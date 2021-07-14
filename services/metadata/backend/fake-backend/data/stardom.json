@@ -1,0 +1,441 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dasch-swiss/dasch-service-platform/main/docs/services/metadata/schema-metadata.json",
+    "project": {
+        "__id": "http://ns.dasch.swiss/repository#dsp-0107-project",
+        "__type": "Project",
+        "__created": "1623677814816666000",
+        "__modified": "1623677814816667000",
+        "howToCite": "XX - new property on project level",
+        "datasets": [
+            "http://ns.dasch.swiss/repository#dsp-0107-dataset-000"
+        ],
+        "keywords": [
+            {
+                "en": "Star studies"
+            },
+            {
+                "en": "Gender"
+            },
+            {
+                "en": "Film character"
+            },
+            {
+                "en": "Cultural studies"
+            },
+            {
+                "en": "Narratology"
+            },
+            {
+                "en": "Popular culture"
+            },
+            {
+                "en": "France in the Forties"
+            },
+            {
+                "en": "Film history"
+            }
+        ],
+        "disciplines": [
+            {
+                "__type": "URL",
+                "text": "Cinematography ",
+                "type": "Skos",
+                "url": "https://skos.um.es/unesco6/620301"
+            },
+            {
+                "en": "Theatre and Cinema"
+            }
+        ],
+        "publications": [
+            "Boillat, Alain (2020), En En cas de malheur de Simenon à Autant-Lara. Essai de génétique scénaristique, Genève, Droz.",
+            "Boillat Alain, Maire Frédéric (2019), Sharing Knowledge between University and Cinémathèque, in Iluminace. The Journal of Film Theory, History, and Aesthetics, 31(1), 45-57.",
+            "Boillat Alain (2019), Jean-Pierre Bleys, Claude Autant-Lara, in 1895. Revue de l’association française de recherche sur l’histoire du cinéma, 88, 167-176.",
+            "Rohner Jeanne (2020), Danielle Darrieux dans Occupe-toi d’Amélie..! Genèse d’une résurrection, in Le Gras Gwénaëlle, Sellier Geneviève (ed.), Presses Universitaires de Bordeaux, Pessac, 163-174.",
+            "Rohner Jeanne (2018), Les états du personnage : du scénario au film, in Fabula : la recherche en littérature, https://www.fabula.org/atelier.php?Personnage_filmique.",
+            "Boillat Alain (2020), L'adaptation d'En cas de malheur par Autant-Lara, Aurenche et Bost : une génère scénaristique en contexte, in TRACES, 3, 23-40.",
+            "Rohner Jeanne (2018), « Occupe-toi d'Amélie! (Claude Autant-Lara, 1949): le théâtre à l'écran », in Philippe Gilles, Boillat Alain (ed.), Impressions Nouvelles, Bruxelles, 205-229.",
+            "Boillat Alain (2020), « Dans les coulisses de la fabrique du personnage : les archives scénaristiques au service des star studies », dans Manon Billaud et Mélissa Gignac (dir.), Quel(s) scénario(s) pour quelle(s) approche(s) du cinéma ?, Paris, AFRHC, chapitre 7.",
+            "Chedaleux Delphine (2020), Fabrique et réceptions du pouvoir féminin : Danielle Darrieux dans Le Bon Dieu sans confession, in LeGras Gwénaëlle, Sellier Geneviève (ed.), Presses Universitaires de Bordeaux, Pessac, 203-218."
+        ],
+        "temporalCoverage": [
+            {
+                "de": "1942-1949",
+                "en": "1942-1949",
+                "fr": "1942-1949"
+            }
+        ],
+        "endDate": "2020-08-31",
+        "description": {
+            "en": "This project aims to study the mechanisms of the construction of genre representations in the French cinematographic production of the 1940s. The aim is to establish links between the work of different contributors, the status of the stars involved, and the characters they portray on the screen. The genre study is rooted in the examination of various historical sources, particularly screenplays at various stages of writing. The production context of films such as Le Mariage de Chiffon (1942), Occupe-toi d’Amélie (1949) or Le Bon Dieu sans confession (1953) is reconstructed and examined on the basis of documents from the Claude Autant-Lara archive of the Swiss Filmrachives, and considered in the light of the tools forged by film narratology, gender studies, star studies and cultural history. The objective is to develop a “genetic” approach that will make it possible to document the stages of creation by placing them in their socio-historical context.\n\nThe main periodization (1942-1949) corresponds both to the first films officially attributed to Claude Autant-Lara as sole director, to the birth of the trio he formed with his two screenwriters Jean Aurenche and Pierre Bost, and to a pivotal moment for the French star system, which was undergoing a feminization and rejuvenation in the context of occupied France. The stars of our corpus (Odette Joyeux, Micheline Presle or Gérard Philipe) offer emblematic case studies. The initial filmic corpus has been expanded to include Le Bon Dieu sans confession (1953), Le Rouge et le Noir (1954) and Love is my Profession (En cas de malheur, 1958)."
+        },
+        "startDate": "2016-07-01",
+        "alternativeNames": [
+            {
+                "en": "stardom"
+            }
+        ],
+        "name": "A Gender Perspective on Film Character and Stardom: Studying the Production of Film Representations in the Forties (Claude Autant-Lara Collection, Swiss Film Archive)",
+        "funders": [
+            "http://ns.dasch.swiss/repository#dsp-0107-organization-001"
+        ],
+        "grants": [
+            "http://ns.dasch.swiss/repository#dsp-0107-grant-000"
+        ],
+        "shortcode": "0107",
+        "contactPoint": "http://ns.dasch.swiss/repository#dsp-0107-person-000",
+        "spatialCoverage": [
+            {
+                "__type": "URL",
+                "text": "France",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/3017382"
+            }
+        ],
+        "urls": [
+            {
+                "__type": "URL",
+                "text": "http://ark.dasch.swiss/ark:/72163/1/0107",
+                "type": "URL",
+                "url": "http://ark.dasch.swiss/ark:/72163/1/0107"
+            }
+        ]
+    },
+    "datasets": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0107-dataset-000",
+            "__type": "Dataset",
+            "__created": "1623677815668466000",
+            "__modified": "1623677815668469000",
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0107-person-000",
+                    "roles": [
+                        "Data collector",
+                        "Project leader"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0107-person-001",
+                    "roles": [
+                        "Data curator",
+                        "Data collector",
+                        "Project member"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0107-person-002",
+                    "roles": [
+                        "Project member",
+                        "Data curator",
+                        "Data collector"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0107-person-006",
+                    "roles": [
+                        "Data curator"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0107-person-005",
+                    "roles": [
+                        "Other"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0107-person-004",
+                    "roles": [
+                        "Data collector"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0107-person-003",
+                    "roles": [
+                        "Data collector"
+                    ]
+                }
+            ],
+            "title": "Base de données Personnage et vedettariat au prisme du genre",
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "CC BY-SA 4.0",
+                    "type": "Creative Commons",
+                    "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+                }
+            ],
+            "dateModified": "2021-02-02",
+            "languages": [
+                {
+                    "en": "French",
+                    "de": "Französisch",
+                    "fr": "français"
+                }
+            ],
+            "accessConditions": "Partly restricted due to copyright issue.",
+            "dateCreated": "2018-02-16",
+            "typeOfData": [
+                "Image",
+                "Text"
+            ],
+            "datePublished": "2018-02-16",
+            "howToCite": "Boillat, A., Chedaleux, D., Rohner, J., Cordonier, L., Gaillard, A., Jaouen, L., Rivoal, M., 2018, Personnage et vedettariat au prisme du genre [database] (DaSCH), http://ark.dasch.swiss/ark:/72163/1/0107.",
+            "status": "Finished",
+            "abstracts": [
+                {
+                    "en": "The ontology of the project comprises 15 distinct classes, 68 properties, mainly describing archive documents (Piece) divided into 7 distinct categories (contractual and legal documents, personal correspondence, published articles, documents related to the organisation of work, script documents, personal documents, documents related to promotion), and listing, for each piece, the natural or legal persons concerned by the writing of the document and, for each page of document, the persons, works and film projects mentioned.\r Some images (pages) are annotated (regions of interest)."
+                }
+            ]
+        }
+    ],
+    "persons": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-001",
+            "__type": "Person",
+            "__created": "1623677815833246000",
+            "__modified": "1623677815833249000",
+            "givenNames": [
+                "Delphine"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+            ],
+            "emails": [
+                "delphine.chedaleux@utc.fr"
+            ],
+            "familyNames": [
+                "Chedaleux"
+            ],
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0002-5080-8409",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0002-5080-8409"
+                }
+            ],
+            "jobTitles": [
+                "Post-doctoral researcher"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-004",
+            "__type": "Person",
+            "__created": "1623677815834197000",
+            "__modified": "1623677815834198000",
+            "familyNames": [
+                "Gaillard"
+            ],
+            "jobTitles": [
+                "PhD student"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+            ],
+            "givenNames": [
+                "Adrien"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-003",
+            "__type": "Person",
+            "__created": "1623677815834522000",
+            "__modified": "1623677815834523000",
+            "familyNames": [
+                "Cordonier"
+            ],
+            "emails": [
+                "laure.cordonier@unil.ch"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+            ],
+            "jobTitles": [
+                "PhD student"
+            ],
+            "givenNames": [
+                "Laure"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-002",
+            "__type": "Person",
+            "__created": "1623677815834938000",
+            "__modified": "1623677815834939000",
+            "emails": [
+                "jeanne.rohner@unil.ch"
+            ],
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0002-1537-8140",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0002-1537-8140"
+                }
+            ],
+            "jobTitles": [
+                "PhD student"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+            ],
+            "familyNames": [
+                "Rohner"
+            ],
+            "givenNames": [
+                "Jeanne"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-000",
+            "__type": "Person",
+            "__created": "1623677815835563000",
+            "__modified": "1623677815835564000",
+            "familyNames": [
+                "Boillat"
+            ],
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0002-2342-395X",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0002-2342-395X"
+                }
+            ],
+            "jobTitles": [
+                "Full professor"
+            ],
+            "givenNames": [
+                "Alain"
+            ],
+            "emails": [
+                "alain.boillat@unil.ch"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-006",
+            "__type": "Person",
+            "__created": "1623677815836115000",
+            "__modified": "1623677815836115000",
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0003-4185-7169",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0003-4185-7169"
+                }
+            ],
+            "givenNames": [
+                "Marion"
+            ],
+            "jobTitles": [
+                "Research manager"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+            ],
+            "familyNames": [
+                "Rivoal"
+            ],
+            "emails": [
+                "marion.rivoal@unil.ch"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-005",
+            "__type": "Person",
+            "__created": "1623677815836648000",
+            "__modified": "1623677815836649000",
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+            ],
+            "jobTitles": [
+                "IT support"
+            ],
+            "givenNames": [
+                "Loïc"
+            ],
+            "emails": [
+                "loic.jaouen@unil.ch"
+            ],
+            "familyNames": [
+                "Jaouen"
+            ]
+        }
+    ],
+    "organizations": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0107-organization-001",
+            "__type": "Organization",
+            "__created": "1623677815837073000",
+            "__modified": "1623677815837074000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "name": "Swiss National Science Foundation (SNSF)",
+            "email": "desk@snf.ch",
+            "address": {
+                "__type": "Address",
+                "street": "Wildhainweg 3 Postfach",
+                "postalCode": "3001",
+                "locality": "Bern",
+                "country": "Switzerland"
+            },
+            "url": {
+                "__type": "URL",
+                "text": "http://www.snf.ch/",
+                "type": "URL",
+                "url": "http://www.snf.ch/"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0107-organization-000",
+            "__type": "Organization",
+            "__created": "1623677815888652000",
+            "__modified": "1623677815888653000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "url": {
+                "__type": "URL",
+                "text": "https://www.unil.ch/",
+                "type": "URL",
+                "url": "https://www.unil.ch/"
+            },
+            "name": "Université de Lausanne",
+            "address": {
+                "__type": "Address",
+                "street": "Unicentre",
+                "postalCode": "1015",
+                "locality": "Lausanne",
+                "country": "Switzerland"
+            }
+        }
+    ],
+    "grants": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0107-grant-000",
+            "__type": "Grant",
+            "__created": "1623677815944183000",
+            "__modified": "1623677815944184000",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0107-organization-001"
+            ],
+            "url": {
+                "__type": "URL",
+                "text": "http://p3.snf.ch/Project-166366",
+                "type": "URL",
+                "url": "http://p3.snf.ch/Project-166366"
+            },
+            "number": "166366",
+            "name": "Project funding (Div. I-III)"
+        }
+    ]
+}

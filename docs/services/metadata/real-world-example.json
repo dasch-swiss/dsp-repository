@@ -1,0 +1,785 @@
+{
+    "$schema": "./schema-metadata.json",
+    "project": {
+        "__id": "http://ns.dasch.swiss/repository#dsp-0806-project",
+        "__type": "Project",
+        "__created": "1623677792179358000",
+        "__modified": "1623677792179359000",
+        "howToCite": "https://www.anton-webern.ch/index.php?id=85",
+        "datasets": [
+            "http://ns.dasch.swiss/repository#dsp-0806-dataset-000"
+        ],
+        "temporalCoverage": [
+            {
+                "en": "1850–today"
+            }
+        ],
+        "keywords": [
+            {
+                "en": "critical edition"
+            },
+            {
+                "en": "digital music edition"
+            },
+            {
+                "en": "musicology"
+            },
+            {
+                "de": "Gesamtausgabe"
+            },
+            {
+                "en": "textual criticism"
+            },
+            {
+                "en": "Viennese school"
+            },
+            {
+                "en": "source studies"
+            },
+            {
+                "en": "Anton Webern"
+            },
+            {
+                "en": "philology"
+            },
+            {
+                "en": "semantic web"
+            }
+        ],
+        "funders": [
+            "http://ns.dasch.swiss/repository#dsp-0806-organization-003",
+            "http://ns.dasch.swiss/repository#dsp-0806-organization-005",
+            "http://ns.dasch.swiss/repository#dsp-0806-organization-004"
+        ],
+        "url": {
+            "__type": "URL",
+            "text": "https://www.anton-webern.ch",
+            "type": "URL",
+            "url": "https://www.anton-webern.ch"
+        },
+        "spatialCoverage": [
+            {
+                "__type": "URL",
+                "text": "Germany",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/DE/germany.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Poland",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/PL/poland.html"
+            },
+            {
+                "__type": "URL",
+                "text": "United States",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/US/united-states.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Austria",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/AT/austria.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Slovenia",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/SI/slovenia.html"
+            },
+            {
+                "__type": "URL",
+                "text": "https://en.wikipedia.org/wiki/Baltic_states",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/12217934/baltic-states.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Spain",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/ES/spain.html"
+            },
+            {
+                "__type": "URL",
+                "text": "France",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/FR/france.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Switzerland",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/CH/switzerland.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Italy",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/IT/italy.html"
+            },
+            {
+                "__type": "URL",
+                "text": "United Kingdom",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/GB/united-kingdom.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Croatia",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/HR/croatia.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Hungary",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/HU/hungary.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Czechia",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/CZ/czechia.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Slovakia",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/SK/slovakia.html"
+            }
+        ],
+        "publications": [
+            "https://www.anton-webern.ch/index.php?id=87"
+        ],
+        "grants": [
+            "http://ns.dasch.swiss/repository#dsp-0806-grant-007",
+            "http://ns.dasch.swiss/repository#dsp-0806-grant-005",
+            "http://ns.dasch.swiss/repository#dsp-0806-grant-004",
+            "http://ns.dasch.swiss/repository#dsp-0806-grant-002",
+            "http://ns.dasch.swiss/repository#dsp-0806-grant-003",
+            "http://ns.dasch.swiss/repository#dsp-0806-grant-001",
+            "http://ns.dasch.swiss/repository#dsp-0806-grant-006",
+            "http://ns.dasch.swiss/repository#dsp-0806-grant-000"
+        ],
+        "contactPoint": "http://ns.dasch.swiss/repository#dsp-0806-organization-000",
+        "startDate": "2006-10-01",
+        "disciplines": [
+            {
+                "__type": "URL",
+                "text": "Criticism of texts",
+                "type": "Skos",
+                "url": "http://skos.um.es/unesco6/620201"
+            },
+            {
+                "__type": "URL",
+                "text": "Music, musicology ",
+                "type": "Skos",
+                "url": "http://skos.um.es/unesco6/620306"
+            }
+        ],
+        "name": "Anton Webern Gesamtausgabe",
+        "endDate": "2024-12-31",
+        "shortcode": "0806",
+        "description": {
+            "en": "The Anton Webern Gesamtausgabe (AWG) is a critical-historical edition which aims to make Webern’s entire oeuvre accessible to musical scholarship and practice in a scholarly form. The edition includes not only all the works Webern himself had forwarded to be printed but also their unpublished variants. It also includes compositions that were never made public in his lifetime, works from his youth and student years, as well as fragments, sketches, arrangements and revisions of his and other scores."
+        },
+        "dataManagementPlan": "http://ns.dasch.swiss/repository#dsp-0806-dmp"
+    },
+    "datasets": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-dataset-000",
+            "__type": "Dataset",
+            "__created": "1623677796518787000",
+            "__modified": "1623677796518788000",
+            "typeOfData": [
+                "Text",
+                "Image",
+                "XML"
+            ],
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0806-person-005",
+                    "roles": [
+                        "Contributor",
+                        "Creator"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0806-person-003",
+                    "roles": [
+                        "Creator",
+                        "Contributor"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0806-person-001",
+                    "roles": [
+                        "Member of the editorial management"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0806-person-002",
+                    "roles": [
+                        "Contributor",
+                        "Creator",
+                        "Member of the editorial management"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0806-person-004",
+                    "roles": [
+                        "Creator",
+                        "Contributor"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0806-person-000",
+                    "roles": [
+                        "Project manager",
+                        "Member of the editorial management"
+                    ]
+                }
+            ],
+            "accessConditions": "Restricted",
+            "languages": [
+                {
+                    "de": "Deutsch",
+                    "en": "German",
+                    "fr": "allemand"
+                }
+            ],
+            "howToCite": "https://www.anton-webern.ch/index.php?id=85",
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "CC BY-SA 4.0",
+                    "type": "Creative Commons",
+                    "url": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+                }
+            ],
+            "abstracts": [
+                {
+                    "en": "The dataset contains content-related and contextual data created and maintained within the SALSAH database as part of the editorial and documentary work of the Anton Webern Gesamtausgabe."
+                }
+            ],
+            "status": "Ongoing",
+            "title": "Salsah data of the Anton Webern Gesamtausgabe"
+        }
+    ],
+    "persons": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-person-005",
+            "__type": "Person",
+            "__created": "1623677796685218000",
+            "__modified": "1623677796685221000",
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0002-0744-5374",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0002-0744-5374"
+                }
+            ],
+            "jobTitles": [
+                "Research associate"
+            ],
+            "familyNames": [
+                "Münnich"
+            ],
+            "givenNames": [
+                "Stefan"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-000",
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-001"
+            ],
+            "emails": [
+                "stefan.muennich@unibas.ch"
+            ],
+            "address": {
+                "__type": "Address",
+                "street": "Petersgraben 27/29",
+                "postalCode": "CH-4051",
+                "locality": "Basel",
+                "country": "Switzerland"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-person-000",
+            "__type": "Person",
+            "__created": "1623677797625954000",
+            "__modified": "1623677797625957000",
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "GND URL: http://d-nb.info/gnd/12307195X",
+                    "type": "GND",
+                    "url": "http://d-nb.info/gnd/12307195X"
+                }
+            ],
+            "familyNames": [
+                "Schmidt"
+            ],
+            "jobTitles": [
+                "Member of the editorial management",
+                "Project manager",
+                "Full professor"
+            ],
+            "address": {
+                "__type": "Address",
+                "street": "Petersgraben 27/29",
+                "postalCode": "CH-4051",
+                "locality": "Basel",
+                "country": "Switzerland"
+            },
+            "emails": [
+                "matthias.schmidt@unibas.ch"
+            ],
+            "givenNames": [
+                "Matthias"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-001",
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-000"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-person-003",
+            "__type": "Person",
+            "__created": "1623677797681283000",
+            "__modified": "1623677797681284000",
+            "address": {
+                "__type": "Address",
+                "street": "Petersgraben 27/29",
+                "postalCode": "CH-4051",
+                "locality": "Basel",
+                "country": "Switzerland"
+            },
+            "jobTitles": [
+                "Research associate"
+            ],
+            "emails": [
+                "barbara.schingnitz@unibas.ch"
+            ],
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "GND URL: http://d-nb.info/gnd/130219827",
+                    "type": "GND",
+                    "url": "http://d-nb.info/gnd/130219827"
+                }
+            ],
+            "givenNames": [
+                "Barbara"
+            ],
+            "familyNames": [
+                "Schingnitz"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-000",
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-001"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-person-001",
+            "__type": "Person",
+            "__created": "1623677797737650000",
+            "__modified": "1623677797737651000",
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "GND URL: http://d-nb.info/gnd/102645249X",
+                    "type": "GND",
+                    "url": "http://d-nb.info/gnd/102645249X"
+                }
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-002",
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-000"
+            ],
+            "jobTitles": [
+                "Member of the editorial management",
+                "Research associate (PSS)",
+                "Curator"
+            ],
+            "emails": [
+                "simon.obert@unibas.ch"
+            ],
+            "address": {
+                "__type": "Address",
+                "street": "Münsterplatz 4",
+                "postalCode": "CH-4051",
+                "locality": "Basel",
+                "country": "Switzerland"
+            },
+            "givenNames": [
+                "Simon"
+            ],
+            "familyNames": [
+                "Obert"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-person-004",
+            "__type": "Person",
+            "__created": "1623677797799482000",
+            "__modified": "1623677797799484000",
+            "givenNames": [
+                "Michael"
+            ],
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "GND URL: http://d-nb.info/gnd/1069569267",
+                    "type": "GND",
+                    "url": "http://d-nb.info/gnd/1069569267"
+                }
+            ],
+            "jobTitles": [
+                "Research associate"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-000",
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-001"
+            ],
+            "address": {
+                "__type": "Address",
+                "street": "Petersgraben 27/29",
+                "postalCode": "CH-4051",
+                "locality": "Basel",
+                "country": "Switzerland"
+            },
+            "emails": [
+                "michael.matter@unibas.ch"
+            ],
+            "familyNames": [
+                "Matter"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-person-002",
+            "__type": "Person",
+            "__created": "1623677797852627000",
+            "__modified": "1623677797852629000",
+            "familyNames": [
+                "Ahrend"
+            ],
+            "emails": [
+                "thomas.ahrend@unibas.ch"
+            ],
+            "givenNames": [
+                "Thomas"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-000",
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-001"
+            ],
+            "jobTitles": [
+                "Research associate",
+                "Member of the editorial management"
+            ],
+            "address": {
+                "__type": "Address",
+                "street": "Petersgraben 27/29",
+                "postalCode": "CH-4051",
+                "locality": "Basel",
+                "country": "Switzerland"
+            },
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "GND URL: http://d-nb.info/gnd/129772429",
+                    "type": "GND",
+                    "url": "http://d-nb.info/gnd/129772429"
+                }
+            ]
+        }
+    ],
+    "organizations": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-organization-001",
+            "__type": "Organization",
+            "__created": "1623677797909208000",
+            "__modified": "1623677797909210000",
+            "alternativeNames": [
+                {
+                    "de": "Fachbereich Musikwissenschaft der Universität Basel"
+                }
+            ],
+            "address": {
+                "__type": "Address",
+                "street": "Petersgraben 27/29",
+                "postalCode": "CH-4051",
+                "locality": "Basel",
+                "country": "Switzerland"
+            },
+            "name": "MWS",
+            "url": {
+                "__type": "URL",
+                "text": "https://mws.unibas.ch/",
+                "type": "URL",
+                "url": "https://mws.unibas.ch/"
+            },
+            "email": "sekretariat-mws@unibas.ch"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-organization-003",
+            "__type": "Organization",
+            "__created": "1623677797964578000",
+            "__modified": "1623677797964580000",
+            "alternativeNames": [
+                {
+                    "de": "Schweizerischer Nationalfonds"
+                }
+            ],
+            "name": "SNF",
+            "email": "com@snf.ch",
+            "address": {
+                "__type": "Address",
+                "street": "Wildhainweg 3 (Postfach)",
+                "postalCode": "CH-3001",
+                "locality": "Bern",
+                "country": "Switzerland"
+            },
+            "url": {
+                "__type": "URL",
+                "text": "http://www.snf.ch",
+                "type": "URL",
+                "url": "http://www.snf.ch"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-organization-000",
+            "__type": "Organization",
+            "__created": "1623677798021509000",
+            "__modified": "1623677798021511000",
+            "url": {
+                "__type": "URL",
+                "text": "https://www.anton-webern.ch",
+                "type": "URL",
+                "url": "https://www.anton-webern.ch"
+            },
+            "address": {
+                "__type": "Address",
+                "street": "Petersgraben 27/29",
+                "postalCode": "CH-4051",
+                "locality": "Basel",
+                "country": "Switzerland"
+            },
+            "name": "Anton Webern Gesamtausgabe",
+            "email": "info-awg@unibas.ch"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-organization-002",
+            "__type": "Organization",
+            "__created": "1623677798076951000",
+            "__modified": "1623677798076954000",
+            "email": "office-pss@unibas.ch",
+            "url": {
+                "__type": "URL",
+                "text": "https://paul-sacher-stiftung.ch",
+                "type": "URL",
+                "url": "https://paul-sacher-stiftung.ch"
+            },
+            "name": "Paul Sacher Stiftung",
+            "address": {
+                "__type": "Address",
+                "street": "Münsterplatz 4",
+                "postalCode": "CH-4051",
+                "locality": "Basel",
+                "country": "Switzerland"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-organization-004",
+            "__type": "Organization",
+            "__created": "1623677798141543000",
+            "__modified": "1623677798141545000",
+            "alternativeNames": [
+                {
+                    "de": "SAGW"
+                }
+            ],
+            "email": "sagw@sagw.ch",
+            "address": {
+                "__type": "Address",
+                "street": "Laupenstrasse 7 (Postfach)",
+                "postalCode": "CH-3001",
+                "locality": "Bern",
+                "country": "Switzerland"
+            },
+            "name": "Schweizerische Akademie der Geistes- und Sozialwissenschaften",
+            "url": {
+                "__type": "URL",
+                "text": "https://sagw.ch/",
+                "type": "URL",
+                "url": "https://sagw.ch/"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-organization-005",
+            "__type": "Organization",
+            "__created": "1623677798197178000",
+            "__modified": "1623677798197180000",
+            "alternativeNames": [
+                {
+                    "de": "Ernst von Siemens Musikstiftung"
+                }
+            ],
+            "name": "EvS",
+            "address": {
+                "__type": "Address",
+                "street": "Landis + Gyr-Strasse 1",
+                "postalCode": "CH-6300",
+                "locality": "Zug",
+                "country": "Switzerland"
+            },
+            "email": "rossnagl@evs-musikstiftung.ch",
+            "url": {
+                "__type": "URL",
+                "text": "https://www.evs-musikstiftung.ch",
+                "type": "URL",
+                "url": "https://www.evs-musikstiftung.ch"
+            }
+        }
+    ],
+    "grants": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-grant-003",
+            "__type": "Grant",
+            "__created": "1623677798653666000",
+            "__modified": "1623677798653667000",
+            "number": "143565",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-003"
+            ],
+            "name": "Projektförderung (spezial) [2012–2015]",
+            "url": {
+                "__type": "URL",
+                "text": "http://p3.snf.ch/Project-143565",
+                "type": "URL",
+                "url": "http://p3.snf.ch/Project-143565"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-grant-007",
+            "__type": "Grant",
+            "__created": "1623677798653963000",
+            "__modified": "1623677798653964000",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-005"
+            ],
+            "number": "E09_471",
+            "name": "[2010–2012]",
+            "url": {
+                "__type": "URL",
+                "text": "https://www.evs-musikstiftung.ch/de/preise/preise/archiv/foerderprojekte/2011/publikationentagungen/historisch-kritische-gesamtausgabe",
+                "type": "URL",
+                "url": "https://www.evs-musikstiftung.ch/de/preise/preise/archiv/foerderprojekte/2011/publikationentagungen/historisch-kritische-gesamtausgabe"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-grant-004",
+            "__type": "Grant",
+            "__created": "1623677798654253000",
+            "__modified": "1623677798654254000",
+            "number": "126789",
+            "url": {
+                "__type": "URL",
+                "text": "http://p3.snf.ch/Project-126789",
+                "type": "URL",
+                "url": "http://p3.snf.ch/Project-126789"
+            },
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-003"
+            ],
+            "name": "Projektförderung (Abt. I-III) [2009–2012]"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-grant-002",
+            "__type": "Grant",
+            "__created": "1623677798654538000",
+            "__modified": "1623677798654539000",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-003"
+            ],
+            "name": "Projektförderung (spezial) [2015–2017]",
+            "url": {
+                "__type": "URL",
+                "text": "http://p3.snf.ch/Project-162871",
+                "type": "URL",
+                "url": "http://p3.snf.ch/Project-162871"
+            },
+            "number": "162871"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-grant-000",
+            "__type": "Grant",
+            "__created": "1623677798654823000",
+            "__modified": "1623677798654824000",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-004"
+            ],
+            "name": "Editionen [2021–2024]"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-grant-005",
+            "__type": "Grant",
+            "__created": "1623677798654952000",
+            "__modified": "1623677798654953000",
+            "number": "113769",
+            "url": {
+                "__type": "URL",
+                "text": "http://p3.snf.ch/Project-113769",
+                "type": "URL",
+                "url": "http://p3.snf.ch/Project-113769"
+            },
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-003"
+            ],
+            "name": "Projektförderung (Abt. I-III) [2006–2009]"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-grant-006",
+            "__type": "Grant",
+            "__created": "1623677798655237000",
+            "__modified": "1623677798655238000",
+            "number": "E13_1003",
+            "name": "[2014–2016]",
+            "url": {
+                "__type": "URL",
+                "text": "https://www.evs-musikstiftung.ch/de/preise/preise/foerderprojekte/symposienpublikationen/anton-webern-briefwechsel-mit-der-universal-0",
+                "type": "URL",
+                "url": "https://www.evs-musikstiftung.ch/de/preise/preise/foerderprojekte/symposienpublikationen/anton-webern-briefwechsel-mit-der-universal-0"
+            },
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-005"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0806-grant-001",
+            "__type": "Grant",
+            "__created": "1623677798655531000",
+            "__modified": "1623677798655532000",
+            "name": "Editionen [2017–2020]",
+            "number": "157968",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0806-organization-003"
+            ],
+            "url": {
+                "__type": "URL",
+                "text": "http://p3.snf.ch/Project-157968",
+                "type": "URL",
+                "url": "http://p3.snf.ch/Project-157968"
+            }
+        }
+    ],
+    "dataManagementPlan": {
+        "__id": "http://ns.dasch.swiss/repository#dsp-0806-dmp",
+        "__type": "DataManagementPlan",
+        "__created": "1623677798655854000",
+        "__modified": "1623677798655854000",
+        "available": true
+    }
+}

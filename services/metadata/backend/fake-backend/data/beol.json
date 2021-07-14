@@ -1,0 +1,615 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dasch-swiss/dasch-service-platform/main/docs/services/metadata/schema-metadata.json",
+    "project": {
+        "__id": "http://ns.dasch.swiss/repository#dsp-0801-project",
+        "__type": "Project",
+        "__created": "1623677831260943000",
+        "__modified": "1623677831260945000",
+        "howToCite": "XX - new property on project level",
+        "datasets": [
+            "http://ns.dasch.swiss/repository#dsp-0801-dataset-000",
+            "http://ns.dasch.swiss/repository#dsp-0801-dataset-001",
+            "http://ns.dasch.swiss/repository#dsp-0801-dataset-002",
+            "http://ns.dasch.swiss/repository#dsp-0801-dataset-003"
+        ],
+        "keywords": [
+            {
+                "de": "Goldbach"
+            },
+            {
+                "fr": "Condorcet"
+            },
+            {
+                "en": "Bernoulli"
+            },
+            {
+                "en": "Leibniz"
+            },
+            {
+                "en": "Euler"
+            },
+            {
+                "en": "Mathematics"
+            },
+            {
+                "en": "Science"
+            },
+            {
+                "en": "history of science"
+            },
+            {
+                "fr": "Turgot"
+            },
+            {
+                "en": "Newton"
+            },
+            {
+                "en": "history of mathematics"
+            }
+        ],
+        "spatialCoverage": [
+            {
+                "__type": "URL",
+                "text": "Switzerland",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/2658434"
+            },
+            {
+                "__type": "URL",
+                "text": "Germany",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/2921044"
+            },
+            {
+                "__type": "URL",
+                "text": "Europe",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/6255148"
+            },
+            {
+                "__type": "URL",
+                "text": "France",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/3017382"
+            },
+            {
+                "__type": "URL",
+                "text": "Italy",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/3175395"
+            },
+            {
+                "__type": "URL",
+                "text": "European Russia",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/11961320"
+            },
+            {
+                "__type": "URL",
+                "text": "United Kingdom",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/2635167"
+            }
+        ],
+        "funders": [
+            "http://ns.dasch.swiss/repository#dsp-0801-organization-000",
+            "http://ns.dasch.swiss/repository#dsp-0801-organization-002"
+        ],
+        "grants": [
+            "http://ns.dasch.swiss/repository#dsp-0801-grant-001",
+            "http://ns.dasch.swiss/repository#dsp-0801-grant-000"
+        ],
+        "description": {
+            "en": "The project Bernoulli-Euler Online (BEOL) integrates the two edition projects Basler Edition der Bernoulli-Briefwechsel (BEBB) and Leonhardi Euleri Opera Omnia (LEOO) into one digital platform available on the web. In addition, Jacob Bernoulli's scientific notebook Meditationes - a document of outstanding significance for the history of mathematics at its turning point around 1700 - is published for the first time in its entirety on the BEOL platform as a region-based multilayer interactive digital edition providing access to facsimiles, transcriptions, translations, indices, and commentaries. Besides being an edition platform, BEOL is a virtual research environment for the study of early modern mathematics and science as a data graph using sophisticated analysis tools. Currently BEOL is connected to two third-party repositories: The Newton Project and the Briefportal Leibniz, initiating the formation of a network of digital editions of the early modern scientific correspondence data. The goal of BEOL is thus twofold: it focuses on the mathematics influenced by the Bernoulli dynasty and Leonhard Euler and undertakes a methodological effort to present these materials to the public and researchers in a highly functional way."
+        },
+        "temporalCoverage": [
+            {
+                "en": "17th century and18th century CE"
+            }
+        ],
+        "startDate": "2016-07-01",
+        "name": "Bernoulli-Euler Online (BEOL)",
+        "alternativeNames": [
+            {
+                "XX": "BEOL"
+            }
+        ],
+        "disciplines": [
+            {
+                "__type": "URL",
+                "text": "Mathematics",
+                "type": "Skos",
+                "url": "http://skos.um.es/unesco6/12"
+            }
+        ],
+        "urls": [
+            {
+                "__type": "URL",
+                "text": "https://beol.dasch.swiss/",
+                "type": "URL",
+                "url": "https://beol.dasch.swiss/"
+            }
+        ],
+        "shortcode": "0801"
+    },
+    "datasets": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-dataset-000",
+            "__type": "Dataset",
+            "__created": "1623677832923938000",
+            "__modified": "1623677832923939000",
+            "languages": [
+                {
+                    "de": "Deutsch",
+                    "en": "German",
+                    "fr": "allemand"
+                },
+                {
+                    "en": "Latin",
+                    "de": "Latein",
+                    "fr": "latin"
+                },
+                {
+                    "en": "French",
+                    "de": "Französisch",
+                    "fr": "français"
+                },
+                {
+                    "en": "English",
+                    "de": "Englisch",
+                    "fr": "anglais"
+                }
+            ],
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "CC BY-NC-ND 4.0",
+                    "type": "Creative Commons",
+                    "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+                }
+            ],
+            "typeOfData": [
+                "Text",
+                "Image",
+                "XML"
+            ],
+            "title": "Briefwechsel von Leonhard Euler mit Christian Goldbach",
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0801-person-001",
+                    "roles": [
+                        "author"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0801-person-000",
+                    "roles": [
+                        "author"
+                    ]
+                }
+            ],
+            "howToCite": "Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://beol.dasch.swiss",
+            "abstracts": [
+                {
+                    "__type": "URL",
+                    "text": "http://ark.dasch.swiss/ark:/72163/1/0801/18ngnZB9Sgy2PlOl71OJxgl.20191028T094314789Z",
+                    "type": "URL",
+                    "url": "http://ark.dasch.swiss/ark:/72163/1/0801/18ngnZB9Sgy2PlOl71OJxgl.20191028T094314789Z"
+                }
+            ],
+            "accessConditions": "open",
+            "status": "Finished"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-dataset-001",
+            "__type": "Dataset",
+            "__created": "1623677833039257000",
+            "__modified": "1623677833039258000",
+            "typeOfData": [
+                "Image",
+                "XML",
+                "Text"
+            ],
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "CC BY-NC-ND 4.0",
+                    "type": "Creative Commons",
+                    "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+                }
+            ],
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0801-person-005",
+                    "roles": [
+                        "author"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0801-person-004",
+                    "roles": [
+                        "author"
+                    ]
+                }
+            ],
+            "alternativeTitles": [
+                {
+                    "fr": "Condorcet-Turgot"
+                }
+            ],
+            "howToCite": "Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://beol.dasch.swiss",
+            "languages": [
+                {
+                    "en": "French",
+                    "de": "Französisch",
+                    "fr": "français"
+                }
+            ],
+            "abstracts": [
+                {
+                    "__type": "URL",
+                    "text": "http://ark.dasch.swiss/ark:/72163/1/0801/4UDRwNHCQZWhJZdL=JfBSAt.20191028T094815009Z",
+                    "type": "URL",
+                    "url": "http://ark.dasch.swiss/ark:/72163/1/0801/4UDRwNHCQZWhJZdL=JfBSAt.20191028T094815009Z"
+                }
+            ],
+            "accessConditions": "open",
+            "title": "Briefwechsel von Euler mit Condoret und Turgot",
+            "status": "Finished"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-dataset-002",
+            "__type": "Dataset",
+            "__created": "1623677833268668000",
+            "__modified": "1623677833268670000",
+            "accessConditions": "open",
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "CC BY-NC-ND 4.0",
+                    "type": "Creative Commons",
+                    "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+                }
+            ],
+            "status": "Finished",
+            "title": "Jacob Bernoulli's Scientific Notebook (Meditationes)",
+            "languages": [
+                {
+                    "en": "English",
+                    "de": "Englisch",
+                    "fr": "anglais"
+                },
+                {
+                    "de": "Deutsch",
+                    "en": "German",
+                    "fr": "allemand"
+                },
+                {
+                    "en": "Latin",
+                    "de": "Latein",
+                    "fr": "latin"
+                }
+            ],
+            "abstracts": [
+                {
+                    "en": "Edition of Jacob Bernoulli's Scientific Notebook (Meditationes)."
+                }
+            ],
+            "howToCite": "Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://beol.dasch.swiss",
+            "typeOfData": [
+                "Text",
+                "Image",
+                "XML"
+            ],
+            "alternativeTitles": [
+                {
+                    "XX": "Meditationes"
+                }
+            ],
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0801-person-000",
+                    "roles": [
+                        "author"
+                    ]
+                }
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-dataset-003",
+            "__type": "Dataset",
+            "__created": "1623677834179550000",
+            "__modified": "1623677834179551000",
+            "alternativeTitles": [
+                {
+                    "XX": "BEBB"
+                }
+            ],
+            "datePublished": "2018-01-01",
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "CC BY-NC-ND 4.0",
+                    "type": "Creative Commons",
+                    "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+                }
+            ],
+            "dateCreated": "2018-01-01",
+            "howToCite": "Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://beol.dasch.swiss",
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0801-person-002",
+                    "roles": [
+                        "author"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0801-person-003",
+                    "roles": [
+                        "author"
+                    ]
+                }
+            ],
+            "abstracts": [
+                {
+                    "__type": "URL",
+                    "text": "https://bez.unibas.ch/de/basler-edition-der-bernoulli-briefwechsel/",
+                    "type": "URL",
+                    "url": "https://bez.unibas.ch/de/basler-edition-der-bernoulli-briefwechsel/"
+                }
+            ],
+            "accessConditions": "open",
+            "languages": [
+                {
+                    "de": "Deutsch",
+                    "en": "German",
+                    "fr": "allemand"
+                },
+                {
+                    "en": "French",
+                    "de": "Französisch",
+                    "fr": "français"
+                },
+                {
+                    "en": "Latin",
+                    "de": "Latein",
+                    "fr": "latin"
+                }
+            ],
+            "dateModified": "2018-01-01",
+            "typeOfData": [
+                "Text",
+                "Image"
+            ],
+            "status": "Ongoing",
+            "title": "Basler Edition der Bernoulli-Briefwechsel"
+        }
+    ],
+    "persons": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-person-004",
+            "__type": "Person",
+            "__created": "1623677834579869000",
+            "__modified": "1623677834579870000",
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0801-organization-003"
+            ],
+            "familyNames": [
+                "Gilan"
+            ],
+            "jobTitles": [
+                "Professor"
+            ],
+            "givenNames": [
+                "Christian"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-person-003",
+            "__type": "Person",
+            "__created": "1623677834580036000",
+            "__modified": "1623677834580036000",
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0801-organization-003"
+            ],
+            "familyNames": [
+                "Gehr"
+            ],
+            "emails": [
+                "sulamith.gehr@unibas.ch"
+            ],
+            "jobTitles": [
+                "Wissenschaftliche Mitarbeiterin"
+            ],
+            "givenNames": [
+                "Sulamith"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-person-005",
+            "__type": "Person",
+            "__created": "1623677834580246000",
+            "__modified": "1623677834580247000",
+            "givenNames": [
+                "Vanja"
+            ],
+            "jobTitles": [
+                "Dr. phil. Historikerin"
+            ],
+            "familyNames": [
+                "Hug"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0801-organization-003"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-person-000",
+            "__type": "Person",
+            "__created": "1623677834580406000",
+            "__modified": "1623677834580406000",
+            "familyNames": [
+                "Mattmüller"
+            ],
+            "jobTitles": [
+                "Wissenschaftlicher Mitarbeiter"
+            ],
+            "givenNames": [
+                "Martin"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0801-organization-003"
+            ],
+            "emails": [
+                "martin.mattmueller@unibas.ch"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-person-002",
+            "__type": "Person",
+            "__created": "1623677834580679000",
+            "__modified": "1623677834580680000",
+            "familyNames": [
+                "Nagel"
+            ],
+            "emails": [
+                "fritz.nagel@unibas.ch"
+            ],
+            "givenNames": [
+                "Fritz"
+            ],
+            "jobTitles": [
+                "Leiter Bernoulli-Archiv"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0801-organization-003"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-person-001",
+            "__type": "Person",
+            "__created": "1623677834580894000",
+            "__modified": "1623677834580895000",
+            "familyNames": [
+                "Lemmermeyer"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0801-organization-003"
+            ],
+            "jobTitles": [
+                "Mathematiker"
+            ],
+            "givenNames": [
+                "Franz"
+            ]
+        }
+    ],
+    "organizations": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-organization-002",
+            "__type": "Organization",
+            "__created": "1623677834581076000",
+            "__modified": "1623677834581077000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "email": "sagw@sagw.ch",
+            "url": {
+                "__type": "URL",
+                "text": "https://sagw.ch/",
+                "type": "URL",
+                "url": "https://sagw.ch/"
+            },
+            "name": "Schweizerische Akademie der Geisteswissenschaften (SAGW)",
+            "address": {
+                "__type": "Address",
+                "street": "Haus der Akademien, Postfach",
+                "postalCode": "3001",
+                "locality": "Bern",
+                "country": "Switzerland"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-organization-003",
+            "__type": "Organization",
+            "__created": "1623677834892322000",
+            "__modified": "1623677834892326000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "email": "bez@unibas.ch",
+            "name": "Bernoulli-Euler-Zentrum",
+            "address": {
+                "__type": "Address",
+                "street": "Universitätsbibliothek, Schönbeinstrasse 18-20",
+                "postalCode": "4056",
+                "locality": "Basel",
+                "country": "Switzerland"
+            },
+            "url": {
+                "__type": "URL",
+                "text": "https://www.bez.unibas.ch",
+                "type": "URL",
+                "url": "https://www.bez.unibas.ch"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-organization-000",
+            "__type": "Organization",
+            "__created": "1623677835089549000",
+            "__modified": "1623677835089550000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "email": "desk@snf.ch",
+            "url": {
+                "__type": "URL",
+                "text": "http://www.snf.ch/",
+                "type": "URL",
+                "url": "http://www.snf.ch/"
+            },
+            "address": {
+                "__type": "Address",
+                "street": "Wildhainweg 3, Postfach",
+                "postalCode": "3001",
+                "locality": "Bern",
+                "country": "Switzerland"
+            },
+            "name": "Schweizerischer Nationalfonds (SNF)"
+        }
+    ],
+    "grants": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-grant-001",
+            "__type": "Grant",
+            "__created": "1623677835278746000",
+            "__modified": "1623677835278748000",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0801-organization-002"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0801-grant-000",
+            "__type": "Grant",
+            "__created": "1623677835278895000",
+            "__modified": "1623677835278897000",
+            "name": "Projektförderung (Abt. I-III)",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0801-organization-000"
+            ],
+            "number": "166072",
+            "url": {
+                "__type": "URL",
+                "text": "http://p3.snf.ch/project-166072",
+                "type": "URL",
+                "url": "http://p3.snf.ch/project-166072"
+            }
+        }
+    ]
+}

@@ -50,23 +50,6 @@ func searchProjects(query string) []Project {
 	return res
 }
 
-// Searches for a element with type == "http://ns.dasch.swiss/repository#Project"
-// in a json-shaped []interface{}
-func findProjectNode(list []interface{}) map[string]interface{} {
-	for _, item := range list {
-		innerMap, ok := item.(map[string]interface{})
-		if ok {
-			tp := innerMap["type"]
-			if tp == "http://ns.dasch.swiss/repository#Project" {
-				return innerMap
-			}
-		} else {
-			log.Fatal("Failed to parse node")
-		}
-	}
-	return nil
-}
-
 // Loads a project from a JSON file.
 // Expects this file to be located in ./data/*.json
 func loadProject(path string) Project {
@@ -84,21 +67,30 @@ func loadProject(path string) Project {
 		log.Fatal(err)
 	}
 
-	// grab actual metadata from JSON
-	projMetadata, ok := jsonMap["projectsMetadata"].([]interface{})
+	// get core information from json to build Project struct
+	p, ok := jsonMap["project"].(map[string]interface{})
 	if ok {
-		projectMap := findProjectNode(projMetadata)
-		id := projectMap["shortcode"].(string)
-		name := projectMap["name"].(string)
-		description := projectMap["description"].(string)
+		id := p["shortcode"].(string)
+		name := p["name"].(string)
+		// default description: simply toString of description map
+		description_map := p["description"].(map[string]interface{})
+		description := fmt.Sprint(description_map)
+		// if en, de or fr are in map, use specific string (in that order)
+		if d, ok := description_map["en"]; ok {
+			description = d.(string)
+		} else if d, ok := description_map["de"]; ok {
+			description = d.(string)
+		} else if d, ok := description_map["fr"]; ok {
+			description = d.(string)
+		}
 		return Project{
 			ID:          id,
 			Name:        name,
 			Description: description,
-			Metadata:    projMetadata,
+			Metadata:    jsonMap,
 		}
 	} else {
-		log.Fatal("Could not find project in JSON")
+		log.Fatal("Could not create project from JSON")
 		return Project{}
 	}
 }
@@ -127,17 +119,9 @@ func getProjects(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Expose-Headers", "X-Total-Count")
-	// TODO: are any of those needed? json-server has them
-	// w.Header().Set("Content-Type", "charset=utf-8")
-	// w.Header().Set("Cache-Control", "no-cache")
-	// w.Header().Set("Expires", "-1")
-	// w.Header().Set("Pragma", "no-cache")
-	// w.Header().Add("X-Total-Count", "10")
-	// TODO: do we need links to previous and next and first an last?
 
 	// Request parameters
 	query := r.URL.Query().Get("q")
-	// TODO: does page start at 0 or 1?
 	page, _ := strconv.Atoi(r.URL.Query().Get("_page"))
 	limit, _ := strconv.Atoi(r.URL.Query().Get("_limit"))
 
@@ -178,7 +162,7 @@ func getProject(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	for _, item := range projects {
 		for item.ID == params["id"] {
-			json.NewEncoder(w).Encode(item)
+			json.NewEncoder(w).Encode(item.Metadata)
 			return
 		}
 	}

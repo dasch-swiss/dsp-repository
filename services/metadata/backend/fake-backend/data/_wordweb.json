@@ -1,0 +1,321 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dasch-swiss/dasch-service-platform/main/docs/services/metadata/schema-metadata.json",
+    "project": {
+        "__id": "http://ns.dasch.swiss/repository#dsp-0826-project",
+        "__type": "Project",
+        "__created": "1623677835645015000",
+        "__modified": "1623677835645016000",
+        "howToCite": "XX - new property on project level",
+        "datasets": [
+            "http://ns.dasch.swiss/repository#dsp-0826-dataset-000"
+        ],
+        "spatialCoverage": [
+            {
+                "__type": "URL",
+                "text": "United Kingdom",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/countries/GB/united-kingdom.html"
+            }
+        ],
+        "temporalCoverage": [
+            {
+                "__type": "URL",
+                "text": "English (culture or style)",
+                "type": "Chronontology",
+                "url": "https://chronontology.dainst.org/period/Fuxla9Z889Zq"
+            },
+            {
+                "__type": "URL",
+                "text": "Roman (ancient Italian culture or period)",
+                "type": "Chronontology",
+                "url": "http://chronontology.dainst.org/period/yY1zReDz86zF"
+            },
+            {
+                "__type": "URL",
+                "text": "Ancient Greek (culture or style)",
+                "type": "Chronontology",
+                "url": "https://chronontology.dainst.org/period/YOyP9TLDuhrb"
+            },
+            {
+                "__type": "URL",
+                "text": "Elizabethan",
+                "type": "Chronontology",
+                "url": "https://chronontology.dainst.org/period/ESV68rKHRuZg"
+            },
+            {
+                "__type": "URL",
+                "text": "Jacobean",
+                "type": "Chronontology",
+                "url": "https://chronontology.dainst.org/period/9Cb5HX6bZ92K"
+            }
+        ],
+        "contactPoint": "http://ns.dasch.swiss/repository#dsp-0826-person-001",
+        "urls": [
+            {
+                "__type": "URL",
+                "text": "ark.dasch.swiss/ark:/72163/1/0826",
+                "type": "URL",
+                "url": "ark.dasch.swiss/ark:/72163/1/0826"
+            }
+        ],
+        "description": {
+            "en": "WordWeb/IDEM offers an innovative digital database for representing intertextuality in the drama of Shakespeare’s time. This digital representation based on Sematic Web technologies displays a comprehensive corpus of mutual quotations within the texts of this time. WordWeb renews our vision of intertextuality through a new paradigm for representing what is conventionally called “quotation”. Instead of complete texts, WordWeb/IDEM stores only intertextually active passages, i.e., phrases which have been identified in more than one text. These items are not seen as deriving from a famous masterpiece. Instead, they represent much- quoted phrases which just happen to occur also in Hamlet, for example. The name “WordWeb” indicates this new focus: short verbal items (“Word”) are connected to each other by rich links that carry bibliographical information and other annotations (“Web”). As a new methodology, WordWeb can be applied to advance research and understanding of complex relationships in many cultural domains."
+        },
+        "shortcode": "0826",
+        "funders": [
+            "http://ns.dasch.swiss/repository#dsp-0826-organization-000"
+        ],
+        "grants": [
+            "http://ns.dasch.swiss/repository#dsp-0826-grant-000"
+        ],
+        "alternativeNames": [
+            {
+                "en": "Intertextuality in drama of the early modern period"
+            },
+            {
+                "en": "WordWeb / IDEM"
+            }
+        ],
+        "keywords": [
+            {
+                "en": "Intertextuality"
+            },
+            {
+                "en": "Elizabethan"
+            },
+            {
+                "en": "English Drama"
+            },
+            {
+                "en": "Shakespeare"
+            },
+            {
+                "en": "Early Modern Period"
+            },
+            {
+                "en": "Digital Humanities"
+            }
+        ],
+        "disciplines": [
+            {
+                "de": "10501 Schwerpunkt Germanistik und Anglistik"
+            }
+        ],
+        "endDate": "2020-11-04",
+        "name": "WordWeb / IDEM: A new way of representing Intertextuality in Drama of the Early\r Modern Period",
+        "startDate": "2018-11-01"
+    },
+    "datasets": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0826-dataset-000",
+            "__type": "Dataset",
+            "__created": "1623677838594610000",
+            "__modified": "1623677838594611000",
+            "languages": [
+                {
+                    "de": "Deutsch",
+                    "en": "German",
+                    "fr": "allemand"
+                },
+                {
+                    "en": "Classical Greek"
+                },
+                {
+                    "en": "Italian",
+                    "de": "Italienisch",
+                    "fr": "italien"
+                },
+                {
+                    "en": "Spanish"
+                },
+                {
+                    "en": "Portuguese"
+                },
+                {
+                    "en": "English",
+                    "de": "Englisch",
+                    "fr": "anglais"
+                },
+                {
+                    "en": "Latin",
+                    "de": "Latein",
+                    "fr": "latin"
+                },
+                {
+                    "en": "French",
+                    "de": "Französisch",
+                    "fr": "français"
+                }
+            ],
+            "status": "Ongoing",
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0826-person-001",
+                    "roles": [
+                        "Author",
+                        "Editor",
+                        "Creator"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0826-person-003",
+                    "roles": [
+                        "Editor"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0826-person-002",
+                    "roles": [
+                        "Editor"
+                    ]
+                }
+            ],
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "CC BY-NC-ND 4.0",
+                    "type": "Creative Commons",
+                    "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+                }
+            ],
+            "accessConditions": "Open",
+            "abstracts": [
+                {
+                    "en": "4500 extracts from plays and other texts written no later than 1688, mostly in English"
+                }
+            ],
+            "title": "WordWeb / IDEM: A new way of representing Intertextuality in Drama of the Early Modern Period",
+            "typeOfData": [
+                "Text"
+            ],
+            "howToCite": "WordWeb/IDEM (2021), DaSCH. ark.dasch.swiss/ark:/72163/1/0826",
+            "dateCreated": "2021-01-25",
+            "alternativeTitles": [
+                {
+                    "en": "WordWeb / IDEM"
+                }
+            ]
+        }
+    ],
+    "persons": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0826-person-002",
+            "__type": "Person",
+            "__created": "1623677838981042000",
+            "__modified": "1623677838981044000",
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0826-organization-001"
+            ],
+            "familyNames": [
+                "Heeg"
+            ],
+            "givenNames": [
+                "Stefanie"
+            ],
+            "jobTitles": [
+                "Scientific collaborator"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0826-person-001",
+            "__type": "Person",
+            "__created": "1623677838981281000",
+            "__modified": "1623677838981281000",
+            "familyNames": [
+                "Hohl Trillini"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0826-organization-001"
+            ],
+            "givenNames": [
+                "Regula"
+            ],
+            "jobTitles": [
+                "Scientific collaborator"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0826-person-003",
+            "__type": "Person",
+            "__created": "1623677838981498000",
+            "__modified": "1623677838981499000",
+            "familyNames": [
+                "Reitzner Elliot"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0826-organization-001"
+            ],
+            "jobTitles": [
+                "Scientific collaborator"
+            ],
+            "givenNames": [
+                "Frédéric"
+            ]
+        }
+    ],
+    "organizations": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0826-organization-000",
+            "__type": "Organization",
+            "__created": "1623677838981744000",
+            "__modified": "1623677838981744000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "email": "desk@snf.ch\rdesk@snf.ch",
+            "url": {
+                "__type": "URL",
+                "text": "www.snf.ch",
+                "type": "URL",
+                "url": "www.snf.ch"
+            },
+            "address": {
+                "__type": "Address",
+                "street": "Wildhainweg 3, Postfach",
+                "postalCode": "3001",
+                "locality": "Bern",
+                "country": "Switzerland"
+            },
+            "name": "Schweizerischer Nationalfonds (SNF)"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0826-organization-001",
+            "__type": "Organization",
+            "__created": "1623677839039910000",
+            "__modified": "1623677839039911000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "url": {
+                "__type": "URL",
+                "text": "www.unibas.ch",
+                "type": "URL",
+                "url": "www.unibas.ch"
+            },
+            "name": "University of Basel"
+        }
+    ],
+    "grants": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0826-grant-000",
+            "__type": "Grant",
+            "__created": "1623677839040078000",
+            "__modified": "1623677839040078000",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0826-organization-000"
+            ],
+            "number": "183259",
+            "url": {
+                "__type": "URL",
+                "text": "http://p3.snf.ch/Project-183259",
+                "type": "URL",
+                "url": "http://p3.snf.ch/Project-183259"
+            },
+            "name": "Digital Lives"
+        }
+    ]
+}

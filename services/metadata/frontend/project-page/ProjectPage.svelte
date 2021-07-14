@@ -1,21 +1,22 @@
 <script lang='ts'>
   import { tick } from 'svelte';
-  import { currentProject, currentProjectMetadata, handleSnackbar, previousRoute } from '../store';
+  import { projectMetadata, handleSnackbar, previousRoute } from '../store';
+  import type {Metadata} from "../interfaces";
   import ProjectWidget from './ProjectWidget.svelte';
   import DownloadWidget from './DownloadWidget.svelte';
   import Tab from './Tab.svelte';
   import { fade } from 'svelte/transition';
   import Snackbar from '../Snackbar.svelte';
+  import { getText } from "../functions";
 
   const mobileResolution = window.innerWidth < 992;
   
-  let datasets: any[] = [];
-  let tabs = [] as any[];
   let isDescriptionExpanded: boolean;
   let descriptionLinesNumber: number;
   let arePublicationsExpanded: boolean;
 
   const getProjectMetadata = async () => {
+    // TODO: can this be cleaned up?
     const protocol = window.location.protocol;
     const port = protocol === 'https:' ? '' : ':3000';
     const baseUrl = `${protocol}//${window.location.hostname}${port}/`;
@@ -23,24 +24,23 @@
     
     // const res = await fetch(`${process.env.BASE_URL}projects/${params.id}`);
     const res = await fetch(`${baseUrl}api/v1/projects/${projectID}`);
-    const projectMetadata = await res.json();
-    currentProjectMetadata.set(projectMetadata);
-    const project = $currentProjectMetadata.metadata.find((p: any) => p.type === 'http://ns.dasch.swiss/repository#Project');
-    currentProject.set(project);
-    document.title = project.name;
+    const metadata: Metadata = await res.json();
+    projectMetadata.set(metadata);
 
-    datasets = $currentProjectMetadata.metadata.filter((p: any) => p.type === 'http://ns.dasch.swiss/repository#Dataset');
+    // const project = $currentProjectMetadata.project
+    // currentProject.set(project);
+    document.title = metadata.project.name;
 
-    datasets.forEach(d => tabs.push({
-      label: d.title,
-      value: datasets.indexOf(d),
-      content: d
-    }));
+    // datasets = $projectMetadata.datasets
+
+    // datasets.forEach(d => tabs.push({
+    //   label: d.title,
+    //   value: datasets.indexOf(d),
+    //   content: d
+    // }));
 
     await tick();
     getDivHeight();
-
-    console.log('metadata', projectMetadata, 'project', $currentProject)
   };
 
   const toggleDescriptionExpand = () => {
@@ -79,13 +79,13 @@
   {/if}
   <div class="row" style="flex-wrap: wrap;">
     <h1 class="title top-heading">
-      {$currentProject?.name}
+      {$projectMetadata?.project.name}
     </h1>
-    {#if $currentProject?.alternateName}
+    {#if $projectMetadata?.project.alternativeNames}
     <div class="row">
       <h4 class="title new-title">
         Also known as:&nbsp;
-        <span style="color:var(--secondary-colour)">{$currentProject?.alternateName.join(", ")}</span>
+        <span style="color:var(--secondary-colour)">{$projectMetadata?.project.alternativeNames.map(t => {return getText(t)}).join(', ')}</span>
       </h4>
     </div>
     {/if}
@@ -94,17 +94,17 @@
     <div class="column-left">
       <div class="property-row">
         <span class="label new-subtitle">Description</span>
-        <div id=description class="data new-text {isDescriptionExpanded ? '' : 'description-short'}">{$currentProject?.description}</div>
+        <div id=description class="data new-text {isDescriptionExpanded ? '' : 'description-short'}">{getText($projectMetadata?.project.description)}</div>
       </div>
       <!-- TODO: if accepted and reused consder move it to separate component -->
       {#if descriptionLinesNumber > 6}
         <div on:click={toggleDescriptionExpand} class=expand-button>show {isDescriptionExpanded ? "less" : "more"}</div>
       {/if}
 
-      {#if $currentProject?.publication && Array.isArray($currentProject?.publication)}
+      {#if $projectMetadata?.project.publications && Array.isArray($projectMetadata?.project.publications)}
         <div class="property-row">
           <span class="label new-subtitle">Publications</span>
-            {#each $currentProject?.publication as p, i}
+            {#each $projectMetadata?.project.publications as p, i}
               {#if i > 1}
                 <span class="{arePublicationsExpanded ? "data new-text" : "hidden"}">{p}</span>
               {:else}
@@ -113,7 +113,7 @@
             {/each}
         </div>
 
-        {#if $currentProject?.publication.length > 2}
+        {#if $projectMetadata?.project.publications.length > 2}
           <div on:click={togglePublicationExpand} class=expand-button>show {arePublicationsExpanded ? "less" : "more"}</div>
         {/if}
 
@@ -121,7 +121,7 @@
 
       {#await getProjectMetadata() then go}
         <div class="tabs">
-          <Tab {tabs} />
+          <Tab datasets={$projectMetadata?.datasets} />
         </div>
       {/await}
 

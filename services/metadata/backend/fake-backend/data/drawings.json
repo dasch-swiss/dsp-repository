@@ -1,0 +1,634 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dasch-swiss/dasch-service-platform/main/docs/services/metadata/schema-metadata.json",
+    "project": {
+        "__id": "http://ns.dasch.swiss/repository#dsp-0105-project",
+        "__type": "Project",
+        "__created": "1623677787438105000",
+        "__modified": "1623677787438106000",
+        "howToCite": "XX - new property on project level",
+        "datasets": [
+            "http://ns.dasch.swiss/repository#dsp-0105-dataset-000"
+        ],
+        "startDate": "2015-03-01",
+        "disciplines": [
+            {
+                "en": "Religious studies, Theology"
+            },
+            {
+                "en": "http://skos.um.es/unesco6/630110"
+            },
+            {
+                "__type": "URL",
+                "text": "Psychology",
+                "type": "Skos",
+                "url": "http://skos.um.es/unesco6/61"
+            },
+            {
+                "en": "Psychology"
+            },
+            {
+                "en": "Sociology"
+            }
+        ],
+        "keywords": [
+            {
+                "en": "Supernatural agents"
+            },
+            {
+                "en": "Drawings"
+            },
+            {
+                "en": "Digital humanities"
+            },
+            {
+                "en": "Interdisciplinarity"
+            },
+            {
+                "en": "Cross-cultural"
+            },
+            {
+                "en": "Child development"
+            },
+            {
+                "en": "Database"
+            }
+        ],
+        "spatialCoverage": [
+            {
+                "__type": "URL",
+                "text": "Nepal",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/1282988/"
+            },
+            {
+                "__type": "URL",
+                "text": "Brazil",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/3469034/"
+            },
+            {
+                "__type": "URL",
+                "text": "Switzerland",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/2658434/"
+            },
+            {
+                "__type": "URL",
+                "text": "Russia",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/2017370/"
+            },
+            {
+                "__type": "URL",
+                "text": "Japan",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/1861060/"
+            },
+            {
+                "__type": "URL",
+                "text": "Iran",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/130758/"
+            },
+            {
+                "__type": "URL",
+                "text": "United States",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/6252001/"
+            },
+            {
+                "__type": "URL",
+                "text": "Romania",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/798549/"
+            },
+            {
+                "__type": "URL",
+                "text": "Netherlands",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/2750405/"
+            },
+            {
+                "__type": "URL",
+                "text": "Argentina",
+                "type": "Geonames",
+                "url": "http://www.geonames.org/3865483/"
+            }
+        ],
+        "temporalCoverage": [
+            {
+                "de": "1987-2018",
+                "en": "1987-2018",
+                "fr": "1987-2018"
+            }
+        ],
+        "name": "Drawings of gods: A Multicultural and Interdisciplinary Approach of Children’s Representations of Supernatural Agents",
+        "shortcode": "0105",
+        "contactPoint": "http://ns.dasch.swiss/repository#dsp-0105-person-000",
+        "urls": [
+            {
+                "__type": "URL",
+                "text": "http://ark.dasch.swiss/ark:/72163/1/0105",
+                "type": "URL",
+                "url": "http://ark.dasch.swiss/ark:/72163/1/0105"
+            }
+        ],
+        "funders": [
+            "http://ns.dasch.swiss/repository#dsp-0105-organization-000"
+        ],
+        "description": {
+            "fr": "La récolte de dessins constitue une technique largement éprouvée pour étudier les représentations imaginaires des enfants. Sur la base d’une collecte de plusieurs centaines de dessins dans diverses régions du monde, notamment au Brésil, en Iran, au Japon, aux Pays-Bas, en Roumanie, en Russie et en Suisse, ce projet prévoit d’étudier l’évolution de la représentation de Dieu ou d’autres êtres surnaturels (dieux, esprits, génies, etc) chez des enfants et des adolescents entre 5 et 18 ans. Il s’intéressera tout spécialement aux stratégies mises en place par les enfants : recours à des représentations religieuses traditionnelles, à des images d’êtres surnaturels véhiculées par des films d’animation ou des bandes dessinées. Au terme du projet, l’objectif est d’avoir pu décrire les stratégies principales utilisées les enfants en ayant pu mettre en évidence comment le choix d’une stratégie plutôt qu’une autre est influencé par l’âge, le sexe, l’éducation religieuse et l’environnement culturel de l’enfant.\nLe contexte de travail est interdisciplinaire. L’analyse du matériel récolté combinera traitement informatique des images et descriptions fournies par des spécialistes du développement de l’enfant, de l’étude des religions et des contextes culturels de provenance des dessins. Ces analyses d’images seront complétées par des analyses textuelles des commentaires fournis par les enfants pour expliquer ce qu’ils ont dessiné."
+        },
+        "publications": [
+            "Brandt Pierre-Yves, Cocco Christelle, Dessart Grégory, Dandarova Robert Zhargalma, Représentations de dieux dans des dessins d’enfants, in Représenter dieux et hommes dans le Proche-Orient ancien, Collège de France, Paris.",
+            "Vinck Dominique, Camus Alexandre, Jaton Florian, Oberhauser Pierre-Nicolas (2018), Localités distribuées, globalités localisées: actions, actants et médiations au service de l’ethnographie du numérique, in Symposium, 22(1), 41-60.",
+            "Darbellay Frédéric, Vinck Dominique, Cocco Christelle, Dessart Grégory, Dandarova Robert Zhargalma, Brandt Pierre-Yves (2018), L'interdisciplinarité en partage: collaborer pour innover - Le projet \"dessins de dieu\", in InnovatiO, (5), NA.",
+            "Dandarova Robert Zhargalma, Dessart Grégory, Serbaeva Olga, Puzdriac Camelia, Khodayarifard Mohammad, Akbari Zardkhaneh Saeed, Zandi Saeid, Petanova Elena, Ladd Kevin, Brandt Pierre-Yves (2016), A Web-based Database for Drawings of Gods: When the Digitals Go Multicultural, in Archive for the Psychology of Religion, (3), 345-352.",
+            "Brandt Pierre-Yves (2016), Représentations enfantines de dieux : comparaison interculturelle, in Rainotte Guy (ed.), Academia-L’Harmattan, Louvain-la-Neuve, 39-59.",
+            "Cocco Christelle, Dessart Grégory, Serbaeva Olga, Brandt Pierre-Yves, Vinck Dominique, Darbellay Frédéric (2018), Potentialités et difficultés d’un projet en humanités numériques (DH) : confrontation aux outils et réorientations de recherche, in Digital Humanities Quarterly, 12(1).",
+            "Oberhauser Pierre-Nicolas (2016), Des collaborations équivoques. La participation de spécialistes en sciences et techniques informatiques à un projet de recherche en humanités numériques, in Revue d'anthropologie des connaissances, 10(4), 557-586.",
+            "Cocco Christelle, Ceré Raphaël, Xanthos Aris, Brandt Pierre-Yves (2019), Identification and quantification of colours in children’s drawings., in Proceedings of the Workshop on Computational Methods in the Humanities 2018, Lausanne http://ceur-ws.org/, Lausanne."
+        ],
+        "alternativeNames": [
+            {
+                "en": "drawings-gods"
+            }
+        ],
+        "grants": [
+            "http://ns.dasch.swiss/repository#dsp-0105-grant-000"
+        ],
+        "endDate": "2019-02-28"
+    },
+    "datasets": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-dataset-000",
+            "__type": "Dataset",
+            "__created": "1623677789200627000",
+            "__modified": "1623677789200629000",
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0105-person-003",
+                    "roles": [
+                        "Project leader"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0105-person-001",
+                    "roles": [
+                        "Project leader"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0105-person-004",
+                    "roles": [
+                        "Project member",
+                        "Data curator",
+                        "Data collector"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0105-person-000",
+                    "roles": [
+                        "Project leader"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0105-person-005",
+                    "roles": [
+                        "Data curator",
+                        "Project member"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0105-person-002",
+                    "roles": [
+                        "Project leader"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0105-person-006",
+                    "roles": [
+                        "Data curator",
+                        "Project member",
+                        "Data collector"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0105-person-007",
+                    "roles": [
+                        "Other"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0105-person-008",
+                    "roles": [
+                        "Data curator"
+                    ]
+                }
+            ],
+            "status": "Finished",
+            "languages": [
+                {
+                    "en": "French",
+                    "de": "Französisch",
+                    "fr": "français"
+                }
+            ],
+            "howToCite": "Brandt, P.-Y., Serbaeva O.,  Cocco, Ch., Dessart, G., Rivoal, M.,  2019, Dessins de dieux [database] (DaSCH), http://ark.dasch.swiss/ark:/72163/1/0105.",
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "CC BY-SA 4.0",
+                    "type": "Creative Commons",
+                    "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+                }
+            ],
+            "dateModified": "2021-02-24",
+            "typeOfData": [
+                "Text",
+                "Image"
+            ],
+            "title": "Base de données Dessins de dieux",
+            "dateCreated": "2018-07-02",
+            "datePublished": "2018-07-02",
+            "accessConditions": "Restricted",
+            "abstracts": [
+                {
+                    "fr": "Au cours des dernières décennies l’étude du concept de dieu (ainsi que l’image et la représentation) est devenu l’un des principaux domaines de recherche en psychologie de la religion. Cette question a été abordée au travers de différentes approches psychologiques : la psychologie développementale cognitive, les théories de la relation d’objet, la psychologie cognitive, les théories des attributions et la théorie d’attachement. En dépit des progrès réalisés, la compréhension de ce phénomène très complexe reste toujours limitée. Selon de nombreux chercheurs une des raisons importantes est celle des méthodes utilisées qui, de façon globale, se basent sur des méthodes verbales: des questionnaires, des entretiens, des listes d’adjectifs pour décrire dieu, des associations libres, etc.  Le projet Dessins de dieux, dirigé par le professeur Pierre-Yves Brandt, vise à contribuer à une compréhension ultérieure de l’origine du concept de dieu et son développement chez les enfants. La technique de dessin, critiquée par certains chercheurs, se présente comme un outil opportun pour effectuer une étude à fois développementale et cross-culturelle. Elle est même plus efficace pour mettre en lumière la place et la fonction des images dans le processus de l’acquisition et de l’intériorisation de certains concepts religieux, ainsi que pour révéler des contradictions et des difficultés de l’acquisition de l’idée de dieu par des enfants. L’absence de telles études entrave les progrès de nos savoirs dans ce domaine.  La base de données Dessins de dieux a été créée pour stocker des données de cette recherche et les rendre accessibles non seulement aux chercheurs affiliés au projet mais aussi au grand public qui s’intéresse à cette problématique. Une première collection de 143 dessins a été récoltée en 2003-2004 au Japon. Actuellement, la base de données contient plus de 7100 dessins recueillis au Japon, en Roumanie, en Russie, en Suisse, aux États-Unis, en Iran, au Népal et aux Pays-Bas ; elle continue à s’agrandir.  Nous espérons que cette recherche intéressera les chercheurs d’autres pays afin que cette base de données s’enrichisse de dessins issus d’autres traditions confessionnelles et culturelles."
+                }
+            ],
+            "urls": [
+                {
+                    "__type": "URL",
+                    "text": "https://ddd.unil.ch/",
+                    "type": "URL",
+                    "url": "https://ddd.unil.ch/"
+                }
+            ]
+        }
+    ],
+    "persons": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-person-007",
+            "__type": "Person",
+            "__created": "1623677789516938000",
+            "__modified": "1623677789516940000",
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0105-organization-001"
+            ],
+            "familyNames": [
+                "Jaouen"
+            ],
+            "givenNames": [
+                "Loïc"
+            ],
+            "jobTitles": [
+                "IT support"
+            ],
+            "emails": [
+                "loic.jaouen@unil.ch"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-person-005",
+            "__type": "Person",
+            "__created": "1623677789517376000",
+            "__modified": "1623677789517377000",
+            "emails": [
+                "christelle.cocco@unil.ch"
+            ],
+            "familyNames": [
+                "Cocco"
+            ],
+            "jobTitles": [
+                "Senior SNSF researcher",
+                "Post-doctoral researcher"
+            ],
+            "givenNames": [
+                "Christelle"
+            ],
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0001-6684-9806",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0001-6684-9806"
+                }
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0105-organization-001"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-person-002",
+            "__type": "Person",
+            "__created": "1623677789517914000",
+            "__modified": "1623677789517915000",
+            "givenNames": [
+                "Zhargalma"
+            ],
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0003-3979-4859",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0003-3979-4859"
+                }
+            ],
+            "familyNames": [
+                "Dandarova-Robert"
+            ],
+            "jobTitles": [
+                "Lecturer"
+            ],
+            "emails": [
+                "zhargalma.dandarova@unil.ch"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0105-organization-001"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-person-001",
+            "__type": "Person",
+            "__created": "1623677789518415000",
+            "__modified": "1623677789518416000",
+            "familyNames": [
+                "Vinck"
+            ],
+            "emails": [
+                "dominique.vinck@unil.ch"
+            ],
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0001-7835-7008",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0001-7835-7008"
+                }
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0105-organization-001"
+            ],
+            "givenNames": [
+                "Dominique"
+            ],
+            "jobTitles": [
+                "Full professor"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-person-009",
+            "__type": "Person",
+            "__created": "1623677789518914000",
+            "__modified": "1623677789518914000",
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0105-organization-001"
+            ],
+            "jobTitles": [
+                "Psychologist"
+            ],
+            "familyNames": [
+                "Laubscher"
+            ],
+            "givenNames": [
+                "Karine"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-person-003",
+            "__type": "Person",
+            "__created": "1623677789519169000",
+            "__modified": "1623677789519169000",
+            "givenNames": [
+                "Frédéric"
+            ],
+            "emails": [
+                "frederic.darbellay@unige.ch"
+            ],
+            "jobTitles": [
+                "Associate professor"
+            ],
+            "familyNames": [
+                "Darbellay"
+            ],
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0003-1321-7105",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0003-1321-7105"
+                }
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0105-organization-002"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-person-004",
+            "__type": "Person",
+            "__created": "1623677789519672000",
+            "__modified": "1623677789519673000",
+            "emails": [
+                "olga.serbaeva@aoi.uzh.ch",
+                "olga.serbaeva@unil.ch"
+            ],
+            "familyNames": [
+                "Serbaeva Saraogi"
+            ],
+            "jobTitles": [
+                "Developer"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0105-organization-001"
+            ],
+            "givenNames": [
+                "Olga"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-person-000",
+            "__type": "Person",
+            "__created": "1623677789520084000",
+            "__modified": "1623677789520084000",
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0105-organization-001"
+            ],
+            "familyNames": [
+                "Brandt"
+            ],
+            "jobTitles": [
+                "Full professor"
+            ],
+            "emails": [
+                "pierre-yves.Brandt@unil.ch"
+            ],
+            "givenNames": [
+                "Pierre-Yves"
+            ],
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0002-4485-5807",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0002-4485-5807"
+                }
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-person-006",
+            "__type": "Person",
+            "__created": "1623677789520586000",
+            "__modified": "1623677789520587000",
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0105-organization-001"
+            ],
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0003-1986-9702",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0003-1986-9702"
+                }
+            ],
+            "givenNames": [
+                "Grégory"
+            ],
+            "jobTitles": [
+                "PhD student"
+            ],
+            "emails": [
+                "gregory.dessart@unil.ch"
+            ],
+            "familyNames": [
+                "Dessart"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-person-008",
+            "__type": "Person",
+            "__created": "1623677789521055000",
+            "__modified": "1623677789521056000",
+            "givenNames": [
+                "Marion"
+            ],
+            "emails": [
+                "marion.rivoal@unil.ch"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0105-organization-001"
+            ],
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0003-4185-7169",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0003-4185-7169"
+                }
+            ],
+            "familyNames": [
+                "Rivoal"
+            ],
+            "jobTitles": [
+                "Research manager"
+            ]
+        }
+    ],
+    "organizations": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-organization-002",
+            "__type": "Organization",
+            "__created": "1623677789521507000",
+            "__modified": "1623677789521508000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "name": "Université de Genève",
+            "url": {
+                "__type": "URL",
+                "text": "https://www.unige.ch/",
+                "type": "URL",
+                "url": "https://www.unige.ch/"
+            },
+            "address": {
+                "__type": "Address",
+                "street": "24 rue du Général-Dufour",
+                "postalCode": "1211",
+                "locality": "Genève 4",
+                "country": "XX - Switzerland?"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-organization-001",
+            "__type": "Organization",
+            "__created": "1623677789637519000",
+            "__modified": "1623677789637522000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "name": "Université de Lausanne",
+            "url": {
+                "__type": "URL",
+                "text": "https://www.unil.ch/",
+                "type": "URL",
+                "url": "https://www.unil.ch/"
+            },
+            "address": {
+                "__type": "Address",
+                "street": "Unicentre",
+                "postalCode": "1015",
+                "locality": "Lausanne",
+                "country": "Switzerland"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-organization-000",
+            "__type": "Organization",
+            "__created": "1623677789826023000",
+            "__modified": "1623677789826026000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "name": "Swiss National Science Foundation (SNSF)",
+            "email": "desk@snf.ch",
+            "url": {
+                "__type": "URL",
+                "text": "http://www.snf.ch/",
+                "type": "URL",
+                "url": "http://www.snf.ch/"
+            },
+            "address": {
+                "__type": "Address",
+                "street": "Wildhainweg 3 Postfach",
+                "postalCode": "3001",
+                "locality": "Bern",
+                "country": "Switzerland"
+            }
+        }
+    ],
+    "grants": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0105-grant-000",
+            "__type": "Grant",
+            "__created": "1623677789869967000",
+            "__modified": "1623677789869969000",
+            "number": "156383",
+            "name": "Interdisciplinary projects",
+            "url": {
+                "__type": "URL",
+                "text": "http://p3.snf.ch/Project-156383",
+                "type": "URL",
+                "url": "http://p3.snf.ch/Project-156383"
+            },
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0105-organization-000"
+            ]
+        }
+    ]
+}

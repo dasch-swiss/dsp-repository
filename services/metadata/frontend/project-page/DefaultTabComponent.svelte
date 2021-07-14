@@ -1,19 +1,17 @@
-<script>
+<script lang="ts">
   import { onMount } from "svelte";
   import { fade } from "svelte/transition";
-  import { currentProjectMetadata, handleSnackbar } from "../store";
+  import { handleSnackbar } from "../store";
+  import { getText, findPersonByID, findOrganizationByID, findObjectByID } from "../functions";
+  import type { TabContent, Grant, Person, Organization, Text } from "../interfaces";
 
-  export let dataset;
+  export let dataset: TabContent;
 
-  let isAbstractExpanded;
-  let abstractLinesNumber;
+  let isAbstractExpanded: boolean;
+  let abstractLinesNumber: number;
 
   const toggleExpand = () => {
     isAbstractExpanded = !isAbstractExpanded;
-  };
-
-  const findObjectById = (id) => {
-    return $currentProjectMetadata?.metadata.find(obj => obj.id === id);
   };
 
   onMount(() => {
@@ -34,7 +32,7 @@
     handleSnackbar.set({isSnackbar: true, message: 'Citation copied succesfully!'});
   };
 
-  const truncateString = (s) => {
+  const truncateString = (s: string) => {
     const browserWidth = window.innerWidth;
     if (browserWidth < 992 && s.length > ((browserWidth - 100) / 8)) {
       return `${s.substring(0, (browserWidth - 100) / 8)}...`;
@@ -43,37 +41,20 @@
     } else return s;
   };
 
-  let mergedAttributions = [];
-  const attributions = JSON.parse(JSON.stringify(dataset?.content.qualifiedAttribution));
-  for(let a of attributions) {
-    if(!mergedAttributions.length) {
-      mergedAttributions.push(a);
-    } else {
-      mergedAttributions.push(a);
-      for(let b of mergedAttributions) {
-        if(a.agent[0].id === b.agent[0].id && a.role !== b.role){
-          b.role.push(a.role[0]);
-          mergedAttributions.splice(mergedAttributions.indexOf(a) ,1);
-        }
-      }
-    }
-  }
-
-  console.log('loaded dataset', dataset)
 </script>
 
 <div id=dataset in:fade={{duration: 200}}>
   {#if dataset}
-    {#if dataset?.content.alternativeTitle}
+    {#if dataset?.content.alternativeTitles}
       <div>
         <span class=label>Alternative Title</span>
-        <span class=data>{dataset?.content.alternativeTitle}</span>
+        <span class=data>{dataset?.content.alternativeTitles.map((t => {return getText(t)})).join(', ')}</span>
       </div>
     {/if}
   <div class="grid-wrapper">
     <div>
       <span class=label>Access</span>
-      <span class=data>{dataset?.content.conditionsOfAccess}</span>
+      <span class=data>{dataset?.content.accessConditions}</span>
     </div>
     <div>
       <span class=label>Status</span>
@@ -93,9 +74,9 @@
     {/if}
     <div>
       <span class=label>License</span>
-      {#if Array.isArray(dataset?.content.license)}
-        {#each dataset?.content.license as l}
-          <a href={l.url} class="data external-link" target=_>CC {(`${l.url.split("/")[4]} ${l.url.split("/")[5]}`).toUpperCase()}</a>
+      {#if Array.isArray(dataset?.content.licenses)}
+        {#each dataset?.content.licenses as l}
+          <a href={l.url} class="data external-link" target=_>{l.text}</a>
         {/each}
       {/if}
     </div>
@@ -103,20 +84,17 @@
       <span class=label>Type of Data</span>
       <span class=data>{dataset?.content.typeOfData.join(', ')}</span>
     </div>
-    {#if dataset?.content.documentation}
+
+    {#if dataset?.content.documentations}
       <div style="grid-column-start: 1;grid-column-end: 3;">
         <span class=label>Additional documentation</span>
-        {#if Array.isArray(dataset?.content.documentation)}
-          {#each dataset?.content.documentation as d}
-            {#if d.url}
-              <a class="data external-link" href={d.url} target=_>{truncateString(d.name)}</a>
-            {:else if d.match("http")}
-              <a class="data external-link" href={d} target=_>{truncateString(d)}</a>
-            {:else}
-              <span class=data>{d}</span>
-            {/if}
-          {/each}
-        {/if}
+        {#each dataset?.content.documentations as d}
+          {#if d.__type === "URL"}
+            <a class="data external-link" href={d.url} target=_>{truncateString(d.text)}</a>
+          {:else}
+            <span class=data>{getText(d)}</span>
+          {/if}
+        {/each}
       </div>
     {/if}
   </div>
@@ -124,19 +102,17 @@
   <div class="grid-wrapper" style="grid-template-columns: repeat(1, 1fr)">
     <div>
       <span class=label>Languages</span>
-      <span class=data>{dataset?.content.language.join(', ')}</span>
+      <span class=data>{dataset?.content.languages.map(l => {return getText(l)}).join(', ')}</span>
     </div>
   </div>
 
-  {#if dataset?.content.sameAs}
+  {#if dataset?.content.urls}
     <div class="grid-wrapper" style="grid-template-columns: repeat(1, 1fr)">
       <div>
         <span class=label>Dataset Website</span>
-        {#each dataset?.content.sameAs as a}
-          {#if a.url}
-            <div><a class="data external-link" href={a.url} target=_>{truncateString(a.name)}</a></div>
-          {:else}
-            <div>{a}</div>
+        {#each dataset?.content.urls as u}
+          {#if u.__type === 'URL'}
+            <div><a class="data external-link" href={u.url} target=_>{truncateString(u.text)}</a></div>
           {/if}
         {/each}
       </div>
@@ -155,17 +131,15 @@
 
   <div>
     <span class=label>Abstract</span>
-    {#if Array.isArray(dataset?.content.abstract)}
       <div id=abstract class="data {isAbstractExpanded ? '' : 'abstract-short'}">
-        {#each dataset?.content.abstract as a}
-          {#if a.url}
-            <div><a class="data external-link" href={a.url} target=_>{truncateString(a.name)}</a></div>
+        {#each dataset?.content.abstracts as a}
+          {#if a.__type === "URL"}
+            <div><a class="data external-link" href={a.url} target=_>{truncateString(a.text)}</a></div>
           {:else}
-            <div>{a}</div>
+            <div>{getText(a)}</div>
           {/if}
         {/each}
       </div>
-    {/if}
   </div>
 
   {#if abstractLinesNumber > 6}
@@ -174,31 +148,37 @@
 
   <span class=label>Attributions</span>
   <div class="grid-wrapper">
-    {#if Array.isArray(mergedAttributions)}
-      {#each mergedAttributions as a}
-        <div class="attributions data">
-          <div class=role>{a.role.join(", ")}</div>
-          {#if findObjectById(a.agent[0].id).type === "http://ns.dasch.swiss/repository#Person"}
-            {#if findObjectById(a.agent[0].id)?.sameAs}
-              <a href={findObjectById(a.agent[0].id)?.sameAs[0].url} target=_ class="external-link">{findObjectById(a.agent[0].id)?.givenName.split(";").join(" ")} {findObjectById(a.agent[0].id)?.familyName.split(";").join(" ")}</a>
+    {#each dataset?.content.attributions as a}
+    <div class="attributions data">
+      <div class=role>{a.roles.join(", ")}</div>
+      <!-- TODO: should this only be person or also organization? -->
+        {#each [findObjectByID(a.person)] as p}
+          {#if p.__type === 'Person'}
+            {#if p.authorityRefs}
+              <a href={p.authorityRefs[0].url} target=_ class="external-link">{p.givenNames.join(" ")} {p.familyNames.join(" ")}</a>
             {:else}
-              <div>{findObjectById(a.agent[0].id)?.givenName.split(";").join(" ")} {findObjectById(a.agent[0].id)?.familyName.split(";").join(" ")}</div>
+              <div>{p.givenNames.join(" ")} {p.familyNames.join(" ")}</div>
             {/if}
-            {#if Array.isArray(findObjectById(a.agent[0].id)?.memberOf)}
-              {#each findObjectById(a.agent[0].id)?.memberOf as o}
-                <div>{findObjectById(o.id).name}</div>
+            {#if p.affiliation}
+              {#each p.affiliation.map(o => {return findOrganizationByID(o)}) as org}
+                <div>{org.name}</div>
               {/each}
             {/if}
-            <div>{findObjectById(a.agent[0].id)?.jobTitle[0]}</div>
-          {:else}
-            <div>{findObjectById(a.agent[0].id)?.name}</div>
+            <div>{p.jobTitles[0]}</div>
+            {#if p.emails}
+              <a class=email href="mailto:{p.emails[0]}">{p.emails[0]}</a>
+            {/if}
+          {:else if p.__type === 'Organization'}
+            {#if p.url}
+              <a href={p.url.url} target=_ class="external-link">{p.name}</a>
+            {/if}
+            {#if p.email}
+              <a class=email href="mailto:{p.email}">{p.email}</a>
+            {/if}
           {/if}
-          {#if findObjectById(a.agent[0].id)?.email && Array.isArray(findObjectById(a.agent[0].id)?.email)}
-            <a class=email href="mailto:{findObjectById(a.agent[0].id)?.email[0]}">{findObjectById(a.agent[0].id)?.email[0]}</a>
-          {/if}
-        </div>
-      {/each}
-    {/if}
+        {/each}
+      </div>
+    {/each}
   </div>
 
   {/if}

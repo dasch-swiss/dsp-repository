@@ -1,8 +1,18 @@
 <script lang="ts">
   import DefaultTabComponent from "./DefaultTabComponent.svelte";
+  import type { Dataset, TabContent } from "../interfaces";
 
-  export let tabs = [] as any[];
+  export let datasets = [] as Dataset[];
+  // export let tabs = [] as any[];
   export let activeTabValue = 0;
+
+  // TODO: maybe we can even drop the TabContent interface completely?
+  let tabs = [] as TabContent[]
+  datasets.forEach(d => tabs.push({
+    label: d.title,
+    value: datasets.indexOf(d),
+    content: d
+  }));
 
   const handleTabsBrowsing = (tabValue: number) => () => (activeTabValue = tabValue);
 </script>
@@ -11,7 +21,7 @@
   {#each tabs as tab}
     <li class={activeTabValue === tab.value ? 'active' : ''}>
       {#if tabs.length > 1 && activeTabValue !== tab.value}
-        <span on:click={handleTabsBrowsing(tab.value)} title={tab.label}>{`${tab.label.substring(0,5)}...`}</span>
+        <span on:click={handleTabsBrowsing(tab.value)} title={tab.label}>{`${tab.label.substring(0,12)}...`}</span>
       {:else}
         <span on:click={handleTabsBrowsing(tab.value)}>{tab.label}</span>
       {/if}

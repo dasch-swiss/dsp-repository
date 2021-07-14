@@ -1,0 +1,218 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dasch-swiss/dasch-service-platform/main/docs/services/metadata/schema-metadata.json",
+    "project": {
+        "__id": "http://ns.dasch.swiss/repository#dsp-0838-project",
+        "__type": "Project",
+        "__created": "1623677828692919000",
+        "__modified": "1623677828692920000",
+        "howToCite": "XX - new property on project level",
+        "datasets": [
+            "http://ns.dasch.swiss/repository#dsp-0838-dataset-001"
+        ],
+        "keywords": [
+            {
+                "en": "Petrographie"
+            },
+            {
+                "en": "anthropogenic material"
+            },
+            {
+                "en": "Petrography"
+            },
+            {
+                "en": "Micromorphology"
+            },
+            {
+                "XX": "Geoarchäologie"
+            },
+            {
+                "XX": "Mikromorphologie"
+            },
+            {
+                "XX": "Mikrofoto"
+            },
+            {
+                "de": "Geologie"
+            },
+            {
+                "en": "Geoarchaeology"
+            },
+            {
+                "en": "archaeological deposit"
+            },
+            {
+                "en": "Thin Section"
+            },
+            {
+                "de": "anthropogene Materialien"
+            },
+            {
+                "de": "archäologische Schicht"
+            },
+            {
+                "en": "Geology"
+            },
+            {
+                "en": "Microphoto"
+            },
+            {
+                "de": "Dünnschliff"
+            }
+        ],
+        "alternativeNames": [
+            {
+                "en": "I-GEOARCHive"
+            },
+            {
+                "en": "geoarch"
+            }
+        ],
+        "spatialCoverage": [
+            {
+                "__type": "URL",
+                "text": "Belgium",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/2802361/kingdom-of-belgium.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Switzerland",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/2658434/switzerland.html"
+            }
+        ],
+        "disciplines": [
+            {
+                "__type": "URL",
+                "text": "Geology",
+                "type": "Skos",
+                "url": "https://skos.um.es/unesco6/2506/html"
+            }
+        ],
+        "startDate": "1900-01-01",
+        "description": {
+            "de": "D: Die geoarchäologische Sammlung am IPNA (Integrative Prähistorische und Naturwissenschaftliche Archäologie) der Universität Basel umfasst u.a. Block- und Sedimentproben von natürlichen Böden sowie archäologischen Schichten, ferner auch Gesteinen, Silices, Keramik etc. Diese Sammlung kann dank der „I-GEOARCHive“ Bilddatenbank in Form von Fotografien und Dünnschliffscans (mit entsprechenden Mikroskopfotos) einer breiten Öffentlichkeit und insbesondere der Forschung und Lehre zugänglich gemacht werden. Die frei zugängliche „I-GEOARCHive“ ermöglicht den Nutzer*innen das Beschlagworten, Analysieren, Publizieren und Archivieren geoarchäologischer Proben. Darüber hinaus sind mikromorphologische Befunde mit den Dünnschliffscans und dadurch mit den Blockproben und Profilen verknüpft. Durch diese Vernetzung wird eine multidimensionale Publikation und Archivierung mikromorphologischer Bilddaten und ihr Bezug zum originalen Feldbefund möglich.\n\nE: The geoarchaeological collection of the IPAS (Integrative Prehistory and Archaeological Science) at the University of Basel includes block and sediment samples of soils and archaeological deposits as well as rocks, flints, ceramics etc. The „I-GEOARCHive“ image database of thin section scans (and corresponding microscope photos) makes the collection digitally accessible to the public and in particular to research and teaching. The freely accessible „I-GEOARCHive“ database enables users to keyword, analyse, publish and archive geoarchaeological samples. Furthermore, micromorphological observations are linked to the thin section scans and thus to the block samples and profiles. This cross-linking enables multidimensional publication and archiving of micromorphological image data and their relation to original archaeological features."
+        },
+        "shortcode": "0838",
+        "temporalCoverage": [
+            {
+                "__type": "URL",
+                "text": "Palaeolithic",
+                "type": "Chronontology",
+                "url": "http://chronontology.dainst.org/period/JMHQs1UHRe3a"
+            }
+        ],
+        "endDate": "2021-12-31",
+        "name": "Bilddatenbank Geoarchäologie",
+        "grants": [
+            "http://ns.dasch.swiss/repository#dsp-0838-grant-001"
+        ],
+        "contactPoint": "http://ns.dasch.swiss/repository#dsp-0838-person-001",
+        "urls": [
+            {
+                "__type": "URL",
+                "text": "http://ark.dasch.swiss/ark:/72163/1/0838",
+                "type": "URL",
+                "url": "http://ark.dasch.swiss/ark:/72163/1/0838"
+            }
+        ],
+        "funders": [
+            "http://ns.dasch.swiss/repository#dsp-0838-organization-001"
+        ]
+    },
+    "datasets": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0838-dataset-001",
+            "__type": "Dataset",
+            "__created": "1623677830980364000",
+            "__modified": "1623677830980367000",
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0838-person-001",
+                    "roles": [
+                        "Researcher"
+                    ]
+                }
+            ],
+            "abstracts": [
+                {
+                    "en": "E: The geoarchaeological collection of the IPAS (Integrative Prehistory and Archaeological Science) at the University of Basel includes block and sediment samples of soils and archaeological deposits as well as rocks, flints, ceramics etc. The „I-GEOARCHive“ image database of thin section scans (and corresponding microscope photos) makes the collection digitally accessible to the public and in particular to research and teaching. The freely accessible „I-GEOARCHive“ database enables users to keyword, analyse, publish and archive geoarchaeological samples. Furthermore, micromorphological observations are linked to the thin section scans and thus to the block samples and profiles. This cross-linking enables multidimensional publication and archiving of micromorphological image data and their relation to original archaeological features."
+                },
+                {
+                    "de": "D: Die geoarchäologische Sammlung am IPNA (Integrative Prähistorische und Naturwissenschaftliche Archäologie) der Universität Basel umfasst u.a. Block- und Sedimentproben von natürlichen Böden sowie archäologischen Schichten, ferner auch Gesteinen, Silices, Keramik etc. Diese Sammlung kann dank der „I-GEOARCHive“ Bilddatenbank in Form von Fotografien und Dünnschliffscans (mit entsprechenden Mikroskopfotos) einer breiten Öffentlichkeit und insbesondere der Forschung und Lehre zugänglich gemacht werden. Die frei zugängliche „I-GEOARCHive“ ermöglicht den Nutzer*innen das Beschlagworten, Analysieren, Publizieren und Archivieren geoarchäologischer Proben. Darüber hinaus sind mikromorphologische Befunde mit den Dünnschliffscans und dadurch mit den Blockproben und Profilen verknüpft. Durch diese Vernetzung wird eine multidimensionale Publikation und Archivierung mikromorphologischer Bilddaten und ihr Bezug zum originalen Feldbefund möglich."
+                }
+            ],
+            "datePublished": "2021-01-01",
+            "typeOfData": [
+                "Image",
+                "Text"
+            ],
+            "dateModified": "2021-01-01",
+            "accessConditions": "Open Access",
+            "howToCite": "https://geoarchI-GEOARCHive.dasch.swiss",
+            "languages": [
+                {
+                    "de": "Deutsch"
+                },
+                {
+                    "de": "Englisch"
+                }
+            ],
+            "status": "Ongoing",
+            "title": "I-GEOARCHive",
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "https://creativecommons.org/licenses/by-nc-sa/3.0/",
+                    "type": "URL",
+                    "url": "https://creativecommons.org/licenses/by-nc-sa/3.0/"
+                }
+            ]
+        }
+    ],
+    "persons": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0838-person-001",
+            "__type": "Person",
+            "__created": "1623677831164768000",
+            "__modified": "1623677831164772000",
+            "givenNames": [
+                "John"
+            ],
+            "familyNames": [
+                "Butterfly"
+            ],
+            "jobTitles": [
+                "Postdoc"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0838-organization-001"
+            ]
+        }
+    ],
+    "organizations": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0838-organization-001",
+            "__type": "Organization",
+            "__created": "1623677831165349000",
+            "__modified": "1623677831165351000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "name": "Departement für Umweltwissenschaften der Universität Basel"
+        }
+    ],
+    "grants": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0838-grant-001",
+            "__type": "Grant",
+            "__created": "1623677831165504000",
+            "__modified": "1623677831165505000",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0838-organization-001"
+            ]
+        }
+    ]
+}

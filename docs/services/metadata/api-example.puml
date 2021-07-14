@@ -3,51 +3,53 @@
 {
   "$schema": "./schema-metadata.json",
   "project": {
-    "@id": "0000-project",
-    "@type": "Project",
-    "@created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
-    "@modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
+    "__id": "0000-project",
+    "__type": "Project",
+    "__created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
+    "__modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
     "shortcode": "0000",
     "name": "Test Project Name",
     "description": {
-      "de": ["Dies ist ein einfaches Beipiel-Projekt zu Dokumentationszwecken."],
-      "en": ["This is a simple example project for documentation purposes."]
+      "de": "Dies ist ein einfaches Beipiel-Projekt zu Dokumentationszwecken.",
+      "en": "This is a simple example project for documentation purposes."
     },
     "startDate": "2021-01-01",
-    "keywords": {
-      "en": [
-        "history"
-      ],
-      "de": [
-        "Geschichte"
-      ]
-    },
+    "keywords": [
+      {
+        "en": "history",
+        "de": "Geschichte"
+      }
+    ],
     "disciplines": [
       {
         "text": "Logic",
         "type": "Skos",
-        "url": "http://skos.um.es/unesco6/11"
+        "url": "http://skos.um.es/unesco6/11",
+        "__type": "URL"
       }
     ],
     "temporalCoverage": [
       {
         "text": "17th Century",
         "type": "Chronontology",
-        "url": "http://chronontology.dainst.org/period/Ef9SyESSafJ1"
+        "url": "http://chronontology.dainst.org/period/Ef9SyESSafJ1",
+        "__type": "URL"
       }
     ],
     "spatialCoverage": [
       {
         "text": "Europe",
         "type": "Geonames",
-        "url": "https://www.geonames.org/6255148/europe.html"
+        "url": "https://www.geonames.org/6255148/europe.html",
+        "__type": "URL"
       }
     ],
     "urls": [
       {
         "text": "DaSCH.swiss",
         "type": "URL",
-        "url": "https://dasch.swiss/someproject"
+        "url": "https://dasch.swiss/someproject",
+        "__type": "URL"
       }
     ],
     "dataManagementPlan": "dmp-001",
@@ -61,14 +63,12 @@
     "grants": [
       "grant-001"
     ],
-    "alternativeNames": {
-      "de": [
-        "Beispielprojekt"
-      ],
-      "en": [
-        "Sample Project"
-      ]
-    },
+    "alternativeNames": [
+      {
+        "de": "Beispielprojekt",
+        "en": "Sample Project"
+      }
+    ],
     "funders": [
       "organization-001"
     ],
@@ -77,31 +77,26 @@
   },
   "datasets": [
     {
-      "@id": "dataset-001",
-      "@type": "Dataset",
-      "@created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
-      "@modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
+      "__id": "dataset-001",
+      "__type": "Dataset",
+      "__created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
+      "__modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
       "title": "Dataset 1",
       "accessConditions": "Embargo until 2023, then open access.",
       "howToCite": "Dataset XY, in Project AB (ARK: ...)",
       "status": "Ongoing",
-      "abstracts": {
-        "urls": [
-          {
-            "url": "http://www.project.org/dataset-01/abstract",
-            "text": "Project.org",
-            "type": "URL"
-          }
-        ],
-        "texts": {
-          "de": [
-            "Dies ist ein Datensatz, der ..."
-          ],
-          "en": [
-            "This is a dataset which ..."
-          ]
+      "abstracts": [
+        {
+          "url": "http://www.project.org/dataset-01/abstract",
+          "text": "Project.org",
+          "type": "URL",
+          "__type": "URL"
+        },
+        {
+          "de": "Dies ist ein Datensatz, der ...",
+          "en": "This is a dataset which ..."
         }
-      },
+      ],
       "typeOfData": [
         "XML",
         "Image"
@@ -110,19 +105,20 @@
         {
           "text": "CC-BY 4.0",
           "type": "URL",
-          "url": "https://creativecommons.org/licenses/by/4.0/"
+          "url": "https://creativecommons.org/licenses/by/4.0/",
+          "__type": "URL"
         }
       ],
-      "languages": {
-        "de": [
-          "Englisch",
-          "Französisch"
-        ],
-        "en": [
-          "English",
-          "French"
-        ]
-      },
+      "languages": [
+        {
+          "de": "Englisch",
+          "en": "English"
+        },
+        {
+          "de": "Französisch",
+          "en": "French"
+        }
+      ],
       "attributions": [
         {
           "person": "person-001",
@@ -133,24 +129,26 @@
           ]
         }
       ],
-      "alternativeTitles": {
-        "en": [
-          "The most awesome dataset."
-        ]
-      },
+      "alternativeTitles": [
+        {
+          "en": "The most awesome dataset."
+        }
+      ],
       "datePublished": "2020-01-01",
       "dateCreated": "2019-06-01",
       "dateModified": "2021-02-01",
       "distribution": {
         "url": "https://dasch.swiss/0000-project/download",
         "type": "URL",
-        "text": "Download"
+        "text": "Download",
+        "__type": "URL"
       },
       "urls": [
         {
           "url": "http://something.something.org",
           "type": "URL",
-          "text": "Something"
+          "text": "Something",
+          "__type": "URL"
         }
       ],
       "documentations": {
@@ -158,26 +156,25 @@
           {
             "url": "https://dasch.swiss/0000-project/dataset-001/docs",
             "text": "Documentation",
-            "type": "URL"
+            "type": "URL",
+            "__type": "URL"
           }
         ],
-        "texts": {
-          "de": [
-            "Bei dem Datenset handelt es sich um..."
-          ],
-          "en": [
-            "The dataset is about..."
-          ]
-        }
+        "texts": [
+          {
+            "de": "Bei dem Datenset handelt es sich um...",
+            "en": "The dataset is about..."
+          }
+        ]
       }
     }
   ],
   "persons": [
     {
-      "@id": "person-001",
-      "@type": "Person",
-      "@created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
-      "@modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
+      "__id": "person-001",
+      "__type": "Person",
+      "__created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
+      "__modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
       "jobTitles": [
         "Professor"
       ],
@@ -195,7 +192,8 @@
         "additional": "Postfach",
         "postalCode": "4000",
         "locality": "Basel",
-        "country": "Switzerland"
+        "country": "Switzerland",
+        "__type": "Address"
       },
       "emails": [
         "jane.doe@dasch.swiss",
@@ -205,27 +203,29 @@
         {
           "url": "http://viaf.org/viaf/00000000",
           "text": "Jane Doe",
-          "type": "VIAF"
+          "type": "VIAF",
+          "__type": "URL"
         }
       ]
     }
   ],
   "organizations": [
     {
-      "@id": "organization-001",
-      "@type": "Organization",
-      "@created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
-      "@modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
+      "__id": "organization-001",
+      "__type": "Organization",
+      "__created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
+      "__modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
       "name": "DaSCH",
-      "alternativeNames": {
-        "en": [
-          "Data and Service Center for the Humanities"
-        ]
-      },
+      "alternativeNames": [
+        {
+          "en": "Data and Service Center for the Humanities"
+        }
+      ],
       "url": {
         "url": "https://dasch.swiss",
         "text": "DaSCH.swiss",
-        "type": "URL"
+        "type": "URL",
+        "__type": "URL"
       },
       "email": "info@dasch.swiss",
       "address": {
@@ -233,38 +233,38 @@
         "additional": "Postfach",
         "postalCode": "4000",
         "locality": "Basel",
-        "country": "Switzerland"
+        "country": "Switzerland",
+        "__type": "Address"
       },
       "authorityRefs": [
         {
           "url": "https://grid.ac/institutes/grid.6612.3",
           "text": "DaSCH",
-          "type": "Grid"
+          "type": "Grid",
+          "__type": "URL"
         }
       ]
     },
     {
-      "@id": "organization-002",
-      "@type": "Organization",
-      "@created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
-      "@modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
+      "__id": "organization-002",
+      "__type": "Organization",
+      "__created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
+      "__modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
       "name": "SNF",
-      "alternativeNames": {
-        "de": [
-          "Schweizerischer Nationalfonds"
-        ],
-        "en": [
-          "Swiss National Science Foundation"
-        ]
-      }
+      "alternativeNames": [
+        {
+          "de": "Schweizerischer Nationalfonds",
+          "en": "Swiss National Science Foundation"
+        }
+      ]
     }
   ],
   "grants": [
     {
-      "@id": "grant-001",
-      "@type": "Grant",
-      "@created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
-      "@modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
+      "__id": "grant-001",
+      "__type": "Grant",
+      "__created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
+      "__modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
       "funders": [
         "organization-001"
       ],
@@ -273,22 +273,25 @@
       "url": {
         "url": "https://www.grants.ch/grant/abcd0001",
         "text": "SNF Eccellenca",
-        "type": "URL"
+        "type": "URL",
+        "__type": "URL"
       }
     }
   ],
   "dataManagementPlan": {
-    "@id": "dmp-001",
-    "@type": "DataManagementPlan",
-    "@created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
-    "@modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
+    "__id": "dmp-001",
+    "__type": "DataManagementPlan",
+    "__created": "2009-11-10 23:00:00 +0000 UTC m=+0.000000001",
+    "__modified": "2009-11-10 23:00:00 +0000 UTC m=+0.000000003",
     "available": true,
     "url": {
       "url": "https://dasch.swiss/someproject/dmp",
-      "type": "URL"
+      "type": "URL",
+      "__type": "URL"
     }
   }
 }
+
 
 
 @endjson

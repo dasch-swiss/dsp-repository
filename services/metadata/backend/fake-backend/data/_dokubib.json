@@ -1,0 +1,178 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dasch-swiss/dasch-service-platform/main/docs/services/metadata/schema-metadata.json",
+    "project": {
+        "__id": "http://ns.dasch.swiss/repository#dsp-0804-project",
+        "__type": "Project",
+        "__created": "1623677789949500000",
+        "__modified": "1623677789949502000",
+        "howToCite": "XX - new property on project level",
+        "datasets": [
+            "http://ns.dasch.swiss/repository#dsp-0804-dataset-000"
+        ],
+        "disciplines": [
+            {
+                "__type": "URL",
+                "text": "Local history",
+                "type": "Skos",
+                "url": "http://skos.um.es/unesco6/550301"
+            }
+        ],
+        "keywords": [
+            {
+                "en": "Historic photograph"
+            },
+            {
+                "en": "Touristic development"
+            },
+            {
+                "en": "St. Moritz"
+            },
+            {
+                "en": "Local history"
+            }
+        ],
+        "shortcode": "0804",
+        "spatialCoverage": [
+            {
+                "__type": "URL",
+                "text": "Saint Moritz",
+                "type": "Geonames",
+                "url": "https://geonames.org/2658813"
+            }
+        ],
+        "description": {
+            "en": "Bibliothek St. Moritz Dokumentation is the local history archive of the community of St. Moritz, Switzerland. It’s collection contains publications, manuscripts and audiovisual documents of the touristic development of St. Moritz"
+        },
+        "temporalCoverage": [
+            {
+                "__type": "URL",
+                "text": "20th Century (1900 - 1999)",
+                "type": "Chronontology",
+                "url": "http://chronontology.dainst.org/period/kqORhO4TGm4n"
+            },
+            {
+                "__type": "URL",
+                "text": "19th Century (1800 - 1899)",
+                "type": "Chronontology",
+                "url": "http://chronontology.dainst.org/period/mvhEZ4S2qWEa"
+            },
+            {
+                "__type": "URL",
+                "text": "20th and 21st Centuries",
+                "type": "Chronontology",
+                "url": "http://chronontology.dainst.org/period/INtagfT8h7Fs"
+            }
+        ],
+        "name": "Bilddatenbank Bibliothek St. Moritz",
+        "startDate": "1980-04-01",
+        "urls": [
+            {
+                "__type": "URL",
+                "text": "https://www.salsah.org/dokubib/",
+                "type": "URL",
+                "url": "https://www.salsah.org/dokubib/"
+            },
+            {
+                "__type": "URL",
+                "text": "www.biblio-stmoritz.ch",
+                "type": "URL",
+                "url": "www.biblio-stmoritz.ch"
+            }
+        ],
+        "funders": [
+            "http://ns.dasch.swiss/repository#dsp-0804-organization-001"
+        ]
+    },
+    "datasets": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0804-dataset-000",
+            "__type": "Dataset",
+            "__created": "1623677791571972000",
+            "__modified": "1623677791571973000",
+            "typeOfData": [
+                "Text",
+                "Image"
+            ],
+            "accessConditions": "restricted",
+            "status": "Ongoing",
+            "urls": [
+                {
+                    "__type": "URL",
+                    "text": "https://www.salsah.org/dokubib/",
+                    "type": "URL",
+                    "url": "https://www.salsah.org/dokubib/"
+                }
+            ],
+            "title": "Dokumentationsbibliothek St. Moritz Bilddatenbank",
+            "abstracts": [
+                {
+                    "en": "Bilddatenbank makes accessible the collection of historic photographs and other graphical representation of St. Moritz Dokumentationsbibliothek"
+                }
+            ],
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0804-organization-000",
+                    "roles": [
+                        "publisher",
+                        "creator"
+                    ]
+                }
+            ],
+            "howToCite": "Dokumentationsbibliothek St. Moritz",
+            "languages": [
+                {
+                    "de": "Deutsch",
+                    "en": "German",
+                    "fr": "allemand"
+                }
+            ]
+        }
+    ],
+    "organizations": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0804-organization-000",
+            "__type": "Organization",
+            "__created": "1623677791629357000",
+            "__modified": "1623677791629359000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "name": "Dokumentationsbibliothek St. Moritz",
+            "url": {
+                "__type": "URL",
+                "text": "www.biblio-stmoritz.ch",
+                "type": "URL",
+                "url": "www.biblio-stmoritz.ch"
+            },
+            "email": "doku@biblio-stmoritz.ch",
+            "address": {
+                "__type": "Address",
+                "street": "Plazza da Scoula 14",
+                "postalCode": "7500",
+                "locality": "St. Moritz",
+                "country": "Switzerland"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0804-organization-001",
+            "__type": "Organization",
+            "__created": "1623677792002461000",
+            "__modified": "1623677792002463000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "address": {
+                "__type": "Address",
+                "street": "",
+                "postalCode": "7500",
+                "locality": "St. Moritz",
+                "country": "Switzerland"
+            },
+            "name": "Gemeinde St. Moritz"
+        }
+    ]
+}

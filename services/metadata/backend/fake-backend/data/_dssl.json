@@ -1,0 +1,387 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dasch-swiss/dasch-service-platform/main/docs/services/metadata/schema-metadata.json",
+    "project": {
+        "__id": "http://ns.dasch.swiss/repository#dsp-0824-project",
+        "__type": "Project",
+        "__created": "1623677818045565000",
+        "__modified": "1623677818045566000",
+        "howToCite": "XX - new property on project level",
+        "datasets": [
+            "http://ns.dasch.swiss/repository#dsp-0824-dataset-001"
+        ],
+        "urls": [
+            {
+                "__type": "URL",
+                "text": "http://ark.dasch.swiss/ark:/72163/1/0824",
+                "type": "URL",
+                "url": "http://ark.dasch.swiss/ark:/72163/1/0824"
+            },
+            {
+                "__type": "URL",
+                "text": "https://dssl.dasch.swiss",
+                "type": "URL",
+                "url": "https://dssl.dasch.swiss"
+            }
+        ],
+        "endDate": "2022-01-01",
+        "keywords": [
+            {
+                "en": "secondary literature"
+            },
+            {
+                "en": "Sumerian"
+            },
+            {
+                "fr": "Mésopotamie"
+            },
+            {
+                "XX": "Assyriologie"
+            },
+            {
+                "de": "Sumerisch"
+            },
+            {
+                "XX": "cunéiforme"
+            },
+            {
+                "de": "Mesopotamien"
+            },
+            {
+                "en": "Akkadian"
+            },
+            {
+                "fr": "Sumérien"
+            },
+            {
+                "de": "Keilschrift"
+            },
+            {
+                "XX": "Altorientalistik"
+            },
+            {
+                "en": "akkadien"
+            },
+            {
+                "de": "Akkadisch"
+            },
+            {
+                "fr": "littérature secondaire"
+            },
+            {
+                "XX": "cuneiform"
+            },
+            {
+                "de": "Sekundärliteratur"
+            },
+            {
+                "en": "Mesopotamia"
+            },
+            {
+                "en": "Assyriology"
+            }
+        ],
+        "name": "Datenbank der sumerischen Sekundärliteratur",
+        "spatialCoverage": [
+            {
+                "__type": "URL",
+                "text": "Syria",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/163843/syrian-arab-republic.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Turkey",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/298795/republic-of-turkey.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Asia",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/6255147/asia.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Iraq",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/99237/republic-of-iraq.html"
+            },
+            {
+                "__type": "URL",
+                "text": "Iran",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/130758/islamic-republic-of-iran.html"
+            }
+        ],
+        "startDate": "2014-10-01",
+        "funders": [
+            "http://ns.dasch.swiss/repository#dsp-0824-organization-001",
+            "http://ns.dasch.swiss/repository#dsp-0824-organization-002"
+        ],
+        "disciplines": [
+            {
+                "__type": "URL",
+                "text": "Philology ",
+                "type": "Skos",
+                "url": "https://skos.um.es/unesco6/550510/html"
+            }
+        ],
+        "shortcode": "0824",
+        "description": {
+            "fr": "D: Die Datenbank umfasst etwa 55'000 Einträge mit Sekundärliteratur zu sumerischen Lexemen. Jeder Eintrag basiert auf einer Hauptzeichenabfolge mit möglichen Lesungen und unorthografischen Schreibungen. Für jedes Lexem wird die Sekundärliteratur erfasst und nicht selten werden die in den Beiträgen vorgeschlagenen Bedeutungen wiedergegeben. \nF: La base de données comporte environ 55'000 entrées enregistrant la littérature secondaire consacrée à un lexème sumérien. Chaque entrée est constituée d'une séquence de signes principale et de leurs lectures possibles, avec le plus souvent renvoi aux graphies non-standards. Pour chaque lexème, la littérature secondaire est saisie, avec pas rarement indication des significations proposées. \n\nE: The database comprises about 55'000 entries listing the secondary literature on Sumerian lexemes. Each entry consists of a main sign sequence with its possible readings and includes references to unorthographical writings. Each lexeme is provided with a list of secondary literature, often indicating the meanings suggested therein."
+        },
+        "alternativeNames": [
+            {
+                "XX": "SumSekLit"
+            },
+            {
+                "en": "DSSL"
+            }
+        ],
+        "grants": [
+            "http://ns.dasch.swiss/repository#dsp-0824-grant-002"
+        ],
+        "temporalCoverage": [
+            {
+                "__type": "URL",
+                "text": "4th millenium BCE",
+                "type": "Chronontology",
+                "url": "http://chronontology.dainst.org/period/ZAxRV9WoxlrI"
+            }
+        ]
+    },
+    "datasets": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0824-dataset-001",
+            "__type": "Dataset",
+            "__created": "1623677820606919000",
+            "__modified": "1623677820606920000",
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0824-person-001",
+                    "roles": [
+                        "Contributor"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0824-person-002",
+                    "roles": [
+                        "Contributor"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0824-person-003",
+                    "roles": [
+                        "Contributor"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0824-person-005",
+                    "roles": [
+                        "Contributor"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0824-person-004",
+                    "roles": [
+                        "Contributor"
+                    ]
+                }
+            ],
+            "languages": [
+                {
+                    "de": "Akkadisch"
+                },
+                {
+                    "de": "Sumerisch"
+                },
+                {
+                    "de": "Französisch"
+                },
+                {
+                    "de": "Englisch"
+                },
+                {
+                    "de": "Deutsch"
+                }
+            ],
+            "abstracts": [
+                {
+                    "en": "E: The database comprises about 55'000 entries listing the secondary literature on Sumerian lexemes. Each entry consists of a main sign sequence with its possible readings and includes references to unorthographical writings. Each lexeme is provided with a list of secondary literature, often indicating the meanings suggested therein."
+                },
+                {
+                    "de": "D: Die Datenbank umfasst etwa 55'000 Einträge mit Sekundärliteratur zu sumerischen Lexemen. Jeder Eintrag basiert auf einer Hauptzeichenabfolge mit möglichen Lesungen und unorthografischen Schreibungen. Für jedes Lexem wird die Sekundärliteratur erfasst und nicht selten werden die in den Beiträgen vorgeschlagenen Bedeutungen wiedergegeben."
+                },
+                {
+                    "fr": "F: La base de données comporte environ 55'000 entrées enregistrant la littérature secondaire consacrée à un lexème sumérien. Chaque entrée est constituée d'une séquence de signes principale et de leurs lectures possibles, avec le plus souvent renvoi aux graphies non-standards. Pour chaque lexème, la littérature secondaire est saisie, avec pas rarement indication des significations proposées."
+                }
+            ],
+            "accessConditions": "Open Access",
+            "status": "Ongoing",
+            "datePublished": "2022-01-01",
+            "typeOfData": [
+                "Text"
+            ],
+            "title": "Dataset of Datenbank der sumerischen Sekundärliteratur",
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+                    "type": "URL",
+                    "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+                }
+            ],
+            "howToCite": "https://dssl.dasch.swiss"
+        }
+    ],
+    "persons": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0824-person-004",
+            "__type": "Person",
+            "__created": "1623677821284480000",
+            "__modified": "1623677821284483000",
+            "givenNames": [
+                "Catherine"
+            ],
+            "jobTitles": [
+                "Researcher"
+            ],
+            "familyNames": [
+                "Mittermayer"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0824-organization-003"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0824-person-001",
+            "__type": "Person",
+            "__created": "1623677821284754000",
+            "__modified": "1623677821284755000",
+            "jobTitles": [
+                "Researcher"
+            ],
+            "familyNames": [
+                "Attinger"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0824-organization-003"
+            ],
+            "givenNames": [
+                "Pascal"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0824-person-005",
+            "__type": "Person",
+            "__created": "1623677821284981000",
+            "__modified": "1623677821284982000",
+            "givenNames": [
+                "Mirko"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0824-organization-003"
+            ],
+            "jobTitles": [
+                "Researcher"
+            ],
+            "familyNames": [
+                "Novák"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0824-person-002",
+            "__type": "Person",
+            "__created": "1623677821285207000",
+            "__modified": "1623677821285208000",
+            "familyNames": [
+                "Deubelbeiss"
+            ],
+            "givenNames": [
+                "Irene"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0824-organization-003"
+            ],
+            "jobTitles": [
+                "Researcher"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0824-person-003",
+            "__type": "Person",
+            "__created": "1623677821285422000",
+            "__modified": "1623677821285423000",
+            "familyNames": [
+                "Ecklin"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0824-organization-003"
+            ],
+            "givenNames": [
+                "Sabine"
+            ],
+            "jobTitles": [
+                "Researcher"
+            ]
+        }
+    ],
+    "organizations": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0824-organization-001",
+            "__type": "Organization",
+            "__created": "1623677821285671000",
+            "__modified": "1623677821285671000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "name": "Schweizerische Akademie der Geisteswissenschaften (SAGW)"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0824-organization-003",
+            "__type": "Organization",
+            "__created": "1623677821285748000",
+            "__modified": "1623677821285749000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "name": "Université de Genève"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0824-organization-002",
+            "__type": "Organization",
+            "__created": "1623677821285822000",
+            "__modified": "1623677821285823000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "name": "Schweizerischer Nationalfonds (SNSF)"
+        }
+    ],
+    "grants": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0824-grant-002",
+            "__type": "Grant",
+            "__created": "1623677821285922000",
+            "__modified": "1623677821285923000",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0824-organization-002"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0824-grant-001",
+            "__type": "Grant",
+            "__created": "1623677821285996000",
+            "__modified": "1623677821285997000",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-0824-organization-001"
+            ]
+        }
+    ]
+}

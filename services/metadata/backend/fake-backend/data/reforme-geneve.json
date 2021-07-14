@@ -1,0 +1,330 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dasch-swiss/dasch-service-platform/main/docs/services/metadata/schema-metadata.json",
+    "project": {
+        "__id": "http://ns.dasch.swiss/repository#dsp-0111-project",
+        "__type": "Project",
+        "__created": "1623677799670627000",
+        "__modified": "1623677799670628000",
+        "howToCite": "XX - new property on project level",
+        "datasets": [
+            "http://ns.dasch.swiss/repository#dsp-0111-dataset-000"
+        ],
+        "keywords": [
+            {
+                "en": "Archival turn"
+            },
+            {
+                "en": "Paleography"
+            },
+            {
+                "en": "Woman history"
+            },
+            {
+                "en": "Calvin"
+            },
+            {
+                "en": "Written culture"
+            },
+            {
+                "en": "Ecclesiastical discipline"
+            },
+            {
+                "en": "History of Geneva"
+            },
+            {
+                "en": "History of the  Reformation"
+            },
+            {
+                "en": "Church History"
+            },
+            {
+                "en": "Social control"
+            }
+        ],
+        "contactPoint": "http://ns.dasch.swiss/repository#dsp-0111-person-000",
+        "disciplines": [
+            {
+                "en": "Religious studies, Theology"
+            },
+            {
+                "en": "Swiss history"
+            },
+            {
+                "en": "Ecclesiastical history"
+            },
+            {
+                "en": "General history (without pre-and early history)"
+            }
+        ],
+        "description": {
+            "en": "In the context of the 500th anniversary of the Lutheran Reformation (1517), The Archives of the State of Geneva, in collaboration with historians from the University of Geneva and from the University of Lausanne, have created an exhibition that presents the impact of the Reformation on daily life in Geneva. This means demonstrating at the same time how the Genevans were involved in this process of Reformation and how the religious conversion of the city affected their daily lives. The archives are in fact the echo of the activism, resistance or the adaptation of various players – men, women, and children – and underline the real – or mythologized – changes imposed by the practice of the new form of worship. The exhibition approaches this topic in three stages. The first period (1517-1555) charts the introduction of the Reformation in Geneva. Guillaume Farel’s (1489-1565) sermons feed the religious stirrings which sometimes manifest themselves in iconoclasm. The second period (1555-1575), describes the Reformation as it was lived in daily life. The population adjusted to the new liturgies, mixed with students of the Academy, took in the influx of refugees and submitted to disciplinary constraints. Finally, the third period (1575-1617) saw tempers calming down and discipline being relaxed. The people of Geneva slowly found a new equilibrium and the year 1617 provided the opportunity to celebrate the first hundred years of the Reformation. The Archives of the State of Geneva maintain, restore and digitalise the documents that historians use in their work. The presentation of a digitalisation project and the restoration of the archives of the Protestant Church complete this exhibition and highlight the historical work linked to the archives."
+        },
+        "temporalCoverage": [
+            {
+                "__type": "URL",
+                "text": null,
+                "type": "Periodo",
+                "url": "http://n2t.net/ark:/99152/p0367jz"
+            }
+        ],
+        "spatialCoverage": [
+            {
+                "__type": "URL",
+                "text": "Geneva",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/2660646/"
+            }
+        ],
+        "urls": [
+            {
+                "__type": "URL",
+                "text": "https://ark.dasch.swiss/ark:/72163/1/0111",
+                "type": "URL",
+                "url": "https://ark.dasch.swiss/ark:/72163/1/0111"
+            }
+        ],
+        "endDate": "2018-03-31",
+        "alternativeNames": [
+            {
+                "fr": "reforme-religieuse"
+            }
+        ],
+        "startDate": "2017-03-31",
+        "funders": [
+            "http://ns.dasch.swiss/repository#dsp-0111-organization-000"
+        ],
+        "publications": [
+            "Grosse, Ch., Dunant Gonzenbach, A., Fornerod, N., Gross, G., Solfaroli Camillocci, D., Vernhes Rappaz, S., Coté chaire, côté rue. L’impact de la Réforme sur la vie quotidienne à Genève (1517-1617), Genève, La Baconnière, 2018."
+        ],
+        "name": "Côté chaire, côté rue, La Réforme à Genève (1517-1617)",
+        "shortcode": "0111"
+    },
+    "datasets": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0111-dataset-000",
+            "__type": "Dataset",
+            "__created": "1623677801512708000",
+            "__modified": "1623677801512710000",
+            "languages": [
+                {
+                    "en": "French",
+                    "de": "Französisch",
+                    "fr": "français"
+                }
+            ],
+            "dateCreated": "2019-01-17",
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0111-person-001",
+                    "roles": [
+                        "Project leader",
+                        "Data curator"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0111-person-003",
+                    "roles": [
+                        "Data curator"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0111-person-002",
+                    "roles": [
+                        "Project member",
+                        "Data curator"
+                    ]
+                },
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-0111-person-000",
+                    "roles": [
+                        "Project leader",
+                        "Data collector"
+                    ]
+                }
+            ],
+            "typeOfData": [
+                "Text",
+                "Audio",
+                "Image"
+            ],
+            "accessConditions": "Open",
+            "status": "Finished",
+            "dateModified": "2019-09-08",
+            "abstracts": [
+                {
+                    "en": "The database is the result of the transposition of a virtual exhibition realised with the web application StoryMap, from ArcGIS. It also integrates the transcriptions of archive documents initially published on the website of the State Archives of Geneva.\r The database is structured around three main chronological showcases, which bring together thematic showcases. The showcases are composed of different images, associated with geographical coordinates, and to which transcriptions of archival documents may be associated. Facsimiles are presented next to transcriptions.\r The database is the result of the transposition of a virtual exhibition realised with the web application StoryMap, from ArcGIS. It also integrates the transcriptions of archive documents initially published on the website of the State Archives of Geneva.\r The database is structured around three main chronological showcases, which bring together thematic showcases. The showcases are composed of different images, associated with geographical coordinates, and to which transcriptions of archival documents may be associated. Facsimiles are presented next to transcriptions.\r The database is the result of the transposition of a virtual exhibition realised with the web application StoryMap, from ArcGIS. It also integrates the transcriptions of archive documents initially published on the website of the State Archives of Geneva.\r The database is structured around three main chronological showcases, which bring together thematic showcases. The showcases are composed of different images, associated with geographical coordinates, and to which transcriptions of archival documents may be associated. Facsimiles are presented next to transcriptions."
+                }
+            ],
+            "title": "Base de données « Côté chaire, côté rue »",
+            "datePublished": "2019-01-17",
+            "urls": [
+                {
+                    "__type": "URL",
+                    "text": "https://sitg.maps.arcgis.com/apps/MapSeries/index.html?appid=5accafa5fd7a429abe7b2cb9a6fa017a",
+                    "type": "URL",
+                    "url": "https://sitg.maps.arcgis.com/apps/MapSeries/index.html?appid=5accafa5fd7a429abe7b2cb9a6fa017a"
+                }
+            ],
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "CC BY-SA 4.0",
+                    "type": "Creative Commons",
+                    "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+                }
+            ],
+            "howToCite": "Grosse, Ch., Dunant Gonzenbach, A., Matthey-Doret, A., 2019, Côté chaire, côté rue, La Réforme à Genève (1517-1617) [database] (DaSCH), http://ark.dasch.swiss/ark:/72163/1/0111."
+        }
+    ],
+    "persons": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0111-person-003",
+            "__type": "Person",
+            "__created": "1623677801677676000",
+            "__modified": "1623677801677678000",
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0003-4185-7169",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0003-4185-7169"
+                }
+            ],
+            "jobTitles": [
+                "Research manager"
+            ],
+            "emails": [
+                "marion.rivoal@unil.ch"
+            ],
+            "familyNames": [
+                "Rivoal"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0111-organization-001"
+            ],
+            "givenNames": [
+                "Marion"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0111-person-002",
+            "__type": "Person",
+            "__created": "1623677801678091000",
+            "__modified": "1623677801678092000",
+            "familyNames": [
+                "Matthey-Doret"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0111-organization-000"
+            ],
+            "givenNames": [
+                "Aude"
+            ],
+            "jobTitles": [
+                "Geomatician, intern"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0111-person-001",
+            "__type": "Person",
+            "__created": "1623677801678299000",
+            "__modified": "1623677801678300000",
+            "familyNames": [
+                "Dunant Gonzenbach"
+            ],
+            "emails": [
+                "anouk.dunant-gonzenbach@etat.ge.ch"
+            ],
+            "givenNames": [
+                "Anouk"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0111-organization-000"
+            ],
+            "jobTitles": [
+                "Archivist"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0111-person-000",
+            "__type": "Person",
+            "__created": "1623677801678568000",
+            "__modified": "1623677801678568000",
+            "authorityRefs": [
+                {
+                    "__type": "URL",
+                    "text": "ORCID URL: https://orcid.org/0000-0002-1930-6275",
+                    "type": "ORCID",
+                    "url": "https://orcid.org/0000-0002-1930-6275"
+                }
+            ],
+            "emails": [
+                "christian.grosse@unil.ch"
+            ],
+            "givenNames": [
+                "Christian"
+            ],
+            "jobTitles": [
+                "Full professor"
+            ],
+            "familyNames": [
+                "Grosse"
+            ],
+            "affiliation": [
+                "http://ns.dasch.swiss/repository#dsp-0111-organization-001"
+            ]
+        }
+    ],
+    "organizations": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0111-organization-001",
+            "__type": "Organization",
+            "__created": "1623677801679004000",
+            "__modified": "1623677801679005000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "url": {
+                "__type": "URL",
+                "text": "https://www.unil.ch/",
+                "type": "URL",
+                "url": "https://www.unil.ch/"
+            },
+            "address": {
+                "__type": "Address",
+                "street": "Unicentre\r CH-1015 Lausanne\r ",
+                "postalCode": "1015",
+                "locality": "Lausanne",
+                "country": "Switzerland"
+            },
+            "name": "Université de Lausanne"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-0111-organization-000",
+            "__type": "Organization",
+            "__created": "1623677802848351000",
+            "__modified": "1623677802848352000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "address": {
+                "__type": "Address",
+                "street": "Rue de l'Hôtel-de-Ville 1 Case postale 3964",
+                "postalCode": "1211 ",
+                "locality": "Genève 3 ",
+                "country": "XX - Switzerland?"
+            },
+            "name": "Archives d’État de Genève",
+            "url": {
+                "__type": "URL",
+                "text": "https://ge.ch/archives/",
+                "type": "URL",
+                "url": "https://ge.ch/archives/"
+            }
+        }
+    ]
+}

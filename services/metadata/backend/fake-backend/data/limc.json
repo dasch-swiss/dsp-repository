@@ -1,0 +1,411 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dasch-swiss/dasch-service-platform/main/docs/services/metadata/schema-metadata.json",
+    "project": {
+        "__id": "http://ns.dasch.swiss/repository#dsp-080E-project",
+        "__type": "Project",
+        "__created": "1623677809638185000",
+        "__modified": "1623677809638186000",
+        "howToCite": "XX - new property on project level",
+        "datasets": [
+            "http://ns.dasch.swiss/repository#dsp-080E-dataset-000"
+        ],
+        "keywords": [
+            {
+                "en": "Archaeology"
+            },
+            {
+                "en": "Mythology"
+            },
+            {
+                "en": "Roman"
+            },
+            {
+                "en": "Greece"
+            },
+            {
+                "en": "Egypt"
+            },
+            {
+                "XX": "Etruria"
+            },
+            {
+                "en": "Near East"
+            }
+        ],
+        "grants": [
+            "http://ns.dasch.swiss/repository#dsp-080E-grant-000",
+            "http://ns.dasch.swiss/repository#dsp-080E-grant-003",
+            "http://ns.dasch.swiss/repository#dsp-080E-grant-002",
+            "http://ns.dasch.swiss/repository#dsp-080E-grant-001",
+            "http://ns.dasch.swiss/repository#dsp-080E-grant-004"
+        ],
+        "temporalCoverage": [
+            {
+                "__type": "URL",
+                "text": "Near Eastern (Early Western World)",
+                "type": "Chronontology",
+                "url": "http://chronontology.dainst.org/period/3mQhHXhO86oj"
+            },
+            {
+                "__type": "URL",
+                "text": "Roman (ancient Italian culture or period)",
+                "type": "Chronontology",
+                "url": "http://chronontology.dainst.org/period/yY1zReDz86zF"
+            },
+            {
+                "__type": "URL",
+                "text": "Etruscan (culture or style)",
+                "type": "Chronontology",
+                "url": "http://chronontology.dainst.org/period/RGbECa9kHJT4"
+            },
+            {
+                "__type": "URL",
+                "text": "Egyptian (ancient)",
+                "type": "Chronontology",
+                "url": "http://chronontology.dainst.org/period/6VooUMYGJjOI"
+            },
+            {
+                "__type": "URL",
+                "text": "Ancient Greek (culture or style)",
+                "type": "Chronontology",
+                "url": "http://chronontology.dainst.org/period/YOyP9TLDuhrb"
+            }
+        ],
+        "disciplines": [
+            {
+                "__type": "URL",
+                "text": "Archaeology",
+                "type": "Skos",
+                "url": "http://skos.um.es/unesco6/550501"
+            }
+        ],
+        "startDate": "2014-06-02",
+        "funders": [
+            "http://ns.dasch.swiss/repository#dsp-080E-organization-000",
+            "http://ns.dasch.swiss/repository#dsp-080E-organization-002",
+            "http://ns.dasch.swiss/repository#dsp-080E-organization-003",
+            "http://ns.dasch.swiss/repository#dsp-080E-organization-004"
+        ],
+        "spatialCoverage": [
+            {
+                "__type": "URL",
+                "text": "Northern Africa",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/7729887"
+            },
+            {
+                "__type": "URL",
+                "text": "Europe",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/6255148"
+            },
+            {
+                "__type": "URL",
+                "text": "Asia",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/6255147"
+            }
+        ],
+        "urls": [
+            {
+                "__type": "URL",
+                "text": "https://weblimc.org/page/home/Basel",
+                "type": "URL",
+                "url": "https://weblimc.org/page/home/Basel"
+            }
+        ],
+        "name": "Digital Lexicon Iconographicum Mythologiae Classicae (Digital LIMC)",
+        "description": {
+            "en": "Digital LIMC is a digital platform for Classical Mythology, it contains what we know about the iconography of Greek, Etruscan and Roman mythology, both in ancient Greek, Etruscan and Roman art as well as in the one of neighbouring Mediterranean cultures. These literary and iconographical sources of ancient mythology are key elements of the cultural heritage of mankind. The Foundation for the LIMC prepared and published 10 volumes of the Lexicon Iconographicum Mythologiae Classicae (LIMC) between 1981 and 2009. This publication project was followed by the Thesaurus Cultus et Rituum Antiquorum (ThesCRA; 10 volumes), focussing on ritual and cult in antiquity.\n\nDigital LIMC makes all data accessible which were assembled in the course of the preparation of the printed books and which are stored in the basement of a building of the University of Basel today."
+        },
+        "alternativeNames": [
+            {
+                "en": "Digital LIMC"
+            }
+        ],
+        "shortcode": "080E"
+    },
+    "datasets": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-080E-dataset-000",
+            "__type": "Dataset",
+            "__created": "1623677811448575000",
+            "__modified": "1623677811448577000",
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "CC BY-NC 4.0",
+                    "type": "Creative Commons",
+                    "url": "https://creativecommons.org/licenses/by-nc/4.0/"
+                }
+            ],
+            "typeOfData": [
+                "Image",
+                "Text"
+            ],
+            "languages": [
+                {
+                    "en": "Italian",
+                    "de": "Italienisch",
+                    "fr": "italien"
+                },
+                {
+                    "de": "Deutsch",
+                    "en": "German",
+                    "fr": "allemand"
+                },
+                {
+                    "en": "English",
+                    "de": "Englisch",
+                    "fr": "anglais"
+                },
+                {
+                    "en": "Greek"
+                },
+                {
+                    "en": "French",
+                    "de": "Französisch",
+                    "fr": "français"
+                }
+            ],
+            "title": "Dataset of Digital Lexicon Iconographicum Mythologiae Classicae (Digital LIMC)",
+            "accessConditions": "open",
+            "alternativeTitles": [
+                {
+                    "en": "Digital LIMC"
+                }
+            ],
+            "howToCite": "Digital LIMC (2021): Digital LIMC, DaSCH. https://weblimc.org/page/home/Basel",
+            "dateCreated": "2014-06-02",
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-080E-organization-005",
+                    "roles": [
+                        "publisher"
+                    ]
+                }
+            ],
+            "abstracts": [
+                {
+                    "en": "Digital LIMC makes accessible what we know about the iconography of Greek, Etruscan and Roman mythology in ancient Greek, Etruscan and Roman art as well as in the one of the neighbouring civilisations of the Mediterranean, to all people interested in classical antiquity. It contains basic information about more than 55’000 archaeological objects (e.g. vases, sculpture, gems, mosaics) which were assembled in the course of the preparation of the printed books of the LIMC and the ThesCRA from about 1970 onward. Short keyword type object descriptions and links to other research projects or museum databases will be added continuously as far as funds permit. The images of the objects are accessible online if the owning institution has given us permission for diffusion."
+                }
+            ],
+            "status": "Ongoing",
+            "datePublished": "2016-12-20"
+        }
+    ],
+    "organizations": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-080E-organization-004",
+            "__type": "Organization",
+            "__created": "1623677811721392000",
+            "__modified": "1623677811721394000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "email": "contact@binding-stiftung.ch",
+            "url": {
+                "__type": "URL",
+                "text": "https://www.binding-stiftung.ch/",
+                "type": "URL",
+                "url": "https://www.binding-stiftung.ch/"
+            },
+            "name": "Sophie und Karl Binding Stiftung",
+            "address": {
+                "__type": "Address",
+                "street": "Rennweg 50",
+                "postalCode": "4020",
+                "locality": "Basel",
+                "country": "Switzerland"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-080E-organization-005",
+            "__type": "Organization",
+            "__created": "1623677811780192000",
+            "__modified": "1623677811780194000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "address": {
+                "__type": "Address",
+                "street": "Petersgraben 51",
+                "postalCode": "4051",
+                "locality": "Basel",
+                "country": "Switzerland"
+            },
+            "name": "Classical Archaeology, University of Basel",
+            "email": "martin-a.guggisberg@unibas.ch",
+            "url": {
+                "__type": "URL",
+                "text": "https://klassarch.philhist.unibas.ch/de/home/",
+                "type": "URL",
+                "url": "https://klassarch.philhist.unibas.ch/de/home/"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-080E-organization-001",
+            "__type": "Organization",
+            "__created": "1623677811820579000",
+            "__modified": "1623677811820580000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "url": {
+                "__type": "URL",
+                "text": "httpS://www.snf.org/en",
+                "type": "URL",
+                "url": "httpS://www.snf.org/en"
+            },
+            "email": "info@snf.org",
+            "name": "Stavros Niarchos Foundation",
+            "address": {
+                "__type": "Address",
+                "street": "14, Avenue de Grande Bretagne, \"Le George V\" 4eme étage",
+                "postalCode": "98000",
+                "locality": "Monte Carlo, Monaco",
+                "country": "XX - Switzerland?"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-080E-organization-003",
+            "__type": "Organization",
+            "__created": "1623677812000302000",
+            "__modified": "1623677812000304000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "address": {
+                "__type": "Address",
+                "street": "St. Jakobs-Strasse 7",
+                "postalCode": "4002",
+                "locality": "Basel",
+                "country": "Switzerland"
+            },
+            "name": "Ceramica Stiftung",
+            "url": {
+                "__type": "URL",
+                "text": "https://ceramica-ch.ch/",
+                "type": "URL",
+                "url": "https://ceramica-ch.ch/"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-080E-organization-000",
+            "__type": "Organization",
+            "__created": "1623677812063726000",
+            "__modified": "1623677812063728000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "url": {
+                "__type": "URL",
+                "text": "https://www.swissuniversities.ch/",
+                "type": "URL",
+                "url": "https://www.swissuniversities.ch/"
+            },
+            "name": "swissuniversities",
+            "address": {
+                "__type": "Address",
+                "street": "Effingerstrasse 15, Postfach",
+                "postalCode": "3001",
+                "locality": "Bern",
+                "country": "Switzerland"
+            }
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-080E-organization-002",
+            "__type": "Organization",
+            "__created": "1623677812120147000",
+            "__modified": "1623677812120148000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "address": {
+                "__type": "Address",
+                "street": "Artherstrasse 19",
+                "postalCode": "6300",
+                "locality": "Zug",
+                "country": "Switzerland"
+            },
+            "name": "Ernst Göhner Stiftung",
+            "url": {
+                "__type": "URL",
+                "text": "http://www.ernst-goehner-stiftung.ch/index.php/de",
+                "type": "URL",
+                "url": "http://www.ernst-goehner-stiftung.ch/index.php/de"
+            }
+        }
+    ],
+    "grants": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-080E-grant-004",
+            "__type": "Grant",
+            "__created": "1623677812178900000",
+            "__modified": "1623677812178902000",
+            "name": "Gesuch im Bereich Kultur",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-080E-organization-004"
+            ],
+            "number": "19-109"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-080E-grant-003",
+            "__type": "Grant",
+            "__created": "1623677812179107000",
+            "__modified": "1623677812179108000",
+            "number": "14/17-18",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-080E-organization-003"
+            ]
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-080E-grant-002",
+            "__type": "Grant",
+            "__created": "1623677812179263000",
+            "__modified": "1623677812179264000",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-080E-organization-002"
+            ],
+            "number": "2015-2371/1.2",
+            "name": "Gesuch im Bereich Bildung und Wissenschaft"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-080E-grant-001",
+            "__type": "Grant",
+            "__created": "1623677812179460000",
+            "__modified": "1623677812179461000",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-080E-organization-001"
+            ],
+            "url": {
+                "__type": "URL",
+                "text": "https://www.snf.org/en/grants/grantees/u/university-of-basel/department-of-ancient-civilisations-program-support/",
+                "type": "URL",
+                "url": "https://www.snf.org/en/grants/grantees/u/university-of-basel/department-of-ancient-civilisations-program-support/"
+            },
+            "name": "Program Support Education"
+        },
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-080E-grant-000",
+            "__type": "Grant",
+            "__created": "1623677812179786000",
+            "__modified": "1623677812179787000",
+            "funders": [
+                "http://ns.dasch.swiss/repository#dsp-080E-organization-000"
+            ]
+        }
+    ]
+}

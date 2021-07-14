@@ -79,6 +79,10 @@
       "type": "object",
       "description": "A URL (general URL or reference to an authority file)",
       "properties": {
+        "__type": {
+          "description": "Internal Object type",
+          "const": "URL"
+        },
         "type": {
           "type": "string",
           "description": "The type of reference. Default is `URL`, any other type should indicate an authority file supported by the DSP.",
@@ -108,6 +112,7 @@
         }
       },
       "required": [
+        "__type",
         "type",
         "url"
       ],
@@ -117,20 +122,20 @@
       "description": "A project on the DSP",
       "type": "object",
       "properties": {
-        "@id": {
+        "__id": {
           "type": "string",
           "description": "Identifier of the project"
         },
-        "@type": {
+        "__type": {
           "type": "string",
           "description": "Type of this object",
           "const": "Project"
         },
-        "@created": {
+        "__created": {
           "type": "string",
           "description": "Creation date of this object"
         },
-        "@modified": {
+        "__modified": {
           "type": "string",
           "description": "Last modification date of this object"
         },
@@ -214,14 +219,13 @@
             "description": "ID of the funding person or organization."
           }
         },
-        "urls": {
-          "description": "URLs of the project. The first one should be the project landing page or website. One additional website can be added, if relevant.",
-          "type": "array",
-          "minItems": 1,
-          "maxItems": 2,
-          "items": {
-            "$ref": "#/definitions/url"
-          }
+        "url": {
+          "description": "Primary URL of the project. This should be the project landing page or website hosted by the DaSCH.",
+          "$ref": "#/definitions/url"
+        },
+        "secondaryURL": {
+          "description": "Optional secondary project URL. This can point to any external project website.",
+          "$ref": "#/definitions/url"
         },
         "dataManagementPlan": {
           "description": "ID of a data management plan.",
@@ -264,10 +268,10 @@
         }
       },
       "required": [
-        "@id",
-        "@type",
-        "@created",
-        "@modified",
+        "__id",
+        "__type",
+        "__created",
+        "__modified",
         "shortcode",
         "name",
         "description",
@@ -278,7 +282,7 @@
         "temporalCoverage",
         "spatialCoverage",
         "funders",
-        "urls"
+        "url"
       ],
       "additionalProperties": false
     },
@@ -286,19 +290,19 @@
       "type": "object",
       "description": "A financial grant.",
       "properties": {
-        "@id": {
+        "__id": {
           "type": "string",
           "description": "Unique id of the grant."
         },
-        "@type": {
+        "__type": {
           "type": "string",
           "const": "Grant"
         },
-        "@created": {
+        "__created": {
           "type": "string",
           "description": "Creation date of this object"
         },
-        "@modified": {
+        "__modified": {
           "type": "string",
           "description": "Last modification date of this object"
         },
@@ -325,10 +329,10 @@
         }
       },
       "required": [
-        "@id",
-        "@type",
-        "@created",
-        "@modified",
+        "__id",
+        "__type",
+        "__created",
+        "__modified",
         "funders"
       ],
       "additionalProperties": false
@@ -337,19 +341,19 @@
       "type": "object",
       "description": "A person relevant to the project.",
       "properties": {
-        "@id": {
+        "__id": {
           "type": "string",
           "description": "Unique id of the person."
         },
-        "@type": {
+        "__type": {
           "type": "string",
           "const": "Person"
         },
-        "@created": {
+        "__created": {
           "type": "string",
           "description": "Creation date of this object"
         },
-        "@modified": {
+        "__modified": {
           "type": "string",
           "description": "Last modification date of this object"
         },
@@ -411,10 +415,10 @@
         }
       },
       "required": [
-        "@id",
-        "@type",
-        "@created",
-        "@modified",
+        "__id",
+        "__type",
+        "__created",
+        "__modified",
         "jobTitles",
         "givenNames",
         "familyNames",
@@ -426,19 +430,19 @@
       "type": "object",
       "description": "A dataset belonging to the project.",
       "properties": {
-        "@id": {
+        "__id": {
           "type": "string",
           "description": "Unique id of the grant."
         },
-        "@type": {
+        "__type": {
           "type": "string",
           "const": "Dataset"
         },
-        "@created": {
+        "__created": {
           "type": "string",
           "description": "Creation date of this object"
         },
-        "@modified": {
+        "__modified": {
           "type": "string",
           "description": "Last modification date of this object"
         },
@@ -465,22 +469,17 @@
           ]
         },
         "abstracts": {
-          "type": "object",
+          "type": "array",
           "description": "Abstracts describing the dataset.",
-          "additionalProperties": false,
-          "properties": {
-            "urls": {
-              "type": "array",
-              "items": {
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/text"
+              },
+              {
                 "$ref": "#/definitions/url"
               }
-            },
-            "texts": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/text"
-              }
-            }
+            ]
           }
         },
         "typeOfData": {
@@ -572,10 +571,10 @@
         }
       },
       "required": [
-        "@id",
-        "@type",
-        "@created",
-        "@modified",
+        "__id",
+        "__type",
+        "__created",
+        "__modified",
         "title",
         "accessConditions",
         "howToCite",
@@ -592,19 +591,19 @@
       "description": "An organization.",
       "type": "object",
       "properties": {
-        "@id": {
+        "__id": {
           "type": "string",
           "description": "ID of the organization."
         },
-        "@type": {
+        "__type": {
           "type": "string",
           "const": "Organization"
         },
-        "@created": {
+        "__created": {
           "type": "string",
           "description": "Creation date of this object"
         },
-        "@modified": {
+        "__modified": {
           "type": "string",
           "description": "Last modification date of this object"
         },
@@ -626,9 +625,11 @@
           "format": "email"
         },
         "alternativeNames": {
-          "type": "object",
+          "type": "array",
           "description": "Alternative names of the organization.",
-          "$ref": "#/definitions/text"
+          "items": {
+            "$ref": "#/definitions/text"
+          }
         },
         "authorityRefs": {
           "type": "array",
@@ -639,10 +640,10 @@
         }
       },
       "required": [
-        "@id",
-        "@type",
-        "@created",
-        "@modified",
+        "__id",
+        "__type",
+        "__created",
+        "__modified",
         "name"
       ],
       "additionalProperties": false
@@ -651,6 +652,10 @@
       "description": "A postal address.",
       "type": "object",
       "properties": {
+        "__type": {
+          "description": "Internal Object type",
+          "const": "Address"
+        },
         "street": {
           "type": "string",
           "description": "The street."
@@ -673,6 +678,7 @@
         }
       },
       "required": [
+        "__type",
         "street",
         "postalCode",
         "locality",
@@ -684,19 +690,19 @@
       "type": "object",
       "description": "Data management plan of the project",
       "properties": {
-        "@id": {
+        "__id": {
           "type": "string",
           "description": "ID of the data management plan."
         },
-        "@type": {
+        "__type": {
           "type": "string",
           "const": "DataManagementPlan"
         },
-        "@created": {
+        "__created": {
           "type": "string",
           "description": "Creation date of this object"
         },
-        "@modified": {
+        "__modified": {
           "type": "string",
           "description": "Last modification date of this object"
         },
@@ -708,10 +714,10 @@
         }
       },
       "required": [
-        "@id",
-        "@type",
-        "@created",
-        "@modified"
+        "__id",
+        "__type",
+        "__created",
+        "__modified"
       ],
       "additionalProperties": false
     },

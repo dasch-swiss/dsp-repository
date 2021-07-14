@@ -1,0 +1,193 @@
+{
+    "$schema": "https://raw.githubusercontent.com/dasch-swiss/dasch-service-platform/main/docs/services/metadata/schema-metadata.json",
+    "project": {
+        "__id": "http://ns.dasch.swiss/repository#dsp-082E-project",
+        "__type": "Project",
+        "__created": "1623677812264486000",
+        "__modified": "1623677812264487000",
+        "howToCite": "XX - new property on project level",
+        "datasets": [
+            "http://ns.dasch.swiss/repository#dsp-082E-dataset-000"
+        ],
+        "spatialCoverage": [
+            {
+                "__type": "URL",
+                "text": "Asia",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/6255147"
+            },
+            {
+                "__type": "URL",
+                "text": "Africa",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/6255146"
+            },
+            {
+                "__type": "URL",
+                "text": "Europe",
+                "type": "Geonames",
+                "url": "https://www.geonames.org/6255148"
+            }
+        ],
+        "disciplines": [
+            {
+                "__type": "URL",
+                "text": "Archaeology",
+                "type": "Skos",
+                "url": "http://skos.um.es/unesco6/550501"
+            },
+            {
+                "__type": "URL",
+                "text": "Decorative arts",
+                "type": "Skos",
+                "url": "http://skos.um.es/unesco6/620303"
+            },
+            {
+                "__type": "URL",
+                "text": "Language and literature",
+                "type": "Skos",
+                "url": "http://skos.um.es/unesco6/570107"
+            }
+        ],
+        "keywords": [
+            {
+                "en": "archaeology"
+            },
+            {
+                "en": "literature"
+            },
+            {
+                "en": "art"
+            }
+        ],
+        "name": "Rosetta",
+        "temporalCoverage": [
+            {
+                "en": "3rd millennium BCE to modern time"
+            }
+        ],
+        "startDate": "2020-12-21",
+        "urls": [
+            {
+                "__type": "URL",
+                "text": "app.test.dasch.swiss",
+                "type": "URL",
+                "url": "app.test.dasch.swiss"
+            }
+        ],
+        "funders": [
+            "http://ns.dasch.swiss/repository#dsp-082E-organization-000"
+        ],
+        "shortcode": "082E",
+        "contactPoint": "http://ns.dasch.swiss/repository#dsp-082E-organization-000",
+        "description": {
+            "en": "Rosetta is the sample project of DaSCH. It contains texts, objects, documents and images from different cultures and times. In the future the sample project will be enriched with new types of data such as audio, video and 3D-images. The downloadable file rosetta.zip contains the data model (json-file), the data itself (xml.file) as well as some documentation (pdf and csv-files). You can use these files to start creating your own data model."
+        }
+    },
+    "datasets": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-082E-dataset-000",
+            "__type": "Dataset",
+            "__created": "1623677813764580000",
+            "__modified": "1623677813764582000",
+            "typeOfData": [
+                "Text",
+                "Image",
+                "Video",
+                "Audio",
+                "XML"
+            ],
+            "title": "Rosetta",
+            "status": "Ongoing",
+            "accessConditions": "open",
+            "licenses": [
+                {
+                    "__type": "URL",
+                    "text": "CC BY 4.0",
+                    "type": "Creative Commons",
+                    "url": "https://creativecommons.org/licenses/by/4.0"
+                }
+            ],
+            "languages": [
+                {
+                    "en": "Akkadian"
+                },
+                {
+                    "en": "French",
+                    "de": "Französisch",
+                    "fr": "français"
+                },
+                {
+                    "de": "Deutsch",
+                    "en": "German",
+                    "fr": "allemand"
+                },
+                {
+                    "en": "Greek"
+                },
+                {
+                    "en": "Hebrew"
+                },
+                {
+                    "en": "Arabic"
+                },
+                {
+                    "de": "Englisch"
+                },
+                {
+                    "en": "Russian"
+                },
+                {
+                    "en": "Egyptian"
+                }
+            ],
+            "howToCite": "DaSCH (2021): Rosetta, DaSCH. http://ark.dasch.swiss/ark:/72163/1/082E/",
+            "documentations": [
+                {
+                    "en": "Added as zip-file to project (rosetta.zip)"
+                }
+            ],
+            "attributions": [
+                {
+                    "person": "http://ns.dasch.swiss/repository#dsp-082E-organization-000",
+                    "roles": [
+                        "creator"
+                    ]
+                }
+            ],
+            "abstracts": [
+                {
+                    "en": "Rosetta is the sample project of DaSCH. It contains texts, objects, documents and images from different cultures and times. In the future the sample project will be enriched with new types of data such as audio, video and 3D-images. The downloadable file rosetta.zip contains the data model (json-file), the data itself (xml.file) as well as some documentation (pdf and csv-files). You can use these files to start creating your own data model."
+                }
+            ]
+        }
+    ],
+    "organizations": [
+        {
+            "__id": "http://ns.dasch.swiss/repository#dsp-082E-organization-000",
+            "__type": "Organization",
+            "__created": "1623677814412385000",
+            "__modified": "1623677814412387000",
+            "alternativeNames": [
+                {
+                    "XX": "XX - new property on organization"
+                }
+            ],
+            "url": {
+                "__type": "URL",
+                "text": "www.dasch.swiss",
+                "type": "URL",
+                "url": "www.dasch.swiss"
+            },
+            "name": "Data and Service Center for the Humanities DaSCH",
+            "address": {
+                "__type": "Address",
+                "street": "Gewerbestrasse 24",
+                "postalCode": "4123",
+                "locality": "Allschwil",
+                "country": "Switzerland"
+            },
+            "email": "info@dasch.swiss"
+        }
+    ]
+}

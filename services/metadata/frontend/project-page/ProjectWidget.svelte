@@ -1,134 +1,125 @@
-<script>
-  import { currentProject, currentProjectMetadata } from "../store";
+<script lang='ts'>
+  import { projectMetadata } from "../store";
+  import { getText, findObjectByID, findGrantByID, findOrganizationByID } from "../functions";
 
-  let grant;
-
-  const findObjectById = (id) => {
-    grant = $currentProjectMetadata?.metadata.find(obj => obj.id === id);
-    return $currentProjectMetadata?.metadata.find(obj => obj.id === id);
-  };
-
-  const handleSpatialCoverageName = (s) => {
-    const regex = /[^/]+\.html/i;
-    // return s.split("/")[4].split('.')[0].split("-").join(' ');
-    return s.substr(s.lastIndexOf('/') + 1).split('.')[0].split("-").join(' ');
-    // return s.match(regex)[0].split('.')[0].split("-").join(' ');
-  }
-
-  const truncateString = (s) => {
+  const truncateString = (s: string) => {
+    // TODO: can this be improved? 1. dynamic langth depending on space; 2. show full text on hover
     if (s.length > 35) {
       return `${s.slice(0, 35)}...`;
     } else return s;
   };
+
 </script>
 
-<div class=label>DSP Internal Shortcode</div>
-<div class=data>{$currentProject?.shortcode}</div>
 
-<div class=label>Data Management Plan</div>
-<div class=data>{$currentProject?.dataManagementPlan ? "available" : "unavailable"}</div>
+{#if $projectMetadata}
 
-<div class=label>Discipline</div>
-{#if Array.isArray($currentProject?.discipline)}
-  {#each $currentProject?.discipline as d}
-    {#if typeof d === "string"}
-      {#if d.split(" ")[0].match(/^[0-9]*$/)}
-        <a class="data external-link" href=http://www.snf.ch/SiteCollectionDocuments/allg_disziplinenliste.pdf target=_>{truncateString(d)}</a>
-      {:else if d.match("http")}
-        <a class="data external-link" href={d} target=_>{truncateString(d)}</a>
+  <div class=label>DSP Internal Shortcode</div>
+  <div class=data>{$projectMetadata?.project.shortcode}</div>
+
+  <div class=label>Data Management Plan</div>
+  <div class=data>{$projectMetadata?.project.dataManagementPlan ? "available" : "unavailable"}</div>
+
+  <div class=label>Discipline</div>
+  {#each $projectMetadata?.project.disciplines as d}
+    {#if d.__type === "URL"}
+      <a class="data external-link" href={d.url} target=_>{truncateString(d.text)}</a>
+    {:else}
+      {#if getText(d).match(/^\d+ /)}
+        <a class="data external-link" href=http://www.snf.ch/SiteCollectionDocuments/allg_disziplinenliste.pdf target=_>{truncateString(getText(d))}</a>
       {:else}
-        <div class="data">{d}</div>
+        <div class="data">{getText(d)}</div>
       {/if}
-    {:else}
-      <a class="data external-link" href={d.url} target=_>{d.name}</a>
     {/if}
   {/each}
-{/if}
 
-<div class=label>Temporal Coverage</div>
-{#if Array.isArray($currentProject?.temporalCoverage)}
-  {#each $currentProject?.temporalCoverage as t}
-    {#if typeof t === "string"}
-      <div class="data">{t}</div>
+  <div class=label>Temporal Coverage</div>
+  {#each $projectMetadata?.project.temporalCoverage as t}
+    {#if t.__type === "URL"}
+      <a class="data external-link" href={t.url} target=_>{t.text ? truncateString(t.text) : truncateString(t.url)}</a>
     {:else}
-      <a class="data external-link" href={t.url} target=_>{truncateString(t.name)}</a>
+      <div class="data">{getText(t)}</div>
+      <!-- <div class="data">{getText(asText(t))}</div> -->
     {/if}
   {/each}
-{/if}
 
-<div class=label>Spatial Coverage</div>
-{#if Array.isArray($currentProject?.spatialCoverage)}
-  {#each $currentProject?.spatialCoverage as s}
-  <!-- temp solution: some of the names were fixed manually, another are paserd from URLs -->
-    {#if s.place.name !== "Geonames"}
-      <a class="data external-link" style="text-transform: capitalize" href={s.place.url} target=_>{truncateString(s.place.name)}</a>
-    {:else}
-      <a class="data external-link" style="text-transform: capitalize" href={s.place.url} target=_>{truncateString(handleSpatialCoverageName(s.place.url))}</a>
-    {/if}    
+  <div class=label>Spatial Coverage</div>
+  {#each $projectMetadata?.project.spatialCoverage as s}
+    <a class="data external-link" style="text-transform: capitalize" href={s.url} target=_>{truncateString(s.text)}</a>
   {/each}
-{/if}
 
-<div class=label>Start date</div>
-<div class=data>{$currentProject?.startDate}</div>
+  <div class=label>Start date</div>
+  <div class=data>{$projectMetadata?.project.startDate}</div>
 
-{#if $currentProject?.endDate}
-<div class=label>End date</div>
-<div class=data>{$currentProject?.endDate}</div>
-{/if}
-
-<div class=label>Funder</div>
-{#if Array.isArray($currentProject?.funder)}
-  {#each $currentProject?.funder as f}
-    {#if findObjectById(f.id).type === "http://ns.dasch.swiss/repository#Person"}
-      <div class=data>{findObjectById(f.id)?.givenName.split(";").join(" ")} {findObjectById(f.id)?.familyName}</div>
-    {:else if findObjectById(f.id).type === "http://ns.dasch.swiss/repository#Organization"}
-      <div class=data>{findObjectById(f.id)?.name.join(", ")}</div>
-    {/if}
-  {/each}
-{/if}
-
-{#if $currentProject?.grant && Array.isArray($currentProject?.grant)}
-<div class=label>Grant</div>
-  {#each $currentProject?.grant as g}
-    {#if findObjectById(g.id)?.number && findObjectById(g.id)?.url}
-      <a class="data external-link" href={findObjectById(g.id)?.url[0].url} target=_>{findObjectById(g.id)?.number}</a>
-    {:else if findObjectById(g.id)?.number}
-      <span class="data">{findObjectById(g.id)?.number}</span>
-    {:else}
-      <span class="data">{findObjectById(findObjectById(g.id)?.funder[0].id)?.name.join(', ')}</span>
-    {/if}
-  {/each}
-{/if}
-
-{#if $currentProject?.contactPoint}
-  <div class=label>Contact</div>
-  {#if findObjectById($currentProject?.contactPoint[0].id)?.givenName && findObjectById($currentProject?.contactPoint[0].id)?.familyName}
-    <div id=contact class=data>{findObjectById($currentProject?.contactPoint[0].id)?.givenName?.split(";").join(" ")} {findObjectById($currentProject?.contactPoint[0].id)?.familyName}</div>
+  {#if $projectMetadata?.project.endDate}
+  <div class=label>End date</div>
+  <div class=data>{$projectMetadata?.project.endDate}</div>
   {/if}
-  {#if Array.isArray(findObjectById($currentProject?.contactPoint[0].id)?.memberOf)}
-    {#each findObjectById($currentProject?.contactPoint[0].id)?.memberOf as o}
-      <span>{findObjectById(o.id).name[0]}</span>
+
+  <div class=label>Funder</div>
+  {#each $projectMetadata?.project.funders.map((o) => {return findObjectByID(o)}) as f}
+    {#if f.__type === "Person"}
+      {console.log('person',f)}
+      <!-- TODO: handle funding person - need to find example -->
+      <!-- <div class=data>{findObjectById(f)?.givenName.split(";").join(" ")} {findObjectById(f)?.familyName}</div> -->
+    {:else if f.__type === "Organization"}
+      <div class=data>{f.name}</div>
+    {/if}
+  {/each}
+  
+  {#if $projectMetadata?.project.grants}
+    <div class=label>Grant</div>
+    {#each $projectMetadata?.project.grants.map(id => {return findGrantByID(id)}) as g}
+      {#if g?.number && g?.url && g?.name}
+        <a class="data external-link" href={g?.url.url} target=_>{truncateString(`${g?.number}: ${g?.name}`)}</a>
+        <!-- TODO: roll back if people don't like it -->
+        <!-- <a class="data external-link" href={g?.url.url} target=_>{g?.number}</a> -->
+      {:else if g?.number && g?.url}
+        <a class="data external-link" href={g?.url.url} target=_>{g?.number}</a>
+      {:else if g?.number}
+        <span class="data">{g?.number}</span>
+      {:else}
+        {#each [g?.funders[0]].map(o => {return findOrganizationByID(o)}) as f}
+          <span class="data">{f.name}</span>
+        {/each}
+      {/if}
     {/each}
   {/if}
-  {#if findObjectById($currentProject?.contactPoint[0].id)?.email}
-    {#if Array.isArray(findObjectById($currentProject?.contactPoint[0].id)?.email)}
-      <a class="data email" href="mailto:{findObjectById($currentProject?.contactPoint[0].id)?.email[0]}">{findObjectById($currentProject?.contactPoint[0].id)?.email[0]}</a>
-    {:else}
-      <a class="data email" href="mailto:{findObjectById($currentProject?.contactPoint[0].id)?.email}">{findObjectById($currentProject?.contactPoint[0].id)?.email}</a>
-    {/if}
+
+  {#if $projectMetadata?.project.contactPoint}
+    <div class=label>Contact</div>
+    {#each [findObjectByID($projectMetadata?.project.contactPoint)] as c}
+      {#if c.__type === 'Organization'}
+        <div id=contact class=data>{c.name}</div>
+        {#if c.email}
+          <a class="data email" href="mailto:{c?.email}">{c?.email}</a>
+        {/if}
+      {:else if c.__type === 'Person'}
+        {#if c?.givenNames && c?.familyNames}
+          <div id=contact class=data>{c?.givenNames?.join(" ")} {c?.familyNames.join(" ")}</div>
+        {/if}
+        {#if Array.isArray(c?.affiliation)}
+          {#each c?.affiliation as o}
+            {#each [findOrganizationByID(o)] as org}
+              <span class="data">{org.name}</span>
+            {/each}
+          {/each}
+        {/if}
+        {#if c.emails}
+          <a class="data email" href="mailto:{c?.emails[0]}">{c?.emails[0]}</a>
+        {/if}
+      {/if}
+    {/each}
   {/if}
-{/if}
 
-<div class=label>Project Website</div>
-{#if Array.isArray($currentProject?.url)}
-  {#each $currentProject?.url as url}
-    <a class="data external-link" href={url.url} target=_>{truncateString(url.name)}</a>
+  <div class=label>Project Website</div>
+  {#each $projectMetadata?.project.urls as url}
+    <a class="data external-link" href={url.url} target=_>{truncateString(url.text)}</a>
   {/each}
-{/if}
 
-{#if $currentProject}
   <div class=label>Keywords</div>
-  <span class="keyword">{$currentProject?.keywords.join(", ")}</span>
+  <span class="keyword">{$projectMetadata?.project.keywords.map(t => {return getText(t)}).join(", ")}</span>
+
 {/if}
 
 <style>

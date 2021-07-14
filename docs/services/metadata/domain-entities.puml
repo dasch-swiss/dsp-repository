@@ -14,6 +14,7 @@ package toplevel {
     +String name
     +MultiLanguageText description
     +Date startDate
+    +URL url
 
     .. (1 - n) ..
     +Dataset[] datasets
@@ -26,9 +27,6 @@ package toplevel {
     +Person[] funderPersons
     +Organization[] funderOrganizations
 
-    .. (1 - 2) ..
-    +URL[] urls
-
     -- Optional Fields --
     .. (0 - 1) ..
     +DataManagementPlan dataManagementPlan
@@ -36,6 +34,7 @@ package toplevel {
     +Person contactPerson
     +Organization contactOrganization
     +String howToCite
+    +URL secondaryURL
 
     .. (0 - n) ..
     +String[] publications

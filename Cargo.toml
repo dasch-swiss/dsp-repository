@@ -1,0 +1,29 @@
+[workspace]
+members = ["modules/html_api","modules/server", "modules/services", "modules/storage", "modules/types"]
+resolver = "2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace.package]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/dasch-swiss/dsp-repository"
+repository = "https://github.com/dasch-swiss/dsp-repository"
+documentation = "https://github.com/dasch-swiss/dsp-repository"
+readme = "README.md"
+description = "The DSP-Repository provides tooling and services for transforming, validating, and serving research project metadata and data. It is part of the DaSCH Service Platform, supporting FAIR principles for research data in the humanities."
+authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
+
+[workspace.dependencies]
+askama = { version = "0.13.0", features = ["full"] }
+async-stream = "0.3.6"
+axum = "0.8.3"
+datastar = { git = "https://github.com/starfederation/datastar", tag = "v1.0.0-beta.11", features = ["axum"] }
+futures = "0.3.31"
+maud = "0.27.0"
+serde = { version = "1.0.219", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1.17"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+uuid = { version = "1.2.2", features = ["v7"] }

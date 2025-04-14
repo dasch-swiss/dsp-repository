@@ -1,0 +1,24 @@
+<table id="fcf_table">
+  <thead>
+    <tr>
+      <th>Year</th>
+      <th>Free Cash Flow (FCF, $M)</th>
+      <th>Discounted Value ($M)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+      <tr>
+        <td>{{ row.year }}</td>
+        <td>{{ row.fcf | round(1) }}</td>
+        <td>{{ row.discounted | round(1) }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="2"><strong>Total Intrinsic Value ($M)</strong></td>
+      <td><strong>{{ total_intrinsic_value | round(1) }}</strong></td>
+    </tr>
+  </tfoot>
+</table>

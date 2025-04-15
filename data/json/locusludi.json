@@ -1,0 +1,269 @@
+{
+  "$schema": "../../resources/schema-metadata-final.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Attia (2024). Kottabos in the Greek World (2024). DaSCH, https://ark.dasch.swiss/ark:/72163/1/0847.",
+    "teaserText": "This database aims to provide a benchmark by compilating all representations of kottabos in the Greek world, including descriptions, images and links to other reference databases.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0847-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "Locus Ludi"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0847-person-001",
+    "description": {
+      "en": "This research is part of the ERC Advanced grant project Locus Ludi (no. 741520), which intends to provide a benchmark by reconstructing the history of the ludic culture in the Greco-Roman world. \n\nThe kottabos game, held at the end of the symposion, was an important moment of conviviality where the wine consumption plays a central role. Play of skills and dexterity it consists of throwing the last drop of wine from the cup towards a predetermined target. Representations of kottabos have been documented between the 6th and 3rd centuries B.C. on a wide variety of materials and media (figured pottery, mirrors, gems, reliefs, figurines, coins, funerary paintings) from various chrono-cultural areas, from Greece to the shores of Italy.\n\nThis database compiles basic informations about known representations of the kottabos game on South Italian pottery, produced and distributed both in Greek and indigenous settlements. It includes short descriptions, images and links to other reference databases.\n\nThe images of the objects are accessible online if the owning institution has given us permission for diffusion."
+    },
+    "disciplines": [
+      {
+        "en": "10402 Archaeology"
+      },
+      {
+        "en": "10404 Visual arts and Art history"
+      }
+    ],
+    "endDate": "2023-09-30",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0847-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0847-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "Dionysos"
+      },
+      {
+        "en": "Game"
+      },
+      {
+        "en": "Greek vases"
+      },
+      {
+        "en": "Greek world"
+      },
+      {
+        "en": "Iconography"
+      },
+      {
+        "en": "Kottabos"
+      },
+      {
+        "en": "South Italian pottery"
+      },
+      {
+        "en": "Wine"
+      }
+    ],
+    "name": "Locus Ludi database: The Kottabos in the Greek World",
+    "publications": [
+      {
+        "text": "Attia, A., Delahaye, A., Le jeu du kottabos. Guide illustré, Collection Locus Ludi, Darmstadt, WBG/Mainz, Ph. von Zabern, in preparation (2024)."
+      },
+      {
+        "text": "Attia, A., Vespa, M., “The Kottabos. Material Play and Cultural Representations”, in V. Dasen, M. Vespa (eds), The Cambridge Handbook of Ancient Play and Games, Cambridge, Cambridge University Press, , in preparation (2024)."
+      },
+      {
+        "text": "Attia, A., “Jouer au banquet : le kottabe au féminin en Grande Grèce”, in M.-L., Arnette, V. Dasen (eds), Joueuses ! Clio. Femmes, genre, histoire, 56, 2022, 187-197.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "URL",
+            "url": "https://www.cairn.info/revue-clio-femmes-genre-histoire-2022-2-page-187.htm",
+            "text": "https://www.cairn.info/revue-clio-femmes-genre-histoire-2022-2-page-187.htm"
+          }
+        ]
+      },
+      {
+        "text": "Attia, A., Delahaye, A., “Vertiges du banquet : jeux d’habilité et d’équilibre au symposion“, in V. Dasen and T. Haziza (eds.), Dossier thématique Jeux, normes et transgressions, Kentron. Revue pluridisciplinaire du monde antique, 36, 2021, 29-66.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "URL",
+            "url": "https://journals.openedition.org/kentron/4415",
+            "text": "https://journals.openedition.org/kentron/4415"
+          }
+        ]
+      }
+    ],
+    "shortcode": "0847",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/6255148/europe.html",
+        "text": "Europe"
+      }
+    ],
+    "startDate": "2017-10-01",
+    "temporalCoverage": [
+      {
+        "en": "Ancient Greek (culture or style)"
+      },
+      {
+        "en": "Etruscan (culture or style)"
+      },
+      {
+        "en": "South Italian (Greek pottery style)"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/sWbpL_RCTWKF6Y3aqxFZfA",
+      "text": "Discover Project Data"
+    },
+    "status": "Finished"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0847-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The database makes an extensive collection of representation of kottabos on South Italian pottery. The ontology of the database includes five main classes (object, scene, museum, artist and photo) to describe, contextualize and illustrate the vase. Each of five classes contains properties using different criteria (e.g. material, technique, production center, description, attribution, dating, discovery place, location, bibliography and photo credits)."
+        }
+      ],
+      "accessConditions": "open",
+      "dateCreated": "2019-03-01",
+      "dateModified": "2023-11-30",
+      "howToCite": "Attia (2024). Kottabos in the Greek World (2024). DaSCH, https://ark.dasch.swiss/ark:/72163/1/0847.",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "en": "French",
+          "de": "Französisch",
+          "fr": "français"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2023-12-04",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            "text": "CC BY-NC-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0847-person-000",
+          "roles": [
+            "Project Leader"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0847-person-001",
+          "roles": [
+            "Researcher and Data Collector"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Kottabos in the Greek World",
+      "typeOfData": [
+        "Image",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0847-person-000",
+      "__type": "Person",
+      "email": "veronique.dasen@unifr.ch",
+      "familyNames": [
+        "Dasen"
+      ],
+      "givenNames": [
+        "Véronique"
+      ],
+      "jobTitles": [
+        "Professor"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0847-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-2101-3105",
+          "text": "ORCID URL: https://orcid.org/0000-0002-2101-3105"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0847-person-001",
+      "__type": "Person",
+      "email": "alexandra.attia@unifr.ch",
+      "familyNames": [
+        "Attia"
+      ],
+      "givenNames": [
+        "Alexandra"
+      ],
+      "jobTitles": [
+        "Post-doc researcher"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0847-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-1525-9205",
+          "text": "ORCID URL: https://orcid.org/0000-0002-1525-9205"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0847-organization-000",
+      "__type": "Organization",
+      "email": "locusludi@gmail.com",
+      "name": "University of Fribourg, ERC Locus Ludi",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://locusludi.hypotheses.org/",
+        "text": "https://locusludi.hypotheses.org/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0847-organization-001",
+      "__type": "Organization",
+      "name": "European Research Council"
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0847-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0847-organization-001"
+      ],
+      "name": "ERC Advanced grant",
+      "number": "741520",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://erc.europa.eu/apply-grant/advanced-grant",
+        "text": "https://erc.europa.eu/apply-grant/advanced-grant"
+      }
+    }
+  ]
+}

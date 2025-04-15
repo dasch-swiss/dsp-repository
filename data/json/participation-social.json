@@ -1,0 +1,364 @@
+{
+  "$schema": "../../resources/schema-metadata-final.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Obrist B, Dillip A, Mayumana I, Rutishauser M, Simon V (2022). Participation in Social Health Protection: An Anthropological Case Study in Tanzania [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D.",
+    "teaserText": "This project calls for a broad view of social health protection, comprising health care funding and people’s ubiquitous but less visible strife for participation in self-organized groups and networks.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-083D-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "Participation in Social Health Protection (Tanzania). pshp"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-083D-person-000",
+    "description": {
+      "en": "Over the past decades, ‘participation’ has become a powerful concept of global development. It circulates around the globe and engages policy makers as well as human rights activists. After capturing the imagination of the biggest players in the field, it has attracted massive funding. And as a crucial principle of the Sustainable Development Goals 2015-2030, it can be expected to do so in the future. Anthropologists tend to share the emancipatory and humanitarian concerns implicit in ‘participation’. At the same time, they have become highly critical of the ways in which this popular buzzword is used in contemporary development speak and produce a growing body of empirical evidence about the ambivalences, dilemma and paradoxes created by participatory planning, policies and programs. This project examines ‘participation’ in the emergent field of ‘social health protection’. In order to reach their goal of Universal Health Coverage, the International Labor Office, the World Bank and the World Health organization push social health protection as a key strategy. They come up with diverse measures of public and publicly organized health financing measures for Low and Middle Income Countries, some of which are implemented through ‘induced participation’ and collective forms of ‘organic participation’. The massive attention given to efforts of inducing participation bears the danger of not only obscuring but perhaps even destroying people’s omnipresent but less visible strife for social participation in family and kin networks and self-organized groups to protect their health and improve their life condition. Contemporary Tanzania presents a particularly interesting case for studying participation in social health protection in this broader sense because of her long engagement with changing forms of participatory development and the government’s current aspiration to transform Tanzania into a middle-income country with Universal Health Coverage. The project thus aims at demonstrating that participation in diverse forms of social health protection can be conceived as a social practice which configures and is reconfigured by broader societal and material orders. Combining a multi-level analysis with in-depth ethnographic field research the project will explore understudied aspects in current research on induced and organic participation and thus contribute to transforming current development perspectives on social and societal change. The project thus aims at contributing to three major emerging fields: First, to the growing research interest in an ‘anthropology of the good’ through its emphasis on the ways in which people engage with each other to make a ‘better life’. Secondly, to the newly evolving ‘anthropology of insurance’ through its combined multi-level analysis and in-depth ethnographic research on social health protection as a social practice. Third, by engaging in a public dialogue, we hope that our insights will be discussed, contested, and appropriated by some of these ‘stakeholders’ and thus make a difference in the comprehension of the important contemporary issues of social health protection reform and more general societal change. The data of this project is only accessible upon explicit request to the contact person and a corresponding positive decision."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/240206",
+        "text": "Ethnology"
+      },
+      {
+        "en": "10400 Ethnology, social and humangeography"
+      }
+    ],
+    "endDate": "2021-08-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-083D-organization-000"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-083D-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "Ethnology"
+      },
+      {
+        "en": "Participation"
+      },
+      {
+        "en": "Social health protection"
+      },
+      {
+        "en": "Tanzania"
+      }
+    ],
+    "publications": [
+      {
+        "text": "Obrist B, Dillip A, Kalolo A, Mayumana IM, Rutishauser M, Simon VT. Savings Groups for Social Health Protection: A Social Resilience Study in Rural Tanzania. Diseases. 2022; 10(3):63.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://doi.org/10.3390/diseases10030063",
+            "text": "DOI: 10.3390/diseases10030063"
+          }
+        ]
+      },
+      {
+        "text": "Dillip A, Kalolo A, Mayumana I, Rutishauser M, Simon VT, Obrist B. Linking the Community Health Fund with Accredited Drug Dispensing Outlets in Tanzania: exploring potentials, pitfalls, and modalities. J Pharm Policy Pract. 2022 Dec 29;15(1):106. PMID: 36582002; PMCID: PMC9801564.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://doi.org/10.1186/s40545-022-00507-y",
+            "text": "DOI: 10.1186/s40545-022-00507-y"
+          }
+        ]
+      }
+    ],
+    "name": "Participation in Social Health Protection: An Anthropological Case Study in Tanzania",
+    "shortcode": "083D",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/149590/tanzania.html",
+        "text": "Tanzania"
+      }
+    ],
+    "startDate": "2017-01-01",
+    "temporalCoverage": [
+      {
+        "__type": "URL",
+        "type": "Chronontology",
+        "url": "https://chronontology.dainst.org/period/D6K5MO2tx66Y",
+        "text": "Modern"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://ark.dasch.swiss/ark:/72163/1/083D",
+      "text": "Discover Project Metadata"
+    },
+    "status": "Finished"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "Over the past decades, ‘participation’ has become a powerful concept of global development. It circulates around the globe and engages policy makers as well as human rights activists. After capturing the imagination of the biggest players in the field, it has attracted massive funding. And as a crucial principle of the Sustainable Development Goals 2015-2030, it can be expected to do so in the future. Anthropologists tend to share the emancipatory and humanitarian concerns implicit in ‘participation’. At the same time, they have become highly critical of the ways in which this popular buzzword is used in contemporary development speak and produce a growing body of empirical evidence about the ambivalences, dilemma and paradoxes created by participatory planning, policies and programs. This project examines ‘participation’ in the emergent field of ‘social health protection’. In order to reach their goal of Universal Health Coverage, the International Labor Office, the World Bank and the World Health organization push social health protection as a key strategy. They come up with diverse measures of public and publicly organized health financing measures for Low and Middle Income Countries, some of which are implemented through ‘induced participation’ and collective forms of ‘organic participation’. The massive attention given to efforts of inducing participation bears the danger of not only obscuring but perhaps even destroying people’s omnipresent but less visible strife for social participation in family and kin networks and self-organized groups to protect their health and improve their life condition. Contemporary Tanzania presents a particularly interesting case for studying participation in social health protection in this broader sense because of her long engagement with changing forms of participatory development and the government’s current aspiration to transform Tanzania into a middle-income country with Universal Health Coverage. The project thus aims at demonstrating that participation in diverse forms of social health protection can be conceived as a social practice which configures and is reconfigured by broader societal and material orders. Combining a multi-level analysis with in-depth ethnographic field research the project will explore understudied aspects in current research on induced and organic participation and thus contribute to transforming current development perspectives on social and societal change. The project thus aims at contributing to three major emerging fields: First, to the growing research interest in an ‘anthropology of the good’ through its emphasis on the ways in which people engage with each other to make a ‘better life’. Secondly, to the newly evolving ‘anthropology of insurance’ through its combined multi-level analysis and in-depth ethnographic research on social health protection as a social practice. Third, by engaging in a public dialogue, we hope that our insights will be discussed, contested, and appropriated by some of these ‘stakeholders’ and thus make a difference in the comprehension of the important contemporary issues of social health protection reform and more general societal change. The data of this project is only accessible upon explicit request to the contact person and a corresponding positive decision."
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "en": "Participation in Social Health Protection (Tanzania) pshp"
+        }
+      ],
+      "accessConditions": "closed",
+      "dateCreated": "2022-08-31",
+      "datePublished": "2022-08-31",
+      "howToCite": "Obrist B, Dillip A, Mayumana I, Rutishauser M, Simon V (2022). Participation in Social Health Protection: An Anthropological Case Study in Tanzania [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D.",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "en": "Swahili"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2022-08-18",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+            "text": "CC BY-NC-ND 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083D-person-000",
+          "roles": [
+            "PI"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083D-person-001",
+          "roles": [
+            "Project Leader"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083D-person-002",
+          "roles": [
+            "Project Leader"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083D-person-003",
+          "roles": [
+            "Project Member / Researcher"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083D-person-004",
+          "roles": [
+            "Project Leader"
+          ]
+        }
+      ],
+      "status": "Finished",
+      "title": "Participation in Social Health Protection: An Anthropological Case Study in Tanzania",
+      "typeOfData": [
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-person-001",
+      "__type": "Person",
+      "email": "adillip@apotheker.co.tz",
+      "familyNames": [
+        "Dillip"
+      ],
+      "givenNames": [
+        "Angel"
+      ],
+      "jobTitles": [
+        "Director of Research"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083D-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-person-002",
+      "__type": "Person",
+      "email": "imayumana@yahoo.com",
+      "familyNames": [
+        "Mayumana"
+      ],
+      "givenNames": [
+        "Iddy"
+      ],
+      "jobTitles": [
+        "Executive Director"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083D-organization-003"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-person-003",
+      "__type": "Person",
+      "email": "Melina.Rutishauser@unibas.ch",
+      "familyNames": [
+        "Rutishauser"
+      ],
+      "givenNames": [
+        "Melina"
+      ],
+      "jobTitles": [
+        "PhD student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083D-organization-004"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-person-004",
+      "__type": "Person",
+      "email": "Vendelin.Simon@yahoo.com",
+      "familyNames": [
+        "Simon"
+      ],
+      "givenNames": [
+        "Vendelin"
+      ],
+      "jobTitles": [
+        "Lecturer, researcher and coordinator of anthropology unit"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083D-organization-005"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-person-000",
+      "__type": "Person",
+      "email": "brigit.obrist@unibas.ch",
+      "familyNames": [
+        "Obrist"
+      ],
+      "givenNames": [
+        "Brigit"
+      ],
+      "jobTitles": [
+        "Professor"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083D-organization-001"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "",
+        "postalCode": "",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "name": "Institute of Anthropology, University of Basel"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-organization-002",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "",
+        "postalCode": "",
+        "locality": "Dar es Salaam",
+        "country": "Tanzania"
+      },
+      "name": "Apotheker Consultancy, Health Access Initiative"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-organization-003",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "",
+        "postalCode": "",
+        "locality": "Ifakara",
+        "country": "Tanzania"
+      },
+      "name": "Kilombero Valley Health and Livelihood Promotion"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-organization-004",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "",
+        "postalCode": "",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "name": "Institute of Social Anthropology, University of Basel"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-organization-005",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "University Rd",
+        "postalCode": "14113",
+        "additional": "PO Box 35091",
+        "locality": "Dar es Salaam",
+        "country": "Tanzania"
+      },
+      "name": "The University of Dar es Salaam"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-organization-000",
+      "__type": "Organization",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.snf.ch/en",
+        "text": "https://www.snf.ch/en"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083D-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-083D-organization-000"
+      ],
+      "name": "Project funding",
+      "number": "169476",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/169476",
+        "text": "https://data.snf.ch/grants/grant/169476"
+      }
+    }
+  ]
+}

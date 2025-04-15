@@ -1,21 +1,17 @@
 use core::error::Error;
 use core::time::Duration;
 
-use axum::{
-    extract::Form,
-    routing::post,
-};
 use async_stream::stream;
-use axum::extract::Query;
+use axum::extract::{Form, Query};
 use axum::response::{Html, IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::Router;
 use datastar::prelude::{MergeFragments, ReadSignals};
 use datastar::Sse;
+use html_api::calculator::{CashFlowRow, DcfForm, DcfTableContext};
 use serde::Deserialize;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use html_api::calculator::{CashFlowRow, DcfForm, DcfTableContext};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -47,7 +43,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 async fn index() -> Html<String> {
-    Html(documents::home::index())
+    Html(html_api::home::index())
 }
 
 const MESSAGE: &str = "Hello, world!";
@@ -67,19 +63,18 @@ async fn hello_world(ReadSignals(signals): ReadSignals<Signals>) -> impl IntoRes
 }
 
 async fn calculator_page() -> Html<String> {
-    Html(documents::calculator::index())
+    Html(html_api::calculator::index())
 }
 
 async fn calculator_style_css() -> Response {
     (
         [("Content-Type", "text/css")],
-        documents::calculator::style(),
+        html_api::calculator::style(),
     )
         .into_response()
 }
 
 async fn handle_calculate(Query(form): Query<DcfForm>) -> impl IntoResponse {
-
     let ctx = compute_dcf_table(
         form.fcf,
         form.growth,
@@ -88,7 +83,7 @@ async fn handle_calculate(Query(form): Query<DcfForm>) -> impl IntoResponse {
         form.years,
     );
 
-    let res = documents::calculator::result_table(&ctx);
+    let res = html_api::calculator::result_table(&ctx);
     Sse(stream! {
         yield MergeFragments::new(format!("<div id='intrinsic_value' class='value-display'>Intrinsic Value: ${}</div>", ctx.total_intrinsic_value)).into();
         yield MergeFragments::new(res.clone()).into()

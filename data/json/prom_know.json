@@ -1,0 +1,428 @@
+{
+  "$schema": "../../resources/schema-metadata-final.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "R. Sigrist, 2023, Base de données sur les savants de la période 1700-1870 [base de données], Swiss National Data and Service Center for the Humanities (DaSCH), http://ark.dasch.swiss/ark:/72163/1/0117.",
+    "teaserText": "The professionalization of science is often conceptualized as the exclusion of amateurs. We show on the contrary that this became only through the development of scientific culture and networks.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0117-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "prom-know"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0117-person-000",
+    "description": {
+      "fr": "La recherche historique s’appuie sur un recensement de près de 12'000 individus engagés dans la recherche scientifique entre 1700 et 1870, dont les parcours de vie de 5’000 européens et nord-américains en astronomie, physique, chimie et botanique. Elle analyse les statuts sociaux et les profils de carrière de savants reconnus ainsi que les pratiques de recherche de centaines d’amateurs de science. En considérant des groupes de chercheurs en France, en Grande-Bretagne, dans les pays germaniques, en Italie, en Suède et en Russie, on caractérise les attentes des sociétés civiles envers la science ainsi que ses retombées.\n\nLa recherche comprend aussi une analyse de réseaux académiques et non-académiques. Dessinés par une combinaison de liens de formation, de collaboration, d’influences intellectuelles et d’échanges d’informations, leur analyse combine une approche historique et une approche sociologique pour prendre en compte de la dimension temporelle et la dynamique de la science moderne. La description des dynamiques à l’œuvre dans différentes communautés de recherche seront confrontées aux données et aux théories issues la recherche sur les réseaux contemporains de collaboration et de partenariat intellectuel.\n\nAprès avoir été considéré comme une affaire de génies ou comme enjeu de rivalités nationales, le développement de la science aux 18e et 19e siècles apparaît aujourd’hui comme une entreprise culturelle et sociale complexe, faite de réseaux dont la nature et les caractéristiques restent à étudier. La première phase de professionnalisation de la science, souvent décrite comme un processus d’exclusion des amateurs, serait plutôt un développement accéléré des réseaux scientifiques dans des secteurs de plus en plus large des sociétés européennes en voie de modernisation."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/5502",
+        "text": "General History"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/63",
+        "text": "Sociology"
+      }
+    ],
+    "endDate": "2020-07-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0117-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0117-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "18th century"
+      },
+      {
+        "en": "19th century"
+      },
+      {
+        "en": "Databases"
+      },
+      {
+        "en": "Early Modern science"
+      },
+      {
+        "en": "Professionalization of research"
+      },
+      {
+        "en": "Prosopography"
+      },
+      {
+        "en": "Science network"
+      },
+      {
+        "en": "Scientific culture"
+      },
+      {
+        "en": "Social network analysis"
+      }
+    ],
+    "name": "Promoting Knowledge. The Origins of the Science System and the Making of Professional Structures in European States, 1700-1870",
+    "publications": [
+      {
+        "text": "1. René Sigrist, “The rise of “Academic science” in Europe, 1700-1870: A demographic and geographic approach”, Annali di Storia delle Università Italiane, 21 (2017), p. 203-243. ISSN: 1127-8250,",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://www.rivisteweb.it/doi/10.17396/88314",
+            "text": "rivisteweb.it/doi/10.17396/88314"
+          }
+        ]
+      },
+      {
+        "text": "2. René Sigrist & Alexander Moutchnik, « Les fondements sociaux du premier essor de la botanique en Russie, 1700-1830 » Almagest. International Journal for the History of Scientific Ideas, 8/1 (2017), p. 38-75. Print ISSN: 1792-2593 Online ISSN: 2507-0371.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://doi.org/10.1484/J.ALMAGEST.5.113697",
+            "text": "DOI: 10.1484/J.ALMAGEST.5.113697"
+          },
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://www.brepolsonline.net/doi/abs/10.1484/J.ALMAGEST.5.113697",
+            "text": "brepolsonline.net/doi/abs/10.1484/J.ALMAGEST.5.113697"
+          }
+        ]
+      },
+      {
+        "text": "3. René Sigrist & Sonia Zanier, « La botanique dans un contexte local : les jardins de Florence à l’époque des grands-ducs (1569-1859) », Gesnerus, 74/1 (2017), p. 5-52. 01-052_Sigrist.pdf",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "URL",
+            "url": "https://gesnerus.ch/_Resources/Persistent/7c128d18e09b9f004a180b30bb680686bde5ba88/0",
+            "text": "https://gesnerus.ch/_Resources/Persistent/7c128d18e09b9f004a180b30bb680686bde5ba88/0"
+          }
+        ]
+      },
+      {
+        "text": "4. René Sigrist & Dominique Vinck, « Le rôle des “objets intermédiaires” dans l’étude naturaliste du Mont-Blanc, 1740-1825 », Archives des Sciences, 69 (2017), p. 101-136. BIB_BFD3ECE440DA.P001/REF",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "URL",
+            "url": "https://serval.unil.ch/resource/serval",
+            "text": "https://serval.unil.ch/resource/serval"
+          }
+        ]
+      },
+      {
+        "text": "5. René Sigrist, “The First Generations of Russian Chemists (1700-1830): Between Pharmacy, Technical Know How and Academia”, Almagest. International Journal for the History of Scientific Ideas, 10/2 (2019), p. 7-49.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://www.brepolsonline.net/doi/pdf/10.1484/J.ALMAGEST.5.119493",
+            "text": "brepolsonline.net/doi/pdf/10.1484/J.ALMAGEST.5.119493"
+          }
+        ]
+      },
+      {
+        "text": "6. René Sigrist, « L’innovation technique à Genève à l’époque de la première industrialisation (1750-1850) : discours, attitudes et enjeux », Archives des Sciences, 71, 2020, p. 205-226."
+      },
+      {
+        "text": "7. René Sigrist, « Correspondances scientifiques du 18e siècle. Un essai d’analyse statistique », Mélanges de l’école française de Rome, Italie et Méditerranée."
+      }
+    ],
+    "shortcode": "0117",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/7008591",
+        "text": "United Kingdom"
+      },
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/7002435",
+        "text": "Russia"
+      },
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/1000080",
+        "text": "Italy"
+      },
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/8711753",
+        "text": "German Empire"
+      },
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/1000070",
+        "text": "France"
+      },
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/1000097",
+        "text": "Sweden"
+      }
+    ],
+    "startDate": "2016-06-01",
+    "temporalCoverage": [
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p09hq4n534b",
+        "text": "XVIIIe siècle EC"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p09hq4ns9gt",
+        "text": "XIXe siècle EC"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/Lg4VTMu4QTSs8I-SPSCoqw",
+      "text": "Discover Project Data"
+    },
+    "status": "Finished"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0117-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "fr": "Cette base de données inclut 11'121 savants reconnus qui étaient âgés de 20 ans et plus entre 1700 et 1870. Est défini comme « savant reconnu » tout individu affilié pour ses travaux scientifiques à l’une au moins des six principales académies de l’époque concernée (Royal Society de Londres ; académies de Paris, Berlin, Stockholm, St-Pétersbourg et Bologne), ou recensé dans le Historical Catalogue of Scientists and Scientific Books publié en 1984 par Robert M. Gascoigne.\r La partie librement accessible de cette base de données (initialement crée en FileMaker Pro), a été migrée dans un modèle relationnel en SQL. Elle inclut une partie des données biographiques, relationnelles et bibliographiques collectées dans le cadre de deux projets FNS successifs, données qui concernent notamment les astronomes, les physiciens, les chimistes et les botanistes européens et nord-américains. Ces données sont plus complètes pour le groupe des « grands savants » (1/4 de l’échantillon environ), ce groupe étant défini comme l’ensemble des individus ayant bénéficié d’affiliations multiples aux six principales académies de la période 1700-1870, ou inclus dans le Dictionary of Scientific Biography édité entre 1970 et 1980 sous la direction de Charles C. Gillispie.\r Le modèle de données repose sur les classes suivantes : « Savant » (informations biographiques et relatives à la carrière des savants) ; « Champ » (principales disciplines dans lesquels ces savants se sont illustrés) ; « Correspondance » (recension de la correspondance qu’ont entretenue ces savants entre eux) et « Lien » (typologie des relations de travail qui se sont nouées entre ces savants)."
+        }
+      ],
+      "accessConditions": "open",
+      "dateCreated": "2023-05-01",
+      "datePublished": "2023-05-01",
+      "additional": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://doi.org/10.5281/zenodo.3956437",
+          "text": "Please find additional documentation here"
+        }
+      ],
+      "howToCite": "R. Sigrist, 2023, Base de données sur les savants de la période 1700-1870 [base de données], Swiss National Data and Service Center for the Humanities (DaSCH), http://ark.dasch.swiss/ark:/72163/1/0117.",
+      "languages": [
+        {
+          "en": "French",
+          "de": "Französisch",
+          "fr": "français"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2023-08-24",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0",
+            "text": "CC BY-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0117-person-000",
+          "roles": [
+            "Project Leader, Project Manager"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0117-person-001",
+          "roles": [
+            "Project Member, Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0117-person-002",
+          "roles": [
+            "Project Member, Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0117-person-003",
+          "roles": [
+            "Data Curator"
+          ]
+        }
+      ],
+      "status": "Finished",
+      "title": "Base de données sur les savants de la période 1700-1870",
+      "typeOfData": [
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0117-person-001",
+      "__type": "Person",
+      "email": "sigrist.rene@bluewin.ch",
+      "familyNames": [
+        "Sigrist"
+      ],
+      "givenNames": [
+        "René"
+      ],
+      "jobTitles": [
+        "Scientific collaborator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0117-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0117-person-002",
+      "__type": "Person",
+      "email": "christelle.cocco@unil.ch",
+      "familyNames": [
+        "Cocco"
+      ],
+      "givenNames": [
+        "Christelle"
+      ],
+      "jobTitles": [
+        "Scientific collaborator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0117-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0001-6684-9806",
+          "text": "ORCID URL: https://orcid.org/0000-0001-6684-9806"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0117-person-003",
+      "__type": "Person",
+      "email": "marion.rivoal@unil.ch",
+      "familyNames": [
+        "Rivoal"
+      ],
+      "givenNames": [
+        "Marion"
+      ],
+      "jobTitles": [
+        "Researcher manager"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0117-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-4185-7169",
+          "text": "ORCID URL: https://orcid.org/0000-0003-4185-7169"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0117-person-000",
+      "__type": "Person",
+      "email": "dominique.vinck@unil.ch",
+      "familyNames": [
+        "Vinck"
+      ],
+      "givenNames": [
+        "Dominique"
+      ],
+      "jobTitles": [
+        "Full professor"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0117-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0001-7835-7008",
+          "text": "ORCID URL: https://orcid.org/0000-0001-7835-7008"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0117-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3",
+        "postalCode": "3001",
+        "locality": "Berne",
+        "country": "Switzerland"
+      },
+      "email": "desk@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.snf.ch/",
+        "text": "http://www.snf.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0117-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Unicentre",
+        "postalCode": "1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+      },
+      "name": "Université de Lausanne",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.unil.ch/",
+        "text": "https://www.unil.ch/"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0117-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0117-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "166345",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/166345",
+        "text": "https://data.snf.ch/grants/grant/166345"
+      }
+    }
+  ]
+}

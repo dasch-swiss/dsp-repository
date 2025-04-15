@@ -1,0 +1,376 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Berton, M., Murtas, E., Tinguely, R., Rivoal, M., Jaouen, L., 2023, Cinéma et psychiatrie en Suisse : les collections Waldau [database] (DaSCH), http://ark.dasch.swiss/ark:/72163/1/0106.",
+    "teaserText": "Comment les psychiatres et neurologues suisses se sont-ils emparés, au XXe siècle, du médium filmique dans leur pratique de médecins, d’enseignants et de chercheurs ?",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0106-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "fr": "Waldau-cinema"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0106-person-000",
+    "dataManagementPlan": {
+      "__type": "DataManagementPlan",
+      "available": true
+    },
+    "description": {
+      "fr": "Ce projet propose d’étudier l’histoire culturelle des pratiques cinématographiques dans le domaine de la (neuro)psychiatrie en Suisse, sur la base d’un corpus de films réalisés au sein et autour de l’hôpital psychiatrique de la Waldau à Berne, entre 1920 et 1970. Le but principal consiste à mettre en évidence le rôle majeur joué, tant au niveau national que transnational, par la Waldau dans l’usage du médium filmique à des fins de recherche, d’enseignement et de promotion scientifique. Il s’agit d’analyser, outre des archives papier, plusieurs corpus filmiques, dont les 97 courts métrages réalisés à l’initiative du psychiatre Ernst Grünthal entre 1934 et 1965 au Hirnanatomisches Institut de l’hôpital psychiatrique de Waldau (fonds déposé à la Cinémathèque suisse). Par leur ampleur et leur homogénéité, ces ensembles offrent une occasion unique d’interroger les enjeux historiques et épistémologiques présidant à l’emploi du cinéma dans le secteur de la santé mentale, en Suisse et à l’étranger. On se demandera quelles sont les conditions de possibilité, les fonctions et les particularités (sémantiques et esthétiques) de ces objets. Que disent ces films sur la maladie, les patients·es, les médecins, les institutions psychiatriques, et, inversement, que révèlent-ils du cinéma en tant qu’outil participant à la construction des phénomènes observés ? Quel(s) regard(s) construisent-ils sur les troubles psychiatriques et neurologiques, ainsi que sur l’éthos des médecins ? Pour répondre à ces questions, il conviendra de battre en brèche un certain nombre d’idées reçues, en montrant que ces artefacts sont des objets-carrefours situés au croisement de la médecine et de la culture (audio)visuelle et, à ce titre, relèvent autant du cinéma scientifique que de l’art cinématographique. N’ayant pas encore fait l’objet de recherche, notamment en raison de leur difficulté d’accès, des enjeux de confidentialité des données et de leur fragilité matérielle, ces films méritent d’être étudiés non seulement pour leur valeur patrimoniale inestimable, mais aussi pour la place nodale qu’ils occupent dans l’histoire européenne du film médical. Ces archives sont appréhendées au regard de deux champs propres aux études cinématographiques : d’une part, l’histoire du film neuropsychiatrique qui s’est enrichie depuis une vingtaine d’années de la découverte de productions que l’on croyait disparues, à l’instar du fonds Magnus-Rademaker aux Pays-Bas ; et, d’autre part, le champ du film utilitaire (dit « useful cinema » ou « Gebrauchsfilm »), qui a permis de valoriser des œuvres longtemps négligées par l’histoire canonique du cinéma en raison de leur caractère marginal. Afin de développer les différents aspects de la recherche, le projet se développe autour de trois axes : Axe 1 : « Les films neuropsychiatriques d’Ernst Grünthal au Hirnanatomisches Institut de la Waldau (1930-1960) », un volet qui examine la contribution du psychiatre (qui fonde le Laboratoire d’anatomie cérébrale/LAC en 1934) dans l’élaboration de pratiques et de savoirs relatifs à la psychiatrie et au cinéma en Suisse. Axe 2 : Les échanges entre la Waldau et l’hôpital psychiatrique de Cery (Lausanne), notamment à travers la figure de Hans Heimann, ainsi que les films institutionnels et les films consacrées aux thérapies par le travail, des « genres » typiques du film médical. Axe 3 : « Imaginer la folie. Les films de la Waldau entre science et fiction » qui étudie les usages « fictionnalisants » ou « narrativisants » du dispositif cinématographique, lequel participe à mettre en scène et en récit une certaine image de la folie. Ce projet débouchera sur une thèse de doctorat, un ouvrage collectif, un numéro de revue, une monographie, plusieurs publications individuelles et une exposition, ainsi que sur la sauvegarde et la valorisation d’un fonds d’archives grâce à la numérisation des films eux-mêmes. La collaboration avec des partenaires européens permet de consolider l’investigation à travers l’échange d’informations, de méthodes et de ressources. Ce projet s’inscrit dans le cadre de la Collaboration UNIL + Cinémathèque suisse qui vise à renforcer les liens entre ces deux institutions."
+    },
+    "disciplines": [
+      {
+        "fr": "10406 Théâtre et cinéma"
+      }
+    ],
+    "endDate": "2023-05-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0106-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0106-grant-000"
+    ],
+    "keywords": [
+      {
+        "fr": "Ernst Grünthal"
+      },
+      {
+        "fr": "Film utilitaire"
+      },
+      {
+        "fr": "Suisse"
+      },
+      {
+        "fr": "Waldau"
+      },
+      {
+        "fr": "cinéma"
+      },
+      {
+        "fr": "enseignement"
+      },
+      {
+        "fr": "médecine"
+      },
+      {
+        "fr": "neurologie"
+      },
+      {
+        "fr": "psychiatrie"
+      },
+      {
+        "fr": "recherche"
+      }
+    ],
+    "name": "Cinéma et (neuro)psychiatrie en Suisse : autour de la collection Waldau (1920-1990)",
+    "shortcode": "0106",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/7011731",
+        "text": "Suisse"
+      },
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/7016845",
+        "text": "Pays-Bas"
+      },
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/1000080",
+        "text": "Italie"
+      },
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/7008591",
+        "text": "Grande-Bretagne"
+      },
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/7012149",
+        "text": "Etats-Unis"
+      },
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/1000070",
+        "text": "France"
+      },
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/7000084",
+        "text": "Allemagne"
+      }
+    ],
+    "startDate": "2021-06-01",
+    "temporalCoverage": [
+      {
+        "de": "1920-1970",
+        "en": "1920-1970",
+        "fr": "1920-1970"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/Y9hvowDvRKy8Mkq5anCDnw",
+      "text": "Discover Project Data"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0106-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "fr": "La base de données vise principalement à rendre accessibles les archives papiers du Musée suisse de la psychiatrie (Berne) relatives à Ernst Grünthal (1894-1972), le psychiatre responsable de la majorité du corpus filmique (correspondant à la classe « Film ») analysé dans le projet – plus d’une centaine de courts et moyens métrages 16 mm montrant des patientes et des patients qui souffrent de troubles psychiques ou neurologiques (dépression, alcoolisme, schizophrénie, démence sénile, troubles mnésiques, troubles du langage, maladie de Parkinson, chorée de Huntington, etc.). Majoritairement en allemand, ces documents (regroupés sous la classe « [Archive papier] ») sont de nature très variée : articles scientifiques, correspondance, notes manuscrites, brochures, papillons, tapuscrits, planches didactiques, documents administratifs. Le modèle de données permet, outre la description des films, de renseigner l’implication des médecins (« Personnel soignant ») dans leur réalisation et fournit des informations sur les personnes (« Patient », « Personnel soignant »), les institutions (« Institutions », « Personne morale »), les dates, les lieux d’archivage, les objets (équipement médical par exemple regroupé sous la classe « Objet »). Les données collectées permettent de reconstituer le réseau de pratiques filmiques initiées par des psychiatres et des neurologues en Suisse, avec plusieurs centres névralgiques : Berne, Bâle, Zurich, Lausanne et Genève. Quelques noms de médecins se distinguent au sein de ce réseau : Ernst Grünthal, Theodor H. Spoerri, Hans Heimann, Michele Risso, Giorgio Pilleri, Maurice Rémy, Walter Rudolf Hess, Karl Kleist, Gustav E. Störring. \r La structure de la base de données a été définie pour permettre une exploration du corpus (en trouvant, par exemple, tous les documents relatifs à un médecin, une maladie ou à un médicament), les recoupements avec des données non filmiques et les comparaisons avec des productions connexes. À plus long terme, la base de données peut constituer un outil utile pour de futures recherches conduites par des chercheuses et chercheurs en histoire des sciences, histoire de la psychiatrie et histoire de la médecine, ainsi qu’à des praticiennes et praticiens dans le secteur de la santé mentale. \r Le modèle de données (classes, propriétés, vocabulaires contrôlés) a été élaboré à partir des documents. Les professions médicales et les pathologies ont été établies sur la base du thésaurus du MeSH : https://mesh.inserm.fr/FrenchMesh/index.htm)"
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "en": "Les collections Waldau"
+        }
+      ],
+      "accessConditions": "restricted",
+      "dateCreated": "2023-06-15",
+      "datePublished": "2025-06-01",
+      "additional": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://waldau.hypotheses.org/",
+          "text": "Le carnet de recherche Hypothèses.org"
+        }
+      ],
+      "howToCite": "Berton, M., Murtas, E., Tinguely, R., Rivoal, M., Jaouen, L., 2023, Cinéma et psychiatrie en Suisse : les collections Waldau [database] (DaSCH), http://ark.dasch.swiss/ark:/72163/1/0106.",
+      "languages": [
+        {
+          "fr": "Français"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2023-07-13",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "text": "CC BY-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0106-person-000",
+          "roles": [
+            "Project Leader, Data Collector, Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0106-person-001",
+          "roles": [
+            "Project Member, Data Collector, Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0106-person-002",
+          "roles": [
+            "Project Member, Data Collector, Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0106-person-003",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0106-person-004",
+          "roles": [
+            "Other"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Cinéma et psychiatrie en Suisse : les collections Waldau",
+      "typeOfData": [
+        "Image",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0106-person-000",
+      "__type": "Person",
+      "email": "Mireille.Berton@unil.ch",
+      "familyNames": [
+        "Berton"
+      ],
+      "givenNames": [
+        "Mireille"
+      ],
+      "jobTitles": [
+        "Senior lecturer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0106-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-4701-7670",
+          "text": "ORCID URL: https://orcid.org/0000-0003-4701-7670"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0106-person-001",
+      "__type": "Person",
+      "email": "Elodie.Murtas@unil.ch",
+      "familyNames": [
+        "Murtas"
+      ],
+      "givenNames": [
+        "Elodie"
+      ],
+      "jobTitles": [
+        "Post-doctoral researcher"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0106-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0106-person-002",
+      "__type": "Person",
+      "email": "Raphael.Tinguely@unil.ch",
+      "familyNames": [
+        "Tinguely"
+      ],
+      "givenNames": [
+        "Raphaël"
+      ],
+      "jobTitles": [
+        "PhD student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0106-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0106-person-003",
+      "__type": "Person",
+      "email": "Marion.rivoal@unil.ch",
+      "familyNames": [
+        "Rivoal"
+      ],
+      "givenNames": [
+        "Marion"
+      ],
+      "jobTitles": [
+        "Researcher manager"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0106-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-4185-7169",
+          "text": "ORCID URL: https://orcid.org/0000-0003-4185-7169"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0106-person-004",
+      "__type": "Person",
+      "email": "loic.jaouen@unil.ch",
+      "familyNames": [
+        "Jaouen"
+      ],
+      "givenNames": [
+        "Loïc"
+      ],
+      "jobTitles": [
+        "IT support"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0106-organization-000"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0106-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3",
+        "postalCode": "3001",
+        "locality": "Berne",
+        "country": "Switzerland"
+      },
+      "email": "desk@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.snf.ch/",
+        "text": "http://www.snf.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0106-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "",
+        "postalCode": "1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+      },
+      "name": "Université de Lausanne",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.unil.ch/",
+        "text": "https://www.unil.ch/"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0106-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0106-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "200598",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/200598",
+        "text": "https://data.snf.ch/grants/grant/200598"
+      }
+    }
+  ]
+}

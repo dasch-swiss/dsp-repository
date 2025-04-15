@@ -1,0 +1,236 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Bruno Manser/Bruno Manser Fonds",
+    "teaserText": "Bruno Manser has left a variety of media in which he documented the nomadic life of the Penan. The project shows and annotates these documents.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0813-dataset-001"
+    ],
+    "alternativeNames": [
+      {
+        "en": "Annotating Bruno Manser's Diaries"
+      }
+    ],
+    "description": {
+      "en": "Bruno Manser has left a variety of media in which he documented the nomadic life of the Penan. The project aims to show and annotate the everyday life moments of a nomadic lifestyle across media as diary entries, video footage and photographs of Bruno Manser."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/5103",
+        "text": "Social anthropology"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/5101",
+        "text": "Cultural anthropology"
+      }
+    ],
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0813-organization-001"
+    ],
+    "keywords": [
+      {
+        "en": "Bruno Manser"
+      },
+      {
+        "de": "Bruno Manser Fonds"
+      },
+      {
+        "en": "Hunters and Gatherers"
+      },
+      {
+        "de": "Nomaden",
+        "en": "Nomads"
+      },
+      {
+        "en": "Penan"
+      },
+      {
+        "en": "Rainforest",
+        "de": "Regenwald"
+      },
+      {
+        "de": "Waldnomaden"
+      },
+      {
+        "en": "nomadic lifestyle"
+      }
+    ],
+    "name": "Annotating Media of Bruno Manser",
+    "shortcode": "0813",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658434/switzerland.html",
+        "text": "Switzerland"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/1733038/sarawak.html",
+        "text": "Sarawak"
+      }
+    ],
+    "startDate": "2014-05-01",
+    "temporalCoverage": [
+      {
+        "de": "1984 - 2000",
+        "en": "1984 - 2000",
+        "fr": "1984 - 2000"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://data.dasch.swiss/bmf/",
+      "text": "Discover Project Data"
+    },
+    "secondaryURL": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://www.bmf.ch/",
+      "text": "External Project Website"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0813-dataset-001",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The dataset contains data of digitized diaries, video footage, photographs and other media of Bruno Manser"
+        }
+      ],
+      "accessConditions": "restricted",
+      "howToCite": "Bruno Manser/Bruno Manser Fonds",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        },
+        {
+          "en": "Penan"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2021-09-02",
+          "license": {
+            "__type": "URL",
+            "type": "URL",
+            "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+            "text": "CC BY-NC-ND"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0813-person-001",
+          "roles": [
+            "Projektleiter"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0813-person-002",
+          "roles": [
+            "Author"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0813-organization-001",
+          "roles": [
+            "Editor"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Annotating Media of Bruno Manser",
+      "typeOfData": [
+        "Image",
+        "Video",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0813-person-001",
+      "__type": "Person",
+      "email": "erwin.zbinden@bmf.ch",
+      "familyNames": [
+        "Zbinden"
+      ],
+      "givenNames": [
+        "Erwin"
+      ],
+      "jobTitles": [
+        "Leiter Dokumentationsstelle"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0813-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0813-person-002",
+      "__type": "Person",
+      "familyNames": [
+        "Manser"
+      ],
+      "givenNames": [
+        "Bruno"
+      ],
+      "jobTitles": [
+        "Creator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0813-organization-001"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0813-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Socinstrasse 37",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "info@bmf.ch",
+      "name": "Bruno Manser Fonds",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.bmf.ch/",
+        "text": "https://www.bmf.ch/"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0813-grant-001",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0813-organization-001"
+      ]
+    }
+  ]
+}

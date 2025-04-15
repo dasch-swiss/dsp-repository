@@ -1,0 +1,2284 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Life Histories of Theban Tombs (2023). DaSCH. https://ark.dasch.swiss/ark:/72163/1/0820",
+    "teaserText": "LHTT focuses on a cluster of tombs in the Theban Necropolis (Egypt). It investigates the evolution of the hillside and explores the history of the tombs from early 2nd mill. BCE to 20th c. CE.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0820-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "LHTT"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0820-person-000",
+    "description": {
+      "en": "The University of Basel, Switzerland, has been conducting an overarching archaeological project on “Life Histories of Theban Tombs” (LHTT) at the ancient hillside cemetery of Sheikh ‘Abd el-Qurna (SAQ) in Western Thebes since November 2015. In cooperation with partners at the ETH and the University of Zurich and an international expert team, LHTT investigates two clusters of mostly unfinished rock-cut tombs from the beginning of the Middle Kingdom (1900–1750 BCE) and the mid-Eighteenth Dynasty (c. 1450‒1400 BCE). The latter group of tombs can be understood as part of a planned cemetery opened for a small elite with close personal links to Pharaohs Thutmose III and Amenhotep II.\n\nThese tombs share a long use history. Distinction can be made between their “systemic” use, including their creation, decoration, use and reuse as sacred spaces for burials and cultic performance during Antiquity (not excluding phases of severe looting and damage), and “non-systemic” use in more recent times, notably as dwelling space for Coptic monks from the 6th to the 8th centuries CE, as well as modern villagers during the 19th and 20th centuries.\n\nThe project promotes the interaction between Egyptology, archaeology, art history, philology, physical anthropology, natural and computer sciences, geomatics, and several archaeometrical fields. It also aims at analysing the emergence and life cycles of the investigated tombs in their natural and built environment. Research focuses on landscape development, including recent activities in the cemetery and in individual tombs, tomb construction and decoration practices, reception, and funerary and domestic (re)uses of the tombs over time. \n\nThe archaeological site stretches over the western and central parts of the SAQ hill; it includes an area covered by a huge cone of debris (AU1000) and comprises two clusters of rock cut tombs: TT95A‒C and K85 in the west, and TT84-K453-K90-K555 in the centre of the hillside. Tomb K555 was, until recently, buried beneath debris accumulations of AU1000. It is currently being excavated (courtyard and inner halls). To the east of TT84 lie the remains of a construction site (AU6000), which were also re-excavated.\n\nThe publication plan is divided in two axes. On the one hand, groups of relevant finds from the first cluster of tombs (TT95A–C and K85) are the subject of various separate articles, some of which are already published in a single volume (see Gnirs (ed.) 2021). On the other hand, the complete study of the decorative programmes of TT84 and K555 (texts and iconography), including archaeological finds from the recent excavations of K555 and area AU1000, is ongoing.",
+      "ar": "\nتقوم جامعة بازل السويسرية منذ نوفمبر 2015 بتنفيذ مشروع أثري شامل بعنوان \"قصص الحياة في مقابر طيبة\" في الجبانة القديمة بتل الشيخ عبد القرنة في طيبة الغربية. من خلال التعاون مع شركاء من المعهد السويسري الفيدرالي للتكنولوجيا وجامعة زيورخ ومع فريق من الخبراء الدوليين يقوم المشروع ببحث ودراسة مجموعتين من المقابر المنقورة في الصخر غير المكتملة التي يعود تاريخها إلى بداية عصر الدولة الوسطى (1900-1750 قبل الميلاد) ومنتصف الأسرة الثامنة عشرة (حوالي 1450-1400 قبل الميلاد). يمكن فهم المجموعة الأحدث من هذه المقابر بوصفها جزءًا من جبانة خُصصت لنخبة محدودة كانت تتمتع بعلاقات شخصية مع الملكين تحتمس الثالث وأمنحتب الثاني.  \nتتشارك هذه المقابر تاريخًا طويلًا من الاستخدام. ويمكن التمييز بين استخدامها \"التقليدي\"، بما في ذلك إنشاؤها وزخرفتها واستخدامها وإعادة استخدامها باعتبارها أماكن مقدسة لدفن الموتى ولممارسة الشعائر الدينية في العصور القديمة (لا يُستنثى من ذلك مراحل النهب والتخريب الشديدين)، وبين استخدامها \"غير التقليدي\" في الآونة الأخيرة، لا سيما استخدامها محلًا لإقامة الرهبان الأقباط من القرن السادس إلى القرن الثامن الميلاديين ولسكن القرويين المحليين في العصر الحديث خلال القرنين التاسع عشر والعشرين. \nيعزز المشروع التفاعل والتعاون بين علم المصريات وعلم الآثار وتاريخ الفن وفقه اللغة والأنثروبولوجيا الفيزيائية وعلوم الطبيعة وعلوم الحاسوب والهندسة الجيولوجية والعديد من العلوم الأثرية. كما يهدف المشروع إلى دراسة نشأة المقابر محل البحث ودورات الحياة بها في بيئتها الطبيعية وتلك التي هي من صنع الإنسان. تركز الأبحاث على تطور الجغرافيا الأثرية للموقع، بما في ذلك الأنشطة الحديثة في الجبانة وفي المقابر الفردية وممارسات بناء المقابر وزخرفتها واستقبال الموتى والاستخدامات أو إعادة الاستخدامات الجنائزية والسكنية للمقابر على مر العصور. \nيمتد الموقع الأثري للمشروع في القسمين الغربي والأوسطي من تل الشيخ عبد القرنة، ويشمل منطقة تغطيها كومة ضخمة من الرديم (الوحدة الأثرية 1000AU). يضم الموقع مجموعتين من المقابر المنقورة في الصخر: TT95A-C  و K85 في القسم الغربي من التل، و TT84-K453-K90-K555 في القسم الأوسطي منه. كانت المقبرة K555 حتى وقت قريب مدفونة تحت الرديم المتراكم القادم من الوحدة الأثرية AU1000. تخضع هذه المقبرة في الوقت الراهن إلى أعمال التنقيب (فناء المقبرة وقاعاتها الداخلية). وتقع إلى الشرق من المقبرة TT84 بقايا موقع بناء (الوحدة الأثرية AU6000) حيث أعاد المشروع إجراء أعمال التنقيب فيها أيضًا.\nتنقسم خطة النشر العلمي لهذه المقابر ومحتوياتها إلى محورين. يشمل المحور الأول نشر مجموعات من الآثار المكتشفة ذات الصلة القادمة من المجموعة الأولى من المقابر (TT95A-C، K85) في العديد من المقالات الفردية، بعضها منشور بالفعل في مجلد واحد (انظر: Gnirs (ed.) 2021). ويشمل المحور الثاني نشر الدراسة المتكاملة الجارية لممارسات وبرامج زخرفة المقبرتين TT84 و K555 (النصوص والمناظر)، بما في ذلك الآثار التي أسفرت عنها أعمال التنقيب الأخيرة في المقبرة K555 وفي منطقة الوحدة الأثرية AU1000.\n"
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/550512",
+        "text": "Stratigraphy "
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/550510",
+        "text": "Philology "
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/550601",
+        "text": "History of architecture"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/550502",
+        "text": "Ceramology"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/550602",
+        "text": "History of art"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/2402",
+        "text": "Anthropology (physical) "
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/550501",
+        "text": "Archaeology"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/2506",
+        "text": "Geology"
+      },
+      {
+        "en": "10303 Ancient history and Classical studies"
+      },
+      {
+        "en": "10402 Archaeology"
+      }
+    ],
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0820-organization-000",
+      "http://ns.dasch.swiss/repository#dsp-0820-organization-012",
+      "http://ns.dasch.swiss/repository#dsp-0820-organization-013"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0820-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "Archaeobotany"
+      },
+      {
+        "en": "Archaeology"
+      },
+      {
+        "en": "Archaeozoology"
+      },
+      {
+        "en": "Art history"
+      },
+      {
+        "en": "Egyptology"
+      },
+      {
+        "en": "Elite society"
+      },
+      {
+        "en": "Geology"
+      },
+      {
+        "en": "Landscape Archaeology"
+      },
+      {
+        "en": "Philology"
+      },
+      {
+        "en": "Physical Anthropology"
+      },
+      {
+        "en": "Sheikh ‘Abd el-Qurna"
+      },
+      {
+        "en": "Theban tombs"
+      },
+      {
+        "en": "Thebes"
+      },
+      {
+        "en": "Tomb Decoration Techniques and Styles"
+      },
+      {
+        "en": "Use and Reuse of Theban Tombs"
+      },
+      {
+        "en": "Western Thebes"
+      },
+      {
+        "ar": "الكلمات المفتاحية:"
+      },
+      {
+        "ar": "علم المصريات "
+      },
+      {
+        "ar": "علم الآثار "
+      },
+      {
+        "ar": "علم الجغرافيا الأثرية "
+      },
+      {
+        "ar": "تاريخ الفن "
+      },
+      {
+        "ar": "فقه اللغة "
+      },
+      {
+        "ar": "الأنثروبولوجيا الفيزيائية"
+      },
+      {
+        "ar": "علم البقايا النباتية  "
+      },
+      {
+        "ar": "علم البقايا الحيوانية "
+      },
+      {
+        "ar": "الجيولوجيا "
+      },
+      {
+        "ar": "مقابر طيبة "
+      },
+      {
+        "ar": "مجتمع النخبة"
+      },
+      {
+        "ar": "طيبة "
+      },
+      {
+        "ar": "طيبة الغربية"
+      },
+      {
+        "ar": "الشيخ عبد القرنة "
+      },
+      {
+        "ar": "تقنيات وأساليب زخرفة المقابر "
+      },
+      {
+        "ar": "استخدام وإعادة استخدام مقابر طيبة  "
+      }
+    ],
+    "name": "Life Histories of Theban Tombs",
+    "publications": [
+      {
+        "text": "1. Sartori, M., “Tombe tebane in dialogo. TT 84, TT95 e la rete di committenti”, in Di Natale A. & Basile C. (eds.), Atti del XIX Convegno di Egittologia e Papirologia, Siracusa, 1-4 Ottobre 2020, Quaderni del Museo del Papiro XVIII, Siracuse, 2022, 47-56."
+      },
+      {
+        "text": "2. Hunkeler, Ch., “Fragments of a Ramesside Coffin Ensemble: What Information Can Be Gained?”, in Kilian, A., & Zöller-Engelhardt, M. (eds.), Excavating the Extraordinary. Challenges and Merit of Working with Small Finds, Heidelberg, Propylaeum, 2021, 155-180."
+      },
+      {
+        "text": "3. Loprieno-Gnirs, A. (ed.), Life Histories of Theban Tombs. Transdisciplinary Investigations of a Cluster of Rock-Cut Tombs at Sheikh 'Abd el-Qurna, Cairo, American University Press, 2021."
+      },
+      {
+        "text": "4. Sartori, M., “Die visuelle Komposition „Gard. R4” („Brot auf Schilfmatte“) zwischen schriftlicher und bildlicher Repräsentation\", in Backes, B. & Serova, D. (eds.), (Un)Sterblichkeit: Schrift–Körper–Kult: Beiträge des neunten Berliner Arbeitskreises Junge Aegyptologen, Berlin, Wiesbaden, Harrassowitz, 2020, 189-200."
+      },
+      {
+        "text": "5. Sartori, M., “Art as Writing, Writing as Art. Case Studies from Selected New Kingdom Theban Tombs”, in Graves, C. (ed.), Proceedings of the 4th British Egyptology Congress, Manchester, London, Egypt Exploration Society, 2020, 124-134."
+      },
+      {
+        "text": "6. Hunkeler, Ch., “Rest in Pieces. Fragments of a Twenty-fifth/Twenty-sixth Dynasty Burial Ensemble” in Dawson, J. & Strudwick, H. (eds.), Ancient Egyptian Coffins. Past – Present – Future, Philadelphia-Oxford, Oxbow Books, 2019, 203."
+      },
+      {
+        "text": "7. Ziegler, M., Colldeweih, R., Wolter, A., Loprieno-Gnirs, A., “Rock Mass Quality and Preliminary Analysis of the Stability of Ancient Rock-cut Theban Tombs at Sheikh ‘Abd el-Qurna, Egypt” in Bulletin of Engineering Geology and the Environment, 2019, 1–27."
+      },
+      {
+        "text": "8. Loprieno-Gnirs, A., “Creuser une tombe dans la colline thébaine : le projet archéologique Life Histories of Theban Tombs de l'université de Bâle\" in Bulletin de la société française d'égyptologie 199, 2018, 100–126."
+      },
+      {
+        "text": "9. Friedli, E., Banz, J., Gojcic, Z., Wieser, A., “Fusion of Laser Scanning and Photogrammetric Data for the Documentation and VR Visualization of an Archaeological Tomb Complex” in FIG 2018, Embracing our Smart World where the Continents Connect Proceedings, Istanbul, Copenhagen, International Federation of Surveyors (FIG), 2018."
+      },
+      {
+        "text": "10. Underwood, M., “Domestic Occupation of Theban Tomb 95 in the First Millennium AD” in Di Biase-Dyson, C. & Donovan, L. (eds.), The Cultural Manifestation of Religious Experience. Studies in Honor of Boyo G. Ockinga, Münster, Ugarit Verlag, 2017, 225–240."
+      }
+    ],
+    "shortcode": "0820",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/347342",
+        "text": "Thebes"
+      },
+      {
+        "__type": "URL",
+        "type": "Pleiades",
+        "url": "https://pleiades.stoa.org/places/786050",
+        "text": "Thebes East"
+      },
+      {
+        "__type": "URL",
+        "type": "Pleiades",
+        "url": "https://pleiades.stoa.org/places/786067",
+        "text": "Thebes West "
+      }
+    ],
+    "startDate": "2015-11-01",
+    "temporalCoverage": [
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qk76zkb23",
+        "text": "Middle Kingdom"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qk76zxgwt",
+        "text": "Second Intermediate Period"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qk76zvjkw",
+        "text": "New Kingdom"
+      },
+      {
+        "__type": "URL",
+        "type": "Chronontology",
+        "url": "http://chronontology.dainst.org/period/GnjMPsF5f2mQ",
+        "text": "New Kingdom (Chronontology)"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qk76zpmnv",
+        "text": "Third Intermediate Period"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qk76zh6n2",
+        "text": "Late Period"
+      },
+      {
+        "__type": "URL",
+        "type": "Chronontology",
+        "url": "https://chronontology.dainst.org/period/TyinwInl5SJ0",
+        "text": "Late Period (Chronontology)"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qk76zgqb7",
+        "text": "Persian Period"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qk76zbv62",
+        "text": "Roman"
+      },
+      {
+        "__type": "URL",
+        "type": "Chronontology",
+        "url": "https://chronontology.dainst.org/period/XHRCuCDjtgu5",
+        "text": "Coptic (culture or style)"
+      },
+      {
+        "__type": "URL",
+        "type": "Chronontology",
+        "url": "https://chronontology.dainst.org/period/uzwK9AAK8Clj",
+        "text": "Ottoman period"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://lhtt.philhist.unibas.ch/",
+      "text": "External Project Website"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "AU1000 – AU1080 from Debris Hill (above K555)"
+        },
+        {
+          "en": "All Data from AU6000"
+        },
+        {
+          "en": "All Data from K85"
+        },
+        {
+          "en": "All Data from TT95"
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "en": "Part 1 of LHTT Data"
+        }
+      ],
+      "accessConditions": "closed",
+      "dateCreated": "2023-01-01",
+      "howToCite": "Life Histories of Theban Tombs (2023). DaSCH. https://ark.dasch.swiss/ark:/72163/1/0820",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "en": "French",
+          "de": "Französisch",
+          "fr": "français"
+        },
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2023-12-06",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-nc/4.0/",
+            "text": "CC BY-NC 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-000",
+          "roles": [
+            "Project Director"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-001",
+          "roles": [
+            "Project Director"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-002",
+          "roles": [
+            "Project Coordinator, Field Director"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-003",
+          "roles": [
+            "Scientific Advisor, Supervisor of BA Thesis (Selina Bächli)"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-004",
+          "roles": [
+            "Scientific Advisor, Supervisor of PhD Thesis (Marina Sartori)"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-005",
+          "roles": [
+            "Scientific Advisor, Archaeological Project Consultant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-006",
+          "roles": [
+            "Scientific Advisor, Head of Geodetic Team"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-007",
+          "roles": [
+            "Scientific Advisor, Head of Geological Team, Supervisor of MA Thesis (Rachael Colldeweih)"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-008",
+          "roles": [
+            "Research Team Member, Sedimentology"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-009",
+          "roles": [
+            "Research Team Member, Conservation assistant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-010",
+          "roles": [
+            "Archaeological Illustrator, Illustrations of archaeological artifacts, Digital visualizations of tomb paintings"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-011",
+          "roles": [
+            "Project Assistant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-012",
+          "roles": [
+            "Research Team Member, BA Thesis: “Die Mumie der Tabaketnetmut: Virtuelle Rekonstruktion einer altägyptischen Bestattung”"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-013",
+          "roles": [
+            "Research Team Member, Burial and domestic pottery from the Middle Bronze Age to recent times"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-014",
+          "roles": [
+            "Research Team Member, Orthopedic assessments on skeletons and mummies"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-015",
+          "roles": [
+            "Research Team Member, Illustrations of ancient tools and work Processes"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-016",
+          "roles": [
+            "Research Team Member, Litho-stratigraphy, Rock mass behavior, MA Thesis: “Geological Investigations of Selected Theban Tombs, Luxor (Egypt)”"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-017",
+          "roles": [
+            "Research Team Member, Egyptological study of tomb decorations – conception and reception including art historical and sociological aspects"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-018",
+          "roles": [
+            "Research Team Member, Philological and material studies of Book of the Dead papyri"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-019",
+          "roles": [
+            "Editor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-020",
+          "roles": [
+            "Research Team Member, Wooden and cartonnage body envelopes"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-021",
+          "roles": [
+            "Student Assistant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-022",
+          "roles": [
+            "Geodetic and photogrammetric landscape, tomb mapping, 3D modelling"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-023",
+          "roles": [
+            "Student Assistant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-024",
+          "roles": [
+            "Research Team Member, Geodetic and photogrammetric landscape, tomb mapping, 3D modelling"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-025",
+          "roles": [
+            "Research Team Member, Wood conservation"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-026",
+          "roles": [
+            "Research Team Member, Ancient plant materials"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-027",
+          "roles": [
+            "Research Team Member, Wooden and cartonnage body envelopes"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-028",
+          "roles": [
+            "Project Consultant, Translator, Research Team Member, Arabic manuscripts from the late 19th-20th Century"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-029",
+          "roles": [
+            "Research Team Member, Ancient plant materials and Flower Garlands"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-030",
+          "roles": [
+            "Archaeological photographer, Photogrammetry of tomb architecture"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-031",
+          "roles": [
+            "Consultant, Geological assessment of rock proveniences"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-032",
+          "roles": [
+            "Research Team Member, Osteological and paleopathological assessments on skeletons and mummies, histological and DNA sampling, mummification practices"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-033",
+          "roles": [
+            "Student Assistant, Excavation Direction"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-034",
+          "roles": [
+            "Consultant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-035",
+          "roles": [
+            "Student Assistant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-036",
+          "roles": [
+            "Research Team Member"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-037",
+          "roles": [
+            "Archaeological Assistant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-038",
+          "roles": [
+            "Research Team Member, Epigrapher, Philological study of hieratic and Coptic text sources"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-039",
+          "roles": [
+            "Consultant, Statistic projections of excavation volumes in ancient tomb construction and of tools’ wear"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-040",
+          "roles": [
+            "Research Team Member, Chief Excavator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-041",
+          "roles": [
+            "Research Team Member, Epigrapher, Philological and orthographic studies of tomb inscriptions"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-042",
+          "roles": [
+            "Conservator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-043",
+          "roles": [
+            "Research Team Member, Excavation Direction, Development of excavation methods, Application of photogrammetric procedures in field archaeology"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-044",
+          "roles": [
+            "Consultant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-045",
+          "roles": [
+            "Research Team Member, Excavation Direction"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-046",
+          "roles": [
+            "Research Team Member, PhD Thesis: “Visual Studies Applied to Egyptian Tomb Wall Paintings”"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-047",
+          "roles": [
+            "Research Team Member, Ancient textiles, MA thesis “Textile Funde aus den ägyptischen Gräbern TT95A und TT95B. Eine statistische Analyse der Zusammensetzung von Grabbeigaben“"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-048",
+          "roles": [
+            "Research Team Member"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-049",
+          "roles": [
+            "Research Team Member, Stomatological assessments on skeletons and mummies"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-050",
+          "roles": [
+            "Research Team Member, Ancient animal materials"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-051",
+          "roles": [
+            "IT Specialist, Development of database structure and interface design, Processing of photogrammetric models"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-052",
+          "roles": [
+            "Research Team Member, Leather material"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-053",
+          "roles": [
+            "Research Team Member, Database Manager, Analyses of finds and archaeological mass data"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-054",
+          "roles": [
+            "Research Team Member, Rock slope instabilities and behaviour"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0820-person-055",
+          "roles": [
+            "Student Assistant"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "AU10000+ (TT95) – AU1 (K85) – AU6000 – AU1000-1080 (Debris Hill)",
+      "typeOfData": [
+        "Image",
+        "Video",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-001",
+      "__type": "Person",
+      "email": "frank.ruehli@iem.uzh.ch",
+      "familyNames": [
+        "Rühli"
+      ],
+      "givenNames": [
+        "Frank",
+        "Jakobus"
+      ],
+      "jobTitles": [
+        "Director of the Institute of Evolutionary Medicine (IEM), Zürich",
+        "Head Museum‚ Medical Collection and Human Remains Group",
+        "Head Paleopathology and Mummy Studies Group"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-002"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.iem.uzh.ch/en/people/dir/frankruehli.html",
+          "text": "https://www.iem.uzh.ch/en/people/dir/frankruehli.html"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-002",
+      "__type": "Person",
+      "email": "andrea.gnirs@unibas.ch",
+      "familyNames": [
+        "Loprieno-Gnirs"
+      ],
+      "givenNames": [
+        "Andrea"
+      ],
+      "jobTitles": [
+        "Egyptologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://daw.philhist.unibas.ch/de/personen/andrea-loprieno-gnirs/",
+          "text": "https://daw.philhist.unibas.ch/de/personen/andrea-loprieno-gnirs/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-003",
+      "__type": "Person",
+      "familyNames": [
+        "Heeb"
+      ],
+      "givenNames": [
+        "Niklaus"
+      ],
+      "jobTitles": [
+        "Professor (Knowledge Visualization, Design)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-004"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.zhdk.ch/person/prof-niklaus-heeb-6114",
+          "text": "https://www.zhdk.ch/person/prof-niklaus-heeb-6114"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-004",
+      "__type": "Person",
+      "email": "a.loprieno@unibas.ch",
+      "familyNames": [
+        "Loprieno"
+      ],
+      "givenNames": [
+        "Antonio"
+      ],
+      "jobTitles": [
+        "Professor (Egyptology, History of Institutions)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://wwz.unibas.ch/de/personen/antonio-loprieno/",
+          "text": "https://wwz.unibas.ch/de/personen/antonio-loprieno/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-005",
+      "__type": "Person",
+      "familyNames": [
+        "Turck"
+      ],
+      "givenNames": [
+        "Rouven"
+      ],
+      "jobTitles": [
+        "Archaeologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-005"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.archaeologie.uzh.ch/de/prehist/portrait/Personen/Dr.-Ruven-Turck.html",
+          "text": "https://www.archaeologie.uzh.ch/de/prehist/portrait/Personen/Dr.-Ruven-Turck.html"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-006",
+      "__type": "Person",
+      "familyNames": [
+        "Wieser"
+      ],
+      "givenNames": [
+        "Andreas"
+      ],
+      "jobTitles": [
+        "Professor (Geosensors and Engineering Geodesy)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-003"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://gseg.igp.ethz.ch/people/group-head/prof-dr--andreas-wieser.html",
+          "text": "https://gseg.igp.ethz.ch/people/group-head/prof-dr--andreas-wieser.html"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-007",
+      "__type": "Person",
+      "familyNames": [
+        "Ziegler"
+      ],
+      "givenNames": [
+        "Martin"
+      ],
+      "jobTitles": [
+        "Engineering Geologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-003"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://erdw.ethz.ch/personen/profil.MTY5MzUy.TGlzdC83NzMsOTI0MjA1OTI2.html",
+          "text": "https://erdw.ethz.ch/personen/profil.MTY5MzUy.TGlzdC83NzMsOTI0MjA1OTI2.html"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-008",
+      "__type": "Person",
+      "familyNames": [
+        "‘Abd el-Monem"
+      ],
+      "givenNames": [
+        "Hossam"
+      ],
+      "jobTitles": [
+        "Geologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-011"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-009",
+      "__type": "Person",
+      "familyNames": [
+        "Ahmed"
+      ],
+      "givenNames": [
+        "Sayed"
+      ],
+      "jobTitles": [
+        "Conservator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-014"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-010",
+      "__type": "Person",
+      "familyNames": [
+        "Aeschlimann-Langer"
+      ],
+      "givenNames": [
+        "Martina"
+      ],
+      "jobTitles": [
+        "Illustrator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.aeschlimann-illustration.ch/",
+          "text": "https://www.aeschlimann-illustration.ch/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-011",
+      "__type": "Person",
+      "familyNames": [
+        "Arpagaus"
+      ],
+      "givenNames": [
+        "Daniel"
+      ],
+      "jobTitles": [
+        "Doctoral Student (Egyptology)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-012",
+      "__type": "Person",
+      "familyNames": [
+        "Bächli"
+      ],
+      "givenNames": [
+        "Selina"
+      ],
+      "jobTitles": [
+        "Scientific Illustrator (BA)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-004"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://selinabaechli.ch/",
+          "text": "https://selinabaechli.ch/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-013",
+      "__type": "Person",
+      "familyNames": [
+        "Barahona-Mendieta"
+      ],
+      "givenNames": [
+        "Zulema"
+      ],
+      "jobTitles": [
+        "Ceramologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.orient-mediterranee.com/member/barahona-mendieta/",
+          "text": "https://www.orient-mediterranee.com/member/barahona-mendieta/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-014",
+      "__type": "Person",
+      "familyNames": [
+        "Böni"
+      ],
+      "givenNames": [
+        "Thomas"
+      ],
+      "jobTitles": [
+        "Orthopedist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-005"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.balgrist.ch/angebot/fachbereiche/tumore/thomas-boeni/",
+          "text": "https://www.balgrist.ch/angebot/fachbereiche/tumore/thomas-boeni/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-015",
+      "__type": "Person",
+      "familyNames": [
+        "Bruderer"
+      ],
+      "givenNames": [
+        "Oliver"
+      ],
+      "jobTitles": [
+        "Scientific Illustrator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-004"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://archaeovisual.ch/",
+          "text": "https://archaeovisual.ch/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-016",
+      "__type": "Person",
+      "familyNames": [
+        "Colldeweih"
+      ],
+      "givenNames": [
+        "Rachael"
+      ],
+      "jobTitles": [
+        "Geologist (MA)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-003"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.linkedin.com/in/rachael-colldeweih-0166a057/",
+          "text": "https://www.linkedin.com/in/rachael-colldeweih-0166a057/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-017",
+      "__type": "Person",
+      "email": "alexis.dendoncker@unibas.ch",
+      "familyNames": [
+        "Den Doncker"
+      ],
+      "givenNames": [
+        "Alexis"
+      ],
+      "jobTitles": [
+        "Assistant Post-Doc (Chair of Egyptology)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://unibas.academia.edu/AlexisDenDoncker",
+          "text": "https://unibas.academia.edu/AlexisDenDoncker"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-018",
+      "__type": "Person",
+      "familyNames": [
+        "Díaz-Iglesias"
+      ],
+      "givenNames": [
+        "Lucía"
+      ],
+      "jobTitles": [
+        "Egyptologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-006"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://cchs.csic.es/es/personal/lucia-elena-diaz-iglesias-llanos",
+          "text": "https://cchs.csic.es/es/personal/lucia-elena-diaz-iglesias-llanos"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-019",
+      "__type": "Person",
+      "familyNames": [
+        "Droux"
+      ],
+      "givenNames": [
+        "Xavier"
+      ],
+      "jobTitles": [
+        "Egyptologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.linkedin.com/in/xavier-droux-230449156/",
+          "text": "https://www.linkedin.com/in/xavier-droux-230449156/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-020",
+      "__type": "Person",
+      "familyNames": [
+        "Fetler"
+      ],
+      "givenNames": [
+        "Stéphane"
+      ],
+      "jobTitles": [
+        "Conservator",
+        "Egyptologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-007"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.linkedin.com/in/stephane-fetler-25158383/",
+          "text": "https://www.linkedin.com/in/stephane-fetler-25158383/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-021",
+      "__type": "Person",
+      "familyNames": [
+        "Freijo"
+      ],
+      "givenNames": [
+        "Stephan"
+      ],
+      "jobTitles": [
+        "Student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-022",
+      "__type": "Person",
+      "familyNames": [
+        "Friedli"
+      ],
+      "givenNames": [
+        "Ephraim"
+      ],
+      "jobTitles": [
+        "Geodesist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-003"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.linkedin.com/in/ephraim-friedli-91075115a/",
+          "text": "https://www.linkedin.com/in/ephraim-friedli-91075115a/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-023",
+      "__type": "Person",
+      "familyNames": [
+        "Gieben"
+      ],
+      "givenNames": [
+        "Charlotte"
+      ],
+      "jobTitles": [
+        "Student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.linkedin.com/in/charlotte-gieben/",
+          "text": "https://www.linkedin.com/in/charlotte-gieben/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-024",
+      "__type": "Person",
+      "familyNames": [
+        "Gojcic"
+      ],
+      "givenNames": [
+        "Zan"
+      ],
+      "jobTitles": [
+        "Geodesist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-003"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://zgojcic.github.io/",
+          "text": "https://zgojcic.github.io/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-025",
+      "__type": "Person",
+      "familyNames": [
+        "El-Hadidi"
+      ],
+      "givenNames": [
+        "Nesrin"
+      ],
+      "jobTitles": [
+        "Scientific Conservator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-008"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://scholar.cu.edu.eg/?q=nesrin/biocv",
+          "text": "https://scholar.cu.edu.eg/?q=nesrin/biocv"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-026",
+      "__type": "Person",
+      "familyNames": [
+        "Hamdy"
+      ],
+      "givenNames": [
+        "Rim"
+      ],
+      "jobTitles": [
+        "Archaeobotanist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-008"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://scholar.cu.edu.eg/?q=rimhamdy/",
+          "text": "https://scholar.cu.edu.eg/?q=rimhamdy/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-027",
+      "__type": "Person",
+      "familyNames": [
+        "Hunkeler"
+      ],
+      "givenNames": [
+        "Charlotte"
+      ],
+      "jobTitles": [
+        "Assistant (Chair of Egyptology)",
+        "PhD Candidate (Egyptology)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://daw.philhist.unibas.ch/de/personen/charlotte-hunkeler/",
+          "text": "https://daw.philhist.unibas.ch/de/personen/charlotte-hunkeler/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-028",
+      "__type": "Person",
+      "familyNames": [
+        "Ibrahim"
+      ],
+      "givenNames": [
+        "Mahmoud"
+      ],
+      "jobTitles": [
+        "Project Consultant"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-029",
+      "__type": "Person",
+      "familyNames": [
+        "Jacquat-Bertossa"
+      ],
+      "givenNames": [
+        "Christiane"
+      ],
+      "jobTitles": [
+        "Archaeobotanist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-005"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "http://4dweb.proclim.ch/4dcgi/continuum/en/Detail_Person?22531",
+          "text": "http://4dweb.proclim.ch/4dcgi/continuum/en/Detail_Person?22531"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-030",
+      "__type": "Person",
+      "email": "matjaz.kacicnik@amis.net",
+      "familyNames": [
+        "Kačičnik"
+      ],
+      "givenNames": [
+        "Matjaž"
+      ],
+      "jobTitles": [
+        "Photographer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-031",
+      "__type": "Person",
+      "familyNames": [
+        "Klemm"
+      ],
+      "givenNames": [
+        "Rosemarie"
+      ],
+      "jobTitles": [
+        "Egyptologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-014"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.aegyptologie.uni-muenchen.de/personen/assoziierte/klemm/index.html",
+          "text": "https://www.aegyptologie.uni-muenchen.de/personen/assoziierte/klemm/index.html"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-032",
+      "__type": "Person",
+      "familyNames": [
+        "Kozieradzka-Ogunmakin"
+      ],
+      "givenNames": [
+        "Iwona"
+      ],
+      "jobTitles": [
+        "Anthropologist",
+        "Bioarchaeologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-002"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://research.manchester.ac.uk/en/persons/iwona.kozieradzka-ogunmakin",
+          "text": "https://research.manchester.ac.uk/en/persons/iwona.kozieradzka-ogunmakin"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-033",
+      "__type": "Person",
+      "familyNames": [
+        "Kurmann"
+      ],
+      "givenNames": [
+        "Lara"
+      ],
+      "jobTitles": [
+        "Archaeologist (MA)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.linkedin.com/in/lara-kurmann-aa1356177/",
+          "text": "https://www.linkedin.com/in/lara-kurmann-aa1356177/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-034",
+      "__type": "Person",
+      "familyNames": [
+        "Lopez"
+      ],
+      "givenNames": [
+        "Marcial"
+      ],
+      "jobTitles": [
+        "Master of Stonemasonry"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-009"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-035",
+      "__type": "Person",
+      "familyNames": [
+        "Marty"
+      ],
+      "givenNames": [
+        "Evelyne"
+      ],
+      "jobTitles": [
+        "Student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.linkedin.com/in/evelyne-marty-80257419a/",
+          "text": "https://www.linkedin.com/in/evelyne-marty-80257419a/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-036",
+      "__type": "Person",
+      "familyNames": [
+        "Meyer"
+      ],
+      "givenNames": [
+        "Sabrina"
+      ],
+      "jobTitles": [
+        "Anthropologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-002"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.linkedin.com/in/sabrina-meyer-12977814b/",
+          "text": "https://www.linkedin.com/in/sabrina-meyer-12977814b/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-037",
+      "__type": "Person",
+      "familyNames": [
+        "Mohamed"
+      ],
+      "givenNames": [
+        "Hosny"
+      ],
+      "jobTitles": [
+        "Inspector of the Supreme Council of Antiquities, Egypt"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-014"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-038",
+      "__type": "Person",
+      "familyNames": [
+        "Müller"
+      ],
+      "givenNames": [
+        "Matthias"
+      ],
+      "jobTitles": [
+        "Coptologist",
+        "Egyptologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://daw.philhist.unibas.ch/en/persons/matthias-mueller-kraehenbuehl-1/",
+          "text": "https://daw.philhist.unibas.ch/en/persons/matthias-mueller-kraehenbuehl-1/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-039",
+      "__type": "Person",
+      "familyNames": [
+        "Nutz"
+      ],
+      "givenNames": [
+        "Rainer"
+      ],
+      "jobTitles": [
+        "Egyptologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://soziologie.philhist.unibas.ch/de/personen/rainer-nutz/",
+          "text": "https://soziologie.philhist.unibas.ch/de/personen/rainer-nutz/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-040",
+      "__type": "Person",
+      "familyNames": [
+        "Osman"
+      ],
+      "givenNames": [
+        "‘Abd el-Hamid"
+      ],
+      "jobTitles": [
+        "Rais"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-014"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-041",
+      "__type": "Person",
+      "familyNames": [
+        "Paksi"
+      ],
+      "givenNames": [
+        "Julianna",
+        "Kitty"
+      ],
+      "jobTitles": [
+        "Egyptologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-042",
+      "__type": "Person",
+      "familyNames": [
+        "Peintner"
+      ],
+      "givenNames": [
+        "Erico"
+      ],
+      "jobTitles": [
+        "Scientific Conservator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-043",
+      "__type": "Person",
+      "familyNames": [
+        "Powroznik"
+      ],
+      "givenNames": [
+        "Klaus"
+      ],
+      "jobTitles": [
+        "Archaeologist",
+        "Photographer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.linkedin.com/in/dr-klaus-powroznik-28180747/",
+          "text": "https://www.linkedin.com/in/dr-klaus-powroznik-28180747/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-044",
+      "__type": "Person",
+      "familyNames": [
+        "Reinhard"
+      ],
+      "givenNames": [
+        "Jacques"
+      ],
+      "jobTitles": [
+        "Basketry and Wickerwork Specialist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-014"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://jacquesreinhard.com/",
+          "text": "https://jacquesreinhard.com/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-045",
+      "__type": "Person",
+      "familyNames": [
+        "Richner"
+      ],
+      "givenNames": [
+        "Lukas"
+      ],
+      "jobTitles": [
+        "Archaeologist (MA)",
+        "Geomatician"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-046",
+      "__type": "Person",
+      "familyNames": [
+        "Sartori"
+      ],
+      "givenNames": [
+        "Marina"
+      ],
+      "jobTitles": [
+        "Egyptologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.ames.ox.ac.uk/people/marina-sartori",
+          "text": "https://www.ames.ox.ac.uk/people/marina-sartori"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-047",
+      "__type": "Person",
+      "familyNames": [
+        "Schönhütte"
+      ],
+      "givenNames": [
+        "Nadine"
+      ],
+      "jobTitles": [
+        "Egyptologist (MA)",
+        "MA Student (Textile Conservation)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-048",
+      "__type": "Person",
+      "familyNames": [
+        "Seiler"
+      ],
+      "givenNames": [
+        "Liliane"
+      ],
+      "jobTitles": [
+        "Assistant Radiology"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-049",
+      "__type": "Person",
+      "familyNames": [
+        "Seiler"
+      ],
+      "givenNames": [
+        "Roger"
+      ],
+      "jobTitles": [
+        "Dentist",
+        "Paleopathologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-002"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.iem.uzh.ch/en/people/ppms/rogerseiler.html",
+          "text": "https://www.iem.uzh.ch/en/people/ppms/rogerseiler.html"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-050",
+      "__type": "Person",
+      "familyNames": [
+        "Studer"
+      ],
+      "givenNames": [
+        "Jacqueline"
+      ],
+      "jobTitles": [
+        "Archaeozoologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-010"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.unige.ch/forel/lap/fr/ancienscoll/studer/",
+          "text": "https://www.unige.ch/forel/lap/fr/ancienscoll/studer/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-051",
+      "__type": "Person",
+      "familyNames": [
+        "Unter"
+      ],
+      "givenNames": [
+        "Stephan"
+      ],
+      "jobTitles": [
+        "Computer Scientist (MA)",
+        "Egyptologist (MA)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "http://www.linkedin.com/in/sunter",
+          "text": "www.linkedin.com/in/sunter"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-052",
+      "__type": "Person",
+      "familyNames": [
+        "Veldmeijer"
+      ],
+      "givenNames": [
+        "André"
+      ],
+      "jobTitles": [
+        "Archaeologist",
+        "Paleontologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-014"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "http://www.leatherandshoes.nl",
+          "text": "http://www.leatherandshoes.nl"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-053",
+      "__type": "Person",
+      "email": "noemi.villars@unibas.ch",
+      "familyNames": [
+        "Villars"
+      ],
+      "givenNames": [
+        "Noémi"
+      ],
+      "jobTitles": [
+        "Egyptologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.linkedin.com/in/villarsnoemi/",
+          "text": "https://www.linkedin.com/in/villarsnoemi/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-054",
+      "__type": "Person",
+      "familyNames": [
+        "Wolter"
+      ],
+      "givenNames": [
+        "Andrea"
+      ],
+      "jobTitles": [
+        "Geologist"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-003"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-055",
+      "__type": "Person",
+      "familyNames": [
+        "Zalunardo"
+      ],
+      "givenNames": [
+        "Alina"
+      ],
+      "jobTitles": [
+        "Student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.linkedin.com/in/alina-zalunardo-137b52197/",
+          "text": "https://www.linkedin.com/in/alina-zalunardo-137b52197/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-person-000",
+      "__type": "Person",
+      "email": "s.bickel@unibas.ch",
+      "familyNames": [
+        "Bickel"
+      ],
+      "givenNames": [
+        "Susanne"
+      ],
+      "jobTitles": [
+        "Professor (Chair of Egyptology)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://daw.philhist.unibas.ch/de/personen/susanne-bickel/",
+          "text": "https://daw.philhist.unibas.ch/de/personen/susanne-bickel/"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-006",
+      "__type": "Organization",
+      "name": "Center for Human and Social Sciences, Madrid"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-007",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Université Libre de Bruxelles, Avenue Franklin Roosevelt, 50",
+        "postalCode": "1050",
+        "locality": "Brussels",
+        "country": "Belgium"
+      },
+      "name": "Free University of Brussels",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.ulb.be",
+        "text": "www.ulb.be"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-009",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Basler Münster, Münsterplatz, 9",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "info@muensterbauhuette.ch",
+      "name": "Basler Münsterbauhütte",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.baslermuenster.ch/bauwerk/muensterbauhuette",
+        "text": "www.baslermuenster.ch/bauwerk/muensterbauhuette"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-010",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "24, rue du Général-Dufour",
+        "postalCode": "1211",
+        "locality": "Geneva",
+        "country": "Switzerland"
+      },
+      "name": "University of Geneva",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.unige.ch",
+        "text": "www.unige.ch"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-011",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Al-Geish Street",
+        "postalCode": "",
+        "locality": "Tanta",
+        "country": "Egypt"
+      },
+      "email": "tanta_unv@unv.tanta.edu.eg",
+      "name": "Tanta University",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.tanta.edu.eg",
+        "text": "www.tanta.edu.eg"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-012",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Dufourstrasse 25",
+        "postalCode": "4052",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "name": "Gertrud Mayer Stiftung Basel"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-013",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Generalsekretariat SLSA, Museum Rietberg Zürich, Gablerstrasse 15",
+        "postalCode": "8002",
+        "locality": "Zürich",
+        "country": "Switzerland"
+      },
+      "email": "postfach@slsa.ch",
+      "name": "Schweizerisch-Liechtensteinische Stiftung für archäologische Forschungen im Ausland (SLSA)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.slsa.ch/",
+        "text": "http://www.slsa.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3",
+        "postalCode": "3001",
+        "locality": "Berne",
+        "country": "Switzerland"
+      },
+      "email": "desk@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.snf.ch",
+        "text": "www.snf.ch"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-008",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "1, Gamaa Street",
+        "postalCode": "12613",
+        "locality": "Giza",
+        "country": "Egypt"
+      },
+      "name": "Cairo University",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.cu.edu.eg",
+        "text": "www.cu.edu.eg"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-004",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Pfingstweidstrasse 96",
+        "postalCode": "8031",
+        "locality": "Zürich",
+        "country": "Switzerland"
+      },
+      "email": "info.admin@zhdk.ch",
+      "name": "Zurich University of the Arts (ZHdK)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.zhdk.ch",
+        "text": "www.zhdk.ch"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-005",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Rämistrasse 71",
+        "postalCode": "8006",
+        "locality": "Zürich",
+        "country": "Switzerland"
+      },
+      "name": "University of Zurich",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.uzh.ch",
+        "text": "www.uzh.ch"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-002",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Universität Zürich, Winterthurerstrasse 190",
+        "postalCode": "8057",
+        "locality": "Zürich",
+        "country": "Switzerland"
+      },
+      "email": "info@iem.uzh.ch",
+      "name": "Institute of Evolutionary Medicine (IEM)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.iem.uzh.ch",
+        "text": "www.iem.uzh.ch"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-003",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Rämistrasse 101",
+        "postalCode": "8092",
+        "locality": "Zürich",
+        "country": "Switzerland"
+      },
+      "name": "ETH Zürich",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.ethz.ch",
+        "text": "www.ethz.ch"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-014",
+      "__type": "Organization",
+      "name": "Other"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Petersgraben 51",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "name": "University of Basel, Department of Ancient Civilisations",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.unibas.ch",
+        "text": "www.unibas.ch"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0820-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0820-organization-000"
+      ],
+      "name": "Project Funding",
+      "number": "162967",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/162967",
+        "text": "https://data.snf.ch/grants/grant/162967"
+      }
+    }
+  ]
+}

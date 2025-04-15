@@ -1,0 +1,431 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Boillat, A., Chedaleux, D., Rohner, J., Cordonier, L., Gaillard, A., Jaouen, L., Rivoal, M., 2018, Personnage et vedettariat au prisme du genre [database] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0107.",
+    "teaserText": "This project studies the mechanisms of the construction of genre representations in the French cinematographic production of the 1940s.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0107-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "stardom"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0107-person-000",
+    "description": {
+      "en": "This project aims to study the mechanisms of the construction of genre representations in the French cinematographic production of the 1940s. The aim is to establish links between the work of different contributors, the status of the stars involved, and the characters they portray on the screen. The genre study is rooted in the examination of various historical sources, particularly screenplays at various stages of writing. The production context of films such as Le Mariage de Chiffon (1942), Occupe-toi d’Amélie (1949) or Le Bon Dieu sans confession (1953) is reconstructed and examined on the basis of documents from the Claude Autant-Lara archive of the Swiss Filmrachives, and considered in the light of the tools forged by film narratology, gender studies, star studies and cultural history. The objective is to develop a “genetic” approach that will make it possible to document the stages of creation by placing them in their socio-historical context.\n\nThe main periodization (1942-1949) corresponds both to the first films officially attributed to Claude Autant-Lara as sole director, to the birth of the trio he formed with his two screenwriters Jean Aurenche and Pierre Bost, and to a pivotal moment for the French star system, which was undergoing a feminization and rejuvenation in the context of occupied France. The stars of our corpus (Odette Joyeux, Micheline Presle or Gérard Philipe) offer emblematic case studies. The initial filmic corpus has been expanded to include Le Bon Dieu sans confession (1953), Le Rouge et le Noir (1954) and Love is my Profession (En cas de malheur, 1958)."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/620301",
+        "text": "Cinematography "
+      },
+      {
+        "en": "10406 Theatre and Cinema"
+      }
+    ],
+    "endDate": "2020-08-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0107-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0107-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "Cultural studies"
+      },
+      {
+        "en": "Film character"
+      },
+      {
+        "en": "Film history"
+      },
+      {
+        "en": "France in the Forties"
+      },
+      {
+        "en": "Gender"
+      },
+      {
+        "en": "Narratology"
+      },
+      {
+        "en": "Popular culture"
+      },
+      {
+        "en": "Star studies"
+      }
+    ],
+    "name": "A Gender Perspective on Film Character and Stardom: Studying the Production of Film Representations in the Forties (Claude Autant-Lara Collection, Swiss Film Archive)",
+    "publications": [
+      {
+        "text": "Boillat Alain (2019), Jean-Pierre Bleys, Claude Autant-Lara, in 1895. Revue de l’association française de recherche sur l’histoire du cinéma, 88, 167-176."
+      },
+      {
+        "text": "Boillat Alain (2020), L'adaptation d'En cas de malheur par Autant-Lara, Aurenche et Bost : une génère scénaristique en contexte, in TRACES, 3, 23-40."
+      },
+      {
+        "text": "Boillat Alain (2020), « Dans les coulisses de la fabrique du personnage : les archives scénaristiques au service des star studies », dans Manon Billaud et Mélissa Gignac (dir.), Quel(s) scénario(s) pour quelle(s) approche(s) du cinéma ?, Paris, AFRHC, chapitre 7."
+      },
+      {
+        "text": "Boillat Alain, Maire Frédéric (2019), Sharing Knowledge between University and Cinémathèque, in Iluminace. The Journal of Film Theory, History, and Aesthetics, 31(1), 45-57."
+      },
+      {
+        "text": "Boillat, Alain (2020), En En cas de malheur de Simenon à Autant-Lara. Essai de génétique scénaristique, Genève, Droz."
+      },
+      {
+        "text": "Chedaleux Delphine (2020), Fabrique et réceptions du pouvoir féminin : Danielle Darrieux dans Le Bon Dieu sans confession, in LeGras Gwénaëlle, Sellier Geneviève (ed.), Presses Universitaires de Bordeaux, Pessac, 203-218."
+      },
+      {
+        "text": "Rohner Jeanne (2018), Les états du personnage : du scénario au film, in Fabula : la recherche en littérature,",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "URL",
+            "url": "https://www.fabula.org/atelier.php?Personnage_filmique",
+            "text": "https://www.fabula.org/atelier.php?Personnage_filmique"
+          }
+        ]
+      },
+      {
+        "text": "Rohner Jeanne (2018), « Occupe-toi d'Amélie! (Claude Autant-Lara, 1949): le théâtre à l'écran », in Philippe Gilles, Boillat Alain (ed.), Impressions Nouvelles, Bruxelles, 205-229."
+      },
+      {
+        "text": "Rohner Jeanne (2020), Danielle Darrieux dans Occupe-toi d’Amélie..! Genèse d’une résurrection, in Le Gras Gwénaëlle, Sellier Geneviève (ed.), Presses Universitaires de Bordeaux, Pessac, 163-174."
+      }
+    ],
+    "shortcode": "0107",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/3017382",
+        "text": "France"
+      }
+    ],
+    "startDate": "2016-07-01",
+    "temporalCoverage": [
+      {
+        "de": "1942-1949",
+        "en": "1942-1949",
+        "fr": "1942-1949"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.ls-prod-server.dasch.swiss/project/0107",
+      "text": "Discover Project Data"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0107-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The ontology of the project comprises 15 distinct classes, 68 properties, mainly describing archive documents (Piece) divided into 7 distinct categories (contractual and legal documents, personal correspondence, published articles, documents related to the organisation of work, script documents, personal documents, documents related to promotion), and listing, for each piece, the natural or legal persons concerned by the writing of the document and, for each page of document, the persons, works and film projects mentioned.\r Some images (pages) are annotated (regions of interest)."
+        }
+      ],
+      "accessConditions": "restricted",
+      "dateCreated": "2018-02-16",
+      "dateModified": "2021-02-02",
+      "datePublished": "2018-02-16",
+      "howToCite": "Boillat, A., Chedaleux, D., Rohner, J., Cordonier, L., Gaillard, A., Jaouen, L., Rivoal, M., 2018, Personnage et vedettariat au prisme du genre [database] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0107.",
+      "languages": [
+        {
+          "en": "French",
+          "de": "Französisch",
+          "fr": "français"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2021-09-02",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "text": "CC BY-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0107-person-000",
+          "roles": [
+            "Project leader",
+            "Data collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0107-person-001",
+          "roles": [
+            "Project member",
+            "Data collector",
+            "Data curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0107-person-002",
+          "roles": [
+            "Project member",
+            "Data collector",
+            "Data curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0107-person-003",
+          "roles": [
+            "Data collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0107-person-004",
+          "roles": [
+            "Data collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0107-person-006",
+          "roles": [
+            "Data curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0107-person-005",
+          "roles": [
+            "Other"
+          ]
+        }
+      ],
+      "status": "Finished",
+      "title": "Base de données Personnage et vedettariat au prisme du genre",
+      "typeOfData": [
+        "Image",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-003",
+      "__type": "Person",
+      "email": "laure.cordonier@unil.ch",
+      "familyNames": [
+        "Cordonier"
+      ],
+      "givenNames": [
+        "Laure"
+      ],
+      "jobTitles": [
+        "PhD student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-004",
+      "__type": "Person",
+      "familyNames": [
+        "Gaillard"
+      ],
+      "givenNames": [
+        "Adrien"
+      ],
+      "jobTitles": [
+        "PhD student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-005",
+      "__type": "Person",
+      "email": "loic.jaouen@unil.ch",
+      "familyNames": [
+        "Jaouen"
+      ],
+      "givenNames": [
+        "Loïc"
+      ],
+      "jobTitles": [
+        "IT support"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-006",
+      "__type": "Person",
+      "email": "marion.rivoal@unil.ch",
+      "familyNames": [
+        "Rivoal"
+      ],
+      "givenNames": [
+        "Marion"
+      ],
+      "jobTitles": [
+        "Research manager"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-4185-7169",
+          "text": "ORCID URL: https://orcid.org/0000-0003-4185-7169"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-000",
+      "__type": "Person",
+      "email": "alain.boillat@unil.ch",
+      "familyNames": [
+        "Boillat"
+      ],
+      "givenNames": [
+        "Alain"
+      ],
+      "jobTitles": [
+        "Full professor"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-2342-395X",
+          "text": "ORCID URL: https://orcid.org/0000-0002-2342-395X"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-001",
+      "__type": "Person",
+      "email": "delphine.chedaleux@utc.fr",
+      "familyNames": [
+        "Chedaleux"
+      ],
+      "givenNames": [
+        "Delphine"
+      ],
+      "jobTitles": [
+        "Post-doctoral researcher"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-5080-8409",
+          "text": "ORCID URL: https://orcid.org/0000-0002-5080-8409"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0107-person-002",
+      "__type": "Person",
+      "email": "jeanne.rohner@unil.ch",
+      "familyNames": [
+        "Rohner"
+      ],
+      "givenNames": [
+        "Jeanne"
+      ],
+      "jobTitles": [
+        "PhD student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0107-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-1537-8140",
+          "text": "ORCID URL: https://orcid.org/0000-0002-1537-8140"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0107-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3 Postfach",
+        "postalCode": "3001",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "desk@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.snf.ch/",
+        "text": "http://www.snf.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0107-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Unicentre",
+        "postalCode": "1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+      },
+      "name": "Université de Lausanne",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.unil.ch/",
+        "text": "https://www.unil.ch/"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0107-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0107-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "166366",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/166366",
+        "text": "https://data.snf.ch/grants/grant/166366"
+      }
+    }
+  ]
+}

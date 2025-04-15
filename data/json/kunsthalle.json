@@ -1,0 +1,416 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Fotoarchiv Kunsthalle Basel (2023). [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080C",
+    "teaserText": "Kunsthalle Basel is Switzerland’s oldest active art museum displaying contemporary art.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-080C-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "de": "fotoarchivkunsthalle"
+      }
+    ],
+    "description": {
+      "en": "Kunsthalle Basel is Switzerland’s oldest active art museum displaying contemporary art. The Photo Archive of Kunsthalle Basel documents the Kunsthalle’s exhibitions from the last century with well over 20,000 photographs. The archive offers a freely accessible insight into the exhibitions, their publications and the works shown. Please be aware that the images are protected by copyright. This database is continuously updated and expanded."
+    },
+    "disciplines": [
+      {
+        "en": "10404 Visual arts and Art history"
+      }
+    ],
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-080C-organization-001",
+      "http://ns.dasch.swiss/repository#dsp-080C-organization-002",
+      "http://ns.dasch.swiss/repository#dsp-080C-organization-003",
+      "http://ns.dasch.swiss/repository#dsp-080C-organization-004",
+      "http://ns.dasch.swiss/repository#dsp-080C-organization-005",
+      "http://ns.dasch.swiss/repository#dsp-080C-organization-006",
+      "http://ns.dasch.swiss/repository#dsp-080C-organization-007",
+      "http://ns.dasch.swiss/repository#dsp-080C-organization-008",
+      "http://ns.dasch.swiss/repository#dsp-080C-organization-009",
+      "http://ns.dasch.swiss/repository#dsp-080C-organization-010"
+    ],
+    "keywords": [
+      {
+        "de": "Basel"
+      },
+      {
+        "de": "Basler Kunstverein"
+      },
+      {
+        "de": "Fotoarchiv"
+      },
+      {
+        "de": "Kunsthalle"
+      },
+      {
+        "de": "Kunsthalle Basel"
+      },
+      {
+        "de": "Lukas Lichtenhan"
+      },
+      {
+        "de": "Zeitgenössische Kunst"
+      }
+    ],
+    "name": "Fotoarchiv Kunsthalle Basel",
+    "shortcode": "080C",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2661604/basel.html",
+        "text": "Basel"
+      }
+    ],
+    "startDate": "2017-06-22",
+    "temporalCoverage": [
+      {
+        "en": "1826 - today"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/ExIK4BHPTaejCzk3saF0UQ",
+      "text": "Discover Project Data"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "Kunsthalle Basel is Switzerland’s oldest active art museum displaying contemporary art. The Photo Archive of Kunsthalle Basel documents the Kunsthalle’s exhibitions from the last century with well over 20,000 photographs. The archive offers a freely accessible insight into the exhibitions, their publications and the works shown. Please be aware that the images are protected by copyright. This database is continuously updated and expanded."
+        }
+      ],
+      "accessConditions": "open",
+      "howToCite": "Fotoarchiv Kunsthalle Basel (2023). [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080C",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-080C-person-001",
+          "roles": [
+            "creator of the project, editor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-080C-person-002",
+          "roles": [
+            "editor, maintainer"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-080C-person-003",
+          "roles": [
+            "editor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-080C-person-000",
+          "roles": [
+            "maintainer, editor"
+          ]
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2023-12-07",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-nc/4.0/deed.en",
+            "text": "CC BY-NC 4.0"
+          }
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Fotoarchiv der Kunsthalle Basel",
+      "typeOfData": [
+        "Image",
+        "XML"
+      ],
+      "urls": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.kunsthallebasel.ch/fotoarchiv/",
+          "text": "Find more information about the database here"
+        }
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-person-000",
+      "__type": "Person",
+      "familyNames": [
+        "Ficco"
+      ],
+      "givenNames": [
+        "Giulia"
+      ],
+      "jobTitles": [
+        "Wiss. Mitarbeiterin"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-person-001",
+      "__type": "Person",
+      "familyNames": [
+        "Schmeling"
+      ],
+      "givenNames": [
+        "Sören"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-person-002",
+      "__type": "Person",
+      "familyNames": [
+        "Berger"
+      ],
+      "givenNames": [
+        "Mara"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-person-003",
+      "__type": "Person",
+      "familyNames": [
+        "Zollinger"
+      ],
+      "givenNames": [
+        "Micha"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-organization-001",
+      "__type": "Organization",
+      "name": "Bundesamt für Kultur"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-organization-002",
+      "__type": "Organization",
+      "name": "UBS Kulturstiftung"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-organization-003",
+      "__type": "Organization",
+      "name": "Kulturelles BL"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-organization-004",
+      "__type": "Organization",
+      "name": "FMB (Freiwilliger Museumsverein Basel)"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-organization-005",
+      "__type": "Organization",
+      "name": "Ernst Göhner Stiftung"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-organization-006",
+      "__type": "Organization",
+      "name": "Sulger Stiftung"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-organization-007",
+      "__type": "Organization",
+      "name": "Sophie und Karl Binding Stiftung"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-organization-008",
+      "__type": "Organization",
+      "name": "Gerda Henkel Stiftung"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-organization-009",
+      "__type": "Organization",
+      "name": "Camille Graeser Stiftung"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-organization-010",
+      "__type": "Organization",
+      "name": "Beisheim Stiftung"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-organization-000",
+      "__type": "Organization",
+      "name": "Basler Kunstverein"
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-001"
+      ],
+      "name": "Bundesamt für Kultur",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.bak.admin.ch/bak/de/home.html",
+        "text": "https://www.bak.admin.ch/bak/de/home.html"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-grant-001",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-002"
+      ],
+      "name": "UBS Kulturstiftung",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.ubs.com/global/de/ubs-society/foundations/culture-foundation.html",
+        "text": "https://www.ubs.com/global/de/ubs-society/foundations/culture-foundation.html"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-grant-002",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-003"
+      ],
+      "name": "Kulturelles BL",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.baselland.ch/politik-und-behorden/direktionen/bildungs-kultur-und-sportdirektion/kultur/kulturelles-bl",
+        "text": "https://www.baselland.ch/politik-und-behorden/direktionen/bildungs-kultur-und-sportdirektion/kultur/kulturelles-bl"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-grant-003",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-004"
+      ],
+      "name": "FMB (Freiwilliger Museumsverein Basel)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.fmb-basel.ch/",
+        "text": "https://www.fmb-basel.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-grant-004",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-005"
+      ],
+      "name": "Ernst Göhner Stiftung",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.ernst-goehner-stiftung.ch/index.php/de",
+        "text": "https://www.ernst-goehner-stiftung.ch/index.php/de"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-grant-005",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-006"
+      ],
+      "name": "Sulger Stiftung",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://stiftungen.stiftungschweiz.ch/organisation/sulger-stiftung",
+        "text": "https://stiftungen.stiftungschweiz.ch/organisation/sulger-stiftung"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-grant-006",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-007"
+      ],
+      "name": "Sophie und Karl Binding Stiftung",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.binding-stiftung.ch/",
+        "text": "https://www.binding-stiftung.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-grant-007",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-008"
+      ],
+      "name": "Gerda Henkel Stiftung",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.gerda-henkel-stiftung.de/",
+        "text": "https://www.gerda-henkel-stiftung.de/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-grant-008",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-009"
+      ],
+      "name": "Camille Graeser Stiftung",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.camille-graeser-stiftung.ch/",
+        "text": "http://www.camille-graeser-stiftung.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-080C-grant-009",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-080C-organization-010"
+      ],
+      "name": "Beisheim Stiftung",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.beisheim-stiftung.com/ch/de",
+        "text": "https://www.beisheim-stiftung.com/ch/de"
+      }
+    }
+  ]
+}

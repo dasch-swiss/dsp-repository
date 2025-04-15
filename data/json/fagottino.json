@@ -1,0 +1,406 @@
+{
+  "$schema": "../../resources/schema-metadata-final.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Agrell, Donna, Domínguez, Áurea, Graziadio, Giovanni Battista, Matthews, Zoë, Viola, Letizia, Plath, Niko, Simian, Ricardo (2023). Fagottino project research articles and documents [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845",
+    "teaserText": "The organological and musicological aspects of small-sized bassoons from the 18th and 19th centuries were the focus of a research team in Basel from 2017–2023.",
+    "datasets": [
+      "https://ns.dasch.swiss/repository#dsp-0845-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "Fagottino research projects"
+      }
+    ],
+    "contactPoint": "https://ns.dasch.swiss/repository#dsp-0845-person-000",
+    "dataManagementPlan": {
+      "__type": "DataManagementPlan",
+      "available": true
+    },
+    "description": {
+      "en": "Small-sized bassoons from the eighteenth and nineteenth centuries and their organological and musicological aspects were the focus of two research projects carried out by a team of researchers from October 2017–April 2023, funded by the Swiss National Science Foundation, and hosted at the Schola Cantorum Basiliensis, Musik Akademie Basel, FHNW (https://www.historical-bassoon.ch/). A third project, “Neue alte Klangkörper”, was carried out as a preliminary step to instrument printing and reconstructions, and successfully tested 3D-CT technologies to produce initial copies of two fagottini (https://www.fhnw.ch/plattformen/3dfagottino/). This trial was funded by Die Mobiliar, Ernst Göhner Stiftung, and the University of Applied Sciences and Arts Northwestern Switzerland (FHNW). \n\n The team explored the history and functions of smaller bassoons from the eighteenth and nineteenth centuries, covering a comprehensive scope of research. Evidence of the usage of these instruments in orchestral, chamber music, opera and sacred settings, as well as in pedagogy, indicate that they formerly played multi-functional roles in musical and cultural life before virtually disappearing in the twentieth century. Imprecise terminology is widespread, leading to questions regarding choice of appropriate instrument size, as well as the necessity to re-evaluate bassoon repertoire. \n\n Outcomes include a complete instrument catalogue with over 120 entries (folder A), photographic material (folders B and C of examined instruments) supplemented by 62 detailed datasets (folders D, E, F, G, H), an annotated suggested repertoire list (folder A), and related articles and links (folder J). Innovative 3-D printing technology was used to create synthetic prototypes of several small-size bassoons (folder I), followed by conventionally-constructed models, enabling a thorough evaluation of organological and musical qualities of each size and type in performance and pedagogical trials. In addition, three representative works with the participation of small bassoons are available in modern editions (folder K). The use of these small bassoons (originals, wooden copies, 3D-prints) in musical practice showed that they are a hitherto unknown but attractive colour, regained for the instrumentarium of the 18th and 19th centuries."
+    },
+    "disciplines": [
+      {
+        "en": "10405 Musicology"
+      }
+    ],
+    "endDate": "2023-04-30",
+    "funders": [
+      "https://ns.dasch.swiss/repository#dsp-0845-organization-001",
+      "https://ns.dasch.swiss/repository#dsp-0845-organization-001"
+    ],
+    "grants": [
+      "https://ns.dasch.swiss/repository#dsp-0845-grant-000",
+      "https://ns.dasch.swiss/repository#dsp-0845-grant-001"
+    ],
+    "keywords": [
+      {
+        "en": "3-D Printing Technology"
+      },
+      {
+        "en": "Bassoon"
+      },
+      {
+        "en": "Fagottino"
+      },
+      {
+        "en": "Historical Wind Instruments"
+      },
+      {
+        "en": "Historically Informed Performance Practice"
+      },
+      {
+        "en": "Music Pedagogy"
+      },
+      {
+        "en": "Musicology"
+      },
+      {
+        "en": "Organology"
+      },
+      {
+        "en": "Reconstruction"
+      },
+      {
+        "en": "Tenoroon"
+      }
+    ],
+    "name": "Fagottini and tenoroons: small-sized bassoons from the 18th and 19th centuries",
+    "publications": [
+      {
+        "text": "Agrell, Donna and Domínguez, Áurea, “Fagottini and tenoroons: small, forgotten giants”, The Double Reed 42/2 (2019), 57–68."
+      },
+      {
+        "text": "Agrell, Donna and Domínguez, Áurea, “Small-sized bassoons from the eighteenth and nineteenth centuries under investigation”, Glareana 67/2 (2018), 58–74. Full text available: ",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "URL",
+            "url": "http://www.gefam.ch/uploads/Glareana_67_2018_2.pdf",
+            "text": "http://www.gefam.ch/uploads/Glareana_67_2018_2.pdf"
+          }
+        ]
+      },
+      {
+        "text": "Domínguez, Áurea,“Fagottino in the Philharmonie de Paris: Researching the largest collection of small-sized bassoons”, in: Glareana 68/2, (2019), 6–19."
+      },
+      {
+        "text": "Domínguez, Áurea. “The Romantic bassoon understood by 19th century performers.” In Geschichte, Bauweise und Repertoire des Fagotts. Michaelstein: Wissner-Verlag (2020), 153–171."
+      }
+    ],
+    "shortcode": "0845",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/6255148/europe.html",
+        "text": "Europe"
+      }
+    ],
+    "startDate": "2017-10-01",
+    "temporalCoverage": [
+      {
+        "__type": "URL",
+        "type": "Chronontology",
+        "url": "https://chronontology.dainst.org/period/IOGdcZ2CU1tz",
+        "text": "18th and 19th Centuries"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/hp1UIqpKS_Kc7j0c5wh5jA",
+      "text": "Discover Project Data"
+    },
+    "secondaryURL": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://www.historical-bassoon.ch/",
+      "text": "External Project Website"
+    },
+    "status": "Finished"
+  },
+  "datasets": [
+    {
+      "__id": "https://ns.dasch.swiss/repository#dsp-0845-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The dataset contains basic data and images of 62 fagottini and tenoroons as well as several articles, including an instrument catalogue of small bassoons covering the key questions addressed during the research project. Furthermore, the dataset contains 3D models of six 3D-CT scanned historical fagottino and tenoroon (FT6; FT30; FT40: FT42; FT44; FT50). Each such Zip file includes the round-bore version, the corrected bore version, and the keys of each instrument. The files are in STL format."
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "en": "Fagottino research projects"
+        }
+      ],
+      "accessConditions": "open",
+      "datePublished": "2023-04-30",
+      "howToCite": "Agrell, Donna, Domínguez, Áurea, Graziadio, Giovanni Battista, Matthews, Zoë, Viola, Letizia, Plath, Niko, Simian, Ricardo (2023). Fagottino project research articles and documents [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845.",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2023-05-05",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by/4.0",
+            "text": "CC BY 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "https://ns.dasch.swiss/repository#dsp-0845-person-000",
+          "roles": [
+            "Research project leader"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "https://ns.dasch.swiss/repository#dsp-0845-person-001",
+          "roles": [
+            "Senior researcher"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "https://ns.dasch.swiss/repository#dsp-0845-person-002",
+          "roles": [
+            "Senior researcher"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "https://ns.dasch.swiss/repository#dsp-0845-person-003",
+          "roles": [
+            "Junior researcher"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "https://ns.dasch.swiss/repository#dsp-0845-person-004",
+          "roles": [
+            "Junior researcher"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "https://ns.dasch.swiss/repository#dsp-0845-person-005",
+          "roles": [
+            "Research project member"
+          ]
+        }
+      ],
+      "status": "Finished",
+      "title": "Fagottini and tenoroons: small-sized bassoons from the 18th and 19th centuries",
+      "typeOfData": [
+        "Image",
+        "Video",
+        "Text"
+      ],
+      "urls": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.historical-bassoon.ch/",
+          "text": "https://www.historical-bassoon.ch/"
+        }
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "https://ns.dasch.swiss/repository#dsp-0845-person-001",
+      "__type": "Person",
+      "email": "donna.agrell@fhnw.ch",
+      "familyNames": [
+        "Agrell"
+      ],
+      "givenNames": [
+        "Donna"
+      ],
+      "jobTitles": [
+        "Prof. Dr."
+      ],
+      "affiliation": [
+        "https://ns.dasch.swiss/repository#dsp-0845-organization-000"
+      ]
+    },
+    {
+      "__id": "https://ns.dasch.swiss/repository#dsp-0845-person-002",
+      "__type": "Person",
+      "email": "aurea.dominguez@fhnw.ch",
+      "secondaryEmail": "aureadominguez@gmail.com",
+      "familyNames": [
+        "Domínguez"
+      ],
+      "givenNames": [
+        "Áurea"
+      ],
+      "jobTitles": [
+        "PhD"
+      ],
+      "affiliation": [
+        "https://ns.dasch.swiss/repository#dsp-0845-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-0225-5221",
+          "text": "ORCID URL: https://orcid.org/0000-0002-0225-5221"
+        }
+      ]
+    },
+    {
+      "__id": "https://ns.dasch.swiss/repository#dsp-0845-person-003",
+      "__type": "Person",
+      "email": "zoe.matthews@fhnw.ch",
+      "familyNames": [
+        "Matthews"
+      ],
+      "givenNames": [
+        "Zoë"
+      ],
+      "jobTitles": [
+        "MA"
+      ],
+      "affiliation": [
+        "https://ns.dasch.swiss/repository#dsp-0845-organization-000"
+      ]
+    },
+    {
+      "__id": "https://ns.dasch.swiss/repository#dsp-0845-person-004",
+      "__type": "Person",
+      "email": "letizia.viola@fhnw.ch",
+      "familyNames": [
+        "Viola"
+      ],
+      "givenNames": [
+        "Letizia"
+      ],
+      "jobTitles": [
+        "MA"
+      ],
+      "affiliation": [
+        "https://ns.dasch.swiss/repository#dsp-0845-organization-000"
+      ]
+    },
+    {
+      "__id": "https://ns.dasch.swiss/repository#dsp-0845-person-005",
+      "__type": "Person",
+      "email": "giovannibattista.graziadio@fhnw.ch",
+      "familyNames": [
+        "Graziadio"
+      ],
+      "givenNames": [
+        "Giovanni",
+        "Battista"
+      ],
+      "jobTitles": [
+        "PhD student"
+      ],
+      "affiliation": [
+        "https://ns.dasch.swiss/repository#dsp-0845-organization-000"
+      ]
+    },
+    {
+      "__id": "https://ns.dasch.swiss/repository#dsp-0845-person-000",
+      "__type": "Person",
+      "email": "thomas.drescher@fhnw.ch",
+      "familyNames": [
+        "Drescher"
+      ],
+      "givenNames": [
+        "Thomas"
+      ],
+      "jobTitles": [
+        "Prof. Dr."
+      ],
+      "affiliation": [
+        "https://ns.dasch.swiss/repository#dsp-0845-organization-000"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "https://ns.dasch.swiss/repository#dsp-0845-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3",
+        "postalCode": "3001",
+        "locality": "Berne",
+        "country": "Switzerland"
+      },
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.snf.ch",
+        "text": "https://www.snf.ch"
+      }
+    },
+    {
+      "__id": "https://ns.dasch.swiss/repository#dsp-0845-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Leonhardsstrasse 6, Postfach",
+        "postalCode": "4009",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "forschung.scb.hsm@fhnw.ch",
+      "name": "Schola Cantorum Basiliensis FHNW",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.fhnw.ch/de/forschung-und-dienstleistungen/musik/schola-cantorum-basiliensis",
+        "text": "https://www.fhnw.ch/de/forschung-und-dienstleistungen/musik/schola-cantorum-basiliensis"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "https://ns.dasch.swiss/repository#dsp-0845-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "https://ns.dasch.swiss/repository#dsp-0845-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "173363",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/173363",
+        "text": "https://data.snf.ch/grants/grant/173363"
+      }
+    },
+    {
+      "__id": "https://ns.dasch.swiss/repository#dsp-0845-grant-001",
+      "__type": "Grant",
+      "funders": [
+        "https://ns.dasch.swiss/repository#dsp-0845-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "192375",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/192375",
+        "text": "https://data.snf.ch/grants/grant/192375"
+      }
+    }
+  ]
+}

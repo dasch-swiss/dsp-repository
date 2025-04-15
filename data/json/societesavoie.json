@@ -1,0 +1,320 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Pibiri, E., Badoux, L., Frei, S., Rivoal, M., 2022, Base de données du projet Hôtels de la cour de Savoie [base de données], Swiss National Data and Service Center for the Humanities (DaSCH), http://ark.dasch.swiss/ark:/72163/1/0121.",
+    "teaserText": "Ce projet étudie l’organisation de l’Hôtel de la cour de Savoie du XIIIe au XVe s., son évolution en une institution réglementée et hiérarchisée et propose une étude prosopographique de ses membres.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0121-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "fr": "societe-savoie"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0121-person-000",
+    "dataManagementPlan": {
+      "__type": "DataManagementPlan",
+      "available": true
+    },
+    "description": {
+      "fr": "Le comté puis duché de Savoie était au Moyen Âge une principauté d’Empire qui présentait la particularité de se trouver aux confluents de trois réalités politiques et culturelles distinctes : l’espace franco-bourguignon, les États du nord de l’Italie et les villes de la Suisse occidentale. La colonne vertébrale de la cour de Savoie était constituée de l’Hôtel, qui regroupait les officiers et les serviteurs devant veiller, en premier lieu, aux besoins domestiques du prince et de sa famille, qu’il s’agisse de les sustenter, de veiller à leurs déplacements, de les vêtir ou encore d’assurer leur sécurité. Dès le XIIIe siècle, l’Hôtel assuma également un rôle politique qui ne cessa de croître, car c’est en son sein que les princes choisissaient ceux dont ils s’entouraient pour exercer le pouvoir, notamment leurs conseillers, leurs ambassadeurs ou encore leurs chefs militaires. Par ailleurs, l’Hôtel revêtait des fonctions de représentation sociopolitiques et symboliques essentielles. L’étude de l’Hôtel, qui s’érige progressivement en institution gouvernementale, s’avère indispensable pour saisir les mécanismes de la formation de l’État princier savoyard. Le premier objectif du projet consiste en une étude complète des Hôtels de la cour de Savoie – celui du prince, celui de la princesse et celui de leurs enfants. En effet, dès la fin du XIIIe siècle, la comtesse et les enfants du couple princier disposaient de leur propre Hôtel. Cette recherche porte sur le temps long, du XIIIe au XVe siècle, période décisive pour la genèse de l’État moderne. Il s’agit ainsi de reconstruire, pour la première fois de manière globale, par le biais de sources comptables, normatives et notariales, l’organisation des Hôtels de Savoie, ainsi que leur lente évolution en une institution réglementée, hiérarchisée et codifiée. Les coûts des Hôtels ainsi que leur impact sur les finances savoyardes seront également définis. Le deuxième objectif vise à réaliser une base de données prosopographique des membres des Hôtels. Ceux-ci n’étaient pas qu’une institution : ils étaient composés d’hommes, de femmes et d’enfants appartenant à une microsociété dont les contours précis restent encore à définir. Cette société de cour est abordée dans son ensemble, afin d’apporter une contribution essentielle à la sociologie des élites et de mettre en évidence le poids des réseaux de solidarité et des alliances au sein de la cour de Savoie, mais également de reconstituer des carrières et de saisir l’ascension des officiers et des serviteurs ne faisant pas partie de la noblesse."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/5502",
+        "text": "General History"
+      },
+      {
+        "fr": "10301 Histoire générale"
+      }
+    ],
+    "endDate": "2024-07-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0121-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0121-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "Accounting"
+      },
+      {
+        "en": "Children"
+      },
+      {
+        "en": "Elites"
+      },
+      {
+        "en": "Households"
+      },
+      {
+        "en": "Medieval Courts"
+      },
+      {
+        "en": "Networking"
+      },
+      {
+        "en": "Officers"
+      },
+      {
+        "en": "Prosopography"
+      },
+      {
+        "en": "States of Savoy"
+      },
+      {
+        "en": "Women"
+      }
+    ],
+    "name": "Société de cour, élites et finances : de l’Hôtel des princes de Savoie à l’État moderne",
+    "shortcode": "0121",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/3175395/",
+        "text": "Italy"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658434/",
+        "text": "Switzerland"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/3017382/",
+        "text": "France"
+      }
+    ],
+    "startDate": "2020-08-01",
+    "temporalCoverage": [
+      {
+        "de": "1269-1465",
+        "en": "1269-1465",
+        "fr": "1269-1465"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/0121",
+      "text": "Discover Project Data"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0121-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The ontology of the project includes 18 classes and 157 properties, describing the information collected on the individuals belonging to or surrounding the princely households of the court of Savoy (names, gender, functions, time of service, office, income...), as well as the family relationships that may exist between these persons. This information is drawn from accounting, normative and notarial sources, whose archival classifications are always indicated, so that the documents can be traced back.  Finally, bibliographic data can be added to provide additional details on persons and functions.     L’ontologie du projet comprend 18 classes et 157 propriétés, décrivant les informations récoltées sur les individus faisant partie des hôtels princiers de la cour de Savoie ou de leur entourage (noms, genre, fonctions, temps de service, office, revenus...), ainsi que les relations familiales qui peuvent exister entre ces personnes.  Ces informations sont tirées de sources comptables, normatives et notariales, dont la cote d’archive est toujours indiquée, afin de pouvoir remonter aux documents.  Finalement, des données bibliographiques peuvent être ajoutées, afin de fournir des renseignements supplémentaires sur des personnes et des fonctions."
+        }
+      ],
+      "accessConditions": "closed",
+      "dateCreated": "2022-12-01",
+      "datePublished": "2024-07-31",
+      "howToCite": "Pibiri, E., Badoux, L., Frei, S., Rivoal, M., 2022, Base de données du projet Hôtels de la cour de Savoie [base de données], Swiss National Data and Service Center for the Humanities (DaSCH), http://ark.dasch.swiss/ark:/72163/1/0121.",
+      "languages": [
+        {
+          "fr": "Français"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2023-02-20",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0",
+            "text": "CC BY-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0121-person-000",
+          "roles": [
+            "Project Leader"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0121-person-002",
+          "roles": [
+            "Project Member, Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0121-person-001",
+          "roles": [
+            "Project Member, Data Collector "
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0121-person-003",
+          "roles": [
+            "Data Curator"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Base de données du projet Hôtels de la cour de Savoie",
+      "typeOfData": [
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0121-person-001",
+      "__type": "Person",
+      "email": "Laureane.Badoux@unil.ch",
+      "familyNames": [
+        "Badoux"
+      ],
+      "givenNames": [
+        "Lauréane"
+      ],
+      "jobTitles": [
+        "SNSF PhD Student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0121-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0121-person-002",
+      "__type": "Person",
+      "email": "Simon.Frei.1@unil.ch",
+      "familyNames": [
+        "Frei"
+      ],
+      "givenNames": [
+        "Simon"
+      ],
+      "jobTitles": [
+        "SNSF PhD Student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0121-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0121-person-003",
+      "__type": "Person",
+      "email": "marion.rivoal@unil.ch",
+      "familyNames": [
+        "Rivoal"
+      ],
+      "givenNames": [
+        "Marion"
+      ],
+      "jobTitles": [
+        "Researcher manager"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0121-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-4185-7169",
+          "text": "ORCID URL: https://orcid.org/0000-0003-4185-7169"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0121-person-000",
+      "__type": "Person",
+      "email": "Eva.pibiri@unil.ch",
+      "familyNames": [
+        "Pibiri"
+      ],
+      "givenNames": [
+        "Eva"
+      ],
+      "jobTitles": [
+        "Senior lecturer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0121-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "http://orcid.org/0000-0003-1380-5986",
+          "text": "ORCID URL: orcid.org/0000-0003-1380-5986"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0121-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3, Case postale",
+        "postalCode": "CH-3001",
+        "locality": "Berne",
+        "country": "Switzerland"
+      },
+      "email": "desk@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.snf.ch/",
+        "text": "http://www.snf.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0121-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Unicentre",
+        "postalCode": "CH-1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+      },
+      "name": "Université de Lausanne",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.unil.ch/",
+        "text": "https://www.unil.ch/"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0121-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0121-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "192168",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/192168",
+        "text": "https://data.snf.ch/grants/grant/192168"
+      }
+    }
+  ]
+}

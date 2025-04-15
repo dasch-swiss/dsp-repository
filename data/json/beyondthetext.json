@@ -1,0 +1,396 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Beyond the Text (BT), University of Basel, 2026",
+    "teaserText": "Philological and archaeological project exploring the emergence and evolution of the funerary literature of the Graeco-Roman Period",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-083A-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "fr": "Au-delà du texte. Les nouvelles compositions funéraires d’époque gréco-romaine : textualités et archéologie à Thèbes"
+      },
+      {
+        "de": "Jenseits des Textes. Neue funeräre Texte aus der griechisch-römischen Zeit: Textualitäten und Archäologie in Theben"
+      }
+    ],
+    "description": {
+      "en": "Philological and archaeological project exploring the emergence and evolution of the funerary literature of the Graeco-Roman Period and contextualizing its development within the Theban social and religious landscape"
+    },
+    "disciplines": [
+      {
+        "en": "10303 Ancient history and Classical studies"
+      },
+      {
+        "en": "10402 Archaeology"
+      }
+    ],
+    "endDate": "2026-01-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-083A-organization-000"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-083A-grant-000"
+    ],
+    "keywords": [
+      {
+        "de": "Archäologie"
+      },
+      {
+        "en": "Demotic"
+      },
+      {
+        "de": "Demotisch"
+      },
+      {
+        "en": "Egypt"
+      },
+      {
+        "de": "Geschichte"
+      },
+      {
+        "en": "Graeco-Roman"
+      },
+      {
+        "en": "Greek"
+      },
+      {
+        "de": "Griechisch"
+      },
+      {
+        "en": "Hieratic"
+      },
+      {
+        "de": "Hieratisch"
+      },
+      {
+        "de": "Ikonographie"
+      },
+      {
+        "de": "Paläographie"
+      },
+      {
+        "de": "Papyrologie"
+      },
+      {
+        "de": "Pass für die Ewigkeit"
+      },
+      {
+        "de": "Prosopographie"
+      },
+      {
+        "de": "Theben"
+      },
+      {
+        "en": "Thebes"
+      },
+      {
+        "fr": "Thèbes"
+      },
+      {
+        "en": "Totentexte"
+      },
+      {
+        "en": "archaeology"
+      },
+      {
+        "fr": "archéologie"
+      },
+      {
+        "fr": "démotique"
+      },
+      {
+        "en": "funerary texts"
+      },
+      {
+        "fr": "grec"
+      },
+      {
+        "de": "griechisch-römisch"
+      },
+      {
+        "fr": "gréco-romain"
+      },
+      {
+        "fr": "histoire"
+      },
+      {
+        "en": "history"
+      },
+      {
+        "fr": "hiératique"
+      },
+      {
+        "de": "iconographie"
+      },
+      {
+        "en": "iconography"
+      },
+      {
+        "en": "palaeography"
+      },
+      {
+        "fr": "paléographie"
+      },
+      {
+        "de": "papyrologie"
+      },
+      {
+        "en": "papyrology"
+      },
+      {
+        "fr": "prosopographie"
+      },
+      {
+        "en": "prosopography"
+      },
+      {
+        "fr": "textes funéraires"
+      },
+      {
+        "de": "Ägypten"
+      },
+      {
+        "fr": "Égypte"
+      }
+    ],
+    "name": "Beyond the Text. New Funerary Compositions from the Graeco-Roman Period: Textualities and Archaeology in Thebes",
+    "shortcode": "083A",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/357994/arab-republic-of-egypt.html",
+        "text": "Egypt"
+      }
+    ],
+    "startDate": "2021-02-01",
+    "temporalCoverage": [
+      {
+        "en": "300 BC"
+      },
+      {
+        "en": "AD 400"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/I0GOxbL3SbanSjcmBaX-hQ",
+      "text": "Discover Project Data"
+    },
+    "secondaryURL": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://beyondthetext.ch/",
+      "text": "External Project Website"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083A-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "Philological and archaeological project exploring the emergence and evolution of the funerary literature of the Graeco-Roman Period and contextualizing its development within the Theban social and religious landscape"
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "en": "Beyond the Text"
+        }
+      ],
+      "accessConditions": "restricted",
+      "howToCite": "Beyond the Text (BT), University of Basel, 2026",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "en": "French",
+          "de": "Französisch",
+          "fr": "français"
+        },
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2022-01-25",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            "text": "CC BY-NC-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083A-person-000",
+          "roles": [
+            "Applicant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083A-person-001",
+          "roles": [
+            "Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083A-person-002",
+          "roles": [
+            "Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083A-person-003",
+          "roles": [
+            "Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083A-person-004",
+          "roles": [
+            "Contributor"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Beyond the Text. New Funerary Compositions from the Graeco-Roman Period: Textualities and Archaeology in Thebes",
+      "typeOfData": [
+        "Image",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083A-person-000",
+      "__type": "Person",
+      "email": "sandrine.vuilleumier@unibas.ch",
+      "familyNames": [
+        "Vuilleumier"
+      ],
+      "givenNames": [
+        "Sandrine"
+      ],
+      "jobTitles": [
+        "Prof. Dr."
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083A-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://aegyptologie.philhist.unibas.ch/de/personen/sandrine-vuilleumier/",
+          "text": "https://aegyptologie.philhist.unibas.ch/de/personen/sandrine-vuilleumier/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083A-person-001",
+      "__type": "Person",
+      "familyNames": [
+        "Dogaer"
+      ],
+      "givenNames": [
+        "Lauren"
+      ],
+      "jobTitles": [
+        "PhD"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083A-person-002",
+      "__type": "Person",
+      "familyNames": [
+        "Fong"
+      ],
+      "givenNames": [
+        "Cyprian"
+      ],
+      "jobTitles": [
+        "PhD"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083A-person-003",
+      "__type": "Person",
+      "familyNames": [
+        "Roth"
+      ],
+      "givenNames": [
+        "Pascale"
+      ],
+      "jobTitles": [
+        "HiWi"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083A-person-004",
+      "__type": "Person",
+      "familyNames": [
+        "Heierli"
+      ],
+      "givenNames": [
+        "Sarah"
+      ],
+      "jobTitles": [
+        "HiWi"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083A-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Petersgraben 51",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "name": "Universität Basel, Departement Altertumswissenschaften – Ägyptologie"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083A-organization-000",
+      "__type": "Organization",
+      "name": "Swiss National Science Foundation (SNSF)"
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083A-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-083A-organization-000"
+      ],
+      "name": "PRIMA",
+      "number": "193226",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/193226",
+        "text": "https://data.snf.ch/grants/grant/193226"
+      }
+    }
+  ]
+}

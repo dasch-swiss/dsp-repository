@@ -1,0 +1,455 @@
+{
+  "$schema": "../../resources/schema-metadata-final.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Gonzalez, Ph., Roca Escoda, M., Stavo Debauge, J., Evequoz, Y., Ben Amor, S., Rivoal, M., 2019, Embarras de la parole religieuse [base de données] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0101.",
+    "teaserText": "Ce projet étudie les mobilisations religieuses sur des questions de genre et de sexualités et comment elles transforment les règles d’interlocution des espaces publics sécularisés et la parole des acteurs religieux.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0101-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "fr": "parole-religieuse"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0101-person-000",
+    "description": {
+      "fr": "Notre recherche se propose d’enquêter sur les embarras de la parole religieuse telle qu’elle s’énonce dans l’espace public, en Suisse et de France, deux pays sécularisés, mais où les acteurs religieux se montrent actifs. À travers leur prise de parole médiatique, ces acteurs parviennent à susciter des controverses, quand ils n’en font pas l’objet. De portées variables, ces controverses portent notamment sur les régulations entre les genres, l’égalité des sexes et la reconnaissance de la pluralité des sexualités. Cette recrudescence du rôle public des religions dans les sociétés contemporaines a alimenté, en philosophie et en sciences sociales, des perspectives post-séculières, critiques du lien entre modernité et sécularisation, et qui invitent à mieux considérer la place des religions dans les espaces publics des sociétés libérales.Chrétienne, musulmane ou autre, la parole religieuse serait affectée d’une variété d’embarras; elle n’irait plus de soi, spécialement lorsqu’elle acquiert visibilité et prétend énoncer une vérité valant pour tous. Au regard de cette situation, certains acteurs religieux s’efforcent de séculariser l’expression de leurs convictions lorsqu’ils prennent part à une controverse - comme dans l’opposition catholique au mariage homosexuel et aux questions de genre - ou s’appuient sur une rhétorique des droits pour répondre des critiques suscitées par leur pratique - comme dans les «affaires du voile». Si les médias ont largement relayé ces controverses, d’autres affaires, scandales ou problèmes publics relatifs au genre ont fourni matière au délicat engagement public d’acteurs religieux inégalement capables de s’exprimer dans des médias séculiers et globalement en butte à la perte d’autorité de la parole religieuse hors de ses lieux propres.Afin d’appréhender cet embarras en France et en Suisse, notre recherche articule des volets quantitatif et qualitatif, à partir de deux émissions radiophoniques quotidiennes de grande écoute qui empruntent le format du «débat» de société. La radio est un lieu d’observation pertinent, en raison de son importance dans l’économie de la production médiatique. Le volet quantitatif vise à cartographier un corpus de plus de 7000 émissions, sur 10 ans (2006-2016). Le volet qualitatif poursuit l’identification fine des acteurs religieux. Dans un second temps, nous sélectionnerons cinq controverses sur lesquelles nous mènerons une enquête approfondie, historiographique et ethnographique, afin de retracer les tenants et aboutissants de chaque controverse, nationale et transnationale. Cette recherche permettra d’interroger empiriquement la façon dont les mobilisations religieuses sur des questions de genre et de sexualités redéfinissent les règles d’interlocution des espaces publics sécularisés et transforment la parole des acteurs religieux."
+    },
+    "disciplines": [
+      {
+        "en": "10201 Sociology"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "text": "Sociology",
+        "url": "https://skos.um.es/unesco6/63/"
+      }
+    ],
+    "endDate": "2019-07-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0101-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0101-grant-000"
+    ],
+    "keywords": [
+      {
+        "de": "Gender"
+      },
+      {
+        "en": "Liberal democracy"
+      },
+      {
+        "en": "Media"
+      },
+      {
+        "en": "Public issues"
+      },
+      {
+        "en": "Religion"
+      },
+      {
+        "en": "Secularisation"
+      },
+      {
+        "en": "Sociology of controversy"
+      }
+    ],
+    "name": "Religious speech embarrassed, radio debates and controversies around gender: Switzerland and France, 2006-2016",
+    "publications": [
+      {
+        "text": "Douyère David, Gonzalez Philippe (ed.), La religion sous le regard du tiers, Questions de communication, Metz."
+      },
+      {
+        "text": "Gonzalez Philippe (2019), Inaugurer une mosquée à Genève: médiatisation ambiguë, dialogue interreligieux et gestion du pluralisme, in Salzbrunn Monika (ed.), Labor et Fides, Genève, 245-275."
+      },
+      {
+        "text": "Gonzalez Philippe, Dieu parle en public : la prophétie charismatique, de l’intimité à la politique, in Pragmata, 2, 1."
+      },
+      {
+        "text": "Gonzalez Philippe, Kaufmann Laurence, Ces croyances auxquelles nous tenons: l'épistémologie sociale à l'épreuve du créationnisme évanéglique, in Künstler Raphaël, Allouche Aurélien (ed.), Hermann, Paris, 1."
+      },
+      {
+        "text": "Gonzalez Philippe, Roca i Escoda Marta, La “liberté de conscience” en croisade contre l’homosexualité : enjeux d’un référendum populaire en Suisse, in Bergeaud-Blackler Florence, Stavo-Debauge Joan (ed.), Presses Universitaires de Rennes, Rennes, 1."
+      },
+      {
+        "text": "Gonzalez Philippe, Stavo-Debauge Joan, Roca i Escoda Marta, 2020, S’aventurer en ethnographes dans les arcanes d’une «base de données», in Ethnographiques.org."
+      },
+      {
+        "text": "Stavo-Debauge Joan (2018), Introduction à Dewey, Hook et Nagel, in ThéoRèmes, (13), 1-4."
+      },
+      {
+        "text": "Stavo-Debauge Joan (2018), Le Divin marché (de dupes). Un fondamentalisme qui ne paie pas de mine mais rapporte gros, in SociologieS, 1."
+      },
+      {
+        "text": "Stavo-Debauge Joan (2018), Le naturalisme de John Dewey : un antidote au post-sécularisme contemporain, in ThéoRèmes, (13), 1-34."
+      },
+      {
+        "text": "Stavo-Debauge Joan (2018), ‘What I Believe‘ de John Dewey : l’unique autorité de l’expérience, ou la foi en une méthode (scientifique) et en un idéal (démocratique), in Pragmata, 1, 330-346."
+      },
+      {
+        "text": "Stavo-Debauge Joan (ed.) (2019), John Dewey: Ecrits sur les religions et le naturalisme, Éditions IES, Genève."
+      },
+      {
+        "text": "Stavo-Debauge Joan, Les embarras de la parole religieuse, in Questions de communication, 37."
+      },
+      {
+        "text": "Stavo-Debauge Joan, L’hommage (oublié) de John Dewey à Mgr Brown, l’évêque des athées ez bolchéviques, pendant la croisade anti-évolutionniste des années 1920, in Pragmata, 2."
+      },
+      {
+        "text": "Stavo-Debauge Joan, Quel retour des religions? L'actualité de John Dewey face à l'absolutisme théologico-politique, Labor et Fides, Genève."
+      }
+    ],
+    "shortcode": "0101",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/3017382/",
+        "text": "France"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658434/",
+        "text": "Switzerland"
+      }
+    ],
+    "startDate": "2016-08-01",
+    "temporalCoverage": [
+      {
+        "de": "2006-2016",
+        "en": "2006-2016",
+        "fr": "2006-2016"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.ls-prod-server.dasch.swiss/project/0101",
+      "text": "Discover Project Data"
+    },
+    "status": "Finished"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0101-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The ontology of the project comprises 15 distinct classes, 68 properties, mainly describing sequences (Sequence) from radio broadcasts (Program), and listing for each sequence the speakers (Intervention, Actor, Nationality), the title in which they intervene (Quality, Institution) and their origin (Place).  The subjects (Gender and Religion) covered by the programs are informed at the program level, then explained at the sequence level, using different concepts related to current events: Event, Common Name or Movement, Phenomenon or controversial subject, Person in the news, Place. 10 controlled vocabularies with 104 entries ensure the quality control of the data entered. The controlled vocabulary Controversial issues' trajectory includes 31 entries. Finally, transcriptions (Transcription) are associated with certain sequences."
+        }
+      ],
+      "accessConditions": "open",
+      "dateCreated": "2017-07-04",
+      "dateModified": "2020-02-10",
+      "datePublished": "2017-07-04",
+      "howToCite": "Gonzalez, Ph., Roca Escoda, M., Stavo Debauge, J., Evequoz, Y., Ben Amor, S., Rivoal, M., 2019, Embarras de la parole religieuse [base de données] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0101.",
+      "languages": [
+        {
+          "en": "French",
+          "de": "Französisch",
+          "fr": "français"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2021-09-02",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "text": "CC BY-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0101-person-000",
+          "roles": [
+            "Project leader",
+            "Data curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0101-person-001",
+          "roles": [
+            "Project leader",
+            "Data curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0101-person-002",
+          "roles": [
+            "Project member",
+            "Data collector",
+            "Data curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0101-person-003",
+          "roles": [
+            "Project member",
+            "Data collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0101-person-004",
+          "roles": [
+            "Data collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0101-person-005",
+          "roles": [
+            "Researcher"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0101-person-007",
+          "roles": [
+            "Data curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0101-person-006",
+          "roles": [
+            "Other"
+          ]
+        }
+      ],
+      "status": "Finished",
+      "title": "Base de données Embarras de la parole religieuse",
+      "typeOfData": [
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0101-person-004",
+      "__type": "Person",
+      "familyNames": [
+        "Ben Amor"
+      ],
+      "givenNames": [
+        "Selim"
+      ],
+      "jobTitles": [
+        "Scientific collaborator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0101-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0101-person-005",
+      "__type": "Person",
+      "email": "christelle.cocco@unil.ch",
+      "familyNames": [
+        "Cocco"
+      ],
+      "givenNames": [
+        "Christelle"
+      ],
+      "jobTitles": [
+        "Post-doctoral researcher"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0101-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0001-6684-9806",
+          "text": "ORCID URL: https://orcid.org/0000-0001-6684-9806"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0101-person-006",
+      "__type": "Person",
+      "email": "loic.jaouen@unil.ch",
+      "familyNames": [
+        "Jaouen"
+      ],
+      "givenNames": [
+        "Loïc"
+      ],
+      "jobTitles": [
+        "IT support"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0101-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0101-person-007",
+      "__type": "Person",
+      "email": "marion.rivoal@unil.ch",
+      "familyNames": [
+        "Rivoal"
+      ],
+      "givenNames": [
+        "Marion"
+      ],
+      "jobTitles": [
+        "Research manager"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0101-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-4185-7169",
+          "text": "ORCID URL: https://orcid.org/0000-0003-4185-7169"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0101-person-001",
+      "__type": "Person",
+      "email": "marta.rocaescoda@unil.ch",
+      "familyNames": [
+        "Roca Escoda"
+      ],
+      "givenNames": [
+        "Marta"
+      ],
+      "jobTitles": [
+        "Senior lecturer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0101-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-8156-2712",
+          "text": "ORCID URL: https://orcid.org/0000-0002-8156-2712"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0101-person-003",
+      "__type": "Person",
+      "familyNames": [
+        "Evequoz"
+      ],
+      "givenNames": [
+        "Yves"
+      ],
+      "jobTitles": [
+        "Scientific collaborator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0101-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0101-person-000",
+      "__type": "Person",
+      "email": "philippe.gonzalez@unil.ch",
+      "familyNames": [
+        "Gonzalez"
+      ],
+      "givenNames": [
+        "Philippe"
+      ],
+      "jobTitles": [
+        "Senior lecturer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0101-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0101-person-002",
+      "__type": "Person",
+      "email": "joan.stavo-debauge@epfl.ch",
+      "familyNames": [
+        "Stavo Debauge"
+      ],
+      "givenNames": [
+        "Joan"
+      ],
+      "jobTitles": [
+        "Post-doctoral researcher"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0101-organization-000"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0101-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3 Postfach",
+        "postalCode": "3001",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "desk@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.snf.ch/",
+        "text": "http://www.snf.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0101-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Unicentre",
+        "postalCode": "1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+      },
+      "name": "Université de Lausanne",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.unil.ch/",
+        "text": "https://www.unil.ch/"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0101-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0101-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "165652",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/165652",
+        "text": "https://data.snf.ch/grants/grant/165652"
+      }
+    }
+  ]
+}

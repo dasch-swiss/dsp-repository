@@ -1,0 +1,625 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "The WoPoss modality corpus. University of Neuchâtel. SNSF. Distributed by DaSCH.",
+    "teaserText": "The WoPoss project aims at reconstructing the evolution of modal meanings in Latin from the prehistory of the language up to the 7th century CE, through a linguistically annotated, diachronic corpus.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-woposs-dataset-000"
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-woposs-person-000",
+    "dataManagementPlan": {
+      "__type": "DataManagementPlan",
+      "available": false
+    },
+    "description": {
+      "en": "The SNSF-funded project «A world of possibilities. Modal pathways over an extra-long period of time: the diachrony of modality in the Latin language» (WoPoss) aims at reconstructing the evolution of modal meanings and constructions from the prehistory of the Latin language up to the 7th century CE. The main milestone of the project is a linguistically annotated, diachronic corpus in which a selection of modal markers has received a fine-grained semantic annotation, according to the WoPoss guidelines for the annotation of modality (DOI 10.5281/zenodo.3560950)."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/5702",
+        "text": "Diachronic linguistics"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/570508",
+        "text": "Semantics"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/550510",
+        "text": "Philology"
+      }
+    ],
+    "endDate": "2025-01-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-woposs-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-woposs-grant-000",
+      "http://ns.dasch.swiss/repository#dsp-woposs-grant-001"
+    ],
+    "keywords": [
+      {
+        "en": "Diachronic semantics"
+      },
+      {
+        "en": "Modality"
+      },
+      {
+        "en": "Latin"
+      },
+      {
+        "en": "Digital Humanities"
+      },
+      {
+        "en": "Computational methods and tools"
+      },
+      {
+        "en": "Corpus-based approach"
+      },
+      {
+        "en": "Semantic annotation"
+      }
+    ],
+    "name": "WoPoss: A world of possibilities. Modal pathways over an extra-long period of time: the diachrony of modality in the Latin language",
+    "shortcode": "0843",
+    "publications": [
+      {
+        "text": "Dell'Oro, Francesca (2023, accepted). «From motion to possibility: Latin (ne)queo ‘I can(not)’ in the light of philological and typological data». Indogermanische Forschungen."
+      },
+      {
+        "text": "Dell'Oro, Francesca (2023, accepted). «A digital tool to draw interactive maps: Pygmalion and the teaching/learning of modal verbs». Cahiers de l'APLIUT. Special issue Du griffonnage aux cartes mentales: considérer les représentations (icono)graphiques dans l’enseignement-apprentissage de l’anglais."
+      },
+      {
+        "text": "McGillivray, Barbara; Kondakova, Daria; Burman, Annie; Dell’Oro, Francesca; Bermúdez Sabel, Helena; Marongiu, Paola; Márquez Cruz, Manuel (2022). “A new corpus annotation framework for Latin diachronic lexical semantics”. Journal of Latin Linguistics 21(1), 47-105.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://doi.org/10.1515/joll-2022-2007",
+            "text": "DOI: 10.1515/joll-2022-2007"
+          }
+        ]
+      },
+      {
+        "text": "Marongiu, Paola; Dell’Oro, Francesca (2022). “From static to interactive maps: drawing diachronic maps of (Latin) modality with Pygmalion”. Journal of Open Humanities Data 8, 1-14.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://doi.org/10.5334/johd.58.",
+            "text": "DOI: 10.5334/johd.58."
+          }
+        ]
+      },
+      {
+        "text": "Dell’Oro, Francesca (2022). “Verbs of motion and intermediate source domains of modality: the understudied case of It. occorrere ‘to be necessary, to be needed'”. Folia Linguistica Historica 43 (1), 1-33.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://doi.org/10.1515/flin-2022-201",
+            "text": "DOI: 10.1515/flin-2022-201"
+          }
+        ]
+      },
+      {
+        "text": "Dell’Oro, Francesca (2020). “L’expression de la modalité par des adjectifs: une comparaison entre l’adjectif grec ancien en -ιμος et l’adjectif latin en -bilis”. ACME 72 (2/2019), 193-209.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://doi.org/10.13130/2282-0035/13679",
+            "text": "DOI: 10.13130/2282-0035/13679"
+          }
+        ]
+      },
+      {
+        "text": "Bermúdez Sabel, Helena (2019). “Digital tools for semantic annotation: the WoPoss use case”. Bulletin de linguistique et des sciences du langage 30, 12–37."
+      },
+      {
+        "text": "Dell'Oro, Francesca (2023, accepted). «Corpus parallèles et apprentissage des langues anciennes: les Évangiles comme corpus multilingue pour apprendre le grec ancien et le latin (avec un focus sur la modalité)» in La traduction et son processus didactique, edited by Daria Zalesskaya, Cahiers du CLSL - Lausanne."
+      },
+      {
+        "text": "Dell’Oro, Francesca; Bermúdez Sabel, Helena; Marongiu, Paola (2022). “Pygmalion in the classroom: a tool to draw lexicographic diachronic maps and their application to didactics” in La lexicografía didáctica: Reflexiones y recursos orientados al aprendizaje de lenguas, edited by Manuel Márquez Cruz, and Viviane Ferreira Martins. Madrid: Guillermo Escolar Editor, 35–48. [Preprint:",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "URL",
+            "url": "https://woposs.unine.ch/outputs/DellOro_BermudezSabel_Marongiu_Pygmalion_Lexicografia.pdf",
+            "text": "https://woposs.unine.ch/outputs/DellOro_BermudezSabel_Marongiu_Pygmalion_Lexicografia.pdf]"
+          }
+        ]
+      },
+      {
+        "text": "Dell’Oro, Francesca (2023, forthcoming). “The French construction ‘j’arrive à + INF’ at the borders of modality. An exploratory survey of a journalistic corpus” in Ubi homo, ibi lingua. Studi in onore di Maria Patrizia Bologna, edited by Laura Biondi, Francesco Dedé, Andrea Scala, and Massimo Vai. Alessandria: Dell’Orso, 427-445."
+      },
+      {
+        "text": "Dell’Oro, Francesca (2022). “Kagan, O. (2020). The Semantics of Case. Key Topics in Semantics and Pragmatics. Cambridge: Cambridge University Press. LINGUIST List, 33.2004. Jun 15, 2022.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "URL",
+            "url": "https://linguistlist.org/issues/33.2004",
+            "text": "https://linguistlist.org/issues/33.2004"
+          }
+        ]
+      },
+      {
+        "text": "Dell’Oro, Francesca; Rossari, Corinne (ed.). “Theoretical issues in the light of the interaction between quantitative and qualitative data: recent approaches and tendencies”. Thematic issue of TRANEL (Travaux neuchâtelois de linguistique)."
+      },
+      {
+        "text": "Bermúdez Sabel, Helena; Dell’Oro, Francesca; Montrichard, Cyrielle; Rossari, Corinne (2022). “Setting up bilingual comparable corpora with non-contemporary languages”. Proceedings of the LREC 2022 15th Workshop on building and using comparable corpora . Edited by R. Rapp, P. Zweigenhaum, S. Sharoff. Paris: European Language Resources Association (ELRA), 52–60."
+      },
+      {
+        "text": "Dell’Oro, Francesca; Bermúdez Sabel, Helena; Marongiu, Paola (2020). “Implemented to be shared: the WoPoss annotation of semantic modality in a Latin diachronic corpus”. Sharing the Experience: Workflows for the Digital Humanities. Proceedings of the DARIAH-CH Workshop 2019. December 5-6, 2019. Neuchâtel, Switzerland."
+      },
+      {
+        "text": "McGillivray, Barbara; Kondakova, Daria; Bermúdez Sabel, Helena (2022). Code for analysing the semantic annotation of Latin data from SemEval 2020 task 1. Zenodo.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://doi.org/10.5281/zenodo.6325749.",
+            "text": "DOI: 10.5281/zenodo.6325749."
+          }
+        ]
+      },
+      {
+        "text": "Dell’Oro, Francesca; Rimaz, Loris; Bermúdez Sabel, Helena; Marongiu, Paola (2021). Pygmalion-colour 1.0. A tool to draw interactive and diachronic maps . WoPoss. A World of Possibilities. Swiss National Science Foundation."
+      },
+      {
+        "text": "Dell’Oro, Francesca; Rimaz, Loris; Bermúdez Sabel, Helena; Marongiu, Paola (2020). Pygmalion-simple 1.0. A tool to draw interactive and diachronic maps of semantics . WoPoss. A World of Possibilities. Swiss National Science Foundation."
+      },
+      {
+        "text": "Dell’Oro, Francesca; Rimaz, Loris; Bermúdez Sabel, Helena; Marongiu, Paola (2020). Pygmalion-modal 1.0. A tool to draw interactive and diachronic maps of modality . WoPoss. A World of Possibilities. Swiss National Science Foundation."
+      },
+      {
+        "text": "Dell'Oro, Francesca; Bermúdez Sabel, Helena; Marongiu, Paola & Reymond, Séverine (2022). Sample of the WoPoss corpus (28th July 2022). Zenodo. Swiss National Science Foundation.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://doi.org/10.5281/zenodo.6925274.",
+            "text": "DOI: 10.5281/zenodo.6925274."
+          }
+        ]
+      },
+      {
+        "text": "Marongiu, Paola & Dell'Oro, Francesca. Interactive diachronic maps of the WoPoss modal markers. Schweizerischer Nationalfonds zur Förderung der wissenschaftlichen Forschung - SNF, Historical linguistics – Institut des sciences du langage - ISLa. Distributed by SWISSUbase, Lausanne, 2022.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "DOI",
+            "url": "https://doi.org/10.48656/qk1e-kk67.",
+            "text": "DOI: 10.48656/qk1e-kk67."
+          }
+        ]
+      },
+      {
+        "text": "Dell’Oro, Francesca (2021). “Annotating (ancient) texts and learning (ancient) languages: a possible connection”. LexTech Institute. October 5, 2021."
+      }
+    ],
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p08m57hmxmp",
+        "text": "Classical World"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p08m57h8zmq",
+        "text": "Medieval"
+      }
+    ],
+    "startDate": "2019-02-01",
+    "temporalCoverage": [
+      {
+        "__type": "URL",
+        "type": "Pleiades",
+        "url": "https://pleiades.stoa.org/places/1052",
+        "text": "Italia"
+      },
+      {
+        "__type": "URL",
+        "type": "Pleiades",
+        "url": "https://pleiades.stoa.org/places/993",
+        "text": "Gallia"
+      },
+      {
+        "__type": "URL",
+        "type": "Pleiades",
+        "url": "https://pleiades.stoa.org/places/1027",
+        "text": "Hispania"
+      },
+      {
+        "__type": "URL",
+        "type": "Pleiades",
+        "url": "https://pleiades.stoa.org/places/775",
+        "text": "Africa (region)"
+      },
+      {
+        "__type": "URL",
+        "type": "Pleiades",
+        "url": "https://pleiades.stoa.org/places/207065",
+        "text": "Dacia"
+      },
+      {
+        "__type": "URL",
+        "type": "Pleiades",
+        "url": "https://pleiades.stoa.org/places/981522",
+        "text": "Dalmatia (province)"
+      },
+      {
+        "__type": "URL",
+        "type": "Pleiades",
+        "url": "https://pleiades.stoa.org/places/520985",
+        "text": "Byzantium"
+      },
+      {
+        "__type": "URL",
+        "type": "Pleiades",
+        "url": "https://pleiades.stoa.org/places/981513",
+        "text": "Britannia (province)"
+      },
+      {
+        "__type": "URL",
+        "type": "Pleiades",
+        "url": "https://pleiades.stoa.org/places/20487",
+        "text": "Hibernia"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://woposs.unine.ch/",
+      "text": "External Project Website"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "A linguistically annotated diachronic corpus of the Latin language (3rd BCE – 7th CE). The corpus enables the investigation of modal meanings and constructions in the history of the Latin language. The texts have been annotated automatically. The modal passages have been manually annotated by the annotators of the WoPoss team (for a more precise responsibility description, see each file)."
+        }
+      ],
+      "accessConditions": "open",
+      "additional": [
+        {
+          "en": "https://github.com/WoPoss-project/WoPoss-corpus"
+        }
+      ],
+      "howToCite": "The WoPoss modality corpus. University of Neuchâtel. SNSF. Distributed by DaSCH.",
+      "languages": [
+        {
+          "en": "Latin"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2023-02-15",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "text": "CC BY-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-woposs-person-000",
+          "roles": [
+            "Principal investigator",
+            "annotator",
+            "annotation reviewer"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-woposs-person-001",
+          "roles": [
+            "Developer",
+            "annotator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-woposs-person-002",
+          "roles": [
+            "Annotator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-woposs-person-003",
+          "roles": [
+            "Annotator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-woposs-person-004",
+          "roles": [
+            "Annotator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-woposs-person-005",
+          "roles": [
+            "Annotator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-woposs-person-006",
+          "roles": [
+            "Annotator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-woposs-person-007",
+          "roles": [
+            "Annotator"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "The WoPoss modality corpus",
+      "typeOfData": [
+        "XML"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-person-000",
+      "__type": "Person",
+      "email": "francesca.delloro@unine.ch",
+      "familyNames": [
+        "Dell’Oro"
+      ],
+      "givenNames": [
+        "Francesca"
+      ],
+      "jobTitles": [
+        "Assistant Professor"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-woposs-organization-002"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-8343-356X",
+          "text": "ORCID URL: https://orcid.org/0000-0002-8343-356X"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-person-001",
+      "__type": "Person",
+      "familyNames": [
+        "Bermúdez Sabel"
+      ],
+      "givenNames": [
+        "Helena"
+      ],
+      "jobTitles": [
+        "Postdoctoral researcher"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-woposs-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-person-002",
+      "__type": "Person",
+      "familyNames": [
+        "Marongiu"
+      ],
+      "givenNames": [
+        "Paola"
+      ],
+      "jobTitles": [
+        "PhD student",
+        "project assistant"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-woposs-organization-002"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-5060-3307",
+          "text": "ORCID URL: https://orcid.org/0000-0002-5060-3307"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-person-003",
+      "__type": "Person",
+      "familyNames": [
+        "Reymond"
+      ],
+      "givenNames": [
+        "Séverine"
+      ],
+      "jobTitles": [
+        "Student assistant"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-woposs-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-person-004",
+      "__type": "Person",
+      "familyNames": [
+        "Graa"
+      ],
+      "givenNames": [
+        "Maël"
+      ],
+      "jobTitles": [
+        "Student assistant"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-woposs-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-person-005",
+      "__type": "Person",
+      "familyNames": [
+        "von Kaenel"
+      ],
+      "givenNames": [
+        "Thomas"
+      ],
+      "jobTitles": [
+        "Student assistant"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-woposs-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-person-006",
+      "__type": "Person",
+      "familyNames": [
+        "Cappiello"
+      ],
+      "givenNames": [
+        "Célia"
+      ],
+      "jobTitles": [
+        "Student assistant"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-woposs-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-person-007",
+      "__type": "Person",
+      "familyNames": [
+        "Marquis"
+      ],
+      "givenNames": [
+        "Emma"
+      ],
+      "jobTitles": [
+        "Student assistant"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-woposs-organization-002"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-organization-002",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "",
+        "postalCode": "",
+        "locality": "",
+        "country": ""
+      },
+      "name": "Université de Neuchâtel",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.unine.ch",
+        "text": "https://www.unine.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3 Postfach",
+        "postalCode": "3001",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "desk@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.snf.ch/",
+        "text": "http://www.snf.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "",
+        "postalCode": "",
+        "locality": "",
+        "country": ""
+      },
+      "name": "Université de Lausanne",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.unil.ch",
+        "text": "http://www.unil.ch"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-woposs-organization-001"
+      ],
+      "name": "SNSF Professorships",
+      "number": "176778",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/176778",
+        "text": "https://data.snf.ch/grants/grant/176778"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-woposs-grant-001",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-woposs-organization-001"
+      ],
+      "name": "SNSF Professorships",
+      "number": "214102",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/214102",
+        "text": "https://data.snf.ch/grants/grant/214102"
+      }
+    }
+  ]
+}

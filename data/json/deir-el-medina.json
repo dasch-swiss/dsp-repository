@@ -1,0 +1,322 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "status": "Ongoing",
+    "howToCite": "Deir el-Medina Hieroglyph Palaeography (2028). DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853",
+    "teaserText": "An online palaeography of hieroglyphs from the Ptolemaic temple of Deir el-Medina",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0853-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "fr": "Paléographie hiéroglyphique du temple ptolémaïque de Deir el-Medina"
+      },
+      {
+        "de": "Hieroglyphische Paläographie des ptolemäischen Tempels von Deir el-Medina"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0853-person-000",
+    "description": {
+      "en": "An online palaeography of hieroglyphs using photographs, drawings, 3D models and epigraphic tools to explore the shapes, colours and meanings of the hieroglyphs in the temple of Deir el-Medina and to document engraving techniques."
+    },
+    "disciplines": [
+      {
+        "en": "10303 Ancient History and Classical studies"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unescothes/C01302",
+        "text": "Egyptology"
+      },
+      {
+        "en": "10402 Archaeology"
+      }
+    ],
+    "endDate": "2027-12-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0853-organization-000"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0853-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "hieroglyphic palaeography"
+      },
+      {
+        "en": "hieroglyphs"
+      },
+      {
+        "en": "Graeco-Roman temples"
+      },
+      {
+        "en": "Deir el-Medina"
+      },
+      {
+        "en": "engraving techniques"
+      },
+      {
+        "en": "colours"
+      },
+      {
+        "fr": "paléographie hiéroglyphique"
+      },
+      {
+        "fr": "hiéroglyphes"
+      },
+      {
+        "fr": "temples gréco-romains"
+      },
+      {
+        "fr": "Deir el-Médina"
+      },
+      {
+        "fr": "techniques de gravure"
+      },
+      {
+        "fr": "couleurs"
+      },
+      {
+        "de": "hieroglyphische Paläographie"
+      },
+      {
+        "de": "Hieroglyphen"
+      },
+      {
+        "de": "griechisch-römische Tempel"
+      },
+      {
+        "de": "Deir el-Medina"
+      },
+      {
+        "de": "Gravur Techniken"
+      },
+      {
+        "de": "Farben"
+      }
+    ],
+    "name": "Hieroglyphic Palaeography of the Ptolemaic Temple at Deir el-Medina",
+    "publications": [
+      {
+        "text": " Sandrine Vuilleumier, Laurence Cappa Dafflon, Paléographie hiéroglyphique du temple de Deir el-Médina, PalHier, Le Caire, Ifao, 2027. (in preparation)"
+      }
+    ],
+    "shortcode": "0853",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/357994",
+        "text": "Egypt"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "http://www.geonames.org/347342",
+        "text": "Thebes"
+      }
+    ],
+    "startDate": "2021-02-01",
+    "temporalCoverage": [
+      {
+        "en": "300 BC"
+      },
+      {
+        "en": "AD 200"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://beyondthetext.ch/deir-el-medina",
+      "text": "External Project Website"
+    }
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0853-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The dataset consists of elements documenting the paleography of the hieroglyphs from the temple of Deir el-Medina. It includes images, orthophotos, DEMs, sections associated with external 3D models and drawings. It includes descriptive, analytical and bibliographical information relating to each sign associated with a hieroglyph."
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "en": "Paléographie hiéroglyphique du temple ptolémaïque de Deir el-Medina"
+        },
+        {
+          "de": "Hieroglyphische Paläographie des ptolemäischen Tempels von Deir el-Medina"
+        }
+      ],
+      "accessConditions": "restricted",
+      "dateCreated": "2021-02-01",
+      "dateModified": "2027-12-31",
+      "datePublished": "2027-12-31",
+      "howToCite": "Deir el-Medina Hieroglyph Palaeography (2028). DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853",
+      "languages": [
+        {
+          "en": "English"
+        },
+        {
+          "en": "French"
+        },
+        {
+          "en": "German"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2024-08-31",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            "text": "CC BY-NC-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0853-person-000",
+          "roles": [
+            "Project Leader",
+            "Creator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0853-person-001",
+          "roles": [
+            "Project Member",
+            "Creator",
+            "Epigrapher"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Dataset of the project: Hieroglyphic Palaeography of the Ptolemaic Temple at Deir el-Medina",
+      "typeOfData": [
+        "Image",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0853-person-001",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Universität Basel, Departement Altertumswissenschaften – Ägyptologie, Petersgraben 51",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "familyNames": [
+        "Cappa Dafflon"
+      ],
+      "givenNames": [
+        "Laurence"
+      ],
+      "jobTitles": [
+        "MA"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0853-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0853-person-000",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Universität Basel, Departement Altertumswissenschaften – Ägyptologie, Petersgraben 51",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "sandrine.vuilleumier@unibas.ch",
+      "familyNames": [
+        "Vuilleumier"
+      ],
+      "givenNames": [
+        "Sandrine"
+      ],
+      "jobTitles": [
+        "Prof. Dr."
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0853-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://daw.philhist.unibas.ch/de/personen/sandrine-vuilleumier",
+          "text": "https://daw.philhist.unibas.ch/de/personen/sandrine-vuilleumier"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0853-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3",
+        "postalCode": "3001",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "desk@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.snf.ch",
+        "text": "www.snf.ch"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0853-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Petersplatz, 1",
+        "postalCode": "4001",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "name": "Universität Basel, Departement Altertumswissenschaften – Ägyptologie",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.unibas.ch",
+        "text": "www.unibas.ch"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0853-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0853-organization-000"
+      ],
+      "name": "PRIMA",
+      "number": "193226",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/193226",
+        "text": "https://data.snf.ch/grants/grant/193226"
+      }
+    }
+  ]
+}

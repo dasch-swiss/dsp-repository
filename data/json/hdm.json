@@ -1,0 +1,174 @@
+{
+  "$schema": "../../resources/schema-metadata-final.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "HdM-Bern",
+    "teaserText": "The database documents the different kinds of spectacles such as theatre plays, operas, ballets, or concerts that took place in the Hôtel de Musique in Bern between 1766 and 1905.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-081C-dataset-000"
+    ],
+    "description": {
+      "en": "The database documents the events that took place in the Hôtel de Musique in Bern between 1766 and 1905. The repertoire was constituted by different kinds of spectacles like theatre plays, operas, ballets, concerts, dance parties, acrobatic performances, conferences or magicians. The list reconstructs the lifely and colourful theatre culture of Bern in the 19th Century."
+    },
+    "disciplines": [
+      {
+        "de": "10302 Schweizer Geschichte"
+      },
+      {
+        "de": "10405 Musikologie"
+      },
+      {
+        "de": "10406 Theater-und Filmwissenschaften"
+      },
+      {
+        "de": "10604 Musik und Theater"
+      }
+    ],
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-081C-organization-000"
+    ],
+    "keywords": [
+      {
+        "en": "19 Century"
+      },
+      {
+        "de": "Bern"
+      },
+      {
+        "en": "Concert"
+      },
+      {
+        "en": "Music"
+      },
+      {
+        "en": "Musicology"
+      },
+      {
+        "en": "Opera"
+      },
+      {
+        "en": "Spectales"
+      },
+      {
+        "en": "Switzerland"
+      },
+      {
+        "en": "Theater history"
+      },
+      {
+        "en": "Theatre"
+      }
+    ],
+    "name": "Hôtel de Musique Bern",
+    "shortcode": "081C",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2661552",
+        "text": "Bern"
+      }
+    ],
+    "startDate": "2009-04-01",
+    "temporalCoverage": [
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p06c6g3pvr5",
+        "text": "Under Mediation act, 1803-1814"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p06c6g3p4cf",
+        "text": "Sonderbund, 1845-1847"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p06c6g364np",
+        "text": "Helvetic Republic, 1798-1803"
+      },
+      {
+        "de": "1766-1905",
+        "en": "1766-1905",
+        "fr": "1766-1905"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/081C",
+      "text": "Discover Project Data"
+    },
+    "status": "Finished"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-081C-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The database documents the events that took place in the Hôtel de Musique in Bern between 1766 and 1905. The repertoire was constituted by different kinds of spectacles like theatre plays, operas, ballets, concerts, dance parties, acrobatic performances, conferences or magicians. The list reconstructs the lifely and colourful theatre culture of Bern in the 19th Century."
+        }
+      ],
+      "accessConditions": "open",
+      "datePublished": "2015-04-01",
+      "howToCite": "HdM-Bern",
+      "languages": [
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2021-09-02",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-nc/4.0",
+            "text": "CC BY-NC 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-081C-organization-000",
+          "roles": [
+            "author"
+          ]
+        }
+      ],
+      "status": "Finished",
+      "title": "Hôtel de Musique Bern",
+      "typeOfData": [
+        "Text"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-081C-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Mittelstr. 43",
+        "postalCode": "3011",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "urchueguia@musik.unibe.ch",
+      "name": "Institut für Musikwissenschaft der Universität Bern",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.musik.unibe.ch/index_ger.html",
+        "text": "https://www.musik.unibe.ch/index_ger.html"
+      }
+    }
+  ]
+}

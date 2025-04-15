@@ -1,0 +1,277 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Holler, T.; Baptista Wilhelm, L; Von Kerssenbrock-Krosigk, G.: Healing Arts. Representations and Practices of Medical Knowledge in Art and Literature (9th-12th centuries) [database]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083E",
+    "teaserText": "The project explores the entangled histories of botany, art and health. It considers plant images in early medieval herbals as modes of knowledge that articulate and negotiate medical practices.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-083E-dataset-000"
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/KQs82YDBRei6YGWrT5Y3ig",
+      "text": "Discover Project Data"
+    },
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-083E-person-000",
+    "description": {
+      "en": "The project focuses on the intertwined histories of Botany and Art in the Early Middle Ages. Herbaria with elaborated plant images, poems with pharmacological content, as well as medical boxes used as reliquaries manifest the post-antique interest in pharmacology, especially in the 9th/ 10th century. These visualizations reveal systems of knowledge in which concrete medical practices were being actively articulated and negotiated. It furthermore connects questions that lead us to see plants as a way to approach nature and how the natural world transforms into a visual system beyond the question of resemblance."
+    },
+    "disciplines": [
+      {
+        "en": "10404 Visual arts and Art history"
+      },
+      {
+        "en": "10502 Romance languages and literature"
+      },
+      {
+        "en": "10603 Arts"
+      }
+    ],
+    "endDate": "2025-10-30",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-083E-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-083E-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "Art and Science"
+      },
+      {
+        "en": "Botany"
+      },
+      {
+        "en": "Herbal"
+      },
+      {
+        "en": "Iatromagical Practices"
+      },
+      {
+        "en": "Manuscript Studies"
+      },
+      {
+        "en": "Medicine"
+      },
+      {
+        "en": "Medieval Art History"
+      },
+      {
+        "en": "Plants"
+      },
+      {
+        "en": "Pre-modern Health Care"
+      }
+    ],
+    "name": "Healing Arts. Representations and Practices of Medical Knowledge in Art and Literature (9th-12th centuries)",
+    "publications": [
+      {
+        "text": "Theresa Holler, Andrew Griebeler and Hannah Baader, Visualizing Drugs & Dyes. Art and Pharmacology in the larger Medieval Mediterranean, Leiden, Brill 2025 (in preparation)"
+      },
+      {
+        "text": "Theresa Holler, “In search of Panacea. Luxury healing roots in western materia medica”, in: Visualizing Drugs & Dyes. Art and Pharmacology in the larger Medieval Mediterranean, Leiden, Brill 2025 (in preparation)"
+      }
+    ],
+    "shortcode": "083E",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/6255148/europe.html",
+        "text": "Europe"
+      }
+    ],
+    "startDate": "2021-11-01",
+    "temporalCoverage": [
+      {
+        "en": "Middle Ages"
+      }
+    ],
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083E-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The database is a comprehensive collection of early medieval herbals prior to 1200. The ontology of the database includes several main classes (e.g. remedy, manuscript, object, person, text) to describe, contextualise and visualise plant images. By linking these classes to each other, the database displays the transmission of individual plant images and the underlying network between manuscript productions. Special attention has been paid to the very diverse medieval botanical nomenclature, including synonyms, spelling variants and the vernacular. This allows a broad search for remedies and their possible identification across geographical borders."
+        }
+      ],
+      "accessConditions": "restricted",
+      "howToCite": "Holler, T.; Baptista Wilhelm, L; Von Kerssenbrock-Krosigk, G.: Healing Arts. Representations and Practices of Medical Knowledge in Art and Literature (9th-12th centuries) [database]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083E",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2024-07-19",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            "text": "CC BY-NC-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083E-person-000",
+          "roles": [
+            "PI",
+            "Project Leader"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083E-person-002",
+          "roles": [
+            "Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083E-person-001",
+          "roles": [
+            "Data Collector"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Dataset of the Project Healing Arts",
+      "typeOfData": [
+        "Image",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083E-person-001",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Rheinsprung 9/11",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "gregor.krosigk@unibas.ch",
+      "familyNames": [
+        "von Kerssenbrock-Krosigk"
+      ],
+      "givenNames": [
+        "Gregor"
+      ],
+      "jobTitles": [
+        "Student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083E-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083E-person-002",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Rheinsprung 9/11",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "ly.baptistawilhelm@unibas.ch",
+      "familyNames": [
+        "Baptista Wilhelm"
+      ],
+      "givenNames": [
+        "Lyvia"
+      ],
+      "jobTitles": [
+        "Student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083E-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083E-person-000",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Rheinsprung 9/11",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "theresa.holler@unibas.ch",
+      "familyNames": [
+        "Holler"
+      ],
+      "givenNames": [
+        "Theresa"
+      ],
+      "jobTitles": [
+        "Post-doctoral Researcher"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083E-organization-000"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083E-organization-001",
+      "__type": "Organization",
+      "name": "Swiss National Science Foundation (SNSF)"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083E-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "St. Alban-Graben 8/10",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "daniela.steinebrunner@unibas.ch",
+      "name": "Universität Basel, Kunsthistorisches Seminar",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://kunstgeschichte.philhist.unibas.ch/de/",
+        "text": "https://kunstgeschichte.philhist.unibas.ch/de/"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083E-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-083E-organization-001"
+      ],
+      "name": "Ambizione",
+      "number": "201738",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/201738",
+        "text": "https://data.snf.ch/grants/grant/201738"
+      }
+    }
+  ]
+}

@@ -1,0 +1,912 @@
+{
+  "$schema": "../../resources/schema-metadata-final.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Lucien Criblez, Lea Hägi, Stefan Kessler, Christina Rothen and Thomas Ruoss (2024). Forschungsinfrastruktur «Bildung in Zahlen» [Datenbank]. DaSCH, https://ark.dasch.swiss/ark:/72163/1/0828.",
+    "teaserText": "Annotated historical statistics on the development and use of cantonal education programmes and the vocational education and training system in Switzerland in the 19th and 20th centuries.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0828-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "de": "BiZ"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0828-person-000",
+    "dataManagementPlan": {
+      "__type": "DataManagementPlan",
+      "available": true
+    },
+    "description": {
+      "en": "As part of the “Bildung in Zahlen” (Education by numbers) project funded by the Swiss National Science Foundation, long-term statistical series on the development of cantonal education programmes and the vocational education and training system in Switzerland in the 19th and 20th centuries were being generated, annotated and contextualised between September 2010 and December 2023. The research infrastructure comprises data on all educational levels, including pre-school, compulsory school, secondary school, higher education as well as vocational and professional education and training. The statistical data provide a basis for empirical-quantitative and historical analysis of changes in education systems in Switzerland. In addition, information on the sources used to compile these series, graphs visualizing school types and educational pathways as well as chronicles containing information on normative changes in school structures allow the statistical data to be placed in the historical context of the respective (cantonal) education system."
+    },
+    "disciplines": [
+      {
+        "en": "10104 Education and learning sciences, subject-specific education"
+      },
+      {
+        "en": "10201 Sociology"
+      },
+      {
+        "en": "10302 Swiss history"
+      }
+    ],
+    "endDate": "2023-12-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0828-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0828-grant-000",
+      "http://ns.dasch.swiss/repository#dsp-0828-grant-001",
+      "http://ns.dasch.swiss/repository#dsp-0828-grant-002",
+      "http://ns.dasch.swiss/repository#dsp-0828-grant-003"
+    ],
+    "keywords": [
+      {
+        "en": "History of education"
+      },
+      {
+        "en": "Educational policy"
+      },
+      {
+        "en": "Educational statistics"
+      },
+      {
+        "en": "Pre-school"
+      },
+      {
+        "en": "Compulsory school (primary school, lower and upper secondary school)"
+      },
+      {
+        "en": "High school"
+      },
+      {
+        "en": "Vocational and professional education and training"
+      },
+      {
+        "en": "Teacher education"
+      },
+      {
+        "en": "University"
+      }
+    ],
+    "name": "Bildung in Zahlen (Education by numbers)",
+    "shortcode": "0828",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658434/switzerland.html",
+        "text": "Switzerland"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2657895/kanton-zuerich.html",
+        "text": "Zurich"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2661551/canton-de-berne.html",
+        "text": "Bern"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2659810/kanton-luzern.html",
+        "text": "Lucerne"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658226/kanton-uri.html",
+        "text": "Uri"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658664/kanton-schwyz.html",
+        "text": "Schwyz"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2659315/kanton-obwalden.html",
+        "text": "Obwalden"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2659471/kanton-nidwalden.html",
+        "text": "Nidwalden"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2660593/kanton-glarus.html",
+        "text": "Glarus"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2657907/kanton-zug.html",
+        "text": "Zug"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2660717/canton-de-fribourg.html",
+        "text": "Fribourg"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658563/kanton-solothurn.html",
+        "text": "Solothurn"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2661602/kanton-basel-stadt.html",
+        "text": "Basel-City"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2661603/kanton-basel-landschaft.html",
+        "text": "Basel-Landschaft"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658760/kanton-schaffhausen.html",
+        "text": "Schaffhausen"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2661739/kanton-appenzell-ausserrhoden.html",
+        "text": "Appenzell Ausserrhoden"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2661741/kanton-appenzell-innerrhoden.html",
+        "text": "Appenzell Innerrhoden"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658821/kanton-st-gallen.html",
+        "text": "Saint Gall"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2660522/kanton-graubuenden.html",
+        "text": "Canton Grisons"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2661876/kanton-aargau.html",
+        "text": "Aargau"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658372/kanton-thurgau.html",
+        "text": "Thurgau"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658370/ticino.html",
+        "text": "Ticino"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658182/canton-de-vaud.html",
+        "text": "Vaud"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658205/canton-du-valais.html",
+        "text": "Valais"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2659495/neuchatel.html",
+        "text": "Neuchâtel"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2660645/geneve.html",
+        "text": "Geneva"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2660207/jura.html",
+        "text": "Jura"
+      }
+    ],
+    "startDate": "2010-09-01",
+    "temporalCoverage": [
+      {
+        "en": "19th Century"
+      },
+      {
+        "en": "20th Century"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/w0ViRJuOQwy6az9amUg-gw",
+      "text": "Discover Project Data"
+    },
+    "secondaryURL": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://www.bildungsgeschichte.uzh.ch/",
+      "text": "External Project Website"
+    },
+    "status": "Finished"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The infrastructure comprises (1) annotated historical long-term education statistics series (data on teachers, students in training, educational qualifications, school organization and school operations), (2) contextual documentation of this data, (3) graphics and chronicles of school structure development and (4) short biographies of cantonal education directors."
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "en": "Research infrastructure «Bildung in Zahlen»"
+        }
+      ],
+      "accessConditions": "open",
+      "dateCreated": "2010-09-01",
+      "datePublished": "2023-12-31",
+      "howToCite": "Lucien Criblez, Lea Hägi, Stefan Kessler, Christina Rothen and Thomas Ruoss (2024). Forschungsinfrastruktur «Bildung in Zahlen» [Datenbank]. DaSCH, https://ark.dasch.swiss/ark:/72163/1/0828.",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "en": "French",
+          "de": "Französisch",
+          "fr": "français"
+        },
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        },
+        {
+          "en": "Italian",
+          "de": "Italienisch",
+          "fr": "italien"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2024-03-01",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by/4.0/",
+            "text": "CC BY 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-000",
+          "roles": [
+            "Project Leader (2010–2023), Editor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-001",
+          "roles": [
+            "Project Manager (2021–2023), Editor, Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-002",
+          "roles": [
+            "Project Manager (2019–2023), Editor, Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-003",
+          "roles": [
+            "Project Manager (2014–2019), Editor, Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-004",
+          "roles": [
+            "Project Manager (2010–2018), Editor, Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-005",
+          "roles": [
+            "Project Member (2022–2023), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-006",
+          "roles": [
+            "Project Member (2020–2021), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-007",
+          "roles": [
+            "Project Member (2014–2019), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-008",
+          "roles": [
+            "Project Member (2010–2013), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-009",
+          "roles": [
+            "Project Member (2010–2013), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-010",
+          "roles": [
+            "Project Member (2023), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-011",
+          "roles": [
+            "Project Member (2017–2022), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-012",
+          "roles": [
+            "Project Member (2017–2020), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-013",
+          "roles": [
+            "Project Member (2020–2023), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-014",
+          "roles": [
+            "Project Member (2010–2013), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-015",
+          "roles": [
+            "Project Member (2020–2023), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-016",
+          "roles": [
+            "Project Member (2010–2013), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-017",
+          "roles": [
+            "Project Member (2010–2013), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-018",
+          "roles": [
+            "Project Member (2014–2017), Contributor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0828-person-019",
+          "roles": [
+            "Project Member (2018–2022), Contributor"
+          ]
+        }
+      ],
+      "status": "Finished",
+      "title": "Forschungsinfrastruktur «Bildung in Zahlen»",
+      "typeOfData": [
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-001",
+      "__type": "Person",
+      "familyNames": [
+        "Hägi"
+      ],
+      "givenNames": [
+        "Lea"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-002",
+      "__type": "Person",
+      "familyNames": [
+        "Kessler"
+      ],
+      "givenNames": [
+        "Stefan"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-0298-4827",
+          "text": "ORCID URL: https://orcid.org/0000-0003-0298-4827"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-003",
+      "__type": "Person",
+      "familyNames": [
+        "Rothen"
+      ],
+      "givenNames": [
+        "Christina"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-004",
+      "__type": "Person",
+      "familyNames": [
+        "Ruoss"
+      ],
+      "givenNames": [
+        "Thomas"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-2261-907X",
+          "text": "ORCID URL: https://orcid.org/0000-0002-2261-907X"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-005",
+      "__type": "Person",
+      "familyNames": [
+        "Bertschinger"
+      ],
+      "givenNames": [
+        "Romina"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-006",
+      "__type": "Person",
+      "familyNames": [
+        "Erb"
+      ],
+      "givenNames": [
+        "Jeannine"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-007",
+      "__type": "Person",
+      "familyNames": [
+        "Flury"
+      ],
+      "givenNames": [
+        "Carmen"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-008",
+      "__type": "Person",
+      "familyNames": [
+        "Gebauer"
+      ],
+      "givenNames": [
+        "Susann"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-009",
+      "__type": "Person",
+      "familyNames": [
+        "Giudici"
+      ],
+      "givenNames": [
+        "Anja"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0001-8238-7859",
+          "text": "ORCID URL: https://orcid.org/0000-0001-8238-7859"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-010",
+      "__type": "Person",
+      "familyNames": [
+        "Haymoz"
+      ],
+      "givenNames": [
+        "Nives"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-011",
+      "__type": "Person",
+      "familyNames": [
+        "Heinzer"
+      ],
+      "givenNames": [
+        "Lars"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-012",
+      "__type": "Person",
+      "familyNames": [
+        "Lehner-Loosli"
+      ],
+      "givenNames": [
+        "Tamara"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-013",
+      "__type": "Person",
+      "familyNames": [
+        "Mazzarella"
+      ],
+      "givenNames": [
+        "Jennifer"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-014",
+      "__type": "Person",
+      "familyNames": [
+        "Merz"
+      ],
+      "givenNames": [
+        "Nicole"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-015",
+      "__type": "Person",
+      "familyNames": [
+        "Pfiffner"
+      ],
+      "givenNames": [
+        "Nathalie"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-016",
+      "__type": "Person",
+      "familyNames": [
+        "Probst-Schellenberg"
+      ],
+      "givenNames": [
+        "Mirjam"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-017",
+      "__type": "Person",
+      "familyNames": [
+        "Sibilia"
+      ],
+      "givenNames": [
+        "Miriam"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-018",
+      "__type": "Person",
+      "familyNames": [
+        "Ullmann"
+      ],
+      "givenNames": [
+        "Lara"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-019",
+      "__type": "Person",
+      "familyNames": [
+        "de Vries"
+      ],
+      "givenNames": [
+        "Raffaela",
+        "Christina"
+      ],
+      "jobTitles": [
+        "Project staff"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-person-000",
+      "__type": "Person",
+      "email": "lcriblez@ife.uzh.ch",
+      "familyNames": [
+        "Criblez"
+      ],
+      "givenNames": [
+        "Lucien"
+      ],
+      "jobTitles": [
+        "Professor Emeritus of Historical Research in Education and Governance of the Education System"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.ife.uzh.ch/de/institut/emeritiundemeritae/criblezlucien.html",
+          "text": "https://www.ife.uzh.ch/de/institut/emeritiundemeritae/criblezlucien.html"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-organization-001",
+      "__type": "Organization",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://snf.ch/",
+        "text": "https://snf.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Freiestrasse 36",
+        "postalCode": "8032",
+        "locality": "Zürich",
+        "country": "Switzerland"
+      },
+      "name": "Universität Zürich, Institut für Erziehungswissenschaft",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.ife.uzh.ch/",
+        "text": "https://www.ife.uzh.ch/"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "130398",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/130398",
+        "text": "https://data.snf.ch/grants/grant/130398"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-grant-001",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "146239",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/146239",
+        "text": "https://data.snf.ch/grants/grant/146239"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-grant-002",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-001"
+      ],
+      "name": "Research Infrastructure",
+      "number": "170407",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/170407",
+        "text": "https://data.snf.ch/grants/grant/170407"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0828-grant-003",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0828-organization-001"
+      ],
+      "name": "Research Infrastructure",
+      "number": "198049",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/198049",
+        "text": "https://data.snf.ch/grants/grant/198049"
+      }
+    }
+  ]
+}

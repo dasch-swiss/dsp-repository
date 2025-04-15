@@ -1,5 +1,6 @@
 
-
-pub struct AppError {
-    message: String,
+#[derive(Debug)]
+pub enum  AppError {
+    Message(String),
+    Msg(&'static str)
 }

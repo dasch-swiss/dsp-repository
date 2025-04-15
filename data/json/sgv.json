@@ -1,0 +1,1836 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Photo Archive of the Cultural Anthropology Switzerland (CAS).",
+    "teaserText": "With its approximately 500,000 photo objects from across the world, the photo archive of the CAS fosters new approaches to the study and consumption of photographs.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0812-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "Photo Archive of the CAS"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0812-person-001",
+    "description": {
+      "en": "From the beginning of the photographic project initiated by the Cultural Anthropology Switzerland (CAS) in 2014 up to now, one hundred twenty thousand photographs from sixteen collections have been processed. Under the direction of Prof. Dr. Walter Leimgruber and in close collaboration with the Digital Humanities Lab of the University of Basel and the restoration studio Anklin & Assen, these objects were conserved, restored, digitized, and documented in a database as well as made digitally accessible through a user-friendly website. Following Memoriav and the Florence Declaration we preserve and make accessible to the broad public both digital and analogue formats. The photo archive contains about 500,000 photographic objects as part of about 40 collections and spanning 150 years of photographic history."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/5101/html",
+        "text": "Cultural anthropology"
+      }
+    ],
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-006",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-007",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-008",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-009",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-010",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-011",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-012",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-013",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-014",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-015",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-016",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-017",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-018",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-019",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-020",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-021",
+      "http://ns.dasch.swiss/repository#dsp-0812-organization-022"
+    ],
+    "keywords": [
+      {
+        "en": "Afghanistan"
+      },
+      {
+        "en": "Anthropology"
+      },
+      {
+        "en": "Cultural Heritage"
+      },
+      {
+        "en": "Folklore"
+      },
+      {
+        "en": "Participation"
+      },
+      {
+        "en": "Photo Archives"
+      },
+      {
+        "en": "Photography"
+      },
+      {
+        "en": "Sumatra"
+      },
+      {
+        "en": "Switzerland"
+      },
+      {
+        "en": "Syria"
+      },
+      {
+        "en": "Visual Anthropology"
+      },
+      {
+        "en": "Visual Studies"
+      }
+    ],
+    "name": "Photo Archive of the Cultural Anthropology Switzerland (CAS)",
+    "publications": [
+      {
+        "text": "Graf, Stephan, Huber, Birgit, Oezvegyi, Aila, Peduzzi, Nicole (2019). “Das Fotoarchiv der Schweizerischen Gesellschaft für Volkskunde: Ein Ort der Forschung, der Begegnungen und Affekte”. In: Rundbrief Fotografie 26/1: 31–40."
+      },
+      {
+        "text": "Peduzzi, Nicole (2016). “Die Wohlfahrt fotografischer Objekte”. In: Bulletin SAGW 3: 44–47."
+      },
+      {
+        "text": "Peduzzi, Nicole (2018). “Ein Fotoarchiv zwischen Wissenschaftlichkeit und Intimität”. In: Memoriav Bulletin 25: 38-39."
+      },
+      {
+        "text": "Peduzzi, Nicole (2018). “Un archivio tra intimità e rigore scientifico”. In: Memoriav Bulletin 25: 38-39."
+      }
+    ],
+    "shortcode": "0812",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/798544/republic-of-poland.html",
+        "text": "Poland"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2264397/portuguese-republic.html",
+        "text": "Portugal"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/660013/republic-of-finland.html",
+        "text": "Finland"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/357994/arab-republic-of-egypt.html",
+        "text": "Egypt"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/192950/republic-of-kenya.html",
+        "text": "Kenya"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/1149361/islamic-republic-of-afghanistan.html",
+        "text": "Afghanistan"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/1269750/republic-of-india.html",
+        "text": "India"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/11919979/new-england.html",
+        "text": "New England"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/1062947/republic-of-madagascar.html",
+        "text": "Madagascar"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/3017382/republic-of-france.html",
+        "text": "France"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/878675/republic-of-zimbabwe.html",
+        "text": "Zimbabwe"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/3144096/kingdom-of-norway.html",
+        "text": "Norway"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2233387/republic-of-cameroon.html",
+        "text": "Cameroon"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2510769/kingdom-of-spain.html",
+        "text": "Spain"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2434508/republic-of-chad.html",
+        "text": "Chad"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/3175395/italian-republic.html",
+        "text": "Italy"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/149590/united-republic-of-tanzania.html",
+        "text": "Tanzania"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2960313/grand-duchy-of-luxembourg.html",
+        "text": "Luxembourg"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2782113/republic-of-austria.html",
+        "text": "Austria"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/163843/syrian-arab-republic.html",
+        "text": "Syria"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/337996/federal-democratic-republic-of-ethiopia.html",
+        "text": "Ethiopia"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2661886/kingdom-of-sweden.html",
+        "text": "Sweden"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/1819730/hong-kong-special-administrative-region.html",
+        "text": "Hong Kong"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "http://www.geonames.org/2638360/scotland.html",
+        "text": "Scotland"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/1643084/republic-of-indonesia.html",
+        "text": "Indonesia"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2921044/federal-republic-of-germany.html",
+        "text": "Germany"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658434/switzerland.html",
+        "text": "Switzerland"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/1861060/japan.html",
+        "text": "Japan"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/798549/romania.html",
+        "text": "Romania"
+      }
+    ],
+    "startDate": "2014-01-01",
+    "temporalCoverage": [
+      {
+        "en": "Photography: 1850-today"
+      },
+      {
+        "en": "Text: 1700-today"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/Wacpqk4-SfujXYw5EeUoCw",
+      "text": "Discover Project Data"
+    },
+    "secondaryURL": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://archiv.sgv-sstp.ch/",
+      "text": "External Project Website"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The dataset contains the photographic collections of the Cultural Anthropology Switzerland (CAS) as well as about thirty-five films related to them."
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "en": "CAS photo collections"
+        }
+      ],
+      "accessConditions": "open",
+      "howToCite": "Photo Archive of the Cultural Anthropology Switzerland (CAS).",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "en": "French",
+          "de": "Französisch",
+          "fr": "français"
+        },
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        },
+        {
+          "en": "Italian",
+          "de": "Italienisch",
+          "fr": "italien"
+        },
+        {
+          "en": "Romansh"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2022-01-25",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "http://creativecommons.org/licenses/by-nc-nd/4.0/",
+            "text": "CC BY-NC-ND 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-000",
+          "roles": [
+            "Head of project"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-001",
+          "roles": [
+            "Project coordination"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-002",
+          "roles": [
+            "Restoration, Project Consultant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-003",
+          "roles": [
+            "Coordination web design and development, Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-004",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-005",
+          "roles": [
+            "Coordinator, Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-006",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-007",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-008",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-009",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-010",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-011",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-012",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-013",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-014",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-015",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-016",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-017",
+          "roles": [
+            "Oral history partner, Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-018",
+          "roles": [
+            "Oral history partner"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-019",
+          "roles": [
+            "Oral history partner"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-020",
+          "roles": [
+            "Database programming"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-021",
+          "roles": [
+            "Database programming"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-022",
+          "roles": [
+            "Database programming"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-023",
+          "roles": [
+            "Database programming"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-024",
+          "roles": [
+            "Database programming"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-025",
+          "roles": [
+            "Database programming"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-026",
+          "roles": [
+            "Database programming"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-027",
+          "roles": [
+            "Database programming"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-028",
+          "roles": [
+            "Database programming"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-029",
+          "roles": [
+            "Database programming"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-030",
+          "roles": [
+            "Web design and development"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-031",
+          "roles": [
+            "Typeface"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-032",
+          "roles": [
+            "Conservation, restoration, Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-033",
+          "roles": [
+            "Conservation, restoration"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-034",
+          "roles": [
+            "Conservation, restoration"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-035",
+          "roles": [
+            "Conservation, restoration"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-036",
+          "roles": [
+            "Conservation, restoration"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-037",
+          "roles": [
+            "Conservation, restoration"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-038",
+          "roles": [
+            "Conservation, restoration"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-039",
+          "roles": [
+            "Conservation, restoration"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-040",
+          "roles": [
+            "Digitization"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-041",
+          "roles": [
+            "Digitization"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-042",
+          "roles": [
+            "Digitization"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-043",
+          "roles": [
+            "Digitization"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-044",
+          "roles": [
+            "Digitization"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-045",
+          "roles": [
+            "ICT Consultant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-046",
+          "roles": [
+            "Translation (EN)"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-047",
+          "roles": [
+            "Translation (FR), Editor"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-048",
+          "roles": [
+            "Translation (IT)"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-049",
+          "roles": [
+            "Translation (RM)"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0812-person-050",
+          "roles": [
+            "Translation (RM), Data curator"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Photographic collections of the CAS",
+      "typeOfData": [
+        "Image",
+        "Video"
+      ],
+      "urls": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://www.volkskunde.ch/",
+          "text": "Find more information about CAS here"
+        }
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-000",
+      "__type": "Person",
+      "familyNames": [
+        "Leimgruber"
+      ],
+      "givenNames": [
+        "Walter"
+      ],
+      "jobTitles": [
+        "Professor"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000",
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-003"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://kulturwissenschaft.philhist.unibas.ch/de/personen/walter-leimgruber/",
+          "text": "https://kulturwissenschaft.philhist.unibas.ch/de/personen/walter-leimgruber/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-002",
+      "__type": "Person",
+      "email": "regula.anklin@bluewin.ch",
+      "familyNames": [
+        "Anklin"
+      ],
+      "givenNames": [
+        "Regula"
+      ],
+      "jobTitles": [
+        "Conservator/Restorer",
+        "Photo archive consultant"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-003",
+      "__type": "Person",
+      "email": "mail@stephangraf.ch",
+      "familyNames": [
+        "Graf"
+      ],
+      "givenNames": [
+        "Stephan"
+      ],
+      "jobTitles": [
+        "Project Consultant",
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://stephangraf.ch/",
+          "text": "https://stephangraf.ch/"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-004",
+      "__type": "Person",
+      "email": "birgit.huber@unibas.ch",
+      "familyNames": [
+        "Huber"
+      ],
+      "givenNames": [
+        "Birgit"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000",
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-003"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-005",
+      "__type": "Person",
+      "familyNames": [
+        "Iselin"
+      ],
+      "givenNames": [
+        "Regula"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-006",
+      "__type": "Person",
+      "familyNames": [
+        "Karrer"
+      ],
+      "givenNames": [
+        "Uta"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000",
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-003"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-007",
+      "__type": "Person",
+      "familyNames": [
+        "Özvegyi"
+      ],
+      "givenNames": [
+        "Aila"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000",
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-003"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-008",
+      "__type": "Person",
+      "familyNames": [
+        "Wiedemer"
+      ],
+      "givenNames": [
+        "Caroline"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-009",
+      "__type": "Person",
+      "familyNames": [
+        "Chen"
+      ],
+      "givenNames": [
+        "Lucia"
+      ],
+      "jobTitles": [
+        "Intern"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-010",
+      "__type": "Person",
+      "familyNames": [
+        "Hohn"
+      ],
+      "givenNames": [
+        "Julia"
+      ],
+      "jobTitles": [
+        "Intern"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-011",
+      "__type": "Person",
+      "familyNames": [
+        "Planzer"
+      ],
+      "givenNames": [
+        "Julia"
+      ],
+      "jobTitles": [
+        "Intern"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-012",
+      "__type": "Person",
+      "familyNames": [
+        "Weber"
+      ],
+      "givenNames": [
+        "Dominic"
+      ],
+      "jobTitles": [
+        "Civil service associate",
+        "Intern"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-013",
+      "__type": "Person",
+      "familyNames": [
+        "Do Sul"
+      ],
+      "givenNames": [
+        "Leandro"
+      ],
+      "jobTitles": [
+        "Civil service associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-014",
+      "__type": "Person",
+      "familyNames": [
+        "Röthlisberger"
+      ],
+      "givenNames": [
+        "Ramon"
+      ],
+      "jobTitles": [
+        "Civil service associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-015",
+      "__type": "Person",
+      "familyNames": [
+        "Doebele"
+      ],
+      "givenNames": [
+        "Verena"
+      ],
+      "jobTitles": [
+        "Volunteer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-016",
+      "__type": "Person",
+      "familyNames": [
+        "Scheidegger"
+      ],
+      "givenNames": [
+        "Annerose"
+      ],
+      "jobTitles": [
+        "Volunteer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-017",
+      "__type": "Person",
+      "familyNames": [
+        "Ghirardelli"
+      ],
+      "givenNames": [
+        "Gennaro"
+      ],
+      "jobTitles": [
+        "Collector",
+        "Photographer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-018",
+      "__type": "Person",
+      "familyNames": [
+        "Röösli"
+      ],
+      "givenNames": [
+        "Anton"
+      ],
+      "jobTitles": [
+        "Collector",
+        "Photographer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-019",
+      "__type": "Person",
+      "familyNames": [
+        "Werner"
+      ],
+      "givenNames": [
+        "Margrith"
+      ],
+      "jobTitles": [
+        "Collector",
+        "Photographer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-020",
+      "__type": "Person",
+      "familyNames": [
+        "Rosenthaler"
+      ],
+      "givenNames": [
+        "Lukas"
+      ],
+      "jobTitles": [
+        "Assistant Professor"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-021",
+      "__type": "Person",
+      "familyNames": [
+        "Geer"
+      ],
+      "givenNames": [
+        "Benjamin"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-022",
+      "__type": "Person",
+      "familyNames": [
+        "Subotic"
+      ],
+      "givenNames": [
+        "Ivan"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-023",
+      "__type": "Person",
+      "familyNames": [
+        "Schweizer"
+      ],
+      "givenNames": [
+        "Tobias"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-024",
+      "__type": "Person",
+      "familyNames": [
+        "Kilchenmann"
+      ],
+      "givenNames": [
+        "André"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-025",
+      "__type": "Person",
+      "familyNames": [
+        "Aeschlimann"
+      ],
+      "givenNames": [
+        "Andreas"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-026",
+      "__type": "Person",
+      "familyNames": [
+        "Alassi"
+      ],
+      "givenNames": [
+        "Sepideh"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-027",
+      "__type": "Person",
+      "familyNames": [
+        "Gafner"
+      ],
+      "givenNames": [
+        "Tamino"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-028",
+      "__type": "Person",
+      "familyNames": [
+        "Tissaveerasingham"
+      ],
+      "givenNames": [
+        "Vijeinath"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-029",
+      "__type": "Person",
+      "familyNames": [
+        "Zbinden"
+      ],
+      "givenNames": [
+        "Erwin"
+      ],
+      "jobTitles": [
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-030",
+      "__type": "Person",
+      "familyNames": [
+        "Aeschbach"
+      ],
+      "givenNames": [
+        "Marin"
+      ],
+      "jobTitles": [
+        "Design and webapp development"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-004"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-031",
+      "__type": "Person",
+      "familyNames": [
+        "Harb"
+      ],
+      "givenNames": [
+        "Fabian"
+      ],
+      "jobTitles": [
+        "Designer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-005"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-032",
+      "__type": "Person",
+      "familyNames": [
+        "Anklin Kull"
+      ],
+      "givenNames": [
+        "Miriam"
+      ],
+      "jobTitles": [
+        "Assistant",
+        "Research associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000",
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-033",
+      "__type": "Person",
+      "familyNames": [
+        "Eisenhut"
+      ],
+      "givenNames": [
+        "Fiona"
+      ],
+      "jobTitles": [
+        "Conservator/Restorer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-034",
+      "__type": "Person",
+      "familyNames": [
+        "Gründel"
+      ],
+      "givenNames": [
+        "Johanna"
+      ],
+      "jobTitles": [
+        "Conservator/Restorer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-035",
+      "__type": "Person",
+      "familyNames": [
+        "van den Heiligenberg"
+      ],
+      "givenNames": [
+        "Vai"
+      ],
+      "jobTitles": [
+        "Conservator/Restorer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-036",
+      "__type": "Person",
+      "familyNames": [
+        "Hofmann"
+      ],
+      "givenNames": [
+        "Gian",
+        "Luca"
+      ],
+      "jobTitles": [
+        "Conservator/Restorer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-037",
+      "__type": "Person",
+      "familyNames": [
+        "Huber"
+      ],
+      "givenNames": [
+        "Corinne"
+      ],
+      "jobTitles": [
+        "Conservator/Restorer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-038",
+      "__type": "Person",
+      "familyNames": [
+        "Kull"
+      ],
+      "givenNames": [
+        "Jonas"
+      ],
+      "jobTitles": [
+        "Conservator/Restorer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-039",
+      "__type": "Person",
+      "familyNames": [
+        "Lowe"
+      ],
+      "givenNames": [
+        "Emma"
+      ],
+      "jobTitles": [
+        "Conservator/Restorer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-040",
+      "__type": "Person",
+      "familyNames": [
+        "Fornaro"
+      ],
+      "givenNames": [
+        "Peter"
+      ],
+      "jobTitles": [
+        "Privatdozent"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-1485-4923",
+          "text": "ORCID URL: https://orcid.org/0000-0003-1485-4923"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-041",
+      "__type": "Person",
+      "familyNames": [
+        "Tschakert"
+      ],
+      "givenNames": [
+        "Alexandra"
+      ],
+      "jobTitles": [
+        "Research Associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-042",
+      "__type": "Person",
+      "familyNames": [
+        "Meier"
+      ],
+      "givenNames": [
+        "Daniela"
+      ],
+      "jobTitles": [
+        "Research Associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-043",
+      "__type": "Person",
+      "familyNames": [
+        "Stratton"
+      ],
+      "givenNames": [
+        "Dominic"
+      ],
+      "jobTitles": [
+        "Assistant"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-044",
+      "__type": "Person",
+      "familyNames": [
+        "Buder"
+      ],
+      "givenNames": [
+        "Stefanie"
+      ],
+      "jobTitles": [
+        "Research Associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-045",
+      "__type": "Person",
+      "familyNames": [
+        "Longhitano"
+      ],
+      "givenNames": [
+        "Marco"
+      ],
+      "jobTitles": [
+        "IT Consultant",
+        "IT-Systems Engineer"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-046",
+      "__type": "Person",
+      "familyNames": [
+        "Stephenson"
+      ],
+      "givenNames": [
+        "Nigel"
+      ],
+      "jobTitles": [
+        "Free-lance translator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-047",
+      "__type": "Person",
+      "familyNames": [
+        "Hilfiker Durand"
+      ],
+      "givenNames": [
+        "Véronique"
+      ],
+      "jobTitles": [
+        "Free-lance editor and translator (FR)",
+        "Institute management"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000",
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-003"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-048",
+      "__type": "Person",
+      "familyNames": [
+        "Peduzzi"
+      ],
+      "givenNames": [
+        "Dante"
+      ],
+      "jobTitles": [
+        "Membro Commissione Sorveglianza dei Licei del Canton Grigioni"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-049",
+      "__type": "Person",
+      "familyNames": [
+        "Conrad"
+      ],
+      "givenNames": [
+        "Benno"
+      ],
+      "jobTitles": [
+        "Cultural Mediator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-050",
+      "__type": "Person",
+      "familyNames": [
+        "Spinas"
+      ],
+      "givenNames": [
+        "Violanta"
+      ],
+      "jobTitles": [
+        "Volunteer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-person-001",
+      "__type": "Person",
+      "email": "nicole.peduzzi@ekws.ch",
+      "secondaryEmail": "nicole.peduzzilonghitano@unibas.ch",
+      "familyNames": [
+        "Peduzzi Longhitano"
+      ],
+      "givenNames": [
+        "Nicole"
+      ],
+      "jobTitles": [
+        "Curator photo archive",
+        "Project coordinator",
+        "Senior Research Associate"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-000",
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-003"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-004",
+      "__type": "Organization",
+      "email": "mail@formwerdung.ch",
+      "name": "Formwerdung",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://formwerdung.ch/",
+        "text": "https://formwerdung.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-005",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Klingelbergstrasse 11",
+        "postalCode": "4056",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "mail@abcdinamo.com",
+      "name": "Dinamo Basel",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://abcdinamo.com/",
+        "text": "https://abcdinamo.com/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-006",
+      "__type": "Organization",
+      "name": "Memoriav",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://memoriav.ch/",
+        "text": "https://memoriav.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-007",
+      "__type": "Organization",
+      "name": "Ernst Göhner Stiftung",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.ernst-goehner-stiftung.ch",
+        "text": "http://www.ernst-goehner-stiftung.ch"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-008",
+      "__type": "Organization",
+      "name": "Sophie und Karl Binding Stiftung"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-009",
+      "__type": "Organization",
+      "name": "Goethe-Stiftung für Kunst und Wissenschaft"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-010",
+      "__type": "Organization",
+      "name": "Die Schweizerische Post"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-011",
+      "__type": "Organization",
+      "name": "Fondation Dufloteau"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-012",
+      "__type": "Organization",
+      "name": "Landis&Gyr Stiftung",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.lg-stiftung.ch/",
+        "text": "https://www.lg-stiftung.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-013",
+      "__type": "Organization",
+      "name": "FC Basel"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-014",
+      "__type": "Organization",
+      "name": "Bundesamt für Kultur (BAK)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.bak.admin.ch/",
+        "text": "https://www.bak.admin.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-015",
+      "__type": "Organization",
+      "name": "Bundesamt für Bevölkerungsschutz (BABS)"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-016",
+      "__type": "Organization",
+      "name": "Loterie Romande",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.loro.ch/",
+        "text": "https://www.loro.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-017",
+      "__type": "Organization",
+      "name": "Lotteriefonds, Kanton Zürich"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-018",
+      "__type": "Organization",
+      "name": "Swisslos"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-020",
+      "__type": "Organization",
+      "name": "Stiftung für Kunst, Kultur und Geschichte (SKKG)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.skkg.ch",
+        "text": "https://www.skkg.ch"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-021",
+      "__type": "Organization",
+      "name": "Jacqueline Spengler Stiftung c/o Christoph Merian Stiftung (CMS)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.cms-basel.ch/stiftung/selbstaendige-stiftungen/jacqueline-spengler-stiftung",
+        "text": "https://www.cms-basel.ch/stiftung/selbstaendige-stiftungen/jacqueline-spengler-stiftung"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-022",
+      "__type": "Organization",
+      "name": "Private anonymous donor"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-019",
+      "__type": "Organization",
+      "name": "Swiss National Science Foundation (SNSF)"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-003",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Rheinsprung 9/11",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "kulturwissenschaft@unibas.ch",
+      "name": "Seminar für Kulturwissenschaft und Europäische Ethnologie, Universität Basel",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://kulturwissenschaft.philhist.unibas.ch/",
+        "text": "https://kulturwissenschaft.philhist.unibas.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-002",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "St. Johanns-Ring 133",
+        "postalCode": "4056",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "name": "Atelier für Restaurierung Anklin & Assen"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Spalenberg 65",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "sekretariat-dhlab@unibas.ch",
+      "name": "Digital Humanities Lab (DHLab), University of Basel",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://dhlab.philhist.unibas.ch/",
+        "text": "https://dhlab.philhist.unibas.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Spalenvorstadt 2",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "archiv@sgv-sstp.ch",
+      "name": "Photo Archive of the Cultural Anthropology Switzerland (CAS)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://archiv.sgv-sstp.ch/",
+        "text": "https://archiv.sgv-sstp.ch/"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0812-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0812-organization-019"
+      ],
+      "name": "Participatory Knowledge Practices in Analogue and Digital Image Archives (PIA)",
+      "number": "193788",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://p3.snf.ch/Project-193788",
+        "text": "https://p3.snf.ch/Project-193788"
+      }
+    }
+  ]
+}

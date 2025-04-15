@@ -1,0 +1,535 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Brönnimann, D., Lo Russo, S., Pümpin, Ch., Ismail-Meyer, K., Devos, Y., Kübler, S., Rentzel, Ph. (2024). I-GEOARCHive [Database]. DaSCH. http://ark.dasch.swiss/ark:/72163/1/0838",
+    "teaserText": "I-GEOARCHive provides geoarchaeological data and images (profile photos, thin section scans, microscope photos, layer descriptions, mortar and ceramic samples, etc.) from various archaeological sites.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0838-dataset-000"
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0838-person-000",
+    "dataManagementPlan": {
+      "__type": "DataManagementPlan",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://zenodo.org/doi/10.5281/zenodo.10514612",
+        "text": "https://zenodo.org/doi/10.5281/zenodo.10514612"
+      },
+      "available": true
+    },
+    "description": {
+      "en": "The geoarchaeological collection of IPAS (Integrative Prehistory and Archaeological Science) at the University of Basel and of AMGC (Archaeology, Environmental Changes & Geo-Chemistry) at the Vrije Universiteit Brussel includes block and sediment samples of soils and archaeological deposits as well as rocks, flints, ceramics and mortar samples etc. The „I-GEOARCHive“ image database of thin section scans (and corresponding microscope photos) makes the collection digitally accessible to the public and in particular to research and teaching. The freely accessible „I-GEOARCHive“ database enables users to keyword, analyse, publish and archive geoarchaeological samples. Furthermore, micromorphological observations are linked to the thin section scans and thus to the block samples and profiles. This cross-linking enables multidimensional publication and archiving of micromorphological image data and their relation to original archaeological features."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/550512/html",
+        "text": "Stratigraphy"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/2506/html",
+        "text": "Geology"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/2511/html",
+        "text": "Soil Science (Soil Science)"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/550502/html",
+        "text": "Ceramology"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/550501/html",
+        "text": "Archaeology"
+      }
+    ],
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0838-organization-000",
+      "http://ns.dasch.swiss/repository#dsp-0838-organization-002",
+      "http://ns.dasch.swiss/repository#dsp-0838-organization-003"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0838-grant-000",
+      "http://ns.dasch.swiss/repository#dsp-0838-grant-001"
+    ],
+    "keywords": [
+      {
+        "en": "Geoarchaeology"
+      },
+      {
+        "en": "Archaeology"
+      },
+      {
+        "en": "Geology"
+      },
+      {
+        "en": "Micromorphology"
+      },
+      {
+        "en": "Petrography"
+      },
+      {
+        "en": "Thin Section"
+      },
+      {
+        "en": "Microphotographs"
+      },
+      {
+        "en": "Microartifacts"
+      },
+      {
+        "de": "Geoarchäologie"
+      },
+      {
+        "de": "Archäologie"
+      },
+      {
+        "de": "Geologie"
+      },
+      {
+        "de": "Mikromorphologie"
+      },
+      {
+        "de": "Petrographie"
+      },
+      {
+        "de": "Dünnschliff"
+      },
+      {
+        "de": "Mikroskopie"
+      },
+      {
+        "de": "Mikroskopfoto"
+      },
+      {
+        "de": "Mikroartefakte"
+      },
+      {
+        "de": "Archäologische Schichten"
+      }
+    ],
+    "name": "I-GEOARCHive",
+    "publications": [
+      {
+        "text": "Lo Russo, S., Brönnimann, D., Pümpin, C., Ismail-Meyer, K., Rentzel, P., Gautschy, R., Wimmer, J., Devos, Y., Nys, K: Recording, sharing and linking micromorphological data: A two-pillar database system, Open Archaeology (submitted)."
+      }
+    ],
+    "shortcode": "0838",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658434",
+        "text": "Switzerland"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/9408659",
+        "text": "Western Europe"
+      }
+    ],
+    "startDate": "2020-02-06",
+    "temporalCoverage": [
+      {
+        "en": "Palaeolithic to Modern"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/n0eRr0vWTDOArdaBAZ-jQQ",
+      "text": "Discover Project Data"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The geoarchaeological collection of  IPAS (Integrative Prehistory and Archaeological Science) at the University of Basel and of  AMGC (Archaeology, Environmental Changes & Geo-Chemistry) at the Vrije Universiteit Brussel includes block and sediment samples of soils and archaeological deposits as well as rocks, flints, ceramics and mortar samples. The I-GEOARCHive image database of thin section scans and microphotographs makes the collection digitally accessible to research and teaching. The freely accessible I-GEOARCHive database enables users to keyword, analyse, publish and archive geoarchaeological samples. Furthermore, micromorphological observations are linked to the thin section scans and thus to the block samples and profiles. This cross-linking enables multidimensional publication and archiving of micromorphological image data and their relation to original archaeological features."
+        }
+      ],
+      "accessConditions": "open",
+      "additional": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://zenodo.org/doi/10.5281/zenodo.10514612",
+          "text": "Data Model and Data Management Plan"
+        }
+      ],
+      "howToCite": "Brönnimann, D., Lo Russo, S., Pümpin, Ch., Ismail-Meyer, K., Devos, Y., Kübler, S., Rentzel, Ph. (2024). I-GEOARCHive [Database]. DaSCH. http://ark.dasch.swiss/ark:/72163/1/0838.",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2024-01-22",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            "text": "CC BY-NC-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0838-person-000",
+          "roles": [
+            "Project Leader, Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0838-person-001",
+          "roles": [
+            "Project Leader, Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0838-person-002",
+          "roles": [
+            "Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0838-person-003",
+          "roles": [
+            "Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0838-person-004",
+          "roles": [
+            "Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0838-person-005",
+          "roles": [
+            "Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0838-person-006",
+          "roles": [
+            "Project Leader, Data Collector"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "I-GEOARCHive",
+      "typeOfData": [
+        "Image",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-person-001",
+      "__type": "Person",
+      "email": "sarah.lorusso@unibas.ch",
+      "familyNames": [
+        "Lo Russo"
+      ],
+      "givenNames": [
+        "Sarah"
+      ],
+      "jobTitles": [
+        "PhD Student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0838-organization-000",
+        "http://ns.dasch.swiss/repository#dsp-0838-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-5540-7938",
+          "text": "ORCID URL: https://orcid.org/0000-0002-5540-7938"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-person-002",
+      "__type": "Person",
+      "email": "Yannick.George.Devos@vub.be",
+      "familyNames": [
+        "Devos"
+      ],
+      "givenNames": [
+        "Yannick"
+      ],
+      "jobTitles": [
+        "Prof. Dr."
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0838-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-5315-1916",
+          "text": "ORCID URL: https://orcid.org/0000-0002-5315-1916"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-person-003",
+      "__type": "Person",
+      "email": "christine.puempin@unibas.ch",
+      "familyNames": [
+        "Pümpin"
+      ],
+      "givenNames": [
+        "Christine"
+      ],
+      "jobTitles": [
+        "PhD Student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0838-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-2948-7011",
+          "text": "ORCID URL: https://orcid.org/0000-0003-2948-7011"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-person-004",
+      "__type": "Person",
+      "email": "k.ismail-meyer@unibas.ch",
+      "familyNames": [
+        "Ismail-Meyer"
+      ],
+      "givenNames": [
+        "Kristin"
+      ],
+      "jobTitles": [
+        "Scientific Collaborator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0838-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-0398-6907",
+          "text": "ORCID URL: https://orcid.org/0000-0002-0398-6907"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-person-005",
+      "__type": "Person",
+      "email": "simon.kuebler@unibas.ch",
+      "familyNames": [
+        "Kübler"
+      ],
+      "givenNames": [
+        "Simon"
+      ],
+      "jobTitles": [
+        "BA"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0838-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-person-006",
+      "__type": "Person",
+      "email": "philippe.rentzel@unibas.ch",
+      "familyNames": [
+        "Rentzel"
+      ],
+      "givenNames": [
+        "Philippe"
+      ],
+      "jobTitles": [
+        "PD Dr."
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0838-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-7518-7987",
+          "text": "ORCID URL: https://orcid.org/0000-0002-7518-7987"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-person-000",
+      "__type": "Person",
+      "email": "david.broennimann@unibas.ch",
+      "familyNames": [
+        "Brönnimann"
+      ],
+      "givenNames": [
+        "David"
+      ],
+      "jobTitles": [
+        "Post-doctoral Researcher"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0838-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-3432-1753",
+          "text": "ORCID URL: https://orcid.org/0000-0003-3432-1753"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Pleinlaan 2",
+        "postalCode": "1050",
+        "locality": "Brussels",
+        "country": "Belgium"
+      },
+      "name": "Archaeology, Environmental Changes & Geo-Chemistry (AMGC)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://amgc.research.vub.be/",
+        "text": "https://amgc.research.vub.be/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-organization-002",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3",
+        "postalCode": "CH-3001",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "com@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.snf.ch/",
+        "text": "https://www.snf.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-organization-003",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "HOEK 38, Leuvenseweg 38",
+        "postalCode": "1000",
+        "locality": "Brussel",
+        "country": "Belgium"
+      },
+      "name": "Research Foundation – Flanders (FWO)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.fwo.be",
+        "text": "https://www.fwo.be"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Spalenring 145",
+        "postalCode": "4055",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "name": "Integrative Prehistory and Archaeological Science (IPAS)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://ipna.duw.unibas.ch",
+        "text": "https://ipna.duw.unibas.ch"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0838-organization-002"
+      ],
+      "name": "Weave (SNSF)",
+      "number": "205278",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/205278",
+        "text": "https://data.snf.ch/grants/grant/205278"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0838-grant-001",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0838-organization-003"
+      ],
+      "name": "Weave (FWO)",
+      "number": "FWOAL1057",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://researchportal.vub.be/en/projects/welcome-to-the-dark-side-disclosing-the-invisible-stages-of-medie",
+        "text": "https://researchportal.vub.be/en/projects/welcome-to-the-dark-side-disclosing-the-invisible-stages-of-medie"
+      }
+    }
+  ]
+}

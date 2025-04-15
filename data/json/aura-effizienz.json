@@ -1,0 +1,306 @@
+{
+  "$schema": "../../resources/schema-metadata-final.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Jael Bollag, Katharina Wolf, Hubert Thüring (2018-2023). Aura und Effizienz [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846.",
+    "teaserText": "Das Projekt untersucht die diskursiven und praktischen Wechselwirkungen zwischen Materialisierung und Spiritualisierung in der deutschsprachigen Literatur der 1920-30er Jahre.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0846-dataset-000"
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0846-person-000",
+    "dataManagementPlan": {
+      "__type": "DataManagementPlan",
+      "available": true
+    },
+    "description": {
+      "de": "Nach dem Ersten Weltkrieg formiert sich in den wissenschaftlichen, ökonomischen und medialen Diskursen und Praktiken im Zeichen der Leistung eine Doppelstrategie der wechselweisen Materialisierung und Spiritualisierung von körperlichen und seelisch-geistigen Funktionen und Prozessen. Das Projekt hat untersucht, wie diese Doppelstrategie in der Literatur der 1920-30er-Jahre thematisiert, performiert und reflektiert wird."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/62/htm",
+        "text": "Science of Arts and Letters"
+      }
+    ],
+    "endDate": "2023-04-30",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0846-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0846-grant-000"
+    ],
+    "keywords": [
+      {
+        "de": "Arbeit"
+      },
+      {
+        "de": "Aura"
+      },
+      {
+        "en": "Charisma"
+      },
+      {
+        "de": "Effizienz"
+      },
+      {
+        "de": "Gefängnis"
+      },
+      {
+        "de": "Geist"
+      },
+      {
+        "de": "Körper"
+      },
+      {
+        "de": "Leistung"
+      },
+      {
+        "de": "Materialisierung"
+      },
+      {
+        "de": "Medien"
+      },
+      {
+        "de": "Messianismus"
+      },
+      {
+        "de": "Neoreligiosität"
+      },
+      {
+        "de": "Okkultismus"
+      },
+      {
+        "de": "Optimierung"
+      },
+      {
+        "de": "Psychiatrie"
+      },
+      {
+        "de": "Spiritismus"
+      },
+      {
+        "de": "Spiritualisierung"
+      },
+      {
+        "de": "Taylorismus"
+      },
+      {
+        "de": "Transzendenz"
+      },
+      {
+        "de": "Ökonomie"
+      }
+    ],
+    "name": "Aura und Effizienz. Leistungsorientierte Materialisierung und Spiritualisierung in der Literatur der 1920-30er-Jahre: Emmy Hennings, Marieluise Fleisser, Friedrich Glauser und Bruno Goetz",
+    "publications": [
+      {
+        "text": "Bollag, Jael: „‚Das Brutale kann man nicht bezaubern‘. Emmy Hennings’ literarische Genealogie der Strafe“, in: Hubert Thüring, Ulrich Weber (Hg.): Literatur und Institutionen – Deutschschweizer Literatur zwischen Heteronomie und Autonomie. Zürich: Chronos 2023, S. 27-44."
+      },
+      {
+        "text": "Bollag, Jael; Thüring, Hubert; Wolf, Katharina (Hg.): Aura und Effizienz. Materialisierung und Spiritualisierung in literarischen Texten von 1900-1939. München: Fink [2024]."
+      },
+      {
+        "text": "Bollag, Jael: „Zum Verhältnis von Materialisierung und Spiritualisierung bei Emmy Hennings“, in: Bollag, Thüring, Wolf (Hg.): Aura und Effizienz [2024]."
+      },
+      {
+        "text": "Thüring, Hubert: “Literatur und Arbeit in der Merkwelt der Moderne. Meinrad Inglins Grand Hotel Excelsior und Walter Benjamins Modernetheorien im Licht von Hannah Arendts ‚Vita activa‘“, in: Bollag, Thüring, Wolf (Hg.): Aura und Effizienz [2024]."
+      },
+      {
+        "text": "Wolf, Katharina: „Zwischen Alchemie und Radioaktivität. Charisma und Leistungsdenken bei Bruno Goetz“, in: Bollag, Thüring, Wolf (Hg.): Aura und Effizienz [2024]."
+      },
+      {
+        "text": "Wolf, Katharina: „Bruno Goetz’ Ästhetik der Selbstüberschreitung – ein vergessener Kreuzungspunkt expressionistischen Schreibens“. In: Eichhorn, Kristin / Lorenzen, Johannes S. (Hg.): Internationaler Expressionismus – gestern und heute, Berlin: Neofelis 2023."
+      },
+      {
+        "text": "Wolf, Katharina: „Der Künstler und die Zeitkrankheit“. In: Wolfinger, Kay (Hg.): Hugo Ball Handbuch, Stuttgart: Metzler [2024]."
+      }
+    ],
+    "shortcode": "0846",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2921044/federal-republic-of-germany.html",
+        "text": "Germany"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658434/switzerland.html",
+        "text": "Switzerland"
+      }
+    ],
+    "startDate": "2018-05-01",
+    "temporalCoverage": [
+      {
+        "de": "1900-1939",
+        "en": "1900-1939",
+        "fr": "1900-1939"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/5hWMpIIlQSysoKSJxZpZSA",
+      "text": "Discover Project Data"
+    },
+    "secondaryURL": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://germanistik.philhist.unibas.ch/de/aura-und-effizienz",
+      "text": "External Project Website"
+    },
+    "status": "Finished"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0846-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "de": "Seminar: „Effizienz. Leistung und Literatur (1900-1930)“, Power Point mit Text, Bild, Audios, exportiert als mp4-Dateien. Vorlesung: „Arbeit. Praktiken und Ökonomien des Alltags in der Literatur 1900-1945“, Word-Datei als pdf und PPP-Datei als pdf."
+        }
+      ],
+      "accessConditions": "open",
+      "dateCreated": "2023-06-05",
+      "howToCite": "Jael Bollag, Katharina Wolf, Hubert Thüring (2018-2023). Aura und Effizienz [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846.",
+      "languages": [
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2023-06-07",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            "text": "CC BY-NC-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0846-person-000",
+          "roles": [
+            "Projektleitung, creator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0846-person-001",
+          "roles": [
+            "creator"
+          ]
+        }
+      ],
+      "status": "Finished",
+      "title": "Aura und Effizienz. Leistungsorientierte Materialisierung und Spiritualisierung in der Literatur der 1920-30er-Jahre: Emmy Hennings, Marieluise Fleisser, Friedrich Glauser und Bruno Goetz",
+      "typeOfData": [
+        "Image",
+        "Video",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0846-person-001",
+      "__type": "Person",
+      "familyNames": [
+        "Bollag"
+      ],
+      "givenNames": [
+        "Jael"
+      ],
+      "jobTitles": [
+        "M.A."
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0846-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0846-person-000",
+      "__type": "Person",
+      "email": "hubert.thuering@unibas.ch",
+      "familyNames": [
+        "Thüring"
+      ],
+      "givenNames": [
+        "Hubert"
+      ],
+      "jobTitles": [
+        "Prof. Dr. / Universitätsdozent und Titularprofessor"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0846-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://germanistik.philhist.unibas.ch/de/personen/hubert-thuering",
+          "text": "https://germanistik.philhist.unibas.ch/de/personen/hubert-thuering"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0846-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3",
+        "postalCode": "3001",
+        "locality": "Berne",
+        "country": "Switzerland"
+      },
+      "email": "desk@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://snf.ch/",
+        "text": "https://snf.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0846-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Nadelberg 4",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "hubert.thuering@unibas.ch",
+      "name": "Universität Basel"
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0846-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0846-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "179010",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/179010",
+        "text": "https://data.snf.ch/grants/grant/179010"
+      }
+    }
+  ]
+}

@@ -1,0 +1,350 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Terrier Aliferis, L., Acosta, L., Ciardo, S., Rivoal, M., 2020, MedFrameS [database] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0116.",
+    "teaserText": "This project aims to valorise and better comprehend the various elements surrounding monumental statues of church portals, namely pedestals, canopies, and niches.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0116-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "medframes"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0116-person-000",
+    "description": {
+      "en": "This project aims to valorise and better comprehend the various elements surrounding monumental statues of church portals, namely pedestals, canopies, and niches. Their analysis will be integrated within four research axes: cultural transfers, relationships between the central representation and that at the margins, the communication potential of the objects (agency), and their strategic arrangement within the composition (display). Based on a corpus constituted of over a hundred portals located in the Western part of gothic art penetration (Germany, Belgium, England, France, Iberian Peninsula, and Switzerland), the project will aim to determine the conditions within which technological and formal innovations emerged, and to evaluate their local impact and diffusion. Moreover, it will attempt to understand their significance and their function within the visual message developed at the doorstep of sacred buildings.\nThe project will create synergies with research concerned by the communicative function of religious building portals, and will allow for a better understanding of the semiological stakes of sculpted pedestals and microarchitecture canopies."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/550602/",
+        "text": "History of art"
+      },
+      {
+        "en": "10404 Visual arts and Art history"
+      }
+    ],
+    "endDate": "2023-11-30",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0116-organization-002"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0116-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "Agency"
+      },
+      {
+        "en": "Artistic geography"
+      },
+      {
+        "en": "Canopies"
+      },
+      {
+        "en": "Cultural transfers"
+      },
+      {
+        "en": "Devices"
+      },
+      {
+        "en": "Display"
+      },
+      {
+        "en": "Frame"
+      },
+      {
+        "en": "Gothic sculpture"
+      },
+      {
+        "de": "Niches"
+      },
+      {
+        "en": "Pedestals"
+      }
+    ],
+    "name": "The Medieval Frame of Monumental Portal Sculpture (Pedestals, Canopies, Niches) : Cultural Transfers and Agency (12th-13th Centuries)",
+    "shortcode": "0116",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/6255148/",
+        "text": "Europe"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2510769/",
+        "text": "Spain"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/3017382/",
+        "text": "France"
+      }
+    ],
+    "startDate": "2018-12-01",
+    "temporalCoverage": [
+      {
+        "__type": "URL",
+        "type": "Chronontology",
+        "url": "http://chronontology.dainst.org/period/ROL7rN1qOgMe",
+        "text": "Gothic (Medieval)"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qhb66xnj2",
+        "text": "Moyen Âge classique"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.ls-prod-server.dasch.swiss/project/0116",
+      "text": "Discover Project Data"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0116-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The database regroups the portals of monuments included in the project’s corpus. It is structured by building, and gives access to the photographs as well as the bibliographic and descriptive data of each edifice. The photographs of each portal are presented from general to particular, going from the embrasures to the statues, and to their surrounding elements (pedestals, canopies, capitals). This database is conceived as a working tool allowing for typological groupings to be made between buildings, as well as to conduct comparative analyses. Consequently, the research results can be verified and the data reused to other ends if desired."
+        }
+      ],
+      "accessConditions": "open",
+      "dateCreated": "2020-07-17",
+      "dateModified": "2021-02-10",
+      "datePublished": "2020-07-17",
+      "howToCite": "Terrier Aliferis, L., Acosta, L., Ciardo, S., Rivoal, M., 2020, MedFrameS [database] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0116.",
+      "languages": [
+        {
+          "en": "French",
+          "de": "Französisch",
+          "fr": "français"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2021-09-02",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "text": "CC BY-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0116-person-000",
+          "roles": [
+            "Project leader",
+            "Data collector",
+            "Data curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0116-person-001",
+          "roles": [
+            "Project member",
+            "Data collector",
+            "Data curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0116-person-002",
+          "roles": [
+            "Project member",
+            "Data collector",
+            "Data curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0116-person-003",
+          "roles": [
+            "Data curator"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Base de données MedFrameS",
+      "typeOfData": [
+        "Image",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0116-person-003",
+      "__type": "Person",
+      "email": "marion.rivoal@unil.ch",
+      "familyNames": [
+        "Rivoal"
+      ],
+      "givenNames": [
+        "Marion"
+      ],
+      "jobTitles": [
+        "Research manager"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0116-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0116-person-001",
+      "__type": "Person",
+      "email": "laura.acosta@unine.ch",
+      "familyNames": [
+        "Acosta"
+      ],
+      "givenNames": [
+        "Laura"
+      ],
+      "jobTitles": [
+        "PhD student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0116-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0116-person-002",
+      "__type": "Person",
+      "email": "sabrina.ciardo@gmail.com",
+      "familyNames": [
+        "Ciardo"
+      ],
+      "givenNames": [
+        "Sabrina"
+      ],
+      "jobTitles": [
+        "Scientific collaborator"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0116-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0116-person-000",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Université de Neuchâtel - Faculté des lettres et sciences humaines - Institut d’histoire de l’art et de muséologie - Espace Tilo-Frey 1",
+        "postalCode": "2000",
+        "locality": "Neuchâtel",
+        "country": "Switzerland"
+      },
+      "email": "laurence.terrier@gmail.com",
+      "familyNames": [
+        "Terrier Aliferis"
+      ],
+      "givenNames": [
+        "Laurence"
+      ],
+      "jobTitles": [
+        "Assistant professor"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0116-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-0397-4794",
+          "text": "ORCID URL: https://orcid.org/0000-0003-0397-4794"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0116-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Unicentre",
+        "postalCode": "1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+      },
+      "name": "Université de Lausanne",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.unil.ch/",
+        "text": "https://www.unil.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0116-organization-002",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3 Postfach",
+        "postalCode": "3001",
+        "locality": "Berne",
+        "country": "Switzerland"
+      },
+      "email": "desk@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.snf.ch/",
+        "text": "http://www.snf.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0116-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Avenue du 1er-Mars 26",
+        "postalCode": "2000",
+        "locality": "Neuchâtel",
+        "country": "Switzerland"
+      },
+      "name": "Université de Neuchâtel",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.unine.ch/",
+        "text": "http://www.unine.ch/"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0116-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0116-organization-002"
+      ],
+      "name": "PRIMA",
+      "number": "179787",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/179787",
+        "text": "https://data.snf.ch/grants/grant/179787"
+      }
+    }
+  ]
+}

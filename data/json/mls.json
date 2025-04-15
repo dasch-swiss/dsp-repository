@@ -1,0 +1,473 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "AutorIn: Artikelname. MLS, Datum der Abfrage.",
+    "teaserText": "Das MLS stellt fundierte Information über die AkteurInnen, Institutionen, Orte, Objekte und Phänomene zur Verfügung, die für die Musikgeschichte Schweiz über alle Sparten und Stile relevant sind.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0807-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "Dictionary of Music in Switzerland"
+      },
+      {
+        "fr": "Dictionnaire de la musique en Suisse"
+      },
+      {
+        "de": "Dizionario della musica in Svizzera"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0807-person-001",
+    "description": {
+      "de": "Das Musiklexikon der Schweiz bietet Information zur Musikgeschichte der Schweiz über alle Sparten und Musikstile hinweg: von Kirchengesang bis Jodel, vom Luzern- bis zum Gurten-Festival, vom Montreux-Jazz- bis zum Gurten-Festival, von den Glockengiessern bis zur Clubkultur, vom Alphorn bis zum Hang, von der Tonhalle bis zum KKL. Auf der Grundlage der bereits vorhandenen Lexikographie über die Schweiz, die digitalisiert oder über Verlinkungen bereitgestellt wird, erarbeitet das MLS in Kooperation mit den musikalischen Institutionen der Schweiz und unter Einbezug zahlreicher ExpertInnen aus dem In- und Ausland neue Artikel zu bekannten Personen, Orten und Objekten und bereichert das Wissen laufend mit unbekannten Themen. \nDas MLS ist multimedial, es kombiniert Text, Bild und audiovisuelle Medien und bietet dank der Nutzung von Normdaten den Zugang zu allen Ressourcen im World Wide Web, die mit den behandelten Themen und Personen zur Verfügung stehen."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/5899/html",
+        "text": "Other specialities pedagogical (specify)"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/620306/html",
+        "text": "Music, musicology "
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/6203/html",
+        "text": "Fine arts theory, analysis and criticism"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/620310/html",
+        "text": "Theatre"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/51/html",
+        "text": "Anthropology "
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/55/html",
+        "text": "History"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/58/html",
+        "text": "Pedagogy"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/5599/html",
+        "text": "Other historical specialities (specify)"
+      }
+    ],
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0807-organization-000",
+      "http://ns.dasch.swiss/repository#dsp-0807-organization-001",
+      "http://ns.dasch.swiss/repository#dsp-0807-organization-002",
+      "http://ns.dasch.swiss/repository#dsp-0807-organization-003"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0807-grant-000"
+    ],
+    "keywords": [
+      {
+        "de": "Ethnologie"
+      },
+      {
+        "de": "Geschichte"
+      },
+      {
+        "de": "Musik"
+      },
+      {
+        "de": "Musikwissenschaft"
+      },
+      {
+        "de": "Prosopographie"
+      },
+      {
+        "de": "Pädagogik"
+      },
+      {
+        "de": "Schweiz"
+      },
+      {
+        "de": "Vereinsgeschichte"
+      },
+      {
+        "de": "kulturelle Teilhabe"
+      }
+    ],
+    "name": "Musiklexikon der Schweiz",
+    "shortcode": "0807",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658434/switzerland.html",
+        "text": "Switzerland"
+      }
+    ],
+    "startDate": "2013-01-01",
+    "temporalCoverage": [
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qhb66nbgb",
+        "text": "Völkerwanderungszeit"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qhb664bgz",
+        "text": "Frühes Mittelalter"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qhb664xk9",
+        "text": "Römische"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qhb66388g",
+        "text": "Spätmittelalter"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qhb66rvm3",
+        "text": "Zeitgeschichte"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qhb66h8m4",
+        "text": "Hochmittelalter"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qhb66sn2z",
+        "text": "Frühe Römische"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qhb662qrr",
+        "text": "Mittelalter"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qhb669pgp",
+        "text": "Neuzeit"
+      },
+      {
+        "__type": "URL",
+        "type": "Periodo",
+        "url": "http://n2t.net/ark:/99152/p0qhb66b6b4",
+        "text": "Späte Römische"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/0807",
+      "text": "Discover Project Data"
+    },
+    "secondaryURL": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://mls.0807.dasch.swiss/home",
+      "text": "Project Website"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0807-dataset-000",
+      "__type": "Dataset",
+      "accessConditions": "open",
+      "dateCreated": "2016-01-01",
+      "datePublished": "2020-02-13",
+      "abstracts": [
+        {
+          "de": "Das Musiklexikon der Schweiz bietet Information zur Musikgeschichte der Schweiz über alle Sparten und Musikstile hinweg: von Kirchengesang bis Jodel, vom Luzern- bis zum Gurten-Festival, vom Montreux-Jazz- bis zum Gurten-Festival, von den Glockengiessern bis zur Clubkultur, vom Alphorn bis zum Hang, von der Tonhalle bis zum KKL. Auf der Grundlage der bereits vorhandenen Lexikographie über die Schweiz, die digitalisiert oder über Verlinkungen bereitgestellt wird, erarbeitet das MLS in Kooperation mit den musikalischen Institutionen der Schweiz und unter Einbezug zahlreicher ExpertInnen aus dem In- und Ausland neue Artikel zu bekannten Personen, Orten und Objekten und bereichert das Wissen laufend mit unbekannten Themen. \nDas MLS ist multimedial, es kombiniert Text, Bild und audiovisuelle Medien und bietet dank der Nutzung von Normdaten den Zugang zu allen Ressourcen im World Wide Web, die mit den behandelten Themen und Personen zur Verfügung stehen."
+        }
+      ],
+      "howToCite": "AutorIn: Artikelname. MLS, Datum der Abfrage.",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "en": "French",
+          "de": "Französisch",
+          "fr": "français"
+        },
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        },
+        {
+          "en": "Italian",
+          "de": "Italienisch",
+          "fr": "italien"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2022-05-09",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            "text": "CC BY-NC-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0807-person-000",
+          "roles": [
+            "Coordination, Contact"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0807-person-001",
+          "roles": [
+            "Responsible for the Dataset, Contact with DaSCH"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0807-person-002",
+          "roles": [
+            "Coordination, Lead"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0807-organization-000",
+          "roles": [
+            "Project Leader"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0807-organization-001",
+          "roles": [
+            "Maintainer"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0807-organization-002",
+          "roles": [
+            "Maintainer, Sponsor"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Musiklexikon der Schweiz",
+      "typeOfData": [
+        "Audio",
+        "Image",
+        "Video",
+        "Text",
+        "XML"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0807-person-000",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Mittelstr. 43",
+        "postalCode": "3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "cristina.urchueguia@unibe.ch",
+      "familyNames": [
+        "Urchueguía"
+      ],
+      "givenNames": [
+        "Cristina"
+      ],
+      "jobTitles": [
+        "Professor for Musicology University of Bern / President of SMG"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0807-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-5276-9474",
+          "text": "ORCID URL: https://orcid.org/0000-0002-5276-9474"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0807-person-002",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Hubacherweg 15",
+        "postalCode": "3097",
+        "locality": "Liebefeld",
+        "country": "Switzerland"
+      },
+      "email": "minder@liebefeld.ch",
+      "familyNames": [
+        "Minder-Jeanneret"
+      ],
+      "givenNames": [
+        "Irène"
+      ],
+      "jobTitles": [
+        "President Kuratorium MLS (SAGW)"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0807-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0807-person-001",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Mittelstr. 43",
+        "postalCode": "3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "moritz.kelber@unibe.ch",
+      "familyNames": [
+        "Kelber"
+      ],
+      "givenNames": [
+        "Moritz"
+      ],
+      "jobTitles": [
+        "Research assistant at the University of Bern"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0807-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-1201-6048",
+          "text": "ORCID URL: https://orcid.org/0000-0002-1201-6048"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0807-organization-004",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Mittelstrasse 43",
+        "postalCode": "3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "name": "Universität Bern Institut für Musikwissenschaft"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0807-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Mittelstr. 43",
+        "postalCode": "3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "info@sma-ssm.ch",
+      "name": "Schweizerische Musikforschende Gesellschaft",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.smg-ssm.ch/smg-ssm/",
+        "text": "https://www.smg-ssm.ch/smg-ssm/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0807-organization-003",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Gönhardweg 32",
+        "postalCode": "5000",
+        "locality": "Aarau",
+        "country": "Switzerland"
+      },
+      "name": "Schweizer Musikrat"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0807-organization-002",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Laupenstrasse 7",
+        "postalCode": "3001",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "sagw@sagw.ch",
+      "name": "SAGW Schweizerische Akademie der Geistes- und Sozialwissenschaften"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0807-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Hubacherweg 15",
+        "postalCode": "3097",
+        "locality": "Liebefeld",
+        "country": "Switzerland"
+      },
+      "email": "minder@liebefeld.ch",
+      "name": "Kuratorium Musiklexikon der Schweiz (SAGW)"
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0807-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0807-organization-002"
+      ],
+      "name": "SAGW Förderung der Digitalisierung"
+    }
+  ]
+}

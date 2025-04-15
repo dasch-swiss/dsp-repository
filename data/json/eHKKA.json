@@ -1,0 +1,272 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Morgenthaler et al., historisch-kritsche Kellerausgabe online, 1996-2013",
+    "teaserText": "Gottfried Keller (1819-1890) gehört zu den grossen Autoren des Realismus. Die eHKKA ediert Kellers Gesamtwerk: Seine Romane, Novellen, Gedichte, Tagebücher und Briefe.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-083C-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "de": "HKKA"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-083C-person-003",
+    "description": {
+      "de": "Die HKKA war ein Meilenstein der computergestützten Editonsphilologie. Sie dokumentiert nicht nur die Entstehungs- und Publikationsgeschichte der von Keller veröffentlichten Werke, sondern präsentiert erstmals ohne willkürliche Selektion den gesamten literarischen Nachlass. Nach Abschluss der Buchausgabe soll die Ausgabe nun auch in benutzerfreundlicher Art auf dem Netzt zugänglich gemacht werden."
+    },
+    "disciplines": [
+      {
+        "de": "10302 Schweizer Geschichte"
+      },
+      {
+        "de": "10501 Sprach- und Literaturwissenschaft"
+      }
+    ],
+    "endDate": "2013-07-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-083C-organization-000"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-083C-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "Arts"
+      },
+      {
+        "en": "German Literature"
+      },
+      {
+        "en": "History"
+      },
+      {
+        "en": "Politics"
+      },
+      {
+        "en": "Swiss Literature"
+      }
+    ],
+    "name": "Historische-Kritische Gottfried Keller Ausgabe (HKKA)",
+    "publications": [
+      {
+        "text": "Gottfried Keller: Sämtliche Werke. Historisch-Kritische Ausgabe. Herausgegeben unter der Leitung von Walter Morgenthaler im Auftrag der Stiftung Historisch-Kritische Gottfried Keller-Ausgabe. 32 Bände. Frankfurt a. M., Basel und Zürich 1996-2013."
+      }
+    ],
+    "shortcode": "083C",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2921044/federal-republic-of-germany.html",
+        "text": "Germany"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658434/switzerland.html",
+        "text": "Switzerland"
+      }
+    ],
+    "startDate": "1991-04-01",
+    "temporalCoverage": [
+      {
+        "__type": "URL",
+        "type": "Chronontology",
+        "url": "http://chronontology.dainst.org/period/5C8DINGE1IXb",
+        "text": "19th Century"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://www.ehkka.ch/ehkka/",
+      "text": "External Project Website"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083C-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "de": "Eine online-Edition der Historisch-Kritischen Kellerausgabe"
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "de": "eHKKA"
+        }
+      ],
+      "accessConditions": "open",
+      "datePublished": "1996-01-01",
+      "howToCite": "Morgenthaler et al., historisch-kritsche Kellerausgabe online, 1996-2013.",
+      "languages": [
+        {
+          "de": "Deutsch"
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083C-person-000",
+          "roles": [
+            "1991-2012: Vollberuflicher Mitarbeiter der HKKA  Initiant des Projekts und Leiter des Herausgeberteams"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-083C-person-002",
+          "roles": [
+            "2000-2013 Vollberuflicher Mitarbeiter der HKKA 2000-2013 Mitglied des Herausgeberteams, zuständig für EDV  "
+          ]
+        }
+      ],
+      "status": "Finished",
+      "title": "Historisch-Kritische Kellerausgabe online",
+      "typeOfData": [
+        "Image",
+        "Text",
+        "XML"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083C-person-001",
+      "__type": "Person",
+      "familyNames": [
+        "Amrein"
+      ],
+      "givenNames": [
+        "Ursula"
+      ],
+      "jobTitles": [
+        "Prof. Dr. phil."
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083C-organization-000",
+        "http://ns.dasch.swiss/repository#dsp-083C-organization-005"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083C-person-000",
+      "__type": "Person",
+      "familyNames": [
+        "Morgenthaler"
+      ],
+      "givenNames": [
+        "Walter"
+      ],
+      "jobTitles": [
+        "Dr. phil."
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083C-organization-000",
+        "http://ns.dasch.swiss/repository#dsp-083C-organization-005"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083C-person-002",
+      "__type": "Person",
+      "familyNames": [
+        "Grob"
+      ],
+      "givenNames": [
+        "Karl"
+      ],
+      "jobTitles": [
+        "Dr. phil."
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083C-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083C-person-003",
+      "__type": "Person",
+      "email": "dom.muller@bluewin.ch",
+      "familyNames": [
+        "Müller"
+      ],
+      "givenNames": [
+        "Dominik"
+      ],
+      "jobTitles": [
+        "Dr. phil."
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-083C-organization-000",
+        "http://ns.dasch.swiss/repository#dsp-083C-organization-006"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083C-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3, Postfach",
+        "postalCode": "3001",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "name": "Swiss National Science Foundation (SNSF)"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083C-organization-006",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "24 rue du Général-Dufour",
+        "postalCode": "1211",
+        "locality": "Genève 4",
+        "country": "Switzerland"
+      },
+      "name": "Université de Genève, Départemet de langue et de littérature allemandes, Faculté des Lettres"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083C-organization-005",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Schönberggasse 9",
+        "postalCode": "8001",
+        "locality": "Zürich",
+        "country": "Switzerland"
+      },
+      "name": "Deutsches Seminar, Universität Zürich"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083C-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "c/o Pestalozzi Rechtsanwälte, Löwenstrasse 1",
+        "postalCode": "8000",
+        "locality": "Zürich",
+        "country": "Switzerland"
+      },
+      "email": "dom.muller@bluewin.ch",
+      "name": "Stiftung für eine Historisch-Kritische Gottfried Keller-Ausgabe"
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-083C-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-083C-organization-001"
+      ],
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.snf.ch/de",
+        "text": "https://www.snf.ch/de"
+      }
+    }
+  ]
+}

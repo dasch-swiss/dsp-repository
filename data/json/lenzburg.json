@@ -1,0 +1,324 @@
+{
+  "$schema": "../../resources/schema-metadata-final.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Schweizerisches Volksliedarchiv, Tonbandsammlung Folkfestival auf der Lenzburg",
+    "teaserText": "Folk music enthusiasts gathered between 1972 and 1980 at the picturesque Lenzburg Castle. Discover the audio heritage of the legendary Lenzburg Folk Festival",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-082A-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "Folkfestival; Lenzburg Festival; Lenzburg Folk Festival"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-082A-organization-000",
+    "description": {
+      "en": "The Folkfestival auf der Lenzburg (Lenzburg Folk Festival) took place in Switzerland from 1972 until 1980 at Lenzburg Castle (Lenzburg, Aargau), always on a weekend in June or July. Looking back the festival was the most important folk event in Switzerland. Over the years, many Swiss and international folk bands played at the Lenzburg festival. The event grew continuously: its duration was extended from initially one to two days, more international artists from different subgenres of folk performed, and also the audience grew steadily so that the castle became gradually very crowded, and tickets had to be sold by drawing lots. For this reason, and because various political and social upheavals were shaking up the Swiss folk scene (furthermore, reconstruction works on the castle were planned), many members of the organizing committee resigned, and the last festival was held in 1980. \nThe festival was mainly the result of the efforts of musicians and other actors around the folk clubs of Bern and Zurich which formed an association and an organizing committee. The Lenzburg Folk Festival Society made tape recordings on cassette and magnetic tapes during the performances. In 1984, the audio tapes were donated to the Schweizerisches Volksliedarchiv (Swiss Folk Song Archive, SVA) in Basel, accompanied by a typewritten documentation, archival chards, and further archival materials, e.g., program leaflets (documentation process continued until 1987). \nThe Lenzburg audio tape collection was archived, stored, and for a long time little was done with the tapes. It was not until 2015 that the SVA decided to breathe new life into the recordings and digitize them. Two reasons were decisive for this: firstly, the SVA as a section of the archives of the Cultural Anthropology Switzerland (CAS aims at making the rich historical folk culture collections accessible to the broader public and for scientific use. Secondly, practical reasons create a demand for digitization since the SVA cannot create the optimal conditions for storing audio tapes, and the archive does not own the technical devices for magnetic audio tapes so that the recordings could therefore no longer be listened to by the public.\nThe Lenzburg project started in 2017 and was presented to the public for the first time at an event of the Cultural Anthropology Switzerland (CAS) section Basel, on February 11, 2019, in the form of a workshop report."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/5101",
+        "text": "Cultural anthropology"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/620306",
+        "text": "Music, musicology "
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/510104",
+        "text": "Ethno-musicology "
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "http://skos.um.es/unesco6/630103",
+        "text": "Folklore"
+      }
+    ],
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-082A-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-082A-grant-000"
+    ],
+    "keywords": [
+      {
+        "de": "Folklore"
+      },
+      {
+        "de": "Lenzburg"
+      },
+      {
+        "de": "Schweizerisches Volksliedarchiv"
+      },
+      {
+        "en": "folk music"
+      },
+      {
+        "en": "folk song"
+      }
+    ],
+    "name": "Tonbandsammlung Folkfestival auf der Lenzburg",
+    "publications": [
+      {
+        "text": "Burckhardt-Seebass, Christine (1987): “Gang, hol d’Gitarre …”: das Folk-Festival auf der Lenzburg 1972–1980 und die schweizerische Folk-Bewegung: eine Skizze. In: Schweizerisches Archiv für Volkskunde, 83 (3–4), 154–168.",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "URL",
+            "url": "http://doi.org/10.5169/seals-117606",
+            "text": "DOI: 10.5169/seals-117606"
+          }
+        ]
+      },
+      {
+        "text": "Hostettler, Urs (undat.): Lenzburg-Chronik. Die Folkfestivals auf der Lenzburg. URL: (29.07.2021)",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "URL",
+            "url": "https://urs.fatamorgana.ch/lenzburg.html",
+            "text": "https://urs.fatamorgana.ch/lenzburg.html"
+          }
+        ]
+      }
+    ],
+    "shortcode": "082A",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/10395074/lenzburg-schloss.html",
+        "text": "Lenzburg, Schloss"
+      }
+    ],
+    "startDate": "2017-07-01",
+    "temporalCoverage": [
+      {
+        "de": "1972-1980",
+        "en": "1972-1980",
+        "fr": "1972-1980"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/082A",
+      "text": "Discover Project Data"
+    },
+    "secondaryURL": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv",
+      "text": "External Project Website"
+    },
+    "status": "Finished"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082A-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The collection consists of cassette tapes and magnetic tapes. They were recorded during the concerts at the festival (1972–1980). The metadata entail the original archival number (tape numbers), song titles, duration, band names and artist names as well as further information such as song incipits."
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "en": "Lenzburg Folk Festival"
+        }
+      ],
+      "accessConditions": "closed",
+      "additional": [
+        {
+          "de": "Weiteres Schriftgut, Fotos und Begleitmaterialien des Folkfestivals Lenzburg werden im Schweizerischen Sozialarchiv aufbewahrt."
+        }
+      ],
+      "howToCite": "Schweizerisches Volksliedarchiv, Tonbandsammlung Folkfestival auf der Lenzburg",
+      "languages": [
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2021-11-23",
+          "license": {
+            "__type": "URL",
+            "type": "URL",
+            "url": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv",
+            "text": "SGV Schweizerisches Volksliedarchiv"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-082A-person-000",
+          "roles": [
+            "PI"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-082A-person-003",
+          "roles": [
+            "PI"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-082A-person-001",
+          "roles": [
+            "Archivist, Information Specialist"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-082A-person-002",
+          "roles": [
+            "Creator, Maintainer"
+          ]
+        }
+      ],
+      "status": "Finished",
+      "title": "Tonbandsammlung Folkfestival auf der Lenzburg",
+      "typeOfData": [
+        "Audio"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082A-person-000",
+      "__type": "Person",
+      "email": "johannes.mueske@zpkm.uni-freiburg.de",
+      "familyNames": [
+        "Müske"
+      ],
+      "givenNames": [
+        "Johannes"
+      ],
+      "jobTitles": [
+        "Co-head, Swiss Folk Song Archive"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-082A-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082A-person-001",
+      "__type": "Person",
+      "email": "senta.bindschaedler@unibas.ch",
+      "familyNames": [
+        "Bindschädler"
+      ],
+      "givenNames": [
+        "Senta"
+      ],
+      "jobTitles": [
+        "Co-Head, Swiss Folk Song Archive"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-082A-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082A-person-002",
+      "__type": "Person",
+      "familyNames": [
+        "Hostettler"
+      ],
+      "givenNames": [
+        "Urs"
+      ],
+      "jobTitles": [
+        "Festival organizing committee"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-082A-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082A-person-003",
+      "__type": "Person",
+      "familyNames": [
+        "Ackermann"
+      ],
+      "givenNames": [
+        "Tamara"
+      ],
+      "jobTitles": [
+        "Head Swiss Folk Song Archive, ad interim"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-082A-organization-000"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082A-organization-002",
+      "__type": "Organization",
+      "name": "Lenzburg Folk Festival Organizing Committee (association terminated)"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082A-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Bümplizstrasse 192",
+        "postalCode": "3018",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "info@memoriav.ch",
+      "name": "Memoriav – Verein zur Erhaltung des audiovisuellen Kulturgutes der Schweiz",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://memoriav.ch/",
+        "text": "https://memoriav.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082A-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Rheinsprung 9",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+      },
+      "email": "johannes.mueske@zpkm.uni-freiburg.de",
+      "name": "Schweizerisches Volksliedarchiv der Empirischen Kulturwissenschaft Schweiz (EKWS)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv",
+        "text": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082A-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-082A-organization-001"
+      ],
+      "name": "Digitale Erschliessung Tonbandsammlung Lenzburg"
+    }
+  ]
+}

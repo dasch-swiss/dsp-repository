@@ -27,22 +27,22 @@ pub struct DcfForm {
 
 #[derive(Clone, Debug)]
 pub struct CashFlowRow {
-    pub year: String,         // "1", "2", ..., "Terminal"
-    pub fcf: f64,             // in millions
-    pub discounted: f64,      // in millions
+    pub year: String,    // "1", "2", ..., "Terminal"
+    pub fcf: f64,        // in millions
+    pub discounted: f64, // in millions
 }
 
 #[derive(askama::Template)]
 #[template(path = "calculator/table.html")]
 pub struct DcfTableContext {
     pub rows: Vec<CashFlowRow>,
-    pub total_intrinsic_value: f64,  // sum of discounted values
+    pub total_intrinsic_value: f64, // sum of discounted values
 }
 
 pub fn result_table(context: &DcfTableContext) -> String {
     let table = DcfTableContext {
         rows: context.rows.clone(),
-        total_intrinsic_value: context.total_intrinsic_value
+        total_intrinsic_value: context.total_intrinsic_value,
     };
     table.render().unwrap()
 }

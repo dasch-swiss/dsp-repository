@@ -1,0 +1,450 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Croci, C., Quadri, I, Gianandrea, M., Romano, S., Tosti, E., Chiaraella, M., Ventura, D., Rivoal, M., 2022, Rome in the Early Middle Ages: Arts and Culture [database] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0118",
+    "teaserText": "The project addresses the visual culture of the city of Rome (Vth-XIth ct.) by means of an interdisciplinary approach (art history, architecture, archaeology archaeometry, liturgy, epigraphy).",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-REMA-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "fr": "rome-siecles-obscurs"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-REMA-person-000",
+    "dataManagementPlan": {
+      "__type": "DataManagementPlan",
+      "available": true
+    },
+    "description": {
+      "en": "The project addresses the visual culture of the city of Rome (Vth-XIth ct.) by means of an interdisciplinary approach (art history, architecture, archaeology archaeometry, liturgy, epigraphy)."
+    },
+    "disciplines": [
+      {
+        "en": "10402 Archaeology"
+      },
+      {
+        "en": "10404 Visual arts and Art history"
+      }
+    ],
+    "endDate": "2023-08-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-REMA-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-REMA-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "painting"
+      },
+      {
+        "en": "mosaic"
+      },
+      {
+        "en": "visual culture"
+      },
+      {
+        "en": "iconography"
+      },
+      {
+        "en": "style"
+      },
+      {
+        "en": "archaeometry"
+      },
+      {
+        "en": "epigraphy"
+      },
+      {
+        "en": "archaeology"
+      },
+      {
+        "en": "historiography"
+      },
+      {
+        "en": "papacy"
+      },
+      {
+        "en": "Rome"
+      },
+      {
+        "en": "artistic geography"
+      },
+      {
+        "en": "early Middle Ages"
+      },
+      {
+        "en": "Goths"
+      },
+      {
+        "en": "Byzantines"
+      },
+      {
+        "en": "Carolingians"
+      },
+      {
+        "en": "Ottonians"
+      }
+    ],
+    "name": "Rome in the Early Middle Ages: Arts and Culture",
+    "shortcode": "0118",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://vocab.getty.edu/page/tgn/7000874",
+        "text": "Rome (inhabited place)"
+      }
+    ],
+    "startDate": "2020-09-01",
+    "temporalCoverage": [
+      {
+        "__type": "URL",
+        "type": "Chronontology",
+        "url": "https://chronontology.dainst.org/period/ZkwNN4oimUDM",
+        "text": "Middle Ages, 500-1500"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/0118",
+      "text": "Discover Project Data"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The ontology of the database comprises three main classes, making it possible to describe paintings and mosaics in the buildings where they are found. The class “Oggetto” (i.e.: mosaic, painting) falls under the class “Cappella” and/or the class “Edificio”. Each of these three classes contains properties (custom controlled vocabularies and text fields), making it possible to characterize the building, chapel, paintings or mosaic using names, location, description, state of preservation, analysis, dating, patrons, inscriptions, sources, critical commentary, bibliography. Illustrations can be added to the three main categories using two further classes, ‘Illustrazioni’ and ‘Illustrazioni ad accesso limitato’, whose properties (also text fields and controlled vocabularies) include information on the type of image and photograph credits."
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "fr": "rome-siecles-obscurs"
+        }
+      ],
+      "accessConditions": "restricted",
+      "howToCite": "Croci, C., Quadri, I, Gianandrea, M., Romano, S., Tosti, E., Chiaraella, M., Ventura, D., Rivoal, M., 2022, Rome in the Early Middle Ages: Arts and Culture [database] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0118",
+      "languages": [
+        {
+          "en": "Italian",
+          "de": "Italienisch",
+          "fr": "italien"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2022-07-13",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "text": "CC BY-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-REMA-person-000",
+          "roles": [
+            "Project Leader"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-REMA-person-001",
+          "roles": [
+            "Project Leader"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-REMA-person-006",
+          "roles": [
+            "Project Member"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-REMA-person-005",
+          "roles": [
+            "Project Member"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-REMA-person-004",
+          "roles": [
+            "Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-REMA-person-003",
+          "roles": [
+            "Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-REMA-person-007",
+          "roles": [
+            "Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-REMA-person-002",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-REMA-person-008",
+          "roles": [
+            "Data Collector"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Database of the project Rome in the Early Middle Ages: Arts and Culture",
+      "typeOfData": [
+        "Image",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-person-001",
+      "__type": "Person",
+      "email": "Irene.Quadri@unil.ch",
+      "familyNames": [
+        "Quadri"
+      ],
+      "givenNames": [
+        "Irene"
+      ],
+      "jobTitles": [
+        "Post-doctoral researcher"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-REMA-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-person-002",
+      "__type": "Person",
+      "email": "Marion.Rivoal@unil.ch",
+      "familyNames": [
+        "Rivoal"
+      ],
+      "givenNames": [
+        "Marion"
+      ],
+      "jobTitles": [
+        "Research Manager"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-REMA-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-person-003",
+      "__type": "Person",
+      "email": "mariaelena.chiarella@unil.ch",
+      "familyNames": [
+        "Chiarella"
+      ],
+      "givenNames": [
+        "Maria Elena"
+      ],
+      "jobTitles": [
+        "PhD Student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-REMA-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-person-004",
+      "__type": "Person",
+      "email": "Eleonora.tosti@unil.ch",
+      "familyNames": [
+        "Tosti"
+      ],
+      "givenNames": [
+        "Eleonora"
+      ],
+      "jobTitles": [
+        "Post-doctoral researcher"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-REMA-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-person-005",
+      "__type": "Person",
+      "email": "Serena.Romano@unil.ch",
+      "familyNames": [
+        "Romano"
+      ],
+      "givenNames": [
+        "Serena"
+      ],
+      "jobTitles": [
+        "Professor Emeritus"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-REMA-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-person-006",
+      "__type": "Person",
+      "email": "Manuela.Gianandrea@unil.ch",
+      "familyNames": [
+        "Gianandrea"
+      ],
+      "givenNames": [
+        "Manuela"
+      ],
+      "jobTitles": [
+        "Associate Professor"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-REMA-organization-000",
+        "http://ns.dasch.swiss/repository#dsp-REMA-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-person-007",
+      "__type": "Person",
+      "email": "mimmoventura74@gmail.com",
+      "familyNames": [
+        "Ventura"
+      ],
+      "givenNames": [
+        "Domenico"
+      ],
+      "jobTitles": [
+        "Freelance photographer"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-REMA-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-person-000",
+      "__type": "Person",
+      "email": "Chiara.Croci@unil.ch",
+      "familyNames": [
+        "Croci"
+      ],
+      "givenNames": [
+        "Chiara"
+      ],
+      "jobTitles": [
+        "Post-doctoral researcher"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-REMA-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-person-008",
+      "__type": "Person",
+      "email": "Cassandre.Lejosne@unil.ch",
+      "familyNames": [
+        "Cassandre"
+      ],
+      "givenNames": [
+        "Lejosne"
+      ],
+      "jobTitles": [
+        "PhD student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-REMA-organization-000"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-organization-002",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "",
+        "postalCode": "",
+        "locality": "Sapienza",
+        "country": "Italy"
+      },
+      "name": "University of Rome"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3 Postfach",
+        "postalCode": "3001",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "desk@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.snf.ch/",
+        "text": "http://www.snf.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Unicentre",
+        "postalCode": "1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+      },
+      "name": "University of Lausanne",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.unil.ch",
+        "text": "www.unil.ch"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-REMA-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-REMA-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "192854",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/192854",
+        "text": "https://data.snf.ch/grants/grant/192854"
+      }
+    }
+  ]
+}

@@ -1,3 +1,3 @@
 pub mod model;
-pub mod repository;
-pub mod service;
+pub mod metadata_repository;
+pub mod metadata_service;

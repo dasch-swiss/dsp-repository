@@ -9,6 +9,11 @@ DOCKER_IMAGE := DOCKER_REPO + ":" + IMAGE_TAG
 default:
     just --list --unsorted
 
+# Install all requirements
+install-requirements:
+    cargo install cargo-watch
+    cargo install mdbook
+
 # Run all fmt and clippy checks
 check:
     just --check --fmt --unstable

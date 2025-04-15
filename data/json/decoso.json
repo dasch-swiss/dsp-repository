@@ -1,0 +1,287 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "teaserText": "It aims to apply decolonial methods and to mobilize practice-based approaches to engage in the critical analysis of case studies of art practices from socialist geographies of the Cold War period.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-082C-dataset-000"
+    ],
+    "description": {
+      "en": "Artistic projects from state-socialisms in Europe, e.g., the GDR (1949-1990), under conditions of the Global Cold War often remain subject to be simplified in binary patterns, that means, type-casting artists (or architects, writers…) from “the East” as either dissidents (“the underground artist”) or conformists (“the State artist”). Situated in the field of Visual Cultures, the Research Project aims to apply decolonial methods and to mobilize practice-based approaches to engage in the critical analysis of case studies of art practices from socialist geographies of the Cold War period from Europe with a specific focus on operational concepts of cybernetics and internationalism for the contemporary condition.\nZum einen haben akademische Forschungen über den Globalen Kalten Krieg, zur europäischen Nachkriegsgeschichte und das Studium von Internationalen Beziehungen in Europa Szenarien zum Kalten Krieg vor allem aus einer “westlichen” Perspektive analysiert, oft ohne sich um den Bereich der Kunst zu kümmern. Eine europäische Kunstgeschichte, andererseits, definiert jedoch vor allem ein historisch-vergleichendes Studium einer Kunst aus zwei Deutschlands. Dies führt oft zu einer unterkomplexen Binär-Klassifizierung vom “staatlichen Künstler” und “dissidenten Künstler”, d.h., es wiederholt “The Age of Extremes” (Hobsbwam, 1994) des Kalten Krieges in den Bereichen Kunst, Forschung und Wissen in der Zeit nach 1989. Was fehlt und daher dringend benötigt wird, ist eine fallbezogene Analyse von Kunstprojekten aus der DDR mit einer klar internationalistischen Mission und deren Mobilisierung für unsere aktuellen Debatten.\n\nDas Forschungsprojekt zielt darauf ab, dekoloniale/dekolonisierende Methoden mit epistemologischem Bewusstsein für die gelebten Erfahrungen, wissenschaftlichen Dokumente, Geheimdienstakten und künstlerischen Projekte aus sozialistisch/internationalistischen Geographien, wie z.B. der DDR (1949-1990), zu mobilisieren, um das politische Projekt der DDR über die oft binäre Erzählung vom Dissidentismus vs. Konformismus hinaus zu positionieren. Fokus hierbei sind künstlerische Methoden, welche Kybernetik mit Geopolitik bzw. Internationalismus in Bezug setzen. \n\nMöglicher Ausgangspunkt sind Filme, Schriften, kybernetische Zeichnungen und Konzepte der DEFA Gruppe Profil (1960-1968), die ihre Fortsetzung in der “künstlerischen Arbeitsgruppe defa-futurum” (1971-1980) der DDR gefunden hat, die den “sozialistischen Zukunftsfilm” oder Science Fiction als “intergenre” (defa-futurum, 1975) entwickelte, um die Analyse von damals-zeitgenössischen Problemen, aus denen die Gesellschaft aufgebaut werden soll, durchzuführen. Die praxisorientierte Doktorarbeit der defa-futurum-Gruppe bietet darüber hinaus die Möglichkeit, sich mit den philosophisch-logischen Schriften des Bürgerrechtlers, deutsch-jüdischen Immigranten und Professors Franz Loeser über deontische Logik, Mathematik, Kybernetik und Marxismus-Leninismus zu beschäftigen, die einen wenig erforschten philosophischen Ansatz zu Organisation, Rationalismus und Ethik kennzeichnet. Welche Prinzipien haben Automatisierung, Computation, nicht-menschliche Kognition und Technologiepolitik von planetarischer Dimension oder mit globalisierenden Kräfte aus der Perspektive einer alternativen oder minoritären Post-/Moderne? \n\nEingebettet in eine Zusammenarbeit zwischen HEAD Genève, der Universität Basel, dem VanAbbe Museum in Eindhoven und dem Haus der Kulturen der Welt in Berlin sind die Ergebnisse des Forschungsprojekts eine Doktorarbeit, Konferenzbeiträge, peer-revieweded Artikel, Ausstellungsbeiträge, eine relationale Datenbank, etc."
+    },
+    "disciplines": [
+      {
+        "en": "10404  Visual arts and Art history"
+      },
+      {
+        "en": "10407  Architecture and Social urban science"
+      },
+      {
+        "en": "10603 Arts"
+      }
+    ],
+    "endDate": "2023-09-30",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-082C-organization-000"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-082C-grant-000"
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/082C",
+      "text": "Discover Project Data"
+    },
+    "secondaryURL": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://entangledinternationalism.org/",
+      "text": "External Project Website"
+    },
+    "keywords": [
+      {
+        "en": "Europe"
+      },
+      {
+        "en": "art/research"
+      },
+      {
+        "en": "cinema/art"
+      },
+      {
+        "en": "contemporaneity"
+      },
+      {
+        "en": "cyber-cultures"
+      },
+      {
+        "en": "decolonial / decolonizing practices"
+      },
+      {
+        "en": "global Cold War"
+      },
+      {
+        "en": "socialism/internationalism"
+      },
+      {
+        "en": "techno-politics"
+      }
+    ],
+    "name": "Decolonizing Socialism: Entangled Internationalism. An Intersectional Study of Cold War Projects from East Germany in Cinema and Cybernetics with Relevance for the 21st Century",
+    "publications": [
+      {
+        "text": "Mende Doreen (2019), Hamhung’s Two Orphans (To Konrad Püschel) East German Internationalism in North-Korea Emerging through a Chronopolitical Lens, in Bauhaus Imaginista Journal, (3), 1."
+      },
+      {
+        "text": "Mende Doreen (2020), Remarks on defa-futurum’s ‘Socialist Future Film’ for Our Contemporary Condition, in de Bruyn Eric , Lütticken Sven (ed.), MIT Press and Sternberg Press, 2020, U.S.A., 173-186."
+      },
+      {
+        "text": "Mende Doreen (2020), The Time Lag of Defa-Futurum: A Socialist Cine-Futurism from East Germany, in The Oxford Handbook of Communist Visual Cultures, 12."
+      },
+      {
+        "text": "Agarwal Vinit, Mende Doreen, Gilleti Laure, Vora Chetna, Barthel Lars, Borges Sónia Vaz (2020), Inter∞Note 01, Self Published, Leipzig/Geneva."
+      }
+    ],
+    "shortcode": "082C",
+    "startDate": "2019-10-01",
+    "temporalCoverage": [
+      {
+        "en": "1949-1990"
+      }
+    ],
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2921044/germany.html",
+        "text": "Germany"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/8354410/german-democratic-republic.html",
+        "text": "German Democratic Republic"
+      }
+    ],
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "This cross-disciplinary Research Project undertakes a decolonial analysis of artistic projects that were realised in the framework of Socialist Internationalism as, for example, proposed by East German Socialist Internationalism from the 1950s through the 1970s in cinema, art and cybernetics with relevance for the global contemporary condition in academia, art-research and art-making with focus on techno-politics. The Research Project aims to mobilize decolonial/decolonizing methods with specific awareness for the lived experiences, scientific documents and artistic projects from socialist/internationalist geographies, e.g., the GDR (1949-1990) for situating the political project of socialism beyond the often-binary Cold War narrative of dissidentism vs. conformism. In doing so, the Research Project aims (a) to contribute to a more complex understanding of Cold War art-science-knowledge experimentations from a political geography that has been marginalized under global Cold War conditions as ‘soviet occupied zone’ after 1949, and which has been exposed to an \"embarrassed silence\" (Jameson, 2015) in many debates of academic research projects, cultural programs, contemporary art institutions, etc. after 1989; and (b) to contribute to the contemporary need of analyzing principles of automation, computation and techno-politics of planetary dimension or globalizing forces through an alternative or minor post-/modernity. The idea is to unearth as well as mobilize overlooked archival documents, micro-histories, silenced oral narratives and conflicting memories from state-socialist projects such as GDR for developing a substantial vocabulary to cross-read science and politics with art and culture with specific awareness for micro-social art practices in struggle with macro-political state-protocols departing from the internationalist ambitions of state-socialisms. Furthermore, “Decolonizing Socialism” aims to fathom the tensions between the national project of a new state (‘german democratic republic’) in post-war Europe and the world-spanning, or, 'planetary' concept of socialist internationalism. A possible point of departure and Case Study, respectively, are films, writings, cybernetic drawings and concepts of the DEFA Gruppe Profil (1960-1968) that has been followed by the \"artistic working group defa-futurum\" (1971-circa 1980) from the GDR promoting the \"socialist future film\" or ‘science fiction’ as formats to engage in the analysis of then-contemporary problematics from which to build society; furthermore, the philosophical-logical writings by civil rights activist, German-Jewish immigrant and professor Franz Loeser on deontic logics, mathematics, cybernetics and Marxism-Leninism offer an under-researched philosophical approach to organization, rationalism and ethics. The Case Study was chosen based on its unique and extensive elaboration of cinema, cybernetics and socialism/internationalism from the GDR; it provides necessary material to study the role of technology, philosophy and art for (a) declaring an own political/independent position as a young nation-state and state-socialism in the post-1945-world, (b) formulating anti-fascist politics for supporting the processes of de-nazification in Europe (post-war West-Germany specifically), (c) contributing to the ideologies of the techno-political race during the global World War, and (d) experiencing the structural violence of being-silenced after 1989. What does a decolonial analysis mean with regard to a cultural Socialist Internationalism? What does a decolonial analysis produce? Why is such an approach necessary in relation to art, techno-politics, research and knowledge production of the global contemporary? How does a decolonial analysis of Socialist Internationalism yield a comprehension of a contemporary intra-European reality? So far, academic Cold War studies, European history and diplomacy studies in Europe have mainly analysed Cold War scenarios from a “Western” perspective, and often without paying attention to the field of art. European art history, however, mainly defines a historical-comparative juxtaposition of an Art of Two Germanys. What is missing and urgently needed, though, is a case-based analysis of internationalist art projects rooted in German Democratic Republic (GDR) with relevance for our contemporary condition. Research Methods will include “history lessons,” i.e., sources-tracing and their respective hermeneutic study. The Doctoral researcher will conduct her/his studies based on institutional archives, interviews and fieldwork. A material-based iconography will consider the materiality of found objects or archival material (e.g. paper, photographs, film reels, etc.). Regarding the need for contemporaneity, the project-at-large is situated in the “studying [of] visual culture” (Rogoff, 1998) and its extension to the visual arena to infrastructures, distribution systems, archive politics, and civil knowledge (Azoulay, 2012; McLagan, McKee, 2012; Mirzoeff, 2017). Therefore, case-based research will foster methods to articulate trans-historical and trans-generational relations. The Project will put to use the “speaking-nearby” method (Chen/Minh-ha, 1992) as seen in postcolonial documentary practices to engage in materially marginalized but still present narratives. Under a practice-based approach, the Project will commit to research methods as developed by studies on “intersectionality” (Crenshaw, 1989; Lugones 2008; MacKinnon, 2013). Here the aim is to mobilize politics of gender and race in art projects emerging from the East German version of proletarian internationalism, also coined “socialist chromatism” (Slobodan, 2015).The planned Research outcome includes: (1) a doctoral dissertation that is due to generate in collaboration with University of Basel(2) conference papers, and (3) contributions to exhibitions. Further, (4) an issue on Decolonizing Socialism / Entangled Internationalism is expected, for publication in a peer-reviewed academic journal, as is (5) a relational database as Data-Bank-Library on Decolonizing Socialism, and finally, (6) the organisation of an international symposium and workshops at various academic and art venues, notably in collaboration with the doctoral-degree-providing Swiss university involved, the international Scientific Advisory Board as well as two European art institutions (Project Partners) that also will provide an infrastructure for an artist-researcher position to join the project."
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-082C-person-000",
+          "roles": [
+            "Applicant"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-082C-person-001",
+          "roles": [
+            "Employee"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-082C-person-002",
+          "roles": [
+            "Employee"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-082C-person-003",
+          "roles": [
+            "Employee"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-082C-person-004",
+          "roles": [
+            "Project partner"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-082C-person-005",
+          "roles": [
+            "Project partner"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Decolonizing Socialism: Entangled Internationalism. An Intersectional Study of Cold War Projects from East Germany in Cinema and Cybernetics with Relevance for the 21st Century"
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-person-000",
+      "__type": "Person",
+      "familyNames": [
+        "Mende"
+      ],
+      "givenNames": [
+        "Doreen"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-082C-organization-001"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-person-001",
+      "__type": "Person",
+      "familyNames": [
+        "Agarwal"
+      ],
+      "givenNames": [
+        "Vinit"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-person-002",
+      "__type": "Person",
+      "familyNames": [
+        "Nienhoff"
+      ],
+      "givenNames": [
+        "Lea"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-082C-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-person-003",
+      "__type": "Person",
+      "familyNames": [
+        "Leu"
+      ],
+      "givenNames": [
+        "Rada"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-082C-organization-002"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-person-004",
+      "__type": "Person",
+      "familyNames": [
+        "Franke"
+      ],
+      "givenNames": [
+        "Anselm"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-082C-organization-003"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-person-005",
+      "__type": "Person",
+      "familyNames": [
+        "Esche"
+      ],
+      "givenNames": [
+        "Charles"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-082C-organization-004"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-organization-001",
+      "__type": "Organization",
+      "name": "University of Applied Sciences and Arts Western Switzerland - HES-SO"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-organization-003",
+      "__type": "Organization",
+      "name": "Haus der Kulturen der Welt"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-organization-004",
+      "__type": "Organization",
+      "name": "Van Abbemuseum Charles Esche"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-organization-000",
+      "__type": "Organization",
+      "name": "Swiss National Science Foundation (SNSF)"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-organization-002",
+      "__type": "Organization",
+      "name": "Institut de Recherche en Art et Design HEAD – Genève"
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-082C-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-082C-organization-000"
+      ],
+      "name": "Project funding",
+      "number": "184864",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/184864",
+        "text": "https://data.snf.ch/grants/grant/184864"
+      }
+    }
+  ]
+}

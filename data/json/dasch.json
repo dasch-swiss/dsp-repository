@@ -1,0 +1,212 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "DaSCH (2023). Swiss National Data and Service Center for the Humanities [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0810",
+    "teaserText": "This project contains material about DaSCH and events organised by DaSCH. All documents are made available in the original language of the presentations.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0810-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "DaSCH"
+      }
+    ],
+    "description": {
+      "en": "This project contains material about DaSCH and events organised by DaSCH. All documents are made available in the original language of the presentations."
+    },
+    "disciplines": [
+      {
+        "en": "Humanities"
+      }
+    ],
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0810-organization-000"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0810-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "DaSCH"
+      },
+      {
+        "en": "DaSCHCon"
+      },
+      {
+        "en": "Documents"
+      },
+      {
+        "en": "Events"
+      },
+      {
+        "en": "Posters"
+      },
+      {
+        "en": "Reports"
+      },
+      {
+        "en": "Slides"
+      },
+      {
+        "en": "Tutorials"
+      },
+      {
+        "en": "Videos"
+      },
+      {
+        "en": "Visuals"
+      }
+    ],
+    "name": "DaSCH – Swiss National Data and Service Center for the Humanities",
+    "shortcode": "0810",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658434/switzerland.html",
+        "text": "Switzerland"
+      }
+    ],
+    "startDate": "2021-01-01",
+    "temporalCoverage": [
+      {
+        "en": "21st century"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/v0B3nQt2Q-6aZiFGRe88KQ",
+      "text": "Discover Project Data"
+    },
+    "secondaryURL": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://www.dasch.swiss/",
+      "text": "Project Website"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0810-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "This dataset contains material (visuals, slides, posters, videos, tutorials, reports) prepared by members of DaSCH as well as material contributed by researchers at events organised by DaSCH."
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "en": "DaSCH"
+        }
+      ],
+      "accessConditions": "open",
+      "dateCreated": "2023-05-01",
+      "howToCite": "DaSCH (2023). Swiss National Data and Service Center for the Humanities [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0810",
+      "languages": [
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "en": "French",
+          "de": "Französisch",
+          "fr": "français"
+        },
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2023-05-03",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by/4.0/",
+            "text": "CC BY 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0810-organization-001",
+          "roles": [
+            "Creator"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "DaSCH – Swiss National Data and Service Center for the Humanities",
+      "typeOfData": [
+        "Audio",
+        "Image",
+        "Video",
+        "Text"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0810-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Gewerbestrasse 24",
+        "postalCode": "4123",
+        "locality": "Allschwil",
+        "country": "Switzerland"
+      },
+      "email": "info@dasch.swiss",
+      "name": "DaSCH - Swiss National Data and Service Center for the Humanities",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.dasch.swiss/",
+        "text": "https://www.dasch.swiss/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0810-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3",
+        "postalCode": "3001",
+        "locality": "Berne",
+        "country": "Switzerland"
+      },
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.snf.ch",
+        "text": "https://www.snf.ch"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0810-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0810-organization-000"
+      ],
+      "name": "Research Infrastructure",
+      "number": "189588",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/189588",
+        "text": "https://data.snf.ch/grants/grant/189588"
+      }
+    }
+  ]
+}

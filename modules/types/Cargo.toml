@@ -11,4 +11,8 @@ description.workspace = true
 authors.workspace = true
 
 [dependencies]
+regex.workspace = true
+serde.workspace = true
+serde_with.workspace = true
+serde_json.workspace = true
 uuid.workspace = true

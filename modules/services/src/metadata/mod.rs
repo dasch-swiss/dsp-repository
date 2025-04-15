@@ -1,13 +1,13 @@
 use types::error::AppError;
 use types::metadata::model::ResearchProject;
-use types::metadata::repository::MetadataRepository;
-use types::metadata::service::MetadataService;
+use types::metadata::metadata_repository::MetadataRepository;
+use types::metadata::metadata_service::MetadataService;
 
-pub struct MetadataServiceImpl<R: MetadataRepository> {
+pub struct MetadataServiceImpl<R: MetadataRepository + Send + Sync> {
     repo: R,
 }
 
-impl<R: MetadataRepository> MetadataService for MetadataServiceImpl<R> {
+impl<R: MetadataRepository + Send + Sync> MetadataService for MetadataServiceImpl<R> {
     async fn count(&self) -> Result<usize, AppError> {
         self.repo.count().await
     }
@@ -20,7 +20,7 @@ impl<R: MetadataRepository> MetadataService for MetadataServiceImpl<R> {
         self.repo.find_by_filter(filter).await
     }
 
-    async fn find_by_id(&self, id: &str) -> Result<ResearchProject, AppError> {
+    async fn find_by_id(&self, id: &str) -> Result<Option<ResearchProject>, AppError> {
         self.repo.find_by_id(id).await
     }
 }

@@ -1,0 +1,223 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Portraits of Unbelonging (POU), 2021, DaSCH. ark.dasch.swiss/ark:/72163/1/0827",
+    "teaserText": "How do photography and statecraft intersect in the making and unmaking of citizens?  How and why did photography become a new media for unmaking subjects in late 19th c Ottoman empire?",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0827-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "POU"
+      },
+      {
+        "en": "Portraits of Unbelonging (POU)"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0827-person-000",
+    "description": {
+      "en": "This database lists all individuals who left the Ottoman empire through the terk-i tabiiyet process based on documents in the Ottoman archives in Istanbul.  These Ottoman Armenians were permitted to leave on the condition that they expatriate and never return hence these photographs that predate passport photographs by a decade or more are bureaucratic documents of exclusion, taken as part of unmaking these individuals as Ottoman subjects.  Hence, they are portraits of unbelonging.  This database lists every glass negative that must have existed at some point with the names of all individuals whose likeness would have been captured in the negative.  Moreover it charts the circulation of all bureaucratic documents pertaining to the terk-I tabiiyet process."
+    },
+    "disciplines": [
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/5101/html",
+        "text": "Cultural anthropology"
+      },
+      {
+        "__type": "URL",
+        "type": "Skos",
+        "url": "https://skos.um.es/unesco6/5901/html",
+        "text": "International relations "
+      }
+    ],
+    "endDate": "2024-12-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0827-organization-000"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0827-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "Ottoman empire"
+      },
+      {
+        "en": "citizenship"
+      },
+      {
+        "en": "emigration"
+      },
+      {
+        "en": "expatriation"
+      },
+      {
+        "en": "migration"
+      },
+      {
+        "en": "mobility"
+      },
+      {
+        "en": "nationality"
+      },
+      {
+        "en": "photography"
+      },
+      {
+        "en": "subjecthood"
+      },
+      {
+        "en": "surveillance"
+      }
+    ],
+    "name": "Portraits of Unbelonging: Photography, the Ottoman State, and the making of Armenian emigrants 1896-1908",
+    "shortcode": "0827",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/298795/republic-of-turkey.html",
+        "text": "Turkey"
+      }
+    ],
+    "startDate": "2019-03-01",
+    "temporalCoverage": [
+      {
+        "__type": "URL",
+        "type": "Chronontology",
+        "url": "https://chronontology.dainst.org/period/nFHLcF9nTOUL",
+        "text": "Ottoman"
+      }
+    ],
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0827-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "en": "The dataset lists all individuals who left the Ottoman empire through the terk-i tabiiyet process based on documents in the Ottoman archives in Istanbul. These Ottoman Armenians were permitted to leave on the condition that they expatriate and never return, hence these photographs that predate passport photographs by a decade or more are bureaucratic documents of exclusion, taken as part of unmaking these individuals as Ottoman subjects. Hence, they are portraits of unbelonging. This dataset lists every glass negative that must have existed at some point with the names of all individuals whose likeness would have been captured in the negative.  Moreover, it charts the circulation of all bureaucratic documents pertaining to the terk-I tabiiyet process."
+        }
+      ],
+      "alternativeTitles": [
+        {
+          "en": "POU"
+        }
+      ],
+      "accessConditions": "closed",
+      "howToCite": "Portraits of Unbelonging (POU), 2021, DaSCH. ark.dasch.swiss/ark:/72163/1/0827",
+      "languages": [
+        {
+          "en": "Armenian"
+        },
+        {
+          "en": "English",
+          "de": "Englisch",
+          "fr": "anglais"
+        },
+        {
+          "en": "Turkish"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2022-05-06",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            "text": "CC BY-NC-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0827-person-000",
+          "roles": [
+            "Principal Investigator"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Portraits of Unbelonging",
+      "typeOfData": [
+        "Image",
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0827-person-000",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Department of Anthropology, Ruth Adams Building, 131 George St",
+        "postalCode": "NJ 08901",
+        "locality": "New Brunswick",
+        "country": "USA"
+      },
+      "email": "z.gursel@rutgers.edu",
+      "familyNames": [
+        "Gürsel"
+      ],
+      "givenNames": [
+        "Zeynep",
+        "Devrim"
+      ],
+      "jobTitles": [
+        "Associate Professor"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0827-organization-001"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-0473-5883",
+          "text": "ORCID URL: https://orcid.org/0000-0003-0473-5883"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0827-organization-001",
+      "__type": "Organization",
+      "name": "Rutgers University"
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0827-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Claridenstrasse 26",
+        "postalCode": "8002",
+        "locality": "Zurich",
+        "country": "Switzerland"
+      },
+      "name": "NOMIS Foundation",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://nomisfoundation.ch/",
+        "text": "https://nomisfoundation.ch/"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0827-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0827-organization-000"
+      ]
+    }
+  ]
+}

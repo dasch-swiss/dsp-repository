@@ -1,0 +1,321 @@
+{
+  "$schema": "../../resources/schema-metadata-draft.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Nitsche, M., Schobinger, J., Scheller, J., Thyroff, J., Weber, T. (2024). Historische Lernprozesse erforschen – Research of Learning Processes in History (RicH) [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E",
+    "teaserText": "Die RicH-Studie erforscht die Operationen narrativer Kompetenz und deren qualitative Unterschiede anhand eines Novizen-Experten-Vergleichs zwecks empirischer Fundierung eines Progressionsmodelles.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-084E-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "de": "Historische Lernprozesse erforschen"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-084E-person-000",
+    "description": {
+      "de": "Geschichtsvermittlung soll dazu befähigen, mittels historischem Denken Perspektiven für die Gegenwart und Zukunft zu entwickeln, indem historisch gelernt wird. Historisches Lernen wird häufig als Entwicklung narrativer Kompetenz definiert. Wie Lernprozesse und Lernprogressionen erfasst und diagnostiziert werden können, ist jedoch kaum bekannt. Bisherige Graduierungsvorschläge sind empirisch nicht abgesichert. Die RicH-Studie setzt hier an, indem sie systematisch die Operationen narrativer Kompetenz und diesbezügliche qualitative Unterschiede bei Personen mit unterschiedlicher Expertise (z.B. universitäre Historiker*innen, Public Historians, Studierende, Schüler*innen) exemplarisch mittels Think-Aloud-Methode anhand des Themas «Schweizer Neutralität im Ersten Weltkrieg» erforscht und Zusammenhänge zwischen historischen Denkprozessen und epistemologischen Beliefs, situationalem Interesse und metakognitiven Strategien aufklärt. Das Ziel ist es, Lernprogressionsmodelle für weiterführende Studien und schulische Lerndiagnostik zu entwickeln."
+    },
+    "disciplines": [
+      {
+        "de": "10104 Erziehungs- und Bildungswissenschaften, Fachdidaktiken"
+      },
+      {
+        "de": "110302 Schweizer Geschichte"
+      }
+    ],
+    "endDate": "2024-07-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-084E-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-084E-grant-000"
+    ],
+    "keywords": [
+      {
+        "de": "Expert*innen-Noviz*innen-Vergleich"
+      },
+      {
+        "de": "Geschichtsdidaktik"
+      },
+      {
+        "de": "Lernprogression"
+      },
+      {
+        "de": "Schweizer Neutralität"
+      },
+      {
+        "en": "Think-Aloud-Methode"
+      },
+      {
+        "de": "historisches Denken"
+      },
+      {
+        "de": "historisches Lernen"
+      },
+      {
+        "de": "narrative Kompetenz"
+      }
+    ],
+    "name": "Historische Lernprozesse erforschen – Research of Learning Processes in History (RicH)",
+    "publications": [
+      {
+        "text": "See",
+        "url": [
+          {
+            "__type": "URL",
+            "type": "URL",
+            "url": "https://irf.fhnw.ch/entities/project/ca0a8373-086b-4b41-ae2c-52d95fefc517",
+            "text": "https://irf.fhnw.ch/entities/project/ca0a8373-086b-4b41-ae2c-52d95fefc517"
+          }
+        ]
+      }
+    ],
+    "shortcode": "084E",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/6295630/earth.html",
+        "text": "Global"
+      },
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658434/switzerland.html",
+        "text": "Switzerland"
+      }
+    ],
+    "startDate": "2020-08-01",
+    "temporalCoverage": [
+      {
+        "en": "1st century A.D. – 21st century A.D."
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/91_Qg-ubQl-1wf3ZfqVjjg",
+      "text": "Discover Project Data"
+    },
+    "status": "Ongoing"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-084E-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "de": "Aus dem Projekt erarbeitete Resultate: Projektzusammenfassung und Projektbeschreibung\r \r Im Projekt erhobene Daten von Expert*innen und Noviz*innen: Transkripte der Think-Aloud-Aufnahmen inkl. Interviewteil zum ersten Erhebungstermin, Antworttexte inkl. Interviewteil zum zweiten Erhebungstermin, soziodemographische Angaben, Antworten auf Fragebögen zu epistemologischen Beliefs, situationalem Interesse und metakognitiven Strategien der Teilnehmenden sowie die Dokumentation der entsprechenden Erhebungs- und Auswertungsinstrumente."
+        }
+      ],
+      "accessConditions": "closed",
+      "howToCite": "Nitsche, M., Schobinger, J., Scheller, J., Thyroff, J., Weber, T. (2024). Historische Lernprozesse erforschen – Research of Learning Processes in History (RicH) [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E",
+      "languages": [
+        {
+          "de": "Deutsch",
+          "en": "German",
+          "fr": "allemand"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2024-07-25",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "text": "CC BY-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-084E-person-000",
+          "roles": [
+            "Projektleiter"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-084E-person-001",
+          "roles": [
+            "Projektmitglied"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-084E-person-002",
+          "roles": [
+            "Projektmitglied"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-084E-person-003",
+          "roles": [
+            "Projektmitglied"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-084E-person-004",
+          "roles": [
+            "Projektmitglied"
+          ]
+        }
+      ],
+      "status": "Ongoing",
+      "title": "Historische Lernprozesse erforschen – Research of Learning Processes in History (RicH)",
+      "typeOfData": [
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-084E-person-001",
+      "__type": "Person",
+      "email": "jan.scheller@uni-greifswald.de",
+      "familyNames": [
+        "Scheller"
+      ],
+      "givenNames": [
+        "Jan"
+      ],
+      "jobTitles": [
+        "Wissenschaftlicher Mitarbeiter"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-084E-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-084E-person-002",
+      "__type": "Person",
+      "email": "jonas.schobinger@fhnw.ch",
+      "familyNames": [
+        "Schobinger"
+      ],
+      "givenNames": [
+        "Jonas"
+      ],
+      "jobTitles": [
+        "Wissenschaftlicher Mitarbeiter"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-084E-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-084E-person-003",
+      "__type": "Person",
+      "email": "julia.thyroff@fhnw.ch",
+      "familyNames": [
+        "Thyroff"
+      ],
+      "givenNames": [
+        "Julia"
+      ],
+      "jobTitles": [
+        "Wissenschaftliche Mitarbeiterin"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-084E-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0002-0633-4509",
+          "text": "ORCID URL: https://orcid.org/0000-0002-0633-4509"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-084E-person-004",
+      "__type": "Person",
+      "email": "tina.nicole.weber@bluewin.ch",
+      "familyNames": [
+        "Weber"
+      ],
+      "givenNames": [
+        "Tina"
+      ],
+      "jobTitles": [
+        "Wissenschaftliche Assistentin"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-084E-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-084E-person-000",
+      "__type": "Person",
+      "email": "martin.nitsche@fhnw.ch",
+      "familyNames": [
+        "Nitsche"
+      ],
+      "givenNames": [
+        "Martin"
+      ],
+      "jobTitles": [
+        "Wissenschaftlicher Mitarbeiter"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-084E-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-4261-5583",
+          "text": "ORCID URL: https://orcid.org/0000-0003-4261-5583"
+        }
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-084E-organization-001",
+      "__type": "Organization",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.snf.ch",
+        "text": "https://www.snf.ch"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-084E-organization-000",
+      "__type": "Organization",
+      "name": "Pädagogische Hochschule der Fachhochschule Nordwestschweiz",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.fhnw.ch/de/die-fhnw/hochschulen/ph",
+        "text": "https://www.fhnw.ch/de/die-fhnw/hochschulen/ph"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-084E-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-084E-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "192414",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/192414",
+        "text": "https://data.snf.ch/grants/grant/192414"
+      }
+    }
+  ]
+}

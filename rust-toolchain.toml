@@ -1,0 +1,8 @@
+[toolchain]
+channel = "1.83.0" # or "stable", "nightly", etc.
+components = ["rustfmt", "clippy"] # Optional: specify additional components
+targets = [
+    "x86_64-apple-darwin",      # Intel Mac
+    "aarch64-apple-darwin",     # Apple Silicon Mac (if applicable)
+    "x86_64-unknown-linux-gnu"  # Production (Intel Linux)
+]

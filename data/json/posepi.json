@@ -1,0 +1,371 @@
+{
+  "$schema": "../../resources/schema-metadata-final.json",
+  "project": {
+    "__type": "Project",
+    "howToCite": "Jacquin, J., Keck, A., Robin, C., Roh, S., Rivoal, M. (2024). Marqueurs épistémiques et évidentiels du français identifiés et annotés dans un corpus d'interactions relevant de débats politiques et de réunions d’entreprise [Projet FNS 188924, POSEPI] [base de données] (DaSCH), http://ark.dasch.swiss/ark:/72163/1/0120",
+    "teaserText": "A systematic and multimodal study of French epistemic and evidential markers as emerging in various professional/institutional settings documented by “natural“ video-recorded data.",
+    "datasets": [
+      "http://ns.dasch.swiss/repository#dsp-0120-dataset-000"
+    ],
+    "alternativeNames": [
+      {
+        "en": "posepi"
+      }
+    ],
+    "contactPoint": "http://ns.dasch.swiss/repository#dsp-0120-person-000",
+    "dataManagementPlan": {
+      "__type": "DataManagementPlan",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://doi.org/10.5281/zenodo.7038186",
+        "text": "https://doi.org/10.5281/zenodo.7038186"
+      },
+      "available": true
+    },
+    "description": {
+      "fr": "Comment exprime-t-on et assume-t-on, en français, le fait de savoir quelque chose, d'en douter ou de l'ignorer ? On pourrait croire que cette question d'apparence si simple a été réglée depuis longtemps, tant elle résonne avec notre quotidien : ne sommes-nous pas en effet en permanence en train de moduler, nuancer, adapter le degré de certitude de ce que nous disons et de plus ou moins afficher les sources, des plus directes aux plus indirectes, sur lesquelles nous basons ce que nous avançons ? Les linguistes, y compris celles et ceux qui se sont penchés sur le français, ont certes circonscrit ce qu'on appelle la modalité épistémique, d'une part, le domaine évidentiel de l'autre, identifiant toute une série de marqueurs, des plus lexicaux (« peut-être », « probablement ») aux plus phraséologiques (« il se peut », « il me semble », « j'en sais rien »), qui permettent à une locutrice ou un locuteur de moduler la prise en charge du contenu qu'il ou elle avance. Toutefois, il n'existait encore aucune étude empirique, basée sur un ensemble de données naturelles constituées en corpus, qui propose une analyse systématique de ces marqueurs du savoir, du non-savoir et du doute tels qu'ils apparaissent dans des interactions authentiques et tels qu'ils servent, en leur sein, à élaborer des jeux de positionnements respectifs ([je sais, tu ne sais pas]; [nous savons, ils doutent]; etc.).\n\n\n\nLe présent projet présente ainsi la première étude systématique des marqueurs épistémiques et évidentiels du français tels qu'ils émergent dans un corpus documentant 28 heures d'interactions naturelles, 14 étant tirées de débats publics et télévisés, 14 de réunions professionnelles. Ces données originales ont été recueillies et confectionnées lors de recherches antérieures. Elles présentent l'intérêt d'être vidéo-enregistrées et donc de permettre une prise en compte de la dimension mimo-gestuelle, de manière à sortir d'un verbo-centrisme largement critiqué et embrasser une approche plus multimodale du langage et de la communication. Le fait que ces données documentent deux types d'interaction différents - les débats politiques et les réunions professionnelles - rend finalement possibles des comparaisons entre les deux contextes. \n\n\n\nL'objectif d'étudier systématiquement les marqueurs épistémiques et évidentiels a rencontré un état de la littérature particulièrement fragmenté, qu'il s'agisse de perspectives, de données ou de définitions. Ce faisant, le projet a impliqué une avancée sur les fronts théorique, méthodologique et analytique. Au plan théorique, le projet clarifie, sur une base empirique, les rapports entre les domaines de l'épistémique et de l'évidentiel en français. Au plan méthodologique, le projet présente un cadre d'analyse qui articule panorama quantitatif d'ensemble et explorations qualitatives de détail. Au plan analytique, le projet propose une analyse systématique des marqueurs du savoir, du non-savoir et du doute en français tels qu'ils émergent d'un corpus de données naturelles et lie ceux-ci aux positions prises par les locutrices et locuteurs dans l'interaction. Sur ces trois fronts, le projet articule les apports et les perspectives des trois champs disciplinaires que sont la linguistique de l’énonciation, la linguistique interactionnelle et l’analyse conversationnelle multimodale, de manière à ce que chaque observable soit considéré dans ses dimensions énonciative, interactionnelle et multimodale.\n\n\n\nEn termes de pertinence et d’impact, et au travers de deux recherches doctorales et d'une monographie accessibles en open access, le projet contribue à une meilleure compréhension du langage - en général - et des ressources énonciatives spécifiques que sont les marqueurs épistémiques/évidentiels - en particulier - du point de vue de leur fonctionnement interactionnel. Il propose non seulement un enrichissement mutuel de la linguistique de l’énonciation et de la linguistique interactionnelle, mais aussi une modélisation qui intègre le rôle de la multimodalité. Le projet propose enfin une analyse d’une langue peu explorée du point de vue du positionnement épistémique et il contribue de ce fait à poser les bases pour des comparaisons interlinguistiques, très sollicitées à l’heure actuelle."
+    },
+    "disciplines": [
+      {
+        "en": "10502 Romance languages and literature"
+      },
+      {
+        "en": "10607 Applied linguistics"
+      }
+    ],
+    "endDate": "2024-03-31",
+    "funders": [
+      "http://ns.dasch.swiss/repository#dsp-0120-organization-001"
+    ],
+    "grants": [
+      "http://ns.dasch.swiss/repository#dsp-0120-grant-000"
+    ],
+    "keywords": [
+      {
+        "en": "Conversation Analysis"
+      },
+      {
+        "en": "Epistemic Modality"
+      },
+      {
+        "en": "Evidentiality"
+      },
+      {
+        "en": "French Linguistics"
+      },
+      {
+        "en": "Interactional Linguistics"
+      },
+      {
+        "en": "Linguistics"
+      },
+      {
+        "en": "Multimodality"
+      },
+      {
+        "en": "Talk-in-Interaction"
+      }
+    ],
+    "name": "Prendre une position épistémique dans l’interaction. Les marqueurs du savoir, du non-savoir et du doute en français",
+    "shortcode": "0120",
+    "spatialCoverage": [
+      {
+        "__type": "URL",
+        "type": "Geonames",
+        "url": "https://www.geonames.org/2658434",
+        "text": "Switzerland"
+      }
+    ],
+    "startDate": "2020-03-01",
+    "temporalCoverage": [
+      {
+        "de": "2007-2018",
+        "en": "2007-2018",
+        "fr": "2007-2018"
+      }
+    ],
+    "url": {
+      "__type": "URL",
+      "type": "URL",
+      "url": "https://app.dasch.swiss/project/OYPOsaE5TLeQjhRC4QTwgQ",
+      "text": "Discover Project Data"
+    },
+    "status": "Finished"
+  },
+  "datasets": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0120-dataset-000",
+      "__type": "Dataset",
+      "abstracts": [
+        {
+          "fr": "La base de données consiste en près de 4000 marqueurs épistémiques et évidentiels du français identifiés, extraits et annotés à partir d’un corpus d’interactions verbales relevant de débats politiques et de réunions d’entreprise. Chaque token est annoté au niveau morpho-syntaxique, énonciatif, interactionnel et multimodal. \r La base de données est organisée autour de 7 classes, dont la principale, “Marqueur”, renvoie à un “Lemme”, à une éventuelle portée ainsi qu’à une typologie de gestes (“Mimogestualité”). Les classes “Evènement” et “Participant” précisent le contexte dans lequel sont relevés ces marqueurs et qualifient les rôles des participants. \r Les données primaires à partir desquelles les marqueurs ont été identifiés, extraits et annotés sont consultables ici: http://clapi.icar.cnrs.fr/Posepi/. \r La base de données a été constituée dans le cadre du projet FNS \"Prendre une position épistémique dans l’interaction. Les marqueurs du savoir, du non-savoir et du doute en français\" [188924, POSEPI]."
+        }
+      ],
+      "accessConditions": "open",
+      "datePublished": "2024-05-01",
+      "additional": [
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "http://clapi.icar.cnrs.fr/Posepi/",
+          "text": "Please find more information on CLAPI-POSEPI here"
+        },
+        {
+          "__type": "URL",
+          "type": "URL",
+          "url": "https://zenodo.org/records/7266737",
+          "text": "Please find more on Guide d'annotation du projet POSEPI on zenodo here"
+        }
+      ],
+      "howToCite": "Jacquin, J., Keck, A., Robin, C., Roh, S., Rivoal, M. (2024). Marqueurs épistémiques et évidentiels du français identifiés et annotés dans un corpus d'interactions relevant de débats politiques et de réunions d’entreprise [Projet FNS 188924, POSEPI] [base de données] (DaSCH), http://ark.dasch.swiss/ark:/72163/1/0120",
+      "languages": [
+        {
+          "en": "French",
+          "de": "Französisch",
+          "fr": "français"
+        }
+      ],
+      "licenses": [
+        {
+          "__type": "License",
+          "date": "2024-04-30",
+          "license": {
+            "__type": "URL",
+            "type": "Creative Commons",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "text": "CC BY-SA 4.0"
+          }
+        }
+      ],
+      "attributions": [
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0120-person-000",
+          "roles": [
+            "Project Leader",
+            "Data Curator",
+            "Data Collector"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0120-person-002",
+          "roles": [
+            "Project Member",
+            "Researcher",
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0120-person-001",
+          "roles": [
+            "Project Member",
+            "Researcher",
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0120-person-003",
+          "roles": [
+            "Data Curator"
+          ]
+        },
+        {
+          "__type": "Attribution",
+          "agent": "http://ns.dasch.swiss/repository#dsp-0120-person-004",
+          "roles": [
+            "Other"
+          ]
+        }
+      ],
+      "status": "Finished",
+      "title": "Marqueurs épistémiques et évidentiels du français identifiés et annotés dans un corpus d'interactions relevant de débats politiques et de réunions d’entreprise",
+      "typeOfData": [
+        "Text"
+      ]
+    }
+  ],
+  "persons": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0120-person-000",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Sciences du Langage et de l’Information\r Université de Lausanne\r Anthropole — bureau 3134",
+        "postalCode": "1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+      },
+      "email": "jerome.jacquin@unil.ch",
+      "familyNames": [
+        "Jacquin"
+      ],
+      "givenNames": [
+        "Jérôme"
+      ],
+      "jobTitles": [
+        "Senior lecture"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0120-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0001-8174-4973",
+          "text": "ORCID URL: https://orcid.org/0000-0001-8174-4973"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0120-person-002",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Sciences du Langage et de l’Information\r Université de Lausanne\r Anthropole",
+        "postalCode": "1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+      },
+      "email": "anaclaudia.keck@unil.ch",
+      "familyNames": [
+        "Keck"
+      ],
+      "givenNames": [
+        "Ana Claudia"
+      ],
+      "jobTitles": [
+        "PhD student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0120-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0120-person-001",
+      "__type": "Person",
+      "address": {
+        "__type": "Address",
+        "street": "Sciences du Langage et de l’Information\r Université de Lausanne\r Anthropole",
+        "postalCode": "1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+      },
+      "email": "clotilde.robin@unil.ch",
+      "familyNames": [
+        "Robin"
+      ],
+      "givenNames": [
+        "Clotilde"
+      ],
+      "jobTitles": [
+        "PhD student"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0120-organization-000"
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0120-person-003",
+      "__type": "Person",
+      "email": "marion.rivoal@unil.ch",
+      "familyNames": [
+        "Rivoal"
+      ],
+      "givenNames": [
+        "Marion"
+      ],
+      "jobTitles": [
+        "Researcher manager"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0120-organization-000"
+      ],
+      "authorityRefs": [
+        {
+          "__type": "URL",
+          "type": "ORCID",
+          "url": "https://orcid.org/0000-0003-4185-7169",
+          "text": "ORCID URL: https://orcid.org/0000-0003-4185-7169"
+        }
+      ]
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0120-person-004",
+      "__type": "Person",
+      "email": "loic.jaouen@unil.ch",
+      "familyNames": [
+        "Jaouen"
+      ],
+      "givenNames": [
+        "Loïc"
+      ],
+      "jobTitles": [
+        "IT support"
+      ],
+      "affiliation": [
+        "http://ns.dasch.swiss/repository#dsp-0120-organization-000"
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0120-organization-001",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Wildhainweg 3",
+        "postalCode": "CH-3001",
+        "locality": "Bern",
+        "country": "Switzerland"
+      },
+      "email": "desk@snf.ch",
+      "name": "Swiss National Science Foundation (SNSF)",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "http://www.snf.ch/",
+        "text": "http://www.snf.ch/"
+      }
+    },
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0120-organization-000",
+      "__type": "Organization",
+      "address": {
+        "__type": "Address",
+        "street": "Unicentre",
+        "postalCode": "CH-1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+      },
+      "name": "Université de Lausanne",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://www.unil.ch/",
+        "text": "https://www.unil.ch/"
+      }
+    }
+  ],
+  "grants": [
+    {
+      "__id": "http://ns.dasch.swiss/repository#dsp-0120-grant-000",
+      "__type": "Grant",
+      "funders": [
+        "http://ns.dasch.swiss/repository#dsp-0120-organization-001"
+      ],
+      "name": "Project funding",
+      "number": "188924",
+      "url": {
+        "__type": "URL",
+        "type": "URL",
+        "url": "https://data.snf.ch/grants/grant/188924",
+        "text": "https://data.snf.ch/grants/grant/188924"
+      }
+    }
+  ]
+}

@@ -9,7 +9,7 @@ pub fn load_json_file_paths(data_path: &Path) -> Vec<PathBuf> {
 
 fn find_files_by_extension_in_dir(dir: &Path, file_extension: &str) -> Vec<PathBuf> {
     if !dir.is_dir() {
-        panic!("Directory does not exist.");
+        panic!("Directory does not exist: {:?}", dir);
     };
     fs::read_dir(dir)
         .expect("Unable to read directory.")

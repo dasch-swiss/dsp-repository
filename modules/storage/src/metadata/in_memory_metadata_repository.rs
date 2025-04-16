@@ -5,16 +5,17 @@ use std::sync::{Arc, RwLock};
 use log::{info, trace};
 use dto::metadata::MetadataDto;
 use types::error::AppError;
-use types::metadata::model::{ProjectMetadata, ResearchProject, Shortcode};
+use types::metadata::model::{ProjectMetadata, Shortcode};
 use types::metadata::metadata_repository::MetadataRepository;
 use crate::file_utils::load_json_file_paths;
 
+#[derive(Debug, Clone)]
 pub struct InMemoryMetadataRepository {
     data: Arc<RwLock<HashMap<Shortcode, ProjectMetadata>>>,
 }
 
 impl InMemoryMetadataRepository {
-    fn new(metadata: Vec<ProjectMetadata>) -> Self {
+    pub fn new(metadata: Vec<ProjectMetadata>) -> Self {
         let data = Arc::new(RwLock::new(HashMap::new()));
 
         for meta in metadata {
@@ -25,15 +26,13 @@ impl InMemoryMetadataRepository {
         Self { data }
     }
 
-    fn new_from_path(data_path: &Path) -> Self {
+    pub fn new_from_path(data_path: &Path) -> Self {
         info!("Init Repository {:?}", data_path);
         let data = Arc::new(RwLock::new(HashMap::new()));
 
         let file_paths = load_json_file_paths(data_path);
         info!("Found {} projects", file_paths.len());
 
-        
-        let mut metadata = Vec::<ProjectMetadata>::new();
         let mut known_shortcodes: Vec<Shortcode> = Vec::new();
         for file in file_paths {
             let file = File::open(file).expect("open file.");
@@ -58,16 +57,6 @@ impl InMemoryMetadataRepository {
 
         Self { data }
     }
-
-    fn get_by_shortcode(&self, shortcode: &Shortcode) -> Option<ProjectMetadata> {
-        let data = self.data.read().unwrap();
-        data.get(shortcode).cloned()
-    }
-
-    fn remove(&self, id: &Shortcode) {
-        let mut data = self.data.write().unwrap();
-        data.remove(id);
-    }
 }
 
 impl Default for InMemoryMetadataRepository {
@@ -89,7 +78,8 @@ impl MetadataRepository for InMemoryMetadataRepository {
         &self,
         filter: &str,
     ) -> Result<Vec<ProjectMetadata>, AppError> {
-        todo!()
+        let _ = filter;
+        Ok(vec![])
     }
 
     async fn find_by_id(&self, id: &Shortcode) -> Result<Option<ProjectMetadata>, AppError> {

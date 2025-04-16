@@ -1,4 +1,6 @@
+use std::fmt::{Display, Formatter};
 use regex::Regex;
+use serde::Deserialize;
 use crate::error::AppError;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -29,13 +31,29 @@ pub struct ResearchProject {
     pub name: String,
 }
 
-#[derive(Debug, Default, Clone, PartialEq, Hash, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Hash, Eq, Deserialize)]
 pub struct Shortcode(String);
 impl Shortcode {
     pub fn as_string(&self) -> String {
         self.0.to_string()
     }
 }
+
+impl Display for Shortcode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl std::str::FromStr for Shortcode {
+    type Err = AppError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let value = s.to_uppercase();
+        Shortcode::try_from(value)
+    }
+}
+
 impl TryFrom<String> for Shortcode {
     type Error = AppError;
     fn try_from(value: String) -> Result<Self, Self::Error> {

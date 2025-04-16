@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Research Projects{% endblock %}
+
+{% block content %}
+<div class="cds--grid">
+    <div class="cds--row">
+        <div class="cds--col-lg-16">
+            <h2 class="cds--type-display-04">Research Projects</h2>
+        </div>
+    </div>
+    <div class="cds--row">
+        {% for project in projects %}
+        <div class="cds--col-sm-4 cds--col-md-8 cds--col-lg-4">
+            <div class="cds--tile cds--tile--clickable">
+                <h4 class="cds--type-heading-04">{{ project.research_project.shortcode }}</h4>
+                <p class="cds--type-body-long-01">{{ project.research_project.name }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

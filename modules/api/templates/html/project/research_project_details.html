@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Project Details{% endblock %}
+
+{% block content %}
+<div class="cds--grid">
+    <div class="cds--row">
+        <div class="cds--col-lg-12">
+            <h2 class="cds--type-display-04">{{ project.shortcode }}</h2>
+            <p class="cds--type-body-long-01">{{ project.name }}</p>
+        </div>
+    </div>
+
+    <div class="cds--row">
+        <div class="cds--col-lg-12">
+            <a href="/projects" class="cds--btn cds--btn--secondary">← Back to Projects</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

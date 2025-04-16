@@ -1,7 +1,7 @@
 use types::error::AppError;
-use types::metadata::model::{ProjectMetadata, Shortcode};
 use types::metadata::metadata_repository::MetadataRepository;
 use types::metadata::metadata_service::MetadataService;
+use types::metadata::model::{ProjectMetadata, Shortcode};
 
 #[derive(Debug, Clone)]
 pub struct MetadataServiceImpl<R: MetadataRepository + Send + Sync> {

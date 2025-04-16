@@ -1,6 +1,6 @@
 [toolchain]
-channel = "1.83.0" # or "stable", "nightly", etc.
-components = ["rustfmt", "clippy"] # Optional: specify additional components
+channel = "1.86.0" # or "stable", "nightly", etc.
+components = ["cargo", "clippy", "rust-analyzer", "rustfmt"] # Optional: specify additional components
 targets = [
     "x86_64-apple-darwin",      # Intel Mac
     "aarch64-apple-darwin",     # Apple Silicon Mac (if applicable)

@@ -1,6 +1,8 @@
 use std::sync::Arc;
+
 use axum::extract::State;
 use axum::response::Html;
+
 use crate::app_state::AppState;
 use crate::error::ServerError;
 

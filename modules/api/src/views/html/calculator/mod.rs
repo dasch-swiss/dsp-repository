@@ -12,5 +12,3 @@ pub struct DcfResultTableTemplate {
     pub rows: Vec<CashFlowRow>,
     pub total_intrinsic_value: f64, // sum of discounted values
 }
-
-

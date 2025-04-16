@@ -21,4 +21,3 @@ pub struct DcfResult {
     pub rows: Vec<CashFlowRow>,
     pub total_intrinsic_value: f64,
 }
-

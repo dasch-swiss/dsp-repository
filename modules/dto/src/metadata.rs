@@ -1,5 +1,4 @@
-
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use types::error::AppError;
 use types::metadata::model::{ProjectMetadata, ResearchProject};
@@ -33,15 +32,13 @@ impl TryFrom<MetadataDto> for ProjectMetadata {
     fn try_from(dto: MetadataDto) -> Result<Self, Self::Error> {
         Ok(Self {
             research_project: ResearchProject::try_from(dto.project)?,
-            datasets: vec![], // TODO: Implement conversion for datasets
-            persons: vec![], // TODO: Implement conversion for persons
+            datasets: vec![],      // TODO: Implement conversion for datasets
+            persons: vec![],       // TODO: Implement conversion for persons
             organizations: vec![], // TODO: Implement conversion for organizations
-            grants: vec![], // TODO: Implement conversion for grants
+            grants: vec![],        // TODO: Implement conversion for grants
         })
     }
 }
-
-
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]

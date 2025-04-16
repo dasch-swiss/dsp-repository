@@ -2,11 +2,13 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
 use std::sync::{Arc, RwLock};
-use log::{info, trace};
+
 use dto::metadata::MetadataDto;
+use log::{info, trace};
 use types::error::AppError;
-use types::metadata::model::{ProjectMetadata, Shortcode};
 use types::metadata::metadata_repository::MetadataRepository;
+use types::metadata::model::{ProjectMetadata, Shortcode};
+
 use crate::file_utils::load_json_file_paths;
 
 #[derive(Debug, Clone)]
@@ -40,7 +42,7 @@ impl InMemoryMetadataRepository {
             let entity: ProjectMetadata = dto.try_into().expect("convert DTO to domain");
 
             let mut data = data.write().unwrap();
-            
+
             let shortcode = entity.research_project.shortcode.to_owned();
             if known_shortcodes.contains(&shortcode) {
                 panic!("Duplicate shortcode: {:?}", shortcode);
@@ -74,16 +76,13 @@ impl MetadataRepository for InMemoryMetadataRepository {
         Ok(self.data.read().unwrap().values().cloned().collect())
     }
 
-    async fn find_by_filter(
-        &self,
-        filter: &str,
-    ) -> Result<Vec<ProjectMetadata>, AppError> {
+    async fn find_by_filter(&self, filter: &str) -> Result<Vec<ProjectMetadata>, AppError> {
         let _ = filter;
         Ok(vec![])
     }
 
     async fn find_by_id(&self, id: &Shortcode) -> Result<Option<ProjectMetadata>, AppError> {
-        Ok(self.data.read().unwrap().get(id).map(|p| p.clone()))
+        Ok(self.data.read().unwrap().get(id).cloned())
     }
 }
 

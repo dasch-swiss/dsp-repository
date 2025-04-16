@@ -1,5 +1,5 @@
-use axum::response::{IntoResponse, Response};
 use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
 use types::error::AppError;
 
 /// Local wrapper so we can implement Axum traits

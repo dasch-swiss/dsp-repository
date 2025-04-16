@@ -1,6 +1,8 @@
 use std::fmt::{Display, Formatter};
+
 use regex::Regex;
 use serde::Deserialize;
+
 use crate::error::AppError;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -8,7 +10,6 @@ pub struct ProjectCluster {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Collection {}
-
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Dataset {}
@@ -60,7 +61,9 @@ impl TryFrom<String> for Shortcode {
         let regex: Regex = Regex::new(r"^[A-F0-9]{4}$").expect("Valid regex");
         let value = value.to_uppercase();
         if !regex.is_match(&value) {
-            Err(AppError::Msg("Shortcode must be a 4 character hexadecimal string"))
+            Err(AppError::Msg(
+                "Shortcode must be a 4 character hexadecimal string",
+            ))
         } else {
             Ok(Shortcode(value))
         }

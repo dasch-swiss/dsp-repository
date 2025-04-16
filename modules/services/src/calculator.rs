@@ -45,5 +45,5 @@ impl CalculatorServiceImpl {
             rows,
             total_intrinsic_value: total,
         }
-    } 
+    }
 }

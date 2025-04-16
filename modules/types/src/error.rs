@@ -1,10 +1,9 @@
 use std::fmt;
 
-
 #[derive(Debug)]
 pub enum AppError {
     Message(String),
-    Msg(&'static str)
+    Msg(&'static str),
 }
 
 impl fmt::Display for AppError {

@@ -1,4 +1,4 @@
-pub (crate) mod metadata;
+pub(crate) mod metadata;
 pub(crate) mod research_project;
 
 pub use metadata::*;

@@ -1,5 +1,8 @@
 # Project Structure and Code Organization
 
+> [!WARNING]  
+> This page is not up-to-date.
+
 ## Overview
 
 This project is a modular, crate-based Rust workspace implementing a **hypermedia-based multi-page application (MPA)** using:

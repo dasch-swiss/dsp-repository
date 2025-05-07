@@ -13,6 +13,7 @@ default:
 install-requirements:
     cargo install cargo-watch
     cargo install mdbook
+    cargo install mdbook-alerts
 
 # Run all fmt and clippy checks
 check:

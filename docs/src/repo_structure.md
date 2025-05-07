@@ -188,13 +188,13 @@ cargo run --bin cli -- import-users ./users.csv
 
 ## Benefits of This Structure
 
-| Aspect             | Benefit |
-|--------------------|---------|
-| **Separation of concerns** | Clear boundaries between domain, logic, persistence, and delivery |
-| **Modular**         | Each crate can be tested and reused independently |
-| **Team-friendly**   | Frontend-focused devs work in `html_api`; backend devs focus on `services` and `storage` |
-| **Testable**        | Services and repositories can be mocked for unit/integration testing |
-| **Extensible**      | Add more APIs (e.g., GraphQL, CLI commands) without modifying existing code |
+| Aspect                     | Benefit                                                                                  |
+| -------------------------- | ---------------------------------------------------------------------------------------- |
+| **Separation of concerns** | Clear boundaries between domain, logic, persistence, and delivery                        |
+| **Modular**                | Each crate can be tested and reused independently                                        |
+| **Team-friendly**          | Frontend-focused devs work in `html_api`; backend devs focus on `services` and `storage` |
+| **Testable**               | Services and repositories can be mocked for unit/integration testing                     |
+| **Extensible**             | Add more APIs (e.g., GraphQL, CLI commands) without modifying existing code              |
 
 ---
 

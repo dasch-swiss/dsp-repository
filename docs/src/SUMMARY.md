@@ -1,3 +1,3 @@
 # Summary
 
-- [Project Structure and Code Organization](./chapter_1.md)
+- [Project Structure and Code Organization](./repo_structure.md)

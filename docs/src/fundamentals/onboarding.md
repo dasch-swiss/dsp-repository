@@ -16,9 +16,21 @@
 
 ...
 
+### Archtectural Design Patterns
+
+...
+
 ### Testing
 
 ...
+
+### Domain Driven Design
+
+...
+
+### Test Driven Development
+
+TDD, BDD
 
 
 ## Hypermedia

@@ -11,23 +11,12 @@
 # Design System
 
 - [DSP Design System](./design_system/overview.md)
-  - [Aim and Purpose]()
-  - [Design Principles]()
-  - [Design Tokens]()
-  - [Components]()
-  - [Patterns]()
-  - [Icons]()
-  - [Typography]()
-  - [Colors]()
-  - [Accessibility]()
-  - [Design System in Figma]()
-  - [Playground]()
 
 # Fundamentals
 
 - [Discovery, Design and Development Process](./fundamentals/processes.md)
-- [Tech Stack]()
-- [Testing and Quality Assurance]()
+- [Tech Stack](./fundamentals/tech_stack.md)
+- [Testing and Quality Assurance](./fundamentals/testing.md)
 - [Onboarding](./fundamentals/onboarding.md)
 
 [About this Documentation](./docs.md)

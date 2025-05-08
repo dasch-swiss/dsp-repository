@@ -2,6 +2,8 @@
 
 [Intorduction](./introduction.md)
 
+[About this Documentation](./docs.md)
+
 - [Project Structure and Code Organization](./repo_structure.md)
 
 # System Architecture
@@ -18,5 +20,3 @@
 - [Tech Stack](./fundamentals/tech_stack.md)
 - [Testing and Quality Assurance](./fundamentals/testing.md)
 - [Onboarding](./fundamentals/onboarding.md)
-
-[About this Documentation](./docs.md)

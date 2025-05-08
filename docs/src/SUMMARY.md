@@ -2,11 +2,9 @@
 
 [Intorduction](./introduction.md)
 
-# About this Repository
-
 - [Project Structure and Code Organization](./repo_structure.md)
 
-# DPE
+# System Architecture
 
 - [Discovery and Presentation Environment](./dpe/overview.md)
 
@@ -31,3 +29,5 @@
 - [Tech Stack]()
 - [Testing and Quality Assurance]()
 - [Onboarding](./onboarding.md)
+
+[About this Documentation](./docs.md)

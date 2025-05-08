@@ -6,7 +6,7 @@
 
 # System Architecture
 
-- [Discovery and Presentation Environment](./dpe/overview.md)
+- [Discovery and Presentation Environment]()
 
 # Design System
 
@@ -25,9 +25,9 @@
 
 # Fundamentals
 
-- [Discovery, Design and Development Process]()
+- [Discovery, Design and Development Process](./fundamentals/processes.md)
 - [Tech Stack]()
 - [Testing and Quality Assurance]()
-- [Onboarding](./onboarding.md)
+- [Onboarding](./fundamentals/onboarding.md)
 
 [About this Documentation](./docs.md)

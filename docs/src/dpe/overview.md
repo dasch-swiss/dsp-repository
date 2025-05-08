@@ -1,1 +1,0 @@
-# Discovery and Presentation Environment

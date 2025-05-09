@@ -52,10 +52,7 @@ pub struct ProjectDto {
 
 impl From<ResearchProject> for ProjectDto {
     fn from(p: ResearchProject) -> Self {
-        Self {
-            shortcode: p.shortcode.as_string(),
-            name: p.name,
-        }
+        Self { shortcode: p.shortcode.as_string(), name: p.name }
     }
 }
 
@@ -63,10 +60,7 @@ impl TryFrom<ProjectDto> for ResearchProject {
     type Error = AppError;
 
     fn try_from(dto: ProjectDto) -> Result<Self, Self::Error> {
-        Ok(Self {
-            shortcode: dto.shortcode.try_into()?,
-            name: dto.name,
-        })
+        Ok(Self { shortcode: dto.shortcode.try_into()?, name: dto.name })
     }
 }
 

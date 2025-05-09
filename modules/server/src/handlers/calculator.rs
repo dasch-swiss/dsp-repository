@@ -19,27 +19,18 @@ pub(crate) async fn calculator_index_page_handler(
 }
 
 /// GET /calculator/style.css - returns the calculator style.css
-pub(crate) async fn calculator_style_css_handler(
-    State(_state): State<Arc<AppState>>,
-) -> Result<Response, ServerError> {
-    Ok((
-        [("Content-Type", "text/css")],
-        api::routes::calculator::get_style_css(),
-    )
-        .into_response())
+pub(crate) async fn calculator_style_css_handler(State(_state): State<Arc<AppState>>) -> Result<Response, ServerError> {
+    Ok(([("Content-Type", "text/css")], api::routes::calculator::get_style_css()).into_response())
 }
 
 pub(crate) async fn calculate_action_handler(
     State(state): State<Arc<AppState>>,
     Query(form): Query<DcfForm>,
 ) -> impl IntoResponse {
-    let dcf_result = state.calculator_service.compute_dcf_result(
-        form.fcf,
-        form.growth,
-        form.discount,
-        form.terminal,
-        form.years,
-    );
+    let dcf_result =
+        state
+            .calculator_service
+            .compute_dcf_result(form.fcf, form.growth, form.discount, form.terminal, form.years);
 
     let res = api::routes::calculator::get_result_table_page_fragment(&dcf_result);
     Sse(stream! {

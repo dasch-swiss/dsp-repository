@@ -1,6 +1,8 @@
 [book]
-authors = ["Ivan Subotic"]
+authors = ["Ivan Subotic", "Balduin Landolt"]
 language = "en"
 multilingual = false
 src = "src"
 title = "DSP-Repository Developer Documentation"
+
+[preprocessor.alerts]

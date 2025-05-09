@@ -4,14 +4,7 @@ use types::calculator::{CashFlowRow, DcfResult};
 pub struct CalculatorServiceImpl;
 
 impl CalculatorServiceImpl {
-    pub fn compute_dcf_result(
-        &self,
-        fcf: f64,
-        growth: f64,
-        discount: f64,
-        terminal: f64,
-        years: u32,
-    ) -> DcfResult {
+    pub fn compute_dcf_result(&self, fcf: f64, growth: f64, discount: f64, terminal: f64, years: u32) -> DcfResult {
         let mut rows = Vec::new();
         let mut total = 0.0;
 
@@ -19,11 +12,7 @@ impl CalculatorServiceImpl {
             let projected_fcf = fcf * (1.0 + growth).powi(year as i32);
             let discounted = projected_fcf / (1.0 + discount).powi(year as i32);
 
-            rows.push(CashFlowRow {
-                year: year.to_string(),
-                fcf: projected_fcf,
-                discounted,
-            });
+            rows.push(CashFlowRow { year: year.to_string(), fcf: projected_fcf, discounted });
 
             total += discounted;
         }
@@ -41,9 +30,6 @@ impl CalculatorServiceImpl {
 
         total += discounted_terminal;
 
-        DcfResult {
-            rows,
-            total_intrinsic_value: total,
-        }
+        DcfResult { rows, total_intrinsic_value: total }
     }
 }

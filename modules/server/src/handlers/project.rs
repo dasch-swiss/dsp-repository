@@ -9,9 +9,7 @@ use crate::app_state::AppState;
 use crate::error::ServerError;
 
 /// GET /projects — returns a list of all projects as HTML
-pub(crate) async fn projects_list_handler(
-    State(state): State<Arc<AppState>>,
-) -> Result<Html<String>, ServerError> {
+pub(crate) async fn projects_list_handler(State(state): State<Arc<AppState>>) -> Result<Html<String>, ServerError> {
     let projects = state.metadata_service.find_all().await?;
     let view = api::routes::project::get_projects_list_page(projects);
     Ok(Html(view))

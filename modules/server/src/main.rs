@@ -18,9 +18,8 @@ use tracing_subscriber::util::SubscriberInitExt;
 async fn main() -> Result<(), Box<dyn Error>> {
     tracing_subscriber::registry()
         .with(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                format!("{}=debug,tower_http=debug", env!("CARGO_CRATE_NAME")).into()
-            }),
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| format!("{}=debug,tower_http=debug", env!("CARGO_CRATE_NAME")).into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -40,9 +39,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let app = routes::routes().with_state(app_state).layer(cors);
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3333")
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3333").await.unwrap();
 
     tracing::debug!("listening on http://{}", listener.local_addr().unwrap());
 

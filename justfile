@@ -88,3 +88,6 @@ docs-serve:
 
 docs-clean:
     mdbook clean docs
+
+run-watch-playground:
+    cargo watch -s 'cargo run --bin playground-server'

@@ -1,0 +1,257 @@
+@import url("reset.css");
+
+@layer variables {
+    @layer spacing {
+        :root {
+            --spacing-01: 0.125rem;
+            /* 2px */
+            --spacing-02: 0.25rem;
+            /* 4px */
+            --spacing-03: 0.5rem;
+            /* 8px */
+            --spacing-04: 0.75rem;
+            /* 12px */
+            --spacing-05: 1rem;
+            /* 16px */
+            --spacing-06: 1.5rem;
+            /* 24px */
+            --spacing-07: 2rem;
+            /* 32px */
+            --spacing-08: 2.5rem;
+            /* 40px */
+            --spacing-09: 3rem;
+            /* 48px */
+            --spacing-10: 4rem;
+            /* 64px */
+            --spacing-11: 5rem;
+            /* 80px */
+            --spacing-12: 6rem;
+            /* 96px */
+            --spacing-13: 10rem;
+            /* 160px */
+        }
+    }
+
+    @layer colors {
+        @layer base {
+            :root {
+                /* Brand Colors */
+                --brand-dasch-primary: hsl(206 48% 38%);
+                --brand-dasch-secondary: hsl(210 49% 63%);
+                --brand-dasch-tertiary: hsl(206 47% 28%);
+                --brand-dasch-gray: hsl(211 19% 28%);
+                --brand-dasch-green: hsl(174 46% 35%);
+                --brand-dasch-yellow: hsl(39 78% 51%);
+                --brand-dasch-red: hsl(357 37% 45%);
+                --brand-dasch-purple: hsl(243 24% 54%);
+                /* Carbon Design System Colors */
+                --system-white: hsl(0 0 100%);
+                --system-gray-10: hsl(0, 0%, 96%);
+                --system-gray-15: hsl(0, 0%, 91%);
+                --system-gray-20: hsl(0, 0%, 88%);
+                --system-gray-30: hsl(0 0 78%);
+                --system-gray-70: hsl(0 0 32%);
+                --system-gray-75: hsl(0, 0%, 28%);
+                --system-gray-80: hsl(0 0 22%);
+                --system-gray-90: hsl(0 0 15%);
+                --system-gray-100: hsl(0 0 9%);
+                --system-black: hsl(0 0 0%);
+            }
+        }
+
+        @layer system {
+            :root {
+                /* Background */
+                --bg-primary: var(--brand-dasch-primary);
+                --bg-primary-hover: var(--brand-dasch-secondary);
+                --bg-background: var(--system-gray-10);
+                --bg-layer-01: var(--system-white);
+                /* bg with hover effect */
+                --bg-layer-01-hover: var(--system-gray-15);
+                /* Text */
+                --text-brand: var(--brand-dasch-primary);
+                --text-on-color: var(--system-white);
+                --text-primary: var(--system-gray-100);
+                --text-secondary: var(--system-gray-70);
+            }
+
+            /* Dark Theme specific colors */
+            html.dark {
+                /* Background */
+                --bg-primary-hover: var(--brand-dasch-tertiary);
+                --bg-background: var(--system-gray-90);
+                --bg-layer-01: var(--system-gray-80);
+                /* bg with hover effect */
+                --bg-layer-01-hover: var(--system-gray-75);
+                /* Text */
+                --text-primary: var(--system-gray-10);
+                --text-secondary: var(--system-gray-30);
+            }
+        }
+    }
+
+    @layer components {
+        @layer button {
+            :root {
+                --button-bg-color: var(--bg-primary);
+                --button-bg-color-hover: var(--bg-primary-hover);
+            }
+        }
+
+        @layer shell {
+            :root {
+                --shell-bg-color: var(--bg-background);
+                --shell-bg-color-hover: var(--bg-layer-01);
+                --shell-bg-color-menu-item-hover: var(--bg-layer-01-hover);
+                --shell-outline-color: var(--brand-dasch-secondary);
+                --shell-text-color: var(--text-secondary);
+                --shell-text-color-hover: var(--text-primary);
+            }
+
+            html.dark {
+                --shell-outline-color: var(--brand-dasch-tertiary);
+            }
+        }
+
+        @layer icon {
+            :root {
+                --icon-stroke-color: var(--text-secondary);
+            }
+        }
+    }
+}
+
+@layer typography {
+    @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&display=swap");
+
+    :root {
+        font-family: "IBM Plex Sans", "Roboto", "Helvetica Neue", Arial, sans-serif;
+        --font-size-body-01: 0.875rem;
+        /* 14px */
+        --font-size-body-02: 1rem;
+        /* 16px */
+
+        --font-line-height-regular-01: 1.25rem;
+        /* 20px */
+        --font-line-height-regular-02: 1.5rem;
+        /* 24px */
+        --font-line-height-compact-01: 1.125rem;
+        /* 18px */
+        --font-line-height-compact-02: 1.375rem;
+        /* 22px */
+
+        --font-weight-light: 300;
+        --font-weight-regular: 400;
+        --font-weight-semibold: 600;
+    }
+}
+
+@layer base {
+    :root {
+        color: var(--text-primary);
+        background-color: var(--bg-background);
+        /* font-size: var(--font-size-body-01); */
+        line-height: var(--font-line-height-regular-01);
+        font-weight: var(--font-weight-regular);
+    }
+}
+
+@layer components {
+    @layer button {
+        .dsp-button {
+            background-color: var(--button-bg-color);
+            border: none;
+        }
+    }
+
+    @layer banner {
+        .dsp-banner {
+            /* TODO: actually use a design system values here */
+            /* TODO: different font? */
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.6;
+            color: var(--text-on-color);
+            background-color: var(--bg-primary);
+            text-align: center;
+            padding-block: var(--spacing-10);
+        }
+
+        .dsp-banner__accent {
+            font-size: 150%;
+        }
+    }
+
+    @layer shell {
+        .dsp-shell-header {
+            background-color: var(--shell-bg-color);
+            border-block-end: 1px solid var(--shell-outline-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dsp-shell-header__header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .dsp-shell-header__logo {
+            width: auto;
+            height: var(--spacing-09);
+            padding-block: var(--spacing-03);
+            padding-inline: var(--spacing-04) var(--spacing-07);
+            display: block;
+        }
+
+        .dsp-shell-header__header-actions {
+            display: flex;
+        }
+
+        .dsp-shell-header__action-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            height: var(--spacing-09);
+            width: var(--spacing-09);
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dsp-shell-header__action-icon:hover {
+            background-color: var(--shell-bg-color-hover);
+        }
+
+        .dsp-shell-header__action-icon[hidden] {
+            display: none;
+        }
+
+        .dsp-shell-header__action-icon:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .dsp-shell-header__divider {
+            width: 1px;
+            height: var(--spacing-07);
+            background-color: var(--shell-outline-color);
+            margin: 0 var(--spacing-05) 0 0;
+        }
+    }
+
+    @layer utility {
+
+        /* Hides elements visually but keeps them accessible to screen readers */
+        .visually-hidden {
+            clip: rect(0 0 0 0);
+            clip-path: inset(50%);
+            height: 1px;
+            overflow: hidden;
+            position: absolute;
+            white-space: nowrap;
+            width: 1px;
+        }
+    }
+}

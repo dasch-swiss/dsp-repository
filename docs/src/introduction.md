@@ -1,4 +1,4 @@
-# Intorduction
+# Introduction
 
 This is the monorepo for the DSP Repository.
 

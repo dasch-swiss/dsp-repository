@@ -6,8 +6,10 @@ members = [
     "modules/dpe/services",
     "modules/dpe/storage",
     "modules/dpe/types",
+    "modules/design_system/components",
+    "modules/design_system/playground",
 ]
-resolver = "2"
+resolver = "3"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -24,14 +26,14 @@ authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
 [workspace.dependencies]
 askama = { version = "0.13.0", features = ["full"] }
 async-stream = "0.3.6"
-axum = { version = "0.8.3", features = ["macros"] }
+axum = { version = "0.8.3", features = ["macros", "ws"] }
 axum-macros = "0.5.0-alpha.1"
 datastar = { git = "https://github.com/starfederation/datastar", tag = "v1.0.0-beta.11", features = [
     "axum",
 ] }
 futures = "0.3.31"
 log = "0.4.22"
-maud = "0.27.0"
+maud = { version = "0.27.0", features = ["axum"] }
 regex = "1.11.1"
 serde = { version = "1", features = ["derive"] }
 serde_with = "3.11.0"

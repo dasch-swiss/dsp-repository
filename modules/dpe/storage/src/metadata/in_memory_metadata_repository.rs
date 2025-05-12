@@ -88,7 +88,7 @@ impl MetadataRepository for InMemoryMetadataRepository {
 
 #[tokio::test]
 async fn test_new_from_path() {
-    let data_path = Path::new("../../data");
+    let data_path = Path::new("../../../data");
     let repo = InMemoryMetadataRepository::new_from_path(data_path);
     assert!(repo.count().await.unwrap() > 0usize);
 }

@@ -1,5 +1,12 @@
 [workspace]
-members = [ "modules/api","modules/dto","modules/server", "modules/services", "modules/storage", "modules/types"]
+members = [
+    "modules/dpe/api",
+    "modules/dpe/dto",
+    "modules/dpe/server",
+    "modules/dpe/services",
+    "modules/dpe/storage",
+    "modules/dpe/types",
+]
 resolver = "2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -19,7 +26,9 @@ askama = { version = "0.13.0", features = ["full"] }
 async-stream = "0.3.6"
 axum = { version = "0.8.3", features = ["macros"] }
 axum-macros = "0.5.0-alpha.1"
-datastar = { git = "https://github.com/starfederation/datastar", tag = "v1.0.0-beta.11", features = ["axum"] }
+datastar = { git = "https://github.com/starfederation/datastar", tag = "v1.0.0-beta.11", features = [
+    "axum",
+] }
 futures = "0.3.31"
 log = "0.4.22"
 maud = "0.27.0"

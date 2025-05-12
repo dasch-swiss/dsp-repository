@@ -10,6 +10,7 @@
 # System Architecture
 
 - [Discovery and Presentation Environment]()
+  - [Project Structure](./dpe/project_structure.md)
 
 # Design System
 

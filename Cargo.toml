@@ -22,9 +22,9 @@ description = "The DSP-Repository provides tooling and services for transforming
 authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
 
 [workspace.dependencies]
-askama = { version = "0.13.0", features = ["full"] }
+askama = { version = "0.13.1", features = ["full"] }
 async-stream = "0.3.6"
-axum = { version = "0.8.3", features = ["macros"] }
+axum = { version = "0.8.4", features = ["macros"] }
 axum-macros = "0.5.0-alpha.1"
 datastar = { git = "https://github.com/starfederation/datastar", tag = "v1.0.0-beta.11", features = [
     "axum",
@@ -39,7 +39,7 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1.17"
 tower = "0.5.1"
-tower-http = { version = "0.6.2", features = ["trace", "fs", "cors"] }
+tower-http = { version = "0.6.4", features = ["trace", "fs", "cors"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 url = { version = "2", features = ["serde"] }

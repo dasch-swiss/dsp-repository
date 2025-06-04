@@ -89,5 +89,8 @@ docs-serve:
 docs-clean:
     mdbook clean docs
 
+docs-test:
+    mdbook test docs
+
 run-watch-playground:
     cargo watch -s 'cargo run --bin playground-server'

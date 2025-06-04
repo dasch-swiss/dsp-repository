@@ -38,6 +38,7 @@ jobs:
           components: rustfmt
       - name: cargo fmt --check
         run: cargo fmt --check
+
   clippy:
     runs-on: ubuntu-latest
     name: clippy / ${{ matrix.toolchain }}
@@ -59,12 +60,13 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           components: clippy
       - run: cargo clippy -- -D warnings
-  doc:
+
+  rustdoc:
     # run docs generation on nightly rather than stable. This enables features like
     # https://doc.rust-lang.org/beta/unstable-book/language-features/doc-cfg.html which allows an
     # API be documented as only available in some specific platforms.
     runs-on: ubuntu-latest
-    name: doc / nightly
+    name: rustdoc / nightly
     steps:
       - uses: actions/checkout@v4
         with:
@@ -75,6 +77,7 @@ jobs:
         run: cargo doc --no-deps --all-features
         env:
           RUSTDOCFLAGS: --cfg docsrs
+
   hack:
     # cargo-hack checks combinations of feature flags to ensure that features are all additive
     # which is required for feature unification
@@ -92,3 +95,16 @@ jobs:
       # --feature-powerset runs for every combination of features
       - name: cargo hack
         run: cargo hack --feature-powerset check
+
+  docs:
+    runs-on: ubuntu-latest
+    name: docs / stable
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Setup mdBook
+        uses: peaceiris/actions-mdbook@v2
+        with:
+          mdbook-version: 'latest'
+      - run: mdbook build docs

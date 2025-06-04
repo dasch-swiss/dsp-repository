@@ -1,0 +1,723 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>DSP-Repository Developer Documentation</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<p>This is the monorepo for the DSP Repository.</p>
+<p>The DaSCH Service Platform (DSP) consists of two main components:</p>
+<ul>
+<li><strong>DSP VRE</strong>: The DSP Virtual Research Environment (VRE),
+where resdearchers can work on their data during the lifetime of the project.
+It consists of the DSP-APP, DSP-API and DSP-TOOLS.<br />
+The DSP VRE is developed in various other git repositories.</li>
+<li><strong>DSP Repository</strong>: The DSP Repository is the long-term archive for research data.
+It consists of the DSP Archive and the Discovery and Presentation Environment (DPE).<br />
+The DSP Repository is developed in this monorepo.</li>
+</ul>
+<p>Additionally, the monorepo contains the DSP Design System and DaSCH's website.</p>
+<!-- TODO: Add architecture diagram here -->
+<p>This documentation provides an overview of the project structure.
+It covers the different components of the system architecture,
+the design system we use for the development,
+and the processes we follow for working on the DSP Repository,
+including onboarding information, etc.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="about-this-documentation"><a class="header" href="#about-this-documentation">About this Documentation</a></h1>
+<p>This documentation is built using <a href="https://github.com/rust-lang/mdBook">mdBook</a>.</p>
+<h2 id="pre-requisites"><a class="header" href="#pre-requisites">Pre-requisites</a></h2>
+<p>Before contributing, please ensure you have the following installed:</p>
+<ul>
+<li><a href="https://www.rust-lang.org/tools/install">The Rust toolchain</a>.</li>
+<li><a href="https://just.systems/man/en/">Just</a>.</li>
+</ul>
+<p>Any further dependencies can be installed using <code>just</code> commands:</p>
+<pre><code class="language-bash">just install-requirements
+</code></pre>
+<h2 id="building-and-serving-the-documentation"><a class="header" href="#building-and-serving-the-documentation">Building and Serving the Documentation</a></h2>
+<p>To run the documentation locally, use:</p>
+<pre><code class="language-bash">just docs-serve
+</code></pre>
+<h2 id="contributing-to-the-documentation"><a class="header" href="#contributing-to-the-documentation">Contributing to the Documentation</a></h2>
+<p>mdBook uses Markdown for documentation.</p>
+<p>The documentation is organized into chapters and sections, which are defined in the <code>SUMMARY.md</code> file.
+Each section corresponds to a Markdown file in the <code>src</code> directory.</p>
+<p>To configure the documentation (e.g. adding plugins), modify the <code>book.toml</code> file.</p>
+<h2 id="deployment"><a class="header" href="#deployment">Deployment</a></h2>
+<p>This documentation is not yet deployed. The deployment process will be defined in the future.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="workflows-and-conventions"><a class="header" href="#workflows-and-conventions">Workflows and Conventions</a></h1>
+<h2 id="entry-points"><a class="header" href="#entry-points">Entry Points</a></h2>
+<p>The first entry point of this repository is the README file,
+which should give anyone an indication of where to find any information they need.</p>
+<p>For any interaction or coding-related workflow, the justfile is the primary source of truth.
+The justfile contains all the commands and workflows that are used in this repository, along with their descriptions.</p>
+<p>Any further information should be located in the documentation.</p>
+<h2 id="git-workflow"><a class="header" href="#git-workflow">Git Workflow</a></h2>
+<p>For this repository, we use a rebase workflow.
+This means that all changes should be made on a branch,
+and then rebased onto the main branch before being merged.</p>
+<p>This allows us to keep a clean commit history and avoid merge commits.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="project-structure-and-code-organization"><a class="header" href="#project-structure-and-code-organization">Project Structure and Code Organization</a></h1>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>This repository contains the source code for the DSP Repository.
+It is structured as a Rust workspace, with multiple crates.</p>
+<p>All Rust crates are organized as subdirectories within the <code>modules/</code> directory.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="project-structure"><a class="header" href="#project-structure">Project Structure</a></h1>
+<blockquote>
+<p>[!WARNING]<br />
+This page is not up-to-date.</p>
+</blockquote>
+<h2 id="workspace-layout"><a class="header" href="#workspace-layout">Workspace Layout</a></h2>
+<pre><code>.
+├── Cargo.toml         # Workspace manifest
+├── types/             # Domain models, traits, and shared errors
+├── services/          # Pure business logic implementations
+├── storage/           # Data persistence (DB, in-memory) implementations
+├── html_api/          # HTML routes, templates, and SSE endpoints
+├── json_api/          # JSON RPC/REST endpoints
+├── server/            # Web server binary crate
+└── cli/               # CLI binary crate for tools and scripts
+</code></pre>
+<hr />
+<h2 id="crate-responsibilities"><a class="header" href="#crate-responsibilities">Crate Responsibilities</a></h2>
+<h3 id="types--domain-types-and-interfaces"><a class="header" href="#types--domain-types-and-interfaces"><code>types/</code> – Domain Types and Interfaces</a></h3>
+<p>This crate defines all core <strong>data structures</strong>, <strong>error types</strong>, and <strong>trait interfaces</strong> shared across the application. It is dependency-light and logic-free.</p>
+<ul>
+<li>Domain models (<code>ProjectCluster</code>, <code>ResearchProject</code>, <code>Collection</code>, <code>Dataset</code>, <code>Record</code>, etc.)</li>
+<li>Error types (<code>AppError</code>)</li>
+<li>Trait definitions:
+<ul>
+<li>Service traits: <code>MetadataService</code></li>
+<li>Repository traits: <code>MetadataRepository</code></li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>Example:</p>
+</blockquote>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait MetadataRepository {
+  async fn find_by_id(&amp;self, id: &amp;str) -&gt; Result&lt;ResearchProject, AppError&gt;;
+}
+<span class="boring">}</span></code></pre></pre>
+<hr />
+<h3 id="services--business-logic"><a class="header" href="#services--business-logic"><code>services/</code> – Business Logic</a></h3>
+<p>Implements the <code>types::service</code> traits and contains all <strong>pure application logic</strong>.</p>
+<ul>
+<li>Depends on <code>types</code></li>
+<li>Free of side effects and I/O</li>
+<li>Easily testable</li>
+<li>Orchestrates workflows and enforces business rules</li>
+</ul>
+<blockquote>
+<p>Example:</p>
+</blockquote>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct MetadataServiceImpl&lt;R: MetadataRepository&gt; {
+    pub repo: R,
+}
+
+#[async_trait]
+impl&lt;R: MetadataRepository&gt; MetadataService for MetadataServiceImpl&lt;R&gt; {
+    async fn find_by_id(&amp;self, id: &amp;str) -&gt; Result&lt;ResearchProject, AppError&gt; {
+        self.repo.find_by_id(id).await
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<hr />
+<h3 id="storage--persistence-layer"><a class="header" href="#storage--persistence-layer"><code>storage/</code> – Persistence Layer</a></h3>
+<p>Implements the <code>types::storage</code> traits to access data in external systems such as SQLite or in-memory stores.</p>
+<ul>
+<li>No business logic</li>
+<li>Easily swappable with mocks or test implementations</li>
+</ul>
+<blockquote>
+<p>Example:</p>
+</blockquote>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct InMemoryMetadataRepository { ... }
+
+#[async_trait]
+impl MetadataRepository for InMemoryMetadataRepository { 
+  async fn find_by_id(&amp;self, id: &amp;str) -&gt; Result&lt;ResearchProject, AppError&gt; {
+    // In-memory lookup logic
+  }
+}
+<span class="boring">}</span></code></pre></pre>
+<hr />
+<h3 id="html_api--html-hypermedia--sse"><a class="header" href="#html_api--html-hypermedia--sse"><code>html_api/</code> – HTML Hypermedia + SSE</a></h3>
+<p>Handles the <strong>user-facing UI</strong> layer, serving HTML pages and fragments, and live-updating data via SSE.</p>
+<ul>
+<li><a href="https://github.com/djc/askama">Askama</a> templates</li>
+<li><a href="https://docs.rs/datastar">Datastar</a> for link generation</li>
+<li>SSE endpoints for live features like notifications, progress updates</li>
+<li>Routes for page rendering and form submissions</li>
+</ul>
+<blockquote>
+<p>Example:</p>
+</blockquote>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[get("/users/:id")]
+async fn user_profile(State(app): State&lt;AppState&gt;, Path(id): Path&lt;Uuid&gt;) -&gt; impl IntoResponse {
+    let user = app.user_service.get_user_profile(id).await?;
+    HtmlTemplate(UserProfileTemplate { user })
+}
+<span class="boring">}</span></code></pre></pre>
+<hr />
+<h3 id="http_api--machine-readable-http-api"><a class="header" href="#http_api--machine-readable-http-api"><code>http_api/</code> – Machine-Readable HTTP API</a></h3>
+<p>Exposes your application logic through a structured JSON API for integration with JavaScript frontends or third-party services.</p>
+<ul>
+<li>Cleanly separates business logic from representation</li>
+<li>Handles serialization and input validation</li>
+</ul>
+<blockquote>
+<p>Example:</p>
+</blockquote>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[get("/api/users/:id")]
+async fn get_user(State(app): State&lt;AppState&gt;, Path(id): Path&lt;Uuid&gt;) -&gt; impl IntoResponse {
+    let user = app.user_service.get_user_profile(id).await?;
+    Json(user)
+}
+<span class="boring">}</span></code></pre></pre>
+<hr />
+<h3 id="server--web-server-binary"><a class="header" href="#server--web-server-binary"><code>server/</code> – Web Server Binary</a></h3>
+<p>This crate is the <strong>entrypoint</strong> for running the full web application.</p>
+<ul>
+<li>Loads configuration</li>
+<li>Initializes services and storage</li>
+<li>Combines all route layers (<code>html_api</code>, <code>http_api</code>)</li>
+<li>Starts the Axum server</li>
+</ul>
+<blockquote>
+<p>Example:</p>
+</blockquote>
+<pre><pre class="playground"><code class="language-rust">#[tokio::main]
+async fn main() -&gt; Result&lt;(), AppError&gt; {
+    let storage = PostgresUserRepository::new(...);
+    let service = UserServiceImpl { repo: storage };
+
+    let app = Router::new()
+        .merge(html_api::routes(service.clone()))
+        .merge(http_api::routes(service.clone()));
+
+    axum::Server::bind(&amp;addr).serve(app.into_make_service()).await?;
+    Ok(())
+}</code></pre></pre>
+<hr />
+<h3 id="cli--command-line-interface"><a class="header" href="#cli--command-line-interface"><code>cli/</code> – Command-Line Interface</a></h3>
+<p>Provides a CLI for administrative or batch tasks such as:</p>
+<ul>
+<li>Import/export of data</li>
+<li>Cleanup scripts</li>
+<li>Background migrations</li>
+<li>Developer utilities</li>
+</ul>
+<blockquote>
+<p>Example (using <a href="https://docs.rs/clap">clap</a>):</p>
+</blockquote>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Parser)]
+enum Command {
+    ImportUsers { file: PathBuf },
+    ReindexSearch,
+}
+<span class="boring">}</span></code></pre></pre>
+<blockquote>
+<p>Run via:</p>
+</blockquote>
+<pre><code>cargo run --bin cli -- import-users ./users.csv
+</code></pre>
+<hr />
+<h2 id="benefits-of-this-structure"><a class="header" href="#benefits-of-this-structure">Benefits of This Structure</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Aspect</th><th>Benefit</th></tr></thead><tbody>
+<tr><td><strong>Separation of concerns</strong></td><td>Clear boundaries between domain, logic, persistence, and delivery</td></tr>
+<tr><td><strong>Modular</strong></td><td>Each crate can be tested and reused independently</td></tr>
+<tr><td><strong>Team-friendly</strong></td><td>Frontend-focused devs work in <code>html_api</code>; backend devs focus on <code>services</code> and <code>storage</code></td></tr>
+<tr><td><strong>Testable</strong></td><td>Services and repositories can be mocked for unit/integration testing</td></tr>
+<tr><td><strong>Extensible</strong></td><td>Add more APIs (e.g., GraphQL, CLI commands) without modifying existing code</td></tr>
+</tbody></table>
+</div>
+<hr />
+<h2 id="development-guidelines"><a class="header" href="#development-guidelines">Development Guidelines</a></h2>
+<ul>
+<li><strong>Never put business logic in route handlers.</strong> Use the service layer.</li>
+<li><strong>Keep domain models and interfaces free of framework dependencies.</strong></li>
+<li><strong>Each crate has a single responsibility.</strong></li>
+<li><strong>SSE endpoints live in <code>html_api</code>, not as a separate API crate.</strong></li>
+<li><strong>Prefer async traits for I/O-related operations.</strong></li>
+<li><strong>Write integration tests in the same crate or create a top-level <code>tests/</code> crate for system-wide tests.</strong></li>
+</ul>
+<hr />
+<h2 id="future-growth-possibilities"><a class="header" href="#future-growth-possibilities">Future Growth Possibilities</a></h2>
+<ul>
+<li>Add a <code>worker/</code> crate for background jobs</li>
+<li>Add a <code>scheduler/</code> crate for periodic tasks</li>
+<li>Add a <code>tests/</code> crate for orchestrated integration tests</li>
+<li>Add a <code>graphql_api/</code> or <code>admin_api/</code> if needed</li>
+</ul>
+<hr />
+<h2 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h2>
+<p>To run the application server:</p>
+<pre><code>cargo run --bin server
+</code></pre>
+<p>To run the CLI:</p>
+<pre><code>cargo run --bin cli -- help
+</code></pre>
+<hr />
+<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
+<p>This modular design ensures clarity, maintainability, and smooth collaboration for both backend and frontend developers. The split between crates follows clean architecture principles and allows for focused development, rapid iteration, and clear testing strategies.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="dsp-design-system"><a class="header" href="#dsp-design-system">DSP Design System</a></h1>
+<h2 id="introduction-1"><a class="header" href="#introduction-1">Introduction</a></h2>
+<p>The DSP Design System is a customization of the <a href="https://carbondesignsystem.com/">IBM Carbon Design System</a>.
+It follows Carbon in terms of design language and implementation.
+It is customized in the following ways:</p>
+<ul>
+<li>It is not a general purpose design system, but a purpose-built system. As such, it is much smaller and less complex.</li>
+<li>It is not generic or customizeable, instead the DSP brand is baked into it, thus simplifying complexity if use.</li>
+<li>It is purposefully kept small:
+<ul>
+<li>It comes with two themes (dark and light, corresponding to "gray-90" and "gray-10" in Carbon)
+and no option for custom theming.</li>
+<li>The set of available styles (colors, typography, spacing, etc.)
+is kept intentionally small to promote consistent user interfaces.</li>
+<li>It only has the components that are strictly needed.
+Additional components may be added, when necessary.</li>
+<li>It only has the component variants that are strictly needed.
+Additional component variants may be added, when necessary.</li>
+</ul>
+</li>
+<li>It may have purpose-specific components.
+(E.g. Carbon does not provide a "Card" component, but rather a "Tile" component, from which cards can be built.
+The DSP Design System instead would provide a "Card" component.)</li>
+</ul>
+<blockquote>
+<p>[!NOTE]
+The DSP Design System is still in planning and not yet implemented.</p>
+</blockquote>
+<!-- TODO: Add the following pages:
+  - [Aim and Purpose]()
+  - [Design Principles]()
+  - [Design Tokens]()
+  - [Components]()
+  - [Patterns]()
+  - [Icons]()
+  - [Typography]()
+  - [Colors]()
+  - [Accessibility]()
+  - [Design System in Figma]()
+  - [Playground]()
+ -->
+<div style="break-before: page; page-break-before: always;"></div><h1 id="discovery-design-and-development-process"><a class="header" href="#discovery-design-and-development-process">Discovery, Design and Development Process</a></h1>
+<p>Any work on the DSP Repository is done in collaboration between
+Management, Product Management (PM), the Research Data Unit (RDU) and Development (Dev).
+The process should look as outlined below,
+but may be adjusted to fit the needs of the project and the team.</p>
+<p>In discovery, PM validates that an opportunity is aligned with DaSCH's strategy.
+In collaboration with the RDU, PM verifies that the opportunity can provide a desirable outcome.</p>
+<p>PM will create a project description, including low-fidelity wireframes (Balsamiq or pen and paper),
+based on which they define user flows and journeys.</p>
+<p>If any design components are needed, these will be added to the design system.</p>
+<p>Finally, high-fidelity wireframes will be created in Figma, if needed.</p>
+<p>Based on the project description and the wireframes,
+Dev will refine the project description, create Linear tickets and implement it accordingly.</p>
+<p>When the implementation is done, PM will verify that the outcome was achieved
+and identify opportunities for further improvements.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="tech-stack"><a class="header" href="#tech-stack">Tech Stack</a></h1>
+<ul>
+<li>Rust</li>
+<li>Axum</li>
+<li>Askama or Maud</li>
+<li>DataStar</li>
+<li>Database TBD</li>
+</ul>
+<!-- TODO: elaborate at some point -->
+<p>We keep the design evolutionary, starting from the simplest possible solution and iterating on it.
+At first, providing data from a static JSON files, or working with static content, is sufficient.
+Following clean architecture principles, swapping out the persistence layer is easy.</p>
+<!-- TODO: for CSS post processing, check out https://github.com/rs-tml/rcss or https://docs.rs/lightningcss/latest/lightningcss/ -->
+<div style="break-before: page; page-break-before: always;"></div><h1 id="testing-and-quality-assurance"><a class="header" href="#testing-and-quality-assurance">Testing and Quality Assurance</a></h1>
+<p>We follow the Testing Pyramid approach to testing,
+the majority of tests are unit tests,
+with a smaller number of integration tests,
+and a few end-to-end tests.</p>
+<p>Unit and integration tests are written in Rust,
+end-to-end tests are written either in Rust or in JavaScript using Playwright.</p>
+<blockquote>
+<p>[!note]
+We still need to verify that playwright works well with the current setup.</p>
+<p>Playwright may be used for the following:</p>
+<ul>
+<li>End-to-end tests simulating <em>entire user flows</em>.</li>
+<li>Visual regression tests.</li>
+</ul>
+<p>For single user interactions, we should not need Playwright.
+For these, we should use the Rust testing framework.</p>
+</blockquote>
+<p>Unit tests are the foundation of our testing strategy.
+They test individual components in isolation,
+ensuring that each part of the codebase behaves as expected.
+Unit tests are fast to write and to execute,
+and they provide immediate feedback on the correctness of the code.</p>
+<p>Integration tests verify the interaction between different components,
+ensuring that they work together as expected.
+Integration tests may check the integration between the business logic and the presentation layer,
+or between the view and the business logic.</p>
+<p>End-to-end tests verify the entire system.
+They simulate real user interactions and check that the system behaves as expected.</p>
+<p>Additional to the functional tests,
+we also need to implement performance tests.</p>
+<p>We aim to follow the practice of Test Driven Development (TDD),
+where tests are written before the code is implemented.
+This helps to ensure that the code is testable and meets the requirements.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="onboarding"><a class="header" href="#onboarding">Onboarding</a></h1>
+<h2 id="rust"><a class="header" href="#rust">Rust</a></h2>
+<p>The main technology we use is Rust.
+A solid understanding of Rust is needed,
+though particularly the frontend work does not require deep knowledge of Rust.</p>
+<h3 id="rust-http-server"><a class="header" href="#rust-http-server">Rust HTTP Server</a></h3>
+<p>We use <a href="https://docs.rs/axum/latest/axum/">Axum</a> as our HTTP server.</p>
+<h3 id="serialization-and-deserialization"><a class="header" href="#serialization-and-deserialization">Serialization and Deserialization</a></h3>
+<p>We use <a href="https://serde.rs/">serde</a> for serialization and deserialization of data.</p>
+<h3 id="rust-templating"><a class="header" href="#rust-templating">Rust Templating</a></h3>
+<p>We are still evaluating two templating engines for rendering HTML in Rust:</p>
+<ul>
+<li><a href="https://askama.readthedocs.io/en/stable/">Askama</a></li>
+<li><a href="https://maud.lambda.xyz/">Maud</a></li>
+</ul>
+<p>Askama is a compile-time templating engine, that is very similar to Jinja2.
+It uses a file-based approach, where separate template files are stored and dynamic content is injected into them.</p>
+<p>Maud is a macro-based templating engine, that allows to write HTML directly in Rust code.
+It is more similar to JSX, where the HTML is written inline with the Rust code.</p>
+<p>We have to try both engines and see which one fits our needs better.
+In principle, we can use both engines in the same project,
+if they excel at different things.
+But for simplicity, we should try to stick to one engine.</p>
+<h3 id="archtectural-design-patterns"><a class="header" href="#archtectural-design-patterns">Archtectural Design Patterns</a></h3>
+<p>We follow concepts such as <a href="https://en.wikipedia.org/wiki/Clean_architecture">Clean Architecture</a>,
+<a href="https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)">Hexagonal Architecture</a>
+or <a href="https://en.wikipedia.org/wiki/Onion_architecture">Onion Architecture</a>.
+Familiarity with these concepts will be helpful.</p>
+<p>Some of the patterns must be adapted to the idioms of Rust,
+but the general principles are the same.</p>
+<h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
+<p>We follow the Testing Pyramid approach to testing,
+the majority of tests are unit tests, with a smaller number of integration tests, and a few end-to-end tests.</p>
+<p>Unit and integration tests are written in Rust, following the Rust testing best practices.
+End-to-end tests are written either in Rust or in JavaScript using Playwright.</p>
+<p>We are looking into how to integrate Playwright into our setup.
+Playwright may be used for the following:</p>
+<ul>
+<li>End-to-end tests simulating <em>entire user flows</em>.</li>
+<li>Visual regression tests.</li>
+</ul>
+<p>For single user interactions, we should not need Playwright.
+For these, we should use the Rust testing framework.</p>
+<h3 id="domain-driven-design"><a class="header" href="#domain-driven-design">Domain Driven Design</a></h3>
+<p>We do not follow strict Domain Driven Design (DDD) principles,
+but we try to follow some of the concepts.
+In particular, we try to keep the language used in code aligned with the domain language.</p>
+<h3 id="test-driven-development"><a class="header" href="#test-driven-development">Test Driven Development</a></h3>
+<p>We should absolutely do TDD and BDD.</p>
+<h2 id="database"><a class="header" href="#database">Database</a></h2>
+<p>We are still evaluating the database to use.</p>
+<p>For the initial development, we work with static content or JSON files.</p>
+<h2 id="hypermedia"><a class="header" href="#hypermedia">Hypermedia</a></h2>
+<p>Instead of the traditional single-page application architecture,
+where the client is a JavaScript application that runs in the browser,
+and communicates with the server via JSON over HTTP,
+we are using a hypermedia approach.</p>
+<p>In this approach, the server sends HTML pages or fragments to the client.
+The client simply renders the HTML, without much JavaScript.
+The client also does not need to maintain state,
+this is done by the server.
+Server and client keep a connection open,
+through which the server can send updates to the client,
+so called "server-sent events" (SSE),
+which guarantees responsiveness and interactivity.</p>
+<p>This approach has several advantages:</p>
+<ul>
+<li>The client is much simpler, as it does not need to maintain state or manage complex interactions.</li>
+<li>The client does not have many security concerns, as the server is the source of truth
+and can control what is sent to the client.</li>
+<li>The server can update the client at any time, without the need for the client to poll for updates.</li>
+</ul>
+<p>Furthermore, with this approach, we can share much of the code between the server and the client.
+With the UI-code living on the server, we can use the same language (Rust) for both server and client,
+and there is no strict separation between backend and frontend.</p>
+<p>The hypermedia approach is not a new concept, it has been used in the past,
+but had been widely replaced by the single-page application approach.
+Lately, the hypermedia approach has been making a comeback.</p>
+<p>This approach is best known from <a href="https://htmx.org/">HTMX</a>.
+HTMX is fairly well established and there is a lot of learning material available.
+Its major downside is that it is not sufficient for most use-cases, when used by itself.
+Most of the time, you need to combine it with other libraries, such as Alpine.js.</p>
+<p>Rather than HTMX, we are using <a href="https://data-star.dev/">DataStar</a>,
+which provides similar functionality,
+but is more compliant with web standards,
+and provides a more complete solution,
+so that we do not need to combine it with other libraries.</p>
+<p>DataStar is a fairly new project,
+so there is not much learning material available yet.
+However, it is very similar to HTMX,
+so that most of the HTMX learning material can be applied to DataStar as well.</p>
+<h2 id="design-system"><a class="header" href="#design-system">Design System</a></h2>
+<p>Rather than using a generic design system,
+and designing solutions on top of it ad hoc,
+we are using a purpose-built design system.
+This will help us to keep the design consistent and coherent,
+reduce complexity, and give our products a clearer brand identity.</p>
+<p>This design system is based on the <a href="https://carbondesignsystem.com/">IBM Carbon Design System</a>,
+but is customized to our needs.</p>
+<h3 id="concept-aim-and-purpose"><a class="header" href="#concept-aim-and-purpose">Concept, Aim and Purpose</a></h3>
+<p>We build the DSP Design System on top of the Carbon Design System,
+because it communicates the reliability and trustworthiness that users expect from an archive.
+Furthermore, it is a well established design system,
+where concerns such as accessibility and usability have been well thought out.</p>
+<p>There are several reasons why we do not use the Carbon Design System as is,
+and instead build our own design system on top of it:</p>
+<ul>
+<li>It is a customizeable, generic, general purpose design system.<br />
+As such, it provides a lot of options and flexibility but comes with a lot of complexity.<br />
+By customizing it to our needs, we can reduce complexity and limit it to our needs.
+By limiting optins (e.g. components, icons, tokens, etc.) to the ones we need,
+we can simplify design and ensure consistency in our products.</li>
+<li>It is customizeable, but we do not need that flexibility.<br />
+By creating a purpose-built design system, we can bake our brand into it, and reduce complexity even further.</li>
+<li>The official and community implementations of Carbon do not align with our tech stack.<br />
+By creating our own implementation, we can tailor it to our needs
+and move the implementation of individual components to dedicated design system work,
+rather than having to implement them in the context of project work.<br />
+The design system work will be done in close collaboration between Dev and PM,
+and is an up-fron investment that will improve the speed and quality of project work in the long run.</li>
+</ul>
+<h3 id="implementation"><a class="header" href="#implementation">Implementation</a></h3>
+<p>It is part of the discovery process to define components needed for any project.</p>
+<p>These are then implemented in the design system as individual, reuseable components.
+It should then be possible to import these components as Rust modules,
+and use them in the project code.</p>
+<p>The details of the implementation depend on the rendering engine we decide to use.</p>
+<h3 id="playground"><a class="header" href="#playground">Playground</a></h3>
+<p>We create a playground for the design system,
+where we can test and experiment with the components.</p>
+<p>This playground is a separate Rust crate that depends on the design system crate.
+It is losely inspired by Storybook, but intentionally kept simpler.</p>
+<p>For each component, we create a page that shows the component in action,
+in all its variants and states.
+We also pages for compounds and patterns,
+where we show how to use the components together.
+Finally, we create sample pages that show how to use the components in a real-world scenario.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+    </div>
+    </body>
+</html>

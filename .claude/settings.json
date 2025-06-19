@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add)",
+      "Bash(git commit)",
+      "Bash(git diff)",
+      "Bash(git diff --staged)",
+      "Bash(git log)",
+      "Bash(git status)",
+      "Bash(just build)",
+      "Bash(just check)",
+      "Bash(just docs-build)",
+      "Bash(just fmt)",
+      "Bash(just fmt:*)",
+      "Bash(just test)",
+      "Bash(just test:*)"
+    ],
+    "deny": []
+  }
+}

@@ -22,3 +22,6 @@ target/
 /.idea
 
 /docs/book
+
+# Claude temporary files
+CLAUDE_TMP_*

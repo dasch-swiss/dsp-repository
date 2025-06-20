@@ -18,6 +18,7 @@
 # Design System
 
 - [DSP Design System](./design_system/overview.md)
+- [Component Architecture](./design_system/component_architecture.md)
 
 # Fundamentals
 

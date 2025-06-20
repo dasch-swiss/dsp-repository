@@ -1,3 +1,6 @@
+// TODO: verify styling against carbon (including hover state, etc.)
+// TODO: find a solution for button-style anchor tags
+// TODO: add accessibility features (ARIA states, focus management)
 use maud::{html, Markup};
 
 #[derive(Debug, Clone)]

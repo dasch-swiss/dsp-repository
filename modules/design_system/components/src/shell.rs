@@ -1,3 +1,5 @@
+// TODO: work in progress
+// TODO: add accessibility features (navigation landmarks, keyboard support)
 use maud::{html, Markup};
 
 pub struct ShellNav {}

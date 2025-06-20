@@ -22,8 +22,38 @@ It is customized in the following ways:
   The DSP Design System instead would provide a "Card" component.)
 
 
-> [!NOTE]
-> The DSP Design System is still in planning and not yet implemented.
+# Current Implementation Status
+
+The DSP Design System is currently in early development with the following components implemented:
+
+## Available Components
+
+### Button
+- **Variants**: Primary, Secondary, Outline
+- **Status**: 🚧 Work in progress (styling verification against Carbon needed)
+- **Features**: Basic button functionality with variant support
+
+### Banner  
+- **Variants**: Accent only, with prefix, with suffix, full (prefix + accent + suffix)
+- **Status**: ✅ Functional
+- **Features**: Configurable text sections with accent styling
+
+### Shell
+- **Purpose**: Application navigation and layout wrapper
+- **Status**: 🚧 Work in progress
+- **Features**: Header with logo, placeholder navigation, action buttons
+
+### Tile
+- **Variants**: Base, Clickable
+- **Status**: 🚧 Work in progress (styling verification against Carbon needed)
+- **Features**: Content containers with Carbon-compliant styling (no borders, shadows, or rounded corners)
+
+## Development Environment
+
+### Playground
+- **URL**: http://localhost:3400 (via `just run-watch-playground`)
+- **Features**: Live component testing with structured sections and isolated examples
+- **Status**: ✅ Fully functional with improved layout
 
 <!-- TODO: Add the following pages:
   - [Aim and Purpose]()

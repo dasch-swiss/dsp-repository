@@ -113,6 +113,18 @@
             }
         }
 
+        @layer tile {
+            :root {
+                --tile-bg-color: var(--bg-layer-01);
+                --tile-bg-color-hover: var(--bg-layer-01-hover);
+                --tile-padding: var(--spacing-05);
+                --tile-margin-bottom: var(--spacing-05);
+                --tile-min-height: 4rem;
+                --tile-max-width: 20rem;
+            }
+
+        }
+
         @layer icon {
             :root {
                 --icon-stroke-color: var(--text-secondary);
@@ -238,6 +250,52 @@
             height: var(--spacing-07);
             background-color: var(--shell-outline-color);
             margin: 0 var(--spacing-05) 0 0;
+        }
+    }
+
+    @layer tile {
+        .dsp-tile {
+            background-color: var(--tile-bg-color);
+            padding: var(--tile-padding);
+            margin-block-end: var(--tile-margin-bottom);
+            min-height: var(--tile-min-height);
+            max-width: var(--tile-max-width);
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            transition: background-color 150ms ease;
+        }
+
+        /* Clickable tile styles */
+        .dsp-tile--clickable {
+            cursor: pointer;
+        }
+
+        .dsp-tile--clickable:hover,
+        .dsp-tile--clickable:focus {
+            background-color: var(--tile-bg-color-hover);
+        }
+
+
+
+        /* Remove default margins from nested elements */
+        .dsp-tile h1,
+        .dsp-tile h2,
+        .dsp-tile h3,
+        .dsp-tile h4,
+        .dsp-tile h5,
+        .dsp-tile h6 {
+            margin-block-start: 0;
+            margin-block-end: var(--spacing-03);
+        }
+
+        .dsp-tile p {
+            margin-block-start: 0;
+            margin-block-end: var(--spacing-03);
+        }
+
+        .dsp-tile p:last-child {
+            margin-block-end: 0;
         }
     }
 

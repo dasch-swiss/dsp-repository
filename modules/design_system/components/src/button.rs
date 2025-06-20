@@ -1,11 +1,31 @@
-use maud::html;
+use maud::{html, Markup};
 
-//  TODO: parameterize the button
-pub fn button() -> String {
-    html! {
-        button .dsp-button {
-            "Click me!"
+#[derive(Debug, Clone)]
+pub enum ButtonVariant {
+    Primary,
+    Secondary,
+    Outline,
+}
+
+impl ButtonVariant {
+    fn css_class(&self) -> &'static str {
+        match self {
+            ButtonVariant::Primary => "dsp-button--primary",
+            ButtonVariant::Secondary => "dsp-button--secondary",
+            ButtonVariant::Outline => "dsp-button--outline",
         }
     }
-    .into_string()
+}
+
+pub fn button(text: impl Into<String>) -> Markup {
+    button_with_variant(text, ButtonVariant::Primary, false)
+}
+
+pub fn button_with_variant(text: impl Into<String>, variant: ButtonVariant, disabled: bool) -> Markup {
+    let text = text.into();
+    html! {
+        button .dsp-button .(variant.css_class()) disabled[disabled] {
+            (text)
+        }
+    }
 }

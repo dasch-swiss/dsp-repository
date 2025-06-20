@@ -1,7 +1,7 @@
 use askama::Template;
 use axum::response::Html;
-use components::{banner, button};
-use maud::{html, PreEscaped};
+use components::{banner, button, shell};
+use maud::html;
 
 use crate::skeleton::PlaygroundSkeleton;
 
@@ -29,7 +29,7 @@ pub fn button() -> Html<String> {
         div {
             h2 { "Button" }
             p { "This is the button component" }
-            div {(PreEscaped(button::button()))}
+            div {(button::button("Click me!"))}
             // TODO: add variants
         }
     );
@@ -39,15 +39,11 @@ pub fn button() -> Html<String> {
 
 pub fn banner() -> Html<String> {
     let title = "Playground - Banner";
-    let banner = banner::banner(
-        None,
-        "DaSCH".to_string(),
-        Some("Swiss National Data and Service Center for the Humanities".to_string()),
-    );
-    let banner_all = banner::banner(
-        Some("We are".to_string()),
-        "DaSCH".to_string(),
-        Some("The Swiss National Data and Service Center for the Humanities".to_string()),
+    let banner = banner::with_suffix("DaSCH", "Swiss National Data and Service Center for the Humanities");
+    let banner_all = banner::full(
+        "We are",
+        "DaSCH",
+        "The Swiss National Data and Service Center for the Humanities",
     );
     let body = html!(
         div {
@@ -55,17 +51,17 @@ pub fn banner() -> Html<String> {
             p { "This is the banner component" }
             h3 { "Accent Only" }
             p { "This is the banner component with accent only" }
-            div {(PreEscaped(banner::banner(None, "DaSCH".to_string(), None)))}
+            div {(banner::accent_only("DaSCH"))}
             h3 { "Prefix and Accent" }
             p { "This is the banner component with prefix and accent" }
-            div {(PreEscaped(banner::banner(Some("We are".to_string()), "DaSCH".to_string(), None)))}
+            div {(banner::with_prefix("We are", "DaSCH"))}
             h3 { "Accent and Suffix" }
             p { "This is the banner component with accent and suffix" }
             p { "This is what we will use on the website" }
-            div {(PreEscaped(banner))}
+            div {(banner)}
             h3 { "Prefix, Accent and Suffix" }
             p { "This is the banner component with prefix, accent and suffix" }
-            div {(PreEscaped(banner_all))}
+            div {(banner_all)}
         }
     );
     let scaffold = PlaygroundSkeleton::new(title.to_string(), body.into_string()).render().unwrap();
@@ -78,7 +74,7 @@ pub fn shell() -> Html<String> {
         div {
             h2 { "Shell" }
             p { "This is the shell component" }
-            div {(PreEscaped(components::shell::shell()))}
+            div {(shell::shell())}
         }
     );
     let scaffold = PlaygroundSkeleton::new(title.to_string(), body.into_string()).render().unwrap();

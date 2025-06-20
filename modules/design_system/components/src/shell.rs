@@ -1,8 +1,8 @@
-use maud::{html, PreEscaped};
+use maud::{html, Markup};
 
 pub struct ShellNav {}
 
-pub fn shell() -> String {
+pub fn shell() -> Markup {
     html! {
         header .dsp-shell-header role="banner" {
             div .dsp-shell-header__header-left {
@@ -19,17 +19,16 @@ pub fn shell() -> String {
             }
         }
     }
-    .into_string()
 }
 
-fn shell_nav() -> PreEscaped<String> {
+fn shell_nav() -> Markup {
     html! {
         // TODO: implement
         div {"placeholder"}
     }
 }
 
-fn search_icon_button() -> PreEscaped<String> {
+fn search_icon_button() -> Markup {
     html! {
         // TODO: implement with icon, and get it to do stuff
         button .dsp-shell-header__action-icon disabled="true" {
@@ -38,7 +37,7 @@ fn search_icon_button() -> PreEscaped<String> {
     }
 }
 
-fn theme_toggle() -> PreEscaped<String> {
+fn theme_toggle() -> Markup {
     html! {
         // TODO: implement with icon, and get it to do stuff
         button .dsp-shell-header__action-icon disabled="true" {

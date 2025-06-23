@@ -460,10 +460,40 @@ Additional component variants may be added, when necessary.</li>
 (E.g. Carbon does not provide a "Card" component, but rather a "Tile" component, from which cards can be built.
 The DSP Design System instead would provide a "Card" component.)</li>
 </ul>
-<blockquote>
-<p>[!NOTE]
-The DSP Design System is still in planning and not yet implemented.</p>
-</blockquote>
+<h1 id="current-implementation-status"><a class="header" href="#current-implementation-status">Current Implementation Status</a></h1>
+<p>The DSP Design System is currently in early development with the following components implemented:</p>
+<h2 id="available-components"><a class="header" href="#available-components">Available Components</a></h2>
+<h3 id="button"><a class="header" href="#button">Button</a></h3>
+<ul>
+<li><strong>Variants</strong>: Primary, Secondary, Outline</li>
+<li><strong>Status</strong>: 🚧 Work in progress (styling verification against Carbon needed)</li>
+<li><strong>Features</strong>: Basic button functionality with variant support</li>
+</ul>
+<h3 id="banner"><a class="header" href="#banner">Banner</a></h3>
+<ul>
+<li><strong>Variants</strong>: Accent only, with prefix, with suffix, full (prefix + accent + suffix)</li>
+<li><strong>Status</strong>: ✅ Functional</li>
+<li><strong>Features</strong>: Configurable text sections with accent styling</li>
+</ul>
+<h3 id="shell"><a class="header" href="#shell">Shell</a></h3>
+<ul>
+<li><strong>Purpose</strong>: Application navigation and layout wrapper</li>
+<li><strong>Status</strong>: 🚧 Work in progress</li>
+<li><strong>Features</strong>: Header with logo, placeholder navigation, action buttons</li>
+</ul>
+<h3 id="tile"><a class="header" href="#tile">Tile</a></h3>
+<ul>
+<li><strong>Variants</strong>: Base, Clickable</li>
+<li><strong>Status</strong>: 🚧 Work in progress (styling verification against Carbon needed)</li>
+<li><strong>Features</strong>: Content containers with Carbon-compliant styling (no borders, shadows, or rounded corners)</li>
+</ul>
+<h2 id="development-environment"><a class="header" href="#development-environment">Development Environment</a></h2>
+<h3 id="playground"><a class="header" href="#playground">Playground</a></h3>
+<ul>
+<li><strong>URL</strong>: http://localhost:3400 (via <code>just run-watch-playground</code>)</li>
+<li><strong>Features</strong>: Live component testing with structured sections and isolated examples</li>
+<li><strong>Status</strong>: ✅ Fully functional with improved layout</li>
+</ul>
 <!-- TODO: Add the following pages:
   - [Aim and Purpose]()
   - [Design Principles]()
@@ -477,6 +507,76 @@ The DSP Design System is still in planning and not yet implemented.</p>
   - [Design System in Figma]()
   - [Playground]()
  -->
+<div style="break-before: page; page-break-before: always;"></div><h1 id="component-architecture-decision"><a class="header" href="#component-architecture-decision">Component Architecture Decision</a></h1>
+<h2 id="composability-approach"><a class="header" href="#composability-approach">Composability Approach</a></h2>
+<p>We use a <strong>Maud-Native + Props</strong> combination for component composability:</p>
+<h3 id="core-principles"><a class="header" href="#core-principles">Core Principles</a></h3>
+<ol>
+<li><strong>Maud <code>Markup</code> Return Types</strong>: Components return <code>maud::Markup</code> instead of <code>String</code> for zero-copy composition</li>
+<li><strong>Props Structs</strong>: Complex components use dedicated props structs for clear parameter grouping</li>
+<li><strong>Simple Functions</strong>: Basic components remain as simple functions</li>
+<li><strong>Flexible Text Input</strong>: Use <code>impl Into&lt;String&gt;</code> for text parameters</li>
+</ol>
+<h3 id="component-patterns"><a class="header" href="#component-patterns">Component Patterns</a></h3>
+<h4 id="simple-components"><a class="header" href="#simple-components">Simple Components</a></h4>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use maud::{Markup, html};
+
+pub fn button(text: impl Into&lt;String&gt;) -&gt; Markup {
+    html! {
+        button .dsp-button { (text.into()) }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h4 id="complex-components-with-props"><a class="header" href="#complex-components-with-props">Complex Components with Props</a></h4>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct CardProps {
+    pub title: String,
+    pub content: Markup,
+    pub variant: CardVariant,
+}
+
+pub fn card(props: CardProps) -&gt; Markup {
+    html! {
+        div .dsp-card {
+            h2 .dsp-card__title { (props.title) }
+            div .dsp-card__content { (props.content) }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h4 id="component-composition"><a class="header" href="#component-composition">Component Composition</a></h4>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Direct nesting - zero-copy composition
+pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup {
+    html! {
+        header .dsp-page-header {
+            h1 { (title.into()) }
+            div .dsp-page-header__actions {
+                (actions)  // Direct Markup insertion
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="benefits"><a class="header" href="#benefits">Benefits</a></h3>
+<ul>
+<li><strong>Efficient</strong>: No string concatenation overhead</li>
+<li><strong>Type Safe</strong>: Compile-time guarantees for component structure</li>
+<li><strong>Composable</strong>: Components nest naturally without conversion</li>
+<li><strong>Extensible</strong>: Props structs make adding parameters easy</li>
+<li><strong>Consistent</strong>: Unified approach across all components</li>
+</ul>
+<h3 id="migration-path"><a class="header" href="#migration-path">Migration Path</a></h3>
+<ol>
+<li>Convert existing components to return <code>Markup</code></li>
+<li>Add props structs for components with 3+ parameters</li>
+<li>Use <code>impl Into&lt;String&gt;</code> for text inputs</li>
+<li>Test composition in playground</li>
+</ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="discovery-design-and-development-process"><a class="header" href="#discovery-design-and-development-process">Discovery, Design and Development Process</a></h1>
 <p>Any work on the DSP Repository is done in collaboration between
 Management, Product Management (PM), the Research Data Unit (RDU) and Development (Dev).
@@ -666,7 +766,7 @@ and is an up-fron investment that will improve the speed and quality of project 
 It should then be possible to import these components as Rust modules,
 and use them in the project code.</p>
 <p>The details of the implementation depend on the rendering engine we decide to use.</p>
-<h3 id="playground"><a class="header" href="#playground">Playground</a></h3>
+<h3 id="playground-1"><a class="header" href="#playground-1">Playground</a></h3>
 <p>We create a playground for the design system,
 where we can test and experiment with the components.</p>
 <p>This playground is a separate Rust crate that depends on the design system crate.

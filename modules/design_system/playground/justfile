@@ -1,0 +1,95 @@
+# Design System Playground - E2E Testing
+set dotenv-load
+mod claude
+
+# Show all available commands
+default:
+    @just --list
+
+# Install dependencies and browsers
+install:
+    npm install
+    npm run playwright:install
+
+# Run all tests (headless)
+test:
+    npm run test
+
+# Run tests with browser visible
+test-headed:
+    npm run test:headed
+
+# Run tests in debug mode
+test-debug:
+    npm run test:debug
+
+# Run tests with interactive UI
+test-ui:
+    npm run test:ui
+
+# List all available test cases
+list-tests:
+    npm run test:list
+
+# Update visual test baselines
+update-visuals:
+    npm run test:update-snapshots
+
+# TypeScript type checking
+type-check:
+    npm run type-check
+
+# TypeScript type checking in watch mode
+type-check-watch:
+    npm run type-check:watch
+
+# Lint TypeScript files
+lint:
+    npm run lint
+
+# Lint and auto-fix issues
+lint-fix:
+    npm run lint:fix
+
+# Format files with Prettier
+format:
+    npm run format
+
+# Check formatting
+format-check:
+    npm run format:check
+
+# Run linting and formatting
+lint-and-format:
+    npm run lint:fix
+    npm run format
+
+# Show test report
+report:
+    npm run test:report
+
+# Generate test code
+codegen:
+    npm run playwright:codegen
+
+# Clean test artifacts
+clean:
+    rm -rf playwright-report/ test-results.json output/
+    @echo "✅ Cleaned up test artifacts"
+
+# Clean visual snapshots
+clean-visuals:
+    find tests/ -name "*-snapshots" -type d -exec rm -rf {} + 2>/dev/null || true
+    @echo "✅ Cleaned up visual snapshots"
+
+# Docker commands for Linux-consistent baselines
+docker-build:
+    docker-compose build
+
+# Update visual baselines using Docker (Linux environment)
+docker-update-visuals:
+    docker-compose run --rm playwright npm run test:update-snapshots
+
+# Run tests using Docker (Linux environment)
+docker-test:
+    docker-compose run --rm playwright npm run test

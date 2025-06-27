@@ -94,3 +94,20 @@ docs-test:
 
 run-watch-playground:
     cargo watch -s 'cargo run --bin playground-server'
+
+# Run playground server in background (for MCP testing)
+run-playground-background:
+    cargo run --bin playground-server > /dev/null 2>&1 &
+    @echo "Playground server started in background at http://localhost:3400"
+    @echo "To stop: just stop-playground"
+
+# Stop background playground server
+stop-playground:
+    @pkill -f playground-server || echo "No playground server running"
+
+# Check if playground server is running
+check-playground:
+    @curl -s -o /dev/null -w "%{http_code}" http://localhost:3400 && echo " - Playground server is running at http://localhost:3400" || echo "Playground server is not running"
+
+# Playwright testing module
+mod playground 'modules/design_system/playground'

@@ -34,3 +34,4 @@ test-results/
 playwright-report/
 **/playwright/.cache/
 
+modules/design_system/playground/test-results.json

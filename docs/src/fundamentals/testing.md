@@ -8,15 +8,47 @@ and a few end-to-end tests.
 Unit and integration tests are written in Rust,
 end-to-end tests are written either in Rust or in JavaScript using Playwright.
 
+## Playwright Setup
+
+Playwright is set up for design system component testing with two approaches:
+
+**Interactive Testing (MCP)**:
+- Start playground server: `just run-watch-playground`
+- Use Claude Code with Playwright MCP commands for visual verification
+- Commands whitelisted in `.claude/settings.json`
+- Best for: Component development, design verification, manual testing
+
+**Automated Testing (CI/CD)**:
+- TypeScript-based Playwright setup with comprehensive tooling
+- Visual regression testing with 2% threshold tolerance, OS-independent naming
+- Cross-platform consistency using Docker for baseline generation
+- ESLint, Prettier, and strict TypeScript checking
+- HTML + JSON reporters for CI/CD integration
+- Video recording and screenshots on test failures
+- Best for: End-to-end user flows, automated regression detection
+
+Setup: `just playground install` then `just playground test`
+
+Available commands:
+- `just playground test-ui` - Interactive test runner
+- `just playground test-debug` - Debug mode with browser DevTools
+- `just playground docker-update-visuals` - Update visual baselines (Linux-consistent)
+- `just playground update-visuals` - Update visual baselines (platform-specific)
+- `just playground docker-test` - Run tests in Docker (matches CI environment)
+- `just playground docker-build` - Build Docker image for testing
+- `just playground type-check` - TypeScript validation
+- `just playground lint-and-format` - Code quality checks
+
+**Cross-Platform Visual Testing**:
+To ensure visual snapshots work consistently across different operating systems (macOS development, Linux CI), use the Docker-based commands:
+1. `just playground docker-build` - One-time setup of Docker testing environment
+2. `just playground docker-update-visuals` - Generate baselines that match Linux CI
+3. Commit the generated snapshots for consistent CI behavior
+
+For single component interactions, prefer Rust tests. Playwright is for visual verification and complete user flows.
+
 > [!note]
-> We still need to verify that playwright works well with the current setup.
->
-> Playwright may be used for the following:
-> - End-to-end tests simulating *entire user flows*.
-> - Visual regression tests.
->
-> For single user interactions, we should not need Playwright.
-> For these, we should use the Rust testing framework.
+> We are still evaluating Playwright integration for broader testing use cases.
 
 Unit tests are the foundation of our testing strategy.
 They test individual components in isolation,

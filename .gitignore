@@ -24,4 +24,13 @@ target/
 /docs/book
 
 # Claude temporary files
-CLAUDE_TMP_*
+.claude/tmp/
+
+# Node.js dependencies
+node_modules/
+
+# Playwright test artifacts (but NOT baseline screenshots)
+test-results/
+playwright-report/
+**/playwright/.cache/
+

@@ -6,14 +6,24 @@
       "Bash(git diff)",
       "Bash(git diff --staged)",
       "Bash(git log)",
+      "Bash(grep:*)",
       "Bash(git status)",
       "Bash(just build)",
       "Bash(just check)",
+      "Bash(just check-playground:*)",
       "Bash(just docs-build)",
       "Bash(just fmt)",
       "Bash(just fmt:*)",
       "Bash(just test)",
-      "Bash(just test:*)"
+      "Bash(just test:*)",
+      "Bash(rg:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_close",
+      "mcp__playwright__browser_install",
+      "WebFetch(domain:just.systems)"
     ],
     "deny": []
   }

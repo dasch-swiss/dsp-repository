@@ -18,6 +18,14 @@ impl ButtonVariant {
             ButtonVariant::Outline => "dsp-button--outline",
         }
     }
+
+    fn test_id(&self) -> &'static str {
+        match self {
+            ButtonVariant::Primary => "button-primary",
+            ButtonVariant::Secondary => "button-secondary",
+            ButtonVariant::Outline => "button-outline",
+        }
+    }
 }
 
 pub fn button(text: impl Into<String>) -> Markup {
@@ -25,9 +33,20 @@ pub fn button(text: impl Into<String>) -> Markup {
 }
 
 pub fn button_with_variant(text: impl Into<String>, variant: ButtonVariant, disabled: bool) -> Markup {
+    button_with_variant_and_testid(text, variant, disabled, None)
+}
+
+pub fn button_with_variant_and_testid(
+    text: impl Into<String>,
+    variant: ButtonVariant,
+    disabled: bool,
+    custom_test_id: Option<&str>,
+) -> Markup {
     let text = text.into();
+    let test_id = custom_test_id.unwrap_or(variant.test_id());
+
     html! {
-        button .dsp-button .(variant.css_class()) disabled[disabled] {
+        button .dsp-button .(variant.css_class()) disabled[disabled] data-testid=(test_id) {
             (text)
         }
     }

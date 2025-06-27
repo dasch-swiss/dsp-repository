@@ -103,3 +103,90 @@ When developing components, use these methods to understand design requirements:
 - **Visual Specifications**: Detailed written descriptions of expected appearance, states, and variants
 - **Design Tokens**: Follow documented color palette, spacing, and typography rules
 - **Visual Testing**: Use WebFetch on playground at `http://localhost:3400/[component]` to compare against targets
+
+## MCP Testing Workflow
+Interactive component testing using Playwright MCP during development:
+
+### Setup
+1. Start playground server:
+   - **Interactive**: `just run-watch-playground` (shows logs, http://localhost:3400)
+   - **Background**: `just run-playground-background` (silent, for MCP testing)
+2. Use MCP commands to test components interactively
+3. Stop background server: `just stop-playground`
+
+### Core MCP Commands
+- `mcp__playwright__browser_navigate(url)` - Navigate to component pages
+- `mcp__playwright__browser_take_screenshot()` - Visual verification
+- `mcp__playwright__browser_click(element, ref)` - Test interactions
+- `mcp__playwright__browser_snapshot()` - Accessibility structure
+
+### Testing Pattern
+```markdown
+1. Navigate: http://localhost:3400/[component]
+2. Screenshot: Verify visual rendering
+3. Interact: Test clicks, hovers, navigation
+4. Document: Note issues or improvements
+```
+
+### Development Integration
+- **During Development**: Test components as you build them
+- **Design Review**: Capture screenshots for comparison
+- **Regression Testing**: Verify changes don't break existing components
+- **Accessibility**: Use snapshots to verify semantic structure
+
+## Automated Testing (TypeScript + Playwright)
+Professional test suite with TypeScript, visual regression, and comprehensive tooling:
+
+### Interactive Commands (for manual use)
+```bash
+just playground install         # Install dependencies and browsers
+just playground test            # Run all tests (headless)
+just playground test-headed     # Run with browser visible
+just playground test-ui         # Interactive test runner
+just playground test-debug      # Debug mode
+```
+
+### Claude Code Commands (non-blocking, optimized for automation)
+```bash
+just playground::claude::test-quick      # Quick test with first failure feedback
+just playground::claude::test           # Run all tests (non-blocking)
+just playground::claude::test-visual    # Visual regression tests only
+just playground::claude::type-check     # TypeScript validation
+just playground::claude::lint           # Code linting
+just playground::claude::verify         # Silent test verification (exit code only)
+just playground::claude::status         # Git status
+```
+
+### Development Commands
+```bash
+just playground type-check      # TypeScript validation
+just playground lint            # Code linting
+just playground format          # Code formatting
+just playground lint-and-format # Both linting and formatting
+```
+
+### Visual Testing
+```bash
+# Local visual baseline updates (cross-platform consistent)
+just playground docker-update-visuals  # Update visual baselines using Docker (Linux environment)
+just playground update-visuals         # Update visual baselines (platform-specific, use docker version for CI consistency)
+
+# Cleanup and reports
+just playground clean-visuals           # Clean visual snapshots
+just playground report                  # View test reports
+
+# Docker commands for CI consistency
+just playground docker-build           # Build Docker image for testing
+just playground docker-test            # Run tests using Docker (Linux environment)
+```
+
+### Test Structure
+- **Location**: `playground/tests/e2e/` (TypeScript files)
+- **Config**: `playground/playwright.config.ts` (TypeScript, visual regression, multi-reporter)
+- **Tooling**: ESLint v9 (flat config), Prettier, TypeScript with strict checking
+- **Linting**: `eslint.config.js` with TypeScript, Playwright, and Prettier integration
+- **Module**: Access via `just playground <command>` from project root
+- **CI**: `.github/workflows/playwright.yml` (automatic on design system changes)
+- **Screenshots**: Visual regression testing with 2% threshold tolerance, OS-independent naming
+- **Cross-platform**: Docker-based baseline generation ensures Linux CI consistency
+- **Reports**: HTML + JSON output for CI/CD integration

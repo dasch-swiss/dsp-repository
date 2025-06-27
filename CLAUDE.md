@@ -74,23 +74,26 @@ just install-requirements     # Install cargo-watch, mdbook, mdbook-alerts
 ## Important Notes
 
 ### Development Workflow Practices
-- **Always check with me before each instruction** - Don't loop too long on the wrong path, burning unnecessary tokens
-- **Always verify that changes compile and tests pass** - Run `just check` and `just test` before considering anything as "done"
-- **Always check if documentation needs to be updated** - Before considering a change done, verify if any documentation in `/docs/src/` needs updates to reflect the changes
-- **Always ask before committing anything to git** - Never run git commit without explicit permission. When ready to commit, ask if you want a summary of the changes and to see the diff (unless the diff is very long, in which case mention that it's too long to show)
+
+**Important:** Ensure to follow ALL the steps below during development.
+
+- **Always check with the developer before each step** - Check in, instead of going down the wrong path
+- **Use `JUST` for all commands** - Use `just` to run commands instead of `cargo` or `npm`. If availant, use claude-specific just commands.
+- **Use consistent style** - Follow the project's coding style. Run auto-formatting. Add a new line at the end of every file.
+- **Tests first** - Ensure that every code change is accompanied by tests. Start with a test suite to define the expected behavior of the system. Check the tests with the developer to ensure the behavior is correct.
+
+Before considering ANY change as "done", ensure the following:
+
+- **Always verify that changes compile and all checks and tests pass** - Run `just check` and `just test`, or similar commands
+- **Always check if documentation needs to be updated** - Before considering a change done, verify if any documentation in `/docs/src/`, the readme, or the claude-files needs updates to reflect the changes.
+- **Always ask before committing anything to git** - Never run git add or commit without explicit permission.
 - **GitHub PR Creation Workflow** - When creating pull requests:
   1. Create as draft PR with `gh pr create --draft`
   2. Assign to the requesting developer with `gh pr edit [PR_NUMBER] --add-assignee [USERNAME]`
   3. Include "Review Notes" section mentioning that separate commits should be checked for easier review
-  4. Do not include test plan sections in PR description
-- **Follow Test-Driven Development (TDD)** - Unless instructed otherwise:
-  1. Start with a test suite to define the behavior of any new component
-  2. Check in with me to ensure the behavior we're testing is exactly as wanted
-  3. Only then start implementation, constantly verifying tests pass
-  4. TDD works for AI as well as it works for humans
 
 ### Temporary File Management
-- **Use CLAUDE_TMP_ prefix** for temporary documents that serve as instructions during development (e.g., migration plans, implementation guides, task breakdowns)
+- **Temporary files**: Use `.claude/tmp/` for temporary files that are
 - **Ask if unsure** whether a document should be temporary or permanent
 - **Temporary files are gitignored** and won't be tracked in version control
 - **Permanent documentation** should go in the appropriate location in `/docs/src/`
@@ -100,3 +103,9 @@ just install-requirements     # Install cargo-watch, mdbook, mdbook-alerts
 - Single responsibility per crate
 - Server-rendered HTML with DataStar for interactivity
 - Domain-driven design aligned with research data concepts
+
+## Operational Guidelines
+- Whenever you make a change, check if any documentation needs to be adapted
+
+## Memory
+- Every file must end on a new line character

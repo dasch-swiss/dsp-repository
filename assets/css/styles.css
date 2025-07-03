@@ -98,6 +98,87 @@
             }
         }
 
+        @layer carbon-web-components {
+            :root {
+                /* Carbon Web Components Theme Integration */
+                /* Using DaSCH brand colors for Carbon components */
+                
+                /* Background colors */
+                --cds-background: var(--bg-background);
+                --cds-background-inverse: var(--system-gray-100);
+                --cds-layer-01: var(--bg-layer-01);
+                --cds-layer-hover-01: var(--bg-layer-01-hover);
+                
+                /* Text colors */
+                --cds-text-primary: var(--text-primary);
+                --cds-text-secondary: var(--text-secondary);
+                --cds-text-on-color: var(--text-on-color);
+                
+                /* Interactive colors using DaSCH brand */
+                --cds-interactive-01: var(--brand-dasch-primary);
+                --cds-interactive-01-hover: var(--brand-dasch-secondary);
+                --cds-interactive-02: var(--brand-dasch-secondary);
+                --cds-interactive-03: var(--brand-dasch-tertiary);
+                --cds-interactive-04: var(--brand-dasch-primary);
+                
+                /* Link colors - multiple approaches for compatibility */
+                --cds-link-01: var(--brand-dasch-primary);
+                --cds-link-01-hover: var(--brand-dasch-secondary);
+                --cds-link-visited: var(--brand-dasch-tertiary);
+                
+                /* Alternative link token names */
+                --cds-link-primary: var(--brand-dasch-primary);
+                --cds-link-primary-hover: var(--brand-dasch-secondary);
+                --cds-link-secondary: var(--brand-dasch-secondary);
+                --cds-text-interactive: var(--brand-dasch-primary);
+                
+                /* Tag component colors */
+                --cds-tag-background-gray: var(--system-gray-20);
+                --cds-tag-color-gray: var(--text-primary);
+                --cds-tag-background-blue: var(--brand-dasch-secondary);
+                --cds-tag-color-blue: var(--text-on-color);
+                --cds-tag-background-green: var(--brand-dasch-green);
+                --cds-tag-color-green: var(--text-on-color);
+                
+                /* Support colors using DaSCH palette */
+                --cds-support-01: var(--brand-dasch-red);     /* Error */
+                --cds-support-02: var(--brand-dasch-green);   /* Success */
+                --cds-support-03: var(--brand-dasch-yellow);  /* Warning */
+                --cds-support-04: var(--brand-dasch-primary); /* Info */
+                
+                /* Border colors */
+                --cds-border-subtle-01: var(--system-gray-20);
+                --cds-border-strong-01: var(--system-gray-30);
+                --cds-border-inverse: var(--system-gray-80);
+            }
+            
+            /* Dark theme overrides */
+            html.dark {
+                --cds-background: var(--bg-background);
+                --cds-background-inverse: var(--system-gray-10);
+                --cds-layer-01: var(--bg-layer-01);
+                --cds-layer-hover-01: var(--bg-layer-01-hover);
+                --cds-text-primary: var(--text-primary);
+                --cds-text-secondary: var(--text-secondary);
+                --cds-interactive-01-hover: var(--brand-dasch-tertiary);
+                --cds-border-subtle-01: var(--system-gray-70);
+                --cds-border-strong-01: var(--system-gray-80);
+            }
+            
+            /* Direct component targeting for links */
+            cds-link {
+                --cds-link-01: var(--brand-dasch-primary);
+                --cds-link-01-hover: var(--brand-dasch-secondary);
+                --cds-text-interactive: var(--brand-dasch-primary);
+                color: var(--brand-dasch-primary);
+            }
+            
+            cds-link:hover {
+                --cds-link-01: var(--brand-dasch-secondary);
+                color: var(--brand-dasch-secondary);
+            }
+        }
+
         @layer shell {
             :root {
                 --shell-bg-color: var(--bg-background);

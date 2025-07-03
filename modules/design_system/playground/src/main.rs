@@ -37,6 +37,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/button", get(pages::button()))
         .route("/banner", get(pages::banner()))
         .route("/shell", get(pages::shell()))
+        .route("/tag", get(pages::tag()))
         .route("/tile", get(pages::tile()))
         .route("/reload-ws", get(reload_ws))
         .nest_service("/assets", ServeDir::new("assets"))

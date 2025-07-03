@@ -36,6 +36,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/", get(pages::home()))
         .route("/button", get(pages::button()))
         .route("/banner", get(pages::banner()))
+        .route("/link", get(pages::link()))
         .route("/shell", get(pages::shell()))
         .route("/tag", get(pages::tag()))
         .route("/tile", get(pages::tile()))

@@ -173,16 +173,49 @@ with a smaller number of integration tests,
 and a few end-to-end tests.</p>
 <p>Unit and integration tests are written in Rust,
 end-to-end tests are written either in Rust or in JavaScript using Playwright.</p>
+<h2 id="playwright-setup"><a class="header" href="#playwright-setup">Playwright Setup</a></h2>
+<p>Playwright is set up for design system component testing with two approaches:</p>
+<p><strong>Interactive Testing (MCP)</strong>:</p>
+<ul>
+<li>Start playground server: <code>just run-watch-playground</code></li>
+<li>Use Claude Code with Playwright MCP commands for visual verification</li>
+<li>Commands whitelisted in <code>.claude/settings.json</code></li>
+<li>Best for: Component development, design verification, manual testing</li>
+</ul>
+<p><strong>Automated Testing (CI/CD)</strong>:</p>
+<ul>
+<li>TypeScript-based Playwright setup with comprehensive tooling</li>
+<li>Functional, accessibility, and responsive design testing in CI</li>
+<li>Visual regression testing disabled in CI (runs locally only)</li>
+<li>ESLint, Prettier, and strict TypeScript checking</li>
+<li>HTML + JSON reporters for CI/CD integration</li>
+<li>Video recording and screenshots on test failures</li>
+<li>Best for: End-to-end user flows, automated regression detection</li>
+</ul>
+<p>Setup: <code>just playground install</code> then <code>just playground test</code></p>
+<p>Available commands:</p>
+<ul>
+<li><code>just playground test-ui</code> - Interactive test runner</li>
+<li><code>just playground test-debug</code> - Debug mode with browser DevTools</li>
+<li><code>just playground docker-update-visuals</code> - Update visual baselines (Linux-consistent)</li>
+<li><code>just playground update-visuals</code> - Update visual baselines (platform-specific)</li>
+<li><code>just playground docker-test</code> - Run tests in Docker (matches CI environment)</li>
+<li><code>just playground docker-build</code> - Build Docker image for testing</li>
+<li><code>just playground type-check</code> - TypeScript validation</li>
+<li><code>just playground lint-and-format</code> - Code quality checks</li>
+</ul>
+<p><strong>Visual Testing (Local Development Only)</strong>:
+Visual regression tests are disabled in CI to avoid cross-platform font rendering differences. For local visual validation:</p>
+<ol>
+<li><code>just playground test</code> - Runs all tests including visual regression</li>
+<li><code>just playground docker-update-visuals</code> - Update visual baselines using consistent Docker environment</li>
+<li><code>just playground docker-test</code> - Test using Docker environment</li>
+</ol>
+<p><strong>Note</strong>: CI runs functional, accessibility, and responsive tests only. Visual validation should be performed locally during development.</p>
+<p>For single component interactions, prefer Rust tests. Playwright is for visual verification and complete user flows.</p>
 <blockquote>
 <p>[!note]
-We still need to verify that playwright works well with the current setup.</p>
-<p>Playwright may be used for the following:</p>
-<ul>
-<li>End-to-end tests simulating <em>entire user flows</em>.</li>
-<li>Visual regression tests.</li>
-</ul>
-<p>For single user interactions, we should not need Playwright.
-For these, we should use the Rust testing framework.</p>
+We are still evaluating Playwright integration for broader testing use cases.</p>
 </blockquote>
 <p>Unit tests are the foundation of our testing strategy.
 They test individual components in isolation,

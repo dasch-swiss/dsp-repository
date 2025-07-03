@@ -141,6 +141,8 @@ Professional test suite with TypeScript, visual regression, and comprehensive to
 ```bash
 just playground install         # Install dependencies and browsers
 just playground test            # Run all tests (headless)
+just playground test-functional # Run functional tests only (no visual regression)
+just playground test-visual     # Run visual regression tests only
 just playground test-headed     # Run with browser visible
 just playground test-ui         # Interactive test runner
 just playground test-debug      # Debug mode
@@ -187,6 +189,7 @@ just playground docker-test            # Run tests using Docker (Linux environme
 - **Linting**: `eslint.config.js` with TypeScript, Playwright, and Prettier integration
 - **Module**: Access via `just playground <command>` from project root
 - **CI**: `.github/workflows/playwright.yml` (automatic on design system changes)
-- **Screenshots**: Visual regression testing with 2% threshold tolerance, OS-independent naming
-- **Cross-platform**: Docker-based baseline generation ensures Linux CI consistency
+- **Screenshots**: Visual regression testing with 2% threshold tolerance (local development only)
+- **CI Testing**: Functional, accessibility, and responsive tests only (visual tests skipped in CI)
+- **Cross-platform**: Docker-based baseline generation for consistent local testing
 - **Reports**: HTML + JSON output for CI/CD integration

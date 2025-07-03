@@ -20,8 +20,8 @@ Playwright is set up for design system component testing with two approaches:
 
 **Automated Testing (CI/CD)**:
 - TypeScript-based Playwright setup with comprehensive tooling
-- Visual regression testing with 2% threshold tolerance, OS-independent naming
-- Cross-platform consistency using Docker for baseline generation
+- Functional, accessibility, and responsive design testing in CI
+- Visual regression testing disabled in CI (runs locally only)
 - ESLint, Prettier, and strict TypeScript checking
 - HTML + JSON reporters for CI/CD integration
 - Video recording and screenshots on test failures
@@ -39,11 +39,13 @@ Available commands:
 - `just playground type-check` - TypeScript validation
 - `just playground lint-and-format` - Code quality checks
 
-**Cross-Platform Visual Testing**:
-To ensure visual snapshots work consistently across different operating systems (macOS development, Linux CI), use the Docker-based commands:
-1. `just playground docker-build` - One-time setup of Docker testing environment
-2. `just playground docker-update-visuals` - Generate baselines that match Linux CI
-3. Commit the generated snapshots for consistent CI behavior
+**Visual Testing (Local Development Only)**:
+Visual regression tests are disabled in CI to avoid cross-platform font rendering differences. For local visual validation:
+1. `just playground test` - Runs all tests including visual regression
+2. `just playground docker-update-visuals` - Update visual baselines using consistent Docker environment
+3. `just playground docker-test` - Test using Docker environment
+
+**Note**: CI runs functional, accessibility, and responsive tests only. Visual validation should be performed locally during development.
 
 For single component interactions, prefer Rust tests. Playwright is for visual verification and complete user flows.
 

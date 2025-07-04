@@ -23,15 +23,15 @@ Live development environment for testing and developing design system components
   - `/banner` - Banner component examples
   - `/shell` - Shell component examples
 
-## Cross-Platform Testing
+## Visual Testing Notes
 
-For consistent visual regression testing across different operating systems:
+Visual regression tests are platform-specific and generate different baselines on different operating systems:
 
-- **Update Baselines**: `just docker-update-visuals` (generates Linux-consistent snapshots)
-- **Run Tests in Docker**: `just docker-test` (matches CI environment)
-- **Build Docker Image**: `just docker-build` (one-time setup)
+- **Platform Dependency**: Visual baselines should be generated on the same OS where tests will run
+- **Local Testing**: Use `just update-visuals` to generate baselines for your platform
+- **CI Considerations**: Visual tests may need to be disabled or run conditionally in CI environments
 
-This ensures that visual snapshots generated locally match those in the Linux CI environment, preventing platform-specific test failures.
+Visual tests have been separated from functional tests to provide flexibility in testing workflows.
 
 ## File Structure
 

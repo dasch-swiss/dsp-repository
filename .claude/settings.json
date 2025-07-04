@@ -16,6 +16,11 @@
       "Bash(just fmt:*)",
       "Bash(just test)",
       "Bash(just test:*)",
+      "Bash(just fix)",
+      "Bash(just list-tests:*)",
+      "Bash(just claude test-visual)",
+      "Bash(just claude test-functional)",
+      "Bash(just claude type-check)",
       "Bash(rg:*)",
       "mcp__playwright__browser_navigate",
       "mcp__playwright__browser_take_screenshot",
@@ -23,7 +28,9 @@
       "mcp__playwright__browser_click",
       "mcp__playwright__browser_close",
       "mcp__playwright__browser_install",
-      "WebFetch(domain:just.systems)"
+      "WebFetch(domain:just.systems)",
+      "WebFetch(domain:web-components.carbondesignsystem.com)",
+      "WebFetch(domain:carbondesignsystem.com)"
     ],
     "deny": []
   }

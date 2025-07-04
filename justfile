@@ -109,5 +109,4 @@ stop-playground:
 check-playground:
     @curl -s -o /dev/null -w "%{http_code}" http://localhost:3400 && echo " - Playground server is running at http://localhost:3400" || echo "Playground server is not running"
 
-# Playwright testing module
 mod playground 'modules/design_system/playground'

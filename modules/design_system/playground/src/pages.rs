@@ -1,6 +1,6 @@
 use askama::Template;
 use axum::response::Html;
-use components::{banner, button, shell, tile};
+use components::{banner, button, link, shell, tag, tile};
 use maud::html;
 
 use crate::skeleton::PlaygroundSkeleton;
@@ -18,7 +18,9 @@ pub fn home() -> Html<String> {
                     ul {
                         li { a href="/button" { "Button" } }
                         li { a href="/banner" { "Banner" } }
+                        li { a href="/link" { "Link" } }
                         li { a href="/shell" { "Shell" } }
+                        li { a href="/tag" { "Tag" } }
                         li { a href="/tile" { "Tile" } }
                     }
                 }
@@ -172,6 +174,79 @@ pub fn tile() -> Html<String> {
                             (button::button_with_variant("Secondary", components::ButtonVariant::Secondary, false))
                         }
                     }))
+                }
+            }
+        }
+    );
+    let scaffold = PlaygroundSkeleton::new(title.to_string(), body.into_string()).render().unwrap();
+    Html(scaffold)
+}
+
+pub fn tag() -> Html<String> {
+    let title = "Playground - Tag";
+    let body = html!(
+        div {
+            h1 class="playground-page-title" { "Tag" }
+            p class="playground-section__description" { "Carbon Design System tag component wrapper" }
+
+            section class="playground-section" {
+                h2 class="playground-section__title" { "Basic Tag" }
+                p class="playground-section__description" { "Default gray tag component" }
+                div class="playground-section__example" {
+                    div class="playground-section__example-title" { "Example" }
+                    (tag::tag("Default"))
+                }
+            }
+
+            section class="playground-section" {
+                h2 class="playground-section__title" { "Tag Variants" }
+                p class="playground-section__description" { "Different tag colors" }
+                div class="playground-section__example" {
+                    div class="playground-section__example-title" { "Example" }
+                    (tag::tag_with_variant("Gray", components::TagVariant::Gray))
+                    " "
+                    (tag::tag_with_variant("Blue", components::TagVariant::Blue))
+                    " "
+                    (tag::tag_with_variant("Green", components::TagVariant::Green))
+                }
+            }
+        }
+    );
+    let scaffold = PlaygroundSkeleton::new(title.to_string(), body.into_string()).render().unwrap();
+    Html(scaffold)
+}
+
+pub fn link() -> Html<String> {
+    let title = "Playground - Link";
+    let body = html!(
+        div {
+            h1 class="playground-page-title" { "Link" }
+            p class="playground-section__description" { "Carbon Design System link component wrapper" }
+
+            section class="playground-section" {
+                h2 class="playground-section__title" { "Basic Link" }
+                p class="playground-section__description" { "Default link component" }
+                div class="playground-section__example" {
+                    div class="playground-section__example-title" { "Example" }
+                    (link::link("Visit Carbon Design System", "https://carbondesignsystem.com"))
+                }
+            }
+
+            section class="playground-section" {
+                h2 class="playground-section__title" { "Internal Link" }
+                p class="playground-section__description" { "Link to other pages in the application" }
+                div class="playground-section__example" {
+                    div class="playground-section__example-title" { "Example" }
+                    (link::link("Go to Button Component", "/button"))
+                }
+            }
+
+            section class="playground-section" {
+                h2 class="playground-section__title" { "Custom Test ID" }
+                p class="playground-section__description" { "Link with custom test identifier" }
+                div class="playground-section__example" {
+                    div class="playground-section__example-title" { "Example" }
+                    (link::link_with_testid("Custom Link", "/tag", Some("custom-test-link")))
                 }
             }
         }

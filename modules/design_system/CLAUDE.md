@@ -141,7 +141,7 @@ Professional test suite with TypeScript, visual regression, and comprehensive to
 ```bash
 just playground install         # Install dependencies and browsers
 just playground test            # Run all tests (headless)
-just playground test-functional # Run functional tests only (no visual regression)
+just playground test-functional # Run functional tests only
 just playground test-visual     # Run visual regression tests only
 just playground test-headed     # Run with browser visible
 just playground test-ui         # Interactive test runner
@@ -152,6 +152,7 @@ just playground test-debug      # Debug mode
 ```bash
 just playground::claude::test-quick      # Quick test with first failure feedback
 just playground::claude::test           # Run all tests (non-blocking)
+just playground::claude::test-functional # Run functional tests only
 just playground::claude::test-visual    # Visual regression tests only
 just playground::claude::type-check     # TypeScript validation
 just playground::claude::lint           # Code linting
@@ -169,27 +170,28 @@ just playground lint-and-format # Both linting and formatting
 
 ### Visual Testing
 ```bash
-# Local visual baseline updates (cross-platform consistent)
-just playground docker-update-visuals  # Update visual baselines using Docker (Linux environment)
-just playground update-visuals         # Update visual baselines (platform-specific, use docker version for CI consistency)
+# Local visual baseline updates (platform-specific)
+just playground update-visuals         # Update visual baselines for current platform
 
 # Cleanup and reports
 just playground clean-visuals           # Clean visual snapshots
 just playground report                  # View test reports
-
-# Docker commands for CI consistency
-just playground docker-build           # Build Docker image for testing
-just playground docker-test            # Run tests using Docker (Linux environment)
 ```
+
+**Note**: Visual tests are platform-specific and generate different baselines on different operating systems. Generate baselines on the same OS where tests will run.
 
 ### Test Structure
 - **Location**: `playground/tests/e2e/` (TypeScript files)
-- **Config**: `playground/playwright.config.ts` (TypeScript, visual regression, multi-reporter)
+- **Configs**: 
+  - `playground/playwright.config.ts` (functional tests only)
+  - `playground/playwright-visual.config.ts` (visual regression tests only)
+- **Test Files**:
+  - `functional.spec.ts` (page loads, interactions, accessibility, responsive)
+  - `visual.spec.ts` (screenshot comparisons)
 - **Tooling**: ESLint v9 (flat config), Prettier, TypeScript with strict checking
 - **Linting**: `eslint.config.js` with TypeScript, Playwright, and Prettier integration
 - **Module**: Access via `just playground <command>` from project root
 - **CI**: `.github/workflows/playwright.yml` (automatic on design system changes)
-- **Screenshots**: Visual regression testing with 2% threshold tolerance (local development only)
-- **CI Testing**: Functional, accessibility, and responsive tests only (visual tests skipped in CI)
-- **Cross-platform**: Docker-based baseline generation for consistent local testing
+- **Screenshots**: Visual regression testing with 2% threshold tolerance (platform-specific)
+- **CI Testing**: Functional, accessibility, and responsive tests (visual tests are platform-specific)
 - **Reports**: HTML + JSON output for CI/CD integration

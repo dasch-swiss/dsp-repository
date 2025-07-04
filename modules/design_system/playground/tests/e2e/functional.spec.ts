@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Design System Components', () => {
+test.describe('Design System Components - Functional Tests', () => {
   test('homepage loads correctly', async ({ page }) => {
     await page.goto('/');
 
@@ -76,57 +76,6 @@ test.describe('Design System Components', () => {
     const clickableTile = page.getByTestId('tile-clickable').first();
     await expect(clickableTile).toBeVisible();
     // Note: Could test navigation but keeping simple for now
-  });
-
-  test('visual regression - component screenshots', async ({ page }) => {
-    // Skip visual regression tests in CI environment to avoid font rendering differences
-    test.skip(!!process.env.CI, 'Visual regression tests skipped in CI - run locally for visual validation');
-
-    // TODO: Either reactivate visual testing in CI by solving font rendering differences,
-    // or simplify the visual test setup to be more reliable across environments
-    // Helper function to ensure fonts are loaded before taking screenshots
-    const waitForFontsLoaded = async () => {
-      await page.waitForLoadState('networkidle');
-      // Wait for IBM Plex Sans font to be loaded
-      await page.waitForFunction(() => {
-        return document.fonts.ready.then(() => {
-          // Check if IBM Plex Sans is available
-          const testElement = document.createElement('div');
-          testElement.style.fontFamily = '"IBM Plex Sans", Arial, sans-serif';
-          testElement.style.position = 'absolute';
-          testElement.style.visibility = 'hidden';
-          testElement.textContent = 'Test';
-          document.body.appendChild(testElement);
-
-          const computedStyle = window.getComputedStyle(testElement);
-          const fontFamily = computedStyle.fontFamily;
-          document.body.removeChild(testElement);
-
-          return fontFamily.includes('IBM Plex Sans') || fontFamily.includes('Arial');
-        });
-      });
-    };
-
-    // Button component
-    await page.goto('/button');
-    await waitForFontsLoaded();
-    await expect(page.locator('.playground-section').first()).toHaveScreenshot(
-      'button-component.png'
-    );
-
-    // Banner component
-    await page.goto('/banner');
-    await waitForFontsLoaded();
-    await expect(page.locator('.playground-section').first()).toHaveScreenshot(
-      'banner-component.png'
-    );
-
-    // Tile component
-    await page.goto('/tile');
-    await waitForFontsLoaded();
-    await expect(page.locator('.playground-section').first()).toHaveScreenshot(
-      'tile-component.png'
-    );
   });
 
   test('responsive design - mobile viewport', async ({ page }) => {

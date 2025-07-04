@@ -5,6 +5,10 @@
 test:
     npm run test -- --reporter=list 2>/dev/null
 
+# Run functional tests only
+test-functional:
+    npm run test:functional -- --reporter=list 2>/dev/null
+
 # Quick test run - stop at first failure for immediate feedback
 test-quick:
     npm run test -- --reporter=list --max-failures=1 2>/dev/null | head -15
@@ -19,11 +23,11 @@ test-headless:
 
 # Visual regression test only
 test-visual:
-    npm run test -- --grep "visual regression" --reporter=list 2>/dev/null
+    npm run test:visual -- --reporter=list 2>/dev/null
 
 # Update visual baselines (non-blocking)
 update-visuals:
-    npm run test:update-snapshots 2>/dev/null
+    npm run test:visual:update 2>/dev/null
     @echo "✅ Visual baselines updated"
 
 # TypeScript compilation check

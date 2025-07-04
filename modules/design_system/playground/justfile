@@ -17,11 +17,11 @@ test:
 
 # Run functional tests only (no visual regression)
 test-functional:
-    npm run test -- --grep-invert "visual regression"
+    npm run test:functional
 
 # Run visual regression tests only (local development)
 test-visual:
-    npm run test -- --grep "visual regression"
+    npm run test:visual
 
 # Run tests with browser visible
 test-headed:
@@ -39,9 +39,9 @@ test-ui:
 list-tests:
     npm run test:list
 
-# Update visual test baselines
+# Update visual test baselines (local development only)
 update-visuals:
-    npm run test:update-snapshots
+    npm run test:visual:update
 
 # TypeScript type checking
 type-check:
@@ -89,15 +89,4 @@ clean:
 clean-visuals:
     find tests/ -name "*-snapshots" -type d -exec rm -rf {} + 2>/dev/null || true
     @echo "✅ Cleaned up visual snapshots"
-
-# Docker commands for Linux-consistent baselines
-docker-build:
-    docker-compose build
-
-# Update visual baselines using Docker (Linux environment)
-docker-update-visuals:
-    docker-compose run --rm playwright npm run test:update-snapshots
-
-# Run tests using Docker (Linux environment)
-docker-test:
-    docker-compose run --rm playwright npm run test
+    @echo "ℹ️  Note: Visual tests are platform-specific. Generate baselines on the same OS where tests will run."

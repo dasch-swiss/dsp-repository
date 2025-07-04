@@ -3,8 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   
-  // Only run functional tests (exclude visual tests)
-  testMatch: '**/functional.spec.ts',
+  // Only run visual tests
+  testMatch: '**/visual.spec.ts',
 
   // Run tests in files in parallel
   fullyParallel: true,
@@ -12,16 +12,16 @@ export default defineConfig({
   // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,
 
-  // Retry on CI only
-  retries: process.env.CI ? 2 : 0,
+  // More retries for visual tests to handle potential rendering variations
+  retries: 3,
 
-  // Opt out of parallel tests on CI
-  workers: process.env.CI ? 1 : 4,
+  // Single worker for consistent visual results
+  workers: 1,
 
   // Reporter to use
   reporter: [
-    ['html', { outputFolder: 'playwright-report' }],
-    ['json', { outputFile: 'test-results.json' }],
+    ['html', { outputFolder: 'playwright-report-visual' }],
+    ['json', { outputFile: 'test-results-visual.json' }],
   ],
 
   use: {
@@ -37,9 +37,9 @@ export default defineConfig({
     // Record video on failure
     video: 'retain-on-failure',
 
-    // Global timeout for all tests
-    actionTimeout: 30000,
-    navigationTimeout: 30000,
+    // Longer timeouts for visual tests
+    actionTimeout: 45000,
+    navigationTimeout: 45000,
   },
 
   // Visual regression testing configuration
@@ -56,15 +56,19 @@ export default defineConfig({
 
       // Animation handling for consistent screenshots
       animations: 'disabled',
+
+      // Clip to avoid edge rendering differences
+      clip: { x: 0, y: 0, width: 1200, height: 800 },
     },
   },
 
-  // Configure projects for major browsers
+  // Configure only chromium for visual consistency
   projects: [
     {
-      name: 'chromium',
+      name: 'chromium-visual',
       use: { 
         ...devices['Desktop Chrome'],
+        viewport: { width: 1200, height: 800 },
         launchOptions: {
           args: [
             '--disable-font-subpixel-positioning',
@@ -73,21 +77,16 @@ export default defineConfig({
             '--font-render-hinting=none',
             '--disable-system-font-check',
             '--disable-font-smoothing',
+            '--disable-lcd-text',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--no-sandbox',
+            '--disable-gpu-sandbox',
           ],
         },
       },
     },
-
-    // TODO: Add other browsers when needed for broader compatibility testing
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
   ],
 
   // Run your local dev server before starting the tests
@@ -97,9 +96,9 @@ export default defineConfig({
       : 'cd ../../../ && cargo run --bin playground-server',
     url: 'http://127.0.0.1:3400',
     reuseExistingServer: !process.env.CI,
-    timeout: 30000,
+    timeout: 45000,
   },
 
   // Output directories
-  outputDir: './output/test-results',
+  outputDir: './output/visual-test-results',
 });

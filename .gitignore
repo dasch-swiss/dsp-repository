@@ -32,6 +32,9 @@ node_modules/
 # Playwright test artifacts (but NOT baseline screenshots)
 test-results/
 playwright-report/
+playwright-report-visual/
 **/playwright/.cache/
+**/output/
 
 modules/design_system/playground/test-results.json
+modules/design_system/playground/test-results-visual.json

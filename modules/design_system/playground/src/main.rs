@@ -1,6 +1,5 @@
 mod livereload;
-mod pages;
-mod skeleton;
+mod playground;
 
 use core::error::Error;
 
@@ -33,15 +32,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let notifier = ReloadNotifier::new();
 
     let routes = Router::new()
-        .route("/", get(pages::home()))
-        .route("/button", get(pages::button()))
-        .route("/banner", get(pages::banner()))
-        .route("/link", get(pages::link()))
-        .route("/shell", get(pages::shell()))
-        .route("/tag", get(pages::tag()))
-        .route("/tile", get(pages::tile()))
+        .route("/", get(playground::shell::shell))
+        .route("/iframe", get(playground::iframe::iframe_component))
         .route("/reload-ws", get(reload_ws))
         .nest_service("/assets", ServeDir::new("assets"))
+        .nest_service("/playground-assets", ServeDir::new("modules/design_system/playground/assets"))
         .layer(Extension(notifier.clone()));
 
     let app = routes.layer(cors);

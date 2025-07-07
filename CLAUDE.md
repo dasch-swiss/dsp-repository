@@ -25,7 +25,7 @@ modules/
 │   └── types/             # Domain models and trait definitions
 └── design_system/         # Custom design system
     ├── components/        # Reusable UI components
-    └── playground/        # Component testing environment
+    └── playground/        # Full development environment with Rust server, TypeScript testing, and visual regression
 ```
 
 ## Development Commands (via justfile)
@@ -39,6 +39,12 @@ just run                       # Run main server (release mode)
 # Development workflow
 just watch                     # Watch for changes and run tests  
 just run-watch-playground      # Run design system playground with hot reload
+
+# Design system playground
+just playground install         # Install frontend dependencies and browsers
+just playground test            # Run TypeScript/Playwright tests
+just playground test-visual     # Run visual regression tests
+just playground test-headed     # Run tests with browser visible
 
 # Code quality
 just fmt                       # Format Rust code
@@ -58,6 +64,7 @@ just install-requirements     # Install cargo-watch, mdbook, mdbook-alerts
 - **Async**: Tokio runtime
 - **Testing**: Cargo nextest for parallel execution
 - **Documentation**: mdBook with alerts plugin
+- **Design System**: TypeScript + Playwright for E2E and visual regression testing
 
 ## Data Layer
 - **Current**: Static JSON files in `/data/json/` directory
@@ -68,7 +75,8 @@ just install-requirements     # Install cargo-watch, mdbook, mdbook-alerts
 - **Formatting**: .rustfmt.toml with 120 char width, Unix newlines
 - **File endings**: All files must end with a newline character
 - **Linting**: Strict clippy warnings
-- **Testing**: Testing pyramid (unit → integration → future E2E with Playwright)
+- **Testing**: Testing pyramid (unit → integration → E2E with Playwright)
+- **Visual Testing**: Automated visual regression testing for design system components
 - **Git**: Rebase workflow, clean commit history
 
 ## Important Notes
@@ -109,3 +117,4 @@ Before considering ANY change as "done", ensure the following:
 
 ## Memory
 - Every file must end on a new line character
+- In documentation, keep the tone factual and almost understated. Documentation should be clear first of all, there is no need to praise the software.

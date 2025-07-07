@@ -8,7 +8,7 @@ The DSP Repository is a Rust-based monorepo for the DaSCH Service Platform Repos
 ## Architecture
 - **Language**: Rust (Edition 2021, Toolchain 1.86.0)
 - **Web Framework**: Axum HTTP server
-- **Templating**: Dual approach - Askama (file-based) and Maud (macro/JSX-like)
+- **Templating**: Maud (macro/JSX-like) - primary templating engine
 - **Frontend**: Hypermedia-driven using DataStar (similar to HTMX)
 - **Pattern**: Clean Architecture/Hexagonal Architecture
 - **Structure**: Cargo workspace with modular crates
@@ -59,7 +59,7 @@ just install-requirements     # Install cargo-watch, mdbook, mdbook-alerts
 
 ## Tech Stack
 - **HTTP**: Axum with macros, WebSocket support
-- **Templating**: Askama + Maud
+- **Templating**: Maud
 - **Hypermedia**: DataStar for interactive UI
 - **Async**: Tokio runtime
 - **Testing**: Cargo nextest for parallel execution

@@ -90,7 +90,7 @@ impl MetadataRepository for InMemoryMetadataRepository {
 
 Handles the **user-facing UI** layer, serving HTML pages and fragments, and live-updating data via SSE.
 
-- [Askama](https://github.com/djc/askama) templates
+- [Maud](https://maud.lambda.xyz/) templates
 - [Datastar](https://docs.rs/datastar) for link generation
 - SSE endpoints for live features like notifications, progress updates
 - Routes for page rendering and form submissions

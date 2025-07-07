@@ -4,7 +4,7 @@
 
 - **Rust** - Primary development language (Edition 2021, Toolchain 1.86.0)
 - **Axum** - HTTP web framework with WebSocket support
-- **Askama + Maud** - Dual templating approach (file-based and macro-based)
+- **Maud** - Macro-based templating engine (JSX-like syntax)
 - **DataStar** - Hypermedia-driven frontend interactivity
 - **Carbon Web Components** - Design system components via CDN integration
 - **Database TBD** - Currently using static JSON files

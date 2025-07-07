@@ -16,21 +16,18 @@ We use [serde](https://serde.rs/) for serialization and deserialization of data.
 
 ### Rust Templating
 
-We are still evaluating two templating engines for rendering HTML in Rust:
+We use [Maud](https://maud.lambda.xyz/) as our templating engine for rendering HTML in Rust.
 
-- [Askama](https://askama.readthedocs.io/en/stable/)
-- [Maud](https://maud.lambda.xyz/)
+Maud is a macro-based templating engine that allows writing HTML directly in Rust code.
+It is similar to JSX, where the HTML is written inline with the Rust code.
+This approach provides strong type safety and excellent integration with Rust's ownership system.
 
-Askama is a compile-time templating engine, that is very similar to Jinja2.
-It uses a file-based approach, where separate template files are stored and dynamic content is injected into them.
-
-Maud is a macro-based templating engine, that allows to write HTML directly in Rust code.
-It is more similar to JSX, where the HTML is written inline with the Rust code.
-
-We have to try both engines and see which one fits our needs better.
-In principle, we can use both engines in the same project,
-if they excel at different things.
-But for simplicity, we should try to stick to one engine.
+Maud offers several advantages:
+- Compile-time template checking
+- Full Rust syntax support within templates
+- Automatic HTML escaping
+- No external template files to manage
+- Better IDE support with syntax highlighting and autocomplete
 
 ### Archtectural Design Patterns
 

@@ -71,3 +71,7 @@ pub fn page_header(title: impl Into<String>, actions: Markup) -> Markup {
 2. Add props structs for components with 3+ parameters
 3. Use `impl Into<String>` for text inputs
 4. Test composition in playground
+
+## Temporary Carbon Web Components Usage
+
+**Note**: Some components currently use Carbon Design System web components via CDN with wrapper functions as a temporary solution. This approach uses `PreEscaped` HTML with conditional script loading for rapid development. These will be replaced with native Maud implementations following the architecture above as the design system matures.

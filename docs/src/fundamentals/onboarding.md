@@ -173,8 +173,12 @@ The details of the implementation depend on the rendering engine we decide to us
 We create a playground for the design system,
 where we can test and experiment with the components.
 
-This playground is a separate Rust crate that depends on the design system crate.
-It is losely inspired by Storybook, but intentionally kept simpler.
+This playground is a Rust web server with TypeScript testing:
+- Shell interface with component navigation
+- Component isolation via iframe rendering
+- Variant selection and theme switching
+- Live reload via WebSocket
+- TypeScript/Playwright tests for functional, accessibility, and visual regression testing
 
 For each component, we create a page that shows the component in action,
 in all its variants and states.

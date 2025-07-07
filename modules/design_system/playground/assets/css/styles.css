@@ -1,0 +1,98 @@
+/* Component preview styles - iframe container and theming only */
+:root {
+    --primary-color: #0f62fe;
+    --background-light: #ffffff;
+    --background-dark: #161616;
+    --text-light: #161616;
+    --text-dark: #ffffff;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+}
+
+/* Light theme (default) */
+body {
+    margin: 0;
+    padding: var(--spacing-md);
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--background-light);
+    color: var(--text-light);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Dark theme */
+.dark body {
+    background: var(--background-dark);
+    color: var(--text-dark);
+}
+
+.component-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: var(--spacing-lg);
+}
+
+/* Error styles */
+.error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: var(--spacing-lg);
+    text-align: center;
+}
+
+.error-message {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    max-width: 400px;
+}
+
+html[data-theme="dark"] .error-message {
+    background: #2d2a1c;
+    border-color: #574a00;
+}
+
+.error-message h3 {
+    margin: 0 0 var(--spacing-md) 0;
+    color: #856404;
+    font-size: 1.25rem;
+}
+
+html[data-theme="dark"] .error-message h3 {
+    color: #fdcb6e;
+}
+
+.error-message p {
+    margin: 0;
+    color: #856404;
+    line-height: 1.5;
+}
+
+html[data-theme="dark"] .error-message p {
+    color: #fdcb6e;
+}
+
+.error-actions a {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+.error-actions a:hover {
+    background: #0043ce;
+}

@@ -159,3 +159,116 @@ pub fn render_component_tabs(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_build_component_link_basic() {
+        let result = build_component_link("banner", "component=button&theme=light&view=component");
+        assert_eq!(result, "/?component=banner&theme=light&view=component");
+    }
+
+    #[test]
+    fn test_build_component_link_with_variant() {
+        let result = build_component_link("banner", "component=button&variant=primary&theme=light&view=component");
+        assert_eq!(result, "/?component=banner&variant=primary&theme=light&view=component");
+    }
+
+    #[test]
+    fn test_build_component_link_preserve_all_params() {
+        let current_params = "component=button&variant=secondary&theme=dark&view=documentation";
+        let result = build_component_link("tile", current_params);
+        assert_eq!(result, "/?component=tile&variant=secondary&theme=dark&view=documentation");
+    }
+
+    #[test]
+    fn test_build_component_link_empty_params() {
+        let result = build_component_link("button", "");
+        assert_eq!(result, "/?component=button");
+    }
+
+    #[test]
+    fn test_build_component_link_only_component_param() {
+        let result = build_component_link("banner", "component=button");
+        assert_eq!(result, "/?component=banner");
+    }
+
+    #[test]
+    fn test_build_component_link_malformed_params() {
+        // Test with malformed parameter (missing value)
+        let result = build_component_link("banner", "component=button&theme=&view=component");
+        assert_eq!(result, "/?component=banner&theme=&view=component");
+    }
+
+    #[test]
+    fn test_build_component_link_single_param_no_equals() {
+        // Test with parameter that has no equals sign
+        let result = build_component_link("banner", "component=button&invalidparam&theme=light");
+        assert_eq!(result, "/?component=banner&theme=light");
+    }
+
+    #[test]
+    fn test_build_component_link_duplicate_non_component_params() {
+        // Test with duplicate non-component parameters
+        let result = build_component_link("banner", "component=button&theme=light&theme=dark&view=component");
+        assert_eq!(result, "/?component=banner&theme=light&theme=dark&view=component");
+    }
+
+    #[test]
+    fn test_build_component_link_component_param_not_first() {
+        // Test when component is not the first parameter
+        let result = build_component_link("banner", "theme=light&component=button&view=component");
+        assert_eq!(result, "/?component=banner&theme=light&view=component");
+    }
+
+    #[test]
+    fn test_build_component_link_special_characters() {
+        // Test with special characters in component name
+        let result = build_component_link("test-component", "component=button&theme=light");
+        assert_eq!(result, "/?component=test-component&theme=light");
+    }
+
+    #[test]
+    fn test_build_component_link_empty_component_name() {
+        let result = build_component_link("", "component=button&theme=light");
+        assert_eq!(result, "/?component=&theme=light");
+    }
+
+    #[test]
+    fn test_build_component_link_no_component_in_current_params() {
+        // Test when current params don't contain component parameter
+        let result = build_component_link("banner", "theme=light&view=component");
+        assert_eq!(result, "/?component=banner&theme=light&view=component");
+    }
+
+    #[test]
+    fn test_build_component_link_multiple_equals_in_value() {
+        // Test with parameter value containing equals signs
+        let result = build_component_link("banner", "component=button&custom=value=with=equals&theme=light");
+        assert_eq!(result, "/?component=banner&custom=value=with=equals&theme=light");
+    }
+
+    #[test]
+    fn test_build_component_link_preserves_order() {
+        // Test that parameter order is preserved (except component is first)
+        let result = build_component_link("banner", "component=button&view=component&theme=light&variant=primary");
+        assert_eq!(result, "/?component=banner&view=component&theme=light&variant=primary");
+    }
+
+    #[test]
+    fn test_render_page_shell_theme_conditional_logic() {
+        let content = html! { div { "Test content" } };
+
+        // Test light theme - should NOT have dark class
+        let light_result = render_page_shell("light", "Test Title", "/test.css", content.clone());
+        let light_str = light_result.into_string();
+        assert!(!light_str.contains("class=\"dark\""));
+
+        // Test dark theme - should have dark class
+        let dark_result = render_page_shell("dark", "Test Title", "/test.css", content);
+        let dark_str = dark_result.into_string();
+        assert!(dark_str.contains("class=\"dark\""));
+    }
+}

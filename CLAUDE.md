@@ -100,6 +100,12 @@ Before considering ANY change as "done", ensure the following:
   2. Assign to the requesting developer with `gh pr edit [PR_NUMBER] --add-assignee [USERNAME]`
   3. Include "Review Notes" section mentioning that separate commits should be checked for easier review
 
+### Testing Guidelines
+- **Tests first**: Unless instructed otherwise, write the tests before implementing the feature.
+- **Unit tests**: Write unit tests for all new functionality.
+- **Useful tests**: Ensure that tests are useful and meaningful. Ask yourself: What is this test verifying? NEVER write tests that verify the behavior of the Rust compiler or external libraries.
+- **Helper functions**: In tests, it is better to repeat yourself than to complicate the test setup. Only use helper functions if they improve the clarity of the test.
+
 ### Temporary File Management
 - **Temporary files**: Use `.claude/tmp/` for temporary files that are
 - **Ask if unsure** whether a document should be temporary or permanent

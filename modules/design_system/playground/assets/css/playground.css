@@ -165,17 +165,178 @@ body {
 
 .documentation-content {
     flex: 1;
-    padding: var(--spacing-05);
+    padding: var(--spacing-05) 2rem;
     overflow-y: auto;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Typography hierarchy */
+.documentation-content h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-subtle);
+    padding-bottom: 0.5rem;
+}
+
+.documentation-content h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
 }
 
 .documentation-content h3 {
-    margin-bottom: var(--spacing-04);
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+}
+
+.documentation-content h4 {
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
     color: var(--text-primary);
 }
 
 .documentation-content p {
-    margin-bottom: var(--spacing-04);
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 0.875rem;
+}
+
+/* Lists */
+.documentation-content ul,
+.documentation-content ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+    list-style-type: disc;
+}
+
+.documentation-content ul {
+    list-style-type: disc;
+}
+
+.documentation-content ol {
+    list-style-type: decimal;
+}
+
+.documentation-content li {
+    margin-bottom: 0.5rem;
     color: var(--text-secondary);
     line-height: 1.5;
+    font-size: 0.875rem;
+    display: list-item;
+}
+
+.documentation-content li::marker {
+    color: var(--text-primary);
+    font-weight: bold;
+}
+
+/* Code blocks */
+.documentation-content code {
+    background: var(--background-secondary);
+    padding: 0.125rem 0.25rem;
+    border-radius: 3px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+}
+
+.documentation-content pre {
+    background: var(--background-secondary);
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-subtle);
+}
+
+.documentation-content pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.8125rem;
+}
+
+/* Emphasis and strong text */
+.documentation-content em {
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.documentation-content strong {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Status indicators */
+.documentation-content p:has(em:only-child) {
+    font-style: italic;
+    opacity: 0.8;
+    text-align: center;
+    margin: 2rem 0;
+}
+
+/* Blockquotes */
+.documentation-content blockquote {
+    border-left: 4px solid var(--link-color);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Tables */
+.documentation-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.documentation-content th,
+.documentation-content td {
+    padding: 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.documentation-content th {
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--background-secondary);
+}
+
+.documentation-content td {
+    color: var(--text-secondary);
+}
+
+/* Links */
+.documentation-content a {
+    color: var(--link-color);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.documentation-content a:hover {
+    color: var(--link-hover-color);
+    border-bottom-color: var(--link-hover-color);
+}
+
+/* Spacing adjustments */
+.documentation-content > *:first-child {
+    margin-top: 0;
+}
+
+.documentation-content > *:last-child {
+    margin-bottom: 0;
 }

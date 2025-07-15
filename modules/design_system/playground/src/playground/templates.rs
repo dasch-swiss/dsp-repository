@@ -1,5 +1,31 @@
 use maud::{html, Markup};
 
+use crate::playground::{components, docs_parser};
+
+/// Helper function to build component links preserving current state
+fn build_component_link(component_name: &str, current_params: &str) -> String {
+    // Parse current parameters
+    let mut preserved_params = Vec::new();
+
+    for param in current_params.split('&') {
+        if let Some((key, value)) = param.split_once('=') {
+            if key != "component" {
+                preserved_params.push(format!("{}={}", key, value));
+            }
+        }
+    }
+
+    // Build new URL with component parameter first
+    let mut url = format!("/?component={}", component_name);
+
+    if !preserved_params.is_empty() {
+        url.push('&');
+        url.push_str(&preserved_params.join("&"));
+    }
+
+    url
+}
+
 /// Common HTML document structure for playground pages
 pub fn render_page_shell(theme: &str, title: &str, css_path: &str, content: Markup) -> Markup {
     html! {
@@ -34,18 +60,29 @@ pub fn render_error_content(error_message: &str) -> Markup {
                 p { (error_message) }
             }
             div .error-actions {
-                a href="/playground" target="_parent" { "← Back to Playground" }
+                a href="/" target="_parent" { "← Back to Playground" }
             }
         }
     }
 }
 
 /// Template for component documentation section
-pub fn render_documentation_section(component_name: &str, description: &str) -> Markup {
+pub fn render_documentation_section(component_name: &str) -> Markup {
+    // Try to find the component spec and load documentation
+    if let Some(spec) = components::get_component_spec_by_route_name(component_name) {
+        if let Ok(doc) = docs_parser::load_component_documentation(spec) {
+            return html! {
+                div class="documentation-content" {
+                    (maud::PreEscaped(doc.content_html))
+                }
+            };
+        }
+    }
+
+    // Fallback to basic documentation
     html! {
         div class="documentation-content" {
             h3 { (component_name) " Documentation" }
-            p { (description) }
             p { em { "Detailed documentation coming soon..." } }
         }
     }
@@ -53,7 +90,7 @@ pub fn render_documentation_section(component_name: &str, description: &str) -> 
 
 /// Template for component controls section
 pub fn render_component_controls(
-    component_info: &crate::playground::components::ComponentInfo,
+    component_info: &components::ComponentInfo,
     current_variant: &str,
     current_theme: &str,
 ) -> Markup {
@@ -69,13 +106,11 @@ pub fn render_component_controls(
                     }
                 }
             }
-            @if component_info.supports_theme {
-                div class="parameter-group" {
-                    label for="theme-select" { "Theme:" }
-                    select id="theme-select" data-param="theme" {
-                        option value="light" selected[current_theme == "light"] { "Light" }
-                        option value="dark" selected[current_theme == "dark"] { "Dark" }
-                    }
+            div class="parameter-group" {
+                label for="theme-select" { "Theme:" }
+                select id="theme-select" data-param="theme" {
+                    option value="light" selected[current_theme == "light"] { "Light" }
+                    option value="dark" selected[current_theme == "dark"] { "Dark" }
                 }
             }
         }
@@ -84,8 +119,9 @@ pub fn render_component_controls(
 
 /// Template for component navigation sidebar
 pub fn render_component_sidebar(
-    components: &[crate::playground::components::ComponentInfo],
+    components: &[components::ComponentInfo],
     current_component: &str,
+    current_params: &str,
 ) -> Markup {
     html! {
         nav class="playground-sidebar" {
@@ -93,7 +129,7 @@ pub fn render_component_sidebar(
             ul class="component-list" {
                 @for component in components {
                     li {
-                        a href=(format!("/?component={}", component.route_name))
+                        a href=(build_component_link(&component.route_name, current_params))
                           class=(format!("component-link{}", if component.route_name == current_component { " active" } else { "" })) {
                             (component.name)
                         }
@@ -107,18 +143,19 @@ pub fn render_component_sidebar(
 /// Template for component preview tabs
 pub fn render_component_tabs(
     iframe_src: &str,
-    component_info: &crate::playground::components::ComponentInfo,
+    component_info: &components::ComponentInfo,
+    current_view: &str,
 ) -> Markup {
     html! {
         div class="playground-tabs" {
-            button class="tab-button active" data-tab="component" { "Component" }
-            button class="tab-button" data-tab="documentation" { "Documentation" }
+            button class="tab-button" class=(if current_view == "component" { "active" } else { "" }) data-tab="component" { "Component" }
+            button class="tab-button" class=(if current_view == "documentation" { "active" } else { "" }) data-tab="documentation" { "Documentation" }
         }
-        div class="tab-content active" id="component-tab" {
+        div class="tab-content" class=(if current_view == "component" { "active" } else { "" }) id="component-tab" {
             iframe id="component-iframe" src=(iframe_src) {}
         }
-        div class="tab-content" id="documentation-tab" {
-            (render_documentation_section(&component_info.name, &component_info.description))
+        div class="tab-content" class=(if current_view == "documentation" { "active" } else { "" }) id="documentation-tab" {
+            (render_documentation_section(&component_info.route_name))
         }
     }
 }

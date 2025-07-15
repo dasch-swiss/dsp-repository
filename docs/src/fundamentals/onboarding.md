@@ -31,9 +31,10 @@ Maud offers several advantages:
 
 ### Archtectural Design Patterns
 
-We follow concepts such as [Clean Architecture](https://en.wikipedia.org/wiki/Clean_architecture),
+We follow concepts such as [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+(there is also a [book](https://www.oreilly.com/library/view/clean-architecture-a/9780134494272/)),
 [Hexagonal Architecture](https://en.wikipedia.org/wiki/Hexagonal_architecture_(software))
-or [Onion Architecture](https://en.wikipedia.org/wiki/Onion_architecture).
+or [Onion Architecture](https://jeffreypalermo.com/2008/07/the-onion-architecture-part-1/).
 Familiarity with these concepts will be helpful.
 
 Some of the patterns must be adapted to the idioms of Rust,

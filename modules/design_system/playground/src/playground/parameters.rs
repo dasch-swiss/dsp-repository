@@ -10,6 +10,8 @@ pub struct PlaygroundParams {
     pub variant: Option<String>,
     #[serde(default)]
     pub theme: Theme,
+    #[serde(default)]
+    pub view: ViewMode,
 }
 
 fn default_component() -> String {
@@ -24,11 +26,28 @@ pub enum Theme {
     Dark,
 }
 
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum ViewMode {
+    #[default]
+    Component,
+    Documentation,
+}
+
 impl std::fmt::Display for Theme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Theme::Light => write!(f, "light"),
             Theme::Dark => write!(f, "dark"),
+        }
+    }
+}
+
+impl std::fmt::Display for ViewMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ViewMode::Component => write!(f, "component"),
+            ViewMode::Documentation => write!(f, "documentation"),
         }
     }
 }
@@ -67,6 +86,7 @@ impl PlaygroundParams {
         }
 
         params.push(format!("theme={}", self.theme));
+        params.push(format!("view={}", self.view));
 
         params.join("&")
     }

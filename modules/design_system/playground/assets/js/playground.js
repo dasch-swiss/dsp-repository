@@ -31,7 +31,7 @@ class PlaygroundController {
         this.tabButtons.forEach(button => {
             button.addEventListener('click', (e) => {
                 const tabName = e.target.dataset.tab;
-                this.switchTab(tabName);
+                this.switchTab(tabName, true);
             });
         });
 
@@ -45,6 +45,7 @@ class PlaygroundController {
         const urlParams = new URLSearchParams(window.location.search);
         const variant = urlParams.get('variant');
         const theme = urlParams.get('theme');
+        const view = urlParams.get('view') || 'component';
 
         if (variant && this.variantSelect) {
             this.variantSelect.value = variant;
@@ -55,6 +56,9 @@ class PlaygroundController {
             // Update theme on the main HTML element
             document.documentElement.classList.toggle('dark', theme === 'dark');
         }
+
+        // Sync tab state with URL (without triggering URL update)
+        this.switchTab(view, false);
 
         this.updateIframe();
     }
@@ -86,7 +90,7 @@ class PlaygroundController {
         this.iframe.src = iframeUrl.toString();
     }
 
-    switchTab(tabName) {
+    switchTab(tabName, updateURL = true) {
         // Update tab buttons
         this.tabButtons.forEach(button => {
             if (button.dataset.tab === tabName) {
@@ -104,6 +108,11 @@ class PlaygroundController {
                 content.classList.remove('active');
             }
         });
+
+        // Update URL to persist tab state only when user interacts
+        if (updateURL) {
+            this.updateParameter('view', tabName);
+        }
     }
 }
 

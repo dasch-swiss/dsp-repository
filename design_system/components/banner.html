@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Component Architecture - DSP-Repository Developer Documentation</title>
+        <title>Banner - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -12,34 +12,34 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="../favicon.svg">
-        <link rel="shortcut icon" href="../favicon.png">
-        <link rel="stylesheet" href="../css/variables.css">
-        <link rel="stylesheet" href="../css/general.css">
-        <link rel="stylesheet" href="../css/chrome.css">
-        <link rel="stylesheet" href="../css/print.css" media="print">
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="../fonts/fonts.css">
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "../";
+            const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex.js";
+            window.path_to_searchindex_js = "../../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc.js"></script>
+        <script src="../../toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -106,7 +106,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -141,7 +141,7 @@
                     <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
 
                     <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
 
@@ -175,88 +175,41 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="component-architecture-decision"><a class="header" href="#component-architecture-decision">Component Architecture Decision</a></h1>
-<h2 id="composability-approach"><a class="header" href="#composability-approach">Composability Approach</a></h2>
-<p>We use a <strong>Maud-Native + Props</strong> combination for component composability:</p>
-<h3 id="core-principles"><a class="header" href="#core-principles">Core Principles</a></h3>
-<ol>
-<li><strong>Maud <code>Markup</code> Return Types</strong>: Components return <code>maud::Markup</code> instead of <code>String</code> for zero-copy composition</li>
-<li><strong>Props Structs</strong>: Complex components use dedicated props structs for clear parameter grouping</li>
-<li><strong>Simple Functions</strong>: Basic components remain as simple functions</li>
-<li><strong>Flexible Text Input</strong>: Use <code>impl Into&lt;String&gt;</code> for text parameters</li>
-</ol>
-<h3 id="component-patterns"><a class="header" href="#component-patterns">Component Patterns</a></h3>
-<h4 id="simple-components"><a class="header" href="#simple-components">Simple Components</a></h4>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>use maud::{Markup, html};
-
-pub fn button(text: impl Into&lt;String&gt;) -&gt; Markup {
-    html! {
-        button .dsp-button { (text.into()) }
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<h4 id="complex-components-with-props"><a class="header" href="#complex-components-with-props">Complex Components with Props</a></h4>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>pub struct CardProps {
-    pub title: String,
-    pub content: Markup,
-    pub variant: CardVariant,
-}
-
-pub fn card(props: CardProps) -&gt; Markup {
-    html! {
-        div .dsp-card {
-            h2 .dsp-card__title { (props.title) }
-            div .dsp-card__content { (props.content) }
-        }
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<h4 id="component-composition"><a class="header" href="#component-composition">Component Composition</a></h4>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// Direct nesting - zero-copy composition
-pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup {
-    html! {
-        header .dsp-page-header {
-            h1 { (title.into()) }
-            div .dsp-page-header__actions {
-                (actions)  // Direct Markup insertion
-            }
-        }
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<h3 id="benefits"><a class="header" href="#benefits">Benefits</a></h3>
+                        <h1 id="banner"><a class="header" href="#banner">Banner</a></h1>
+<p>Banner component with multiple display variants for highlighting important information.</p>
+<h2 id="usage-guidelines"><a class="header" href="#usage-guidelines">Usage Guidelines</a></h2>
+<p>The banner component should only be used on landing pages etc. as a prominent way to display a core message.
+Use the appropriate variant based on the content structure and emphasis needed.</p>
+<h2 id="variants"><a class="header" href="#variants">Variants</a></h2>
 <ul>
-<li><strong>Efficient</strong>: No string concatenation overhead</li>
-<li><strong>Type Safe</strong>: Compile-time guarantees for component structure</li>
-<li><strong>Composable</strong>: Components nest naturally without conversion</li>
-<li><strong>Extensible</strong>: Props structs make adding parameters easy</li>
-<li><strong>Consistent</strong>: Unified approach across all components</li>
+<li>Accent Only</li>
+<li>With Prefix</li>
+<li>With Suffix</li>
+<li>Full</li>
 </ul>
-<h3 id="migration-path"><a class="header" href="#migration-path">Migration Path</a></h3>
-<ol>
-<li>Convert existing components to return <code>Markup</code></li>
-<li>Add props structs for components with 3+ parameters</li>
-<li>Use <code>impl Into&lt;String&gt;</code> for text inputs</li>
-<li>Test composition in playground</li>
-</ol>
-<h2 id="temporary-carbon-web-components-usage"><a class="header" href="#temporary-carbon-web-components-usage">Temporary Carbon Web Components Usage</a></h2>
-<p><strong>Note</strong>: Some components currently use Carbon Design System web components via CDN with wrapper functions as a temporary solution. This approach uses <code>PreEscaped</code> HTML with conditional script loading for rapid development. These will be replaced with native Maud implementations following the architecture above as the design system matures.</p>
+<p>The banner is structured as follows:
+The first line is an optional prefix, the second line - which is of larger font size - is the main message, and the third line is an optional suffix.</p>
+<h2 id="accessibility-notes"><a class="header" href="#accessibility-notes">Accessibility Notes</a></h2>
+<ul>
+<li>Semantic HTML structure ensures proper screen reader navigation</li>
+<li>High contrast colors meet WCAG AA standards</li>
+<li>Text is properly structured for assistive technologies</li>
+</ul>
+<!-- TODO: verify this -->
+<h2 id="implementation-status"><a class="header" href="#implementation-status">Implementation Status</a></h2>
+<p>✅ Fully functional - complete implementation with all variants</p>
+<h2 id="design-notes"><a class="header" href="#design-notes">Design Notes</a></h2>
+<p>None</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../design_system/overview.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../design_system/components/button.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../design_system/components/button.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../design_system/components/link.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -266,11 +219,11 @@ pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../design_system/overview.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../design_system/components/button.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../design_system/components/button.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../design_system/components/link.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -285,13 +238,13 @@ pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup
         </script>
 
 
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
 
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
 
         <!-- Custom JS scripts -->
 

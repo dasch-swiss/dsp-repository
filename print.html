@@ -637,6 +637,141 @@ pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup
 </ol>
 <h2 id="temporary-carbon-web-components-usage"><a class="header" href="#temporary-carbon-web-components-usage">Temporary Carbon Web Components Usage</a></h2>
 <p><strong>Note</strong>: Some components currently use Carbon Design System web components via CDN with wrapper functions as a temporary solution. This approach uses <code>PreEscaped</code> HTML with conditional script loading for rapid development. These will be replaced with native Maud implementations following the architecture above as the design system matures.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="button-1"><a class="header" href="#button-1">Button</a></h1>
+<p>Interactive button component for user actions.</p>
+<h2 id="usage-guidelines"><a class="header" href="#usage-guidelines">Usage Guidelines</a></h2>
+<p>Use buttons to trigger actions, submit forms, or navigate to different sections of the application. Choose the appropriate variant based on the action's importance and context.</p>
+<h2 id="variants"><a class="header" href="#variants">Variants</a></h2>
+<h3 id="primary"><a class="header" href="#primary">Primary</a></h3>
+<p>The primary button is used for the most important action on a page. Use sparingly - typically only one primary button per page or section.</p>
+<h3 id="secondary"><a class="header" href="#secondary">Secondary</a></h3>
+<p>Secondary buttons are used for less important actions that still need emphasis. They can be used multiple times on a page.</p>
+<h3 id="outline"><a class="header" href="#outline">Outline</a></h3>
+<p>Outline buttons are used for tertiary actions or when you need a lighter visual treatment while maintaining accessibility.</p>
+<h2 id="accessibility-notes"><a class="header" href="#accessibility-notes">Accessibility Notes</a></h2>
+<!-- TODO -->
+<p>Section missing...</p>
+<h2 id="implementation-status"><a class="header" href="#implementation-status">Implementation Status</a></h2>
+<p>🚧 Functional but incomplete - styling verification needed, missing accessibility features</p>
+<h2 id="design-notes"><a class="header" href="#design-notes">Design Notes</a></h2>
+<p>The button component follows Carbon Design System patterns with DSP brand customizations. Spacing and typography align with the design system tokens.</p>
+<h3 id="button-vs-link"><a class="header" href="#button-vs-link">Button vs. Link</a></h3>
+<p>Use buttons for actions that trigger changes or submit data. Use links for navigation to other pages or sections. Buttons should not be used for navigation purposes.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="banner-1"><a class="header" href="#banner-1">Banner</a></h1>
+<p>Banner component with multiple display variants for highlighting important information.</p>
+<h2 id="usage-guidelines-1"><a class="header" href="#usage-guidelines-1">Usage Guidelines</a></h2>
+<p>The banner component should only be used on landing pages etc. as a prominent way to display a core message.
+Use the appropriate variant based on the content structure and emphasis needed.</p>
+<h2 id="variants-1"><a class="header" href="#variants-1">Variants</a></h2>
+<ul>
+<li>Accent Only</li>
+<li>With Prefix</li>
+<li>With Suffix</li>
+<li>Full</li>
+</ul>
+<p>The banner is structured as follows:
+The first line is an optional prefix, the second line - which is of larger font size - is the main message, and the third line is an optional suffix.</p>
+<h2 id="accessibility-notes-1"><a class="header" href="#accessibility-notes-1">Accessibility Notes</a></h2>
+<ul>
+<li>Semantic HTML structure ensures proper screen reader navigation</li>
+<li>High contrast colors meet WCAG AA standards</li>
+<li>Text is properly structured for assistive technologies</li>
+</ul>
+<!-- TODO: verify this -->
+<h2 id="implementation-status-1"><a class="header" href="#implementation-status-1">Implementation Status</a></h2>
+<p>✅ Fully functional - complete implementation with all variants</p>
+<h2 id="design-notes-1"><a class="header" href="#design-notes-1">Design Notes</a></h2>
+<p>None</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="link-1"><a class="header" href="#link-1">Link</a></h1>
+<p>Link component for navigation and external links.</p>
+<h2 id="usage-guidelines-2"><a class="header" href="#usage-guidelines-2">Usage Guidelines</a></h2>
+<p>Use links for navigation between pages, sections, or external resources. The link component provides consistent styling across the application.</p>
+<h2 id="variants-2"><a class="header" href="#variants-2">Variants</a></h2>
+<h3 id="default"><a class="header" href="#default">Default</a></h3>
+<p>Standard link styling with brand colors and hover states. Suitable for all link use cases.</p>
+<h2 id="accessibility-notes-2"><a class="header" href="#accessibility-notes-2">Accessibility Notes</a></h2>
+<ul>
+<li>Proper semantic HTML anchor tags</li>
+<li>Clear focus indicators for keyboard navigation</li>
+<li>Sufficient color contrast for readability</li>
+<li>External links include appropriate indicators</li>
+</ul>
+<h2 id="implementation-status-2"><a class="header" href="#implementation-status-2">Implementation Status</a></h2>
+<p>✅ Functional - currently using Carbon Web Components as temporary implementation</p>
+<h2 id="design-notes-2"><a class="header" href="#design-notes-2">Design Notes</a></h2>
+<p>Currently implemented using Carbon Web Components via CDN. This provides Carbon-styled links with brand colors and hover states. Will be migrated to native Maud implementation following the component architecture patterns.</p>
+<h3 id="link-vs-button"><a class="header" href="#link-vs-button">Link vs. Button</a></h3>
+<p>Use links for navigation purposes. Use buttons for actions that trigger changes or submit data. Links should not be used for actions that modify state or submit forms.</p>
+<!-- TODO: what about button-styled links? -->
+<div style="break-before: page; page-break-before: always;"></div><h1 id="shell-1"><a class="header" href="#shell-1">Shell</a></h1>
+<p>Application shell component providing navigation and layout wrapper.</p>
+<h2 id="usage-guidelines-3"><a class="header" href="#usage-guidelines-3">Usage Guidelines</a></h2>
+<p>Use the shell component as the main application wrapper. It provides consistent navigation, theme management, and layout structure across the application.</p>
+<h2 id="variants-3"><a class="header" href="#variants-3">Variants</a></h2>
+<h3 id="default-1"><a class="header" href="#default-1">Default</a></h3>
+<p>Complete application shell with navigation header, search functionality, and theme toggle.</p>
+<h2 id="features"><a class="header" href="#features">Features</a></h2>
+<ul>
+<li><strong>Responsive Navigation</strong>: Adapts to different screen sizes</li>
+<li><strong>Search Functionality</strong>: Integrated search with accessibility features</li>
+<li><strong>Theme Toggle</strong>: Light/dark theme switching with persistence</li>
+<li><strong>Side Navigation</strong>: Collapsible sidebar navigation</li>
+<li><strong>Accessible ARIA Labels</strong>: Full accessibility support</li>
+</ul>
+<h2 id="accessibility-notes-3"><a class="header" href="#accessibility-notes-3">Accessibility Notes</a></h2>
+<ul>
+<li>Comprehensive ARIA labels and roles</li>
+<li>Keyboard navigation support</li>
+<li>Screen reader optimized structure</li>
+<li>Focus management for modal states</li>
+<li>High contrast theme support</li>
+</ul>
+<h2 id="implementation-status-3"><a class="header" href="#implementation-status-3">Implementation Status</a></h2>
+<p>✅ Fully functional with advanced features</p>
+<h2 id="design-notes-3"><a class="header" href="#design-notes-3">Design Notes</a></h2>
+<p>Currently implemented using Carbon Web Components via CDN. Provides advanced features including responsive navigation, search functionality, and theme management. The shell serves as the primary application wrapper and maintains consistent layout across different pages.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="tag-1"><a class="header" href="#tag-1">Tag</a></h1>
+<p>Tag component with different color variants for categorization and labeling.</p>
+<h2 id="usage-guidelines-4"><a class="header" href="#usage-guidelines-4">Usage Guidelines</a></h2>
+<p>Use tags to categorize content, show status, or provide quick visual identification. Choose colors that align with your content's meaning and maintain consistency across the application.</p>
+<h2 id="variants-4"><a class="header" href="#variants-4">Variants</a></h2>
+<h3 id="gray"><a class="header" href="#gray">Gray</a></h3>
+<p>Default neutral tag for general categorization and labeling.</p>
+<h3 id="blue"><a class="header" href="#blue">Blue</a></h3>
+<p>Blue tag for information, links, or primary category identification.</p>
+<h3 id="green"><a class="header" href="#green">Green</a></h3>
+<p>Green tag for success states, completed items, or positive categorization.</p>
+<h2 id="accessibility-notes-4"><a class="header" href="#accessibility-notes-4">Accessibility Notes</a></h2>
+<ul>
+<li>Semantic HTML structure</li>
+<li>Sufficient color contrast for all variants</li>
+<li>Screen reader compatible text</li>
+<li>Clear visual differentiation between variants</li>
+</ul>
+<h2 id="implementation-status-4"><a class="header" href="#implementation-status-4">Implementation Status</a></h2>
+<p>🚧 Functional but incomplete - missing variants and attributes</p>
+<h2 id="design-notes-4"><a class="header" href="#design-notes-4">Design Notes</a></h2>
+<p>Currently implemented using Carbon Web Components via CDN. Provides colored labels with brand-aligned styling and dynamic script loading. Will be extended to include additional variants and attributes as needed.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="tile-1"><a class="header" href="#tile-1">Tile</a></h1>
+<p>Tile component with base and clickable variants for content containers.</p>
+<h2 id="usage-guidelines-5"><a class="header" href="#usage-guidelines-5">Usage Guidelines</a></h2>
+<p>Use tiles to group related content in a visually distinct container. Choose the clickable variant when the entire tile should be interactive.</p>
+<h2 id="variants-5"><a class="header" href="#variants-5">Variants</a></h2>
+<h3 id="base"><a class="header" href="#base">Base</a></h3>
+<p>Static content container for displaying information without interaction.</p>
+<h3 id="clickable"><a class="header" href="#clickable">Clickable</a></h3>
+<p>Interactive tile that responds to user interaction. Use when the entire tile should be clickable.</p>
+<h2 id="accessibility-notes-5"><a class="header" href="#accessibility-notes-5">Accessibility Notes</a></h2>
+<ul>
+<li>Proper semantic HTML structure</li>
+<li>Keyboard navigation support for clickable variant</li>
+<li>Clear focus indicators</li>
+<li>Screen reader compatible content structure</li>
+</ul>
+<h2 id="implementation-status-5"><a class="header" href="#implementation-status-5">Implementation Status</a></h2>
+<p>🚧 Functional but incomplete - styling verification needed, missing accessibility features</p>
+<h2 id="design-notes-5"><a class="header" href="#design-notes-5">Design Notes</a></h2>
+<p>The tile component serves as a content container accepting arbitrary Markup. Custom test IDs are supported for testing. The clickable variant includes proper interaction states and accessibility features.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="discovery-design-and-development-process"><a class="header" href="#discovery-design-and-development-process">Discovery, Design and Development Process</a></h1>
 <p>Any work on the DSP Repository is done in collaboration between
 Management, Product Management (PM), the Research Data Unit (RDU) and Development (Dev).

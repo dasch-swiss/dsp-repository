@@ -336,7 +336,7 @@ impl MetadataRepository for InMemoryMetadataRepository {
 <h3 id="html_api--html-hypermedia--sse"><a class="header" href="#html_api--html-hypermedia--sse"><code>html_api/</code> – HTML Hypermedia + SSE</a></h3>
 <p>Handles the <strong>user-facing UI</strong> layer, serving HTML pages and fragments, and live-updating data via SSE.</p>
 <ul>
-<li><a href="https://github.com/djc/askama">Askama</a> templates</li>
+<li><a href="https://maud.lambda.xyz/">Maud</a> templates</li>
 <li><a href="https://docs.rs/datastar">Datastar</a> for link generation</li>
 <li>SSE endpoints for live features like notifications, progress updates</li>
 <li>Routes for page rendering and form submissions</li>
@@ -657,7 +657,7 @@ and identify opportunities for further improvements.</p>
 <ul>
 <li><strong>Rust</strong> - Primary development language (Edition 2021, Toolchain 1.86.0)</li>
 <li><strong>Axum</strong> - HTTP web framework with WebSocket support</li>
-<li><strong>Askama + Maud</strong> - Dual templating approach (file-based and macro-based)</li>
+<li><strong>Maud</strong> - Macro-based templating engine (JSX-like syntax)</li>
 <li><strong>DataStar</strong> - Hypermedia-driven frontend interactivity</li>
 <li><strong>Carbon Web Components</strong> - Design system components via CDN integration</li>
 <li><strong>Database TBD</strong> - Currently using static JSON files</li>
@@ -745,19 +745,18 @@ though particularly the frontend work does not require deep knowledge of Rust.</
 <h3 id="serialization-and-deserialization"><a class="header" href="#serialization-and-deserialization">Serialization and Deserialization</a></h3>
 <p>We use <a href="https://serde.rs/">serde</a> for serialization and deserialization of data.</p>
 <h3 id="rust-templating"><a class="header" href="#rust-templating">Rust Templating</a></h3>
-<p>We are still evaluating two templating engines for rendering HTML in Rust:</p>
+<p>We use <a href="https://maud.lambda.xyz/">Maud</a> as our templating engine for rendering HTML in Rust.</p>
+<p>Maud is a macro-based templating engine that allows writing HTML directly in Rust code.
+It is similar to JSX, where the HTML is written inline with the Rust code.
+This approach provides strong type safety and excellent integration with Rust's ownership system.</p>
+<p>Maud offers several advantages:</p>
 <ul>
-<li><a href="https://askama.readthedocs.io/en/stable/">Askama</a></li>
-<li><a href="https://maud.lambda.xyz/">Maud</a></li>
+<li>Compile-time template checking</li>
+<li>Full Rust syntax support within templates</li>
+<li>Automatic HTML escaping</li>
+<li>No external template files to manage</li>
+<li>Better IDE support with syntax highlighting and autocomplete</li>
 </ul>
-<p>Askama is a compile-time templating engine, that is very similar to Jinja2.
-It uses a file-based approach, where separate template files are stored and dynamic content is injected into them.</p>
-<p>Maud is a macro-based templating engine, that allows to write HTML directly in Rust code.
-It is more similar to JSX, where the HTML is written inline with the Rust code.</p>
-<p>We have to try both engines and see which one fits our needs better.
-In principle, we can use both engines in the same project,
-if they excel at different things.
-But for simplicity, we should try to stick to one engine.</p>
 <h3 id="archtectural-design-patterns"><a class="header" href="#archtectural-design-patterns">Archtectural Design Patterns</a></h3>
 <p>We follow concepts such as <a href="https://en.wikipedia.org/wiki/Clean_architecture">Clean Architecture</a>,
 <a href="https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)">Hexagonal Architecture</a>

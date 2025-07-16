@@ -36,6 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -92,10 +93,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -146,7 +150,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -296,8 +305,14 @@ and use them in the project code.</p>
 <h3 id="playground"><a class="header" href="#playground">Playground</a></h3>
 <p>We create a playground for the design system,
 where we can test and experiment with the components.</p>
-<p>This playground is a separate Rust crate that depends on the design system crate.
-It is losely inspired by Storybook, but intentionally kept simpler.</p>
+<p>This playground is a Rust web server with TypeScript testing:</p>
+<ul>
+<li>Shell interface with component navigation</li>
+<li>Component isolation via iframe rendering</li>
+<li>Variant selection and theme switching</li>
+<li>Live reload via WebSocket</li>
+<li>TypeScript/Playwright tests for functional, accessibility, and visual regression testing</li>
+</ul>
 <p>For each component, we create a page that shows the component in action,
 in all its variants and states.
 We also pages for compounds and patterns,
@@ -344,6 +359,7 @@ Finally, we create sample pages that show how to use the components in a real-wo
         <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
+
 
 
     </div>

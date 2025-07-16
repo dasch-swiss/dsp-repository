@@ -36,6 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -92,10 +93,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -146,7 +150,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -167,17 +176,28 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="tech-stack"><a class="header" href="#tech-stack">Tech Stack</a></h1>
+<h2 id="core-technologies"><a class="header" href="#core-technologies">Core Technologies</a></h2>
 <ul>
-<li>Rust</li>
-<li>Axum</li>
-<li>Askama or Maud</li>
-<li>DataStar</li>
-<li>Database TBD</li>
+<li><strong>Rust</strong> - Primary development language (Edition 2021, Toolchain 1.86.0)</li>
+<li><strong>Axum</strong> - HTTP web framework with WebSocket support</li>
+<li><strong>Askama + Maud</strong> - Dual templating approach (file-based and macro-based)</li>
+<li><strong>DataStar</strong> - Hypermedia-driven frontend interactivity</li>
+<li><strong>Carbon Web Components</strong> - Design system components via CDN integration</li>
+<li><strong>Database TBD</strong> - Currently using static JSON files</li>
 </ul>
-<!-- TODO: elaborate at some point -->
+<h2 id="development--testing"><a class="header" href="#development--testing">Development &amp; Testing</a></h2>
+<ul>
+<li><strong>TypeScript + Playwright</strong> - End-to-end and visual regression testing for design system</li>
+<li><strong>Cargo nextest</strong> - Parallel test execution</li>
+<li><strong>ESLint + Prettier</strong> - JavaScript/TypeScript code quality (testing only)</li>
+<li><strong>Node.js ecosystem</strong> - Supporting testing infrastructure</li>
+</ul>
+<h2 id="architecture-principles"><a class="header" href="#architecture-principles">Architecture Principles</a></h2>
 <p>We keep the design evolutionary, starting from the simplest possible solution and iterating on it.
-At first, providing data from a static JSON files, or working with static content, is sufficient.
+At first, providing data from static JSON files, or working with static content, is sufficient.
 Following clean architecture principles, swapping out the persistence layer is easy.</p>
+<h2 id="implementation-notes"><a class="header" href="#implementation-notes">Implementation Notes</a></h2>
+<p>The TypeScript ecosystem is used exclusively for testing and development tooling, not for production runtime code. The core application remains purely Rust-based with hypermedia-driven interactivity.</p>
 <!-- TODO: for CSS post processing, check out https://github.com/rs-tml/rcss or https://docs.rs/lightningcss/latest/lightningcss/ -->
 
                     </main>
@@ -226,6 +246,7 @@ Following clean architecture principles, swapping out the persistence layer is e
         <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
+
 
 
     </div>

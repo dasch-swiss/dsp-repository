@@ -36,6 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -92,10 +93,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -146,7 +150,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -195,34 +204,70 @@ The DSP Design System instead would provide a "Card" component.)</li>
 <h2 id="available-components"><a class="header" href="#available-components">Available Components</a></h2>
 <h3 id="button"><a class="header" href="#button">Button</a></h3>
 <ul>
+<li><strong>Implementation</strong>: Native Maud</li>
 <li><strong>Variants</strong>: Primary, Secondary, Outline</li>
-<li><strong>Status</strong>: 🚧 Work in progress (styling verification against Carbon needed)</li>
-<li><strong>Features</strong>: Basic button functionality with variant support</li>
+<li><strong>Status</strong>: 🚧 Functional but incomplete (styling verification needed, missing accessibility features)</li>
+<li><strong>Features</strong>: Basic button functionality with variant support, disabled state, custom test IDs</li>
 </ul>
 <h3 id="banner"><a class="header" href="#banner">Banner</a></h3>
 <ul>
+<li><strong>Implementation</strong>: Native Maud</li>
 <li><strong>Variants</strong>: Accent only, with prefix, with suffix, full (prefix + accent + suffix)</li>
-<li><strong>Status</strong>: ✅ Functional</li>
-<li><strong>Features</strong>: Configurable text sections with accent styling</li>
+<li><strong>Status</strong>: ✅ Fully functional</li>
+<li><strong>Features</strong>: Semantic HTML with proper structure, configurable text sections with accent styling</li>
 </ul>
 <h3 id="shell"><a class="header" href="#shell">Shell</a></h3>
 <ul>
+<li><strong>Implementation</strong>: Carbon Web Components (CDN-based)</li>
 <li><strong>Purpose</strong>: Application navigation and layout wrapper</li>
-<li><strong>Status</strong>: 🚧 Work in progress</li>
-<li><strong>Features</strong>: Header with logo, placeholder navigation, action buttons</li>
+<li><strong>Status</strong>: ✅ Fully functional with advanced features</li>
+<li><strong>Features</strong>: Responsive navigation header, search functionality, theme toggle with persistence, side navigation, accessible ARIA labels</li>
 </ul>
 <h3 id="tile"><a class="header" href="#tile">Tile</a></h3>
 <ul>
+<li><strong>Implementation</strong>: Native Maud</li>
 <li><strong>Variants</strong>: Base, Clickable</li>
-<li><strong>Status</strong>: 🚧 Work in progress (styling verification against Carbon needed)</li>
-<li><strong>Features</strong>: Content containers with Carbon-compliant styling (no borders, shadows, or rounded corners)</li>
+<li><strong>Status</strong>: 🚧 Functional but incomplete (styling verification needed, missing accessibility features)</li>
+<li><strong>Features</strong>: Content containers accepting arbitrary Markup, custom test IDs</li>
+</ul>
+<h3 id="link"><a class="header" href="#link">Link</a></h3>
+<ul>
+<li><strong>Implementation</strong>: Carbon Web Components (CDN-based)</li>
+<li><strong>Purpose</strong>: Navigation and external links</li>
+<li><strong>Status</strong>: ✅ Functional (temporary implementation)</li>
+<li><strong>Features</strong>: Carbon-styled links with brand colors and hover states</li>
+</ul>
+<h3 id="tag"><a class="header" href="#tag">Tag</a></h3>
+<ul>
+<li><strong>Implementation</strong>: Carbon Web Components (CDN-based)</li>
+<li><strong>Variants</strong>: Gray, Blue, Green</li>
+<li><strong>Status</strong>: 🚧 Functional but incomplete (missing variants and attributes)</li>
+<li><strong>Features</strong>: Colored labels with brand-aligned styling, dynamic script loading</li>
 </ul>
 <h2 id="development-environment"><a class="header" href="#development-environment">Development Environment</a></h2>
 <h3 id="playground"><a class="header" href="#playground">Playground</a></h3>
 <ul>
 <li><strong>URL</strong>: http://localhost:3400 (via <code>just run-watch-playground</code>)</li>
-<li><strong>Features</strong>: Live component testing with structured sections and isolated examples</li>
-<li><strong>Status</strong>: ✅ Fully functional with improved layout</li>
+<li><strong>Architecture</strong>: Full-featured development environment with Rust server, TypeScript testing, and visual regression</li>
+<li><strong>Features</strong>:
+<ul>
+<li><strong>Shell Interface</strong>: Sidebar navigation with component list and active states</li>
+<li><strong>Component Isolation</strong>: Iframe-based component rendering with parameter controls</li>
+<li><strong>Variant Selection</strong>: Dynamic component variant switching with real-time updates</li>
+<li><strong>Theme Switching</strong>: Light/dark theme toggle with live preview</li>
+<li><strong>Documentation Tabs</strong>: Component and documentation view switching</li>
+<li><strong>Live Reload</strong>: WebSocket-based automatic refresh on file changes</li>
+</ul>
+</li>
+<li><strong>Testing</strong>: Comprehensive TypeScript/Playwright test suite with functional, accessibility, responsive, and visual regression tests</li>
+<li><strong>Commands</strong>:
+<ul>
+<li><code>just playground install</code> - Install frontend dependencies and browsers</li>
+<li><code>just playground test</code> - Run all automated tests</li>
+<li><code>just playground test-visual</code> - Run visual regression tests</li>
+<li><code>just playground test-headed</code> - Run tests with browser visible</li>
+</ul>
+</li>
 </ul>
 <!-- TODO: Add the following pages:
   - [Aim and Purpose]()
@@ -284,6 +329,7 @@ The DSP Design System instead would provide a "Card" component.)</li>
         <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
+
 
 
     </div>

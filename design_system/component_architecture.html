@@ -36,6 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -92,10 +93,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -146,7 +150,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -236,6 +245,8 @@ pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup
 <li>Use <code>impl Into&lt;String&gt;</code> for text inputs</li>
 <li>Test composition in playground</li>
 </ol>
+<h2 id="temporary-carbon-web-components-usage"><a class="header" href="#temporary-carbon-web-components-usage">Temporary Carbon Web Components Usage</a></h2>
+<p><strong>Note</strong>: Some components currently use Carbon Design System web components via CDN with wrapper functions as a temporary solution. This approach uses <code>PreEscaped</code> HTML with conditional script loading for rapid development. These will be replaced with native Maud implementations following the architecture above as the design system matures.</p>
 
                     </main>
 
@@ -283,6 +294,7 @@ pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup
         <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
+
 
 
     </div>

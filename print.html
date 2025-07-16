@@ -37,6 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc.js"></script>
@@ -93,10 +94,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -147,7 +151,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -214,6 +223,19 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 which should give anyone an indication of where to find any information they need.</p>
 <p>For any interaction or coding-related workflow, the justfile is the primary source of truth.
 The justfile contains all the commands and workflows that are used in this repository, along with their descriptions.</p>
+<h2 id="key-development-commands"><a class="header" href="#key-development-commands">Key Development Commands</a></h2>
+<p>The justfile provides self-documenting commands. Key workflows include:</p>
+<ul>
+<li><code>just check</code> - Run formatting and linting checks</li>
+<li><code>just build</code> - Build all targets</li>
+<li><code>just test</code> - Run all tests</li>
+<li><code>just run</code> - Run main server</li>
+<li><code>just watch</code> - Watch for changes and run tests</li>
+<li><code>just run-watch-playground</code> - Run design system playground with hot reload</li>
+<li><code>just playground install</code> - Install playground dependencies</li>
+<li><code>just playground test</code> - Run design system tests</li>
+</ul>
+<p>Run <code>just</code> without arguments to see all available commands with descriptions.</p>
 <p>Any further information should be located in the documentation.</p>
 <h2 id="git-workflow"><a class="header" href="#git-workflow">Git Workflow</a></h2>
 <p>For this repository, we use a rebase workflow.
@@ -465,34 +487,70 @@ The DSP Design System instead would provide a "Card" component.)</li>
 <h2 id="available-components"><a class="header" href="#available-components">Available Components</a></h2>
 <h3 id="button"><a class="header" href="#button">Button</a></h3>
 <ul>
+<li><strong>Implementation</strong>: Native Maud</li>
 <li><strong>Variants</strong>: Primary, Secondary, Outline</li>
-<li><strong>Status</strong>: 🚧 Work in progress (styling verification against Carbon needed)</li>
-<li><strong>Features</strong>: Basic button functionality with variant support</li>
+<li><strong>Status</strong>: 🚧 Functional but incomplete (styling verification needed, missing accessibility features)</li>
+<li><strong>Features</strong>: Basic button functionality with variant support, disabled state, custom test IDs</li>
 </ul>
 <h3 id="banner"><a class="header" href="#banner">Banner</a></h3>
 <ul>
+<li><strong>Implementation</strong>: Native Maud</li>
 <li><strong>Variants</strong>: Accent only, with prefix, with suffix, full (prefix + accent + suffix)</li>
-<li><strong>Status</strong>: ✅ Functional</li>
-<li><strong>Features</strong>: Configurable text sections with accent styling</li>
+<li><strong>Status</strong>: ✅ Fully functional</li>
+<li><strong>Features</strong>: Semantic HTML with proper structure, configurable text sections with accent styling</li>
 </ul>
 <h3 id="shell"><a class="header" href="#shell">Shell</a></h3>
 <ul>
+<li><strong>Implementation</strong>: Carbon Web Components (CDN-based)</li>
 <li><strong>Purpose</strong>: Application navigation and layout wrapper</li>
-<li><strong>Status</strong>: 🚧 Work in progress</li>
-<li><strong>Features</strong>: Header with logo, placeholder navigation, action buttons</li>
+<li><strong>Status</strong>: ✅ Fully functional with advanced features</li>
+<li><strong>Features</strong>: Responsive navigation header, search functionality, theme toggle with persistence, side navigation, accessible ARIA labels</li>
 </ul>
 <h3 id="tile"><a class="header" href="#tile">Tile</a></h3>
 <ul>
+<li><strong>Implementation</strong>: Native Maud</li>
 <li><strong>Variants</strong>: Base, Clickable</li>
-<li><strong>Status</strong>: 🚧 Work in progress (styling verification against Carbon needed)</li>
-<li><strong>Features</strong>: Content containers with Carbon-compliant styling (no borders, shadows, or rounded corners)</li>
+<li><strong>Status</strong>: 🚧 Functional but incomplete (styling verification needed, missing accessibility features)</li>
+<li><strong>Features</strong>: Content containers accepting arbitrary Markup, custom test IDs</li>
+</ul>
+<h3 id="link"><a class="header" href="#link">Link</a></h3>
+<ul>
+<li><strong>Implementation</strong>: Carbon Web Components (CDN-based)</li>
+<li><strong>Purpose</strong>: Navigation and external links</li>
+<li><strong>Status</strong>: ✅ Functional (temporary implementation)</li>
+<li><strong>Features</strong>: Carbon-styled links with brand colors and hover states</li>
+</ul>
+<h3 id="tag"><a class="header" href="#tag">Tag</a></h3>
+<ul>
+<li><strong>Implementation</strong>: Carbon Web Components (CDN-based)</li>
+<li><strong>Variants</strong>: Gray, Blue, Green</li>
+<li><strong>Status</strong>: 🚧 Functional but incomplete (missing variants and attributes)</li>
+<li><strong>Features</strong>: Colored labels with brand-aligned styling, dynamic script loading</li>
 </ul>
 <h2 id="development-environment"><a class="header" href="#development-environment">Development Environment</a></h2>
 <h3 id="playground"><a class="header" href="#playground">Playground</a></h3>
 <ul>
 <li><strong>URL</strong>: http://localhost:3400 (via <code>just run-watch-playground</code>)</li>
-<li><strong>Features</strong>: Live component testing with structured sections and isolated examples</li>
-<li><strong>Status</strong>: ✅ Fully functional with improved layout</li>
+<li><strong>Architecture</strong>: Full-featured development environment with Rust server, TypeScript testing, and visual regression</li>
+<li><strong>Features</strong>:
+<ul>
+<li><strong>Shell Interface</strong>: Sidebar navigation with component list and active states</li>
+<li><strong>Component Isolation</strong>: Iframe-based component rendering with parameter controls</li>
+<li><strong>Variant Selection</strong>: Dynamic component variant switching with real-time updates</li>
+<li><strong>Theme Switching</strong>: Light/dark theme toggle with live preview</li>
+<li><strong>Documentation Tabs</strong>: Component and documentation view switching</li>
+<li><strong>Live Reload</strong>: WebSocket-based automatic refresh on file changes</li>
+</ul>
+</li>
+<li><strong>Testing</strong>: Comprehensive TypeScript/Playwright test suite with functional, accessibility, responsive, and visual regression tests</li>
+<li><strong>Commands</strong>:
+<ul>
+<li><code>just playground install</code> - Install frontend dependencies and browsers</li>
+<li><code>just playground test</code> - Run all automated tests</li>
+<li><code>just playground test-visual</code> - Run visual regression tests</li>
+<li><code>just playground test-headed</code> - Run tests with browser visible</li>
+</ul>
+</li>
 </ul>
 <!-- TODO: Add the following pages:
   - [Aim and Purpose]()
@@ -577,6 +635,8 @@ pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup
 <li>Use <code>impl Into&lt;String&gt;</code> for text inputs</li>
 <li>Test composition in playground</li>
 </ol>
+<h2 id="temporary-carbon-web-components-usage"><a class="header" href="#temporary-carbon-web-components-usage">Temporary Carbon Web Components Usage</a></h2>
+<p><strong>Note</strong>: Some components currently use Carbon Design System web components via CDN with wrapper functions as a temporary solution. This approach uses <code>PreEscaped</code> HTML with conditional script loading for rapid development. These will be replaced with native Maud implementations following the architecture above as the design system matures.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="discovery-design-and-development-process"><a class="header" href="#discovery-design-and-development-process">Discovery, Design and Development Process</a></h1>
 <p>Any work on the DSP Repository is done in collaboration between
 Management, Product Management (PM), the Research Data Unit (RDU) and Development (Dev).
@@ -593,17 +653,28 @@ Dev will refine the project description, create Linear tickets and implement it 
 <p>When the implementation is done, PM will verify that the outcome was achieved
 and identify opportunities for further improvements.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tech-stack"><a class="header" href="#tech-stack">Tech Stack</a></h1>
+<h2 id="core-technologies"><a class="header" href="#core-technologies">Core Technologies</a></h2>
 <ul>
-<li>Rust</li>
-<li>Axum</li>
-<li>Askama or Maud</li>
-<li>DataStar</li>
-<li>Database TBD</li>
+<li><strong>Rust</strong> - Primary development language (Edition 2021, Toolchain 1.86.0)</li>
+<li><strong>Axum</strong> - HTTP web framework with WebSocket support</li>
+<li><strong>Askama + Maud</strong> - Dual templating approach (file-based and macro-based)</li>
+<li><strong>DataStar</strong> - Hypermedia-driven frontend interactivity</li>
+<li><strong>Carbon Web Components</strong> - Design system components via CDN integration</li>
+<li><strong>Database TBD</strong> - Currently using static JSON files</li>
 </ul>
-<!-- TODO: elaborate at some point -->
+<h2 id="development--testing"><a class="header" href="#development--testing">Development &amp; Testing</a></h2>
+<ul>
+<li><strong>TypeScript + Playwright</strong> - End-to-end and visual regression testing for design system</li>
+<li><strong>Cargo nextest</strong> - Parallel test execution</li>
+<li><strong>ESLint + Prettier</strong> - JavaScript/TypeScript code quality (testing only)</li>
+<li><strong>Node.js ecosystem</strong> - Supporting testing infrastructure</li>
+</ul>
+<h2 id="architecture-principles"><a class="header" href="#architecture-principles">Architecture Principles</a></h2>
 <p>We keep the design evolutionary, starting from the simplest possible solution and iterating on it.
-At first, providing data from a static JSON files, or working with static content, is sufficient.
+At first, providing data from static JSON files, or working with static content, is sufficient.
 Following clean architecture principles, swapping out the persistence layer is easy.</p>
+<h2 id="implementation-notes"><a class="header" href="#implementation-notes">Implementation Notes</a></h2>
+<p>The TypeScript ecosystem is used exclusively for testing and development tooling, not for production runtime code. The core application remains purely Rust-based with hypermedia-driven interactivity.</p>
 <!-- TODO: for CSS post processing, check out https://github.com/rs-tml/rcss or https://docs.rs/lightningcss/latest/lightningcss/ -->
 <div style="break-before: page; page-break-before: always;"></div><h1 id="testing-and-quality-assurance"><a class="header" href="#testing-and-quality-assurance">Testing and Quality Assurance</a></h1>
 <p>We follow the Testing Pyramid approach to testing,
@@ -612,8 +683,8 @@ with a smaller number of integration tests,
 and a few end-to-end tests.</p>
 <p>Unit and integration tests are written in Rust,
 end-to-end tests are written either in Rust or in JavaScript using Playwright.</p>
-<h2 id="playwright-setup"><a class="header" href="#playwright-setup">Playwright Setup</a></h2>
-<p>Playwright is set up for design system component testing with two approaches:</p>
+<h2 id="design-system-testing"><a class="header" href="#design-system-testing">Design System Testing</a></h2>
+<p>The design system playground includes comprehensive testing infrastructure:</p>
 <p><strong>Interactive Testing (MCP)</strong>:</p>
 <ul>
 <li>Start playground server: <code>just run-watch-playground</code></li>
@@ -623,34 +694,26 @@ end-to-end tests are written either in Rust or in JavaScript using Playwright.</
 </ul>
 <p><strong>Automated Testing (CI/CD)</strong>:</p>
 <ul>
-<li>TypeScript-based Playwright setup with comprehensive tooling</li>
+<li>TypeScript-based Playwright setup with tooling</li>
 <li>Functional, accessibility, and responsive design testing in CI</li>
-<li>Visual regression testing disabled in CI (runs locally only)</li>
-<li>ESLint, Prettier, and strict TypeScript checking</li>
+<li>Visual regression testing (local development only)</li>
+<li>ESLint, Prettier, and TypeScript checking</li>
 <li>HTML + JSON reporters for CI/CD integration</li>
-<li>Video recording and screenshots on test failures</li>
 <li>Best for: End-to-end user flows, automated regression detection</li>
 </ul>
-<p>Setup: <code>just playground install</code> then <code>just playground test</code></p>
-<p>Available commands:</p>
+<p><strong>Setup</strong>: <code>just playground install</code> then <code>just playground test</code></p>
+<p><strong>Key Commands</strong>:</p>
 <ul>
+<li><code>just playground test</code> - Run all tests</li>
+<li><code>just playground test-visual</code> - Visual regression tests</li>
 <li><code>just playground test-ui</code> - Interactive test runner</li>
 <li><code>just playground test-debug</code> - Debug mode with browser DevTools</li>
-<li><code>just playground docker-update-visuals</code> - Update visual baselines (Linux-consistent)</li>
 <li><code>just playground update-visuals</code> - Update visual baselines (platform-specific)</li>
-<li><code>just playground docker-test</code> - Run tests in Docker (matches CI environment)</li>
-<li><code>just playground docker-build</code> - Build Docker image for testing</li>
 <li><code>just playground type-check</code> - TypeScript validation</li>
 <li><code>just playground lint-and-format</code> - Code quality checks</li>
 </ul>
-<p><strong>Visual Testing (Local Development Only)</strong>:
-Visual regression tests are disabled in CI to avoid cross-platform font rendering differences. For local visual validation:</p>
-<ol>
-<li><code>just playground test</code> - Runs all tests including visual regression</li>
-<li><code>just playground docker-update-visuals</code> - Update visual baselines using consistent Docker environment</li>
-<li><code>just playground docker-test</code> - Test using Docker environment</li>
-</ol>
-<p><strong>Note</strong>: CI runs functional, accessibility, and responsive tests only. Visual validation should be performed locally during development.</p>
+<p><strong>Visual Testing</strong>:
+Visual regression tests run locally only to avoid cross-platform font rendering differences. CI runs functional, accessibility, and responsive tests.</p>
 <p>For single component interactions, prefer Rust tests. Playwright is for visual verification and complete user flows.</p>
 <blockquote>
 <p>[!note]
@@ -802,8 +865,14 @@ and use them in the project code.</p>
 <h3 id="playground-1"><a class="header" href="#playground-1">Playground</a></h3>
 <p>We create a playground for the design system,
 where we can test and experiment with the components.</p>
-<p>This playground is a separate Rust crate that depends on the design system crate.
-It is losely inspired by Storybook, but intentionally kept simpler.</p>
+<p>This playground is a Rust web server with TypeScript testing:</p>
+<ul>
+<li>Shell interface with component navigation</li>
+<li>Component isolation via iframe rendering</li>
+<li>Variant selection and theme switching</li>
+<li>Live reload via WebSocket</li>
+<li>TypeScript/Playwright tests for functional, accessibility, and visual regression testing</li>
+</ul>
 <p>For each component, we create a page that shows the component in action,
 in all its variants and states.
 We also pages for compounds and patterns,
@@ -850,6 +919,7 @@ Finally, we create sample pages that show how to use the components in a real-wo
             window.setTimeout(window.print, 100);
         });
         </script>
+
 
     </div>
     </body>

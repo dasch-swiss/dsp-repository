@@ -36,6 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc.js"></script>
@@ -92,10 +93,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -146,7 +150,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -172,6 +181,19 @@
 which should give anyone an indication of where to find any information they need.</p>
 <p>For any interaction or coding-related workflow, the justfile is the primary source of truth.
 The justfile contains all the commands and workflows that are used in this repository, along with their descriptions.</p>
+<h2 id="key-development-commands"><a class="header" href="#key-development-commands">Key Development Commands</a></h2>
+<p>The justfile provides self-documenting commands. Key workflows include:</p>
+<ul>
+<li><code>just check</code> - Run formatting and linting checks</li>
+<li><code>just build</code> - Build all targets</li>
+<li><code>just test</code> - Run all tests</li>
+<li><code>just run</code> - Run main server</li>
+<li><code>just watch</code> - Watch for changes and run tests</li>
+<li><code>just run-watch-playground</code> - Run design system playground with hot reload</li>
+<li><code>just playground install</code> - Install playground dependencies</li>
+<li><code>just playground test</code> - Run design system tests</li>
+</ul>
+<p>Run <code>just</code> without arguments to see all available commands with descriptions.</p>
 <p>Any further information should be located in the documentation.</p>
 <h2 id="git-workflow"><a class="header" href="#git-workflow">Git Workflow</a></h2>
 <p>For this repository, we use a rebase workflow.
@@ -225,6 +247,7 @@ and then rebased onto the main branch before being merged.</p>
         <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
+
 
 
     </div>

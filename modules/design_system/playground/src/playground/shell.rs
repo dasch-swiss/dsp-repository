@@ -24,7 +24,7 @@ fn render_shell_content(data: &ShellData) -> Markup {
         div class="playground-layout" {
             (render_component_sidebar(data.components, data.current_component, data.current_params))
             main class="playground-main" {
-                (render_component_controls(data.current_component_info, data.current_variant, data.current_theme, &iframe_src))
+                (render_component_controls(data.current_component_info, data.current_variant, data.current_theme))
                 (render_component_tabs(&iframe_src, data.current_component_info, data.current_view))
             }
         }

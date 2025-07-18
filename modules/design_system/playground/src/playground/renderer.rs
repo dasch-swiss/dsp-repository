@@ -1,6 +1,6 @@
 use components::button::{self, ButtonVariant};
 use components::tag::{self, TagVariant};
-use components::{banner, link, tile};
+use components::{banner, link, shell, tile};
 use maud::{html, Markup};
 
 use crate::playground::error::{PlaygroundError, PlaygroundResult};
@@ -100,23 +100,81 @@ impl ComponentRenderer for LinkRenderer {
 pub struct ShellRenderer;
 
 impl ComponentRenderer for ShellRenderer {
-    fn render_variant(&self, _variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
-        // Shell component appears to be more complex, using placeholder for now
-        let markup = html! {
-            div class="dsp-shell" {
-                header class="dsp-shell__header" { "Sample Shell Header" }
-                main class="dsp-shell__main" { "Sample Shell Content" }
+    fn render_variant(&self, variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
+        // Create sample navigation with both items and menus for playground demonstration
+        let header_nav_elements = vec![
+            shell::NavElement::Item(shell::NavItem { label: "Home", href: "/" }),
+            shell::NavElement::Item(shell::NavItem { label: "Projects", href: "/projects" }),
+            shell::NavElement::Menu(shell::NavMenu {
+                label: "Resources",
+                items: vec![
+                    shell::NavMenuItem { label: "Documentation", href: "/docs" },
+                    shell::NavMenuItem { label: "Tutorials", href: "/tutorials" },
+                    shell::NavMenuItem { label: "API Reference", href: "/api" },
+                ],
+            }),
+            shell::NavElement::Item(shell::NavItem { label: "Contact", href: "/contact" }),
+        ];
+
+        // Create sample content for demonstration
+        let sample_content = html! {
+            section {
+                h1 { "Welcome to the Application Shell" }
+                p  {
+                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris."
+                }
+                p  {
+                    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+                }
+            }
+        };
+
+        let markup = match variant {
+            "header-only" => {
+                // Shell with header navigation only
+                shell::shell(header_nav_elements).with_content(sample_content).build()
+            }
+            "with-side-nav" => {
+                // Shell with both header and side navigation
+                let side_nav_elements = vec![
+                    shell::NavElement::Item(shell::NavItem { label: "Dashboard", href: "/dashboard" }),
+                    shell::NavElement::Item(shell::NavItem { label: "Recent Items", href: "/recent" }),
+                    shell::NavElement::Menu(shell::NavMenu {
+                        label: "My Work",
+                        items: vec![
+                            shell::NavMenuItem { label: "Active Projects", href: "/work/active" },
+                            shell::NavMenuItem { label: "Drafts", href: "/work/drafts" },
+                            shell::NavMenuItem { label: "Completed", href: "/work/completed" },
+                        ],
+                    }),
+                    shell::NavElement::Menu(shell::NavMenu {
+                        label: "Account",
+                        items: vec![
+                            shell::NavMenuItem { label: "Profile", href: "/profile" },
+                            shell::NavMenuItem { label: "Settings", href: "/settings" },
+                            shell::NavMenuItem { label: "Logout", href: "/logout" },
+                        ],
+                    }),
+                ];
+                shell::shell(header_nav_elements)
+                    .with_side_nav(side_nav_elements)
+                    .with_content(sample_content)
+                    .build()
+            }
+            _ => {
+                // Default to header-only variant
+                shell::shell(header_nav_elements).with_content(sample_content).build()
             }
         };
         Ok(markup)
     }
 
     fn default_variant(&self) -> &'static str {
-        "default"
+        "header-only"
     }
 
     fn supported_variants(&self) -> Vec<&'static str> {
-        vec!["default"]
+        vec!["header-only", "with-side-nav"]
     }
 }
 

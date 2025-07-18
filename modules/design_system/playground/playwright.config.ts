@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  
+
   // Only run functional tests (exclude visual tests)
   testMatch: '**/functional.spec.ts',
 
@@ -27,6 +27,9 @@ export default defineConfig({
   use: {
     // Base URL to use in actions like `await page.goto('/')`
     baseURL: 'http://localhost:3400',
+
+    // Viewport size to ensure nav elements are visible
+    viewport: { width: 1440, height: 720 },
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -63,8 +66,9 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 720 },
         launchOptions: {
           args: [
             '--disable-font-subpixel-positioning',

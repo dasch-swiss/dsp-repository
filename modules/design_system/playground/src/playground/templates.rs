@@ -93,6 +93,7 @@ pub fn render_component_controls(
     component_info: &components::ComponentInfo,
     current_variant: &str,
     current_theme: &str,
+    iframe_src: &str,
 ) -> Markup {
     html! {
         div class="playground-controls" {
@@ -111,6 +112,11 @@ pub fn render_component_controls(
                 select id="theme-select" data-param="theme" {
                     option value="light" selected[current_theme == "light"] { "Light" }
                     option value="dark" selected[current_theme == "dark"] { "Dark" }
+                }
+            }
+            div class="parameter-group" {
+                button class="open-in-new-tab-btn" onclick=(format!("window.open('{}', '_blank')", iframe_src)) title="Open component preview in new tab" {
+                    "Open Component"
                 }
             }
         }

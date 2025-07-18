@@ -29,6 +29,10 @@
             /* 96px */
             --spacing-13: 10rem;
             /* 160px */
+            --spacing-14: 12rem;
+            /* 192px */
+            --spacing-15: 16rem;
+            /* 256px */
         }
     }
 
@@ -49,13 +53,13 @@
                 --system-gray-10: hsl(0, 0%, 96%);
                 --system-gray-15: hsl(0, 0%, 91%);
                 --system-gray-20: hsl(0, 0%, 88%);
-                --system-gray-30: hsl(0 0 78%);
-                --system-gray-70: hsl(0 0 32%);
+                --system-gray-30: hsl(0 0% 78%);
+                --system-gray-70: hsl(0 0% 32%);
                 --system-gray-75: hsl(0, 0%, 28%);
-                --system-gray-80: hsl(0 0 22%);
-                --system-gray-90: hsl(0 0 15%);
-                --system-gray-100: hsl(0 0 9%);
-                --system-black: hsl(0 0 0%);
+                --system-gray-80: hsl(0, 0%, 22%);
+                --system-gray-90: hsl(0 0% 15%);
+                --system-gray-100: hsl(0 0% 9%);
+                --system-black: hsl(0 0% 0%);
             }
         }
 
@@ -102,36 +106,37 @@
             :root {
                 /* Carbon Web Components Theme Integration */
                 /* Using DaSCH brand colors for Carbon components */
-                
+
                 /* Background colors */
                 --cds-background: var(--bg-background);
+                --cds-ui-background: var(--bg-background);
                 --cds-background-inverse: var(--system-gray-100);
                 --cds-layer-01: var(--bg-layer-01);
                 --cds-layer-hover-01: var(--bg-layer-01-hover);
-                
+
                 /* Text colors */
                 --cds-text-primary: var(--text-primary);
                 --cds-text-secondary: var(--text-secondary);
                 --cds-text-on-color: var(--text-on-color);
-                
+
                 /* Interactive colors using DaSCH brand */
                 --cds-interactive-01: var(--brand-dasch-primary);
                 --cds-interactive-01-hover: var(--brand-dasch-secondary);
                 --cds-interactive-02: var(--brand-dasch-secondary);
                 --cds-interactive-03: var(--brand-dasch-tertiary);
                 --cds-interactive-04: var(--brand-dasch-primary);
-                
+
                 /* Link colors - multiple approaches for compatibility */
                 --cds-link-01: var(--brand-dasch-primary);
                 --cds-link-01-hover: var(--brand-dasch-secondary);
                 --cds-link-visited: var(--brand-dasch-tertiary);
-                
+
                 /* Alternative link token names */
                 --cds-link-primary: var(--brand-dasch-primary);
                 --cds-link-primary-hover: var(--brand-dasch-secondary);
                 --cds-link-secondary: var(--brand-dasch-secondary);
                 --cds-text-interactive: var(--brand-dasch-primary);
-                
+
                 /* Tag component colors */
                 --cds-tag-background-gray: var(--system-gray-20);
                 --cds-tag-color-gray: var(--text-primary);
@@ -139,18 +144,23 @@
                 --cds-tag-color-blue: var(--text-on-color);
                 --cds-tag-background-green: var(--brand-dasch-green);
                 --cds-tag-color-green: var(--text-on-color);
-                
+
                 /* Support colors using DaSCH palette */
-                --cds-support-01: var(--brand-dasch-red);     /* Error */
-                --cds-support-02: var(--brand-dasch-green);   /* Success */
-                --cds-support-03: var(--brand-dasch-yellow);  /* Warning */
-                --cds-support-04: var(--brand-dasch-primary); /* Info */
-                
+                --cds-support-01: var(--brand-dasch-red);
+                /* Error */
+                --cds-support-02: var(--brand-dasch-green);
+                /* Success */
+                --cds-support-03: var(--brand-dasch-yellow);
+                /* Warning */
+                --cds-support-04: var(--brand-dasch-primary);
+                /* Info */
+
                 /* Border colors */
-                --cds-border-subtle-01: var(--system-gray-20);
-                --cds-border-strong-01: var(--system-gray-30);
+                --cds-border-subtle: var(--system-gray-20);
+                /* #525252 */
+                --cds-border-strong: var(--system-gray-30);
                 --cds-border-inverse: var(--system-gray-80);
-                
+
                 /* UI Shell specific colors */
                 --cds-ui-background: var(--system-white);
                 --cds-ui-01: var(--system-gray-10);
@@ -158,31 +168,31 @@
                 --cds-ui-03: var(--system-gray-20);
                 --cds-ui-04: var(--system-gray-30);
                 --cds-ui-05: var(--system-gray-100);
-                
+
                 /* Header specific tokens */
                 --cds-header-01: var(--system-gray-100);
                 --cds-header-02: var(--system-gray-90);
                 --cds-header-03: var(--system-gray-80);
-                
+
                 /* Focus and active states */
                 --cds-focus: var(--brand-dasch-primary);
                 --cds-focus-inset: var(--system-white);
                 --cds-active-primary: var(--brand-dasch-tertiary);
                 --cds-active-secondary: var(--brand-dasch-secondary);
-                
+
                 /* Hover states */
                 --cds-hover-primary: var(--brand-dasch-secondary);
                 --cds-hover-secondary: var(--system-gray-15);
                 --cds-hover-tertiary: var(--system-gray-20);
                 --cds-hover-ui: var(--system-gray-15);
-                
+
                 /* Icon colors */
                 --cds-icon-primary: var(--text-primary);
                 --cds-icon-secondary: var(--text-secondary);
                 --cds-icon-on-color: var(--text-on-color);
                 --cds-icon-inverse: var(--system-white);
             }
-            
+
             /* Dark theme overrides */
             html.dark {
                 --cds-background: var(--bg-background);
@@ -194,7 +204,7 @@
                 --cds-interactive-01-hover: var(--brand-dasch-tertiary);
                 --cds-border-subtle-01: var(--system-gray-70);
                 --cds-border-strong-01: var(--system-gray-80);
-                
+
                 /* UI Shell dark theme */
                 --cds-ui-background: var(--system-gray-100);
                 --cds-ui-01: var(--system-gray-90);
@@ -202,22 +212,25 @@
                 --cds-ui-03: var(--system-gray-70);
                 --cds-ui-04: var(--system-gray-30);
                 --cds-ui-05: var(--system-gray-10);
-                
+
                 /* Header dark theme */
                 --cds-header-01: var(--system-gray-10);
                 --cds-header-02: var(--system-gray-20);
                 --cds-header-03: var(--system-gray-30);
-                
+
                 /* Hover states for dark theme */
                 --cds-hover-secondary: var(--system-gray-70);
                 --cds-hover-tertiary: var(--system-gray-75);
                 --cds-hover-ui: var(--system-gray-75);
-                
+
                 /* Icon colors for dark theme */
                 --cds-icon-primary: var(--text-primary);
                 --cds-icon-secondary: var(--text-secondary);
+
+                /* Border colors */
+                --cds-border-subtle: var(--system-gray-70);
             }
-            
+
             /* Direct component targeting for links */
             cds-link {
                 --cds-link-01: var(--brand-dasch-primary);
@@ -225,115 +238,92 @@
                 --cds-text-interactive: var(--brand-dasch-primary);
                 color: var(--brand-dasch-primary);
             }
-            
+
             cds-link:hover {
                 --cds-link-01: var(--brand-dasch-secondary);
                 color: var(--brand-dasch-secondary);
             }
-            
+
             /* Carbon UI Shell Header Components */
             cds-header {
                 --cds-ui-background: var(--system-white);
-                background-color: var(--cds-ui-background);
-                border-bottom: 1px solid var(--cds-border-subtle-01);
             }
-            
+
             cds-header-name {
                 --cds-text-01: var(--brand-dasch-primary);
                 --cds-link-01: var(--brand-dasch-primary);
-                color: var(--brand-dasch-primary);
-                font-weight: 600;
             }
-            
+
             cds-header-name:hover,
             cds-header-name:focus {
                 --cds-text-01: var(--brand-dasch-secondary);
                 --cds-link-01: var(--brand-dasch-secondary);
                 color: var(--brand-dasch-secondary);
             }
-            
+
             cds-header-nav-item {
                 --cds-text-02: var(--text-secondary);
                 --cds-link-01: var(--text-secondary);
-                color: var(--text-secondary);
             }
-            
+
             cds-header-nav-item:hover,
             cds-header-nav-item:focus {
                 --cds-text-01: var(--brand-dasch-primary);
                 --cds-link-01: var(--brand-dasch-primary);
-                color: var(--brand-dasch-primary);
-                background-color: var(--cds-hover-ui);
             }
-            
+
             cds-header-menu-item {
                 --cds-text-02: var(--text-secondary);
-                color: var(--text-secondary);
             }
-            
+
             cds-header-menu-item:hover,
             cds-header-menu-item:focus {
                 --cds-text-01: var(--brand-dasch-primary);
-                color: var(--brand-dasch-primary);
-                background-color: var(--cds-hover-ui);
             }
-            
+
             cds-header-global-action {
                 --cds-icon-01: var(--text-secondary);
-                color: var(--text-secondary);
             }
-            
+
             cds-header-global-action:hover,
             cds-header-global-action:focus {
                 --cds-icon-01: var(--brand-dasch-primary);
-                color: var(--brand-dasch-primary);
-                background-color: var(--cds-hover-ui);
             }
-            
+
             /* Keep theme toggle icon neutral */
             cds-header-global-action[aria-label="Toggle theme"] {
                 --cds-icon-01: var(--text-secondary);
-                color: var(--text-secondary);
             }
-            
+
             cds-header-global-action[aria-label="Toggle theme"]:hover,
             cds-header-global-action[aria-label="Toggle theme"]:focus {
                 --cds-icon-01: var(--text-secondary);
-                color: var(--text-secondary);
-                background-color: var(--cds-hover-ui);
             }
-            
+
             /* Dark theme for UI Shell */
             html.dark cds-header {
                 --cds-ui-background: var(--system-gray-100);
-                background-color: var(--cds-ui-background);
-                border-bottom: 1px solid var(--cds-border-subtle-01);
             }
-            
+
             html.dark cds-header-name {
                 --cds-text-01: var(--brand-dasch-secondary);
                 --cds-link-01: var(--brand-dasch-secondary);
-                color: var(--brand-dasch-secondary);
             }
-            
+
             html.dark cds-header-name:hover,
             html.dark cds-header-name:focus {
                 --cds-text-01: var(--brand-dasch-tertiary);
                 --cds-link-01: var(--brand-dasch-tertiary);
-                color: var(--brand-dasch-tertiary);
             }
-            
+
             /* Keep theme toggle icon neutral in dark theme */
             html.dark cds-header-global-action[aria-label="Toggle theme"] {
                 --cds-icon-01: var(--text-secondary);
-                color: var(--text-secondary);
             }
-            
+
             html.dark cds-header-global-action[aria-label="Toggle theme"]:hover,
             html.dark cds-header-global-action[aria-label="Toggle theme"]:focus {
                 --cds-icon-01: var(--text-secondary);
-                color: var(--text-secondary);
-                background-color: var(--cds-hover-ui);
             }
         }
 
@@ -550,5 +540,18 @@
             white-space: nowrap;
             width: 1px;
         }
+    }
+}
+
+@layer layout {
+    .dsp--layout__main_content {
+        padding: var(--spacing-05);
+        max-width: 1200px;
+        margin-inline: auto;
+        margin-block: var(--spacing-10) 0;
+    }
+
+    .dsp--layout__main_content--with-side-nav {
+        margin-inline-start: var(--spacing-15);
     }
 }

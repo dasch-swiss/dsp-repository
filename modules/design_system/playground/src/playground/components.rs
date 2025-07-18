@@ -60,7 +60,14 @@ const COMPONENTS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Shell",
         route_name: "shell",
-        variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
+        variants: &[
+            ComponentVariantSpec { name: "Header Only", value: "header-only", is_default: true },
+            ComponentVariantSpec {
+                name: "With Side Nav",
+                value: "with-side-nav",
+                is_default: false,
+            },
+        ],
         doc_file: "shell.md",
     },
     ComponentSpec {

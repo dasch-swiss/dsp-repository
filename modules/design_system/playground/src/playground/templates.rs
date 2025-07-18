@@ -4,12 +4,12 @@ use crate::playground::{components, docs_parser};
 
 /// Helper function to build component links preserving current state
 fn build_component_link(component_name: &str, current_params: &str) -> String {
-    // Parse current parameters
+    // Parse current parameters, only preserving theme
     let mut preserved_params = Vec::new();
 
     for param in current_params.split('&') {
         if let Some((key, value)) = param.split_once('=') {
-            if key != "component" {
+            if key == "theme" {
                 preserved_params.push(format!("{}={}", key, value));
             }
         }
@@ -93,7 +93,6 @@ pub fn render_component_controls(
     component_info: &components::ComponentInfo,
     current_variant: &str,
     current_theme: &str,
-    iframe_src: &str,
 ) -> Markup {
     html! {
         div class="playground-controls" {
@@ -115,7 +114,7 @@ pub fn render_component_controls(
                 }
             }
             div class="parameter-group" {
-                button class="open-in-new-tab-btn" onclick=(format!("window.open('{}', '_blank')", iframe_src)) title="Open component preview in new tab" {
+                button class="open-in-new-tab-btn" onclick="openComponentInNewTab()" title="Open component preview in new tab" {
                     "Open Component"
                 }
             }
@@ -173,20 +172,20 @@ mod tests {
     #[test]
     fn test_build_component_link_basic() {
         let result = build_component_link("banner", "component=button&theme=light&view=component");
-        assert_eq!(result, "/?component=banner&theme=light&view=component");
+        assert_eq!(result, "/?component=banner&theme=light");
     }
 
     #[test]
     fn test_build_component_link_with_variant() {
         let result = build_component_link("banner", "component=button&variant=primary&theme=light&view=component");
-        assert_eq!(result, "/?component=banner&variant=primary&theme=light&view=component");
+        assert_eq!(result, "/?component=banner&theme=light");
     }
 
     #[test]
     fn test_build_component_link_preserve_all_params() {
         let current_params = "component=button&variant=secondary&theme=dark&view=documentation";
         let result = build_component_link("tile", current_params);
-        assert_eq!(result, "/?component=tile&variant=secondary&theme=dark&view=documentation");
+        assert_eq!(result, "/?component=tile&theme=dark");
     }
 
     #[test]
@@ -205,7 +204,7 @@ mod tests {
     fn test_build_component_link_malformed_params() {
         // Test with malformed parameter (missing value)
         let result = build_component_link("banner", "component=button&theme=&view=component");
-        assert_eq!(result, "/?component=banner&theme=&view=component");
+        assert_eq!(result, "/?component=banner&theme=");
     }
 
     #[test]
@@ -219,14 +218,14 @@ mod tests {
     fn test_build_component_link_duplicate_non_component_params() {
         // Test with duplicate non-component parameters
         let result = build_component_link("banner", "component=button&theme=light&theme=dark&view=component");
-        assert_eq!(result, "/?component=banner&theme=light&theme=dark&view=component");
+        assert_eq!(result, "/?component=banner&theme=light&theme=dark");
     }
 
     #[test]
     fn test_build_component_link_component_param_not_first() {
         // Test when component is not the first parameter
         let result = build_component_link("banner", "theme=light&component=button&view=component");
-        assert_eq!(result, "/?component=banner&theme=light&view=component");
+        assert_eq!(result, "/?component=banner&theme=light");
     }
 
     #[test]
@@ -246,21 +245,21 @@ mod tests {
     fn test_build_component_link_no_component_in_current_params() {
         // Test when current params don't contain component parameter
         let result = build_component_link("banner", "theme=light&view=component");
-        assert_eq!(result, "/?component=banner&theme=light&view=component");
+        assert_eq!(result, "/?component=banner&theme=light");
     }
 
     #[test]
     fn test_build_component_link_multiple_equals_in_value() {
         // Test with parameter value containing equals signs
         let result = build_component_link("banner", "component=button&custom=value=with=equals&theme=light");
-        assert_eq!(result, "/?component=banner&custom=value=with=equals&theme=light");
+        assert_eq!(result, "/?component=banner&theme=light");
     }
 
     #[test]
     fn test_build_component_link_preserves_order() {
         // Test that parameter order is preserved (except component is first)
         let result = build_component_link("banner", "component=button&view=component&theme=light&variant=primary");
-        assert_eq!(result, "/?component=banner&view=component&theme=light&variant=primary");
+        assert_eq!(result, "/?component=banner&theme=light");
     }
 
     #[test]

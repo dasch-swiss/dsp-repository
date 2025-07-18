@@ -114,9 +114,37 @@ class PlaygroundController {
             this.updateParameter('view', tabName);
         }
     }
+
+    // Get current iframe URL with all parameters
+    getCurrentIframeUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const iframeUrl = new URL('/iframe', window.location.origin);
+
+        // Copy all parameters to iframe URL
+        for (const [key, value] of urlParams) {
+            iframeUrl.searchParams.set(key, value);
+        }
+
+        return iframeUrl.toString();
+    }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    new PlaygroundController();
-});
+// Initialize when DOM is ready, handling both cases where DOM is already loaded and not
+function initializePlayground() {
+    window.playgroundController = new PlaygroundController();
+}
+
+// Global function to open component in new tab with current parameters
+function openComponentInNewTab() {
+    if (window.playgroundController) {
+        const iframeUrl = window.playgroundController.getCurrentIframeUrl();
+        window.open(iframeUrl, '_blank');
+    }
+}
+
+// Initialize immediately if DOM is already loaded, otherwise wait for DOMContentLoaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializePlayground);
+} else {
+    initializePlayground();
+}

@@ -704,18 +704,156 @@ The first line is an optional prefix, the second line - which is of larger font 
 <p>Use links for navigation purposes. Use buttons for actions that trigger changes or submit data. Links should not be used for actions that modify state or submit forms.</p>
 <!-- TODO: what about button-styled links? -->
 <div style="break-before: page; page-break-before: always;"></div><h1 id="shell-1"><a class="header" href="#shell-1">Shell</a></h1>
-<p>Application shell component providing navigation and layout wrapper.</p>
+<p>Application shell component providing navigation and layout wrapper with configurable navigation elements.</p>
 <h2 id="usage-guidelines-3"><a class="header" href="#usage-guidelines-3">Usage Guidelines</a></h2>
 <p>Use the shell component as the main application wrapper. It provides consistent navigation, theme management, and layout structure across the application.</p>
-<h2 id="variants-3"><a class="header" href="#variants-3">Variants</a></h2>
-<h3 id="default-1"><a class="header" href="#default-1">Default</a></h3>
-<p>Complete application shell with navigation header, search functionality, and theme toggle.</p>
+<h2 id="api"><a class="header" href="#api">API</a></h2>
+<h3 id="shellheader_nav_elements-vecnavelement"><a class="header" href="#shellheader_nav_elements-vecnavelement"><code>shell(header_nav_elements: Vec&lt;NavElement&gt;)</code></a></h3>
+<p>Create a shell with header navigation using the builder pattern.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::shell::{shell, NavElement, NavItem, NavMenu, NavMenuItem};
+
+// Shell with header navigation only
+let header_nav = vec![
+    NavElement::Item(NavItem { label: "Home", href: "/" }),
+    NavElement::Item(NavItem { label: "Projects", href: "/projects" }),
+    NavElement::Menu(NavMenu {
+        label: "Resources",
+        items: vec![
+            NavMenuItem { label: "Documentation", href: "/docs" },
+            NavMenuItem { label: "Tutorials", href: "/tutorials" },
+        ],
+    }),
+];
+
+let shell_markup = shell(header_nav).build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="with_side_navside_nav_elements-vecnavelement"><a class="header" href="#with_side_navside_nav_elements-vecnavelement"><code>with_side_nav(side_nav_elements: Vec&lt;NavElement&gt;)</code></a></h3>
+<p>Optionally add side navigation to the shell.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let side_nav = vec![
+    NavElement::Item(NavItem { label: "Dashboard", href: "/dashboard" }),
+    NavElement::Menu(NavMenu {
+        label: "My Work",
+        items: vec![
+            NavMenuItem { label: "Active Projects", href: "/work/active" },
+            NavMenuItem { label: "Drafts", href: "/work/drafts" },
+        ],
+    }),
+];
+
+let shell_markup = shell(header_nav)
+    .with_side_nav(side_nav)
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="with_contentcontent-markup"><a class="header" href="#with_contentcontent-markup"><code>with_content(content: Markup)</code></a></h3>
+<p>Add content to the shell's main content area.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use maud::html;
+
+let content = html! {
+    div style="padding: 2rem;" {
+        h1 { "Welcome to the Application" }
+        p { "This is the main content area of the shell." }
+    }
+};
+
+let shell_markup = shell(header_nav)
+    .with_content(content)
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="complete-example"><a class="header" href="#complete-example">Complete Example</a></h3>
+<p>Full shell configuration with navigation and content:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::shell::{shell, NavElement, NavItem, NavMenu, NavMenuItem};
+use maud::html;
+
+let header_nav = vec![
+    NavElement::Item(NavItem { label: "Home", href: "/" }),
+    NavElement::Item(NavItem { label: "Projects", href: "/projects" }),
+    NavElement::Menu(NavMenu {
+        label: "Resources",
+        items: vec![
+            NavMenuItem { label: "Documentation", href: "/docs" },
+            NavMenuItem { label: "API Reference", href: "/api" },
+        ],
+    }),
+];
+
+let side_nav = vec![
+    NavElement::Item(NavItem { label: "Dashboard", href: "/dashboard" }),
+    NavElement::Menu(NavMenu {
+        label: "My Work",
+        items: vec![
+            NavMenuItem { label: "Active Projects", href: "/work/active" },
+            NavMenuItem { label: "Drafts", href: "/work/drafts" },
+        ],
+    }),
+];
+
+let content = html! {
+    div style="padding: 2rem; max-width: 1200px; margin: 0 auto;" {
+        h1 { "Application Dashboard" }
+        p { "Welcome to your personalized dashboard." }
+        
+        div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 2rem;" {
+            div style="padding: 1rem; background: var(--cds-background-hover); border-radius: 4px;" {
+                h3 { "Recent Activity" }
+                p { "Your latest updates and changes." }
+            }
+            div style="padding: 1rem; background: var(--cds-background-hover); border-radius: 4px;" {
+                h3 { "Quick Actions" }
+                p { "Frequently used tools and shortcuts." }
+            }
+        }
+    }
+};
+
+let shell_markup = shell(header_nav)
+    .with_side_nav(side_nav)
+    .with_content(content)
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h2 id="builder-pattern"><a class="header" href="#builder-pattern">Builder Pattern</a></h2>
+<p>The shell uses a builder pattern for clean and flexible configuration:</p>
+<ul>
+<li><strong>Required</strong>: Header navigation elements must be provided</li>
+<li><strong>Optional</strong>: Side navigation can be added with <code>with_side_nav()</code></li>
+<li><strong>Optional</strong>: Content can be added with <code>with_content()</code></li>
+<li><strong>Fluent API</strong>: Method chaining for readable configuration</li>
+<li><strong>Type Safety</strong>: Cannot create shell without header navigation</li>
+</ul>
+<h2 id="navigation-structure"><a class="header" href="#navigation-structure">Navigation Structure</a></h2>
+<p>The shell supports flexible navigation with two types of elements:</p>
+<h3 id="navigation-items"><a class="header" href="#navigation-items">Navigation Items</a></h3>
+<p>Single navigation links that appear in both header and side navigation.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>NavElement::Item(NavItem { label: "Home", href: "/" })
+<span class="boring">}</span></code></pre></pre>
+<h3 id="navigation-menus"><a class="header" href="#navigation-menus">Navigation Menus</a></h3>
+<p>Dropdown menus with multiple items that appear as dropdowns in header navigation and expandable menus in side navigation.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>NavElement::Menu(NavMenu {
+    label: "Resources",
+    items: vec![
+        NavMenuItem { label: "Documentation", href: "/docs" },
+        NavMenuItem { label: "API Reference", href: "/api" },
+    ],
+})
+<span class="boring">}</span></code></pre></pre>
 <h2 id="features"><a class="header" href="#features">Features</a></h2>
 <ul>
-<li><strong>Responsive Navigation</strong>: Adapts to different screen sizes</li>
+<li><strong>Configurable Navigation</strong>: Support for both navigation items and dropdown menus</li>
+<li><strong>Responsive Design</strong>: Adapts to different screen sizes with collapsible side navigation</li>
 <li><strong>Search Functionality</strong>: Integrated search with accessibility features</li>
 <li><strong>Theme Toggle</strong>: Light/dark theme switching with persistence</li>
-<li><strong>Side Navigation</strong>: Collapsible sidebar navigation</li>
+<li><strong>Static Branding</strong>: DaSCH Service Platform branding remains consistent</li>
 <li><strong>Accessible ARIA Labels</strong>: Full accessibility support</li>
 </ul>
 <h2 id="accessibility-notes-3"><a class="header" href="#accessibility-notes-3">Accessibility Notes</a></h2>
@@ -725,16 +863,18 @@ The first line is an optional prefix, the second line - which is of larger font 
 <li>Screen reader optimized structure</li>
 <li>Focus management for modal states</li>
 <li>High contrast theme support</li>
+<li>Semantic navigation structure</li>
 </ul>
 <h2 id="implementation-status-3"><a class="header" href="#implementation-status-3">Implementation Status</a></h2>
-<p>✅ Fully functional with advanced features</p>
+<p>✅ Fully functional with configurable navigation</p>
 <h2 id="design-notes-3"><a class="header" href="#design-notes-3">Design Notes</a></h2>
 <p>Currently implemented using Carbon Web Components via CDN. Provides advanced features including responsive navigation, search functionality, and theme management. The shell serves as the primary application wrapper and maintains consistent layout across different pages.</p>
+<p>Navigation content is now configurable while maintaining static branding elements and core functionality.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tag-1"><a class="header" href="#tag-1">Tag</a></h1>
 <p>Tag component with different color variants for categorization and labeling.</p>
 <h2 id="usage-guidelines-4"><a class="header" href="#usage-guidelines-4">Usage Guidelines</a></h2>
 <p>Use tags to categorize content, show status, or provide quick visual identification. Choose colors that align with your content's meaning and maintain consistency across the application.</p>
-<h2 id="variants-4"><a class="header" href="#variants-4">Variants</a></h2>
+<h2 id="variants-3"><a class="header" href="#variants-3">Variants</a></h2>
 <h3 id="gray"><a class="header" href="#gray">Gray</a></h3>
 <p>Default neutral tag for general categorization and labeling.</p>
 <h3 id="blue"><a class="header" href="#blue">Blue</a></h3>
@@ -756,7 +896,7 @@ The first line is an optional prefix, the second line - which is of larger font 
 <p>Tile component with base and clickable variants for content containers.</p>
 <h2 id="usage-guidelines-5"><a class="header" href="#usage-guidelines-5">Usage Guidelines</a></h2>
 <p>Use tiles to group related content in a visually distinct container. Choose the clickable variant when the entire tile should be interactive.</p>
-<h2 id="variants-5"><a class="header" href="#variants-5">Variants</a></h2>
+<h2 id="variants-4"><a class="header" href="#variants-4">Variants</a></h2>
 <h3 id="base"><a class="header" href="#base">Base</a></h3>
 <p>Static content container for displaying information without interaction.</p>
 <h3 id="clickable"><a class="header" href="#clickable">Clickable</a></h3>

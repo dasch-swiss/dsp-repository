@@ -247,6 +247,8 @@ and then rebased onto the main branch before being merged.</p>
 <p>This repository contains the source code for the DSP Repository.
 It is structured as a Rust workspace, with multiple crates.</p>
 <p>All Rust crates are organized as subdirectories within the <code>modules/</code> directory.</p>
+<p>Additionally, any non-Rust code or assets are placed either in the <code>assets/</code> directory
+or as a separate module within the <code>modules/</code> directory.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="project-structure"><a class="header" href="#project-structure">Project Structure</a></h1>
 <blockquote>
 <p>[!WARNING]<br />
@@ -912,6 +914,73 @@ let shell_markup = shell(header_nav)
 <p>🚧 Functional but incomplete - styling verification needed, missing accessibility features</p>
 <h2 id="design-notes-5"><a class="header" href="#design-notes-5">Design Notes</a></h2>
 <p>The tile component serves as a content container accepting arbitrary Markup. Custom test IDs are supported for testing. The clickable variant includes proper interaction states and accessibility features.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="web-components-overview"><a class="header" href="#web-components-overview">Web Components Overview</a></h1>
+<p>DaSCH publishes a small number of purpose-built web components.
+These components are intended for external use, allowing developers to integrate them into their own applications.</p>
+<p>We do not publish our design system components as web components.</p>
+<p>Web components are organized by functionality in the <code>web_components/</code> directory.</p>
+<h2 id="web-components"><a class="header" href="#web-components">Web Components</a></h2>
+<p><code>attribution</code>:<br />
+A badge component that external data providers can use to attribute their data if it is hosted on DaSCH.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="attribution-badge"><a class="header" href="#attribution-badge">Attribution Badge</a></h1>
+<p>The Attribution Badge is a web component that marks data as being archived at DaSCH.
+We kindly ask data providers or project specific websites to use this badge to attribute their data,
+if large amounts of data are served from DaSCH.<br />
+We do not expect this badge to be used for small amounts of data, such as single resources.</p>
+<h2 id="badges"><a class="header" href="#badges">Badges</a></h2>
+<p>The badge comes in two variants, a small "tag-like" variant and a larger "card-like" variant.
+The card-like variant has a light and a dark theme.</p>
+<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
+<p>Currently, the web commponents are not published to a package registry.
+When published, they can be used by importing the them as a JavaScript module.</p>
+<h3 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h3>
+<p>To display the badge, you can use the following HTML:</p>
+<p>For the small variant:</p>
+<pre><code class="language-html">&lt;dsp-attribution-badge&gt;&lt;/dsp-attribution-badge&gt;
+</code></pre>
+<p>For the large variant:</p>
+<pre><code class="language-html">&lt;dasch-data-attribution-card&gt;&lt;/dasch-data-attribution-card&gt;
+</code></pre>
+<h3 id="data-attributes"><a class="header" href="#data-attributes">Data Attributes</a></h3>
+<h4 id="permalink"><a class="header" href="#permalink"><code>permalink</code></a></h4>
+<p>Both badge and card components support a <code>permalink</code> attribute that allows customizing the URL they link to.
+When no permalink is provided, components default to linking to <code>https://www.dasch.swiss/</code>.
+This attribute is useful for linking directly to specific datasets or projects archived at DaSCH.</p>
+<pre><code class="language-html">&lt;dasch-data-attribution-badge permalink="https://ark.dasch.swiss/ark:/72163/1/0000/xyz"&gt;&lt;/dasch-data-attribution-badge&gt;
+&lt;dasch-data-attribution-card permalink="https://ark.dasch.swiss/ark:/72163/1/0000/xyz"&gt;&lt;/dasch-data-attribution-card&gt;
+</code></pre>
+<h4 id="theme"><a class="header" href="#theme"><code>theme</code></a></h4>
+<p>The card component supports a <code>theme</code> attribute with two values: <code>"light"</code> (default) and <code>"dark"</code>.
+This allows the component to adapt to different design contexts. The badge component does not support theming.</p>
+<pre><code class="language-html">&lt;dasch-data-attribution-card theme="light"&gt;&lt;/dasch-data-attribution-card&gt;
+&lt;dasch-data-attribution-card theme="dark"&gt;&lt;/dasch-data-attribution-card&gt;
+</code></pre>
+<p>While any link may work, we strongly recommend using a permalink (ARK URL) as provided by DaSCH.
+This ensures that the link remains stable and persistent over time.</p>
+<h3 id="style-customization"><a class="header" href="#style-customization">Style Customization</a></h3>
+<p>The components expose CSS custom properties (CSS variables) that can be customized to inject colors into the components.</p>
+<p>We recommend not to make use of this, unless you have a specific need to adapt the colors,
+e.g. for accessibility reasons.</p>
+<h4 id="badge-component"><a class="header" href="#badge-component">Badge Component</a></h4>
+<pre><code class="language-css">dasch-data-attribution-badge {
+  --dasch-attribution-primary: hsl(206 48% 38%);    /* Badge background color */
+  --dasch-attribution-text: hsl(0, 0.00%, 90.30%); /* Text color */
+}
+</code></pre>
+<h4 id="card-component"><a class="header" href="#card-component">Card Component</a></h4>
+<pre><code class="language-css">dasch-data-attribution-card {
+  --dasch-attribution-primary: hsl(206 48% 38%);      /* Primary accent color */
+  --dasch-attribution-secondary: hsl(210 49% 63%);    /* Secondary accent color */
+  --dasch-attribution-bg-light: hsl(0, 0.00%, 96.30%); /* Light theme background */
+  --dasch-attribution-bg-dark: hsl(0, 0.00%, 9.20%);   /* Dark theme background */
+  --dasch-attribution-text-light: hsl(0, 0.00%, 90.30%); /* Light theme text */
+  --dasch-attribution-text-dark: hsl(0, 0.00%, 15.20%);  /* Dark theme text */
+}
+</code></pre>
+<h2 id="demo"><a class="header" href="#demo">Demo</a></h2>
+<p>An interactive demo is available at <code>modules/webcomponents/attribution/demo.html</code>.
+The demo showcases both components with various configuration options
+including different themes, custom permalinks, and styling examples.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="discovery-design-and-development-process"><a class="header" href="#discovery-design-and-development-process">Discovery, Design and Development Process</a></h1>
 <p>Any work on the DSP Repository is done in collaboration between
 Management, Product Management (PM), the Research Data Unit (RDU) and Development (Dev).

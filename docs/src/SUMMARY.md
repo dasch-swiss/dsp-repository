@@ -10,7 +10,11 @@
 - [Project Structure and Code Organization](./repo_structure.md)
 - [Release, Deployment and Versioning]()
 
-# System Architecture
+---
+
+# Modules
+
+# DPE
 
 - [Discovery and Presentation Environment]()
   - [Project Structure](./dpe/project_structure.md)
@@ -26,6 +30,13 @@
   - [Shell](./design_system/components/shell.md)
   - [Tag](./design_system/components/tag.md)
   - [Tile](./design_system/components/tile.md)
+
+# Web Components
+
+- [Web Components Overview](./web_components/overview.md)
+  - [Attribution Badge](./web_components/attribution_badge.md)
+
+---
 
 # Fundamentals
 

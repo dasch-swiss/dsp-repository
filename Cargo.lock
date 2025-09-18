@@ -279,6 +279,7 @@ dependencies = [
 name = "components"
 version = "0.1.0"
 dependencies = [
+ "askama",
  "async-stream",
  "axum",
  "axum-macros",

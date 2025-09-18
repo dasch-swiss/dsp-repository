@@ -1,6 +1,6 @@
 use components::button::{self, ButtonVariant};
 use components::tag::{self, TagVariant};
-use components::{banner, link, shell, tile};
+use components::{banner, link, shell, tailwind_askama_experiment, tailwind_experiment, tile};
 use maud::{html, Markup};
 
 use crate::playground::error::{PlaygroundError, PlaygroundResult};
@@ -247,6 +247,42 @@ impl ComponentRenderer for TileRenderer {
     }
 }
 
+/// TailwindExperiment component renderer
+pub struct TailwindExperimentRenderer;
+
+impl ComponentRenderer for TailwindExperimentRenderer {
+    fn render_variant(&self, _variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
+        let markup = tailwind_experiment::tailwind_experiment();
+        Ok(markup)
+    }
+
+    fn default_variant(&self) -> &'static str {
+        "default"
+    }
+
+    fn supported_variants(&self) -> Vec<&'static str> {
+        vec!["default"]
+    }
+}
+
+/// TailwindAskamaExperiment component renderer
+pub struct TailwindAskamaExperimentRenderer;
+
+impl ComponentRenderer for TailwindAskamaExperimentRenderer {
+    fn render_variant(&self, _variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
+        let markup = tailwind_askama_experiment::tailwind_askama_experiment();
+        Ok(markup)
+    }
+
+    fn default_variant(&self) -> &'static str {
+        "default"
+    }
+
+    fn supported_variants(&self) -> Vec<&'static str> {
+        vec!["default"]
+    }
+}
+
 /// Registry for all component renderers
 pub struct ComponentRendererRegistry;
 
@@ -258,6 +294,8 @@ impl ComponentRendererRegistry {
             "link" => Some(Box::new(LinkRenderer)),
             "shell" => Some(Box::new(ShellRenderer)),
             "tag" => Some(Box::new(TagRenderer)),
+            "tailwind-experiment" => Some(Box::new(TailwindExperimentRenderer)),
+            "tailwind-askama-experiment" => Some(Box::new(TailwindAskamaExperimentRenderer)),
             "tile" => Some(Box::new(TileRenderer)),
             _ => None,
         }

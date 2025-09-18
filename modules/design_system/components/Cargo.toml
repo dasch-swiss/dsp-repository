@@ -11,6 +11,7 @@ description.workspace = true
 authors.workspace = true
 
 [dependencies]
+askama.workspace = true
 async-stream.workspace = true
 axum.workspace = true
 axum-macros.workspace = true

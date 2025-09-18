@@ -89,6 +89,18 @@ const COMPONENTS: &[ComponentSpec] = &[
         ],
         doc_file: "tile.md",
     },
+    ComponentSpec {
+        name: "TailwindExperiment",
+        route_name: "tailwind-experiment",
+        variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
+        doc_file: "tailwind_experiment.md",
+    },
+    ComponentSpec {
+        name: "TailwindAskamaExperiment",
+        route_name: "tailwind-askama-experiment",
+        variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
+        doc_file: "tailwind_askama_experiment.md",
+    },
 ];
 
 impl ComponentInfo {

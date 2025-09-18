@@ -38,3 +38,5 @@ playwright-report-visual/
 
 modules/design_system/playground/test-results.json
 modules/design_system/playground/test-results-visual.json
+
+.DS_Store

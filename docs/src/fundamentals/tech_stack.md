@@ -6,7 +6,7 @@
 - **Axum** - HTTP web framework with WebSocket support
 - **Maud** - Macro-based templating engine (JSX-like syntax)
 - **DataStar** - Hypermedia-driven frontend interactivity
-- **Carbon Web Components** - Design system components via CDN integration
+- **Tailwind Plus** - Design system foundation with utility-first CSS approach
 - **Database TBD** - Currently using static JSON files
 
 ## Development & Testing

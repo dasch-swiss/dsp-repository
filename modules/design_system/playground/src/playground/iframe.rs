@@ -21,6 +21,7 @@ pub async fn iframe_component(Query(params): Query<PlaygroundParams>) -> Result<
 
     let theme = format!("{}", playground_params.theme);
     let content = render_iframe_content(component_markup);
+    // TODO: Build stripped tailwind CSS
     let html_markup = render_page_shell(&theme, "Component Preview", "/assets/css/styles.css", content);
 
     Ok(html_markup)

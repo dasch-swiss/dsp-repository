@@ -72,6 +72,6 @@ pub fn page_header(title: impl Into<String>, actions: Markup) -> Markup {
 3. Use `impl Into<String>` for text inputs
 4. Test composition in playground
 
-## Temporary Carbon Web Components Usage
+## Migration to Tailwind Plus
 
-**Note**: Some components currently use Carbon Design System web components via CDN with wrapper functions as a temporary solution. This approach uses `PreEscaped` HTML with conditional script loading for rapid development. These will be replaced with native Maud implementations following the architecture above as the design system matures.
+**Note**: Some components are currently in transition from web component implementations to native Maud components using Tailwind Plus for styling. This migration provides better performance, type safety, and maintainability while leveraging Tailwind's utility-first approach for consistent styling across the design system.

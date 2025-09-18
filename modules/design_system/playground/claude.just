@@ -1,6 +1,10 @@
 # Claude Code Automation Commands
 # Non-blocking commands designed for automated use
 
+# Show all available commands
+default:
+    @just --list
+
 # Run all tests and show all failures
 test:
     npm run test -- --reporter=list 2>/dev/null

@@ -14,13 +14,16 @@ Live development environment for testing and developing design system components
 
 ## Development Workflow
 
-- **Start Server**: `just run-watch-playground`
+- **Server Management**:
+  - **Always assume the playground is already running** at http://localhost:3400
+  - Only start the server if it's not responding or you get connection errors
+  - If you must start the server, in the project root, use `just run-playground-background` (non-blocking background task)
+  - **Never stop a server you didn't start yourself** - use `just stop-playground` only if you started it
 - **Visual Testing**: Use WebFetch tool to view rendered components at `http://localhost:3400/[component]` while developing
 - **Page Structure**: Each component gets its own dedicated route/page for testing
 - **Component Routes**:
   - `/` - Home page with component list
   - `/button` - Button component examples
-  - `/banner` - Banner component examples
   - `/shell` - Shell component examples
 
 ## Visual Testing Notes

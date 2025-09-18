@@ -36,8 +36,11 @@ pub fn render_page_shell(theme: &str, title: &str, css_path: &str, content: Mark
                 meta name="viewport" content="width=device-width, initial-scale=1.0";
                 title { (title) }
                 link rel="stylesheet" href=(css_path);
+                script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" {}
+                script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module" {}
             }
             body { (content) }
+            // body class="theme-text-primary theme-bg-primary m-0 p-0 h-screen overflow-hidden" { (content) }
         }
     }
 }
@@ -54,13 +57,13 @@ pub fn render_iframe_content(component_markup: Markup) -> Markup {
 /// Template for error display
 pub fn render_error_content(error_message: &str) -> Markup {
     html! {
-        div .error-container {
-            div .error-message {
-                h3 { "Error" }
-                p { (error_message) }
+        div class="flex flex-col items-center justify-center min-h-48 p-6 text-center" {
+            div class="theme-warning-bg border theme-warning-border rounded-lg p-6 mb-4 max-w-md" {
+                h3 class="m-0 mb-4 theme-warning-text text-xl" { "Error" }
+                p class="m-0 theme-warning-text leading-relaxed" { (error_message) }
             }
-            div .error-actions {
-                a href="/" target="_parent" { "← Back to Playground" }
+            div {
+                a href="/" target="_parent" class="inline-block px-4 py-2 theme-accent-primary text-white no-underline rounded text-sm font-medium transition-colors duration-200 theme-accent-hover" { "← Back to Playground" }
             }
         }
     }
@@ -72,7 +75,7 @@ pub fn render_documentation_section(component_name: &str) -> Markup {
     if let Some(spec) = components::get_component_spec_by_route_name(component_name) {
         if let Ok(doc) = docs_parser::load_component_documentation(spec) {
             return html! {
-                div class="documentation-content" {
+                div class="flex-1 px-8 py-4 overflow-y-auto documentation-content theme-bg-primary" {
                     (maud::PreEscaped(doc.content_html))
                 }
             };
@@ -81,9 +84,9 @@ pub fn render_documentation_section(component_name: &str) -> Markup {
 
     // Fallback to basic documentation
     html! {
-        div class="documentation-content" {
-            h3 { (component_name) " Documentation" }
-            p { em { "Detailed documentation coming soon..." } }
+        div class="flex-1 px-8 py-4 overflow-y-auto max-w-3xl mx-auto theme-bg-primary" {
+            h3 class="text-xl font-medium mb-3 theme-text-primary" { (component_name) " Documentation" }
+            p { em class="italic theme-text-secondary" { "Detailed documentation coming soon..." } }
         }
     }
 }
@@ -95,10 +98,10 @@ pub fn render_component_controls(
     current_theme: &str,
 ) -> Markup {
     html! {
-        div class="playground-controls" {
-            div class="parameter-group" {
-                label for="variant-select" { "Variant:" }
-                select id="variant-select" data-param="variant" {
+        div class="flex gap-4 p-3 border-b theme-border-subtle theme-bg-primary" {
+            div class="flex items-center gap-2" {
+                label for="variant-select" class="text-sm theme-text-secondary whitespace-nowrap" { "Variant:" }
+                select id="variant-select" data-param="variant" class="px-2 py-1 border theme-border-subtle rounded theme-bg-primary theme-text-primary text-sm" {
                     @for variant in &component_info.variants {
                         option value=(variant.value) selected[variant.value == current_variant] {
                             (variant.name)
@@ -106,16 +109,16 @@ pub fn render_component_controls(
                     }
                 }
             }
-            div class="parameter-group" {
-                label for="theme-select" { "Theme:" }
-                select id="theme-select" data-param="theme" {
+            div class="flex items-center gap-2" {
+                label for="theme-select" class="text-sm theme-text-secondary whitespace-nowrap" { "Theme:" }
+                select id="theme-select" data-param="theme" class="px-2 py-1 border theme-border-subtle rounded theme-bg-primary theme-text-primary text-sm" {
                     option value="light" selected[current_theme == "light"] { "Light" }
                     option value="dark" selected[current_theme == "dark"] { "Dark" }
                 }
             }
-            div class="parameter-group" {
-                button class="open-in-new-tab-btn" onclick="openComponentInNewTab()" title="Open component preview in new tab" {
-                    "Open Component"
+            div class="flex items-center ml-auto" {
+                button class="flex items-center gap-2 px-4 py-2 theme-accent-primary theme-accent-hover text-white border-none rounded cursor-pointer text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2" onclick="openComponentInNewTab()" title="Open component preview in new tab" {
+                    "Open Component ↗"
                 }
             }
         }
@@ -129,13 +132,18 @@ pub fn render_component_sidebar(
     current_params: &str,
 ) -> Markup {
     html! {
-        nav class="playground-sidebar" {
-            h2 { "Components" }
-            ul class="component-list" {
+        nav class="theme-bg-primary border-r theme-border-subtle p-4 overflow-y-auto" {
+            h2 class="text-lg font-normal mb-3 theme-text-primary" { "Components" }
+            ul class="list-none" {
                 @for component in components {
-                    li {
+                    li class="mb-1" {
                         a href=(build_component_link(&component.route_name, current_params))
-                          class=(format!("component-link{}", if component.route_name == current_component { " active" } else { "" })) {
+                          class=(format!("block px-3 py-2 rounded text-sm no-underline transition-all duration-200 {}",
+                            if component.route_name == current_component {
+                                "theme-accent-primary text-white"
+                            } else {
+                                "theme-text-secondary hover:theme-bg-secondary hover:theme-text-primary"
+                            })) {
                             (component.name)
                         }
                     }
@@ -152,14 +160,26 @@ pub fn render_component_tabs(
     current_view: &str,
 ) -> Markup {
     html! {
-        div class="playground-tabs" {
-            button class="tab-button" class=(if current_view == "component" { "active" } else { "" }) data-tab="component" { "Component" }
-            button class="tab-button" class=(if current_view == "documentation" { "active" } else { "" }) data-tab="documentation" { "Documentation" }
+        div class="flex border-b theme-border-subtle theme-bg-primary" {
+            button data-tab-button data-tab="component" class=(format!("bg-none border-none px-4 py-3 cursor-pointer border-b-2 transition-all duration-200 {}",
+                if current_view == "component" {
+                    "tab-button-active"
+                } else {
+                    "tab-button-inactive"
+                })) { "Component" }
+            button data-tab-button data-tab="documentation" class=(format!("bg-none border-none px-4 py-3 cursor-pointer border-b-2 transition-all duration-200 {}",
+                if current_view == "documentation" {
+                    "tab-button-active"
+                } else {
+                    "tab-button-inactive"
+                })) { "Documentation" }
         }
-        div class="tab-content" class=(if current_view == "component" { "active" } else { "" }) id="component-tab" {
-            iframe id="component-iframe" src=(iframe_src) {}
+        div data-tab-content data-panel="component" class=(format!("flex-1 overflow-hidden {}",
+            if current_view == "component" { "flex flex-col" } else { "hidden" })) id="component-tab" {
+            iframe id="component-iframe" src=(iframe_src) class="flex-1 border-none w-full h-full theme-bg-primary" {}
         }
-        div class="tab-content" class=(if current_view == "documentation" { "active" } else { "" }) id="documentation-tab" {
+        div data-tab-content data-panel="documentation" class=(format!("flex-1 overflow-hidden theme-bg-primary {}",
+            if current_view == "documentation" { "flex flex-col" } else { "hidden" })) id="documentation-tab" {
             (render_documentation_section(&component_info.route_name))
         }
     }

@@ -31,19 +31,5 @@ test.describe('Design System Components - Visual Regression Tests', () => {
     await expect(page.locator('.playground-section').first()).toHaveScreenshot(
       'button-component.png'
     );
-
-    // Banner component
-    await page.goto('/banner');
-    await waitForFontsLoaded();
-    await expect(page.locator('.playground-section').first()).toHaveScreenshot(
-      'banner-component.png'
-    );
-
-    // Tile component
-    await page.goto('/tile');
-    await waitForFontsLoaded();
-    await expect(page.locator('.playground-section').first()).toHaveScreenshot(
-      'tile-component.png'
-    );
   });
 });

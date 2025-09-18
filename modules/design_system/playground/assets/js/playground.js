@@ -9,8 +9,8 @@ class PlaygroundController {
         this.variantSelect = document.getElementById('variant-select');
         this.themeSelect = document.getElementById('theme-select');
         this.iframe = document.getElementById('component-iframe');
-        this.tabButtons = document.querySelectorAll('.tab-button');
-        this.tabContents = document.querySelectorAll('.tab-content');
+        this.tabButtons = document.querySelectorAll('[data-tab-button]');
+        this.tabContents = document.querySelectorAll('[data-tab-content]');
     }
 
     bindEvents() {
@@ -91,21 +91,25 @@ class PlaygroundController {
     }
 
     switchTab(tabName, updateURL = true) {
-        // Update tab buttons
+        // Update tab button styling with semantic classes
         this.tabButtons.forEach(button => {
             if (button.dataset.tab === tabName) {
-                button.classList.add('active');
+                button.classList.remove('tab-button-inactive');
+                button.classList.add('tab-button-active');
             } else {
-                button.classList.remove('active');
+                button.classList.remove('tab-button-active');
+                button.classList.add('tab-button-inactive');
             }
         });
 
-        // Update tab contents
+        // Update tab contents - show the selected tab, hide others
         this.tabContents.forEach(content => {
-            if (content.id === `${tabName}-tab`) {
-                content.classList.add('active');
+            if (content.dataset.panel === tabName) {
+                content.classList.remove('hidden');
+                content.classList.add('flex', 'flex-col');
             } else {
-                content.classList.remove('active');
+                content.classList.add('hidden');
+                content.classList.remove('flex', 'flex-col');
             }
         });
 

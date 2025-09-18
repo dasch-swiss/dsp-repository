@@ -2,24 +2,21 @@
 
 ## Introduction
 
-The DSP Design System is a customization of the [IBM Carbon Design System](https://carbondesignsystem.com/). 
-It follows Carbon in terms of design language and implementation. 
-It is customized in the following ways:
+The DSP Design System is built with Tailwind Plus as the foundation, providing a modern, utility-first approach to component design and styling.
+
+The system is designed with the following principles:
 
 - It is not a general purpose design system, but a purpose-built system. As such, it is much smaller and less complex.
-- It is not generic or customizeable, instead the DSP brand is baked into it, thus simplifying complexity if use.
+- It is not generic or customizable, instead the DSP brand is baked into it, thus simplifying complexity of use.
 - It is purposefully kept small:
-  - It comes with two themes (dark and light, corresponding to "gray-90" and "gray-10" in Carbon) 
-    and no option for custom theming.
-  - The set of available styles (colors, typography, spacing, etc.) 
+  - It comes with two themes (dark and light) with no option for custom theming.
+  - The set of available styles (colors, typography, spacing, etc.)
     is kept intentionally small to promote consistent user interfaces.
   - It only has the components that are strictly needed.
     Additional components may be added, when necessary.
-  - It only has the component variants that are strictly needed. 
+  - It only has the component variants that are strictly needed.
     Additional component variants may be added, when necessary.
-- It may have purpose-specific components. 
-  (E.g. Carbon does not provide a "Card" component, but rather a "Tile" component, from which cards can be built. 
-  The DSP Design System instead would provide a "Card" component.)
+- It may have purpose-specific components tailored to the DSP platform's unique requirements.
 
 
 # Current Implementation Status
@@ -41,28 +38,16 @@ The DSP Design System is currently in early development with the following compo
 - **Features**: Semantic HTML with proper structure, configurable text sections with accent styling
 
 ### Shell
-- **Implementation**: Carbon Web Components (CDN-based)
+- **Implementation**: Transitioning from web components to Tailwind Plus
 - **Purpose**: Application navigation and layout wrapper
 - **Status**: ✅ Fully functional with advanced features
 - **Features**: Responsive navigation header, search functionality, theme toggle with persistence, side navigation, accessible ARIA labels
 
 ### Tile
-- **Implementation**: Native Maud
+- **Implementation**: Native Maud with Tailwind Plus styling
 - **Variants**: Base, Clickable
 - **Status**: 🚧 Functional but incomplete (styling verification needed, missing accessibility features)
 - **Features**: Content containers accepting arbitrary Markup, custom test IDs
-
-### Link
-- **Implementation**: Carbon Web Components (CDN-based)
-- **Purpose**: Navigation and external links
-- **Status**: ✅ Functional (temporary implementation)
-- **Features**: Carbon-styled links with brand colors and hover states
-
-### Tag
-- **Implementation**: Carbon Web Components (CDN-based)
-- **Variants**: Gray, Blue, Green
-- **Status**: 🚧 Functional but incomplete (missing variants and attributes)
-- **Features**: Colored labels with brand-aligned styling, dynamic script loading
 
 ## Development Environment
 

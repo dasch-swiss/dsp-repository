@@ -21,9 +21,9 @@ struct ShellData<'a> {
 fn render_shell_content(data: &ShellData) -> Markup {
     let iframe_src = format!("/iframe?{}", data.current_params);
     html! {
-        div class="playground-layout" {
+        div class="grid grid-cols-[250px_1fr] h-screen" {
             (render_component_sidebar(data.components, data.current_component, data.current_params))
-            main class="playground-main" {
+            main class="flex flex-col h-screen" {
                 (render_component_controls(data.current_component_info, data.current_variant, data.current_theme))
                 (render_component_tabs(&iframe_src, data.current_component_info, data.current_view))
             }

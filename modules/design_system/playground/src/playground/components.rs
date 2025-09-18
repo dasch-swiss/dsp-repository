@@ -41,17 +41,6 @@ const COMPONENTS: &[ComponentSpec] = &[
         doc_file: "button.md",
     },
     ComponentSpec {
-        name: "Banner",
-        route_name: "banner",
-        variants: &[
-            ComponentVariantSpec { name: "Accent Only", value: "accent_only", is_default: true },
-            ComponentVariantSpec { name: "With Prefix", value: "with_prefix", is_default: false },
-            ComponentVariantSpec { name: "With Suffix", value: "with_suffix", is_default: false },
-            ComponentVariantSpec { name: "Full", value: "full", is_default: false },
-        ],
-        doc_file: "banner.md",
-    },
-    ComponentSpec {
         name: "Link",
         route_name: "link",
         variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
@@ -60,34 +49,26 @@ const COMPONENTS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Shell",
         route_name: "shell",
-        variants: &[
-            ComponentVariantSpec { name: "Header Only", value: "header-only", is_default: true },
-            ComponentVariantSpec {
-                name: "With Side Nav",
-                value: "with-side-nav",
-                is_default: false,
-            },
-        ],
+        variants: &[ComponentVariantSpec { name: "Header Only", value: "header-only", is_default: true }],
         doc_file: "shell.md",
     },
     ComponentSpec {
-        name: "Tag",
-        route_name: "tag",
-        variants: &[
-            ComponentVariantSpec { name: "Gray", value: "gray", is_default: true },
-            ComponentVariantSpec { name: "Blue", value: "blue", is_default: false },
-            ComponentVariantSpec { name: "Green", value: "green", is_default: false },
-        ],
-        doc_file: "tag.md",
+        name: "Footer",
+        route_name: "footer",
+        variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
+        doc_file: "footer.md",
     },
     ComponentSpec {
-        name: "Tile",
-        route_name: "tile",
-        variants: &[
-            ComponentVariantSpec { name: "Base", value: "base", is_default: true },
-            ComponentVariantSpec { name: "Clickable", value: "clickable", is_default: false },
-        ],
-        doc_file: "tile.md",
+        name: "Header",
+        route_name: "header",
+        variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
+        doc_file: "header.md",
+    },
+    ComponentSpec {
+        name: "Hero",
+        route_name: "hero",
+        variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
+        doc_file: "hero.md",
     },
 ];
 
@@ -202,17 +183,6 @@ mod tests {
         assert_eq!(spec.name, "Button");
         assert_eq!(spec.route_name, "button");
         assert_eq!(spec.doc_file, "button.md");
-        assert!(!spec.variants.is_empty());
-    }
-
-    #[test]
-    fn test_get_component_spec_by_route_name_valid_banner() {
-        let spec = get_component_spec_by_route_name("banner");
-        assert!(spec.is_some());
-        let spec = spec.unwrap();
-        assert_eq!(spec.name, "Banner");
-        assert_eq!(spec.route_name, "banner");
-        assert_eq!(spec.doc_file, "banner.md");
         assert!(!spec.variants.is_empty());
     }
 

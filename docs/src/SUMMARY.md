@@ -25,11 +25,8 @@
 - [Component Architecture](./design_system/component_architecture.md)
 - [Components]()
   - [Button](./design_system/components/button.md)
-  - [Banner](./design_system/components/banner.md)
   - [Link](./design_system/components/link.md)
   - [Shell](./design_system/components/shell.md)
-  - [Tag](./design_system/components/tag.md)
-  - [Tile](./design_system/components/tile.md)
 
 # Web Components
 

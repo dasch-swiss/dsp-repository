@@ -29,7 +29,7 @@ Section missing...
 
 ## Design Notes
 
-The button component follows Carbon Design System patterns with DSP brand customizations. Spacing and typography align with the design system tokens.
+The button component follows Tailwind Plus design patterns with DSP brand customizations. Spacing and typography align with the design system tokens.
 
 ### Button vs. Link
 

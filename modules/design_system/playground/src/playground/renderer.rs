@@ -1,6 +1,6 @@
 use components::button::{self, ButtonVariant};
-use components::tag::{self, TagVariant};
-use components::{banner, link, shell, tile};
+use components::header::{HeaderConfig, NavElement, NavItem, NavMenu, NavMenuItem};
+use components::{footer, header, hero, shell};
 use maud::{html, Markup};
 
 use crate::playground::error::{PlaygroundError, PlaygroundResult};
@@ -26,7 +26,6 @@ impl ComponentRenderer for ButtonRenderer {
     fn render_variant(&self, variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
         let button_variant = match variant {
             "secondary" => ButtonVariant::Secondary,
-            "outline" => ButtonVariant::Outline,
             "primary" => ButtonVariant::Primary,
             other => {
                 return Err(PlaygroundError::InvalidVariant {
@@ -45,54 +44,7 @@ impl ComponentRenderer for ButtonRenderer {
     }
 
     fn supported_variants(&self) -> Vec<&'static str> {
-        vec!["primary", "secondary", "outline"]
-    }
-}
-
-/// Banner component renderer
-pub struct BannerRenderer;
-
-impl ComponentRenderer for BannerRenderer {
-    fn render_variant(&self, variant: &str, params: &PlaygroundParams) -> PlaygroundResult<Markup> {
-        let markup = match variant {
-            "with_prefix" => banner::with_prefix("Sample Prefix", "Sample Banner"),
-            "with_suffix" => banner::with_suffix("Sample Banner", "Sample Suffix"),
-            "full" => banner::full("Sample Prefix", "Sample Banner", "Sample Suffix"),
-            "accent_only" => banner::accent_only("Sample Banner"),
-            other => {
-                return Err(PlaygroundError::InvalidVariant {
-                    component: params.component.clone(),
-                    variant: other.to_string(),
-                })
-            }
-        };
-        Ok(markup)
-    }
-
-    fn default_variant(&self) -> &'static str {
-        "accent_only"
-    }
-
-    fn supported_variants(&self) -> Vec<&'static str> {
-        vec!["accent_only", "with_prefix", "with_suffix", "full"]
-    }
-}
-
-/// Link component renderer
-pub struct LinkRenderer;
-
-impl ComponentRenderer for LinkRenderer {
-    fn render_variant(&self, _variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
-        let markup = link::link("Sample Link", "#");
-        Ok(markup)
-    }
-
-    fn default_variant(&self) -> &'static str {
-        "default"
-    }
-
-    fn supported_variants(&self) -> Vec<&'static str> {
-        vec!["default"]
+        vec!["primary", "secondary"]
     }
 }
 
@@ -103,18 +55,26 @@ impl ComponentRenderer for ShellRenderer {
     fn render_variant(&self, variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
         // Create sample navigation with both items and menus for playground demonstration
         let header_nav_elements = vec![
-            shell::NavElement::Item(shell::NavItem { label: "Home", href: "/" }),
-            shell::NavElement::Item(shell::NavItem { label: "Projects", href: "/projects" }),
-            shell::NavElement::Menu(shell::NavMenu {
+            NavElement::Item(NavItem { label: "Home", href: "/" }),
+            NavElement::Item(NavItem { label: "Projects", href: "/projects" }),
+            NavElement::Menu(NavMenu {
                 label: "Resources",
                 items: vec![
-                    shell::NavMenuItem { label: "Documentation", href: "/docs" },
-                    shell::NavMenuItem { label: "Tutorials", href: "/tutorials" },
-                    shell::NavMenuItem { label: "API Reference", href: "/api" },
+                    NavMenuItem { label: "Documentation", href: "/docs" },
+                    NavMenuItem { label: "Tutorials", href: "/tutorials" },
+                    NavMenuItem { label: "API Reference", href: "/api" },
                 ],
             }),
-            shell::NavElement::Item(shell::NavItem { label: "Contact", href: "/contact" }),
+            NavElement::Item(NavItem { label: "Contact", href: "/contact" }),
         ];
+
+        // Create header configuration
+        let header_config = HeaderConfig {
+            company_name: "DaSCH Service Platform",
+            logo_light_url: "/assets/logo.png",
+            logo_dark_url: "/assets/logo.png",
+            login_href: "/login",
+        };
 
         // Create sample content for demonstration
         let sample_content = html! {
@@ -129,41 +89,27 @@ impl ComponentRenderer for ShellRenderer {
             }
         };
 
+        // Create footer configuration
+        let footer_config = footer::FooterConfig {
+            company_name: "DaSCH",
+            description: "Digital infrastructure for humanities research data preservation and discovery.",
+            copyright_text: "© 2024 DaSCH, University of Basel. All rights reserved.",
+            logo_light_url: "assets/logo.png",
+            logo_dark_url: "assets/logo.png",
+        };
+
         let markup = match variant {
             "header-only" => {
                 // Shell with header navigation only
-                shell::shell(header_nav_elements).with_content(sample_content).build()
-            }
-            "with-side-nav" => {
-                // Shell with both header and side navigation
-                let side_nav_elements = vec![
-                    shell::NavElement::Item(shell::NavItem { label: "Dashboard", href: "/dashboard" }),
-                    shell::NavElement::Item(shell::NavItem { label: "Recent Items", href: "/recent" }),
-                    shell::NavElement::Menu(shell::NavMenu {
-                        label: "My Work",
-                        items: vec![
-                            shell::NavMenuItem { label: "Active Projects", href: "/work/active" },
-                            shell::NavMenuItem { label: "Drafts", href: "/work/drafts" },
-                            shell::NavMenuItem { label: "Completed", href: "/work/completed" },
-                        ],
-                    }),
-                    shell::NavElement::Menu(shell::NavMenu {
-                        label: "Account",
-                        items: vec![
-                            shell::NavMenuItem { label: "Profile", href: "/profile" },
-                            shell::NavMenuItem { label: "Settings", href: "/settings" },
-                            shell::NavMenuItem { label: "Logout", href: "/logout" },
-                        ],
-                    }),
-                ];
-                shell::shell(header_nav_elements)
-                    .with_side_nav(side_nav_elements)
+                shell::shell(header_nav_elements, header_config, footer_config)
                     .with_content(sample_content)
                     .build()
             }
             _ => {
                 // Default to header-only variant
-                shell::shell(header_nav_elements).with_content(sample_content).build()
+                shell::shell(header_nav_elements, header_config, footer_config)
+                    .with_content(sample_content)
+                    .build()
             }
         };
         Ok(markup)
@@ -174,76 +120,104 @@ impl ComponentRenderer for ShellRenderer {
     }
 
     fn supported_variants(&self) -> Vec<&'static str> {
-        vec!["header-only", "with-side-nav"]
+        vec!["header-only"]
     }
 }
 
-/// Tag component renderer
-pub struct TagRenderer;
+/// Header component renderer
+pub struct HeaderRenderer;
 
-impl ComponentRenderer for TagRenderer {
-    fn render_variant(&self, variant: &str, params: &PlaygroundParams) -> PlaygroundResult<Markup> {
-        let tag_variant = match variant {
-            "blue" => TagVariant::Blue,
-            "green" => TagVariant::Green,
-            "gray" => TagVariant::Gray,
-            other => {
-                return Err(PlaygroundError::InvalidVariant {
-                    component: params.component.clone(),
-                    variant: other.to_string(),
-                })
-            }
+impl ComponentRenderer for HeaderRenderer {
+    fn render_variant(&self, _variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
+        let nav_elements = vec![
+            header::NavElement::Item(header::NavItem { label: "Projects", href: "#" }),
+            header::NavElement::Item(header::NavItem { label: "Services", href: "#" }),
+            header::NavElement::Menu(header::NavMenu {
+                label: "How to",
+                items: vec![
+                    header::NavMenuItem { label: "Docs", href: "#" },
+                    header::NavMenuItem { label: "Knowledge center", href: "#" },
+                    header::NavMenuItem { label: "Documents", href: "#" },
+                ],
+            }),
+            header::NavElement::Item(header::NavItem { label: "About us", href: "#" }),
+        ];
+
+        let config = header::HeaderConfig {
+            company_name: "DaSCH Service Platform",
+            logo_light_url: "https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600",
+            logo_dark_url: "https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500",
+            login_href: "#",
         };
 
-        let markup = tag::tag_with_variant("Sample Tag", tag_variant);
+        let markup = header::header(nav_elements, &config);
         Ok(markup)
     }
 
     fn default_variant(&self) -> &'static str {
-        "gray"
+        "default"
     }
 
     fn supported_variants(&self) -> Vec<&'static str> {
-        vec!["gray", "blue", "green"]
+        vec!["default"]
     }
 }
 
-/// Tile component renderer
-pub struct TileRenderer;
+/// Hero component renderer
+pub struct HeroRenderer;
 
-impl ComponentRenderer for TileRenderer {
-    fn render_variant(&self, variant: &str, params: &PlaygroundParams) -> PlaygroundResult<Markup> {
-        let content = html! {
-            h3 { "Sample Tile" }
-            p {
-                @if variant == "clickable" {
-                    "Clickable content"
-                } @else {
-                    "Base content"
-                }
-            }
+impl ComponentRenderer for HeroRenderer {
+    fn render_variant(&self, _variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
+        let config = hero::HeroConfig {
+            headline: "DaSCH Service Platform",
+            description: "Long-term archive for humanities research data with discovery and presentation tools for researchers.",
+            announcement_text: "New features available for data management.",
+            announcement_link_text: "Read more",
+            announcement_href: "#",
+            primary_button_text: "Get started",
+            primary_button_href: "#",
+            secondary_button_text: "Learn more",
+            secondary_button_href: "#",
+            image_url: "https://images.unsplash.com/photo-1483389127117-b6a2102724ae?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1587&q=80",
+            image_alt: "Research data visualization",
         };
 
-        let markup = match variant {
-            "clickable" => tile::clickable("#", content),
-            "base" => tile::base(content),
-            other => {
-                return Err(PlaygroundError::InvalidVariant {
-                    component: params.component.clone(),
-                    variant: other.to_string(),
-                })
-            }
-        };
-
+        let markup = hero::hero(&config);
         Ok(markup)
     }
 
     fn default_variant(&self) -> &'static str {
-        "base"
+        "default"
     }
 
     fn supported_variants(&self) -> Vec<&'static str> {
-        vec!["base", "clickable"]
+        vec!["default"]
+    }
+}
+
+/// Footer component renderer
+pub struct FooterRenderer;
+
+impl ComponentRenderer for FooterRenderer {
+    fn render_variant(&self, _variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
+        let config = footer::FooterConfig {
+            company_name: "DaSCH",
+            description: "Digital infrastructure for humanities research data preservation and discovery.",
+            copyright_text: "© 2024 DaSCH, University of Basel. All rights reserved.",
+            logo_light_url: "https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=600",
+            logo_dark_url: "https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500",
+        };
+
+        let markup = footer::footer(&config);
+        Ok(markup)
+    }
+
+    fn default_variant(&self) -> &'static str {
+        "default"
+    }
+
+    fn supported_variants(&self) -> Vec<&'static str> {
+        vec!["default"]
     }
 }
 
@@ -254,11 +228,10 @@ impl ComponentRendererRegistry {
     pub fn get_renderer(component: &str) -> Option<Box<dyn ComponentRenderer>> {
         match component {
             "button" => Some(Box::new(ButtonRenderer)),
-            "banner" => Some(Box::new(BannerRenderer)),
-            "link" => Some(Box::new(LinkRenderer)),
+            "footer" => Some(Box::new(FooterRenderer)),
+            "header" => Some(Box::new(HeaderRenderer)),
+            "hero" => Some(Box::new(HeroRenderer)),
             "shell" => Some(Box::new(ShellRenderer)),
-            "tag" => Some(Box::new(TagRenderer)),
-            "tile" => Some(Box::new(TileRenderer)),
             _ => None,
         }
     }

@@ -73,7 +73,6 @@ just install-requirements     # Install cargo-watch, mdbook, mdbook-alerts
 
 ## Code Quality
 - **Formatting**: .rustfmt.toml with 120 char width, Unix newlines
-- **File endings**: All files must end with a newline character
 - **Linting**: Strict clippy warnings
 - **Testing**: Testing pyramid (unit → integration → E2E with Playwright)
 - **Visual Testing**: Automated visual regression testing for design system components
@@ -87,7 +86,7 @@ just install-requirements     # Install cargo-watch, mdbook, mdbook-alerts
 
 - **Always check with the developer before each step** - Check in, instead of going down the wrong path
 - **Use `JUST` for all commands** - Use `just` to run commands instead of `cargo` or `npm`. If availant, use claude-specific just commands.
-- **Use consistent style** - Follow the project's coding style. Run auto-formatting. Add a new line at the end of every file.
+- **Use consistent style** - Follow the project's coding style. Run auto-formatting.
 - **Tests first** - Ensure that every code change is accompanied by tests. Start with a test suite to define the expected behavior of the system. Check the tests with the developer to ensure the behavior is correct.
 
 Before considering ANY change as "done", ensure the following:

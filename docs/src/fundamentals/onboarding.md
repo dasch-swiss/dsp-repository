@@ -128,30 +128,25 @@ we are using a purpose-built design system.
 This will help us to keep the design consistent and coherent,
 reduce complexity, and give our products a clearer brand identity.
 
-This design system is based on the [IBM Carbon Design System](https://carbondesignsystem.com/),
-but is customized to our needs.
+This design system is built with Tailwind Plus as its foundation,
+providing modern, utility-first styling and component patterns.
 
 ### Concept, Aim and Purpose
 
-We build the DSP Design System on top of the Carbon Design System,
-because it communicates the reliability and trustworthiness that users expect from an archive.
-Furthermore, it is a well established design system,
-where concerns such as accessibility and usability have been well thought out.
+We build the DSP Design System using Tailwind Plus principles
+because it provides a robust foundation for creating consistent, maintainable interfaces
+that communicate the reliability and trustworthiness that users expect from an archive.
 
-There are several reasons why we do not use the Carbon Design System as is,
-and instead build our own design system on top of it:
+Our approach differs from using design systems as-is for several key reasons:
 
-- It is a customizeable, generic, general purpose design system.  
-  As such, it provides a lot of options and flexibility but comes with a lot of complexity.  
-  By customizing it to our needs, we can reduce complexity and limit it to our needs. 
-  By limiting optins (e.g. components, icons, tokens, etc.) to the ones we need,
-  we can simplify design and ensure consistency in our products.
-- It is customizeable, but we do not need that flexibility.  
-  By creating a purpose-built design system, we can bake our brand into it, and reduce complexity even further.
-- The official and community implementations of Carbon do not align with our tech stack.  
-  By creating our own implementation, we can tailor it to our needs
-  and move the implementation of individual components to dedicated design system work,
-  rather than having to implement them in the context of project work.  
+- **Purpose-built focus**: Rather than using a generic, customizable system,
+  we create a focused design system tailored specifically to the DSP platform's needs.
+  This reduces complexity and ensures consistency by limiting options to what we actually need.
+- **Brand integration**: By building our own implementation, we can bake the DSP brand
+  directly into the system, eliminating the need for extensive customization layers.
+- **Tech stack alignment**: Our Rust-based, Maud-native implementation aligns perfectly
+  with our technology choices, allowing us to move component implementation
+  to dedicated design system work rather than ad-hoc development during project work.  
   The design system work will be done in close collaboration between Dev and PM,
   and is an up-fron investment that will improve the speed and quality of project work in the long run.
   

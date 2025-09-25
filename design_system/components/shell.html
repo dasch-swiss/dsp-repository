@@ -180,13 +180,15 @@
 <h2 id="usage-guidelines"><a class="header" href="#usage-guidelines">Usage Guidelines</a></h2>
 <p>Use the shell component as the main application wrapper. It provides consistent navigation, theme management, and layout structure across the application.</p>
 <h2 id="api"><a class="header" href="#api">API</a></h2>
-<h3 id="shellheader_nav_elements-vecnavelement"><a class="header" href="#shellheader_nav_elements-vecnavelement"><code>shell(header_nav_elements: Vec&lt;NavElement&gt;)</code></a></h3>
-<p>Create a shell with header navigation using the builder pattern.</p>
+<h3 id="shellheader_nav_elements-vecnavelement-header_config-headerconfig-footer-footerconfig"><a class="header" href="#shellheader_nav_elements-vecnavelement-header_config-headerconfig-footer-footerconfig"><code>shell(header_nav_elements: Vec&lt;NavElement&gt;, header_config: HeaderConfig, footer: FooterConfig)</code></a></h3>
+<p>Create a shell with header navigation and footer using the builder pattern.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use components::shell::{shell, NavElement, NavItem, NavMenu, NavMenuItem};
+</span>use components::shell::shell;
+use components::header::{HeaderConfig, NavElement, NavItem, NavMenu, NavMenuItem};
+use components::footer::FooterConfig;
 
-// Shell with header navigation only
+// Create navigation elements
 let header_nav = vec![
     NavElement::Item(NavItem { label: "Home", href: "/" }),
     NavElement::Item(NavItem { label: "Projects", href: "/projects" }),
@@ -199,26 +201,24 @@ let header_nav = vec![
     }),
 ];
 
-let shell_markup = shell(header_nav).build();
-<span class="boring">}</span></code></pre></pre>
-<h3 id="with_side_navside_nav_elements-vecnavelement"><a class="header" href="#with_side_navside_nav_elements-vecnavelement"><code>with_side_nav(side_nav_elements: Vec&lt;NavElement&gt;)</code></a></h3>
-<p>Optionally add side navigation to the shell.</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let side_nav = vec![
-    NavElement::Item(NavItem { label: "Dashboard", href: "/dashboard" }),
-    NavElement::Menu(NavMenu {
-        label: "My Work",
-        items: vec![
-            NavMenuItem { label: "Active Projects", href: "/work/active" },
-            NavMenuItem { label: "Drafts", href: "/work/drafts" },
-        ],
-    }),
-];
+// Create header configuration
+let header_config = HeaderConfig {
+    company_name: "DaSCH Service Platform",
+    logo_light_url: "/assets/logo-light.svg",
+    logo_dark_url: "/assets/logo-dark.svg",
+    login_href: "/login",
+};
 
-let shell_markup = shell(header_nav)
-    .with_side_nav(side_nav)
-    .build();
+// Create footer configuration
+let footer_config = FooterConfig {
+    company_name: "DaSCH",
+    description: "Digital infrastructure for humanities research data preservation and discovery.",
+    copyright_text: "© 2024 DaSCH, University of Basel. All rights reserved.",
+    logo_light_url: "/assets/footer-logo-light.svg",
+    logo_dark_url: "/assets/footer-logo-dark.svg",
+};
+
+let shell_markup = shell(header_nav, header_config, footer_config).build();
 <span class="boring">}</span></code></pre></pre>
 <h3 id="with_contentcontent-markup"><a class="header" href="#with_contentcontent-markup"><code>with_content(content: Markup)</code></a></h3>
 <p>Add content to the shell's main content area.</p>
@@ -241,7 +241,9 @@ let shell_markup = shell(header_nav)
 <p>Full shell configuration with navigation and content:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use components::shell::{shell, NavElement, NavItem, NavMenu, NavMenuItem};
+</span>use components::shell::shell;
+use components::header::{HeaderConfig, NavElement, NavItem, NavMenu, NavMenuItem};
+use components::footer::FooterConfig;
 use maud::html;
 
 let header_nav = vec![
@@ -256,22 +258,26 @@ let header_nav = vec![
     }),
 ];
 
-let side_nav = vec![
-    NavElement::Item(NavItem { label: "Dashboard", href: "/dashboard" }),
-    NavElement::Menu(NavMenu {
-        label: "My Work",
-        items: vec![
-            NavMenuItem { label: "Active Projects", href: "/work/active" },
-            NavMenuItem { label: "Drafts", href: "/work/drafts" },
-        ],
-    }),
-];
+let header_config = HeaderConfig {
+    company_name: "DaSCH Service Platform",
+    logo_light_url: "/assets/logo-light.svg",
+    logo_dark_url: "/assets/logo-dark.svg",
+    login_href: "/login",
+};
+
+let footer_config = FooterConfig {
+    company_name: "DaSCH",
+    description: "Digital infrastructure for humanities research data preservation and discovery.",
+    copyright_text: "© 2024 DaSCH, University of Basel. All rights reserved.",
+    logo_light_url: "/assets/footer-logo-light.svg",
+    logo_dark_url: "/assets/footer-logo-dark.svg",
+};
 
 let content = html! {
     div style="padding: 2rem; max-width: 1200px; margin: 0 auto;" {
         h1 { "Application Dashboard" }
         p { "Welcome to your personalized dashboard." }
-        
+
         div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 2rem;" {
             div style="padding: 1rem; background: var(--cds-background-hover); border-radius: 4px;" {
                 h3 { "Recent Activity" }
@@ -285,30 +291,28 @@ let content = html! {
     }
 };
 
-let shell_markup = shell(header_nav)
-    .with_side_nav(side_nav)
+let shell_markup = shell(header_nav, header_config, footer_config)
     .with_content(content)
     .build();
 <span class="boring">}</span></code></pre></pre>
 <h2 id="builder-pattern"><a class="header" href="#builder-pattern">Builder Pattern</a></h2>
 <p>The shell uses a builder pattern for clean and flexible configuration:</p>
 <ul>
-<li><strong>Required</strong>: Header navigation elements must be provided</li>
-<li><strong>Optional</strong>: Side navigation can be added with <code>with_side_nav()</code></li>
+<li><strong>Required</strong>: Header navigation elements, header configuration, and footer configuration must be provided</li>
 <li><strong>Optional</strong>: Content can be added with <code>with_content()</code></li>
 <li><strong>Fluent API</strong>: Method chaining for readable configuration</li>
-<li><strong>Type Safety</strong>: Cannot create shell without header navigation</li>
+<li><strong>Type Safety</strong>: Cannot create shell without required parameters</li>
 </ul>
 <h2 id="navigation-structure"><a class="header" href="#navigation-structure">Navigation Structure</a></h2>
 <p>The shell supports flexible navigation with two types of elements:</p>
 <h3 id="navigation-items"><a class="header" href="#navigation-items">Navigation Items</a></h3>
-<p>Single navigation links that appear in both header and side navigation.</p>
+<p>Single navigation links that appear in the header navigation.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>NavElement::Item(NavItem { label: "Home", href: "/" })
 <span class="boring">}</span></code></pre></pre>
 <h3 id="navigation-menus"><a class="header" href="#navigation-menus">Navigation Menus</a></h3>
-<p>Dropdown menus with multiple items that appear as dropdowns in header navigation and expandable menus in side navigation.</p>
+<p>Dropdown menus with multiple items that appear as dropdowns in header navigation.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>NavElement::Menu(NavMenu {
@@ -322,7 +326,7 @@ let shell_markup = shell(header_nav)
 <h2 id="features"><a class="header" href="#features">Features</a></h2>
 <ul>
 <li><strong>Configurable Navigation</strong>: Support for both navigation items and dropdown menus</li>
-<li><strong>Responsive Design</strong>: Adapts to different screen sizes with collapsible side navigation</li>
+<li><strong>Responsive Design</strong>: Adapts to different screen sizes with responsive navigation</li>
 <li><strong>Search Functionality</strong>: Integrated search with accessibility features</li>
 <li><strong>Theme Toggle</strong>: Light/dark theme switching with persistence</li>
 <li><strong>Static Branding</strong>: DaSCH Service Platform branding remains consistent</li>
@@ -340,7 +344,7 @@ let shell_markup = shell(header_nav)
 <h2 id="implementation-status"><a class="header" href="#implementation-status">Implementation Status</a></h2>
 <p>✅ Fully functional with configurable navigation</p>
 <h2 id="design-notes"><a class="header" href="#design-notes">Design Notes</a></h2>
-<p>Currently implemented using Carbon Web Components via CDN. Provides advanced features including responsive navigation, search functionality, and theme management. The shell serves as the primary application wrapper and maintains consistent layout across different pages.</p>
+<p>Currently transitioning from web components to Tailwind Plus implementation. Provides advanced features including responsive navigation, search functionality, and theme management. The shell serves as the primary application wrapper and maintains consistent layout across different pages.</p>
 <p>Navigation content is now configurable while maintaining static branding elements and core functionality.</p>
 
                     </main>
@@ -351,7 +355,7 @@ let shell_markup = shell(header_nav)
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../../design_system/components/tag.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../web_components/overview.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -365,7 +369,7 @@ let shell_markup = shell(header_nav)
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../../design_system/components/tag.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../web_components/overview.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

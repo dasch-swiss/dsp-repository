@@ -177,16 +177,14 @@
                     <main>
                         <h1 id="dsp-design-system"><a class="header" href="#dsp-design-system">DSP Design System</a></h1>
 <h2 id="introduction"><a class="header" href="#introduction">Introduction</a></h2>
-<p>The DSP Design System is a customization of the <a href="https://carbondesignsystem.com/">IBM Carbon Design System</a>.
-It follows Carbon in terms of design language and implementation.
-It is customized in the following ways:</p>
+<p>The DSP Design System is built with Tailwind Plus as the foundation, providing a modern, utility-first approach to component design and styling.</p>
+<p>The system is designed with the following principles:</p>
 <ul>
 <li>It is not a general purpose design system, but a purpose-built system. As such, it is much smaller and less complex.</li>
-<li>It is not generic or customizeable, instead the DSP brand is baked into it, thus simplifying complexity if use.</li>
+<li>It is not generic or customizable, instead the DSP brand is baked into it, thus simplifying complexity of use.</li>
 <li>It is purposefully kept small:
 <ul>
-<li>It comes with two themes (dark and light, corresponding to "gray-90" and "gray-10" in Carbon)
-and no option for custom theming.</li>
+<li>It comes with two themes (dark and light) with no option for custom theming.</li>
 <li>The set of available styles (colors, typography, spacing, etc.)
 is kept intentionally small to promote consistent user interfaces.</li>
 <li>It only has the components that are strictly needed.
@@ -195,9 +193,7 @@ Additional components may be added, when necessary.</li>
 Additional component variants may be added, when necessary.</li>
 </ul>
 </li>
-<li>It may have purpose-specific components.
-(E.g. Carbon does not provide a "Card" component, but rather a "Tile" component, from which cards can be built.
-The DSP Design System instead would provide a "Card" component.)</li>
+<li>It may have purpose-specific components tailored to the DSP platform's unique requirements.</li>
 </ul>
 <h1 id="current-implementation-status"><a class="header" href="#current-implementation-status">Current Implementation Status</a></h1>
 <p>The DSP Design System is currently in early development with the following components implemented:</p>
@@ -218,31 +214,17 @@ The DSP Design System instead would provide a "Card" component.)</li>
 </ul>
 <h3 id="shell"><a class="header" href="#shell">Shell</a></h3>
 <ul>
-<li><strong>Implementation</strong>: Carbon Web Components (CDN-based)</li>
+<li><strong>Implementation</strong>: Transitioning from web components to Tailwind Plus</li>
 <li><strong>Purpose</strong>: Application navigation and layout wrapper</li>
 <li><strong>Status</strong>: ✅ Fully functional with advanced features</li>
 <li><strong>Features</strong>: Responsive navigation header, search functionality, theme toggle with persistence, side navigation, accessible ARIA labels</li>
 </ul>
 <h3 id="tile"><a class="header" href="#tile">Tile</a></h3>
 <ul>
-<li><strong>Implementation</strong>: Native Maud</li>
+<li><strong>Implementation</strong>: Native Maud with Tailwind Plus styling</li>
 <li><strong>Variants</strong>: Base, Clickable</li>
 <li><strong>Status</strong>: 🚧 Functional but incomplete (styling verification needed, missing accessibility features)</li>
 <li><strong>Features</strong>: Content containers accepting arbitrary Markup, custom test IDs</li>
-</ul>
-<h3 id="link"><a class="header" href="#link">Link</a></h3>
-<ul>
-<li><strong>Implementation</strong>: Carbon Web Components (CDN-based)</li>
-<li><strong>Purpose</strong>: Navigation and external links</li>
-<li><strong>Status</strong>: ✅ Functional (temporary implementation)</li>
-<li><strong>Features</strong>: Carbon-styled links with brand colors and hover states</li>
-</ul>
-<h3 id="tag"><a class="header" href="#tag">Tag</a></h3>
-<ul>
-<li><strong>Implementation</strong>: Carbon Web Components (CDN-based)</li>
-<li><strong>Variants</strong>: Gray, Blue, Green</li>
-<li><strong>Status</strong>: 🚧 Functional but incomplete (missing variants and attributes)</li>
-<li><strong>Features</strong>: Colored labels with brand-aligned styling, dynamic script loading</li>
 </ul>
 <h2 id="development-environment"><a class="header" href="#development-environment">Development Environment</a></h2>
 <h3 id="playground"><a class="header" href="#playground">Playground</a></h3>

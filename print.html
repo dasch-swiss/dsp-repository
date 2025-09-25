@@ -462,16 +462,14 @@ enum Command {
 <p>This modular design ensures clarity, maintainability, and smooth collaboration for both backend and frontend developers. The split between crates follows clean architecture principles and allows for focused development, rapid iteration, and clear testing strategies.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="dsp-design-system"><a class="header" href="#dsp-design-system">DSP Design System</a></h1>
 <h2 id="introduction-1"><a class="header" href="#introduction-1">Introduction</a></h2>
-<p>The DSP Design System is a customization of the <a href="https://carbondesignsystem.com/">IBM Carbon Design System</a>.
-It follows Carbon in terms of design language and implementation.
-It is customized in the following ways:</p>
+<p>The DSP Design System is built with Tailwind Plus as the foundation, providing a modern, utility-first approach to component design and styling.</p>
+<p>The system is designed with the following principles:</p>
 <ul>
 <li>It is not a general purpose design system, but a purpose-built system. As such, it is much smaller and less complex.</li>
-<li>It is not generic or customizeable, instead the DSP brand is baked into it, thus simplifying complexity if use.</li>
+<li>It is not generic or customizable, instead the DSP brand is baked into it, thus simplifying complexity of use.</li>
 <li>It is purposefully kept small:
 <ul>
-<li>It comes with two themes (dark and light, corresponding to "gray-90" and "gray-10" in Carbon)
-and no option for custom theming.</li>
+<li>It comes with two themes (dark and light) with no option for custom theming.</li>
 <li>The set of available styles (colors, typography, spacing, etc.)
 is kept intentionally small to promote consistent user interfaces.</li>
 <li>It only has the components that are strictly needed.
@@ -480,9 +478,7 @@ Additional components may be added, when necessary.</li>
 Additional component variants may be added, when necessary.</li>
 </ul>
 </li>
-<li>It may have purpose-specific components.
-(E.g. Carbon does not provide a "Card" component, but rather a "Tile" component, from which cards can be built.
-The DSP Design System instead would provide a "Card" component.)</li>
+<li>It may have purpose-specific components tailored to the DSP platform's unique requirements.</li>
 </ul>
 <h1 id="current-implementation-status"><a class="header" href="#current-implementation-status">Current Implementation Status</a></h1>
 <p>The DSP Design System is currently in early development with the following components implemented:</p>
@@ -503,31 +499,17 @@ The DSP Design System instead would provide a "Card" component.)</li>
 </ul>
 <h3 id="shell"><a class="header" href="#shell">Shell</a></h3>
 <ul>
-<li><strong>Implementation</strong>: Carbon Web Components (CDN-based)</li>
+<li><strong>Implementation</strong>: Transitioning from web components to Tailwind Plus</li>
 <li><strong>Purpose</strong>: Application navigation and layout wrapper</li>
 <li><strong>Status</strong>: ✅ Fully functional with advanced features</li>
 <li><strong>Features</strong>: Responsive navigation header, search functionality, theme toggle with persistence, side navigation, accessible ARIA labels</li>
 </ul>
 <h3 id="tile"><a class="header" href="#tile">Tile</a></h3>
 <ul>
-<li><strong>Implementation</strong>: Native Maud</li>
+<li><strong>Implementation</strong>: Native Maud with Tailwind Plus styling</li>
 <li><strong>Variants</strong>: Base, Clickable</li>
 <li><strong>Status</strong>: 🚧 Functional but incomplete (styling verification needed, missing accessibility features)</li>
 <li><strong>Features</strong>: Content containers accepting arbitrary Markup, custom test IDs</li>
-</ul>
-<h3 id="link"><a class="header" href="#link">Link</a></h3>
-<ul>
-<li><strong>Implementation</strong>: Carbon Web Components (CDN-based)</li>
-<li><strong>Purpose</strong>: Navigation and external links</li>
-<li><strong>Status</strong>: ✅ Functional (temporary implementation)</li>
-<li><strong>Features</strong>: Carbon-styled links with brand colors and hover states</li>
-</ul>
-<h3 id="tag"><a class="header" href="#tag">Tag</a></h3>
-<ul>
-<li><strong>Implementation</strong>: Carbon Web Components (CDN-based)</li>
-<li><strong>Variants</strong>: Gray, Blue, Green</li>
-<li><strong>Status</strong>: 🚧 Functional but incomplete (missing variants and attributes)</li>
-<li><strong>Features</strong>: Colored labels with brand-aligned styling, dynamic script loading</li>
 </ul>
 <h2 id="development-environment"><a class="header" href="#development-environment">Development Environment</a></h2>
 <h3 id="playground"><a class="header" href="#playground">Playground</a></h3>
@@ -637,8 +619,8 @@ pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup
 <li>Use <code>impl Into&lt;String&gt;</code> for text inputs</li>
 <li>Test composition in playground</li>
 </ol>
-<h2 id="temporary-carbon-web-components-usage"><a class="header" href="#temporary-carbon-web-components-usage">Temporary Carbon Web Components Usage</a></h2>
-<p><strong>Note</strong>: Some components currently use Carbon Design System web components via CDN with wrapper functions as a temporary solution. This approach uses <code>PreEscaped</code> HTML with conditional script loading for rapid development. These will be replaced with native Maud implementations following the architecture above as the design system matures.</p>
+<h2 id="migration-to-tailwind-plus"><a class="header" href="#migration-to-tailwind-plus">Migration to Tailwind Plus</a></h2>
+<p><strong>Note</strong>: Some components are currently in transition from web component implementations to native Maud components using Tailwind Plus for styling. This migration provides better performance, type safety, and maintainability while leveraging Tailwind's utility-first approach for consistent styling across the design system.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="button-1"><a class="header" href="#button-1">Button</a></h1>
 <p>Interactive button component for user actions.</p>
 <h2 id="usage-guidelines"><a class="header" href="#usage-guidelines">Usage Guidelines</a></h2>
@@ -656,67 +638,24 @@ pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup
 <h2 id="implementation-status"><a class="header" href="#implementation-status">Implementation Status</a></h2>
 <p>🚧 Functional but incomplete - styling verification needed, missing accessibility features</p>
 <h2 id="design-notes"><a class="header" href="#design-notes">Design Notes</a></h2>
-<p>The button component follows Carbon Design System patterns with DSP brand customizations. Spacing and typography align with the design system tokens.</p>
+<p>The button component follows Tailwind Plus design patterns with DSP brand customizations. Spacing and typography align with the design system tokens.</p>
 <h3 id="button-vs-link"><a class="header" href="#button-vs-link">Button vs. Link</a></h3>
 <p>Use buttons for actions that trigger changes or submit data. Use links for navigation to other pages or sections. Buttons should not be used for navigation purposes.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="banner-1"><a class="header" href="#banner-1">Banner</a></h1>
-<p>Banner component with multiple display variants for highlighting important information.</p>
-<h2 id="usage-guidelines-1"><a class="header" href="#usage-guidelines-1">Usage Guidelines</a></h2>
-<p>The banner component should only be used on landing pages etc. as a prominent way to display a core message.
-Use the appropriate variant based on the content structure and emphasis needed.</p>
-<h2 id="variants-1"><a class="header" href="#variants-1">Variants</a></h2>
-<ul>
-<li>Accent Only</li>
-<li>With Prefix</li>
-<li>With Suffix</li>
-<li>Full</li>
-</ul>
-<p>The banner is structured as follows:
-The first line is an optional prefix, the second line - which is of larger font size - is the main message, and the third line is an optional suffix.</p>
-<h2 id="accessibility-notes-1"><a class="header" href="#accessibility-notes-1">Accessibility Notes</a></h2>
-<ul>
-<li>Semantic HTML structure ensures proper screen reader navigation</li>
-<li>High contrast colors meet WCAG AA standards</li>
-<li>Text is properly structured for assistive technologies</li>
-</ul>
-<!-- TODO: verify this -->
-<h2 id="implementation-status-1"><a class="header" href="#implementation-status-1">Implementation Status</a></h2>
-<p>✅ Fully functional - complete implementation with all variants</p>
-<h2 id="design-notes-1"><a class="header" href="#design-notes-1">Design Notes</a></h2>
-<p>None</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="link-1"><a class="header" href="#link-1">Link</a></h1>
-<p>Link component for navigation and external links.</p>
-<h2 id="usage-guidelines-2"><a class="header" href="#usage-guidelines-2">Usage Guidelines</a></h2>
-<p>Use links for navigation between pages, sections, or external resources. The link component provides consistent styling across the application.</p>
-<h2 id="variants-2"><a class="header" href="#variants-2">Variants</a></h2>
-<h3 id="default"><a class="header" href="#default">Default</a></h3>
-<p>Standard link styling with brand colors and hover states. Suitable for all link use cases.</p>
-<h2 id="accessibility-notes-2"><a class="header" href="#accessibility-notes-2">Accessibility Notes</a></h2>
-<ul>
-<li>Proper semantic HTML anchor tags</li>
-<li>Clear focus indicators for keyboard navigation</li>
-<li>Sufficient color contrast for readability</li>
-<li>External links include appropriate indicators</li>
-</ul>
-<h2 id="implementation-status-2"><a class="header" href="#implementation-status-2">Implementation Status</a></h2>
-<p>✅ Functional - currently using Carbon Web Components as temporary implementation</p>
-<h2 id="design-notes-2"><a class="header" href="#design-notes-2">Design Notes</a></h2>
-<p>Currently implemented using Carbon Web Components via CDN. This provides Carbon-styled links with brand colors and hover states. Will be migrated to native Maud implementation following the component architecture patterns.</p>
-<h3 id="link-vs-button"><a class="header" href="#link-vs-button">Link vs. Button</a></h3>
-<p>Use links for navigation purposes. Use buttons for actions that trigger changes or submit data. Links should not be used for actions that modify state or submit forms.</p>
-<!-- TODO: what about button-styled links? -->
+<div style="break-before: page; page-break-before: always;"></div><h1 id="link"><a class="header" href="#link">Link</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="shell-1"><a class="header" href="#shell-1">Shell</a></h1>
 <p>Application shell component providing navigation and layout wrapper with configurable navigation elements.</p>
-<h2 id="usage-guidelines-3"><a class="header" href="#usage-guidelines-3">Usage Guidelines</a></h2>
+<h2 id="usage-guidelines-1"><a class="header" href="#usage-guidelines-1">Usage Guidelines</a></h2>
 <p>Use the shell component as the main application wrapper. It provides consistent navigation, theme management, and layout structure across the application.</p>
 <h2 id="api"><a class="header" href="#api">API</a></h2>
-<h3 id="shellheader_nav_elements-vecnavelement"><a class="header" href="#shellheader_nav_elements-vecnavelement"><code>shell(header_nav_elements: Vec&lt;NavElement&gt;)</code></a></h3>
-<p>Create a shell with header navigation using the builder pattern.</p>
+<h3 id="shellheader_nav_elements-vecnavelement-header_config-headerconfig-footer-footerconfig"><a class="header" href="#shellheader_nav_elements-vecnavelement-header_config-headerconfig-footer-footerconfig"><code>shell(header_nav_elements: Vec&lt;NavElement&gt;, header_config: HeaderConfig, footer: FooterConfig)</code></a></h3>
+<p>Create a shell with header navigation and footer using the builder pattern.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use components::shell::{shell, NavElement, NavItem, NavMenu, NavMenuItem};
+</span>use components::shell::shell;
+use components::header::{HeaderConfig, NavElement, NavItem, NavMenu, NavMenuItem};
+use components::footer::FooterConfig;
 
-// Shell with header navigation only
+// Create navigation elements
 let header_nav = vec![
     NavElement::Item(NavItem { label: "Home", href: "/" }),
     NavElement::Item(NavItem { label: "Projects", href: "/projects" }),
@@ -729,26 +668,24 @@ let header_nav = vec![
     }),
 ];
 
-let shell_markup = shell(header_nav).build();
-<span class="boring">}</span></code></pre></pre>
-<h3 id="with_side_navside_nav_elements-vecnavelement"><a class="header" href="#with_side_navside_nav_elements-vecnavelement"><code>with_side_nav(side_nav_elements: Vec&lt;NavElement&gt;)</code></a></h3>
-<p>Optionally add side navigation to the shell.</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let side_nav = vec![
-    NavElement::Item(NavItem { label: "Dashboard", href: "/dashboard" }),
-    NavElement::Menu(NavMenu {
-        label: "My Work",
-        items: vec![
-            NavMenuItem { label: "Active Projects", href: "/work/active" },
-            NavMenuItem { label: "Drafts", href: "/work/drafts" },
-        ],
-    }),
-];
+// Create header configuration
+let header_config = HeaderConfig {
+    company_name: "DaSCH Service Platform",
+    logo_light_url: "/assets/logo-light.svg",
+    logo_dark_url: "/assets/logo-dark.svg",
+    login_href: "/login",
+};
 
-let shell_markup = shell(header_nav)
-    .with_side_nav(side_nav)
-    .build();
+// Create footer configuration
+let footer_config = FooterConfig {
+    company_name: "DaSCH",
+    description: "Digital infrastructure for humanities research data preservation and discovery.",
+    copyright_text: "© 2024 DaSCH, University of Basel. All rights reserved.",
+    logo_light_url: "/assets/footer-logo-light.svg",
+    logo_dark_url: "/assets/footer-logo-dark.svg",
+};
+
+let shell_markup = shell(header_nav, header_config, footer_config).build();
 <span class="boring">}</span></code></pre></pre>
 <h3 id="with_contentcontent-markup"><a class="header" href="#with_contentcontent-markup"><code>with_content(content: Markup)</code></a></h3>
 <p>Add content to the shell's main content area.</p>
@@ -771,7 +708,9 @@ let shell_markup = shell(header_nav)
 <p>Full shell configuration with navigation and content:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use components::shell::{shell, NavElement, NavItem, NavMenu, NavMenuItem};
+</span>use components::shell::shell;
+use components::header::{HeaderConfig, NavElement, NavItem, NavMenu, NavMenuItem};
+use components::footer::FooterConfig;
 use maud::html;
 
 let header_nav = vec![
@@ -786,22 +725,26 @@ let header_nav = vec![
     }),
 ];
 
-let side_nav = vec![
-    NavElement::Item(NavItem { label: "Dashboard", href: "/dashboard" }),
-    NavElement::Menu(NavMenu {
-        label: "My Work",
-        items: vec![
-            NavMenuItem { label: "Active Projects", href: "/work/active" },
-            NavMenuItem { label: "Drafts", href: "/work/drafts" },
-        ],
-    }),
-];
+let header_config = HeaderConfig {
+    company_name: "DaSCH Service Platform",
+    logo_light_url: "/assets/logo-light.svg",
+    logo_dark_url: "/assets/logo-dark.svg",
+    login_href: "/login",
+};
+
+let footer_config = FooterConfig {
+    company_name: "DaSCH",
+    description: "Digital infrastructure for humanities research data preservation and discovery.",
+    copyright_text: "© 2024 DaSCH, University of Basel. All rights reserved.",
+    logo_light_url: "/assets/footer-logo-light.svg",
+    logo_dark_url: "/assets/footer-logo-dark.svg",
+};
 
 let content = html! {
     div style="padding: 2rem; max-width: 1200px; margin: 0 auto;" {
         h1 { "Application Dashboard" }
         p { "Welcome to your personalized dashboard." }
-        
+
         div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 2rem;" {
             div style="padding: 1rem; background: var(--cds-background-hover); border-radius: 4px;" {
                 h3 { "Recent Activity" }
@@ -815,30 +758,28 @@ let content = html! {
     }
 };
 
-let shell_markup = shell(header_nav)
-    .with_side_nav(side_nav)
+let shell_markup = shell(header_nav, header_config, footer_config)
     .with_content(content)
     .build();
 <span class="boring">}</span></code></pre></pre>
 <h2 id="builder-pattern"><a class="header" href="#builder-pattern">Builder Pattern</a></h2>
 <p>The shell uses a builder pattern for clean and flexible configuration:</p>
 <ul>
-<li><strong>Required</strong>: Header navigation elements must be provided</li>
-<li><strong>Optional</strong>: Side navigation can be added with <code>with_side_nav()</code></li>
+<li><strong>Required</strong>: Header navigation elements, header configuration, and footer configuration must be provided</li>
 <li><strong>Optional</strong>: Content can be added with <code>with_content()</code></li>
 <li><strong>Fluent API</strong>: Method chaining for readable configuration</li>
-<li><strong>Type Safety</strong>: Cannot create shell without header navigation</li>
+<li><strong>Type Safety</strong>: Cannot create shell without required parameters</li>
 </ul>
 <h2 id="navigation-structure"><a class="header" href="#navigation-structure">Navigation Structure</a></h2>
 <p>The shell supports flexible navigation with two types of elements:</p>
 <h3 id="navigation-items"><a class="header" href="#navigation-items">Navigation Items</a></h3>
-<p>Single navigation links that appear in both header and side navigation.</p>
+<p>Single navigation links that appear in the header navigation.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>NavElement::Item(NavItem { label: "Home", href: "/" })
 <span class="boring">}</span></code></pre></pre>
 <h3 id="navigation-menus"><a class="header" href="#navigation-menus">Navigation Menus</a></h3>
-<p>Dropdown menus with multiple items that appear as dropdowns in header navigation and expandable menus in side navigation.</p>
+<p>Dropdown menus with multiple items that appear as dropdowns in header navigation.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>NavElement::Menu(NavMenu {
@@ -852,13 +793,13 @@ let shell_markup = shell(header_nav)
 <h2 id="features"><a class="header" href="#features">Features</a></h2>
 <ul>
 <li><strong>Configurable Navigation</strong>: Support for both navigation items and dropdown menus</li>
-<li><strong>Responsive Design</strong>: Adapts to different screen sizes with collapsible side navigation</li>
+<li><strong>Responsive Design</strong>: Adapts to different screen sizes with responsive navigation</li>
 <li><strong>Search Functionality</strong>: Integrated search with accessibility features</li>
 <li><strong>Theme Toggle</strong>: Light/dark theme switching with persistence</li>
 <li><strong>Static Branding</strong>: DaSCH Service Platform branding remains consistent</li>
 <li><strong>Accessible ARIA Labels</strong>: Full accessibility support</li>
 </ul>
-<h2 id="accessibility-notes-3"><a class="header" href="#accessibility-notes-3">Accessibility Notes</a></h2>
+<h2 id="accessibility-notes-1"><a class="header" href="#accessibility-notes-1">Accessibility Notes</a></h2>
 <ul>
 <li>Comprehensive ARIA labels and roles</li>
 <li>Keyboard navigation support</li>
@@ -867,53 +808,11 @@ let shell_markup = shell(header_nav)
 <li>High contrast theme support</li>
 <li>Semantic navigation structure</li>
 </ul>
-<h2 id="implementation-status-3"><a class="header" href="#implementation-status-3">Implementation Status</a></h2>
+<h2 id="implementation-status-1"><a class="header" href="#implementation-status-1">Implementation Status</a></h2>
 <p>✅ Fully functional with configurable navigation</p>
-<h2 id="design-notes-3"><a class="header" href="#design-notes-3">Design Notes</a></h2>
-<p>Currently implemented using Carbon Web Components via CDN. Provides advanced features including responsive navigation, search functionality, and theme management. The shell serves as the primary application wrapper and maintains consistent layout across different pages.</p>
+<h2 id="design-notes-1"><a class="header" href="#design-notes-1">Design Notes</a></h2>
+<p>Currently transitioning from web components to Tailwind Plus implementation. Provides advanced features including responsive navigation, search functionality, and theme management. The shell serves as the primary application wrapper and maintains consistent layout across different pages.</p>
 <p>Navigation content is now configurable while maintaining static branding elements and core functionality.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="tag-1"><a class="header" href="#tag-1">Tag</a></h1>
-<p>Tag component with different color variants for categorization and labeling.</p>
-<h2 id="usage-guidelines-4"><a class="header" href="#usage-guidelines-4">Usage Guidelines</a></h2>
-<p>Use tags to categorize content, show status, or provide quick visual identification. Choose colors that align with your content's meaning and maintain consistency across the application.</p>
-<h2 id="variants-3"><a class="header" href="#variants-3">Variants</a></h2>
-<h3 id="gray"><a class="header" href="#gray">Gray</a></h3>
-<p>Default neutral tag for general categorization and labeling.</p>
-<h3 id="blue"><a class="header" href="#blue">Blue</a></h3>
-<p>Blue tag for information, links, or primary category identification.</p>
-<h3 id="green"><a class="header" href="#green">Green</a></h3>
-<p>Green tag for success states, completed items, or positive categorization.</p>
-<h2 id="accessibility-notes-4"><a class="header" href="#accessibility-notes-4">Accessibility Notes</a></h2>
-<ul>
-<li>Semantic HTML structure</li>
-<li>Sufficient color contrast for all variants</li>
-<li>Screen reader compatible text</li>
-<li>Clear visual differentiation between variants</li>
-</ul>
-<h2 id="implementation-status-4"><a class="header" href="#implementation-status-4">Implementation Status</a></h2>
-<p>🚧 Functional but incomplete - missing variants and attributes</p>
-<h2 id="design-notes-4"><a class="header" href="#design-notes-4">Design Notes</a></h2>
-<p>Currently implemented using Carbon Web Components via CDN. Provides colored labels with brand-aligned styling and dynamic script loading. Will be extended to include additional variants and attributes as needed.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="tile-1"><a class="header" href="#tile-1">Tile</a></h1>
-<p>Tile component with base and clickable variants for content containers.</p>
-<h2 id="usage-guidelines-5"><a class="header" href="#usage-guidelines-5">Usage Guidelines</a></h2>
-<p>Use tiles to group related content in a visually distinct container. Choose the clickable variant when the entire tile should be interactive.</p>
-<h2 id="variants-4"><a class="header" href="#variants-4">Variants</a></h2>
-<h3 id="base"><a class="header" href="#base">Base</a></h3>
-<p>Static content container for displaying information without interaction.</p>
-<h3 id="clickable"><a class="header" href="#clickable">Clickable</a></h3>
-<p>Interactive tile that responds to user interaction. Use when the entire tile should be clickable.</p>
-<h2 id="accessibility-notes-5"><a class="header" href="#accessibility-notes-5">Accessibility Notes</a></h2>
-<ul>
-<li>Proper semantic HTML structure</li>
-<li>Keyboard navigation support for clickable variant</li>
-<li>Clear focus indicators</li>
-<li>Screen reader compatible content structure</li>
-</ul>
-<h2 id="implementation-status-5"><a class="header" href="#implementation-status-5">Implementation Status</a></h2>
-<p>🚧 Functional but incomplete - styling verification needed, missing accessibility features</p>
-<h2 id="design-notes-5"><a class="header" href="#design-notes-5">Design Notes</a></h2>
-<p>The tile component serves as a content container accepting arbitrary Markup. Custom test IDs are supported for testing. The clickable variant includes proper interaction states and accessibility features.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="web-components-overview"><a class="header" href="#web-components-overview">Web Components Overview</a></h1>
 <p>DaSCH publishes a small number of purpose-built web components.
 These components are intended for external use, allowing developers to integrate them into their own applications.</p>
@@ -1003,7 +902,7 @@ and identify opportunities for further improvements.</p>
 <li><strong>Axum</strong> - HTTP web framework with WebSocket support</li>
 <li><strong>Maud</strong> - Macro-based templating engine (JSX-like syntax)</li>
 <li><strong>DataStar</strong> - Hypermedia-driven frontend interactivity</li>
-<li><strong>Carbon Web Components</strong> - Design system components via CDN integration</li>
+<li><strong>Tailwind Plus</strong> - Design system foundation with utility-first CSS approach</li>
 <li><strong>Database TBD</strong> - Currently using static JSON files</li>
 </ul>
 <h2 id="development--testing"><a class="header" href="#development--testing">Development &amp; Testing</a></h2>
@@ -1176,27 +1075,22 @@ and designing solutions on top of it ad hoc,
 we are using a purpose-built design system.
 This will help us to keep the design consistent and coherent,
 reduce complexity, and give our products a clearer brand identity.</p>
-<p>This design system is based on the <a href="https://carbondesignsystem.com/">IBM Carbon Design System</a>,
-but is customized to our needs.</p>
+<p>This design system is built with Tailwind Plus as its foundation,
+providing modern, utility-first styling and component patterns.</p>
 <h3 id="concept-aim-and-purpose"><a class="header" href="#concept-aim-and-purpose">Concept, Aim and Purpose</a></h3>
-<p>We build the DSP Design System on top of the Carbon Design System,
-because it communicates the reliability and trustworthiness that users expect from an archive.
-Furthermore, it is a well established design system,
-where concerns such as accessibility and usability have been well thought out.</p>
-<p>There are several reasons why we do not use the Carbon Design System as is,
-and instead build our own design system on top of it:</p>
+<p>We build the DSP Design System using Tailwind Plus principles
+because it provides a robust foundation for creating consistent, maintainable interfaces
+that communicate the reliability and trustworthiness that users expect from an archive.</p>
+<p>Our approach differs from using design systems as-is for several key reasons:</p>
 <ul>
-<li>It is a customizeable, generic, general purpose design system.<br />
-As such, it provides a lot of options and flexibility but comes with a lot of complexity.<br />
-By customizing it to our needs, we can reduce complexity and limit it to our needs.
-By limiting optins (e.g. components, icons, tokens, etc.) to the ones we need,
-we can simplify design and ensure consistency in our products.</li>
-<li>It is customizeable, but we do not need that flexibility.<br />
-By creating a purpose-built design system, we can bake our brand into it, and reduce complexity even further.</li>
-<li>The official and community implementations of Carbon do not align with our tech stack.<br />
-By creating our own implementation, we can tailor it to our needs
-and move the implementation of individual components to dedicated design system work,
-rather than having to implement them in the context of project work.<br />
+<li><strong>Purpose-built focus</strong>: Rather than using a generic, customizable system,
+we create a focused design system tailored specifically to the DSP platform's needs.
+This reduces complexity and ensures consistency by limiting options to what we actually need.</li>
+<li><strong>Brand integration</strong>: By building our own implementation, we can bake the DSP brand
+directly into the system, eliminating the need for extensive customization layers.</li>
+<li><strong>Tech stack alignment</strong>: Our Rust-based, Maud-native implementation aligns perfectly
+with our technology choices, allowing us to move component implementation
+to dedicated design system work rather than ad-hoc development during project work.<br />
 The design system work will be done in close collaboration between Dev and PM,
 and is an up-fron investment that will improve the speed and quality of project work in the long run.</li>
 </ul>

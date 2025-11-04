@@ -10,30 +10,82 @@ Menus are used to display a list of actions or navigation options triggered by a
 
 The menu component uses a builder pattern for flexible construction:
 
-### Basic Usage
+### Basic Usage with Text Trigger
+
+The recommended way to create a menu is using `with_text_trigger()`, which automatically creates a styled button trigger with the correct `popovertarget` attribute:
 
 ```rust
-use components::{menu, menu_item};
+use components::{menu, menu_item, icon, IconType};
+
+let star_icon = icon::icon_for_menu_item(IconType::Star);
 
 let my_menu = menu::menu()
     .with_id("user-menu")
+    .with_text_trigger("Open Menu")
     .with_item(menu_item::link_menu_item("Profile", "/profile"))
-    .with_item(menu_item::link_menu_item("Settings", "/settings"))
+    .with_item(menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon))
     .with_item(menu_item::menu_item_divider())
     .with_item(menu_item::button_menu_item("Sign Out"))
     .build();
 ```
 
-### Triggering the Menu
+### Menu with Icon Trigger
 
-Menus are triggered using the `popovertarget` attribute on a button:
+For a more compact UI, use `with_icon_trigger()` to create an icon button trigger. Icon buttons are keyboard accessible and semantically correct:
 
 ```rust
-html! {
-    button popovertarget="user-menu" class="..." {
-        "Open Menu"
+use components::{menu, menu_item, icon, IconType};
+
+let icon_menu = menu::menu()
+    .with_id("actions-menu")
+    .with_icon_trigger(icon::icon(IconType::Hamburger))
+    .with_item(menu_item::link_menu_item("Dashboard", "/dashboard"))
+    .with_item(menu_item::link_menu_item("Profile", "/profile"))
+    .with_item(menu_item::button_menu_item("Sign Out"))
+    .build();
+```
+
+### Advanced: Custom Trigger Button
+
+If you need full control over the trigger button, create your own button with the `popovertarget` attribute and pass it to `with_trigger()`:
+
+```rust
+use components::{menu, menu_item, button, icon, IconType};
+
+let custom_trigger = html! {
+    button
+        type="button"
+        popovertarget="custom-menu"
+        class="custom-button-classes"
+    {
+        "Custom Trigger"
     }
-    (my_menu)
+};
+
+let my_menu = menu::menu()
+    .with_id("custom-menu")
+    .with_trigger(custom_trigger)
+    .with_item(menu_item::link_menu_item("Profile", "/profile"))
+    .build();
+```
+
+### External Trigger Button
+
+Alternatively, you can create the menu without any trigger and place the trigger button separately:
+
+```rust
+let my_menu = menu::menu()
+    .with_id("user-menu")
+    .with_item(menu_item::link_menu_item("Profile", "/profile"))
+    .build();
+
+html! {
+    div {
+        button popovertarget="user-menu" class="custom-button-classes" {
+            "Separate Trigger"
+        }
+        (my_menu)
+    }
 }
 ```
 
@@ -42,6 +94,45 @@ html! {
 ### `with_id(id: impl Into<String>)`
 
 Sets the menu ID (required for popover targeting). The ID must match the `popovertarget` attribute on the trigger button.
+
+### `with_text_trigger(text: impl Into<String>)`
+
+Creates a styled text button trigger for the menu. The button automatically includes the correct `popovertarget` attribute pointing to the menu ID.
+
+**Example:**
+```rust
+menu::menu()
+    .with_id("my-menu")
+    .with_text_trigger("Open Menu")
+```
+
+### `with_icon_trigger(icon: Markup)`
+
+Creates an icon button trigger for the menu. Icon buttons are compact, keyboard accessible, and semantically correct. The button automatically includes the correct `popovertarget` attribute.
+
+**Example:**
+```rust
+menu::menu()
+    .with_id("my-menu")
+    .with_icon_trigger(icon::icon(IconType::Hamburger))
+```
+
+### `with_trigger(trigger_button: Markup)`
+
+Sets a custom trigger button for the menu. Use this for full control over trigger styling. The trigger should be a complete button element with a `popovertarget` attribute matching the menu ID.
+
+For most use cases, prefer `with_text_trigger()` or `with_icon_trigger()` instead.
+
+**Example:**
+```rust
+let custom = html! {
+    button popovertarget="my-menu" class="..." { "Custom" }
+};
+
+menu::menu()
+    .with_id("my-menu")
+    .with_trigger(custom)
+```
 
 ### `with_item(item: Markup)`
 
@@ -53,7 +144,7 @@ Adds multiple menu items at once.
 
 ### `build()`
 
-Renders the menu component and returns the final markup.
+Renders the menu component and returns the final markup. If a trigger was provided, returns a container with both the trigger button and menu. Otherwise, returns only the menu element.
 
 ## Conditional Menu Building
 
@@ -150,11 +241,22 @@ menu::menu()
 ### Context Menu with Actions
 
 ```rust
+use components::{menu, menu_item, icon, IconType};
+
 menu::menu()
     .with_id("context-menu")
-    .with_item(menu_item::button_menu_item_with_icon("Share", share_icon))
-    .with_item(menu_item::button_menu_item_with_icon("Download", download_icon))
+    .with_item(menu_item::button_menu_item_with_icon(
+        "Share",
+        icon::icon_for_menu_item(IconType::Star)
+    ))
+    .with_item(menu_item::button_menu_item_with_icon(
+        "Download",
+        icon::icon_for_menu_item(IconType::Code)
+    ))
     .with_item(menu_item::menu_item_divider())
-    .with_item(menu_item::button_menu_item_with_icon("Delete", delete_icon))
+    .with_item(menu_item::button_menu_item_with_icon(
+        "Delete",
+        icon::icon_for_menu_item(IconType::Flag)
+    ))
     .build()
 ```

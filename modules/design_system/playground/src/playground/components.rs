@@ -67,6 +67,12 @@ const COMPONENTS: &[ComponentSpec] = &[
         doc_file: "hero.md",
     },
     ComponentSpec {
+        name: "Icon",
+        route_name: "icon",
+        variants: &[ComponentVariantSpec { name: "All Examples", value: "default", is_default: true }],
+        doc_file: "icon.md",
+    },
+    ComponentSpec {
         name: "Menu Item",
         route_name: "menu-item",
         variants: &[ComponentVariantSpec { name: "All Examples", value: "default", is_default: true }],

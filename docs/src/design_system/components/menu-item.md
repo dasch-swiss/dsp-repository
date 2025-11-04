@@ -38,7 +38,17 @@ Both link and button variants support optional icons using the `_with_icon` vari
 - `link_menu_item_with_icon(text, href, icon)`
 - `button_menu_item_with_icon(text, icon)`
 
-Icons should be provided as `Markup` and can use the `menu_item::icon_classes()` helper for consistent styling.
+Icons should be provided as `Markup`. Use the `icon::icon_for_menu_item()` function for properly styled icons:
+
+```rust
+use components::{menu_item, icon, IconType};
+
+let star_icon = icon::icon_for_menu_item(IconType::Star);
+let link_item = menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon);
+
+let code_icon = icon::icon_for_menu_item(IconType::Code);
+let button_item = menu_item::button_menu_item_with_icon("View Source", code_icon);
+```
 
 ## Accessibility Notes
 
@@ -79,11 +89,18 @@ Menu items are designed to be composed into larger menu structures. They work we
 
 Example composition:
 ```rust
+use components::{menu_item, icon, IconType};
+use maud::html;
+
+let star_icon = icon::icon_for_menu_item(IconType::Star);
+let flag_icon = icon::icon_for_menu_item(IconType::Flag);
+
 html! {
     div class="menu-container" {
         (menu_item::link_menu_item("Profile", "/profile"))
-        (menu_item::link_menu_item("Settings", "/settings"))
+        (menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon))
         (menu_item::menu_item_divider())
+        (menu_item::button_menu_item_with_icon("Report", flag_icon))
         (menu_item::button_menu_item("Sign Out"))
     }
 }

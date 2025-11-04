@@ -35,15 +35,10 @@ pub fn link_menu_item(text: impl Into<String>, href: impl Into<String>) -> Marku
 ///
 /// # Example
 /// ```rust
-/// use components::menu_item;
-/// use maud::html;
+/// use components::{menu_item, icon, IconType};
 ///
-/// let icon = html! {
-///     svg viewBox="0 0 20 20" fill="currentColor" class=(menu_item::icon_classes()) {
-///         path d="M10 2a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H3a1 1 0 110-2h6V3a1 1 0 011-1z";
-///     }
-/// };
-/// let item = menu_item::link_menu_item_with_icon("Add Item", "/add", icon);
+/// let star_icon = icon::icon_for_menu_item(IconType::Star);
+/// let item = menu_item::link_menu_item_with_icon("Add to favorites", "/favorites", star_icon);
 /// ```
 pub fn link_menu_item_with_icon(text: impl Into<String>, href: impl Into<String>, icon: Markup) -> Markup {
     let text = text.into();
@@ -79,15 +74,10 @@ pub fn button_menu_item(text: impl Into<String>) -> Markup {
 ///
 /// # Example
 /// ```rust
-/// use components::menu_item;
-/// use maud::html;
+/// use components::{menu_item, icon, IconType};
 ///
-/// let icon = html! {
-///     svg viewBox="0 0 20 20" fill="currentColor" class=(menu_item::icon_classes()) {
-///         path d="M10 2a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H3a1 1 0 110-2h6V3a1 1 0 011-1z";
-///     }
-/// };
-/// let item = menu_item::button_menu_item_with_icon("Share", icon);
+/// let code_icon = icon::icon_for_menu_item(IconType::Code);
+/// let item = menu_item::button_menu_item_with_icon("View source", code_icon);
 /// ```
 pub fn button_menu_item_with_icon(text: impl Into<String>, icon: Markup) -> Markup {
     let text = text.into();
@@ -125,15 +115,17 @@ pub fn menu_item_divider() -> Markup {
 ///
 /// Use this when creating custom icons to ensure consistent styling.
 ///
+/// Note: For standard icons, consider using `icon::icon_for_menu_item()` instead.
+///
 /// # Example
 /// ```rust
-/// use maud::html;
+/// use components::{icon, IconType};
 ///
-/// let icon = html! {
-///     svg viewBox="0 0 20 20" fill="currentColor" class=(components::menu_item::icon_classes()) {
-///         path d="...";
-///     }
-/// };
+/// // Preferred approach for standard icons
+/// let icon = icon::icon_for_menu_item(IconType::Star);
+///
+/// // Or use icon_classes() for custom styling
+/// let custom_icon = icon::icon_with_class(IconType::Star, "mr-3 size-5 text-red-500");
 /// ```
 pub fn icon_classes() -> &'static str {
     ICON_CLASSES

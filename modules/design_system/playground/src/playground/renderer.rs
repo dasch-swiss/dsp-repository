@@ -1,6 +1,6 @@
 use components::button::{self, ButtonVariant};
 use components::header::{HeaderConfig, NavElement, NavItem, NavMenu, NavMenuItem};
-use components::{footer, header, hero, link, menu, menu_item, shell, LinkTarget};
+use components::{footer, header, hero, icon, link, menu, menu_item, shell, IconType, LinkTarget};
 use maud::{html, Markup};
 
 use crate::playground::error::{PlaygroundError, PlaygroundResult};
@@ -48,6 +48,33 @@ impl ComponentRenderer for ButtonRenderer {
                 }
 
                 section {
+                    h3 class="text-lg font-semibold mb-3" { "Icon Buttons" }
+                    p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
+                        "Icon-only buttons for compact actions like closing dialogs or opening menus"
+                    }
+                    div class="flex flex-col gap-4" {
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Default Icon Buttons" }
+                            p class="text-xs text-gray-500 dark:text-gray-500 mb-2" { "Default icon buttons use subtle gray colors (text-gray-900 dark:text-gray-300)" }
+                            div class="flex items-center gap-4" {
+                                (button::icon_button(icon::icon(IconType::Hamburger), false))
+                                (button::icon_button(icon::icon(IconType::Close), false))
+                                (button::icon_button(icon::icon(IconType::ChevronDown), false))
+                            }
+                        }
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Icon Buttons with Custom Colors" }
+                            p class="text-xs text-gray-500 dark:text-gray-500 mb-2" { "Use icon_button_with_color() to override with custom Tailwind color classes" }
+                            div class="flex items-center gap-4" {
+                                (button::icon_button_with_color(icon::icon(IconType::Star), Some("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950"), false))
+                                (button::icon_button_with_color(icon::icon(IconType::Code), Some("text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950"), false))
+                                (button::icon_button_with_color(icon::icon(IconType::Flag), Some("text-red-500 hover:bg-red-50 dark:hover:bg-red-950"), false))
+                            }
+                        }
+                    }
+                }
+
+                section {
                     h3 class="text-lg font-semibold mb-3" { "Disabled States" }
                     div class="flex flex-col gap-4" {
                         div {
@@ -57,6 +84,10 @@ impl ComponentRenderer for ButtonRenderer {
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Secondary Disabled" }
                             (button::button_with_variant("Disabled Secondary", ButtonVariant::Secondary, true))
+                        }
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Icon Button Disabled" }
+                            (button::icon_button(icon::icon(IconType::Close), true))
                         }
                     }
                 }
@@ -298,6 +329,124 @@ impl ComponentRenderer for FooterRenderer {
     }
 }
 
+/// Icon component renderer
+pub struct IconRenderer;
+
+impl ComponentRenderer for IconRenderer {
+    fn render_variant(&self, variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
+        if variant != "default" {
+            return Err(PlaygroundError::InvalidVariant {
+                component: "icon".to_string(),
+                variant: variant.to_string(),
+            });
+        }
+
+        let markup = html! {
+            div class="flex flex-col gap-6 p-8" {
+                section {
+                    h3 class="text-lg font-semibold mb-3" { "Available Icons" }
+                    p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
+                        "All icons from Heroicons with consistent styling"
+                    }
+                    div class="grid grid-cols-2 md:grid-cols-3 gap-4" {
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::Star))
+                            span class="text-sm font-medium" { "Star" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::Code))
+                            span class="text-sm font-medium" { "Code" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::Flag))
+                            span class="text-sm font-medium" { "Flag" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::Hamburger))
+                            span class="text-sm font-medium" { "Hamburger" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::Close))
+                            span class="text-sm font-medium" { "Close" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::ChevronDown))
+                            span class="text-sm font-medium" { "ChevronDown" }
+                        }
+                    }
+                }
+
+                section {
+                    h3 class="text-lg font-semibold mb-3" { "Custom Sizes" }
+                    p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
+                        "Icons can be sized using Tailwind size classes"
+                    }
+                    div class="flex items-center gap-6" {
+                        div class="flex flex-col items-center gap-2" {
+                            (icon::icon_with_class(IconType::Star, "size-4"))
+                            span class="text-xs text-gray-600 dark:text-gray-400" { "size-4" }
+                        }
+                        div class="flex flex-col items-center gap-2" {
+                            (icon::icon_with_class(IconType::Star, "size-5"))
+                            span class="text-xs text-gray-600 dark:text-gray-400" { "size-5 (default)" }
+                        }
+                        div class="flex flex-col items-center gap-2" {
+                            (icon::icon_with_class(IconType::Star, "size-6"))
+                            span class="text-xs text-gray-600 dark:text-gray-400" { "size-6" }
+                        }
+                        div class="flex flex-col items-center gap-2" {
+                            (icon::icon_with_class(IconType::Star, "size-8"))
+                            span class="text-xs text-gray-600 dark:text-gray-400" { "size-8" }
+                        }
+                        div class="flex flex-col items-center gap-2" {
+                            (icon::icon_with_class(IconType::Star, "size-12"))
+                            span class="text-xs text-gray-600 dark:text-gray-400" { "size-12" }
+                        }
+                    }
+                }
+
+                section {
+                    h3 class="text-lg font-semibold mb-3" { "Custom Colors" }
+                    p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
+                        "Icons inherit currentColor and can be styled with text color classes"
+                    }
+                    div class="flex items-center gap-6" {
+                        (icon::icon_with_class(IconType::Star, "size-8 text-yellow-500"))
+                        (icon::icon_with_class(IconType::Star, "size-8 text-blue-500"))
+                        (icon::icon_with_class(IconType::Star, "size-8 text-green-500"))
+                        (icon::icon_with_class(IconType::Star, "size-8 text-red-500"))
+                        (icon::icon_with_class(IconType::Star, "size-8 text-purple-500"))
+                    }
+                }
+
+                section {
+                    h3 class="text-lg font-semibold mb-3" { "Menu Item Icons" }
+                    p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
+                        "Use icon_for_menu_item() for proper menu item styling"
+                    }
+                    div class="bg-white rounded-md shadow-lg w-56 dark:bg-gray-800 dark:-outline-offset-1 dark:outline-white/10" {
+                        div class="py-1" {
+                            (menu_item::link_menu_item_with_icon("Favorites", "/favorites", icon::icon_for_menu_item(IconType::Star)))
+                            (menu_item::link_menu_item_with_icon("View Source", "/source", icon::icon_for_menu_item(IconType::Code)))
+                            (menu_item::link_menu_item_with_icon("Report", "/report", icon::icon_for_menu_item(IconType::Flag)))
+                        }
+                    }
+                }
+            }
+        };
+
+        Ok(markup)
+    }
+
+    fn default_variant(&self) -> &'static str {
+        "default"
+    }
+
+    fn supported_variants(&self) -> Vec<&'static str> {
+        vec!["default"]
+    }
+}
+
 /// Menu Item component renderer
 pub struct MenuItemRenderer;
 
@@ -310,24 +459,10 @@ impl ComponentRenderer for MenuItemRenderer {
             });
         }
 
-        // Create sample SVG icons for demonstration
-        let star_icon = html! {
-            svg viewBox="0 0 20 20" fill="currentColor" data-slot="icon" aria-hidden="true" class=(menu_item::icon_classes()) {
-                path d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401Z" clip-rule="evenodd" fill-rule="evenodd";
-            }
-        };
-
-        let code_icon = html! {
-            svg viewBox="0 0 20 20" fill="currentColor" data-slot="icon" aria-hidden="true" class=(menu_item::icon_classes()) {
-                path d="M6.28 5.22a.75.75 0 0 1 0 1.06L2.56 10l3.72 3.72a.75.75 0 0 1-1.06 1.06L.97 10.53a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Zm7.44 0a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L17.44 10l-3.72-3.72a.75.75 0 0 1 0-1.06ZM11.377 2.011a.75.75 0 0 1 .612.867l-2.5 14.5a.75.75 0 0 1-1.478-.255l2.5-14.5a.75.75 0 0 1 .866-.612Z" clip-rule="evenodd" fill-rule="evenodd";
-            }
-        };
-
-        let flag_icon = html! {
-            svg viewBox="0 0 20 20" fill="currentColor" data-slot="icon" aria-hidden="true" class=(menu_item::icon_classes()) {
-                path d="M3.5 2.75a.75.75 0 0 0-1.5 0v14.5a.75.75 0 0 0 1.5 0v-4.392l1.657-.348a6.449 6.449 0 0 1 4.271.572 7.948 7.948 0 0 0 5.965.524l2.078-.64A.75.75 0 0 0 18 12.25v-8.5a.75.75 0 0 0-.904-.734l-2.38.501a7.25 7.25 0 0 1-4.186-.363l-.502-.2a8.75 8.75 0 0 0-5.053-.439l-1.475.31V2.75Z";
-            }
-        };
+        // Create sample icons for demonstration
+        let star_icon = icon::icon_for_menu_item(IconType::Star);
+        let code_icon = icon::icon_for_menu_item(IconType::Code);
+        let flag_icon = icon::icon_for_menu_item(IconType::Flag);
 
         let markup = html! {
             div class="flex flex-col gap-6 p-8" {
@@ -434,50 +569,48 @@ impl ComponentRenderer for MenuRenderer {
             });
         }
 
-        // Create sample SVG icons for demonstration
-        let star_icon = html! {
-            svg viewBox="0 0 20 20" fill="currentColor" data-slot="icon" aria-hidden="true" class=(menu_item::icon_classes()) {
-                path d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401Z" clip-rule="evenodd" fill-rule="evenodd";
-            }
-        };
-
-        let code_icon = html! {
-            svg viewBox="0 0 20 20" fill="currentColor" data-slot="icon" aria-hidden="true" class=(menu_item::icon_classes()) {
-                path d="M6.28 5.22a.75.75 0 0 1 0 1.06L2.56 10l3.72 3.72a.75.75 0 0 1-1.06 1.06L.97 10.53a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Zm7.44 0a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L17.44 10l-3.72-3.72a.75.75 0 0 1 0-1.06ZM11.377 2.011a.75.75 0 0 1 .612.867l-2.5 14.5a.75.75 0 0 1-1.478-.255l2.5-14.5a.75.75 0 0 1 .866-.612Z" clip-rule="evenodd" fill-rule="evenodd";
-            }
-        };
-
-        let flag_icon = html! {
-            svg viewBox="0 0 20 20" fill="currentColor" data-slot="icon" aria-hidden="true" class=(menu_item::icon_classes()) {
-                path d="M3.5 2.75a.75.75 0 0 0-1.5 0v14.5a.75.75 0 0 0 1.5 0v-4.392l1.657-.348a6.449 6.449 0 0 1 4.271.572 7.948 7.948 0 0 0 5.965.524l2.078-.64A.75.75 0 0 0 18 12.25v-8.5a.75.75 0 0 0-.904-.734l-2.38.501a7.25 7.25 0 0 1-4.186-.363l-.502-.2a8.75 8.75 0 0 0-5.053-.439l-1.475.31V2.75Z";
-            }
-        };
+        // Create sample icons for demonstration
+        let star_icon = icon::icon_for_menu_item(IconType::Star);
+        let code_icon = icon::icon_for_menu_item(IconType::Code);
+        let flag_icon = icon::icon_for_menu_item(IconType::Flag);
 
         let markup = html! {
             div class="flex flex-col gap-6 p-8" {
                 section {
-                    h3 class="text-lg font-semibold mb-3" { "Comprehensive Menu Example" }
+                    h3 class="text-lg font-semibold mb-3" { "Menu with Text Trigger" }
                     p class="text-sm text-gray-600 dark:text-gray-400 mb-2" {
                         "A complete menu showcasing links, buttons, icons, and dividers. The menu automatically positions itself optimally based on available screen space."
                     }
-                    div class="relative inline-block" {
-                        button popovertarget="demo-menu" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500" {
-                            "Open Menu"
-                        }
-                        (menu::menu()
-                            .with_id("demo-menu")
-                            .with_item(menu_item::link_menu_item("Profile", "/profile"))
-                            .with_item(menu_item::link_menu_item("Settings", "/settings"))
-                            .with_item(menu_item::menu_item_divider())
-                            .with_item(menu_item::link_menu_item_with_icon("Add to favorites", "/favorites", star_icon.clone()))
-                            .with_item(menu_item::link_menu_item_with_icon("View source", "/source", code_icon.clone()))
-                            .with_item(menu_item::menu_item_divider())
-                            .with_item(menu_item::button_menu_item_with_icon("Share", star_icon.clone()))
-                            .with_item(menu_item::button_menu_item_with_icon("Download", code_icon.clone()))
-                            .with_item(menu_item::menu_item_divider())
-                            .with_item(menu_item::button_menu_item_with_icon("Delete", flag_icon))
-                            .build())
+                    (menu::menu()
+                        .with_id("demo-menu")
+                        .with_text_trigger("Open Menu")
+                        .with_item(menu_item::link_menu_item("Profile", "/profile"))
+                        .with_item(menu_item::link_menu_item("Settings", "/settings"))
+                        .with_item(menu_item::menu_item_divider())
+                        .with_item(menu_item::link_menu_item_with_icon("Add to favorites", "/favorites", star_icon.clone()))
+                        .with_item(menu_item::link_menu_item_with_icon("View source", "/source", code_icon.clone()))
+                        .with_item(menu_item::menu_item_divider())
+                        .with_item(menu_item::button_menu_item_with_icon("Share", star_icon.clone()))
+                        .with_item(menu_item::button_menu_item_with_icon("Download", code_icon.clone()))
+                        .with_item(menu_item::menu_item_divider())
+                        .with_item(menu_item::button_menu_item_with_icon("Delete", flag_icon.clone()))
+                        .build())
+                }
+
+                section {
+                    h3 class="text-lg font-semibold mb-3" { "Menu with Icon Trigger" }
+                    p class="text-sm text-gray-600 dark:text-gray-400 mb-2" {
+                        "Using an icon button trigger for a compact UI. Icon buttons are keyboard accessible and semantically correct."
                     }
+                    (menu::menu()
+                        .with_id("icon-menu")
+                        .with_icon_trigger(icon::icon(IconType::Hamburger))
+                        .with_item(menu_item::link_menu_item("Dashboard", "/dashboard"))
+                        .with_item(menu_item::link_menu_item("Profile", "/profile"))
+                        .with_item(menu_item::link_menu_item("Settings", "/settings"))
+                        .with_item(menu_item::menu_item_divider())
+                        .with_item(menu_item::button_menu_item("Sign Out"))
+                        .build())
                 }
 
                 section {
@@ -485,23 +618,20 @@ impl ComponentRenderer for MenuRenderer {
                     p class="text-sm text-gray-600 dark:text-gray-400 mb-2" {
                         "The builder pattern allows flexible, conditional menu construction"
                     }
-                    div class="relative inline-block" {
-                        button popovertarget="conditional-menu" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500" {
-                            "Dynamic Menu"
-                        }
-                        @let is_admin = true;
-                        @let builder = menu::menu().with_id("conditional-menu");
-                        @let builder = builder.with_item(menu_item::link_menu_item("Dashboard", "/dashboard"));
-                        @let builder = builder.with_item(menu_item::link_menu_item("Profile", "/profile"));
-                        @let builder = if is_admin {
-                            builder
-                                .with_item(menu_item::menu_item_divider())
-                                .with_item(menu_item::link_menu_item("Admin Panel", "/admin"))
-                        } else {
-                            builder
-                        };
-                        (builder.build())
-                    }
+                    @let is_admin = true;
+                    @let builder = menu::menu()
+                        .with_id("conditional-menu")
+                        .with_text_trigger("Dynamic Menu");
+                    @let builder = builder.with_item(menu_item::link_menu_item("Dashboard", "/dashboard"));
+                    @let builder = builder.with_item(menu_item::link_menu_item("Profile", "/profile"));
+                    @let builder = if is_admin {
+                        builder
+                            .with_item(menu_item::menu_item_divider())
+                            .with_item(menu_item::link_menu_item("Admin Panel", "/admin"))
+                    } else {
+                        builder
+                    };
+                    (builder.build())
                 }
             }
         };
@@ -528,6 +658,7 @@ impl ComponentRendererRegistry {
             "footer" => Some(Box::new(FooterRenderer)),
             "header" => Some(Box::new(HeaderRenderer)),
             "hero" => Some(Box::new(HeroRenderer)),
+            "icon" => Some(Box::new(IconRenderer)),
             "link" => Some(Box::new(LinkRenderer)),
             "menu" => Some(Box::new(MenuRenderer)),
             "menu-item" => Some(Box::new(MenuItemRenderer)),

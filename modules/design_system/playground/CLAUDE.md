@@ -42,11 +42,52 @@ Visual tests have been separated from functional tests to provide flexibility in
 - `pages.rs` - Page handlers for each component
 - `skeleton.rs` - Page template wrapper
 - `livereload.rs` - WebSocket live reload functionality
+- `src/playground/`
+  - `renderer.rs` - Core showcase traits and registry
+  - `showcases/` - Component showcase implementations
+    - `button_showcase.rs`
+    - `icon_showcase.rs`
+    - `menu_showcase.rs`
+    - ... (one file per component)
+
+## Showcase Architecture
+
+Component showcases are organized in a modular structure where each component has its own dedicated showcase file. This makes the codebase maintainable and prepares for future features like code-view toggling.
+
+**See `SHOWCASE_ARCHITECTURE.md` for detailed documentation.**
+
+### Creating a New Showcase
+
+1. Create `src/playground/showcases/my_component_showcase.rs`
+2. Implement the `ComponentRenderer` trait
+3. Add to `showcases/mod.rs`
+4. Register in `renderer.rs` registry
+5. Add route in `main.rs`
+
+### Future: Code-View Feature
+
+The architecture includes the `example!` macro for capturing both rendered markup and source code:
+
+```rust
+example!{
+    id: "primary-button",
+    name: "Primary Button",
+    description: "Main call-to-action",
+    code: {
+        button::button("Click Me")
+            .variant(ButtonVariant::Primary)
+            .build()
+    }
+}
+```
+
+This enables a toggle between rendered view and code view for each example.
 
 ## Component Development Pattern
 
 1. Create/modify component in `../components/src/`
-2. Add page route in `main.rs`
-3. Create page handler in `pages.rs`
-4. Use WebFetch to view rendered component during development
-5. Test component variations and edge cases
+2. Create showcase in `src/playground/showcases/my_component_showcase.rs`
+3. Add page route in `main.rs`
+4. Create page handler in `pages.rs`
+5. Use WebFetch to view rendered component during development
+6. Test component variations and edge cases

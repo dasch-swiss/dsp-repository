@@ -1,6 +1,6 @@
 use maud::{html, Markup};
 
-use crate::playground::{components, docs_parser};
+use crate::playground::{component_registry, docs_parser};
 
 /// Helper function to build component links preserving current state
 fn build_component_link(component_name: &str, current_params: &str) -> String {
@@ -15,8 +15,8 @@ fn build_component_link(component_name: &str, current_params: &str) -> String {
         }
     }
 
-    // Build new URL with component parameter first
-    let mut url = format!("/?component={}", component_name);
+    // Build new URL with component parameter first, defaulting to component-store view
+    let mut url = format!("/?component={}&view=component-store", component_name);
 
     if !preserved_params.is_empty() {
         url.push('&');
@@ -38,6 +38,13 @@ pub fn render_page_shell(theme: &str, title: &str, css_path: &str, content: Mark
                 link rel="stylesheet" href=(css_path);
                 script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" {}
                 script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module" {}
+                script src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.11/bundles/datastar.js" type="module" {}
+                // Syntax highlighting for code blocks
+                link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css";
+                link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css";
+                script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js" {}
+                script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-rust.min.js" {}
+                script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" {}
             }
             body { (content) }
             // body class="theme-text-primary theme-bg-primary m-0 p-0 h-screen overflow-hidden" { (content) }
@@ -72,7 +79,7 @@ pub fn render_error_content(error_message: &str) -> Markup {
 /// Template for component documentation section
 pub fn render_documentation_section(component_name: &str) -> Markup {
     // Try to find the component spec and load documentation
-    if let Some(spec) = components::get_component_spec_by_route_name(component_name) {
+    if let Some(spec) = component_registry::get_component_spec_by_route_name(component_name) {
         if let Ok(doc) = docs_parser::load_component_documentation(spec) {
             return html! {
                 div class="flex-1 px-8 py-4 overflow-y-auto documentation-content theme-bg-primary" {
@@ -91,9 +98,12 @@ pub fn render_documentation_section(component_name: &str) -> Markup {
     }
 }
 
-/// Template for component controls section
+// NOTE: render_global_controls has been removed - theme selector is now part of component controls
+// and only affects the iframe, not the main playground UI
+
+/// Template for component-specific controls (variant selector, theme selector, and open button)
 pub fn render_component_controls(
-    component_info: &components::ComponentInfo,
+    component_info: &component_registry::ComponentInfo,
     current_variant: &str,
     current_theme: &str,
 ) -> Markup {
@@ -127,13 +137,13 @@ pub fn render_component_controls(
 
 /// Template for component navigation sidebar
 pub fn render_component_sidebar(
-    components: &[components::ComponentInfo],
+    components: &[component_registry::ComponentInfo],
     current_component: &str,
     current_params: &str,
 ) -> Markup {
     html! {
         nav class="theme-bg-primary border-r theme-border-subtle p-4 overflow-y-auto" {
-            h2 class="text-lg font-normal mb-3 theme-text-primary" { "Components" }
+            h2 class="text-lg font-normal mb-3 theme-text-primary" { "Component Library" }
             ul class="list-none" {
                 @for component in components {
                     li class="mb-1" {
@@ -155,18 +165,27 @@ pub fn render_component_sidebar(
 
 /// Template for component preview tabs
 pub fn render_component_tabs(
-    iframe_src: &str,
-    component_info: &components::ComponentInfo,
+    iframe_src_component_store: &str,
+    iframe_src_examples: &str,
+    component_info: &component_registry::ComponentInfo,
     current_view: &str,
+    current_variant: &str,
+    current_theme: &str,
 ) -> Markup {
     html! {
         div class="flex border-b theme-border-subtle theme-bg-primary" {
-            button data-tab-button data-tab="component" class=(format!("bg-none border-none px-4 py-3 cursor-pointer border-b-2 transition-all duration-200 {}",
-                if current_view == "component" {
+            button data-tab-button data-tab="component-store" class=(format!("bg-none border-none px-4 py-3 cursor-pointer border-b-2 transition-all duration-200 {}",
+                if current_view == "component-store" {
                     "tab-button-active"
                 } else {
                     "tab-button-inactive"
                 })) { "Component" }
+            button data-tab-button data-tab="examples" class=(format!("bg-none border-none px-4 py-3 cursor-pointer border-b-2 transition-all duration-200 {}",
+                if current_view == "examples" {
+                    "tab-button-active"
+                } else {
+                    "tab-button-inactive"
+                })) { "Examples and Variants" }
             button data-tab-button data-tab="documentation" class=(format!("bg-none border-none px-4 py-3 cursor-pointer border-b-2 transition-all duration-200 {}",
                 if current_view == "documentation" {
                     "tab-button-active"
@@ -174,10 +193,18 @@ pub fn render_component_tabs(
                     "tab-button-inactive"
                 })) { "Documentation" }
         }
-        div data-tab-content data-panel="component" class=(format!("flex-1 overflow-hidden {}",
-            if current_view == "component" { "flex flex-col" } else { "hidden" })) id="component-tab" {
-            iframe id="component-iframe" src=(iframe_src) class="flex-1 border-none w-full h-full theme-bg-primary" {}
+        // Component tab content
+        div data-tab-content data-panel="component-store" class=(format!("flex-1 overflow-hidden {}",
+            if current_view == "component-store" { "flex flex-col" } else { "hidden" })) id="component-store-tab" {
+            (render_component_controls(component_info, current_variant, current_theme))
+            iframe id="component-store-iframe" src=(iframe_src_component_store) class="flex-1 border-none w-full h-full theme-bg-primary" {}
         }
+        // Examples and Variants tab content
+        div data-tab-content data-panel="examples" class=(format!("flex-1 overflow-hidden {}",
+            if current_view == "examples" { "flex flex-col" } else { "hidden" })) id="examples-tab" {
+            iframe id="examples-iframe" src=(iframe_src_examples) class="flex-1 border-none w-full h-full theme-bg-primary" {}
+        }
+        // Documentation tab content
         div data-tab-content data-panel="documentation" class=(format!("flex-1 overflow-hidden theme-bg-primary {}",
             if current_view == "documentation" { "flex flex-col" } else { "hidden" })) id="documentation-tab" {
             (render_documentation_section(&component_info.route_name))
@@ -192,94 +219,94 @@ mod tests {
     #[test]
     fn test_build_component_link_basic() {
         let result = build_component_link("banner", "component=button&theme=light&view=component");
-        assert_eq!(result, "/?component=banner&theme=light");
+        assert_eq!(result, "/?component=banner&view=component-store&theme=light");
     }
 
     #[test]
     fn test_build_component_link_with_variant() {
         let result = build_component_link("banner", "component=button&variant=primary&theme=light&view=component");
-        assert_eq!(result, "/?component=banner&theme=light");
+        assert_eq!(result, "/?component=banner&view=component-store&theme=light");
     }
 
     #[test]
     fn test_build_component_link_preserve_all_params() {
         let current_params = "component=button&variant=secondary&theme=dark&view=documentation";
         let result = build_component_link("tile", current_params);
-        assert_eq!(result, "/?component=tile&theme=dark");
+        assert_eq!(result, "/?component=tile&view=component-store&theme=dark");
     }
 
     #[test]
     fn test_build_component_link_empty_params() {
         let result = build_component_link("button", "");
-        assert_eq!(result, "/?component=button");
+        assert_eq!(result, "/?component=button&view=component-store");
     }
 
     #[test]
     fn test_build_component_link_only_component_param() {
         let result = build_component_link("banner", "component=button");
-        assert_eq!(result, "/?component=banner");
+        assert_eq!(result, "/?component=banner&view=component-store");
     }
 
     #[test]
     fn test_build_component_link_malformed_params() {
         // Test with malformed parameter (missing value)
         let result = build_component_link("banner", "component=button&theme=&view=component");
-        assert_eq!(result, "/?component=banner&theme=");
+        assert_eq!(result, "/?component=banner&view=component-store&theme=");
     }
 
     #[test]
     fn test_build_component_link_single_param_no_equals() {
         // Test with parameter that has no equals sign
         let result = build_component_link("banner", "component=button&invalidparam&theme=light");
-        assert_eq!(result, "/?component=banner&theme=light");
+        assert_eq!(result, "/?component=banner&view=component-store&theme=light");
     }
 
     #[test]
     fn test_build_component_link_duplicate_non_component_params() {
         // Test with duplicate non-component parameters
         let result = build_component_link("banner", "component=button&theme=light&theme=dark&view=component");
-        assert_eq!(result, "/?component=banner&theme=light&theme=dark");
+        assert_eq!(result, "/?component=banner&view=component-store&theme=light&theme=dark");
     }
 
     #[test]
     fn test_build_component_link_component_param_not_first() {
         // Test when component is not the first parameter
         let result = build_component_link("banner", "theme=light&component=button&view=component");
-        assert_eq!(result, "/?component=banner&theme=light");
+        assert_eq!(result, "/?component=banner&view=component-store&theme=light");
     }
 
     #[test]
     fn test_build_component_link_special_characters() {
         // Test with special characters in component name
         let result = build_component_link("test-component", "component=button&theme=light");
-        assert_eq!(result, "/?component=test-component&theme=light");
+        assert_eq!(result, "/?component=test-component&view=component-store&theme=light");
     }
 
     #[test]
     fn test_build_component_link_empty_component_name() {
         let result = build_component_link("", "component=button&theme=light");
-        assert_eq!(result, "/?component=&theme=light");
+        assert_eq!(result, "/?component=&view=component-store&theme=light");
     }
 
     #[test]
     fn test_build_component_link_no_component_in_current_params() {
         // Test when current params don't contain component parameter
         let result = build_component_link("banner", "theme=light&view=component");
-        assert_eq!(result, "/?component=banner&theme=light");
+        assert_eq!(result, "/?component=banner&view=component-store&theme=light");
     }
 
     #[test]
     fn test_build_component_link_multiple_equals_in_value() {
         // Test with parameter value containing equals signs
         let result = build_component_link("banner", "component=button&custom=value=with=equals&theme=light");
-        assert_eq!(result, "/?component=banner&theme=light");
+        assert_eq!(result, "/?component=banner&view=component-store&theme=light");
     }
 
     #[test]
     fn test_build_component_link_preserves_order() {
         // Test that parameter order is preserved (except component is first)
         let result = build_component_link("banner", "component=button&view=component&theme=light&variant=primary");
-        assert_eq!(result, "/?component=banner&theme=light");
+        assert_eq!(result, "/?component=banner&view=component-store&theme=light");
     }
 
     #[test]

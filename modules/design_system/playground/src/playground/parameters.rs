@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::playground::components::{get_component_info_by_name, ComponentInfo};
+use crate::playground::component_registry::{get_component_info_by_name, ComponentInfo};
 use crate::playground::error::{PlaygroundError, PlaygroundResult};
 
 #[derive(Debug, Clone, Deserialize)]
@@ -27,10 +27,11 @@ pub enum Theme {
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "kebab-case")]
 pub enum ViewMode {
     #[default]
-    Component,
+    ComponentStore,
+    Examples,
     Documentation,
 }
 
@@ -46,7 +47,8 @@ impl std::fmt::Display for Theme {
 impl std::fmt::Display for ViewMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ViewMode::Component => write!(f, "component"),
+            ViewMode::ComponentStore => write!(f, "component-store"),
+            ViewMode::Examples => write!(f, "examples"),
             ViewMode::Documentation => write!(f, "documentation"),
         }
     }
@@ -63,15 +65,18 @@ impl PlaygroundParams {
         let component_info = get_component_info_by_name(&self.component)
             .ok_or_else(|| PlaygroundError::InvalidComponent(self.component.clone()))?;
 
-        // Check if variant exists for this component
+        // Only validate variants for Component Store view
+        // Examples and Documentation views have their own variant systems or don't use variants
         if let Some(variant) = &self.variant {
-            let variant_exists = component_info.variants.iter().any(|v| v.value == *variant);
+            if matches!(self.view, ViewMode::ComponentStore) {
+                let variant_exists = component_info.variants.iter().any(|v| v.value == *variant);
 
-            if !variant_exists {
-                return Err(PlaygroundError::InvalidVariant {
-                    component: self.component.clone(),
-                    variant: variant.clone(),
-                });
+                if !variant_exists {
+                    return Err(PlaygroundError::InvalidVariant {
+                        component: self.component.clone(),
+                        variant: variant.clone(),
+                    });
+                }
             }
         }
 
@@ -108,7 +113,7 @@ mod tests {
             component: "nonexistent".to_string(),
             variant: None,
             theme: Theme::Light,
-            view: ViewMode::Component,
+            view: ViewMode::ComponentStore,
         };
         let result = params.validate_self();
         assert!(result.is_err());
@@ -125,7 +130,7 @@ mod tests {
             component: "nonexistent".to_string(),
             variant: None,
             theme: Theme::Light,
-            view: ViewMode::Component,
+            view: ViewMode::ComponentStore,
         };
         let result = params.validate_self();
         assert!(result.is_err());
@@ -144,7 +149,7 @@ mod tests {
             component: "definitely_nonexistent_component".to_string(),
             variant: Some("nonexistent".to_string()),
             theme: Theme::Light,
-            view: ViewMode::Component,
+            view: ViewMode::ComponentStore,
         };
         let result = params.validate_self();
         assert!(result.is_err());
@@ -164,7 +169,7 @@ mod tests {
             component: "nonexistent".to_string(),
             variant: None,
             theme: Theme::Light,
-            view: ViewMode::Component,
+            view: ViewMode::ComponentStore,
         };
         let result = params.validate_self();
         assert!(result.is_err());
@@ -181,7 +186,7 @@ mod tests {
             component: "".to_string(),
             variant: None,
             theme: Theme::Light,
-            view: ViewMode::Component,
+            view: ViewMode::ComponentStore,
         };
         let result = params.validate_self();
         assert!(result.is_err());
@@ -198,10 +203,13 @@ mod tests {
             component: "button".to_string(),
             variant: Some("primary".to_string()),
             theme: Theme::Light,
-            view: ViewMode::Component,
+            view: ViewMode::ComponentStore,
         };
         let query_string = params.to_query_string();
-        assert_eq!(query_string, "component=button&variant=primary&theme=light&view=component");
+        assert_eq!(
+            query_string,
+            "component=button&variant=primary&theme=light&view=component-store"
+        );
     }
 
     #[test]
@@ -210,10 +218,10 @@ mod tests {
             component: "button".to_string(),
             variant: None,
             theme: Theme::Light,
-            view: ViewMode::Component,
+            view: ViewMode::ComponentStore,
         };
         let query_string = params.to_query_string();
-        assert_eq!(query_string, "component=button&theme=light&view=component");
+        assert_eq!(query_string, "component=button&theme=light&view=component-store");
     }
 
     #[test]
@@ -222,10 +230,10 @@ mod tests {
             component: "button".to_string(),
             variant: None,
             theme: Theme::Dark,
-            view: ViewMode::Component,
+            view: ViewMode::ComponentStore,
         };
         let query_string = params.to_query_string();
-        assert_eq!(query_string, "component=button&theme=dark&view=component");
+        assert_eq!(query_string, "component=button&theme=dark&view=component-store");
     }
 
     #[test]
@@ -248,7 +256,7 @@ mod tests {
             component: "nonexistent".to_string(),
             variant: None,
             theme: Theme::Light,
-            view: ViewMode::Component,
+            view: ViewMode::ComponentStore,
         };
         let component_info = params.get_component_info();
         assert!(component_info.is_none());
@@ -260,7 +268,7 @@ mod tests {
             component: "nonexistent".to_string(),
             variant: None,
             theme: Theme::Light,
-            view: ViewMode::Component,
+            view: ViewMode::ComponentStore,
         };
         let component_info = params.get_component_info();
         assert!(component_info.is_none());

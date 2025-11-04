@@ -74,7 +74,7 @@ fn render_hero_image(config: &HeroConfig) -> Markup {
 pub fn hero(config: &HeroConfig) -> Markup {
     html! {
         section class="relative" aria-label="Hero" role="banner" {
-            div class="mx-auto max-w-7xl" {
+            div class="mx-auto max-w-7xl bg-gray-900" {
                 div class="relative z-10 pt-14 lg:w-full lg:max-w-2xl" {
                     (render_hero_decoration())
                     div class="relative px-6 py-32 sm:py-40 lg:px-8 lg:py-56 lg:pr-0" {

@@ -17,7 +17,7 @@ test.describe('Design System Components - Functional Tests', () => {
       await page.goto('/?component=button');
 
       // Get button from iframe
-      const frame = page.locator('#component-iframe').contentFrame();
+      const frame = page.locator('#component-store-iframe').contentFrame();
       const button = frame.getByTestId('button-primary');
 
       // Check button
@@ -27,10 +27,10 @@ test.describe('Design System Components - Functional Tests', () => {
     });
 
     test('primary button displays correctly', async ({ page }) => {
-      await page.goto('/?component=button&theme=light&view=component&variant=primary');
+      await page.goto('/?component=button&theme=light&view=component-store&variant=primary');
 
       // Get button from iframe
-      const frame = page.locator('#component-iframe').contentFrame();
+      const frame = page.locator('#component-store-iframe').contentFrame();
       const button = frame.getByTestId('button-primary');
 
       // Check button
@@ -40,13 +40,26 @@ test.describe('Design System Components - Functional Tests', () => {
     });
   });
 
+  test.describe('Icon Component', () => {
+    test('close icon displays correctly', async ({ page }) => {
+      await page.goto('/?component=icon&theme=light&view=component-store&variant=close');
+
+      // Get icon from iframe
+      const frame = page.locator('#component-store-iframe').contentFrame();
+      const icon = frame.locator('svg');
+
+      // Check icon exists and is visible
+      await expect(icon).toBeVisible();
+    });
+  });
+
 
   test.describe('Shell Component', () => {
     test.skip('default fallback displays correctly', async ({ page }) => {
       await page.goto('/?component=shell');
 
       // Get elements from iframe
-      const frame = page.locator('#component-iframe').contentFrame();
+      const frame = page.locator('#component-store-iframe').contentFrame();
       await page.waitForTimeout(500);
 
       // Check shell components using test IDs
@@ -66,10 +79,10 @@ test.describe('Design System Components - Functional Tests', () => {
     });
 
     test.skip('header-only variant displays correctly', async ({ page }) => {
-      await page.goto('/?component=shell&theme=light&view=component&variant=header-only');
+      await page.goto('/?component=shell&theme=light&view=component-store&variant=header-only');
 
       // Get elements from iframe
-      const frame = page.locator('#component-iframe').contentFrame();
+      const frame = page.locator('#component-store-iframe').contentFrame();
       await page.waitForTimeout(500);
 
       // Check shell header components
@@ -91,10 +104,10 @@ test.describe('Design System Components - Functional Tests', () => {
 
 
     test.skip('theme toggle functionality', async ({ page }) => {
-      await page.goto('/?component=shell&theme=light&view=component');
+      await page.goto('/?component=shell&theme=light&view=component-store');
 
       // Get elements from iframe
-      const frame = page.locator('#component-iframe').contentFrame();
+      const frame = page.locator('#component-store-iframe').contentFrame();
       await page.waitForTimeout(500);
 
       // Check theme toggle button is present and clickable
@@ -107,10 +120,10 @@ test.describe('Design System Components - Functional Tests', () => {
     });
 
     test.skip('search functionality', async ({ page }) => {
-      await page.goto('/?component=shell&theme=light&view=component');
+      await page.goto('/?component=shell&theme=light&view=component-store');
 
       // Get elements from iframe
-      const frame = page.locator('#component-iframe').contentFrame();
+      const frame = page.locator('#component-store-iframe').contentFrame();
       await page.waitForTimeout(500);
 
       // Check search button is present and clickable
@@ -135,7 +148,7 @@ test.describe('Design System Components - Functional Tests', () => {
 
       // Check components render properly on mobile
       await page.goto('/?component=button');
-      const frame = page.locator('#component-iframe').contentFrame();
+      const frame = page.locator('#component-store-iframe').contentFrame();
       await expect(frame.getByTestId('button-primary')).toBeVisible();
     });
   });
@@ -152,7 +165,7 @@ test.describe('Design System Components - Functional Tests', () => {
 
       // Check buttons have accessible text
       await page.goto('/?component=button');
-      const frame = page.locator('#component-iframe').contentFrame();
+      const frame = page.locator('#component-store-iframe').contentFrame();
       const buttons = frame.locator('button');
       const buttonCount = await buttons.count();
 

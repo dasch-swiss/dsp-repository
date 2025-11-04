@@ -38,11 +38,38 @@ impl ComponentRenderer for ButtonRenderer {
                     div class="flex flex-col gap-4" {
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Primary - Main call-to-action" }
-                            (button::button_with_variant("Primary Button", ButtonVariant::Primary, false))
+                            (button::button_with_variant("Primary Button", ButtonVariant::Primary, false, None))
                         }
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Secondary - Alternative action" }
-                            (button::button_with_variant("Secondary Button", ButtonVariant::Secondary, false))
+                            (button::button_with_variant("Secondary Button", ButtonVariant::Secondary, false, None))
+                        }
+                    }
+                }
+
+                section {
+                    h3 class="text-lg font-semibold mb-3" { "Interactive Buttons (DataStar)" }
+                    p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
+                        "Buttons with onclick handlers using DataStar. Open browser console to see output."
+                    }
+                    div class="flex flex-col gap-4" {
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Button with console.log" }
+                            (button::button_with_variant(
+                                "Click me!",
+                                ButtonVariant::Primary,
+                                false,
+                                Some("console.log('Primary button clicked!')")
+                            ))
+                        }
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Secondary button with console.log" }
+                            (button::button_with_variant(
+                                "Log secondary",
+                                ButtonVariant::Secondary,
+                                false,
+                                Some("console.log('Secondary button clicked!')")
+                            ))
                         }
                     }
                 }
@@ -57,18 +84,31 @@ impl ComponentRenderer for ButtonRenderer {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Default Icon Buttons" }
                             p class="text-xs text-gray-500 dark:text-gray-500 mb-2" { "Default icon buttons use subtle gray colors (text-gray-900 dark:text-gray-300)" }
                             div class="flex items-center gap-4" {
-                                (button::icon_button(icon::icon(IconType::Hamburger), false))
-                                (button::icon_button(icon::icon(IconType::Close), false))
-                                (button::icon_button(icon::icon(IconType::ChevronDown), false))
+                                (button::icon_button(icon::icon(IconType::Hamburger), false, None))
+                                (button::icon_button(icon::icon(IconType::Close), false, None))
+                                (button::icon_button(icon::icon(IconType::ChevronDown), false, None))
                             }
                         }
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Icon Buttons with Custom Colors" }
                             p class="text-xs text-gray-500 dark:text-gray-500 mb-2" { "Use icon_button_with_color() to override with custom Tailwind color classes" }
                             div class="flex items-center gap-4" {
-                                (button::icon_button_with_color(icon::icon(IconType::Star), Some("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950"), false))
-                                (button::icon_button_with_color(icon::icon(IconType::Code), Some("text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950"), false))
-                                (button::icon_button_with_color(icon::icon(IconType::Flag), Some("text-red-500 hover:bg-red-50 dark:hover:bg-red-950"), false))
+                                (button::icon_button_with_color(icon::icon(IconType::Star), Some("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950"), false, None))
+                                (button::icon_button_with_color(icon::icon(IconType::Code), Some("text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950"), false, None))
+                                (button::icon_button_with_color(icon::icon(IconType::Flag), Some("text-red-500 hover:bg-red-50 dark:hover:bg-red-950"), false, None))
+                            }
+                        }
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Interactive Icon Buttons" }
+                            p class="text-xs text-gray-500 dark:text-gray-500 mb-2" { "Icon buttons with DataStar onclick handlers. Check console for output." }
+                            div class="flex items-center gap-4" {
+                                (button::icon_button(icon::icon(IconType::Star), false, Some("console.log('Star icon clicked!')")))
+                                (button::icon_button_with_color(
+                                    icon::icon(IconType::Flag),
+                                    Some("text-red-500 hover:bg-red-50 dark:hover:bg-red-950"),
+                                    false,
+                                    Some("console.log('Flag icon clicked!')")
+                                ))
                             }
                         }
                     }
@@ -79,15 +119,15 @@ impl ComponentRenderer for ButtonRenderer {
                     div class="flex flex-col gap-4" {
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Primary Disabled" }
-                            (button::button_with_variant("Disabled Primary", ButtonVariant::Primary, true))
+                            (button::button_with_variant("Disabled Primary", ButtonVariant::Primary, true, None))
                         }
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Secondary Disabled" }
-                            (button::button_with_variant("Disabled Secondary", ButtonVariant::Secondary, true))
+                            (button::button_with_variant("Disabled Secondary", ButtonVariant::Secondary, true, None))
                         }
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Icon Button Disabled" }
-                            (button::icon_button(icon::icon(IconType::Close), true))
+                            (button::icon_button(icon::icon(IconType::Close), true, None))
                         }
                     }
                 }

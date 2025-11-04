@@ -14,9 +14,6 @@ The primary button is used for the most important action on a page. Use sparingl
 ### Secondary
 Secondary buttons are used for less important actions that still need emphasis. They can be used multiple times on a page.
 
-### Outline
-Outline buttons are used for tertiary actions or when you need a lighter visual treatment while maintaining accessibility.
-
 ## Icon Buttons
 
 Icon buttons contain only an icon without text, providing a compact way to represent actions. They use subtle gray colors with hover states by default and are keyboard accessible.
@@ -73,10 +70,6 @@ let delete_button = button::icon_button_with_color(
 ```
 
 ## Accessibility Notes
-
-<!-- TODO -->
-
-Section missing...
 
 ## Implementation Status
 

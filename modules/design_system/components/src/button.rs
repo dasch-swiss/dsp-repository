@@ -30,25 +30,44 @@ impl ButtonVariant {
     }
 }
 
+// TODO: Create type-safe DataStar action wrapper to replace raw string onclick handlers
+// This would provide compile-time validation for DataStar actions like:
+// - DataStarAction::ConsoleLog(msg)
+// - DataStarAction::Get { url, options }
+// - DataStarAction::Post { url, options }
+// See: https://data-star.dev/ for DataStar action syntax
+
 pub fn button(text: impl Into<String>) -> Markup {
-    button_with_variant(text, ButtonVariant::Primary, false)
+    button_with_variant(text, ButtonVariant::Primary, false, None)
 }
 
-pub fn button_with_variant(text: impl Into<String>, variant: ButtonVariant, disabled: bool) -> Markup {
-    button_with_variant_and_testid(text, variant, disabled, None)
+pub fn button_with_variant(
+    text: impl Into<String>,
+    variant: ButtonVariant,
+    disabled: bool,
+    onclick: Option<&str>,
+) -> Markup {
+    button_with_variant_and_testid(text, variant, disabled, onclick, None)
 }
 
 pub fn button_with_variant_and_testid(
     text: impl Into<String>,
     variant: ButtonVariant,
     disabled: bool,
+    onclick: Option<&str>,
     custom_test_id: Option<&str>,
 ) -> Markup {
     let text = text.into();
     let test_id = custom_test_id.unwrap_or(variant.test_id());
 
     html! {
-        button type="button" class=(format!("{} {}", BASE_CLASSES, variant.variant_classes())) disabled[disabled] data-testid=(test_id) {
+        button
+            type="button"
+            class=(format!("{} {}", BASE_CLASSES, variant.variant_classes()))
+            disabled[disabled]
+            data-on-click=[onclick]
+            data-testid=(test_id)
+        {
             (text)
         }
     }
@@ -66,11 +85,18 @@ pub fn button_with_variant_and_testid(
 /// ```rust
 /// use components::{button, icon, IconType};
 ///
-/// let close_button = button::icon_button(icon::icon(IconType::Close), false);
-/// let menu_trigger = button::icon_button(icon::icon(IconType::Hamburger), false);
+/// let close_button = button::icon_button(icon::icon(IconType::Close), false, None);
+/// let menu_trigger = button::icon_button(icon::icon(IconType::Hamburger), false, None);
+///
+/// // With onclick handler
+/// let clickable = button::icon_button(
+///     icon::icon(IconType::Star),
+///     false,
+///     Some("console.log('Icon clicked!')")
+/// );
 /// ```
-pub fn icon_button(icon: Markup, disabled: bool) -> Markup {
-    icon_button_with_color(icon, None, disabled)
+pub fn icon_button(icon: Markup, disabled: bool, onclick: Option<&str>) -> Markup {
+    icon_button_with_color(icon, None, disabled, onclick)
 }
 
 /// Creates an icon button with custom color classes
@@ -86,17 +112,24 @@ pub fn icon_button(icon: Markup, disabled: bool) -> Markup {
 /// let custom_button = button::icon_button_with_color(
 ///     icon::icon(IconType::Star),
 ///     Some("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950"),
-///     false
+///     false,
+///     None
 /// );
 ///
-/// // Indigo colored icon button
+/// // Indigo colored icon button with onclick
 /// let indigo_button = button::icon_button_with_color(
 ///     icon::icon(IconType::Close),
 ///     Some("text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400"),
-///     false
+///     false,
+///     Some("console.log('Custom close!')")
 /// );
 /// ```
-pub fn icon_button_with_color(icon: Markup, color_class: Option<&str>, disabled: bool) -> Markup {
+pub fn icon_button_with_color(
+    icon: Markup,
+    color_class: Option<&str>,
+    disabled: bool,
+    onclick: Option<&str>,
+) -> Markup {
     let color = color_class.unwrap_or(DEFAULT_ICON_BUTTON_COLOR);
 
     html! {
@@ -104,6 +137,7 @@ pub fn icon_button_with_color(icon: Markup, color_class: Option<&str>, disabled:
             type="button"
             class=(format!("{} {}", ICON_BUTTON_BASE_CLASSES, color))
             disabled[disabled]
+            data-on-click=[onclick]
             data-testid="icon-button"
         {
             (icon)

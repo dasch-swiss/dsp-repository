@@ -38,6 +38,7 @@ pub fn render_page_shell(theme: &str, title: &str, css_path: &str, content: Mark
                 link rel="stylesheet" href=(css_path);
                 script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" {}
                 script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module" {}
+                script src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.11/bundles/datastar.js" type="module" {}
             }
             body { (content) }
             // body class="theme-text-primary theme-bg-primary m-0 p-0 h-screen overflow-hidden" { (content) }

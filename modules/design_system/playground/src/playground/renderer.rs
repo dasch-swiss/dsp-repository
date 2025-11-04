@@ -44,21 +44,16 @@ impl ComponentRenderer for ButtonRenderer {
                     div class="flex flex-col gap-4" {
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Primary - Main call-to-action" }
-                            (button::button_with_variant(
-                                "Primary Button",
-                                ButtonVariant::Primary,
-                                false,
-                                Some("console.log('Primary button clicked!')")
-                            ))
+                            (button::button("Primary Button")
+                                .onclick("console.log('Primary button clicked!')")
+                                .build())
                         }
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Secondary - Alternative action" }
-                            (button::button_with_variant(
-                                "Secondary Button",
-                                ButtonVariant::Secondary,
-                                false,
-                                Some("console.log('Secondary button clicked!')")
-                            ))
+                            (button::button("Secondary Button")
+                                .variant(ButtonVariant::Secondary)
+                                .onclick("console.log('Secondary button clicked!')")
+                                .build())
                         }
                     }
                 }
@@ -73,18 +68,33 @@ impl ComponentRenderer for ButtonRenderer {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Default Icon Buttons" }
                             p class="text-xs text-gray-500 dark:text-gray-500 mb-2" { "Default icon buttons use subtle gray colors (text-gray-900 dark:text-gray-300)" }
                             div class="flex items-center gap-4" {
-                                (button::icon_button(icon::icon(IconType::Hamburger), false, Some("console.log('Hamburger icon clicked!')")))
-                                (button::icon_button(icon::icon(IconType::Close), false, Some("console.log('Close icon clicked!')")))
-                                (button::icon_button(icon::icon(IconType::ChevronDown), false, Some("console.log('ChevronDown icon clicked!')")))
+                                (button::icon_button(icon::icon(IconType::Hamburger))
+                                    .onclick("console.log('Hamburger icon clicked!')")
+                                    .build())
+                                (button::icon_button(icon::icon(IconType::Close))
+                                    .onclick("console.log('Close icon clicked!')")
+                                    .build())
+                                (button::icon_button(icon::icon(IconType::ChevronDown))
+                                    .onclick("console.log('ChevronDown icon clicked!')")
+                                    .build())
                             }
                         }
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Icon Buttons with Custom Colors" }
-                            p class="text-xs text-gray-500 dark:text-gray-500 mb-2" { "Use icon_button_with_color() to override with custom Tailwind color classes" }
+                            p class="text-xs text-gray-500 dark:text-gray-500 mb-2" { "Use .color() to override with custom Tailwind color classes" }
                             div class="flex items-center gap-4" {
-                                (button::icon_button_with_color(icon::icon(IconType::Star), Some("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950"), false, Some("console.log('Star icon clicked!')")))
-                                (button::icon_button_with_color(icon::icon(IconType::Code), Some("text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950"), false, Some("console.log('Code icon clicked!')")))
-                                (button::icon_button_with_color(icon::icon(IconType::Flag), Some("text-red-500 hover:bg-red-50 dark:hover:bg-red-950"), false, Some("console.log('Flag icon clicked!')")))
+                                (button::icon_button(icon::icon(IconType::Star))
+                                    .color("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950")
+                                    .onclick("console.log('Star icon clicked!')")
+                                    .build())
+                                (button::icon_button(icon::icon(IconType::Code))
+                                    .color("text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950")
+                                    .onclick("console.log('Code icon clicked!')")
+                                    .build())
+                                (button::icon_button(icon::icon(IconType::Flag))
+                                    .color("text-red-500 hover:bg-red-50 dark:hover:bg-red-950")
+                                    .onclick("console.log('Flag icon clicked!')")
+                                    .build())
                             }
                         }
                     }
@@ -98,15 +108,87 @@ impl ComponentRenderer for ButtonRenderer {
                     div class="flex flex-col gap-4" {
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Primary Disabled" }
-                            (button::button_with_variant("Disabled Primary", ButtonVariant::Primary, true, Some("console.log('This should not fire!')")))
+                            (button::button("Disabled Primary")
+                                .disabled()
+                                .onclick("console.log('This should not fire!')")
+                                .build())
                         }
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Secondary Disabled" }
-                            (button::button_with_variant("Disabled Secondary", ButtonVariant::Secondary, true, Some("console.log('This should not fire!')")))
+                            (button::button("Disabled Secondary")
+                                .variant(ButtonVariant::Secondary)
+                                .disabled()
+                                .onclick("console.log('This should not fire!')")
+                                .build())
                         }
                         div {
                             p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Icon Button Disabled" }
-                            (button::icon_button(icon::icon(IconType::Close), true, Some("console.log('This should not fire!')")))
+                            (button::icon_button(icon::icon(IconType::Close))
+                                .disabled()
+                                .onclick("console.log('This should not fire!')")
+                                .build())
+                        }
+                    }
+                }
+
+                section {
+                    h3 class="text-lg font-semibold mb-3" { "Buttons with IDs" }
+                    p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
+                        "Use with_id() to set HTML id attributes for targeting with DataStar or JavaScript"
+                    }
+                    div class="flex flex-col gap-4" {
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Button with ID" }
+                            (button::button("Button with ID")
+                                .with_id("my-unique-button")
+                                .onclick("console.log('Button with ID clicked!')")
+                                .build())
+                        }
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Icon Button with ID" }
+                            (button::icon_button(icon::icon(IconType::Star))
+                                .with_id("star-button")
+                                .onclick("console.log('Star button with ID clicked!')")
+                                .build())
+                        }
+                    }
+                }
+
+                section {
+                    h3 class="text-lg font-semibold mb-3" { "Buttons with Icons" }
+                    p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
+                        "Add leading or trailing icons to standard buttons for enhanced visual communication"
+                    }
+                    div class="flex flex-col gap-4" {
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Button with Leading Icon" }
+                            (button::button("Download")
+                                .with_leading_icon(icon::icon(IconType::ChevronDown))
+                                .onclick("console.log('Download button clicked!')")
+                                .build())
+                        }
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Button with Trailing Icon" }
+                            (button::button("Next")
+                                .with_trailing_icon(icon::icon(IconType::ChevronDown))
+                                .onclick("console.log('Next button clicked!')")
+                                .build())
+                        }
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Button with Both Icons" }
+                            (button::button("Code")
+                                .with_leading_icon(icon::icon(IconType::Code))
+                                .with_trailing_icon(icon::icon(IconType::ChevronDown))
+                                .onclick("console.log('Code button clicked!')")
+                                .build())
+                        }
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Secondary with Icon" }
+                            (button::button("Star")
+                                .variant(ButtonVariant::Secondary)
+                                .with_leading_icon(icon::icon(IconType::Star))
+                                .onclick("console.log('Star button clicked!')")
+                                .build())
                         }
                     }
                 }

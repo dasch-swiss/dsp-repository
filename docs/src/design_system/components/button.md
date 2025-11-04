@@ -1,10 +1,67 @@
 # Button
 
-Interactive button component for user actions.
+Interactive button component for user actions using the builder pattern.
 
 ## Usage Guidelines
 
 Use buttons to trigger actions, submit forms, or navigate to different sections of the application. Choose the appropriate variant based on the action's importance and context.
+
+## Basic Usage
+
+The button component uses a builder pattern for flexible configuration:
+
+```rust
+use components::{button, ButtonVariant};
+
+// Simple button with default primary variant
+let btn = button("Click me").build();
+
+// Button with custom variant
+let secondary = button("Cancel")
+    .variant(ButtonVariant::Secondary)
+    .build();
+
+// Button with onclick handler
+let interactive = button("Save")
+    .onclick("console.log('saved')")
+    .build();
+
+// Disabled button
+let disabled = button("Delete")
+    .disabled()
+    .build();
+
+// Combining multiple options
+let custom = button("Submit")
+    .variant(ButtonVariant::Primary)
+    .onclick("@post('/api/submit')")
+    .test_id("submit-button")
+    .build();
+
+// Button with ID for DataStar targeting
+let identified = button("Target Me")
+    .with_id("my-button")
+    .onclick("console.log('clicked')")
+    .build();
+
+// Button with leading icon
+let with_icon = button("Download")
+    .with_leading_icon(icon::icon(IconType::ChevronDown))
+    .onclick("console.log('downloading')")
+    .build();
+
+// Button with trailing icon
+let next_button = button("Next")
+    .with_trailing_icon(icon::icon(IconType::ChevronDown))
+    .build();
+
+// Button with both icons
+let complex = button("Options")
+    .with_leading_icon(icon::icon(IconType::Code))
+    .with_trailing_icon(icon::icon(IconType::ChevronDown))
+    .variant(ButtonVariant::Secondary)
+    .build();
+```
 
 ## Variants
 
@@ -30,43 +87,51 @@ Icon buttons should always use semantically meaningful icons that users can reco
 ### Basic Icon Button
 
 ```rust
-use components::{button, icon, IconType};
+use components::{icon_button, icon, IconType};
 
 // Default icon button with gray colors
-let close_button = button::icon_button(icon::icon(IconType::Close), false);
-let menu_button = button::icon_button(icon::icon(IconType::Hamburger), false);
+let close = icon_button(icon::icon(IconType::Close)).build();
+
+// Icon button with onclick handler
+let interactive = icon_button(icon::icon(IconType::Star))
+    .onclick("console.log('starred')")
+    .build();
 
 // Disabled icon button
-let disabled_button = button::icon_button(icon::icon(IconType::Star), true);
+let disabled = icon_button(icon::icon(IconType::Close))
+    .disabled()
+    .build();
+
+// Icon button with ID
+let identified = icon_button(icon::icon(IconType::Star))
+    .with_id("star-button")
+    .onclick("console.log('starred')")
+    .build();
 ```
 
 ### Icon Buttons with Custom Colors
 
-For custom color schemes, use `icon_button_with_color()` to override the default gray colors:
+Use the `.color()` method to override the default gray colors:
 
 ```rust
-use components::{button, icon, IconType};
+use components::{icon_button, icon, IconType};
 
 // Yellow star button
-let star_button = button::icon_button_with_color(
-    icon::icon(IconType::Star),
-    Some("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950"),
-    false
-);
+let star = icon_button(icon::icon(IconType::Star))
+    .color("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950")
+    .onclick("console.log('starred')")
+    .build();
 
 // Indigo close button
-let indigo_close = button::icon_button_with_color(
-    icon::icon(IconType::Close),
-    Some("text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400"),
-    false
-);
+let indigo_close = icon_button(icon::icon(IconType::Close))
+    .color("text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400")
+    .build();
 
-// Red danger button
-let delete_button = button::icon_button_with_color(
-    icon::icon(IconType::Flag),
-    Some("text-red-500 hover:bg-red-50 dark:hover:bg-red-950"),
-    false
-);
+// Red danger button with interaction
+let delete = icon_button(icon::icon(IconType::Flag))
+    .color("text-red-500 hover:bg-red-50 dark:hover:bg-red-950")
+    .onclick("@post('/api/flag')")
+    .build();
 ```
 
 ## Accessibility Notes

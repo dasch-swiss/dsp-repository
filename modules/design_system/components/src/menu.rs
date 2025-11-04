@@ -16,12 +16,14 @@ const DEFAULT_ANCHOR: &str = "bottom end";
 ///
 /// # Example
 /// ```rust
-/// use components::{menu, menu_item};
+/// use components::{menu, menu_item, icon, IconType};
+///
+/// let star_icon = icon::icon_for_menu_item(IconType::Star);
 ///
 /// let my_menu = menu::menu()
 ///     .with_id("user-menu")
 ///     .with_item(menu_item::link_menu_item("Profile", "/profile"))
-///     .with_item(menu_item::link_menu_item("Settings", "/settings"))
+///     .with_item(menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon))
 ///     .with_item(menu_item::menu_item_divider())
 ///     .with_item(menu_item::button_menu_item("Sign Out"))
 ///     .build();
@@ -29,12 +31,13 @@ const DEFAULT_ANCHOR: &str = "bottom end";
 pub struct MenuBuilder {
     items: Vec<Markup>,
     id: Option<String>,
+    trigger: Option<Markup>,
 }
 
 impl MenuBuilder {
     /// Creates a new menu builder with default settings
     pub fn new() -> Self {
-        Self { items: Vec::new(), id: None }
+        Self { items: Vec::new(), id: None, trigger: None }
     }
 
     /// Adds a single menu item to the menu
@@ -92,9 +95,103 @@ impl MenuBuilder {
         self
     }
 
+    /// Sets a custom trigger element for the menu
+    ///
+    /// The trigger should be a complete button element. For convenience,
+    /// use `with_text_trigger()` or `with_icon_trigger()` helper methods instead.
+    ///
+    /// # Example
+    /// ```rust
+    /// use components::{menu, menu_item};
+    /// use maud::html;
+    ///
+    /// let custom_trigger = html! {
+    ///     button popovertarget="my-menu" class="custom-classes" { "Custom Button" }
+    /// };
+    ///
+    /// let my_menu = menu::menu()
+    ///     .with_id("my-menu")
+    ///     .with_trigger(custom_trigger)
+    ///     .with_item(menu_item::link_menu_item("Profile", "/profile"))
+    ///     .build();
+    /// ```
+    pub fn with_trigger(mut self, trigger_button: Markup) -> Self {
+        self.trigger = Some(trigger_button);
+        self
+    }
+
+    /// Creates a text button trigger for the menu
+    ///
+    /// This helper method creates a styled text button that triggers the menu.
+    /// The button automatically includes the correct `popovertarget` attribute.
+    ///
+    /// # Example
+    /// ```rust
+    /// use components::{menu, menu_item};
+    ///
+    /// let my_menu = menu::menu()
+    ///     .with_id("user-menu")
+    ///     .with_text_trigger("Open Menu")
+    ///     .with_item(menu_item::link_menu_item("Profile", "/profile"))
+    ///     .build();
+    /// ```
+    pub fn with_text_trigger(mut self, text: impl Into<String>) -> Self {
+        let menu_id = self.id.clone().unwrap_or_else(|| "menu".to_string());
+        let text = text.into();
+
+        self.trigger = Some(html! {
+            button
+                type="button"
+                popovertarget=(menu_id)
+                class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                data-testid="menu-trigger"
+            {
+                (text)
+            }
+        });
+        self
+    }
+
+    /// Creates an icon button trigger for the menu
+    ///
+    /// This helper method creates an icon button that triggers the menu.
+    /// Icon buttons are compact, keyboard accessible, and semantically correct.
+    /// The button automatically includes the correct `popovertarget` attribute.
+    ///
+    /// # Example
+    /// ```rust
+    /// use components::{menu, menu_item, icon, IconType};
+    ///
+    /// let my_menu = menu::menu()
+    ///     .with_id("actions-menu")
+    ///     .with_icon_trigger(icon::icon(IconType::Hamburger))
+    ///     .with_item(menu_item::link_menu_item("Dashboard", "/dashboard"))
+    ///     .build();
+    /// ```
+    pub fn with_icon_trigger(mut self, icon: Markup) -> Self {
+        let menu_id = self.id.clone().unwrap_or_else(|| "menu".to_string());
+
+        self.trigger = Some(html! {
+            button
+                type="button"
+                popovertarget=(menu_id)
+                class="rounded-md p-2 text-sm font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-900 dark:text-gray-300"
+                data-testid="menu-trigger"
+            {
+                (icon)
+            }
+        });
+        self
+    }
+
     /// Builds the menu component and returns the rendered markup
+    ///
+    /// When a trigger is provided via `with_trigger()`, `with_text_trigger()`, or
+    /// `with_icon_trigger()`, the menu will be wrapped in a container along with
+    /// its trigger button. Otherwise, only the menu itself is rendered (requiring
+    /// an external trigger button).
     pub fn build(self) -> Markup {
-        html! {
+        let menu = html! {
             el-menu
                 id=[self.id]
                 anchor=(DEFAULT_ANCHOR)
@@ -108,6 +205,18 @@ impl MenuBuilder {
                     }
                 }
             }
+        };
+
+        match self.trigger {
+            Some(trigger_button) => {
+                html! {
+                    div class="relative inline-block" {
+                        (trigger_button)
+                        (menu)
+                    }
+                }
+            }
+            None => menu,
         }
     }
 }

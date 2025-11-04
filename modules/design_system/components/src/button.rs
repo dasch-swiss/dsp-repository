@@ -4,6 +4,11 @@ use maud::{html, Markup};
 const BASE_CLASSES: &str =
     "rounded-md px-3 py-2 text-sm font-semibold shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
+const ICON_BUTTON_BASE_CLASSES: &str =
+    "rounded-md p-2 text-sm font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800";
+
+const DEFAULT_ICON_BUTTON_COLOR: &str = "text-gray-900 dark:text-gray-300";
+
 #[derive(Debug, Clone)]
 pub enum ButtonVariant {
     Primary,
@@ -45,6 +50,63 @@ pub fn button_with_variant_and_testid(
     html! {
         button type="button" class=(format!("{} {}", BASE_CLASSES, variant.variant_classes())) disabled[disabled] data-testid=(test_id) {
             (text)
+        }
+    }
+}
+
+/// Creates an icon button with default styling
+///
+/// Icon buttons are square buttons containing only an icon, commonly used for
+/// compact actions like closing dialogs, opening menus, or triggering popovers.
+///
+/// Uses subtle gray colors with hover states by default. For custom colors,
+/// use `icon_button_with_color()`.
+///
+/// # Example
+/// ```rust
+/// use components::{button, icon, IconType};
+///
+/// let close_button = button::icon_button(icon::icon(IconType::Close), false);
+/// let menu_trigger = button::icon_button(icon::icon(IconType::Hamburger), false);
+/// ```
+pub fn icon_button(icon: Markup, disabled: bool) -> Markup {
+    icon_button_with_color(icon, None, disabled)
+}
+
+/// Creates an icon button with custom color classes
+///
+/// Allows full control over icon button colors via Tailwind CSS classes.
+/// The color classes override the default gray colors.
+///
+/// # Example
+/// ```rust
+/// use components::{button, icon, IconType};
+///
+/// // Icon button with custom colors
+/// let custom_button = button::icon_button_with_color(
+///     icon::icon(IconType::Star),
+///     Some("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950"),
+///     false
+/// );
+///
+/// // Indigo colored icon button
+/// let indigo_button = button::icon_button_with_color(
+///     icon::icon(IconType::Close),
+///     Some("text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400"),
+///     false
+/// );
+/// ```
+pub fn icon_button_with_color(icon: Markup, color_class: Option<&str>, disabled: bool) -> Markup {
+    let color = color_class.unwrap_or(DEFAULT_ICON_BUTTON_COLOR);
+
+    html! {
+        button
+            type="button"
+            class=(format!("{} {}", ICON_BUTTON_BASE_CLASSES, color))
+            disabled[disabled]
+            data-testid="icon-button"
+        {
+            (icon)
         }
     }
 }

@@ -26,6 +26,8 @@
 - [Components]()
   - [Button](./design_system/components/button.md)
   - [Link](./design_system/components/link.md)
+  - [Menu](./design_system/components/menu.md)
+  - [Menu Item](./design_system/components/menu-item.md)
   - [Shell](./design_system/components/shell.md)
 
 # Web Components

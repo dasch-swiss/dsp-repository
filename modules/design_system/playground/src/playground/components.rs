@@ -33,17 +33,13 @@ const COMPONENTS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Button",
         route_name: "button",
-        variants: &[
-            ComponentVariantSpec { name: "Primary", value: "primary", is_default: true },
-            ComponentVariantSpec { name: "Secondary", value: "secondary", is_default: false },
-            ComponentVariantSpec { name: "Outline", value: "outline", is_default: false },
-        ],
+        variants: &[ComponentVariantSpec { name: "All Variants", value: "default", is_default: true }],
         doc_file: "button.md",
     },
     ComponentSpec {
         name: "Link",
         route_name: "link",
-        variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
+        variants: &[ComponentVariantSpec { name: "All Examples", value: "default", is_default: true }],
         doc_file: "link.md",
     },
     ComponentSpec {
@@ -69,6 +65,18 @@ const COMPONENTS: &[ComponentSpec] = &[
         route_name: "hero",
         variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
         doc_file: "hero.md",
+    },
+    ComponentSpec {
+        name: "Menu Item",
+        route_name: "menu-item",
+        variants: &[ComponentVariantSpec { name: "All Examples", value: "default", is_default: true }],
+        doc_file: "menu-item.md",
+    },
+    ComponentSpec {
+        name: "Menu",
+        route_name: "menu",
+        variants: &[ComponentVariantSpec { name: "All Examples", value: "default", is_default: true }],
+        doc_file: "menu.md",
     },
 ];
 

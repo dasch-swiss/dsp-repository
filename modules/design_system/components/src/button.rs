@@ -68,6 +68,7 @@ pub struct ButtonBuilder {
     id: Option<String>,
     leading_icon: Option<Markup>,
     trailing_icon: Option<Markup>,
+    popovertarget: Option<String>,
 }
 
 impl ButtonBuilder {
@@ -82,6 +83,7 @@ impl ButtonBuilder {
             id: None,
             leading_icon: None,
             trailing_icon: None,
+            popovertarget: None,
         }
     }
 
@@ -133,6 +135,19 @@ impl ButtonBuilder {
         self
     }
 
+    /// Sets the popovertarget attribute for triggering popovers/menus
+    ///
+    /// # Example
+    /// ```rust
+    /// button("Open Menu")
+    ///     .popovertarget("my-menu")
+    ///     .build()
+    /// ```
+    pub fn popovertarget(mut self, target: impl Into<String>) -> Self {
+        self.popovertarget = Some(target.into());
+        self
+    }
+
     /// Builds the button component and returns the rendered markup
     pub fn build(self) -> Markup {
         let test_id = self.test_id.unwrap_or_else(|| self.variant.test_id().to_string());
@@ -144,6 +159,7 @@ impl ButtonBuilder {
                 class=(format!("{} {}", BASE_CLASSES, self.variant.variant_classes()))
                 disabled[self.disabled]
                 data-on-click=[self.onclick.as_deref()]
+                popovertarget=[self.popovertarget.as_deref()]
                 data-testid=(test_id)
             {
                 @if let Some(leading) = self.leading_icon {
@@ -205,6 +221,7 @@ pub struct IconButtonBuilder {
     disabled: bool,
     onclick: Option<String>,
     id: Option<String>,
+    popovertarget: Option<String>,
 }
 
 impl IconButtonBuilder {
@@ -216,6 +233,7 @@ impl IconButtonBuilder {
             disabled: false,
             onclick: None,
             id: None,
+            popovertarget: None,
         }
     }
 
@@ -256,6 +274,19 @@ impl IconButtonBuilder {
         self
     }
 
+    /// Sets the popovertarget attribute for triggering popovers/menus
+    ///
+    /// # Example
+    /// ```rust
+    /// icon_button(icon::icon(IconType::Hamburger))
+    ///     .popovertarget("my-menu")
+    ///     .build()
+    /// ```
+    pub fn popovertarget(mut self, target: impl Into<String>) -> Self {
+        self.popovertarget = Some(target.into());
+        self
+    }
+
     /// Builds the icon button component and returns the rendered markup
     pub fn build(self) -> Markup {
         let color = self.color_class.as_deref().unwrap_or(DEFAULT_ICON_BUTTON_COLOR);
@@ -267,6 +298,7 @@ impl IconButtonBuilder {
                 class=(format!("{} {}", ICON_BUTTON_BASE_CLASSES, color))
                 disabled[self.disabled]
                 data-on-click=[self.onclick.as_deref()]
+                popovertarget=[self.popovertarget.as_deref()]
                 data-testid="icon-button"
             {
                 (self.icon)

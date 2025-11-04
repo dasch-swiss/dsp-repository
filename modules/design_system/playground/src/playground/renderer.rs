@@ -670,13 +670,18 @@ impl ComponentRenderer for MenuRenderer {
         let markup = html! {
             div class="flex flex-col gap-6 p-8" {
                 section {
-                    h3 class="text-lg font-semibold mb-3" { "Menu with Text Trigger" }
+                    h3 class="text-lg font-semibold mb-3" { "Menu with Text Button Trigger" }
                     p class="text-sm text-gray-600 dark:text-gray-400 mb-2" {
                         "A complete menu showcasing links, buttons, icons, and dividers. The menu automatically positions itself optimally based on available screen space."
                     }
                     (menu::menu()
                         .with_id("demo-menu")
-                        .with_text_trigger("Open Menu")
+                        .with_trigger(
+                            button::button("Open Menu")
+                                .with_id("demo-menu-trigger")
+                                .popovertarget("demo-menu")
+                                .build()
+                        )
                         .with_item(menu_item::link_menu_item("Profile", "/profile"))
                         .with_item(menu_item::link_menu_item("Settings", "/settings"))
                         .with_item(menu_item::menu_item_divider())
@@ -691,13 +696,18 @@ impl ComponentRenderer for MenuRenderer {
                 }
 
                 section {
-                    h3 class="text-lg font-semibold mb-3" { "Menu with Icon Trigger" }
+                    h3 class="text-lg font-semibold mb-3" { "Menu with Icon Button Trigger" }
                     p class="text-sm text-gray-600 dark:text-gray-400 mb-2" {
                         "Using an icon button trigger for a compact UI. Icon buttons are keyboard accessible and semantically correct."
                     }
                     (menu::menu()
                         .with_id("icon-menu")
-                        .with_icon_trigger(icon::icon(IconType::Hamburger))
+                        .with_trigger(
+                            button::icon_button(icon::icon(IconType::Hamburger))
+                                .with_id("icon-menu-trigger")
+                                .popovertarget("icon-menu")
+                                .build()
+                        )
                         .with_item(menu_item::link_menu_item("Dashboard", "/dashboard"))
                         .with_item(menu_item::link_menu_item("Profile", "/profile"))
                         .with_item(menu_item::link_menu_item("Settings", "/settings"))
@@ -714,7 +724,12 @@ impl ComponentRenderer for MenuRenderer {
                     @let is_admin = true;
                     @let builder = menu::menu()
                         .with_id("conditional-menu")
-                        .with_text_trigger("Dynamic Menu");
+                        .with_trigger(
+                            button::button("Dynamic Menu")
+                                .with_id("conditional-menu-trigger")
+                                .popovertarget("conditional-menu")
+                                .build()
+                        );
                     @let builder = builder.with_item(menu_item::link_menu_item("Dashboard", "/dashboard"));
                     @let builder = builder.with_item(menu_item::link_menu_item("Profile", "/profile"));
                     @let builder = if is_admin {
@@ -725,6 +740,52 @@ impl ComponentRenderer for MenuRenderer {
                         builder
                     };
                     (builder.build())
+                }
+
+                section {
+                    h3 class="text-lg font-semibold mb-3" { "External and Programmatic Triggers" }
+                    p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
+                        "Menus can be triggered externally using any button with popovertarget, or programmatically via DataStar/JavaScript"
+                    }
+
+                    div class="flex flex-col gap-6" {
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "External trigger button (separate from menu)" }
+                            div class="flex items-center gap-4 mb-2" {
+                                (button::button("External Button 1")
+                                    .with_id("external-trigger-1")
+                                    .popovertarget("external-menu")
+                                    .build())
+                                (button::button("External Button 2")
+                                    .with_id("external-trigger-2")
+                                    .variant(ButtonVariant::Secondary)
+                                    .popovertarget("external-menu")
+                                    .build())
+                            }
+                            (menu::menu()
+                                .with_id("external-menu")
+                                .with_item(menu_item::link_menu_item("Profile", "/profile"))
+                                .with_item(menu_item::link_menu_item("Settings", "/settings"))
+                                .with_item(menu_item::menu_item_divider())
+                                .with_item(menu_item::button_menu_item("Sign Out"))
+                                .build())
+                        }
+
+                        div {
+                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Programmatic trigger via DataStar onclick" }
+                            (button::button("Open Programmatically")
+                                .with_id("programmatic-trigger")
+                                .onclick("document.getElementById('programmatic-menu').showPopover()")
+                                .build())
+                            (menu::menu()
+                                .with_id("programmatic-menu")
+                                .with_item(menu_item::link_menu_item("Dashboard", "/dashboard"))
+                                .with_item(menu_item::link_menu_item("Analytics", "/analytics"))
+                                .with_item(menu_item::menu_item_divider())
+                                .with_item(menu_item::button_menu_item("Refresh"))
+                                .build())
+                        }
+                    }
                 }
             }
         };

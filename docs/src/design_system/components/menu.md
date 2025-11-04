@@ -8,20 +8,25 @@ Menus are used to display a list of actions or navigation options triggered by a
 
 ## Component Architecture
 
-The menu component uses a builder pattern for flexible construction:
+The menu component uses a builder pattern for flexible construction. You can trigger menus using button components, external buttons, or programmatically via DataStar/JavaScript.
 
-### Basic Usage with Text Trigger
+### Menu with Button Trigger
 
-The recommended way to create a menu is using `with_text_trigger()`, which automatically creates a styled button trigger with the correct `popovertarget` attribute:
+Use the button builder's `.popovertarget()` method to connect the button to the menu:
 
 ```rust
-use components::{menu, menu_item, icon, IconType};
+use components::{menu, menu_item, button, icon, IconType};
 
 let star_icon = icon::icon_for_menu_item(IconType::Star);
 
 let my_menu = menu::menu()
     .with_id("user-menu")
-    .with_text_trigger("Open Menu")
+    .with_trigger(
+        button::button("Open Menu")
+            .with_id("menu-trigger")
+            .popovertarget("user-menu")
+            .build()
+    )
     .with_item(menu_item::link_menu_item("Profile", "/profile"))
     .with_item(menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon))
     .with_item(menu_item::menu_item_divider())
@@ -29,63 +34,74 @@ let my_menu = menu::menu()
     .build();
 ```
 
-### Menu with Icon Trigger
+### Menu with Icon Button Trigger
 
-For a more compact UI, use `with_icon_trigger()` to create an icon button trigger. Icon buttons are keyboard accessible and semantically correct:
+For a more compact UI, use an icon button trigger:
 
 ```rust
-use components::{menu, menu_item, icon, IconType};
+use components::{menu, menu_item, button, icon, IconType};
 
 let icon_menu = menu::menu()
     .with_id("actions-menu")
-    .with_icon_trigger(icon::icon(IconType::Hamburger))
+    .with_trigger(
+        button::icon_button(icon::icon(IconType::Hamburger))
+            .with_id("actions-trigger")
+            .popovertarget("actions-menu")
+            .build()
+    )
     .with_item(menu_item::link_menu_item("Dashboard", "/dashboard"))
     .with_item(menu_item::link_menu_item("Profile", "/profile"))
     .with_item(menu_item::button_menu_item("Sign Out"))
     .build();
 ```
 
-### Advanced: Custom Trigger Button
+### External Trigger Buttons
 
-If you need full control over the trigger button, create your own button with the `popovertarget` attribute and pass it to `with_trigger()`:
-
-```rust
-use components::{menu, menu_item, button, icon, IconType};
-
-let custom_trigger = html! {
-    button
-        type="button"
-        popovertarget="custom-menu"
-        class="custom-button-classes"
-    {
-        "Custom Trigger"
-    }
-};
-
-let my_menu = menu::menu()
-    .with_id("custom-menu")
-    .with_trigger(custom_trigger)
-    .with_item(menu_item::link_menu_item("Profile", "/profile"))
-    .build();
-```
-
-### External Trigger Button
-
-Alternatively, you can create the menu without any trigger and place the trigger button separately:
+Create the menu without a trigger and place trigger buttons anywhere in your HTML. Multiple buttons can trigger the same menu:
 
 ```rust
 let my_menu = menu::menu()
     .with_id("user-menu")
     .with_item(menu_item::link_menu_item("Profile", "/profile"))
+    .with_item(menu_item::link_menu_item("Settings", "/settings"))
     .build();
 
 html! {
     div {
-        button popovertarget="user-menu" class="custom-button-classes" {
-            "Separate Trigger"
-        }
+        (button::button("Trigger 1")
+            .popovertarget("user-menu")
+            .build())
+        (button::button("Trigger 2")
+            .variant(ButtonVariant::Secondary)
+            .popovertarget("user-menu")
+            .build())
         (my_menu)
     }
+}
+```
+
+### Programmatic Triggering via DataStar
+
+Trigger menus programmatically using DataStar onclick handlers or JavaScript:
+
+```rust
+// Using DataStar onclick
+html! {
+    (button::button("Open Menu")
+        .onclick("document.getElementById('my-menu').showPopover()")
+        .build())
+
+    (menu::menu()
+        .with_id("my-menu")
+        .with_item(menu_item::link_menu_item("Dashboard", "/dashboard"))
+        .build())
+}
+
+// Using DataStar with toggle
+html! {
+    (button::button("Toggle Menu")
+        .onclick("document.getElementById('my-menu').togglePopover()")
+        .build())
 }
 ```
 
@@ -93,46 +109,35 @@ html! {
 
 ### `with_id(id: impl Into<String>)`
 
-Sets the menu ID (required for popover targeting). The ID must match the `popovertarget` attribute on the trigger button.
-
-### `with_text_trigger(text: impl Into<String>)`
-
-Creates a styled text button trigger for the menu. The button automatically includes the correct `popovertarget` attribute pointing to the menu ID.
-
-**Example:**
-```rust
-menu::menu()
-    .with_id("my-menu")
-    .with_text_trigger("Open Menu")
-```
-
-### `with_icon_trigger(icon: Markup)`
-
-Creates an icon button trigger for the menu. Icon buttons are compact, keyboard accessible, and semantically correct. The button automatically includes the correct `popovertarget` attribute.
-
-**Example:**
-```rust
-menu::menu()
-    .with_id("my-menu")
-    .with_icon_trigger(icon::icon(IconType::Hamburger))
-```
+Sets the menu ID (required for popover targeting). The ID must match the `popovertarget` attribute on trigger buttons.
 
 ### `with_trigger(trigger_button: Markup)`
 
-Sets a custom trigger button for the menu. Use this for full control over trigger styling. The trigger should be a complete button element with a `popovertarget` attribute matching the menu ID.
+Sets a trigger button for the menu. Pass a button with `.popovertarget()` set to the menu's ID.
 
-For most use cases, prefer `with_text_trigger()` or `with_icon_trigger()` instead.
-
-**Example:**
+**Example with button builder:**
 ```rust
-let custom = html! {
-    button popovertarget="my-menu" class="..." { "Custom" }
-};
-
 menu::menu()
     .with_id("my-menu")
-    .with_trigger(custom)
+    .with_trigger(
+        button::button("Open")
+            .popovertarget("my-menu")
+            .build()
+    )
 ```
+
+**Example with icon button:**
+```rust
+menu::menu()
+    .with_id("my-menu")
+    .with_trigger(
+        button::icon_button(icon::icon(IconType::Hamburger))
+            .popovertarget("my-menu")
+            .build()
+    )
+```
+
+If no trigger is provided, you can control the menu externally using `.popovertarget()` on any button or via JavaScript/DataStar.
 
 ### `with_item(item: Markup)`
 

@@ -142,6 +142,7 @@ impl LinkBuilder {
 ///     .with_id("external-link")
 ///     .build()
 /// ```
+#[must_use = "call .build() to render the component"]
 pub fn link(text: impl Into<String>, url: impl Into<String>) -> LinkBuilder {
     LinkBuilder::new(text, url)
 }

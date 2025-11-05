@@ -199,6 +199,7 @@ impl ButtonBuilder {
 ///     .onclick("console.log('saved')")
 ///     .build();
 /// ```
+#[must_use = "call .build() to render the component"]
 pub fn button(text: impl Into<String>) -> ButtonBuilder {
     ButtonBuilder::new(text)
 }
@@ -338,6 +339,7 @@ impl IconButtonBuilder {
 ///     .onclick("console.log('starred')")
 ///     .build();
 /// ```
+#[must_use = "call .build() to render the component"]
 pub fn icon_button(icon: Markup) -> IconButtonBuilder {
     IconButtonBuilder::new(icon)
 }

@@ -203,6 +203,7 @@ impl Default for MenuBuilder {
 ///     .with_item(menu_item::button_menu_item("Delete"))
 ///     .build();
 /// ```
+#[must_use = "call .build() to render the component"]
 pub fn menu() -> MenuBuilder {
     MenuBuilder::new()
 }

@@ -4,7 +4,7 @@ use maud::Markup;
 
 use crate::playground::error::PlaygroundError;
 use crate::playground::parameters::PlaygroundParams;
-use crate::playground::renderer::ComponentRendererRegistry;
+use crate::playground::renderer::{render_sections_with_code_view, ComponentRendererRegistry};
 use crate::playground::templates::{render_error_content, render_iframe_content, render_page_shell};
 
 pub async fn iframe_component(Query(params): Query<PlaygroundParams>) -> Result<Markup, (StatusCode, Markup)> {
@@ -32,7 +32,14 @@ fn generate_component_markup(params: &PlaygroundParams) -> Result<Markup, Playgr
         .ok_or_else(|| PlaygroundError::InvalidComponent(params.component.clone()))?;
 
     let variant = params.variant.as_deref().unwrap_or_else(|| renderer.default_variant());
-    renderer.render_variant(variant, params)
+
+    // Try to render with code-view support first
+    if let Some(sections) = renderer.render_variant_with_code(variant, params)? {
+        Ok(render_sections_with_code_view(sections))
+    } else {
+        // Fall back to regular rendering
+        renderer.render_variant(variant, params)
+    }
 }
 
 fn render_error_page(error: &PlaygroundError) -> Markup {

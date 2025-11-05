@@ -9,13 +9,15 @@ use crate::playground::showcases::*;
 /// This structure captures both the rendered component and the Rust code
 /// that generates it, enabling a code-view toggle feature in the playground.
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct ComponentExample {
-    /// Unique identifier for this example
+    /// Unique identifier for this example (for future use with anchor links)
+    #[allow(dead_code)]
     pub id: &'static str,
     /// Display name for this example
+    #[allow(dead_code)]
     pub name: &'static str,
     /// Optional description explaining when/how to use this variant
+    #[allow(dead_code)]
     pub description: Option<&'static str>,
     /// The Rust code as a string (captured via stringify!)
     pub code: &'static str,
@@ -25,7 +27,6 @@ pub struct ComponentExample {
 
 /// Represents a section of related examples in a component showcase
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct ComponentSection {
     /// Section title (e.g., "Button Variants", "Icon Buttons")
     pub title: &'static str,
@@ -95,9 +96,22 @@ macro_rules! example {
 pub trait ComponentRenderer {
     /// Render a component with the specified variant and parameters
     ///
-    /// Returns the rendered markup. In the future, this may be extended
-    /// to return Vec<ComponentSection> for full code-view support.
+    /// Returns the rendered markup for backward compatibility.
     fn render_variant(&self, variant: &str, params: &PlaygroundParams) -> PlaygroundResult<Markup>;
+
+    /// Render component with code-view support (optional)
+    ///
+    /// Returns structured sections with examples that include both rendered
+    /// markup and source code. This enables toggle between rendered and code views.
+    ///
+    /// Default implementation returns None, indicating no code-view support.
+    fn render_variant_with_code(
+        &self,
+        _variant: &str,
+        _params: &PlaygroundParams,
+    ) -> PlaygroundResult<Option<Vec<ComponentSection>>> {
+        Ok(None)
+    }
 
     /// Get the default variant for this component
     fn default_variant(&self) -> &'static str;
@@ -125,6 +139,72 @@ impl ComponentRendererRegistry {
             "menu-item" => Some(Box::new(MenuItemRenderer)),
             "shell" => Some(Box::new(ShellRenderer)),
             _ => None,
+        }
+    }
+}
+
+/// Render component sections with code-view toggle support
+///
+/// Creates a showcase with toggle buttons that allow switching between
+/// rendered view and code view for each example.
+pub fn render_sections_with_code_view(sections: Vec<ComponentSection>) -> Markup {
+    use maud::html;
+
+    html! {
+        div class="flex flex-col gap-6 p-8" {
+            div class="mb-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-md" {
+                p class="text-sm text-blue-900 dark:text-blue-100" {
+                    "💡 Toggle between rendered view and code view using the buttons. All buttons include DataStar onclick handlers."
+                }
+            }
+
+            @for section in sections {
+                @let checkbox_id = format!("toggle-{}", section.title.to_lowercase().replace(' ', "-"));
+
+                // Card wrapper for entire section
+                div class="border border-gray-200 dark:border-gray-700 rounded-lg" {
+                    // Hidden checkbox for CSS-only toggle
+                    input type="checkbox" id=(checkbox_id) class="peer hidden";
+
+                    // Section header with toggle
+                    div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between" {
+                        div {
+                            h3 class="text-lg font-semibold" { (section.title) }
+                            @if let Some(desc) = section.description {
+                                p class="text-sm text-gray-600 dark:text-gray-400 mt-1" { (desc) }
+                            }
+                        }
+                        label
+                            for=(checkbox_id)
+                            class="px-3 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                            {
+                            span class="peer-checked:hidden" { "Show Code" }
+                            span class="hidden peer-checked:inline" { "Show Rendered" }
+                        }
+                    }
+
+                    // Rendered view (all examples, hidden when checkbox is checked)
+                    div class="p-6 peer-checked:hidden flex flex-col gap-6 items-start" {
+                        @for example in &section.examples {
+                            (example.markup)
+                        }
+                    }
+
+                    // Code view (all code examples with dividers, hidden by default)
+                    div class="p-4 hidden peer-checked:block" {
+                        @for (idx, example) in section.examples.iter().enumerate() {
+                            @if idx > 0 {
+                                div class="border-t border-gray-200 dark:border-gray-700 my-4" {}
+                            }
+                            pre class="text-sm" {
+                                code class="language-rust" {
+                                    (example.code)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

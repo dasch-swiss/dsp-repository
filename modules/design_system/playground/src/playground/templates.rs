@@ -39,6 +39,10 @@ pub fn render_page_shell(theme: &str, title: &str, css_path: &str, content: Mark
                 script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" {}
                 script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module" {}
                 script src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.11/bundles/datastar.js" type="module" {}
+                // Syntax highlighting for code blocks
+                link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css";
+                script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js" {}
+                script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-rust.min.js" {}
             }
             body { (content) }
             // body class="theme-text-primary theme-bg-primary m-0 p-0 h-screen overflow-hidden" { (content) }

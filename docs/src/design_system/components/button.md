@@ -16,50 +16,65 @@ use components::{button, ButtonVariant};
 // Simple button with default primary variant
 let btn = button("Click me").build();
 
-// Button with custom variant
-let secondary = button("Cancel")
+// Button with custom configuration
+let custom = button("Submit")
     .variant(ButtonVariant::Secondary)
-    .build();
-
-// Button with onclick handler
-let interactive = button("Save")
-    .onclick("console.log('saved')")
-    .build();
-
-// Disabled button
-let disabled = button("Delete")
+    .with_id("submit-btn")
+    .with_test_id("submit-button")
+    .onclick("@post('/api/submit')")
     .disabled()
     .build();
+```
 
-// Combining multiple options
-let custom = button("Submit")
-    .variant(ButtonVariant::Primary)
-    .onclick("@post('/api/submit')")
-    .with_test_id("submit-button")
-    .build();
+## Builder Methods
 
-// Button with ID for DataStar targeting
-let identified = button("Target Me")
-    .with_id("my-button")
-    .onclick("console.log('clicked')")
-    .build();
+All button builder methods can be chained in any order. Call `.build()` to render the final component.
 
-// Button with leading icon
-let with_icon = button("Download")
+### Text Buttons
+
+- **`.variant(ButtonVariant)`** - Sets the button style (Primary or Secondary). Default: Primary
+- **`.with_id(impl Into<String>)`** - Sets the HTML `id` attribute for the button
+- **`.with_test_id(impl Into<String>)`** - Sets the `data-testid` attribute for testing
+- **`.onclick(impl Into<String>)`** - Sets the DataStar action handler for click events
+- **`.disabled()`** - Marks the button as disabled
+- **`.with_leading_icon(Markup)`** - Adds an icon before the button text
+- **`.with_trailing_icon(Markup)`** - Adds an icon after the button text
+- **`.popovertarget(impl Into<String>)`** - Sets the popover target for triggering menus
+- **`.build()`** - Consumes the builder and returns the rendered markup
+
+### Icon Buttons
+
+- **`.with_id(impl Into<String>)`** - Sets the HTML `id` attribute for the button
+- **`.with_test_id(impl Into<String>)`** - Sets the `data-testid` attribute for testing
+- **`.onclick(impl Into<String>)`** - Sets the DataStar action handler for click events
+- **`.disabled()`** - Marks the button as disabled
+- **`.color(impl Into<String>)`** - Sets custom color classes (overrides default gray)
+- **`.popovertarget(impl Into<String>)`** - Sets the popover target for triggering menus
+- **`.build()`** - Consumes the builder and returns the rendered markup
+
+## Examples
+
+### Button with Icon
+
+```rust
+use components::{button, icon, IconType};
+
+let download = button("Download")
     .with_leading_icon(icon::icon(IconType::ChevronDown))
     .onclick("console.log('downloading')")
     .build();
+```
 
-// Button with trailing icon
-let next_button = button("Next")
-    .with_trailing_icon(icon::icon(IconType::ChevronDown))
-    .build();
+### Complete Example
 
-// Button with both icons
+```rust
 let complex = button("Options")
+    .variant(ButtonVariant::Secondary)
+    .with_id("options-button")
+    .with_test_id("options-btn")
     .with_leading_icon(icon::icon(IconType::Code))
     .with_trailing_icon(icon::icon(IconType::ChevronDown))
-    .variant(ButtonVariant::Secondary)
+    .onclick("@post('/api/options')")
     .build();
 ```
 
@@ -111,7 +126,7 @@ let identified = icon_button(icon::icon(IconType::Star))
 
 ### Icon Buttons with Custom Colors
 
-Use the `.color()` method to override the default gray colors:
+Use the `.color()` method to override the default colors:
 
 ```rust
 use components::{icon_button, icon, IconType};

@@ -1,4 +1,4 @@
-use components::{button, icon, menu, menu_item, IconType};
+use components::{button, icon, menu, menu_item, ComponentBuilder, IconType};
 use maud::{html, Markup};
 
 use crate::playground::error::{PlaygroundError, PlaygroundResult};

@@ -1,5 +1,7 @@
 use maud::{html, Markup};
 
+use crate::builder_common::ComponentBuilder;
+
 const MENU_CLASSES: &str = "w-56 origin-top-right rounded-md bg-white shadow-lg outline-1 outline-black/5 \
                             transition transition-discrete [--anchor-gap:--spacing(2)] \
                             data-closed:scale-95 data-closed:transform data-closed:opacity-0 \
@@ -31,13 +33,62 @@ const DEFAULT_ANCHOR: &str = "bottom end";
 pub struct MenuBuilder {
     items: Vec<Markup>,
     id: Option<String>,
+    test_id: Option<String>,
     trigger: Option<Markup>,
+}
+
+impl ComponentBuilder for MenuBuilder {
+    fn id_mut(&mut self) -> &mut Option<String> {
+        &mut self.id
+    }
+
+    fn test_id_mut(&mut self) -> &mut Option<String> {
+        &mut self.test_id
+    }
+
+    fn build(self) -> Markup {
+        let test_id = self.test_id.as_deref().unwrap_or("menu");
+
+        let menu = html! {
+            el-menu
+                id=[self.id]
+                anchor=(DEFAULT_ANCHOR)
+                popover
+                class=(MENU_CLASSES)
+                data-testid=(test_id)
+            {
+                div class=(MENU_INNER_CLASSES) {
+                    @for item in self.items {
+                        (item)
+                    }
+                }
+            }
+        };
+
+        match self.trigger {
+            Some(trigger_button) => {
+                html! {
+                    el-dropdown class="relative inline-block" {
+                        (trigger_button)
+                        (menu)
+                    }
+                }
+            }
+            None => {
+                html! {
+                    el-dropdown class="relative inline-block" {
+                        (menu)
+                    }
+                }
+            }
+        }
+    }
 }
 
 impl MenuBuilder {
     /// Creates a new menu builder with default settings
     pub fn new() -> Self {
-        Self { items: Vec::new(), id: None, trigger: None }
+        Self { items: Vec::new(), id: None, test_id: None, trigger: None }
     }
 
     /// Adds a single menu item to the menu
@@ -74,27 +125,6 @@ impl MenuBuilder {
     #[must_use = "builder does nothing unless you call .build()"]
     pub fn with_items(mut self, items: Vec<Markup>) -> Self {
         self.items.extend(items);
-        self
-    }
-
-    /// Sets the ID for the menu (required for popover targeting)
-    ///
-    /// The ID is used by trigger buttons with the `popovertarget` attribute.
-    ///
-    /// # Example
-    /// ```rust
-    /// use components::menu::menu;
-    ///
-    /// let my_menu = menu()
-    ///     .with_id("user-menu")
-    ///     .build();
-    ///
-    /// // Later, in the button:
-    /// // <button popovertarget="user-menu">Open Menu</button>
-    /// ```
-    #[must_use = "builder does nothing unless you call .build()"]
-    pub fn with_id(mut self, id: impl Into<String>) -> Self {
-        self.id = Some(id.into());
         self
     }
 
@@ -142,47 +172,6 @@ impl MenuBuilder {
     pub fn with_trigger(mut self, trigger_button: Markup) -> Self {
         self.trigger = Some(trigger_button);
         self
-    }
-
-    /// Builds the menu component and returns the rendered markup
-    ///
-    /// When a trigger is provided via `with_trigger()`, the menu will be wrapped
-    /// in a container along with its trigger button. Otherwise, only the menu
-    /// itself is rendered (requiring an external trigger button).
-    pub fn build(self) -> Markup {
-        let menu = html! {
-            el-menu
-                id=[self.id]
-                anchor=(DEFAULT_ANCHOR)
-                popover
-                class=(MENU_CLASSES)
-                data-testid="menu"
-            {
-                div class=(MENU_INNER_CLASSES) {
-                    @for item in self.items {
-                        (item)
-                    }
-                }
-            }
-        };
-
-        match self.trigger {
-            Some(trigger_button) => {
-                html! {
-                    el-dropdown class="relative inline-block" {
-                        (trigger_button)
-                        (menu)
-                    }
-                }
-            }
-            None => {
-                html! {
-                    el-dropdown class="relative inline-block" {
-                        (menu)
-                    }
-                }
-            }
-        }
     }
 }
 

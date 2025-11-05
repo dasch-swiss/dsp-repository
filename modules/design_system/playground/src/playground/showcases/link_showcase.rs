@@ -1,4 +1,4 @@
-use components::{link, LinkTarget};
+use components::{link, ComponentBuilder, LinkTarget};
 use maud::{html, Markup};
 
 use crate::playground::error::{PlaygroundError, PlaygroundResult};

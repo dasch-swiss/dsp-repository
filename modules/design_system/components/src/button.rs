@@ -1,6 +1,8 @@
 // TODO: find a solution for button-style anchor tags
 use maud::{html, Markup};
 
+use crate::builder_common::ComponentBuilder;
+
 const BASE_CLASSES: &str =
     "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
@@ -71,6 +73,40 @@ pub struct ButtonBuilder {
     popovertarget: Option<String>,
 }
 
+impl ComponentBuilder for ButtonBuilder {
+    fn id_mut(&mut self) -> &mut Option<String> {
+        &mut self.id
+    }
+
+    fn test_id_mut(&mut self) -> &mut Option<String> {
+        &mut self.test_id
+    }
+
+    fn build(self) -> Markup {
+        let test_id = self.test_id.unwrap_or_else(|| self.variant.test_id().to_string());
+
+        html! {
+            button
+                type="button"
+                id=[self.id.as_deref()]
+                class=(format!("{} {}", BASE_CLASSES, self.variant.variant_classes()))
+                disabled[self.disabled]
+                data-on-click=[self.onclick.as_deref()]
+                popovertarget=[self.popovertarget.as_deref()]
+                data-testid=(test_id)
+            {
+                @if let Some(leading) = self.leading_icon {
+                    (leading)
+                }
+                (self.text)
+                @if let Some(trailing) = self.trailing_icon {
+                    (trailing)
+                }
+            }
+        }
+    }
+}
+
 impl ButtonBuilder {
     /// Creates a new button builder with default settings
     pub fn new(text: impl Into<String>) -> Self {
@@ -114,20 +150,6 @@ impl ButtonBuilder {
         self
     }
 
-    /// Sets a custom test ID for the button
-    #[must_use = "builder does nothing unless you call .build()"]
-    pub fn with_test_id(mut self, id: impl Into<String>) -> Self {
-        self.test_id = Some(id.into());
-        self
-    }
-
-    /// Sets the HTML id attribute for the button
-    #[must_use = "builder does nothing unless you call .build()"]
-    pub fn with_id(mut self, id: impl Into<String>) -> Self {
-        self.id = Some(id.into());
-        self
-    }
-
     /// Adds a leading icon before the button text
     #[must_use = "builder does nothing unless you call .build()"]
     pub fn with_leading_icon(mut self, icon: Markup) -> Self {
@@ -154,31 +176,6 @@ impl ButtonBuilder {
     pub fn popovertarget(mut self, target: impl Into<String>) -> Self {
         self.popovertarget = Some(target.into());
         self
-    }
-
-    /// Builds the button component and returns the rendered markup
-    pub fn build(self) -> Markup {
-        let test_id = self.test_id.unwrap_or_else(|| self.variant.test_id().to_string());
-
-        html! {
-            button
-                type="button"
-                id=[self.id.as_deref()]
-                class=(format!("{} {}", BASE_CLASSES, self.variant.variant_classes()))
-                disabled[self.disabled]
-                data-on-click=[self.onclick.as_deref()]
-                popovertarget=[self.popovertarget.as_deref()]
-                data-testid=(test_id)
-            {
-                @if let Some(leading) = self.leading_icon {
-                    (leading)
-                }
-                (self.text)
-                @if let Some(trailing) = self.trailing_icon {
-                    (trailing)
-                }
-            }
-        }
     }
 }
 
@@ -230,7 +227,37 @@ pub struct IconButtonBuilder {
     disabled: bool,
     onclick: Option<String>,
     id: Option<String>,
+    test_id: Option<String>,
     popovertarget: Option<String>,
+}
+
+impl ComponentBuilder for IconButtonBuilder {
+    fn id_mut(&mut self) -> &mut Option<String> {
+        &mut self.id
+    }
+
+    fn test_id_mut(&mut self) -> &mut Option<String> {
+        &mut self.test_id
+    }
+
+    fn build(self) -> Markup {
+        let color = self.color_class.as_deref().unwrap_or(DEFAULT_ICON_BUTTON_COLOR);
+        let test_id = self.test_id.as_deref().unwrap_or("icon-button");
+
+        html! {
+            button
+                type="button"
+                id=[self.id.as_deref()]
+                class=(format!("{} {}", ICON_BUTTON_BASE_CLASSES, color))
+                disabled[self.disabled]
+                data-on-click=[self.onclick.as_deref()]
+                popovertarget=[self.popovertarget.as_deref()]
+                data-testid=(test_id)
+            {
+                (self.icon)
+            }
+        }
+    }
 }
 
 impl IconButtonBuilder {
@@ -242,6 +269,7 @@ impl IconButtonBuilder {
             disabled: false,
             onclick: None,
             id: None,
+            test_id: None,
             popovertarget: None,
         }
     }
@@ -280,13 +308,6 @@ impl IconButtonBuilder {
         self
     }
 
-    /// Sets the HTML id attribute for the icon button
-    #[must_use = "builder does nothing unless you call .build()"]
-    pub fn with_id(mut self, id: impl Into<String>) -> Self {
-        self.id = Some(id.into());
-        self
-    }
-
     /// Sets the popovertarget attribute for triggering popovers/menus
     ///
     /// # Example
@@ -299,25 +320,6 @@ impl IconButtonBuilder {
     pub fn popovertarget(mut self, target: impl Into<String>) -> Self {
         self.popovertarget = Some(target.into());
         self
-    }
-
-    /// Builds the icon button component and returns the rendered markup
-    pub fn build(self) -> Markup {
-        let color = self.color_class.as_deref().unwrap_or(DEFAULT_ICON_BUTTON_COLOR);
-
-        html! {
-            button
-                type="button"
-                id=[self.id.as_deref()]
-                class=(format!("{} {}", ICON_BUTTON_BASE_CLASSES, color))
-                disabled[self.disabled]
-                data-on-click=[self.onclick.as_deref()]
-                popovertarget=[self.popovertarget.as_deref()]
-                data-testid="icon-button"
-            {
-                (self.icon)
-            }
-        }
     }
 }
 

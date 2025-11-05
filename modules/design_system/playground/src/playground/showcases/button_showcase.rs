@@ -1,5 +1,5 @@
 use components::button::{self, ButtonVariant};
-use components::{icon, IconType};
+use components::{icon, ComponentBuilder, IconType};
 use maud::{html, Markup};
 
 use crate::example;

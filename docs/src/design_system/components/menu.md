@@ -107,15 +107,18 @@ html! {
 
 ## Builder Methods
 
-### `with_id(id: impl Into<String>)`
+All menu builder methods can be chained in any order. Call `.build()` to render the final component.
 
-Sets the menu ID (required for popover targeting). The ID must match the `popovertarget` attribute on trigger buttons.
+- **`.with_id(impl Into<String>)`** - Sets the menu ID (required for popover targeting). Must match `popovertarget` on trigger buttons
+- **`.with_test_id(impl Into<String>)`** - Sets the `data-testid` attribute for testing. Default: "menu"
+- **`.with_trigger(Markup)`** - Sets a trigger button for the menu. Pass a button with `.popovertarget()` matching the menu ID
+- **`.with_item(Markup)`** - Adds a single menu item (link, button, or divider from `menu_item` module)
+- **`.with_items(Vec<Markup>)`** - Adds multiple menu items at once
+- **`.build()`** - Consumes the builder and returns the rendered markup
 
-### `with_trigger(trigger_button: Markup)`
+### Trigger Button Examples
 
-Sets a trigger button for the menu. Pass a button with `.popovertarget()` set to the menu's ID.
-
-**Example with button builder:**
+**With text button:**
 ```rust
 menu::menu()
     .with_id("my-menu")
@@ -124,9 +127,10 @@ menu::menu()
             .popovertarget("my-menu")
             .build()
     )
+    .build()
 ```
 
-**Example with icon button:**
+**With icon button:**
 ```rust
 menu::menu()
     .with_id("my-menu")
@@ -135,21 +139,10 @@ menu::menu()
             .popovertarget("my-menu")
             .build()
     )
+    .build()
 ```
 
-If no trigger is provided, you can control the menu externally using `.popovertarget()` on any button or via JavaScript/DataStar.
-
-### `with_item(item: Markup)`
-
-Adds a single menu item. Items can be links, buttons, or dividers from the `menu_item` module.
-
-### `with_items(items: Vec<Markup>)`
-
-Adds multiple menu items at once.
-
-### `build()`
-
-Renders the menu component and returns the final markup. If a trigger was provided, returns a container with both the trigger button and menu. Otherwise, returns only the menu element.
+**Note:** If no trigger is provided, control the menu externally using `.popovertarget()` on any button or via JavaScript/DataStar.
 
 ## Conditional Menu Building
 

@@ -11,59 +11,66 @@ Use links for:
 
 **General design decisions for now:** Links do not have underlines, but visited links are displayed differently than unvisited. Visited have the same color as hovered links for visual consistency.
 
-## Usage
+## Basic Usage
 
-### Default Link
-Opens in the same window/tab:
+The link component uses a builder pattern for flexible configuration:
 
 ```rust
-link::link("Go to homepage", "/")
-    .with_id("homepage-link")
-    .build()
+use components::{link, LinkTarget};
+
+// Simple link (opens in same window)
+let home = link("Go to homepage", "/").build();
+
+// External link with custom configuration
+let github = link("Visit GitHub", "https://github.com")
+    .target(LinkTarget::Blank)
+    .with_id("github-link")
+    .with_test_id("github")
+    .build();
+```
+
+## Builder Methods
+
+All link builder methods can be chained in any order. Call `.build()` to render the final component.
+
+- **`.target(LinkTarget)`** - Sets where the link opens (SelfTarget, Blank, Parent, Top). Default: SelfTarget
+- **`.with_id(impl Into<String>)`** - Sets the HTML `id` attribute for the link
+- **`.with_test_id(impl Into<String>)`** - Sets the `data-testid` attribute for testing. Default: "link"
+- **`.build()`** - Consumes the builder and returns the rendered markup
+
+### Link Targets
+
+- **`LinkTarget::SelfTarget`** - Opens in the same window/tab (default)
+- **`LinkTarget::Blank`** - Opens in a new tab (includes security attributes automatically)
+- **`LinkTarget::Parent`** - Opens in the parent frame
+- **`LinkTarget::Top`** - Opens in the top-most frame
+
+## Examples
+
+### Internal Link
+
+```rust
+let nav_link = link("About", "/about")
+    .with_id("about-link")
+    .build();
 ```
 
 ### External Link
-Opens in a new tab with security attributes (`rel="noopener noreferrer"`):
 
 ```rust
-link::link("Visit GitHub", "https://github.com")
+let external = link("Documentation", "https://docs.example.com")
     .target(LinkTarget::Blank)
-    .with_id("github-link")
-    .build()
+    .with_id("docs-link")
+    .build();
 ```
 
-Convenience function for external links:
+### Convenience Function
+
+For external links, use the shorthand function:
 
 ```rust
-link::link_external("Visit GitHub", "https://github.com")
-```
-
-### Link Targets
-Control where the link opens:
-
-```rust
-// Same window (default)
-link::link("Home", "/")
-    .with_id("home-link")
-    .build()
-
-// New tab (external)
-link::link("External", "https://example.com")
-    .target(LinkTarget::Blank)
-    .with_id("external-link")
-    .build()
-
-// Parent frame
-link::link("Parent", "/parent")
-    .target(LinkTarget::Parent)
-    .with_id("parent-link")
-    .build()
-
-// Top-most frame
-link::link("Top", "/top")
-    .target(LinkTarget::Top)
-    .with_id("top-link")
-    .build()
+let external = link_external("Visit GitHub", "https://github.com");
+// Equivalent to: link(...).target(LinkTarget::Blank).build()
 ```
 
 **Note**: Links are for navigation only. If you need to trigger actions or send data via DataStar, use a button component instead.

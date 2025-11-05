@@ -5,4 +5,5 @@ pub mod iframe;
 pub mod parameters;
 pub mod renderer;
 pub mod shell;
+pub mod showcases;
 pub mod templates;

@@ -33,12 +33,13 @@ pub fn link_menu_item(text: impl Into<String>, href: impl Into<String>) -> Marku
 
 /// Creates a link menu item with an icon
 ///
+/// The icon will be automatically styled with appropriate spacing and color.
+///
 /// # Example
 /// ```rust
 /// use components::{menu_item, icon, IconType};
 ///
-/// let star_icon = icon::icon_for_menu_item(IconType::Star);
-/// let item = menu_item::link_menu_item_with_icon("Add to favorites", "/favorites", star_icon);
+/// let item = menu_item::link_menu_item_with_icon("Add to favorites", "/favorites", icon::icon(IconType::Star));
 /// ```
 pub fn link_menu_item_with_icon(text: impl Into<String>, href: impl Into<String>, icon: Markup) -> Markup {
     let text = text.into();
@@ -46,7 +47,7 @@ pub fn link_menu_item_with_icon(text: impl Into<String>, href: impl Into<String>
 
     html! {
         a href=(href) class=(LINK_BASE_CLASSES) data-testid="menu-item-link" {
-            (icon)
+            span class=(ICON_CLASSES) { (icon) }
             span { (text) }
         }
     }
@@ -72,19 +73,20 @@ pub fn button_menu_item(text: impl Into<String>) -> Markup {
 
 /// Creates a button menu item with an icon
 ///
+/// The icon will be automatically styled with appropriate spacing and color.
+///
 /// # Example
 /// ```rust
 /// use components::{menu_item, icon, IconType};
 ///
-/// let code_icon = icon::icon_for_menu_item(IconType::Code);
-/// let item = menu_item::button_menu_item_with_icon("View source", code_icon);
+/// let item = menu_item::button_menu_item_with_icon("View source", icon::icon(IconType::Code));
 /// ```
 pub fn button_menu_item_with_icon(text: impl Into<String>, icon: Markup) -> Markup {
     let text = text.into();
 
     html! {
         button type="button" class=(BUTTON_BASE_CLASSES) data-testid="menu-item-button" {
-            (icon)
+            span class=(ICON_CLASSES) { (icon) }
             span { (text) }
         }
     }
@@ -109,24 +111,4 @@ pub fn menu_item_divider() -> Markup {
     html! {
         hr class=(DIVIDER_CLASSES);
     }
-}
-
-/// Returns the CSS classes to apply to menu item icons
-///
-/// Use this when creating custom icons to ensure consistent styling.
-///
-/// Note: For standard icons, consider using `icon::icon_for_menu_item()` instead.
-///
-/// # Example
-/// ```rust
-/// use components::{icon, IconType};
-///
-/// // Preferred approach for standard icons
-/// let icon = icon::icon_for_menu_item(IconType::Star);
-///
-/// // Or use icon_classes() for custom styling
-/// let custom_icon = icon::icon_with_class(IconType::Star, "mr-3 size-5 text-red-500");
-/// ```
-pub fn icon_classes() -> &'static str {
-    ICON_CLASSES
 }

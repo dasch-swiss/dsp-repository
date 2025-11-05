@@ -437,39 +437,6 @@ impl ComponentRenderer for IconRenderer {
         let markup = html! {
             div class="flex flex-col gap-6 p-8" {
                 section {
-                    h3 class="text-lg font-semibold mb-3" { "Available Icons" }
-                    p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
-                        "All icons from Heroicons with consistent styling"
-                    }
-                    div class="grid grid-cols-2 md:grid-cols-3 gap-4" {
-                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
-                            (icon::icon(IconType::Star))
-                            span class="text-sm font-medium" { "Star" }
-                        }
-                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
-                            (icon::icon(IconType::Code))
-                            span class="text-sm font-medium" { "Code" }
-                        }
-                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
-                            (icon::icon(IconType::Flag))
-                            span class="text-sm font-medium" { "Flag" }
-                        }
-                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
-                            (icon::icon(IconType::Hamburger))
-                            span class="text-sm font-medium" { "Hamburger" }
-                        }
-                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
-                            (icon::icon(IconType::Close))
-                            span class="text-sm font-medium" { "Close" }
-                        }
-                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
-                            (icon::icon(IconType::ChevronDown))
-                            span class="text-sm font-medium" { "ChevronDown" }
-                        }
-                    }
-                }
-
-                section {
                     h3 class="text-lg font-semibold mb-3" { "Custom Sizes" }
                     p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
                         "Icons can be sized using Tailwind size classes"
@@ -513,15 +480,68 @@ impl ComponentRenderer for IconRenderer {
                 }
 
                 section {
-                    h3 class="text-lg font-semibold mb-3" { "Menu Item Icons" }
+                    h3 class="text-lg font-semibold mb-3" { "Icons in other components" }
                     p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
-                        "Use icon_for_menu_item() for proper menu item styling"
+                        "Some components like the menu component or the button component implement icons. In general there is no need to define a color or a size as it is inherited or already defined by the component. Consult the docs of those components on how to pass or build the desired icon."
                     }
                     div class="bg-white rounded-md shadow-lg w-56 dark:bg-gray-800 dark:-outline-offset-1 dark:outline-white/10" {
                         div class="py-1" {
-                            (menu_item::link_menu_item_with_icon("Favorites", "/favorites", icon::icon_for_menu_item(IconType::Star)))
-                            (menu_item::link_menu_item_with_icon("View Source", "/source", icon::icon_for_menu_item(IconType::Code)))
-                            (menu_item::link_menu_item_with_icon("Report", "/report", icon::icon_for_menu_item(IconType::Flag)))
+                            (menu_item::link_menu_item_with_icon("Favorites", "/favorites", icon::icon(IconType::Star)))
+                            (menu_item::link_menu_item_with_icon("View Source", "/source", icon::icon(IconType::Code)))
+                            (menu_item::link_menu_item_with_icon("Report", "/report", icon::icon(IconType::Flag)))
+                        }
+                    }
+                }
+
+                section {
+                    h3 class="text-lg font-semibold mb-3" { "Available Icons" }
+                    p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
+                        "All available icons including Heroicons and social media icons"
+                    }
+                    div class="grid grid-cols-2 md:grid-cols-3 gap-4" {
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::Star))
+                            span class="text-sm font-medium" { "Star" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::Code))
+                            span class="text-sm font-medium" { "Code" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::Flag))
+                            span class="text-sm font-medium" { "Flag" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::Hamburger))
+                            span class="text-sm font-medium" { "Hamburger" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::Close))
+                            span class="text-sm font-medium" { "Close" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::ChevronDown))
+                            span class="text-sm font-medium" { "ChevronDown" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::Facebook))
+                            span class="text-sm font-medium" { "Facebook" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::Instagram))
+                            span class="text-sm font-medium" { "Instagram" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::X))
+                            span class="text-sm font-medium" { "X" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::GitHub))
+                            span class="text-sm font-medium" { "GitHub" }
+                        }
+                        div class="flex items-center gap-3 p-4 border border-gray-200 rounded-md dark:border-gray-700" {
+                            (icon::icon(IconType::YouTube))
+                            span class="text-sm font-medium" { "YouTube" }
                         }
                     }
                 }
@@ -553,9 +573,9 @@ impl ComponentRenderer for MenuItemRenderer {
         }
 
         // Create sample icons for demonstration
-        let star_icon = icon::icon_for_menu_item(IconType::Star);
-        let code_icon = icon::icon_for_menu_item(IconType::Code);
-        let flag_icon = icon::icon_for_menu_item(IconType::Flag);
+        let star_icon = icon::icon(IconType::Star);
+        let code_icon = icon::icon(IconType::Code);
+        let flag_icon = icon::icon(IconType::Flag);
 
         let markup = html! {
             div class="flex flex-col gap-6 p-8" {
@@ -663,9 +683,9 @@ impl ComponentRenderer for MenuRenderer {
         }
 
         // Create sample icons for demonstration
-        let star_icon = icon::icon_for_menu_item(IconType::Star);
-        let code_icon = icon::icon_for_menu_item(IconType::Code);
-        let flag_icon = icon::icon_for_menu_item(IconType::Flag);
+        let star_icon = icon::icon(IconType::Star);
+        let code_icon = icon::icon(IconType::Code);
+        let flag_icon = icon::icon(IconType::Flag);
 
         let markup = html! {
             div class="flex flex-col gap-6 p-8" {
@@ -717,75 +737,21 @@ impl ComponentRenderer for MenuRenderer {
                 }
 
                 section {
-                    h3 class="text-lg font-semibold mb-3" { "Conditional Menu Building" }
-                    p class="text-sm text-gray-600 dark:text-gray-400 mb-2" {
-                        "The builder pattern allows flexible, conditional menu construction"
-                    }
-                    @let is_admin = true;
-                    @let builder = menu::menu()
-                        .with_id("conditional-menu")
-                        .with_trigger(
-                            button::button("Dynamic Menu")
-                                .with_id("conditional-menu-trigger")
-                                .popovertarget("conditional-menu")
-                                .build()
-                        );
-                    @let builder = builder.with_item(menu_item::link_menu_item("Dashboard", "/dashboard"));
-                    @let builder = builder.with_item(menu_item::link_menu_item("Profile", "/profile"));
-                    @let builder = if is_admin {
-                        builder
-                            .with_item(menu_item::menu_item_divider())
-                            .with_item(menu_item::link_menu_item("Admin Panel", "/admin"))
-                    } else {
-                        builder
-                    };
-                    (builder.build())
-                }
-
-                section {
-                    h3 class="text-lg font-semibold mb-3" { "External and Programmatic Triggers" }
+                    h3 class="text-lg font-semibold mb-3" { "Programmatic Trigger" }
                     p class="text-sm text-gray-600 dark:text-gray-400 mb-4" {
-                        "Menus can be triggered externally using any button with popovertarget, or programmatically via DataStar/JavaScript"
+                        "Menus can be triggered programmatically via DataStar onclick handlers or JavaScript"
                     }
-
-                    div class="flex flex-col gap-6" {
-                        div {
-                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "External trigger button (separate from menu)" }
-                            div class="flex items-center gap-4 mb-2" {
-                                (button::button("External Button 1")
-                                    .with_id("external-trigger-1")
-                                    .popovertarget("external-menu")
-                                    .build())
-                                (button::button("External Button 2")
-                                    .with_id("external-trigger-2")
-                                    .variant(ButtonVariant::Secondary)
-                                    .popovertarget("external-menu")
-                                    .build())
-                            }
-                            (menu::menu()
-                                .with_id("external-menu")
-                                .with_item(menu_item::link_menu_item("Profile", "/profile"))
-                                .with_item(menu_item::link_menu_item("Settings", "/settings"))
-                                .with_item(menu_item::menu_item_divider())
-                                .with_item(menu_item::button_menu_item("Sign Out"))
-                                .build())
-                        }
-
-                        div {
-                            p class="text-sm text-gray-600 dark:text-gray-400 mb-2" { "Programmatic trigger via DataStar onclick" }
-                            (button::button("Open Programmatically")
-                                .with_id("programmatic-trigger")
-                                .onclick("document.getElementById('programmatic-menu').showPopover()")
-                                .build())
-                            (menu::menu()
-                                .with_id("programmatic-menu")
-                                .with_item(menu_item::link_menu_item("Dashboard", "/dashboard"))
-                                .with_item(menu_item::link_menu_item("Analytics", "/analytics"))
-                                .with_item(menu_item::menu_item_divider())
-                                .with_item(menu_item::button_menu_item("Refresh"))
-                                .build())
-                        }
-                    }
+                    (button::button("Open Programmatically")
+                        .with_id("programmatic-trigger")
+                        .onclick("document.getElementById('programmatic-menu').showPopover()")
+                        .build())
+                    (menu::menu()
+                        .with_id("programmatic-menu")
+                        .with_item(menu_item::link_menu_item("Dashboard", "/dashboard"))
+                        .with_item(menu_item::link_menu_item("Analytics", "/analytics"))
+                        .with_item(menu_item::menu_item_divider())
+                        .with_item(menu_item::button_menu_item("Refresh"))
+                        .build())
                 }
             }
         };

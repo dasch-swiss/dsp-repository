@@ -38,15 +38,15 @@ Both link and button variants support optional icons using the `_with_icon` vari
 - `link_menu_item_with_icon(text, href, icon)`
 - `button_menu_item_with_icon(text, icon)`
 
-Icons should be provided as `Markup`. Use the `icon::icon_for_menu_item()` function for properly styled icons:
+Icons should be provided as `Markup`. Use `icon::icon()` to create icons - the menu item component will apply the appropriate styling:
 
 ```rust
 use components::{menu_item, icon, IconType};
 
-let star_icon = icon::icon_for_menu_item(IconType::Star);
+let star_icon = icon::icon(IconType::Star);
 let link_item = menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon);
 
-let code_icon = icon::icon_for_menu_item(IconType::Code);
+let code_icon = icon::icon(IconType::Code);
 let button_item = menu_item::button_menu_item_with_icon("View Source", code_icon);
 ```
 
@@ -92,8 +92,8 @@ Example composition:
 use components::{menu_item, icon, IconType};
 use maud::html;
 
-let star_icon = icon::icon_for_menu_item(IconType::Star);
-let flag_icon = icon::icon_for_menu_item(IconType::Flag);
+let star_icon = icon::icon(IconType::Star);
+let flag_icon = icon::icon(IconType::Flag);
 
 html! {
     div class="menu-container" {

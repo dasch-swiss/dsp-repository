@@ -6,9 +6,9 @@ Reusable icon component for displaying SVG icons from Heroicons.
 
 Icons provide visual cues and improve user interface comprehension. Use icons consistently throughout your application to maintain a cohesive visual language.
 
-## Available Icons
+## IconTypes
 
-The icon component includes commonly used icons from Heroicons:
+The icon component includes commonly used icons from Heroicons like:
 
 - **Star** - Favorites, ratings, featured items
 - **Code** - Source code, embed actions, developer tools
@@ -16,6 +16,8 @@ The icon component includes commonly used icons from Heroicons:
 - **Hamburger** - Mobile menu toggle
 - **Close** - Dismissing dialogs, closing modals
 - **ChevronDown** - Dropdowns, expandable sections
+
+See the components showcase for an exhausting list of available icons.
 
 ## Basic Usage
 
@@ -45,12 +47,12 @@ let custom = icon::icon_with_class(IconType::Code, "size-10 text-blue-600 hover:
 
 ## Menu Item Icons
 
-For menu items, use the specialized function that applies proper styling:
+For menu items, simply pass the icon and the menu item component will apply the appropriate styling:
 
 ```rust
 use components::{icon, menu_item, IconType};
 
-let star_icon = icon::icon_for_menu_item(IconType::Star);
+let star_icon = icon::icon(IconType::Star);
 let menu = menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon);
 ```
 
@@ -138,11 +140,11 @@ menu::menu()
     .with_item(menu_item::link_menu_item_with_icon(
         "Favorites",
         "/favorites",
-        icon::icon_for_menu_item(IconType::Star)
+        icon::icon(IconType::Star)
     ))
     .with_item(menu_item::button_menu_item_with_icon(
         "Share",
-        icon::icon_for_menu_item(IconType::Code)
+        icon::icon(IconType::Code)
     ))
     .build()
 ```

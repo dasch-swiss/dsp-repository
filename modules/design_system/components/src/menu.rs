@@ -18,7 +18,7 @@ const DEFAULT_ANCHOR: &str = "bottom end";
 /// ```rust
 /// use components::{menu, menu_item, icon, IconType};
 ///
-/// let star_icon = icon::icon_for_menu_item(IconType::Star);
+/// let star_icon = icon::icon(IconType::Star);
 ///
 /// let my_menu = menu::menu()
 ///     .with_id("user-menu")
@@ -165,13 +165,19 @@ impl MenuBuilder {
         match self.trigger {
             Some(trigger_button) => {
                 html! {
-                    div class="relative inline-block" {
+                    el-dropdown class="relative inline-block" {
                         (trigger_button)
                         (menu)
                     }
                 }
             }
-            None => menu,
+            None => {
+                html! {
+                    el-dropdown class="relative inline-block" {
+                        (menu)
+                    }
+                }
+            }
         }
     }
 }

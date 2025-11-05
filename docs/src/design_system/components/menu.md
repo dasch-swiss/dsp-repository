@@ -17,7 +17,7 @@ Use the button builder's `.popovertarget()` method to connect the button to the 
 ```rust
 use components::{menu, menu_item, button, icon, IconType};
 
-let star_icon = icon::icon_for_menu_item(IconType::Star);
+let star_icon = icon::icon(IconType::Star);
 
 let my_menu = menu::menu()
     .with_id("user-menu")
@@ -252,16 +252,16 @@ menu::menu()
     .with_id("context-menu")
     .with_item(menu_item::button_menu_item_with_icon(
         "Share",
-        icon::icon_for_menu_item(IconType::Star)
+        icon::icon(IconType::Star)
     ))
     .with_item(menu_item::button_menu_item_with_icon(
         "Download",
-        icon::icon_for_menu_item(IconType::Code)
+        icon::icon(IconType::Code)
     ))
     .with_item(menu_item::menu_item_divider())
     .with_item(menu_item::button_menu_item_with_icon(
         "Delete",
-        icon::icon_for_menu_item(IconType::Flag)
+        icon::icon(IconType::Flag)
     ))
     .build()
 ```

@@ -280,10 +280,10 @@ impl IconButtonBuilder {
     ///
     /// # Example
     /// ```rust
-    /// icon_button(icon).color("text-yellow-500 hover:bg-yellow-50").build()
+    /// icon_button(icon).with_color("text-yellow-500 hover:bg-yellow-50").build()
     /// ```
     #[must_use = "builder does nothing unless you call .build()"]
-    pub fn color(mut self, color_class: impl Into<String>) -> Self {
+    pub fn with_color(mut self, color_class: impl Into<String>) -> Self {
         self.color_class = Some(color_class.into());
         self
     }

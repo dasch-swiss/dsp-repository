@@ -106,7 +106,7 @@ impl ComponentRenderer for ButtonRenderer {
                         code: {
                             button::icon_button(icon::icon(IconType::Star))
                                 .with_id("star-button")
-                                .color("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950")
+                                .with_color("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950")
                                 .onclick("console.log('Star icon clicked!')")
                                 .build()
                         }

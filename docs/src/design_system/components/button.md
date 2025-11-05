@@ -46,9 +46,9 @@ All button builder methods can be chained in any order. Call `.build()` to rende
 
 - **`.with_id(impl Into<String>)`** - Sets the HTML `id` attribute for the button
 - **`.with_test_id(impl Into<String>)`** - Sets the `data-testid` attribute for testing
+- **`.with_color(impl Into<String>)`** - Sets custom color classes (overrides default gray)
 - **`.onclick(impl Into<String>)`** - Sets the DataStar action handler for click events
 - **`.disabled()`** - Marks the button as disabled
-- **`.color(impl Into<String>)`** - Sets custom color classes (overrides default gray)
 - **`.popovertarget(impl Into<String>)`** - Sets the popover target for triggering menus
 - **`.build()`** - Consumes the builder and returns the rendered markup
 
@@ -133,18 +133,18 @@ use components::{icon_button, icon, IconType};
 
 // Yellow star button
 let star = icon_button(icon::icon(IconType::Star))
-    .color("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950")
+    .with_color("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950")
     .onclick("console.log('starred')")
     .build();
 
 // Indigo close button
 let indigo_close = icon_button(icon::icon(IconType::Close))
-    .color("text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400")
+    .with_color("text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400")
     .build();
 
 // Red danger button with interaction
 let delete = icon_button(icon::icon(IconType::Flag))
-    .color("text-red-500 hover:bg-red-50 dark:hover:bg-red-950")
+    .with_color("text-red-500 hover:bg-red-50 dark:hover:bg-red-950")
     .onclick("@post('/api/flag')")
     .build();
 ```

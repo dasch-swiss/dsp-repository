@@ -50,6 +50,7 @@ impl MenuBuilder {
     ///     .with_item(menu_item::link_menu_item("Profile", "/profile"))
     ///     .build();
     /// ```
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn with_item(mut self, item: Markup) -> Self {
         self.items.push(item);
         self
@@ -70,6 +71,7 @@ impl MenuBuilder {
     ///     .with_items(items)
     ///     .build();
     /// ```
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn with_items(mut self, items: Vec<Markup>) -> Self {
         self.items.extend(items);
         self
@@ -90,6 +92,7 @@ impl MenuBuilder {
     /// // Later, in the button:
     /// // <button popovertarget="user-menu">Open Menu</button>
     /// ```
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
         self.id = Some(id.into());
         self
@@ -135,6 +138,7 @@ impl MenuBuilder {
     /// - Use `.popovertarget()` on any button in your HTML
     /// - Use DataStar onclick: `document.getElementById('menu-id').showPopover()`
     /// - Use JavaScript: `document.getElementById('menu-id').togglePopover()`
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn with_trigger(mut self, trigger_button: Markup) -> Self {
         self.trigger = Some(trigger_button);
         self

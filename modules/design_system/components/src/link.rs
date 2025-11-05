@@ -30,38 +30,125 @@ impl LinkTarget {
     }
 }
 
-pub fn link(text: impl Into<String>, url: impl Into<String>) -> Markup {
-    link_with_target(text, url, LinkTarget::SelfTarget)
-}
-
-pub fn link_external(text: impl Into<String>, url: impl Into<String>) -> Markup {
-    link_with_target(text, url, LinkTarget::Blank)
-}
-
-pub fn link_with_target(text: impl Into<String>, url: impl Into<String>, target: LinkTarget) -> Markup {
-    link_with_target_and_testid(text, url, target, None)
-}
-
-pub fn link_with_target_and_testid(
-    text: impl Into<String>,
-    url: impl Into<String>,
+/// Builder for creating link components with flexible configuration
+///
+/// # Examples
+///
+/// ```rust
+/// use components::link::{link, LinkTarget};
+///
+/// // Simple link
+/// let simple = link("Click here", "/path").build();
+///
+/// // External link (opens in new tab)
+/// let external = link("External", "https://example.com")
+///     .target(LinkTarget::Blank)
+///     .build();
+///
+/// // Link with ID and test ID
+/// let customized = link("Customized", "/path")
+///     .with_id("my-link")
+///     .with_test_id("link-test")
+///     .build();
+/// ```
+pub struct LinkBuilder {
+    text: String,
+    url: String,
     target: LinkTarget,
-    custom_test_id: Option<&str>,
-) -> Markup {
-    let text = text.into();
-    let url = url.into();
-    let test_id = custom_test_id.unwrap_or("link");
-    let rel_attr = target.rel();
+    id: Option<String>,
+    test_id: Option<String>,
+}
 
-    html! {
-        @if let Some(rel) = rel_attr {
-            a href=(url) target=(target.target()) rel=(rel) class=(BASE_CLASSES) data-testid=(test_id) {
-                (text)
-            }
-        } @else {
-            a href=(url) target=(target.target()) class=(BASE_CLASSES) data-testid=(test_id) {
-                (text)
+impl LinkBuilder {
+    /// Creates a new link builder with the specified text and URL
+    ///
+    /// Default target is `LinkTarget::SelfTarget` (same window)
+    fn new(text: impl Into<String>, url: impl Into<String>) -> Self {
+        Self {
+            text: text.into(),
+            url: url.into(),
+            target: LinkTarget::SelfTarget,
+            id: None,
+            test_id: None,
+        }
+    }
+
+    /// Sets the link target (where the link opens)
+    ///
+    /// Use `LinkTarget::Blank` for external links to open in new tab
+    #[must_use = "builder does nothing unless you call .build()"]
+    pub fn target(mut self, target: LinkTarget) -> Self {
+        self.target = target;
+        self
+    }
+
+    /// Sets the HTML id attribute
+    #[must_use = "builder does nothing unless you call .build()"]
+    pub fn with_id(mut self, id: impl Into<String>) -> Self {
+        self.id = Some(id.into());
+        self
+    }
+
+    /// Sets the data-testid attribute for testing
+    ///
+    /// Defaults to "link" if not specified
+    #[must_use = "builder does nothing unless you call .build()"]
+    pub fn with_test_id(mut self, test_id: impl Into<String>) -> Self {
+        self.test_id = Some(test_id.into());
+        self
+    }
+
+    /// Builds the final link markup
+    pub fn build(self) -> Markup {
+        let test_id = self.test_id.as_deref().unwrap_or("link");
+        let rel_attr = self.target.rel();
+
+        html! {
+            @if let Some(rel) = rel_attr {
+                a href=(self.url)
+                  target=(self.target.target())
+                  rel=(rel)
+                  class=(BASE_CLASSES)
+                  data-testid=(test_id)
+                  id=[self.id] {
+                    (self.text)
+                }
+            } @else {
+                a href=(self.url)
+                  target=(self.target.target())
+                  class=(BASE_CLASSES)
+                  data-testid=(test_id)
+                  id=[self.id] {
+                    (self.text)
+                }
             }
         }
     }
+}
+
+/// Creates a new link with the specified text and URL
+///
+/// Returns a `LinkBuilder` for further customization
+///
+/// # Examples
+///
+/// ```rust
+/// // Simple link
+/// link("Home", "/").build()
+///
+/// // With customization
+/// link("External", "https://example.com")
+///     .target(LinkTarget::Blank)
+///     .with_id("external-link")
+///     .build()
+/// ```
+pub fn link(text: impl Into<String>, url: impl Into<String>) -> LinkBuilder {
+    LinkBuilder::new(text, url)
+}
+
+/// Convenience function for creating an external link (opens in new tab)
+///
+/// Equivalent to `link(text, url).target(LinkTarget::Blank).build()`
+pub fn link_external(text: impl Into<String>, url: impl Into<String>) -> Markup {
+    link(text, url).target(LinkTarget::Blank).build()
 }

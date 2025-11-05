@@ -9,30 +9,64 @@ Use links for:
 - Opening external resources (documentation, GitHub, etc.)
 - Triggering actions that navigate to new content
 
-**Important:** Links never have underlines, and visited links maintain the same color as hovered links for visual consistency.
+**General design decisions for now:** Links do not have underlines, but visited links are displayed differently than unvisited. Visited have the same color as hovered links for visual consistency.
 
-## Variants
+## Usage
 
-### Internal
-Default link that opens in the same window/tab. Use for navigation within your application.
+### Default Link
+Opens in the same window/tab:
 
 ```rust
 link::link("Go to homepage", "/")
+    .with_id("homepage-link")
+    .build()
 ```
 
-### External
-Opens in a new tab with security attributes (`rel="noopener noreferrer"`) to prevent security vulnerabilities.
+### External Link
+Opens in a new tab with security attributes (`rel="noopener noreferrer"`):
+
+```rust
+link::link("Visit GitHub", "https://github.com")
+    .target(LinkTarget::Blank)
+    .with_id("github-link")
+    .build()
+```
+
+Convenience function for external links:
 
 ```rust
 link::link_external("Visit GitHub", "https://github.com")
 ```
 
-### Custom Target
-For advanced use cases requiring specific target behavior:
+### Link Targets
+Control where the link opens:
 
 ```rust
-link::link_with_target("Open in parent", "/parent", LinkTarget::Parent)
+// Same window (default)
+link::link("Home", "/")
+    .with_id("home-link")
+    .build()
+
+// New tab (external)
+link::link("External", "https://example.com")
+    .target(LinkTarget::Blank)
+    .with_id("external-link")
+    .build()
+
+// Parent frame
+link::link("Parent", "/parent")
+    .target(LinkTarget::Parent)
+    .with_id("parent-link")
+    .build()
+
+// Top-most frame
+link::link("Top", "/top")
+    .target(LinkTarget::Top)
+    .with_id("top-link")
+    .build()
 ```
+
+**Note**: Links are for navigation only. If you need to trigger actions or send data via DataStar, use a button component instead.
 
 ## Security Features
 

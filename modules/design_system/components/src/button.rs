@@ -88,12 +88,14 @@ impl ButtonBuilder {
     }
 
     /// Sets the button variant (Primary or Secondary)
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn variant(mut self, variant: ButtonVariant) -> Self {
         self.variant = variant;
         self
     }
 
     /// Marks the button as disabled
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn disabled(mut self) -> Self {
         self.disabled = true;
         self
@@ -106,30 +108,35 @@ impl ButtonBuilder {
     /// button("Click").onclick("console.log('clicked')").build()
     /// button("Save").onclick("@post('/api/save')").build()
     /// ```
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn onclick(mut self, action: impl Into<String>) -> Self {
         self.onclick = Some(action.into());
         self
     }
 
     /// Sets a custom test ID for the button
-    pub fn test_id(mut self, id: impl Into<String>) -> Self {
+    #[must_use = "builder does nothing unless you call .build()"]
+    pub fn with_test_id(mut self, id: impl Into<String>) -> Self {
         self.test_id = Some(id.into());
         self
     }
 
     /// Sets the HTML id attribute for the button
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
         self.id = Some(id.into());
         self
     }
 
     /// Adds a leading icon before the button text
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn with_leading_icon(mut self, icon: Markup) -> Self {
         self.leading_icon = Some(icon);
         self
     }
 
     /// Adds a trailing icon after the button text
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn with_trailing_icon(mut self, icon: Markup) -> Self {
         self.trailing_icon = Some(icon);
         self
@@ -143,6 +150,7 @@ impl ButtonBuilder {
     ///     .popovertarget("my-menu")
     ///     .build()
     /// ```
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn popovertarget(mut self, target: impl Into<String>) -> Self {
         self.popovertarget = Some(target.into());
         self
@@ -245,12 +253,14 @@ impl IconButtonBuilder {
     /// ```rust
     /// icon_button(icon).color("text-yellow-500 hover:bg-yellow-50").build()
     /// ```
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn color(mut self, color_class: impl Into<String>) -> Self {
         self.color_class = Some(color_class.into());
         self
     }
 
     /// Marks the icon button as disabled
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn disabled(mut self) -> Self {
         self.disabled = true;
         self
@@ -263,12 +273,14 @@ impl IconButtonBuilder {
     /// icon_button(icon).onclick("console.log('clicked')").build()
     /// icon_button(icon).onclick("@get('/api/action')").build()
     /// ```
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn onclick(mut self, action: impl Into<String>) -> Self {
         self.onclick = Some(action.into());
         self
     }
 
     /// Sets the HTML id attribute for the icon button
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
         self.id = Some(id.into());
         self
@@ -282,6 +294,7 @@ impl IconButtonBuilder {
     ///     .popovertarget("my-menu")
     ///     .build()
     /// ```
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn popovertarget(mut self, target: impl Into<String>) -> Self {
         self.popovertarget = Some(target.into());
         self

@@ -35,7 +35,7 @@ let disabled = button("Delete")
 let custom = button("Submit")
     .variant(ButtonVariant::Primary)
     .onclick("@post('/api/submit')")
-    .test_id("submit-button")
+    .with_test_id("submit-button")
     .build();
 
 // Button with ID for DataStar targeting

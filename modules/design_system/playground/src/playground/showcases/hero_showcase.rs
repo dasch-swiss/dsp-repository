@@ -17,8 +17,4 @@ impl ComponentRenderer for HeroRenderer {
             }
         })
     }
-
-    fn default_variant(&self) -> &'static str {
-        "default"
-    }
 }

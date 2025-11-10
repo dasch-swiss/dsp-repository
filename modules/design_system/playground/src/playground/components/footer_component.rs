@@ -21,8 +21,4 @@ impl ComponentRenderer for FooterComponentRenderer {
         let markup = footer::footer(&config);
         Ok(markup)
     }
-
-    fn default_variant(&self) -> &'static str {
-        "default"
-    }
 }

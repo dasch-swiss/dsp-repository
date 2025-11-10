@@ -34,8 +34,4 @@ impl ComponentRenderer for HeaderComponentRenderer {
         let markup = header::header(nav_elements, &config);
         Ok(markup)
     }
-
-    fn default_variant(&self) -> &'static str {
-        "default"
-    }
 }

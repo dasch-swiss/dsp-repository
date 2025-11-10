@@ -17,8 +17,4 @@ impl ComponentRenderer for HeaderRenderer {
             }
         })
     }
-
-    fn default_variant(&self) -> &'static str {
-        "default"
-    }
 }

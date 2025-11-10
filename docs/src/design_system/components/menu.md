@@ -19,6 +19,20 @@ use components::{menu, menu_item, button, icon, IconType};
 
 let star_icon = icon::icon(IconType::Star);
 
+// Build the items vector separately
+let items = vec![
+    // Navigation links
+    menu_item::link_menu_item("Edit", "/edit"),
+    menu_item::link_menu_item("Duplicate", "/duplicate"),
+    menu_item::menu_item_divider(),
+    // Action buttons with icons
+    menu_item::button_menu_item_with_icon("Share", star_icon.clone()),
+    menu_item::button_menu_item_with_icon("Archive", code_icon.clone()),
+    menu_item::menu_item_divider(),
+    // Destructive action
+    menu_item::button_menu_item_with_icon("Delete", flag_icon.clone()),
+];
+
 let my_menu = menu::menu()
     .with_id("user-menu")
     .with_trigger(
@@ -27,10 +41,7 @@ let my_menu = menu::menu()
             .popovertarget("user-menu")
             .build()
     )
-    .with_item(menu_item::link_menu_item("Profile", "/profile"))
-    .with_item(menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon))
-    .with_item(menu_item::menu_item_divider())
-    .with_item(menu_item::button_menu_item("Sign Out"))
+    .with_items(items)
     .build();
 ```
 

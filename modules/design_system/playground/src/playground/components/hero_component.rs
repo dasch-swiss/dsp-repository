@@ -27,8 +27,4 @@ impl ComponentRenderer for HeroComponentRenderer {
         let markup = hero::hero(&config);
         Ok(markup)
     }
-
-    fn default_variant(&self) -> &'static str {
-        "default"
-    }
 }

@@ -41,8 +41,10 @@ pub fn render_page_shell(theme: &str, title: &str, css_path: &str, content: Mark
                 script src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.11/bundles/datastar.js" type="module" {}
                 // Syntax highlighting for code blocks
                 link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css";
+                link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css";
                 script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js" {}
                 script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-rust.min.js" {}
+                script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" {}
             }
             body { (content) }
             // body class="theme-text-primary theme-bg-primary m-0 p-0 h-screen overflow-hidden" { (content) }
@@ -118,9 +120,6 @@ pub fn render_component_controls(component_info: &component_registry::ComponentI
             div class="flex items-center gap-2" {
                 label for="variant-select" class="text-sm theme-text-secondary whitespace-nowrap" { "Variant:" }
                 select id="variant-select" data-param="variant" class="px-2 py-1 border theme-border-subtle rounded theme-bg-primary theme-text-primary text-sm" {
-                    @if component_info.variants.len() > 1 {
-                        option value="all" selected[current_variant == "all"] { "All" }
-                    }
                     @for variant in &component_info.variants {
                         option value=(variant.value) selected[variant.value == current_variant] {
                             (variant.name)

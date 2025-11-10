@@ -72,8 +72,4 @@ impl ComponentRenderer for ShellComponentRenderer {
         };
         Ok(markup)
     }
-
-    fn default_variant(&self) -> &'static str {
-        "header-only"
-    }
 }

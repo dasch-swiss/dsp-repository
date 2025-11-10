@@ -37,57 +37,24 @@ pub struct ComponentSection {
     pub examples: Vec<ComponentExample>,
 }
 
-/// Macro for creating component examples with automatic code capture
+/// Helper function for creating component examples with code display
 ///
-/// This macro captures the code that generates a component as a string
-/// while also executing it to produce the rendered markup.
+/// Creates a ComponentExample with description.
+pub fn example_with_description(
+    id: &'static str,
+    name: &'static str,
+    description: &'static str,
+    code: &'static str,
+    markup: Markup,
+) -> ComponentExample {
+    ComponentExample { id, name, description: Some(description), code, markup }
+}
+
+/// Helper function for creating component examples with code display
 ///
-/// # Usage
-///
-/// ```rust
-/// use crate::example;
-///
-/// let ex = example!{
-///     id: "primary-button",
-///     name: "Primary Button",
-///     description: "Main call-to-action button",
-///     code: {
-///         button::button("Click Me")
-///             .variant(ButtonVariant::Primary)
-///             .onclick("console.log('Clicked!')")
-///             .build()
-///     }
-/// };
-/// ```
-#[macro_export]
-macro_rules! example {
-    (
-        id: $id:expr,
-        name: $name:expr,
-        description: $description:expr,
-        code: $code:block
-    ) => {
-        $crate::playground::renderer::ComponentExample {
-            id: $id,
-            name: $name,
-            description: Some($description),
-            code: stringify!($code),
-            markup: $code,
-        }
-    };
-    (
-        id: $id:expr,
-        name: $name:expr,
-        code: $code:block
-    ) => {
-        $crate::playground::renderer::ComponentExample {
-            id: $id,
-            name: $name,
-            description: None,
-            code: stringify!($code),
-            markup: $code,
-        }
-    };
+/// Creates a ComponentExample without description.
+pub fn example(id: &'static str, name: &'static str, code: &'static str, markup: Markup) -> ComponentExample {
+    ComponentExample { id, name, description: None, code, markup }
 }
 
 /// Trait for rendering components with different variants
@@ -97,8 +64,18 @@ macro_rules! example {
 pub trait ComponentRenderer {
     /// Render a component with the specified variant and parameters
     ///
-    /// Returns the rendered markup for backward compatibility.
-    fn render_variant(&self, variant: &str, params: &PlaygroundParams) -> PlaygroundResult<Markup>;
+    /// Default implementation returns a placeholder message. Override this method
+    /// for Component Store renderers or showcases without code-view support.
+    fn render_variant(&self, _variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
+        use maud::html;
+        Ok(html! {
+            div class="p-8" {
+                p class="text-gray-600 dark:text-gray-400" {
+                    "This component uses code-view rendering. Please implement render_variant_with_code()."
+                }
+            }
+        })
+    }
 
     /// Render component with code-view support (optional)
     ///
@@ -113,9 +90,6 @@ pub trait ComponentRenderer {
     ) -> PlaygroundResult<Option<Vec<ComponentSection>>> {
         Ok(None)
     }
-
-    /// Get the default variant for this component
-    fn default_variant(&self) -> &'static str;
 }
 
 /// Registry for all component renderers (Examples and Variants tab)
@@ -184,7 +158,7 @@ pub fn render_sections_with_code_view(sections: Vec<ComponentSection>) -> Markup
                 // Card wrapper for entire section
                 div class="border border-gray-200 dark:border-gray-700 rounded-lg" {
                     // Hidden checkbox for CSS-only toggle
-                    input type="checkbox" id=(checkbox_id) class="peer hidden";
+                    input type="checkbox" id=(checkbox_id) class="peer hidden" onchange="if(this.checked && typeof Prism !== 'undefined') { setTimeout(() => Prism.highlightAll(), 10); }";
 
                     // Section header with toggle
                     div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between" {
@@ -216,7 +190,7 @@ pub fn render_sections_with_code_view(sections: Vec<ComponentSection>) -> Markup
                             @if idx > 0 {
                                 div class="border-t border-gray-200 dark:border-gray-700 my-4" {}
                             }
-                            pre class="text-sm" {
+                            pre class="line-numbers" {
                                 code class="language-rust" {
                                     (example.code)
                                 }

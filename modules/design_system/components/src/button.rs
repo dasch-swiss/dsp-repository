@@ -24,13 +24,6 @@ impl ButtonVariant {
             ButtonVariant::Secondary => "bg-indigo-300 text-indigo-900 hover:bg-indigo-600 focus-visible:outline-2",
         }
     }
-
-    fn test_id(&self) -> &'static str {
-        match self {
-            ButtonVariant::Primary => "button-primary",
-            ButtonVariant::Secondary => "button-secondary",
-        }
-    }
 }
 
 // TODO: Create type-safe DataStar action wrapper to replace raw string onclick handlers
@@ -83,8 +76,6 @@ impl ComponentBuilder for ButtonBuilder {
     }
 
     fn build(self) -> Markup {
-        let test_id = self.test_id.unwrap_or_else(|| self.variant.test_id().to_string());
-
         html! {
             button
                 type="button"
@@ -93,7 +84,7 @@ impl ComponentBuilder for ButtonBuilder {
                 disabled[self.disabled]
                 data-on-click=[self.onclick.as_deref()]
                 popovertarget=[self.popovertarget.as_deref()]
-                data-testid=(test_id)
+                data-testid=[self.test_id.as_deref()]
             {
                 @if let Some(leading) = self.leading_icon {
                     (leading)

@@ -17,8 +17,4 @@ impl ComponentRenderer for IconRenderer {
             }
         })
     }
-
-    fn default_variant(&self) -> &'static str {
-        "default"
-    }
 }

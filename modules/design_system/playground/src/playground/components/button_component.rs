@@ -53,8 +53,4 @@ impl ComponentRenderer for ButtonComponentRenderer {
             }),
         }
     }
-
-    fn default_variant(&self) -> &'static str {
-        "primary"
-    }
 }

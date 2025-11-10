@@ -79,29 +79,4 @@ This component enforces the best practice of using:
 
 This separation ensures proper accessibility, keyboard navigation, and semantic markup.
 
-## Composition
-
-Menu items are designed to be composed into larger menu structures. They work well with:
-- Dropdown menus (future component)
-- Context menus (future component)
-- Navigation menus
-- Action palettes
-
-Example composition:
-```rust
-use components::{menu_item, icon, IconType};
-use maud::html;
-
-let star_icon = icon::icon(IconType::Star);
-let flag_icon = icon::icon(IconType::Flag);
-
-html! {
-    div class="menu-container" {
-        (menu_item::link_menu_item("Profile", "/profile"))
-        (menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon))
-        (menu_item::menu_item_divider())
-        (menu_item::button_menu_item_with_icon("Report", flag_icon))
-        (menu_item::button_menu_item("Sign Out"))
-    }
-}
 ```

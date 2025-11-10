@@ -133,8 +133,4 @@ impl ComponentRenderer for IconComponentRenderer {
 
         Ok(markup)
     }
-
-    fn default_variant(&self) -> &'static str {
-        "default"
-    }
 }

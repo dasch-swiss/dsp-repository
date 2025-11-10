@@ -67,13 +67,21 @@ const COMPONENTS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Link",
         route_name: "link",
-        variants: &[ComponentVariantSpec { name: "All Examples", value: "default" }],
+        variants: &[
+            ComponentVariantSpec { name: "Internal", value: "internal" },
+            ComponentVariantSpec { name: "Blank (New Tab)", value: "blank" },
+            ComponentVariantSpec { name: "Parent Frame", value: "parent" },
+            ComponentVariantSpec { name: "Top Frame", value: "top" },
+        ],
         doc_file: "link.md",
     },
     ComponentSpec {
         name: "Menu",
         route_name: "menu",
-        variants: &[ComponentVariantSpec { name: "All Examples", value: "default" }],
+        variants: &[
+            ComponentVariantSpec { name: "Text Trigger", value: "text-trigger" },
+            ComponentVariantSpec { name: "Icon Trigger", value: "icon-trigger" },
+        ],
         doc_file: "menu.md",
     },
     ComponentSpec {

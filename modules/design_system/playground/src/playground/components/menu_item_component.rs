@@ -105,8 +105,4 @@ impl ComponentRenderer for MenuItemComponentRenderer {
 
         Ok(markup)
     }
-
-    fn default_variant(&self) -> &'static str {
-        "default"
-    }
 }

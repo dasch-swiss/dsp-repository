@@ -1,4 +1,5 @@
 mod button_component;
+mod dropdown_component;
 mod footer_component;
 mod header_component;
 mod hero_component;
@@ -9,6 +10,7 @@ mod menu_item_component;
 mod shell_component;
 
 pub use button_component::ButtonComponentRenderer;
+pub use dropdown_component::DropdownComponentRenderer;
 pub use footer_component::FooterComponentRenderer;
 pub use header_component::HeaderComponentRenderer;
 pub use hero_component::HeroComponentRenderer;

@@ -41,6 +41,16 @@ const COMPONENTS: &[ComponentSpec] = &[
         doc_file: "button.md",
     },
     ComponentSpec {
+        name: "Dropdown",
+        route_name: "dropdown",
+        variants: &[
+            ComponentVariantSpec { name: "Secondary Button", value: "secondary" },
+            ComponentVariantSpec { name: "MoreVert Icon", value: "more-vert" },
+            ComponentVariantSpec { name: "Hamburger Icon", value: "hamburger" },
+        ],
+        doc_file: "dropdown.md",
+    },
+    ComponentSpec {
         name: "Footer",
         route_name: "footer",
         variants: &[ComponentVariantSpec { name: "Default", value: "default" }],

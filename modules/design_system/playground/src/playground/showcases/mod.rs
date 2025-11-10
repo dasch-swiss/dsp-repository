@@ -1,4 +1,5 @@
 pub mod button_showcase;
+pub mod dropdown_showcase;
 pub mod footer_showcase;
 pub mod header_showcase;
 pub mod hero_showcase;
@@ -9,6 +10,7 @@ pub mod menu_showcase;
 pub mod shell_showcase;
 
 pub use button_showcase::ButtonRenderer;
+pub use dropdown_showcase::DropdownRenderer;
 pub use footer_showcase::FooterRenderer;
 pub use header_showcase::HeaderRenderer;
 pub use hero_showcase::HeroRenderer;

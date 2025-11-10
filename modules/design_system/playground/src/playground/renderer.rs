@@ -101,6 +101,7 @@ impl ComponentRendererRegistry {
     pub fn get_renderer(component: &str) -> Option<Box<dyn ComponentRenderer>> {
         match component {
             "button" => Some(Box::new(ButtonRenderer)),
+            "dropdown" => Some(Box::new(DropdownRenderer)),
             "footer" => Some(Box::new(FooterRenderer)),
             "header" => Some(Box::new(HeaderRenderer)),
             "hero" => Some(Box::new(HeroRenderer)),
@@ -124,6 +125,7 @@ impl ComponentIsolationRegistry {
     pub fn get_renderer(component: &str) -> Option<Box<dyn ComponentRenderer>> {
         match component {
             "button" => Some(Box::new(component_store::ButtonComponentRenderer)),
+            "dropdown" => Some(Box::new(component_store::DropdownComponentRenderer)),
             "footer" => Some(Box::new(component_store::FooterComponentRenderer)),
             "header" => Some(Box::new(component_store::HeaderComponentRenderer)),
             "hero" => Some(Box::new(component_store::HeroComponentRenderer)),

@@ -15,31 +15,45 @@ A dropdown with a hamburger menu icon button. Best for navigation menus, especia
 
 ## Usage
 
-The dropdown component composes existing button and menu components. Pass a configured menu builder to any of the three dropdown functions:
+The dropdown component composes existing button and menu components. Build a vector of menu items and pass it to the menu builder using `with_items()`:
 
 ```rust
 use components::{dropdown, menu, menu_item};
 
 // Secondary button dropdown with label
+let items = vec![
+    menu_item::link_menu_item("Edit", "/edit"),
+    menu_item::link_menu_item("Duplicate", "/duplicate"),
+    menu_item::menu_item_divider(),
+    menu_item::button_menu_item("Delete"),
+];
+
 dropdown::dropdown_secondary(
     "actions-dropdown",
     "Options",
-    menu::menu()
-        .with_item(menu_item::link_menu_item("Edit", "/edit"))
-        .with_item(menu_item::button_menu_item("Delete"))
+    menu::menu().with_items(items)
 )
 
 // Icon button dropdowns
+let items = vec![
+    menu_item::link_menu_item("Settings", "/settings"),
+    menu_item::link_menu_item("Help", "/help"),
+];
+
 dropdown::dropdown_more_vert(
     "more-menu",
-    menu::menu()
-        .with_item(menu_item::link_menu_item("Settings", "/settings"))
+    menu::menu().with_items(items)
 )
+
+let items = vec![
+    menu_item::link_menu_item("Home", "/"),
+    menu_item::link_menu_item("About", "/about"),
+    menu_item::link_menu_item("Contact", "/contact"),
+];
 
 dropdown::dropdown_hamburger(
     "nav-menu",
-    menu::menu()
-        .with_item(menu_item::link_menu_item("Home", "/"))
+    menu::menu().with_items(items)
 )
 ```
 

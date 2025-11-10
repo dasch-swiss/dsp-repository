@@ -15,39 +15,50 @@ impl ComponentRenderer for DropdownComponentRenderer {
         let code_icon = icon::icon(IconType::Code);
 
         match variant {
-            "secondary" => Ok(dropdown::dropdown_secondary(
-                "secondary-dropdown",
-                "Options",
-                menu::menu()
-                    .with_item(menu_item::link_menu_item("Edit", "/edit"))
-                    .with_item(menu_item::link_menu_item("Duplicate", "/duplicate"))
-                    .with_item(menu_item::menu_item_divider())
-                    .with_item(menu_item::link_menu_item_with_icon(
-                        "Add to favorites",
-                        "/favorites",
-                        star_icon.clone(),
-                    ))
-                    .with_item(menu_item::link_menu_item_with_icon("View source", "/source", code_icon.clone()))
-                    .with_item(menu_item::menu_item_divider())
-                    .with_item(menu_item::button_menu_item("Delete")),
-            )),
-            "more-vert" => Ok(dropdown::dropdown_more_vert(
-                "more-vert-dropdown",
-                menu::menu()
-                    .with_item(menu_item::link_menu_item("Settings", "/settings"))
-                    .with_item(menu_item::link_menu_item("Help", "/help"))
-                    .with_item(menu_item::menu_item_divider())
-                    .with_item(menu_item::button_menu_item("Sign Out")),
-            )),
-            "hamburger" => Ok(dropdown::dropdown_hamburger(
-                "hamburger-dropdown",
-                menu::menu()
-                    .with_item(menu_item::link_menu_item("Home", "/"))
-                    .with_item(menu_item::link_menu_item("About", "/about"))
-                    .with_item(menu_item::link_menu_item("Services", "/services"))
-                    .with_item(menu_item::menu_item_divider())
-                    .with_item(menu_item::link_menu_item("Contact", "/contact")),
-            )),
+            "secondary" => {
+                let items = vec![
+                    menu_item::link_menu_item("Edit", "/edit"),
+                    menu_item::link_menu_item("Duplicate", "/duplicate"),
+                    menu_item::menu_item_divider(),
+                    menu_item::link_menu_item_with_icon("Add to favorites", "/favorites", star_icon.clone()),
+                    menu_item::link_menu_item_with_icon("View source", "/source", code_icon.clone()),
+                    menu_item::menu_item_divider(),
+                    menu_item::button_menu_item("Delete"),
+                ];
+
+                Ok(dropdown::dropdown_secondary(
+                    "secondary-dropdown",
+                    "Options",
+                    menu::menu().with_items(items),
+                ))
+            }
+            "more-vert" => {
+                let items = vec![
+                    menu_item::link_menu_item("Settings", "/settings"),
+                    menu_item::link_menu_item("Help", "/help"),
+                    menu_item::menu_item_divider(),
+                    menu_item::button_menu_item("Sign Out"),
+                ];
+
+                Ok(dropdown::dropdown_more_vert(
+                    "more-vert-dropdown",
+                    menu::menu().with_items(items),
+                ))
+            }
+            "hamburger" => {
+                let items = vec![
+                    menu_item::link_menu_item("Home", "/"),
+                    menu_item::link_menu_item("About", "/about"),
+                    menu_item::link_menu_item("Services", "/services"),
+                    menu_item::menu_item_divider(),
+                    menu_item::link_menu_item("Contact", "/contact"),
+                ];
+
+                Ok(dropdown::dropdown_hamburger(
+                    "hamburger-dropdown",
+                    menu::menu().with_items(items),
+                ))
+            }
             _ => Err(PlaygroundError::InvalidVariant {
                 component: "dropdown".to_string(),
                 variant: variant.to_string(),

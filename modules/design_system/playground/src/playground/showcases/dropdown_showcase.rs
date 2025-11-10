@@ -33,90 +33,114 @@ impl ComponentRenderer for DropdownRenderer {
                         "dropdown-secondary",
                         "Secondary Button Dropdown",
                         "Dropdown with a labeled secondary button and chevron icon",
-                        r#"dropdown::dropdown_secondary(
+                        r#"let items = vec![
+    menu_item::link_menu_item("Edit", "/edit"),
+    menu_item::link_menu_item("Duplicate", "/duplicate"),
+    menu_item::menu_item_divider(),
+    menu_item::link_menu_item_with_icon(
+        "Add to favorites",
+        "/favorites",
+        star_icon.clone()
+    ),
+    menu_item::link_menu_item_with_icon(
+        "View source",
+        "/source",
+        code_icon.clone()
+    ),
+    menu_item::menu_item_divider(),
+    menu_item::button_menu_item("Delete"),
+];
+
+dropdown::dropdown_secondary(
     "actions-dropdown",
     "Options",
-    menu::menu()
-        .with_item(menu_item::link_menu_item("Edit", "/edit"))
-        .with_item(menu_item::link_menu_item("Duplicate", "/duplicate"))
-        .with_item(menu_item::menu_item_divider())
-        .with_item(menu_item::link_menu_item_with_icon(
-            "Add to favorites",
-            "/favorites",
-            star_icon.clone()
-        ))
-        .with_item(menu_item::link_menu_item_with_icon(
-            "View source",
-            "/source",
-            code_icon.clone()
-        ))
-        .with_item(menu_item::menu_item_divider())
-        .with_item(menu_item::button_menu_item("Delete"))
+    menu::menu().with_items(items)
 )"#,
-                        dropdown::dropdown_secondary(
-                            "actions-dropdown",
-                            "Options",
-                            menu::menu()
-                                .with_item(menu_item::link_menu_item("Edit", "/edit"))
-                                .with_item(menu_item::link_menu_item("Duplicate", "/duplicate"))
-                                .with_item(menu_item::menu_item_divider())
-                                .with_item(menu_item::link_menu_item_with_icon(
+                        {
+                            let items = vec![
+                                menu_item::link_menu_item("Edit", "/edit"),
+                                menu_item::link_menu_item("Duplicate", "/duplicate"),
+                                menu_item::menu_item_divider(),
+                                menu_item::link_menu_item_with_icon(
                                     "Add to favorites",
                                     "/favorites",
                                     star_icon.clone(),
-                                ))
-                                .with_item(menu_item::link_menu_item_with_icon(
+                                ),
+                                menu_item::link_menu_item_with_icon(
                                     "View source",
                                     "/source",
                                     code_icon.clone(),
-                                ))
-                                .with_item(menu_item::menu_item_divider())
-                                .with_item(menu_item::button_menu_item("Delete")),
-                        ),
+                                ),
+                                menu_item::menu_item_divider(),
+                                menu_item::button_menu_item("Delete"),
+                            ];
+
+                            dropdown::dropdown_secondary(
+                                "actions-dropdown",
+                                "Options",
+                                menu::menu().with_items(items)
+                            )
+                        },
                     ),
                     example_with_description(
                         "dropdown-more-vert",
                         "MoreVert Icon Dropdown",
                         "Dropdown with three vertical dots icon for overflow menus",
-                        r#"dropdown::dropdown_more_vert(
+                        r#"let items = vec![
+    menu_item::link_menu_item("Settings", "/settings"),
+    menu_item::link_menu_item("Help", "/help"),
+    menu_item::menu_item_divider(),
+    menu_item::button_menu_item("Sign Out"),
+];
+
+dropdown::dropdown_more_vert(
     "more-dropdown",
-    menu::menu()
-        .with_item(menu_item::link_menu_item("Settings", "/settings"))
-        .with_item(menu_item::link_menu_item("Help", "/help"))
-        .with_item(menu_item::menu_item_divider())
-        .with_item(menu_item::button_menu_item("Sign Out"))
+    menu::menu().with_items(items)
 )"#,
-                        dropdown::dropdown_more_vert(
-                            "more-dropdown",
-                            menu::menu()
-                                .with_item(menu_item::link_menu_item("Settings", "/settings"))
-                                .with_item(menu_item::link_menu_item("Help", "/help"))
-                                .with_item(menu_item::menu_item_divider())
-                                .with_item(menu_item::button_menu_item("Sign Out")),
-                        ),
+                        {
+                            let items = vec![
+                                menu_item::link_menu_item("Settings", "/settings"),
+                                menu_item::link_menu_item("Help", "/help"),
+                                menu_item::menu_item_divider(),
+                                menu_item::button_menu_item("Sign Out"),
+                            ];
+
+                            dropdown::dropdown_more_vert(
+                                "more-dropdown",
+                                menu::menu().with_items(items)
+                            )
+                        },
                     ),
                     example_with_description(
                         "dropdown-hamburger",
                         "Hamburger Icon Dropdown",
                         "Dropdown with hamburger menu icon for navigation menus",
-                        r#"dropdown::dropdown_hamburger(
+                        r#"let items = vec![
+    menu_item::link_menu_item("Home", "/"),
+    menu_item::link_menu_item("About", "/about"),
+    menu_item::link_menu_item("Services", "/services"),
+    menu_item::menu_item_divider(),
+    menu_item::link_menu_item("Contact", "/contact"),
+];
+
+dropdown::dropdown_hamburger(
     "nav-dropdown",
-    menu::menu()
-        .with_item(menu_item::link_menu_item("Home", "/"))
-        .with_item(menu_item::link_menu_item("About", "/about"))
-        .with_item(menu_item::link_menu_item("Services", "/services"))
-        .with_item(menu_item::menu_item_divider())
-        .with_item(menu_item::link_menu_item("Contact", "/contact"))
+    menu::menu().with_items(items)
 )"#,
-                        dropdown::dropdown_hamburger(
-                            "nav-dropdown",
-                            menu::menu()
-                                .with_item(menu_item::link_menu_item("Home", "/"))
-                                .with_item(menu_item::link_menu_item("About", "/about"))
-                                .with_item(menu_item::link_menu_item("Services", "/services"))
-                                .with_item(menu_item::menu_item_divider())
-                                .with_item(menu_item::link_menu_item("Contact", "/contact")),
-                        ),
+                        {
+                            let items = vec![
+                                menu_item::link_menu_item("Home", "/"),
+                                menu_item::link_menu_item("About", "/about"),
+                                menu_item::link_menu_item("Services", "/services"),
+                                menu_item::menu_item_divider(),
+                                menu_item::link_menu_item("Contact", "/contact"),
+                            ];
+
+                            dropdown::dropdown_hamburger(
+                                "nav-dropdown",
+                                menu::menu().with_items(items)
+                            )
+                        },
                     ),
                 ],
             },

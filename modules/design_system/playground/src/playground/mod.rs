@@ -1,4 +1,5 @@
-pub mod components;
+pub mod component_registry; // Component specifications and metadata
+pub mod components; // Component Store (isolated component variants)
 pub mod docs_parser;
 pub mod error;
 pub mod iframe;

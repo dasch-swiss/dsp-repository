@@ -1,5 +1,6 @@
 use maud::Markup;
 
+use crate::playground::components as component_store;
 use crate::playground::error::PlaygroundResult;
 use crate::playground::parameters::PlaygroundParams;
 use crate::playground::showcases::*;
@@ -115,15 +116,11 @@ pub trait ComponentRenderer {
 
     /// Get the default variant for this component
     fn default_variant(&self) -> &'static str;
-
-    /// Get all supported variants for this component
-    #[allow(dead_code)]
-    fn supported_variants(&self) -> Vec<&'static str>;
 }
 
-/// Registry for all component renderers
+/// Registry for all component renderers (Examples and Variants tab)
 ///
-/// Maps component names to their renderer implementations.
+/// Maps component names to their renderer implementations for the Examples and Variants tab.
 pub struct ComponentRendererRegistry;
 
 impl ComponentRendererRegistry {
@@ -138,6 +135,29 @@ impl ComponentRendererRegistry {
             "menu" => Some(Box::new(MenuRenderer)),
             "menu-item" => Some(Box::new(MenuItemRenderer)),
             "shell" => Some(Box::new(ShellRenderer)),
+            _ => None,
+        }
+    }
+}
+
+/// Registry for component isolation renderers (Component Store tab)
+///
+/// Maps component names to their renderer implementations for the Component Store tab.
+/// These renderers display isolated component variants for testing and visual regression.
+pub struct ComponentIsolationRegistry;
+
+impl ComponentIsolationRegistry {
+    pub fn get_renderer(component: &str) -> Option<Box<dyn ComponentRenderer>> {
+        match component {
+            "button" => Some(Box::new(component_store::ButtonComponentRenderer)),
+            "footer" => Some(Box::new(component_store::FooterComponentRenderer)),
+            "header" => Some(Box::new(component_store::HeaderComponentRenderer)),
+            "hero" => Some(Box::new(component_store::HeroComponentRenderer)),
+            "icon" => Some(Box::new(component_store::IconComponentRenderer)),
+            "link" => Some(Box::new(component_store::LinkComponentRenderer)),
+            "menu" => Some(Box::new(component_store::MenuComponentRenderer)),
+            "menu-item" => Some(Box::new(component_store::MenuItemComponentRenderer)),
+            "shell" => Some(Box::new(component_store::ShellComponentRenderer)),
             _ => None,
         }
     }

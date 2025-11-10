@@ -31,11 +31,6 @@ impl ComponentRenderer for ButtonRenderer {
     fn default_variant(&self) -> &'static str {
         "default"
     }
-
-    fn supported_variants(&self) -> Vec<&'static str> {
-        vec!["default"]
-    }
-
     fn render_variant_with_code(
         &self,
         variant: &str,

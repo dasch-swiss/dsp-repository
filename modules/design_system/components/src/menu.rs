@@ -18,11 +18,11 @@ const DEFAULT_ANCHOR: &str = "bottom end";
 ///
 /// # Example
 /// ```rust
-/// use components::{menu, menu_item, icon, IconType};
+/// use components::{menu::menu, menu_item, icon::icon, IconType, ComponentBuilder};
 ///
-/// let star_icon = icon::icon(IconType::Star);
+/// let star_icon = icon(IconType::Star);
 ///
-/// let my_menu = menu::menu()
+/// let my_menu = menu()
 ///     .with_id("user-menu")
 ///     .with_item(menu_item::link_menu_item("Profile", "/profile"))
 ///     .with_item(menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon))
@@ -95,9 +95,9 @@ impl MenuBuilder {
     ///
     /// # Example
     /// ```rust
-    /// use components::{menu, menu_item};
+    /// use components::{menu::menu, menu_item, ComponentBuilder};
     ///
-    /// let my_menu = menu::menu()
+    /// let my_menu = menu()
     ///     .with_item(menu_item::link_menu_item("Profile", "/profile"))
     ///     .build();
     /// ```
@@ -111,14 +111,14 @@ impl MenuBuilder {
     ///
     /// # Example
     /// ```rust
-    /// use components::{menu, menu_item};
+    /// use components::{menu::menu, menu_item, ComponentBuilder};
     ///
     /// let items = vec![
     ///     menu_item::link_menu_item("Profile", "/profile"),
     ///     menu_item::link_menu_item("Settings", "/settings"),
     /// ];
     ///
-    /// let my_menu = menu::menu()
+    /// let my_menu = menu()
     ///     .with_items(items)
     ///     .build();
     /// ```
@@ -135,12 +135,12 @@ impl MenuBuilder {
     ///
     /// # Example with text button
     /// ```rust
-    /// use components::{menu, menu_item, button};
+    /// use components::{menu::menu, menu_item, button::button, ComponentBuilder};
     ///
-    /// let my_menu = menu::menu()
+    /// let my_menu = menu()
     ///     .with_id("my-menu")
     ///     .with_trigger(
-    ///         button::button("Open Menu")
+    ///         button("Open Menu")
     ///             .popovertarget("my-menu")
     ///             .build()
     ///     )
@@ -150,12 +150,12 @@ impl MenuBuilder {
     ///
     /// # Example with icon button
     /// ```rust
-    /// use components::{menu, menu_item, button, icon, IconType};
+    /// use components::{menu::menu, menu_item, button::icon_button, icon::icon, IconType, ComponentBuilder};
     ///
-    /// let my_menu = menu::menu()
+    /// let my_menu = menu()
     ///     .with_id("my-menu")
     ///     .with_trigger(
-    ///         button::icon_button(icon::icon(IconType::Hamburger))
+    ///         icon_button(icon(IconType::Hamburger))
     ///             .popovertarget("my-menu")
     ///             .build()
     ///     )
@@ -185,9 +185,9 @@ impl Default for MenuBuilder {
 ///
 /// # Example
 /// ```rust
-/// use components::{menu, menu_item};
+/// use components::{menu::menu, menu_item, ComponentBuilder};
 ///
-/// let my_menu = menu::menu()
+/// let my_menu = menu()
 ///     .with_id("actions-menu")
 ///     .with_item(menu_item::button_menu_item("Delete"))
 ///     .build();

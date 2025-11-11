@@ -14,15 +14,15 @@ use crate::ComponentBuilder;
 ///
 /// # Example
 /// ```rust
-/// use components::{dropdown, menu, menu_item};
+/// use components::{dropdown::dropdown_secondary, menu::menu, menu_item, ComponentBuilder};
 ///
-/// dropdown::dropdown_secondary(
+/// let dropdown = dropdown_secondary(
 ///     "actions-dropdown",
 ///     "Options",
-///     menu::menu()
+///     menu()
 ///         .with_item(menu_item::link_menu_item("Edit", "/edit"))
 ///         .with_item(menu_item::link_menu_item("Delete", "/delete"))
-/// )
+/// );
 /// ```
 #[must_use]
 pub fn dropdown_secondary(id: impl Into<String>, label: impl Into<String>, menu: MenuBuilder) -> Markup {
@@ -47,14 +47,14 @@ pub fn dropdown_secondary(id: impl Into<String>, label: impl Into<String>, menu:
 ///
 /// # Example
 /// ```rust
-/// use components::{dropdown, menu, menu_item};
+/// use components::{dropdown::dropdown_more_vert, menu::menu, menu_item, ComponentBuilder};
 ///
-/// dropdown::dropdown_more_vert(
+/// let dropdown = dropdown_more_vert(
 ///     "more-dropdown",
-///     menu::menu()
+///     menu()
 ///         .with_item(menu_item::link_menu_item("Settings", "/settings"))
 ///         .with_item(menu_item::link_menu_item("Help", "/help"))
-/// )
+/// );
 /// ```
 #[must_use]
 pub fn dropdown_more_vert(id: impl Into<String>, menu: MenuBuilder) -> Markup {
@@ -77,14 +77,14 @@ pub fn dropdown_more_vert(id: impl Into<String>, menu: MenuBuilder) -> Markup {
 ///
 /// # Example
 /// ```rust
-/// use components::{dropdown, menu, menu_item};
+/// use components::{dropdown::dropdown_hamburger, menu::menu, menu_item, ComponentBuilder};
 ///
-/// dropdown::dropdown_hamburger(
+/// let dropdown = dropdown_hamburger(
 ///     "nav-dropdown",
-///     menu::menu()
+///     menu()
 ///         .with_item(menu_item::link_menu_item("Home", "/"))
 ///         .with_item(menu_item::link_menu_item("About", "/about"))
-/// )
+/// );
 /// ```
 #[must_use]
 pub fn dropdown_hamburger(id: impl Into<String>, menu: MenuBuilder) -> Markup {

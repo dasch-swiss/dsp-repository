@@ -37,7 +37,7 @@ impl ButtonVariant {
 ///
 /// # Example
 /// ```rust
-/// use components::{button, ButtonVariant, ComponentBuilder};
+/// use components::{button::button, ButtonVariant, ComponentBuilder};
 ///
 /// // Simple button
 /// let simple = button("Click me").build();
@@ -132,7 +132,7 @@ impl ButtonBuilder {
     ///
     /// # Example
     /// ```rust
-    /// use components::{button, ComponentBuilder};
+    /// use components::{button::button, ComponentBuilder};
     /// button("Click").onclick("console.log('clicked')").build();
     /// button("Save").onclick("@post('/api/save')").build();
     /// ```
@@ -160,7 +160,7 @@ impl ButtonBuilder {
     ///
     /// # Example
     /// ```rust
-    /// use components::{button, ComponentBuilder};
+    /// use components::{button::button, ComponentBuilder};
     /// button("Open Menu")
     ///     .popovertarget("my-menu")
     ///     .build();
@@ -178,7 +178,7 @@ impl ButtonBuilder {
 ///
 /// # Example
 /// ```rust
-/// use components::{button, ButtonVariant, ComponentBuilder};
+/// use components::{button::button, ButtonVariant, ComponentBuilder};
 ///
 /// // Simple primary button
 /// let btn = button("Click me").build();
@@ -198,19 +198,19 @@ pub fn button(text: impl Into<String>) -> ButtonBuilder {
 ///
 /// # Example
 /// ```rust
-/// use components::{icon_button, icon, IconType};
+/// use components::{button::icon_button, icon::icon, IconType, ComponentBuilder};
 ///
 /// // Simple icon button
-/// let close = icon_button(icon::icon(IconType::Close)).build();
+/// let close = icon_button(icon(IconType::Close)).build();
 ///
 /// // Disabled icon button
-/// let disabled = icon_button(icon::icon(IconType::Star))
+/// let disabled = icon_button(icon(IconType::Star))
 ///     .disabled()
 ///     .build();
 ///
 /// // Icon button with custom colors
-/// let colored = icon_button(icon::icon(IconType::Flag))
-///     .color("text-red-500 hover:bg-red-50")
+/// let colored = icon_button(icon(IconType::Flag))
+///     .with_color("text-red-500 hover:bg-red-50")
 ///     .onclick("console.log('flagged')")
 ///     .build();
 /// ```
@@ -273,7 +273,10 @@ impl IconButtonBuilder {
     ///
     /// # Example
     /// ```rust
-    /// icon_button(icon).with_color("text-yellow-500 hover:bg-yellow-50").build()
+    /// use components::{button::icon_button, icon::icon, IconType, ComponentBuilder};
+    /// let btn = icon_button(icon(IconType::Star))
+    ///     .with_color("text-yellow-500 hover:bg-yellow-50")
+    ///     .build();
     /// ```
     #[must_use = "builder does nothing unless you call .build()"]
     pub fn with_color(mut self, color_class: impl Into<String>) -> Self {
@@ -292,8 +295,10 @@ impl IconButtonBuilder {
     ///
     /// # Example
     /// ```rust
-    /// icon_button(icon).onclick("console.log('clicked')").build()
-    /// icon_button(icon).onclick("@get('/api/action')").build()
+    /// use components::{button::icon_button, icon::icon, IconType, ComponentBuilder};
+    /// let btn = icon_button(icon(IconType::Close))
+    ///     .onclick("console.log('clicked')")
+    ///     .build();
     /// ```
     #[must_use = "builder does nothing unless you call .build()"]
     pub fn onclick(mut self, action: impl Into<String>) -> Self {
@@ -305,9 +310,10 @@ impl IconButtonBuilder {
     ///
     /// # Example
     /// ```rust
-    /// icon_button(icon::icon(IconType::Hamburger))
+    /// use components::{button::icon_button, icon::icon, IconType, ComponentBuilder};
+    /// let btn = icon_button(icon(IconType::Hamburger))
     ///     .popovertarget("my-menu")
-    ///     .build()
+    ///     .build();
     /// ```
     #[must_use = "builder does nothing unless you call .build()"]
     pub fn popovertarget(mut self, target: impl Into<String>) -> Self {
@@ -323,14 +329,14 @@ impl IconButtonBuilder {
 ///
 /// # Example
 /// ```rust
-/// use components::{icon_button, icon, IconType};
+/// use components::{button::icon_button, icon::icon, IconType, ComponentBuilder};
 ///
 /// // Default gray icon button
-/// let close = icon_button(icon::icon(IconType::Close)).build();
+/// let close = icon_button(icon(IconType::Close)).build();
 ///
 /// // Icon button with custom colors
-/// let star = icon_button(icon::icon(IconType::Star))
-///     .color("text-yellow-500 hover:bg-yellow-50")
+/// let star = icon_button(icon(IconType::Star))
+///     .with_color("text-yellow-500 hover:bg-yellow-50")
 ///     .onclick("console.log('starred')")
 ///     .build();
 /// ```

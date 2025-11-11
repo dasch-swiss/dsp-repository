@@ -37,7 +37,7 @@ impl LinkTarget {
 /// # Examples
 ///
 /// ```rust
-/// use components::link::{link, LinkTarget};
+/// use components::{link::link, LinkTarget, ComponentBuilder};
 ///
 /// // Simple link
 /// let simple = link("Click here", "/path").build();
@@ -128,14 +128,16 @@ impl LinkBuilder {
 /// # Examples
 ///
 /// ```rust
+/// use components::{link::link, LinkTarget, ComponentBuilder};
+///
 /// // Simple link
-/// link("Home", "/").build()
+/// let simple = link("Home", "/").build();
 ///
 /// // With customization
-/// link("External", "https://example.com")
+/// let external = link("External", "https://example.com")
 ///     .target(LinkTarget::Blank)
 ///     .with_id("external-link")
-///     .build()
+///     .build();
 /// ```
 #[must_use = "call .build() to render the component"]
 pub fn link(text: impl Into<String>, url: impl Into<String>) -> LinkBuilder {

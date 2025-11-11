@@ -77,7 +77,7 @@ pub trait ComponentBuilder: Sized {
     ///
     /// # Example
     /// ```rust
-    /// use components::button;
+    /// use components::{button::button, ComponentBuilder};
     ///
     /// let btn = button("Click me")
     ///     .with_id("submit-button")
@@ -95,7 +95,7 @@ pub trait ComponentBuilder: Sized {
     ///
     /// # Example
     /// ```rust
-    /// use components::button;
+    /// use components::{button::button, ComponentBuilder};
     ///
     /// let btn = button("Click me")
     ///     .with_test_id("submit-btn")

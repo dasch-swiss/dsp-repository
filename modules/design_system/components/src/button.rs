@@ -37,7 +37,7 @@ impl ButtonVariant {
 ///
 /// # Example
 /// ```rust
-/// use components::{button, ButtonVariant};
+/// use components::{button, ButtonVariant, ComponentBuilder};
 ///
 /// // Simple button
 /// let simple = button("Click me").build();
@@ -132,8 +132,9 @@ impl ButtonBuilder {
     ///
     /// # Example
     /// ```rust
-    /// button("Click").onclick("console.log('clicked')").build()
-    /// button("Save").onclick("@post('/api/save')").build()
+    /// use components::{button, ComponentBuilder};
+    /// button("Click").onclick("console.log('clicked')").build();
+    /// button("Save").onclick("@post('/api/save')").build();
     /// ```
     #[must_use = "builder does nothing unless you call .build()"]
     pub fn onclick(mut self, action: impl Into<String>) -> Self {
@@ -159,9 +160,10 @@ impl ButtonBuilder {
     ///
     /// # Example
     /// ```rust
+    /// use components::{button, ComponentBuilder};
     /// button("Open Menu")
     ///     .popovertarget("my-menu")
-    ///     .build()
+    ///     .build();
     /// ```
     #[must_use = "builder does nothing unless you call .build()"]
     pub fn popovertarget(mut self, target: impl Into<String>) -> Self {
@@ -176,7 +178,7 @@ impl ButtonBuilder {
 ///
 /// # Example
 /// ```rust
-/// use components::button;
+/// use components::{button, ButtonVariant, ComponentBuilder};
 ///
 /// // Simple primary button
 /// let btn = button("Click me").build();

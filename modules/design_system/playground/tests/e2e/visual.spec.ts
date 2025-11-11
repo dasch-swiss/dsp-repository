@@ -25,16 +25,16 @@ test.describe('Design System Components - Visual Regression Tests', () => {
       });
     };
 
-    // Button component
-    await page.goto('/?component=button&view=examples');
+    // Button component - component store view
+    await page.goto('/?component=button&view=component-store');
     await waitForFontsLoaded();
 
     // Wait for iframe to load
-    const iframe = page.frameLocator('#examples-iframe');
+    const iframe = page.frameLocator('#component-store-iframe');
     await iframe.locator('button').first().waitFor({ state: 'visible' });
 
-    // Take screenshot of the main content area
-    await expect(page.locator('main')).toHaveScreenshot(
+    // Take screenshot of the iframe content
+    await expect(iframe.locator('body')).toHaveScreenshot(
       'button-component.png'
     );
   });

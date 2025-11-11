@@ -25,11 +25,7 @@ use crate::ComponentBuilder;
 /// )
 /// ```
 #[must_use]
-pub fn dropdown_secondary(
-    id: impl Into<String>,
-    label: impl Into<String>,
-    menu: MenuBuilder,
-) -> Markup {
+pub fn dropdown_secondary(id: impl Into<String>, label: impl Into<String>, menu: MenuBuilder) -> Markup {
     let id = id.into();
     let trigger_id = format!("{}-trigger", id);
 

@@ -29,12 +29,14 @@ impl ComponentRenderer for ButtonRenderer {
                     example(
                         "primary-button",
                         "Primary Button",
-                        r#"button::button("Primary Button")
+                        r#"button::button("Sample Button")
     .with_id("primary-button")
+    .with_test_id("button-primary")
     .onclick("console.log('Primary button clicked!')")
     .build()"#,
-                        button::button("Primary Button")
+                        button::button("Sample Button")
                             .with_id("primary-button")
+                            .with_test_id("button-primary")
                             .onclick("console.log('Primary button clicked!')")
                             .build(),
                     ),

@@ -13,8 +13,9 @@ impl ComponentRenderer for ButtonComponentRenderer {
     fn render_variant(&self, variant: &str, _params: &PlaygroundParams) -> PlaygroundResult<Markup> {
         match variant {
             "primary" => Ok(html! {
-                (button::button("Primary Button")
+                (button::button("Sample Button")
                     .with_id("primary-button")
+                    .with_test_id("button-primary")
                     .onclick("console.log('Primary button clicked!')")
                     .build())
             }),

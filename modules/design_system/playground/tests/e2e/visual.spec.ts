@@ -26,9 +26,15 @@ test.describe('Design System Components - Visual Regression Tests', () => {
     };
 
     // Button component
-    await page.goto('/button');
+    await page.goto('/?component=button&view=examples');
     await waitForFontsLoaded();
-    await expect(page.locator('.playground-section').first()).toHaveScreenshot(
+
+    // Wait for iframe to load
+    const iframe = page.frameLocator('#examples-iframe');
+    await iframe.locator('button').first().waitFor({ state: 'visible' });
+
+    // Take screenshot of the main content area
+    await expect(page.locator('main')).toHaveScreenshot(
       'button-component.png'
     );
   });

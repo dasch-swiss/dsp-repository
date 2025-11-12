@@ -4,9 +4,7 @@ use maud::{html, Markup};
 
 use crate::playground::component_registry::{get_all_components, ComponentInfo};
 use crate::playground::parameters::PlaygroundParams;
-use crate::playground::templates::{
-    render_component_sidebar, render_component_tabs, render_global_controls, render_page_shell,
-};
+use crate::playground::templates::{render_component_sidebar, render_component_tabs, render_page_shell};
 
 struct ShellData<'a> {
     components: &'a [ComponentInfo],
@@ -36,13 +34,13 @@ fn render_shell_content(data: &ShellData) -> Markup {
         div class="grid grid-cols-[250px_1fr] h-screen" {
             (render_component_sidebar(data.components, data.current_component, data.current_params))
             main class="flex flex-col h-screen" {
-                (render_global_controls(data.current_theme))
                 (render_component_tabs(
                     &iframe_src_component_store,
                     &iframe_src_examples,
                     data.current_component_info,
                     data.current_view,
-                    data.current_variant
+                    data.current_variant,
+                    data.current_theme
                 ))
             }
         }

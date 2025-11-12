@@ -65,8 +65,6 @@ class PlaygroundController {
 
         if (this.themeSelect) {
             this.themeSelect.value = theme;
-            // Update theme on the main HTML element
-            document.documentElement.classList.toggle('dark', theme === 'dark');
         }
 
         // Sync tab state with URL (without triggering URL update)
@@ -79,11 +77,6 @@ class PlaygroundController {
         const url = new URL(window.location);
         url.searchParams.set(paramName, value);
         window.history.pushState({}, '', url);
-
-        // Update theme on the main HTML element
-        if (paramName === 'theme') {
-            document.documentElement.classList.toggle('dark', value === 'dark');
-        }
 
         this.updateIframes();
     }

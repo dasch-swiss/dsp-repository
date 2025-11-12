@@ -98,23 +98,15 @@ pub fn render_documentation_section(component_name: &str) -> Markup {
     }
 }
 
-/// Template for global controls (theme selector)
-pub fn render_global_controls(current_theme: &str) -> Markup {
-    html! {
-        div class="flex gap-4 p-3 border-b theme-border-subtle theme-bg-primary" {
-            div class="flex items-center gap-2 ml-auto" {
-                label for="theme-select" class="text-sm theme-text-secondary whitespace-nowrap" { "Theme:" }
-                select id="theme-select" data-param="theme" class="px-2 py-1 border theme-border-subtle rounded theme-bg-primary theme-text-primary text-sm" {
-                    option value="light" selected[current_theme == "light"] { "Light" }
-                    option value="dark" selected[current_theme == "dark"] { "Dark" }
-                }
-            }
-        }
-    }
-}
+// NOTE: render_global_controls has been removed - theme selector is now part of component controls
+// and only affects the iframe, not the main playground UI
 
-/// Template for component-specific controls (variant selector and open button)
-pub fn render_component_controls(component_info: &component_registry::ComponentInfo, current_variant: &str) -> Markup {
+/// Template for component-specific controls (variant selector, theme selector, and open button)
+pub fn render_component_controls(
+    component_info: &component_registry::ComponentInfo,
+    current_variant: &str,
+    current_theme: &str,
+) -> Markup {
     html! {
         div class="flex gap-4 p-3 border-b theme-border-subtle theme-bg-primary" {
             div class="flex items-center gap-2" {
@@ -125,6 +117,13 @@ pub fn render_component_controls(component_info: &component_registry::ComponentI
                             (variant.name)
                         }
                     }
+                }
+            }
+            div class="flex items-center gap-2" {
+                label for="theme-select" class="text-sm theme-text-secondary whitespace-nowrap" { "Theme:" }
+                select id="theme-select" data-param="theme" class="px-2 py-1 border theme-border-subtle rounded theme-bg-primary theme-text-primary text-sm" {
+                    option value="light" selected[current_theme == "light"] { "Light" }
+                    option value="dark" selected[current_theme == "dark"] { "Dark" }
                 }
             }
             div class="flex items-center ml-auto" {
@@ -171,6 +170,7 @@ pub fn render_component_tabs(
     component_info: &component_registry::ComponentInfo,
     current_view: &str,
     current_variant: &str,
+    current_theme: &str,
 ) -> Markup {
     html! {
         div class="flex border-b theme-border-subtle theme-bg-primary" {
@@ -196,7 +196,7 @@ pub fn render_component_tabs(
         // Component tab content
         div data-tab-content data-panel="component-store" class=(format!("flex-1 overflow-hidden {}",
             if current_view == "component-store" { "flex flex-col" } else { "hidden" })) id="component-store-tab" {
-            (render_component_controls(component_info, current_variant))
+            (render_component_controls(component_info, current_variant, current_theme))
             iframe id="component-store-iframe" src=(iframe_src_component_store) class="flex-1 border-none w-full h-full theme-bg-primary" {}
         }
         // Examples and Variants tab content

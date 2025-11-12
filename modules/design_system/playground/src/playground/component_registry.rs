@@ -71,7 +71,7 @@ const COMPONENTS: &[ComponentSpec] = &[
     ComponentSpec {
         name: "Icon",
         route_name: "icon",
-        variants: &[ComponentVariantSpec { name: "All Examples", value: "default" }],
+        variants: &[ComponentVariantSpec { name: "Close", value: "close" }],
         doc_file: "icon.md",
     },
     ComponentSpec {

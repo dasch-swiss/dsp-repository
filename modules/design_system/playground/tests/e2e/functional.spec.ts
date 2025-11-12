@@ -40,6 +40,19 @@ test.describe('Design System Components - Functional Tests', () => {
     });
   });
 
+  test.describe('Icon Component', () => {
+    test('close icon displays correctly', async ({ page }) => {
+      await page.goto('/?component=icon&theme=light&view=component-store&variant=close');
+
+      // Get icon from iframe
+      const frame = page.locator('#component-store-iframe').contentFrame();
+      const icon = frame.locator('svg');
+
+      // Check icon exists and is visible
+      await expect(icon).toBeVisible();
+    });
+  });
+
 
   test.describe('Shell Component', () => {
     test.skip('default fallback displays correctly', async ({ page }) => {

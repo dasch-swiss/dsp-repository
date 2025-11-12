@@ -92,7 +92,7 @@ pub async fn shell(Query(playground_params): Query<PlaygroundParams>) -> Result<
     };
 
     Ok(render_page_shell(
-        &current_theme,
+        "light", // Always light theme for playground UI; theme parameter only affects iframe components
         "DSP Design System Playground",
         "/playground-assets/css/playground.css",
         render_shell_content(&shell_data),

@@ -28,27 +28,80 @@ See individual component documentation files for specific usage patterns and var
 - Add playground route in `modules/design_system/playground/src/playground/components.rs`
 - Create documentation: `docs/src/design_system/components/component_name.md`
 
-### Component Template
+### Builder Pattern with Shared Trait
+
+Components that use the builder pattern should implement the `ComponentBuilder` trait to get common methods automatically:
+
 ```rust
 use maud::{html, Markup};
+use crate::builder_common::ComponentBuilder;
 
-#[derive(Debug, Clone)]
-pub enum ComponentVariant {
-    Default,
-    // Add variants as needed
+pub struct MyComponentBuilder {
+    text: String,
+    id: Option<String>,
+    test_id: Option<String>,
+    // ... other component-specific fields
 }
 
-impl ComponentVariant {
-    fn css_class(&self) -> &'static str {
-        match self {
-            ComponentVariant::Default => "dsp-component",
+// Implement the trait to get with_id(), with_test_id(), and build() automatically
+impl ComponentBuilder for MyComponentBuilder {
+    fn id_mut(&mut self) -> &mut Option<String> {
+        &mut self.id
+    }
+
+    fn test_id_mut(&mut self) -> &mut Option<String> {
+        &mut self.test_id
+    }
+
+    fn build(self) -> Markup {
+        // Component-specific rendering logic
+        html! {
+            div
+                id=[self.id]
+                data-testid=[self.test_id.as_deref().unwrap_or("my-component")]
+            {
+                (self.text)
+            }
         }
     }
 }
 
+// Component-specific methods go in a regular impl block
+impl MyComponentBuilder {
+    pub fn new(text: impl Into<String>) -> Self {
+        Self {
+            text: text.into(),
+            id: None,
+            test_id: None,
+        }
+    }
+
+    // Add component-specific builder methods here
+    // with_id() and with_test_id() are provided by the trait
+}
+
+#[must_use = "call .build() to render the component"]
+pub fn my_component(text: impl Into<String>) -> MyComponentBuilder {
+    MyComponentBuilder::new(text)
+}
+```
+
+**Key Points:**
+- Implement `ComponentBuilder` trait to inherit `with_id()`, `with_test_id()`, and `build()` methods
+- Add `id: Option<String>` and `test_id: Option<String>` fields to your builder struct
+- Component-specific methods go in a separate `impl` block
+- Don't forget `#[must_use]` attribute on the constructor function
+
+### Simple Component Template (No Builder)
+
+For components that don't need builder pattern:
+
+```rust
+use maud::{html, Markup};
+
 pub fn component(content: impl Into<String>) -> Markup {
     html! {
-        div class=(ComponentVariant::Default.css_class()) {
+        div class="my-component" {
             (content.into())
         }
     }

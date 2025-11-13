@@ -8,7 +8,8 @@ class PlaygroundController {
     initializeControls() {
         this.variantSelect = document.getElementById('variant-select');
         this.themeSelect = document.getElementById('theme-select');
-        this.iframe = document.getElementById('component-iframe');
+        this.componentStoreIframe = document.getElementById('component-store-iframe');
+        this.examplesIframe = document.getElementById('examples-iframe');
         this.tabButtons = document.querySelectorAll('[data-tab-button]');
         this.tabContents = document.querySelectorAll('[data-tab-content]');
     }
@@ -35,6 +36,17 @@ class PlaygroundController {
             });
         });
 
+        // Intercept sidebar component links to preserve theme
+        document.querySelectorAll('nav a[href^="/?component="]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const href = new URL(link.href);
+                const currentTheme = this.themeSelect ? this.themeSelect.value : 'light';
+                href.searchParams.set('theme', currentTheme);
+                window.location.href = href.toString();
+            });
+        });
+
         // Handle browser back/forward
         window.addEventListener('popstate', () => {
             this.syncFromURL();
@@ -44,50 +56,56 @@ class PlaygroundController {
     syncFromURL() {
         const urlParams = new URLSearchParams(window.location.search);
         const variant = urlParams.get('variant');
-        const theme = urlParams.get('theme');
-        const view = urlParams.get('view') || 'component';
+        const theme = urlParams.get('theme') || 'light';
+        const view = urlParams.get('view') || 'component-store';
 
         if (variant && this.variantSelect) {
             this.variantSelect.value = variant;
         }
 
-        if (theme && this.themeSelect) {
+        if (this.themeSelect) {
             this.themeSelect.value = theme;
-            // Update theme on the main HTML element
-            document.documentElement.classList.toggle('dark', theme === 'dark');
         }
 
         // Sync tab state with URL (without triggering URL update)
         this.switchTab(view, false);
 
-        this.updateIframe();
+        this.updateIframes();
     }
 
     updateParameter(paramName, value) {
         const url = new URL(window.location);
         url.searchParams.set(paramName, value);
         window.history.pushState({}, '', url);
-        
-        // Update theme on the main HTML element
-        if (paramName === 'theme') {
-            document.documentElement.classList.toggle('dark', value === 'dark');
-        }
-        
-        this.updateIframe();
+
+        this.updateIframes();
     }
 
-    updateIframe() {
-        if (!this.iframe) return;
-
+    updateIframes() {
         const urlParams = new URLSearchParams(window.location.search);
-        const iframeUrl = new URL('/iframe', window.location.origin);
+        const component = urlParams.get('component');
+        const variant = urlParams.get('variant');
+        const theme = urlParams.get('theme') || 'light';
 
-        // Copy all parameters to iframe URL
-        for (const [key, value] of urlParams) {
-            iframeUrl.searchParams.set(key, value);
+        // Update component-store iframe
+        if (this.componentStoreIframe) {
+            const componentStoreUrl = new URL('/iframe', window.location.origin);
+            componentStoreUrl.searchParams.set('component', component);
+            if (variant) componentStoreUrl.searchParams.set('variant', variant);
+            componentStoreUrl.searchParams.set('theme', theme);
+            componentStoreUrl.searchParams.set('view', 'component-store');
+            this.componentStoreIframe.src = componentStoreUrl.toString();
         }
 
-        this.iframe.src = iframeUrl.toString();
+        // Update examples iframe
+        if (this.examplesIframe) {
+            const examplesUrl = new URL('/iframe', window.location.origin);
+            examplesUrl.searchParams.set('component', component);
+            examplesUrl.searchParams.set('variant', 'default');
+            examplesUrl.searchParams.set('theme', theme);
+            examplesUrl.searchParams.set('view', 'examples');
+            this.examplesIframe.src = examplesUrl.toString();
+        }
     }
 
     switchTab(tabName, updateURL = true) {
@@ -122,12 +140,16 @@ class PlaygroundController {
     // Get current iframe URL with all parameters
     getCurrentIframeUrl() {
         const urlParams = new URLSearchParams(window.location.search);
-        const iframeUrl = new URL('/iframe', window.location.origin);
+        const view = urlParams.get('view') || 'component-store';
+        const component = urlParams.get('component');
+        const variant = urlParams.get('variant');
+        const theme = urlParams.get('theme') || 'light';
 
-        // Copy all parameters to iframe URL
-        for (const [key, value] of urlParams) {
-            iframeUrl.searchParams.set(key, value);
-        }
+        const iframeUrl = new URL('/iframe', window.location.origin);
+        iframeUrl.searchParams.set('component', component);
+        if (variant) iframeUrl.searchParams.set('variant', variant);
+        iframeUrl.searchParams.set('theme', theme);
+        iframeUrl.searchParams.set('view', view);
 
         return iframeUrl.toString();
     }

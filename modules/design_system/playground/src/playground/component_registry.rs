@@ -11,7 +11,6 @@ pub struct ComponentInfo {
 pub struct ComponentVariant {
     pub name: String,
     pub value: String,
-    pub is_default: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -26,7 +25,6 @@ pub struct ComponentSpec {
 pub struct ComponentVariantSpec {
     pub name: &'static str,
     pub value: &'static str,
-    pub is_default: bool,
 }
 
 const COMPONENTS: &[ComponentSpec] = &[
@@ -34,47 +32,86 @@ const COMPONENTS: &[ComponentSpec] = &[
         name: "Button",
         route_name: "button",
         variants: &[
-            ComponentVariantSpec { name: "Primary", value: "primary", is_default: true },
-            ComponentVariantSpec { name: "Secondary", value: "secondary", is_default: false },
-            ComponentVariantSpec { name: "Outline", value: "outline", is_default: false },
+            ComponentVariantSpec { name: "Primary", value: "primary" },
+            ComponentVariantSpec { name: "Secondary", value: "secondary" },
+            ComponentVariantSpec { name: "Icon Hamburger", value: "icon-hamburger" },
+            ComponentVariantSpec { name: "Icon Close", value: "icon-close" },
+            ComponentVariantSpec { name: "Disabled Primary", value: "disabled-primary" },
         ],
         doc_file: "button.md",
     },
     ComponentSpec {
-        name: "Link",
-        route_name: "link",
-        variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
-        doc_file: "link.md",
-    },
-    ComponentSpec {
-        name: "Shell",
-        route_name: "shell",
-        variants: &[ComponentVariantSpec { name: "Header Only", value: "header-only", is_default: true }],
-        doc_file: "shell.md",
+        name: "Dropdown",
+        route_name: "dropdown",
+        variants: &[
+            ComponentVariantSpec { name: "Secondary Button", value: "secondary" },
+            ComponentVariantSpec { name: "MoreVert Icon", value: "more-vert" },
+            ComponentVariantSpec { name: "Hamburger Icon", value: "hamburger" },
+        ],
+        doc_file: "dropdown.md",
     },
     ComponentSpec {
         name: "Footer",
         route_name: "footer",
-        variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
+        variants: &[ComponentVariantSpec { name: "Default", value: "default" }],
         doc_file: "footer.md",
     },
     ComponentSpec {
         name: "Header",
         route_name: "header",
-        variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
+        variants: &[ComponentVariantSpec { name: "Default", value: "default" }],
         doc_file: "header.md",
     },
     ComponentSpec {
         name: "Hero",
         route_name: "hero",
-        variants: &[ComponentVariantSpec { name: "Default", value: "default", is_default: true }],
+        variants: &[ComponentVariantSpec { name: "Default", value: "default" }],
         doc_file: "hero.md",
+    },
+    ComponentSpec {
+        name: "Icon",
+        route_name: "icon",
+        variants: &[ComponentVariantSpec { name: "Close", value: "close" }],
+        doc_file: "icon.md",
+    },
+    ComponentSpec {
+        name: "Link",
+        route_name: "link",
+        variants: &[
+            ComponentVariantSpec { name: "Internal", value: "internal" },
+            ComponentVariantSpec { name: "Blank (New Tab)", value: "blank" },
+            ComponentVariantSpec { name: "Parent Frame", value: "parent" },
+            ComponentVariantSpec { name: "Top Frame", value: "top" },
+        ],
+        doc_file: "link.md",
+    },
+    ComponentSpec {
+        name: "Menu",
+        route_name: "menu",
+        variants: &[
+            ComponentVariantSpec { name: "Text Trigger", value: "text-trigger" },
+            ComponentVariantSpec { name: "Icon Trigger", value: "icon-trigger" },
+        ],
+        doc_file: "menu.md",
+    },
+    ComponentSpec {
+        name: "Menu Item",
+        route_name: "menu-item",
+        variants: &[ComponentVariantSpec { name: "All Examples", value: "default" }],
+        doc_file: "menu-item.md",
+    },
+    ComponentSpec {
+        name: "Shell",
+        route_name: "shell",
+        variants: &[ComponentVariantSpec { name: "Header Only", value: "header-only" }],
+        doc_file: "shell.md",
     },
 ];
 
 impl ComponentInfo {
+    /// Returns the default variant (first variant in the list)
     pub fn get_default_variant(&self) -> Option<&ComponentVariant> {
-        self.variants.iter().find(|v| v.is_default)
+        self.variants.first()
     }
 }
 
@@ -102,20 +139,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_component_info_get_default_variant_with_default() {
+    fn test_component_info_get_default_variant_returns_first() {
         let component_info = ComponentInfo {
             name: "Button".to_string(),
             route_name: "button".to_string(),
             variants: vec![
-                ComponentVariant {
-                    name: "Primary".to_string(),
-                    value: "primary".to_string(),
-                    is_default: true,
-                },
+                ComponentVariant { name: "Primary".to_string(), value: "primary".to_string() },
                 ComponentVariant {
                     name: "Secondary".to_string(),
                     value: "secondary".to_string(),
-                    is_default: false,
                 },
             ],
         };
@@ -124,29 +156,23 @@ mod tests {
         let variant = default_variant.unwrap();
         assert_eq!(variant.name, "Primary");
         assert_eq!(variant.value, "primary");
-        assert!(variant.is_default);
     }
 
     #[test]
-    fn test_component_info_get_default_variant_no_default() {
+    fn test_component_info_get_default_variant_returns_first_when_multiple() {
         let component_info = ComponentInfo {
             name: "Test".to_string(),
             route_name: "test".to_string(),
             variants: vec![
-                ComponentVariant {
-                    name: "First".to_string(),
-                    value: "first".to_string(),
-                    is_default: false,
-                },
-                ComponentVariant {
-                    name: "Second".to_string(),
-                    value: "second".to_string(),
-                    is_default: false,
-                },
+                ComponentVariant { name: "First".to_string(), value: "first".to_string() },
+                ComponentVariant { name: "Second".to_string(), value: "second".to_string() },
             ],
         };
         let default_variant = component_info.get_default_variant();
-        assert!(default_variant.is_none());
+        assert!(default_variant.is_some());
+        let variant = default_variant.unwrap();
+        assert_eq!(variant.name, "First");
+        assert_eq!(variant.value, "first");
     }
 
     #[test]

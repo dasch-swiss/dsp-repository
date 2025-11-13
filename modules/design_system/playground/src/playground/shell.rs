@@ -2,11 +2,9 @@ use axum::extract::Query;
 use axum::http::StatusCode;
 use maud::{html, Markup};
 
-use crate::playground::components::{get_all_components, ComponentInfo};
+use crate::playground::component_registry::{get_all_components, ComponentInfo};
 use crate::playground::parameters::PlaygroundParams;
-use crate::playground::templates::{
-    render_component_controls, render_component_sidebar, render_component_tabs, render_page_shell,
-};
+use crate::playground::templates::{render_component_sidebar, render_component_tabs, render_page_shell};
 
 struct ShellData<'a> {
     components: &'a [ComponentInfo],
@@ -19,13 +17,31 @@ struct ShellData<'a> {
 }
 
 fn render_shell_content(data: &ShellData) -> Markup {
-    let iframe_src = format!("/iframe?{}", data.current_params);
+    // Generate iframe sources for component-store and examples views
+    let component_store_params = format!(
+        "component={}&variant={}&theme={}&view=component-store",
+        data.current_component, data.current_variant, data.current_theme
+    );
+    // Examples tab always uses "default" variant as it shows all examples
+    let examples_params = format!(
+        "component={}&variant=default&theme={}&view=examples",
+        data.current_component, data.current_theme
+    );
+    let iframe_src_component_store = format!("/iframe?{}", component_store_params);
+    let iframe_src_examples = format!("/iframe?{}", examples_params);
+
     html! {
         div class="grid grid-cols-[250px_1fr] h-screen" {
             (render_component_sidebar(data.components, data.current_component, data.current_params))
             main class="flex flex-col h-screen" {
-                (render_component_controls(data.current_component_info, data.current_variant, data.current_theme))
-                (render_component_tabs(&iframe_src, data.current_component_info, data.current_view))
+                (render_component_tabs(
+                    &iframe_src_component_store,
+                    &iframe_src_examples,
+                    data.current_component_info,
+                    data.current_view,
+                    data.current_variant,
+                    data.current_theme
+                ))
             }
         }
         script src="/playground-assets/js/playground.js" {}
@@ -76,7 +92,7 @@ pub async fn shell(Query(playground_params): Query<PlaygroundParams>) -> Result<
     };
 
     Ok(render_page_shell(
-        &current_theme,
+        "light", // Always light theme for playground UI; theme parameter only affects iframe components
         "DSP Design System Playground",
         "/playground-assets/css/playground.css",
         render_shell_content(&shell_data),

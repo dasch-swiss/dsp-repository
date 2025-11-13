@@ -21,6 +21,7 @@ impl ShellBuilder {
         Self { header_nav_elements, header_config, content: None, footer }
     }
 
+    #[must_use = "builder does nothing unless you call .build()"]
     pub fn with_content(mut self, content: Markup) -> Self {
         self.content = Some(content);
         self
@@ -31,6 +32,7 @@ impl ShellBuilder {
     }
 }
 
+#[must_use = "call .build() to render the component"]
 pub fn shell(
     header_nav_elements: Vec<crate::header::NavElement>,
     header_config: crate::header::HeaderConfig,

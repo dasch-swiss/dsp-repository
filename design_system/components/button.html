@@ -176,19 +176,137 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="button"><a class="header" href="#button">Button</a></h1>
-<p>Interactive button component for user actions.</p>
+<p>Interactive button component for user actions using the builder pattern.</p>
 <h2 id="usage-guidelines"><a class="header" href="#usage-guidelines">Usage Guidelines</a></h2>
 <p>Use buttons to trigger actions, submit forms, or navigate to different sections of the application. Choose the appropriate variant based on the action's importance and context.</p>
+<h2 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h2>
+<p>The button component uses a builder pattern for flexible configuration:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{button, ButtonVariant};
+
+// Simple button with default primary variant
+let btn = button("Click me").build();
+
+// Button with custom configuration
+let custom = button("Submit")
+    .variant(ButtonVariant::Secondary)
+    .with_id("submit-btn")
+    .with_test_id("submit-button")
+    .onclick("@post('/api/submit')")
+    .disabled()
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h2 id="builder-methods"><a class="header" href="#builder-methods">Builder Methods</a></h2>
+<p>All button builder methods can be chained in any order. Call <code>.build()</code> to render the final component.</p>
+<h3 id="text-buttons"><a class="header" href="#text-buttons">Text Buttons</a></h3>
+<ul>
+<li><strong><code>.variant(ButtonVariant)</code></strong> - Sets the button style (Primary or Secondary). Default: Primary</li>
+<li><strong><code>.with_id(impl Into&lt;String&gt;)</code></strong> - Sets the HTML <code>id</code> attribute for the button</li>
+<li><strong><code>.with_test_id(impl Into&lt;String&gt;)</code></strong> - Sets the <code>data-testid</code> attribute for testing</li>
+<li><strong><code>.onclick(impl Into&lt;String&gt;)</code></strong> - Sets the DataStar action handler for click events</li>
+<li><strong><code>.disabled()</code></strong> - Marks the button as disabled</li>
+<li><strong><code>.with_leading_icon(Markup)</code></strong> - Adds an icon before the button text</li>
+<li><strong><code>.with_trailing_icon(Markup)</code></strong> - Adds an icon after the button text</li>
+<li><strong><code>.popovertarget(impl Into&lt;String&gt;)</code></strong> - Sets the popover target for triggering menus</li>
+<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup</li>
+</ul>
+<h3 id="icon-buttons"><a class="header" href="#icon-buttons">Icon Buttons</a></h3>
+<ul>
+<li><strong><code>.with_id(impl Into&lt;String&gt;)</code></strong> - Sets the HTML <code>id</code> attribute for the button</li>
+<li><strong><code>.with_test_id(impl Into&lt;String&gt;)</code></strong> - Sets the <code>data-testid</code> attribute for testing</li>
+<li><strong><code>.with_color(impl Into&lt;String&gt;)</code></strong> - Sets custom color classes (overrides default gray)</li>
+<li><strong><code>.onclick(impl Into&lt;String&gt;)</code></strong> - Sets the DataStar action handler for click events</li>
+<li><strong><code>.disabled()</code></strong> - Marks the button as disabled</li>
+<li><strong><code>.popovertarget(impl Into&lt;String&gt;)</code></strong> - Sets the popover target for triggering menus</li>
+<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup</li>
+</ul>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<h3 id="button-with-icon"><a class="header" href="#button-with-icon">Button with Icon</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{button, icon, IconType};
+
+let download = button("Download")
+    .with_leading_icon(icon::icon(IconType::ChevronDown))
+    .onclick("console.log('downloading')")
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="complete-example"><a class="header" href="#complete-example">Complete Example</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let complex = button("Options")
+    .variant(ButtonVariant::Secondary)
+    .with_id("options-button")
+    .with_test_id("options-btn")
+    .with_leading_icon(icon::icon(IconType::Code))
+    .with_trailing_icon(icon::icon(IconType::ChevronDown))
+    .onclick("@post('/api/options')")
+    .build();
+<span class="boring">}</span></code></pre></pre>
 <h2 id="variants"><a class="header" href="#variants">Variants</a></h2>
 <h3 id="primary"><a class="header" href="#primary">Primary</a></h3>
 <p>The primary button is used for the most important action on a page. Use sparingly - typically only one primary button per page or section.</p>
 <h3 id="secondary"><a class="header" href="#secondary">Secondary</a></h3>
 <p>Secondary buttons are used for less important actions that still need emphasis. They can be used multiple times on a page.</p>
-<h3 id="outline"><a class="header" href="#outline">Outline</a></h3>
-<p>Outline buttons are used for tertiary actions or when you need a lighter visual treatment while maintaining accessibility.</p>
+<h2 id="icon-buttons-1"><a class="header" href="#icon-buttons-1">Icon Buttons</a></h2>
+<p>Icon buttons contain only an icon without text, providing a compact way to represent actions. They use subtle gray colors with hover states by default and are keyboard accessible.</p>
+<h3 id="when-to-use-icon-buttons"><a class="header" href="#when-to-use-icon-buttons">When to use icon buttons</a></h3>
+<ul>
+<li>Compact UI spaces (toolbars, headers, mobile interfaces)</li>
+<li>Common actions with universally recognized icons (close, menu, search)</li>
+<li>Secondary actions that don't need text labels</li>
+<li>As triggers for menus and popovers</li>
+</ul>
+<p>Icon buttons should always use semantically meaningful icons that users can recognize. Consider adding tooltips or aria-labels for accessibility.</p>
+<h3 id="basic-icon-button"><a class="header" href="#basic-icon-button">Basic Icon Button</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{icon_button, icon, IconType};
+
+// Default icon button with gray colors
+let close = icon_button(icon::icon(IconType::Close)).build();
+
+// Icon button with onclick handler
+let interactive = icon_button(icon::icon(IconType::Star))
+    .onclick("console.log('starred')")
+    .build();
+
+// Disabled icon button
+let disabled = icon_button(icon::icon(IconType::Close))
+    .disabled()
+    .build();
+
+// Icon button with ID
+let identified = icon_button(icon::icon(IconType::Star))
+    .with_id("star-button")
+    .onclick("console.log('starred')")
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="icon-buttons-with-custom-colors"><a class="header" href="#icon-buttons-with-custom-colors">Icon Buttons with Custom Colors</a></h3>
+<p>Use the <code>.color()</code> method to override the default colors:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{icon_button, icon, IconType};
+
+// Yellow star button
+let star = icon_button(icon::icon(IconType::Star))
+    .with_color("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950")
+    .onclick("console.log('starred')")
+    .build();
+
+// Indigo close button
+let indigo_close = icon_button(icon::icon(IconType::Close))
+    .with_color("text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400")
+    .build();
+
+// Red danger button with interaction
+let delete = icon_button(icon::icon(IconType::Flag))
+    .with_color("text-red-500 hover:bg-red-50 dark:hover:bg-red-950")
+    .onclick("@post('/api/flag')")
+    .build();
+<span class="boring">}</span></code></pre></pre>
 <h2 id="accessibility-notes"><a class="header" href="#accessibility-notes">Accessibility Notes</a></h2>
-<!-- TODO -->
-<p>Section missing...</p>
 <h2 id="implementation-status"><a class="header" href="#implementation-status">Implementation Status</a></h2>
 <p>🚧 Functional but incomplete - styling verification needed, missing accessibility features</p>
 <h2 id="design-notes"><a class="header" href="#design-notes">Design Notes</a></h2>
@@ -204,7 +322,7 @@
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../../design_system/components/link.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../design_system/components/icon.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -218,7 +336,7 @@
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../../design_system/components/link.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../design_system/components/icon.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

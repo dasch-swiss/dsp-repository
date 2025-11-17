@@ -176,16 +176,106 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="link"><a class="header" href="#link">Link</a></h1>
+<p>Hyperlinks for navigation within the application or to external resources.</p>
+<h2 id="usage-guidelines"><a class="header" href="#usage-guidelines">Usage Guidelines</a></h2>
+<p>Use links for:</p>
+<ul>
+<li>Navigation within the application</li>
+<li>Opening external resources (documentation, GitHub, etc.)</li>
+<li>Triggering actions that navigate to new content</li>
+</ul>
+<p><strong>General design decisions for now:</strong> Links do not have underlines, but visited links are displayed differently than unvisited. Visited have the same color as hovered links for visual consistency.</p>
+<h2 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h2>
+<p>The link component uses a builder pattern for flexible configuration:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{link, LinkTarget};
+
+// Simple link (opens in same window)
+let home = link("Go to homepage", "/").build();
+
+// External link with custom configuration
+let github = link("Visit GitHub", "https://github.com")
+    .target(LinkTarget::Blank)
+    .with_id("github-link")
+    .with_test_id("github")
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h2 id="builder-methods"><a class="header" href="#builder-methods">Builder Methods</a></h2>
+<p>All link builder methods can be chained in any order. Call <code>.build()</code> to render the final component.</p>
+<ul>
+<li><strong><code>.target(LinkTarget)</code></strong> - Sets where the link opens (SelfTarget, Blank, Parent, Top). Default: SelfTarget</li>
+<li><strong><code>.with_id(impl Into&lt;String&gt;)</code></strong> - Sets the HTML <code>id</code> attribute for the link</li>
+<li><strong><code>.with_test_id(impl Into&lt;String&gt;)</code></strong> - Sets the <code>data-testid</code> attribute for testing. Default: "link"</li>
+<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup</li>
+</ul>
+<h3 id="link-targets"><a class="header" href="#link-targets">Link Targets</a></h3>
+<ul>
+<li><strong><code>LinkTarget::SelfTarget</code></strong> - Opens in the same window/tab (default)</li>
+<li><strong><code>LinkTarget::Blank</code></strong> - Opens in a new tab (includes security attributes automatically)</li>
+<li><strong><code>LinkTarget::Parent</code></strong> - Opens in the parent frame</li>
+<li><strong><code>LinkTarget::Top</code></strong> - Opens in the top-most frame</li>
+</ul>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<h3 id="internal-link"><a class="header" href="#internal-link">Internal Link</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let nav_link = link("About", "/about")
+    .with_id("about-link")
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="external-link"><a class="header" href="#external-link">External Link</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let external = link("Documentation", "https://docs.example.com")
+    .target(LinkTarget::Blank)
+    .with_id("docs-link")
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="convenience-function"><a class="header" href="#convenience-function">Convenience Function</a></h3>
+<p>For external links, use the shorthand function:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let external = link_external("Visit GitHub", "https://github.com");
+// Equivalent to: link(...).target(LinkTarget::Blank).build()
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Note</strong>: Links are for navigation only. If you need to trigger actions or send data via DataStar, use a button component instead.</p>
+<h2 id="security-features"><a class="header" href="#security-features">Security Features</a></h2>
+<p>External links (target="_blank") automatically include <code>rel="noopener noreferrer"</code> to prevent:</p>
+<ul>
+<li><strong>Tabnabbing attacks</strong> - Prevents opened pages from accessing <code>window.opener</code></li>
+<li><strong>Performance issues</strong> - Ensures new page runs in separate process</li>
+<li><strong>Phishing vulnerabilities</strong> - Blocks malicious sites from controlling the opener</li>
+</ul>
+<h2 id="accessibility-notes"><a class="header" href="#accessibility-notes">Accessibility Notes</a></h2>
+<ul>
+<li>Semantic <code>&lt;a&gt;</code> element for proper navigation</li>
+<li>Clear visual distinction with color and hover states</li>
+<li>Keyboard accessible (Tab navigation, Enter to activate)</li>
+<li>Screen reader friendly with proper href attributes</li>
+<li><code>data-testid</code> attribute support for automated testing</li>
+</ul>
+<h2 id="implementation-status"><a class="header" href="#implementation-status">Implementation Status</a></h2>
+<p>✅ Complete</p>
+<h2 id="styling"><a class="header" href="#styling">Styling</a></h2>
+<ul>
+<li><strong>Base color</strong>: Indigo-900 (light mode), Indigo-400 (dark mode)</li>
+<li><strong>Hover state</strong>: Indigo-600 (light mode), Indigo-300 (dark mode)</li>
+<li><strong>Visited state</strong>: Same as hover state for consistency</li>
+<li><strong>Underline</strong>: Never shown</li>
+<li><strong>Cursor</strong>: Pointer on hover</li>
+<li><strong>Font weight</strong>: Medium (500)</li>
+</ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../design_system/components/button.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../design_system/components/icon.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../../design_system/components/shell.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../design_system/components/menu.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -195,11 +285,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../design_system/components/button.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../design_system/components/icon.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../../design_system/components/shell.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../design_system/components/menu.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

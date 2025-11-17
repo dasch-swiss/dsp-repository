@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Shell - DSP-Repository Developer Documentation</title>
+        <title>Icon - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -175,173 +175,146 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="shell"><a class="header" href="#shell">Shell</a></h1>
-<p>Application shell component providing navigation and layout wrapper with configurable navigation elements.</p>
+                        <h1 id="icon"><a class="header" href="#icon">Icon</a></h1>
+<p>Reusable icon component for displaying SVG icons from Heroicons.</p>
 <h2 id="usage-guidelines"><a class="header" href="#usage-guidelines">Usage Guidelines</a></h2>
-<p>Use the shell component as the main application wrapper. It provides consistent navigation, theme management, and layout structure across the application.</p>
+<p>Icons provide visual cues and improve user interface comprehension. Use icons consistently throughout your application to maintain a cohesive visual language.</p>
+<h2 id="icontypes"><a class="header" href="#icontypes">IconTypes</a></h2>
+<p>The icon component includes commonly used icons from Heroicons like:</p>
+<ul>
+<li><strong>Star</strong> - Favorites, ratings, featured items</li>
+<li><strong>Code</strong> - Source code, embed actions, developer tools</li>
+<li><strong>Flag</strong> - Reporting, flagging content, markers</li>
+<li><strong>Hamburger</strong> - Mobile menu toggle</li>
+<li><strong>Close</strong> - Dismissing dialogs, closing modals</li>
+<li><strong>ChevronDown</strong> - Dropdowns, expandable sections</li>
+</ul>
+<p>See the components showcase for an exhausting list of available icons.</p>
 <h2 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h2>
-<p>The shell component uses a builder pattern to create the application layout:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use components::shell::shell;
-use components::header::{HeaderConfig, NavElement, NavItem};
-use components::footer::FooterConfig;
-use maud::html;
+</span>use components::{icon, IconType};
 
-let shell_markup = shell(header_nav, header_config, footer_config)
-    .with_content(html! {
-        div { "Page content here" }
-    })
-    .build();
+// Default styling (size-5)
+let star = icon::icon(IconType::Star);
 <span class="boring">}</span></code></pre></pre>
-<h2 id="builder-methods"><a class="header" href="#builder-methods">Builder Methods</a></h2>
-<p>The shell builder has only one optional method. Call <code>.build()</code> to render the final component.</p>
+<h2 id="custom-styling"><a class="header" href="#custom-styling">Custom Styling</a></h2>
+<p>Icons accept custom CSS classes for size, color, and other properties:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{icon, IconType};
+
+// Custom size
+let large_star = icon::icon_with_class(IconType::Star, "size-8");
+
+// Custom color
+let yellow_star = icon::icon_with_class(IconType::Star, "size-6 text-yellow-500");
+
+// Multiple properties
+let custom = icon::icon_with_class(IconType::Code, "size-10 text-blue-600 hover:text-blue-800");
+<span class="boring">}</span></code></pre></pre>
+<h2 id="menu-item-icons"><a class="header" href="#menu-item-icons">Menu Item Icons</a></h2>
+<p>For menu items, simply pass the icon and the menu item component will apply the appropriate styling:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{icon, menu_item, IconType};
+
+let star_icon = icon::icon(IconType::Star);
+let menu = menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="icon-sizes"><a class="header" href="#icon-sizes">Icon Sizes</a></h2>
+<p>Icons use Tailwind size classes:</p>
 <ul>
-<li><strong><code>.with_content(Markup)</code></strong> - Sets the main content area of the shell. If not provided, displays a default "No content provided" message</li>
-<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup with header, content, and footer</li>
+<li><code>size-4</code> - 16px (small)</li>
+<li><code>size-5</code> - 20px (default)</li>
+<li><code>size-6</code> - 24px (medium)</li>
+<li><code>size-8</code> - 32px (large)</li>
+<li><code>size-12</code> - 48px (extra large)</li>
 </ul>
-<p><strong>Note:</strong> The shell constructor requires three parameters: navigation elements, header config, and footer config. These are not builder methods but constructor parameters.</p>
-<h2 id="configuration-structs"><a class="header" href="#configuration-structs">Configuration Structs</a></h2>
-<h3 id="headerconfig"><a class="header" href="#headerconfig">HeaderConfig</a></h3>
+<h2 id="colors"><a class="header" href="#colors">Colors</a></h2>
+<p>Icons inherit <code>currentColor</code> by default, making them easy to style with Tailwind text color classes:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>HeaderConfig {
-    company_name: "DaSCH Service Platform",
-    logo_light_url: "/assets/logo-light.svg",
-    logo_dark_url: "/assets/logo-dark.svg",
-    login_href: "/login",
-}
+</span>icon::icon_with_class(IconType::Star, "size-6 text-red-500")
+icon::icon_with_class(IconType::Flag, "size-6 text-gray-400")
+icon::icon_with_class(IconType::Code, "size-6 text-blue-500")
 <span class="boring">}</span></code></pre></pre>
-<h3 id="footerconfig"><a class="header" href="#footerconfig">FooterConfig</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>FooterConfig {
-    company_name: "DaSCH",
-    description: "Digital infrastructure for humanities research.",
-    copyright_text: "© 2024 DaSCH, University of Basel.",
-    logo_light_url: "/assets/footer-logo-light.svg",
-    logo_dark_url: "/assets/footer-logo-dark.svg",
-}
-<span class="boring">}</span></code></pre></pre>
-<h3 id="complete-example"><a class="header" href="#complete-example">Complete Example</a></h3>
-<p>Full shell configuration with navigation and content:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>use components::shell::shell;
-use components::header::{HeaderConfig, NavElement, NavItem, NavMenu, NavMenuItem};
-use components::footer::FooterConfig;
-use maud::html;
-
-let header_nav = vec![
-    NavElement::Item(NavItem { label: "Home", href: "/" }),
-    NavElement::Item(NavItem { label: "Projects", href: "/projects" }),
-    NavElement::Menu(NavMenu {
-        label: "Resources",
-        items: vec![
-            NavMenuItem { label: "Documentation", href: "/docs" },
-            NavMenuItem { label: "API Reference", href: "/api" },
-        ],
-    }),
-];
-
-let header_config = HeaderConfig {
-    company_name: "DaSCH Service Platform",
-    logo_light_url: "/assets/logo-light.svg",
-    logo_dark_url: "/assets/logo-dark.svg",
-    login_href: "/login",
-};
-
-let footer_config = FooterConfig {
-    company_name: "DaSCH",
-    description: "Digital infrastructure for humanities research data preservation and discovery.",
-    copyright_text: "© 2024 DaSCH, University of Basel. All rights reserved.",
-    logo_light_url: "/assets/footer-logo-light.svg",
-    logo_dark_url: "/assets/footer-logo-dark.svg",
-};
-
-let content = html! {
-    div style="padding: 2rem; max-width: 1200px; margin: 0 auto;" {
-        h1 { "Application Dashboard" }
-        p { "Welcome to your personalized dashboard." }
-
-        div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 2rem;" {
-            div style="padding: 1rem; background: var(--cds-background-hover); border-radius: 4px;" {
-                h3 { "Recent Activity" }
-                p { "Your latest updates and changes." }
-            }
-            div style="padding: 1rem; background: var(--cds-background-hover); border-radius: 4px;" {
-                h3 { "Quick Actions" }
-                p { "Frequently used tools and shortcuts." }
-            }
-        }
-    }
-};
-
-let shell_markup = shell(header_nav, header_config, footer_config)
-    .with_content(content)
-    .build();
-<span class="boring">}</span></code></pre></pre>
-<h2 id="builder-pattern"><a class="header" href="#builder-pattern">Builder Pattern</a></h2>
-<p>The shell uses a builder pattern for clean and flexible configuration:</p>
-<ul>
-<li><strong>Required</strong>: Header navigation elements, header configuration, and footer configuration must be provided</li>
-<li><strong>Optional</strong>: Content can be added with <code>with_content()</code></li>
-<li><strong>Fluent API</strong>: Method chaining for readable configuration</li>
-<li><strong>Type Safety</strong>: Cannot create shell without required parameters</li>
-</ul>
-<h2 id="navigation-structure"><a class="header" href="#navigation-structure">Navigation Structure</a></h2>
-<p>The shell supports flexible navigation with two types of elements:</p>
-<h3 id="navigation-items"><a class="header" href="#navigation-items">Navigation Items</a></h3>
-<p>Single navigation links that appear in the header navigation.</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>NavElement::Item(NavItem { label: "Home", href: "/" })
-<span class="boring">}</span></code></pre></pre>
-<h3 id="navigation-menus"><a class="header" href="#navigation-menus">Navigation Menus</a></h3>
-<p>Dropdown menus with multiple items that appear as dropdowns in header navigation.</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>NavElement::Menu(NavMenu {
-    label: "Resources",
-    items: vec![
-        NavMenuItem { label: "Documentation", href: "/docs" },
-        NavMenuItem { label: "API Reference", href: "/api" },
-    ],
-})
-<span class="boring">}</span></code></pre></pre>
-<h2 id="features"><a class="header" href="#features">Features</a></h2>
-<ul>
-<li><strong>Configurable Navigation</strong>: Support for both navigation items and dropdown menus</li>
-<li><strong>Responsive Design</strong>: Adapts to different screen sizes with responsive navigation</li>
-<li><strong>Search Functionality</strong>: Integrated search with accessibility features</li>
-<li><strong>Theme Toggle</strong>: Light/dark theme switching with persistence</li>
-<li><strong>Static Branding</strong>: DaSCH Service Platform branding remains consistent</li>
-<li><strong>Accessible ARIA Labels</strong>: Full accessibility support</li>
-</ul>
 <h2 id="accessibility-notes"><a class="header" href="#accessibility-notes">Accessibility Notes</a></h2>
 <ul>
-<li>Comprehensive ARIA labels and roles</li>
-<li>Keyboard navigation support</li>
-<li>Screen reader optimized structure</li>
-<li>Focus management for modal states</li>
-<li>High contrast theme support</li>
-<li>Semantic navigation structure</li>
+<li>All icons include <code>aria-hidden="true"</code> as they are decorative</li>
+<li>When icons convey meaning, ensure accompanying text is present</li>
+<li>Icons use semantic <code>&lt;svg&gt;</code> elements for proper rendering</li>
+<li>Dark mode compatible through currentColor inheritance</li>
 </ul>
 <h2 id="implementation-status"><a class="header" href="#implementation-status">Implementation Status</a></h2>
-<p>✅ Fully functional with configurable navigation</p>
+<p>✅ Complete - Production ready with full dark mode support</p>
 <h2 id="design-notes"><a class="header" href="#design-notes">Design Notes</a></h2>
-<p>Currently transitioning from web components to Tailwind Plus implementation. Provides advanced features including responsive navigation, search functionality, and theme management. The shell serves as the primary application wrapper and maintains consistent layout across different pages.</p>
-<p>Navigation content is now configurable while maintaining static branding elements and core functionality.</p>
+<p>The icon component follows these principles:</p>
+<ul>
+<li><strong>Heroicons</strong>: All icons sourced from Heroicons for consistency</li>
+<li><strong>currentColor</strong>: Icons inherit text color for easy theming</li>
+<li><strong>Flexible sizing</strong>: Support for all Tailwind size utilities</li>
+<li><strong>Type safety</strong>: Enum-based icon selection prevents typos</li>
+<li><strong>SVG optimization</strong>: Minimal path data for performance</li>
+</ul>
+<h3 id="svg-structure"><a class="header" href="#svg-structure">SVG Structure</a></h3>
+<p>Icons use two patterns:</p>
+<ul>
+<li><strong>Filled icons</strong> (Star, Code, Flag, ChevronDown): Use <code>fill="currentColor"</code></li>
+<li><strong>Outline icons</strong> (Hamburger, Close): Use <code>stroke="currentColor"</code></li>
+</ul>
+<p>Both patterns ensure proper color inheritance and dark mode support.</p>
+<h2 id="adding-new-icons"><a class="header" href="#adding-new-icons">Adding New Icons</a></h2>
+<p>To add new icons from Heroicons:</p>
+<ol>
+<li>Add icon variant to <code>IconType</code> enum in <code>icon.rs</code></li>
+<li>Add path data in <code>path_data()</code> method</li>
+<li>Specify viewBox in <code>view_box()</code> method (typically <code>"0 0 20 20"</code> or <code>"0 0 24 24"</code>)</li>
+<li>Indicate if icon uses stroke in <code>uses_stroke()</code> method</li>
+<li>Update documentation with new icon name and use case</li>
+</ol>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<h3 id="standalone-icons"><a class="header" href="#standalone-icons">Standalone Icons</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>icon::icon(IconType::Star)
+icon::icon(IconType::Code)
+icon::icon(IconType::Flag)
+<span class="boring">}</span></code></pre></pre>
+<h3 id="custom-styled-icons"><a class="header" href="#custom-styled-icons">Custom Styled Icons</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>icon::icon_with_class(IconType::Star, "size-8 text-yellow-500")
+icon::icon_with_class(IconType::Close, "size-6 text-red-500 hover:text-red-700")
+<span class="boring">}</span></code></pre></pre>
+<h3 id="in-menus"><a class="header" href="#in-menus">In Menus</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{menu, menu_item, icon, IconType};
+
+menu::menu()
+    .with_id("actions")
+    .with_item(menu_item::link_menu_item_with_icon(
+        "Favorites",
+        "/favorites",
+        icon::icon(IconType::Star)
+    ))
+    .with_item(menu_item::button_menu_item_with_icon(
+        "Share",
+        icon::icon(IconType::Code)
+    ))
+    .build()
+<span class="boring">}</span></code></pre></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../design_system/components/menu-item.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../design_system/components/button.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../../web_components/overview.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../design_system/components/link.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -351,11 +324,11 @@ let shell_markup = shell(header_nav, header_config, footer_config)
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../design_system/components/menu-item.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../design_system/components/button.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../../web_components/overview.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../design_system/components/link.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

@@ -622,89 +622,726 @@ pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup
 <h2 id="migration-to-tailwind-plus"><a class="header" href="#migration-to-tailwind-plus">Migration to Tailwind Plus</a></h2>
 <p><strong>Note</strong>: Some components are currently in transition from web component implementations to native Maud components using Tailwind Plus for styling. This migration provides better performance, type safety, and maintainability while leveraging Tailwind's utility-first approach for consistent styling across the design system.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="button-1"><a class="header" href="#button-1">Button</a></h1>
-<p>Interactive button component for user actions.</p>
+<p>Interactive button component for user actions using the builder pattern.</p>
 <h2 id="usage-guidelines"><a class="header" href="#usage-guidelines">Usage Guidelines</a></h2>
 <p>Use buttons to trigger actions, submit forms, or navigate to different sections of the application. Choose the appropriate variant based on the action's importance and context.</p>
+<h2 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h2>
+<p>The button component uses a builder pattern for flexible configuration:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{button, ButtonVariant};
+
+// Simple button with default primary variant
+let btn = button("Click me").build();
+
+// Button with custom configuration
+let custom = button("Submit")
+    .variant(ButtonVariant::Secondary)
+    .with_id("submit-btn")
+    .with_test_id("submit-button")
+    .onclick("@post('/api/submit')")
+    .disabled()
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h2 id="builder-methods"><a class="header" href="#builder-methods">Builder Methods</a></h2>
+<p>All button builder methods can be chained in any order. Call <code>.build()</code> to render the final component.</p>
+<h3 id="text-buttons"><a class="header" href="#text-buttons">Text Buttons</a></h3>
+<ul>
+<li><strong><code>.variant(ButtonVariant)</code></strong> - Sets the button style (Primary or Secondary). Default: Primary</li>
+<li><strong><code>.with_id(impl Into&lt;String&gt;)</code></strong> - Sets the HTML <code>id</code> attribute for the button</li>
+<li><strong><code>.with_test_id(impl Into&lt;String&gt;)</code></strong> - Sets the <code>data-testid</code> attribute for testing</li>
+<li><strong><code>.onclick(impl Into&lt;String&gt;)</code></strong> - Sets the DataStar action handler for click events</li>
+<li><strong><code>.disabled()</code></strong> - Marks the button as disabled</li>
+<li><strong><code>.with_leading_icon(Markup)</code></strong> - Adds an icon before the button text</li>
+<li><strong><code>.with_trailing_icon(Markup)</code></strong> - Adds an icon after the button text</li>
+<li><strong><code>.popovertarget(impl Into&lt;String&gt;)</code></strong> - Sets the popover target for triggering menus</li>
+<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup</li>
+</ul>
+<h3 id="icon-buttons"><a class="header" href="#icon-buttons">Icon Buttons</a></h3>
+<ul>
+<li><strong><code>.with_id(impl Into&lt;String&gt;)</code></strong> - Sets the HTML <code>id</code> attribute for the button</li>
+<li><strong><code>.with_test_id(impl Into&lt;String&gt;)</code></strong> - Sets the <code>data-testid</code> attribute for testing</li>
+<li><strong><code>.with_color(impl Into&lt;String&gt;)</code></strong> - Sets custom color classes (overrides default gray)</li>
+<li><strong><code>.onclick(impl Into&lt;String&gt;)</code></strong> - Sets the DataStar action handler for click events</li>
+<li><strong><code>.disabled()</code></strong> - Marks the button as disabled</li>
+<li><strong><code>.popovertarget(impl Into&lt;String&gt;)</code></strong> - Sets the popover target for triggering menus</li>
+<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup</li>
+</ul>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<h3 id="button-with-icon"><a class="header" href="#button-with-icon">Button with Icon</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{button, icon, IconType};
+
+let download = button("Download")
+    .with_leading_icon(icon::icon(IconType::ChevronDown))
+    .onclick("console.log('downloading')")
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="complete-example"><a class="header" href="#complete-example">Complete Example</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let complex = button("Options")
+    .variant(ButtonVariant::Secondary)
+    .with_id("options-button")
+    .with_test_id("options-btn")
+    .with_leading_icon(icon::icon(IconType::Code))
+    .with_trailing_icon(icon::icon(IconType::ChevronDown))
+    .onclick("@post('/api/options')")
+    .build();
+<span class="boring">}</span></code></pre></pre>
 <h2 id="variants"><a class="header" href="#variants">Variants</a></h2>
 <h3 id="primary"><a class="header" href="#primary">Primary</a></h3>
 <p>The primary button is used for the most important action on a page. Use sparingly - typically only one primary button per page or section.</p>
 <h3 id="secondary"><a class="header" href="#secondary">Secondary</a></h3>
 <p>Secondary buttons are used for less important actions that still need emphasis. They can be used multiple times on a page.</p>
-<h3 id="outline"><a class="header" href="#outline">Outline</a></h3>
-<p>Outline buttons are used for tertiary actions or when you need a lighter visual treatment while maintaining accessibility.</p>
+<h2 id="icon-buttons-1"><a class="header" href="#icon-buttons-1">Icon Buttons</a></h2>
+<p>Icon buttons contain only an icon without text, providing a compact way to represent actions. They use subtle gray colors with hover states by default and are keyboard accessible.</p>
+<h3 id="when-to-use-icon-buttons"><a class="header" href="#when-to-use-icon-buttons">When to use icon buttons</a></h3>
+<ul>
+<li>Compact UI spaces (toolbars, headers, mobile interfaces)</li>
+<li>Common actions with universally recognized icons (close, menu, search)</li>
+<li>Secondary actions that don't need text labels</li>
+<li>As triggers for menus and popovers</li>
+</ul>
+<p>Icon buttons should always use semantically meaningful icons that users can recognize. Consider adding tooltips or aria-labels for accessibility.</p>
+<h3 id="basic-icon-button"><a class="header" href="#basic-icon-button">Basic Icon Button</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{icon_button, icon, IconType};
+
+// Default icon button with gray colors
+let close = icon_button(icon::icon(IconType::Close)).build();
+
+// Icon button with onclick handler
+let interactive = icon_button(icon::icon(IconType::Star))
+    .onclick("console.log('starred')")
+    .build();
+
+// Disabled icon button
+let disabled = icon_button(icon::icon(IconType::Close))
+    .disabled()
+    .build();
+
+// Icon button with ID
+let identified = icon_button(icon::icon(IconType::Star))
+    .with_id("star-button")
+    .onclick("console.log('starred')")
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="icon-buttons-with-custom-colors"><a class="header" href="#icon-buttons-with-custom-colors">Icon Buttons with Custom Colors</a></h3>
+<p>Use the <code>.color()</code> method to override the default colors:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{icon_button, icon, IconType};
+
+// Yellow star button
+let star = icon_button(icon::icon(IconType::Star))
+    .with_color("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950")
+    .onclick("console.log('starred')")
+    .build();
+
+// Indigo close button
+let indigo_close = icon_button(icon::icon(IconType::Close))
+    .with_color("text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400")
+    .build();
+
+// Red danger button with interaction
+let delete = icon_button(icon::icon(IconType::Flag))
+    .with_color("text-red-500 hover:bg-red-50 dark:hover:bg-red-950")
+    .onclick("@post('/api/flag')")
+    .build();
+<span class="boring">}</span></code></pre></pre>
 <h2 id="accessibility-notes"><a class="header" href="#accessibility-notes">Accessibility Notes</a></h2>
-<!-- TODO -->
-<p>Section missing...</p>
 <h2 id="implementation-status"><a class="header" href="#implementation-status">Implementation Status</a></h2>
 <p>🚧 Functional but incomplete - styling verification needed, missing accessibility features</p>
 <h2 id="design-notes"><a class="header" href="#design-notes">Design Notes</a></h2>
 <p>The button component follows Tailwind Plus design patterns with DSP brand customizations. Spacing and typography align with the design system tokens.</p>
 <h3 id="button-vs-link"><a class="header" href="#button-vs-link">Button vs. Link</a></h3>
 <p>Use buttons for actions that trigger changes or submit data. Use links for navigation to other pages or sections. Buttons should not be used for navigation purposes.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="icon"><a class="header" href="#icon">Icon</a></h1>
+<p>Reusable icon component for displaying SVG icons from Heroicons.</p>
+<h2 id="usage-guidelines-1"><a class="header" href="#usage-guidelines-1">Usage Guidelines</a></h2>
+<p>Icons provide visual cues and improve user interface comprehension. Use icons consistently throughout your application to maintain a cohesive visual language.</p>
+<h2 id="icontypes"><a class="header" href="#icontypes">IconTypes</a></h2>
+<p>The icon component includes commonly used icons from Heroicons like:</p>
+<ul>
+<li><strong>Star</strong> - Favorites, ratings, featured items</li>
+<li><strong>Code</strong> - Source code, embed actions, developer tools</li>
+<li><strong>Flag</strong> - Reporting, flagging content, markers</li>
+<li><strong>Hamburger</strong> - Mobile menu toggle</li>
+<li><strong>Close</strong> - Dismissing dialogs, closing modals</li>
+<li><strong>ChevronDown</strong> - Dropdowns, expandable sections</li>
+</ul>
+<p>See the components showcase for an exhausting list of available icons.</p>
+<h2 id="basic-usage-1"><a class="header" href="#basic-usage-1">Basic Usage</a></h2>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{icon, IconType};
+
+// Default styling (size-5)
+let star = icon::icon(IconType::Star);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="custom-styling"><a class="header" href="#custom-styling">Custom Styling</a></h2>
+<p>Icons accept custom CSS classes for size, color, and other properties:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{icon, IconType};
+
+// Custom size
+let large_star = icon::icon_with_class(IconType::Star, "size-8");
+
+// Custom color
+let yellow_star = icon::icon_with_class(IconType::Star, "size-6 text-yellow-500");
+
+// Multiple properties
+let custom = icon::icon_with_class(IconType::Code, "size-10 text-blue-600 hover:text-blue-800");
+<span class="boring">}</span></code></pre></pre>
+<h2 id="menu-item-icons"><a class="header" href="#menu-item-icons">Menu Item Icons</a></h2>
+<p>For menu items, simply pass the icon and the menu item component will apply the appropriate styling:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{icon, menu_item, IconType};
+
+let star_icon = icon::icon(IconType::Star);
+let menu = menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="icon-sizes"><a class="header" href="#icon-sizes">Icon Sizes</a></h2>
+<p>Icons use Tailwind size classes:</p>
+<ul>
+<li><code>size-4</code> - 16px (small)</li>
+<li><code>size-5</code> - 20px (default)</li>
+<li><code>size-6</code> - 24px (medium)</li>
+<li><code>size-8</code> - 32px (large)</li>
+<li><code>size-12</code> - 48px (extra large)</li>
+</ul>
+<h2 id="colors"><a class="header" href="#colors">Colors</a></h2>
+<p>Icons inherit <code>currentColor</code> by default, making them easy to style with Tailwind text color classes:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>icon::icon_with_class(IconType::Star, "size-6 text-red-500")
+icon::icon_with_class(IconType::Flag, "size-6 text-gray-400")
+icon::icon_with_class(IconType::Code, "size-6 text-blue-500")
+<span class="boring">}</span></code></pre></pre>
+<h2 id="accessibility-notes-1"><a class="header" href="#accessibility-notes-1">Accessibility Notes</a></h2>
+<ul>
+<li>All icons include <code>aria-hidden="true"</code> as they are decorative</li>
+<li>When icons convey meaning, ensure accompanying text is present</li>
+<li>Icons use semantic <code>&lt;svg&gt;</code> elements for proper rendering</li>
+<li>Dark mode compatible through currentColor inheritance</li>
+</ul>
+<h2 id="implementation-status-1"><a class="header" href="#implementation-status-1">Implementation Status</a></h2>
+<p>✅ Complete - Production ready with full dark mode support</p>
+<h2 id="design-notes-1"><a class="header" href="#design-notes-1">Design Notes</a></h2>
+<p>The icon component follows these principles:</p>
+<ul>
+<li><strong>Heroicons</strong>: All icons sourced from Heroicons for consistency</li>
+<li><strong>currentColor</strong>: Icons inherit text color for easy theming</li>
+<li><strong>Flexible sizing</strong>: Support for all Tailwind size utilities</li>
+<li><strong>Type safety</strong>: Enum-based icon selection prevents typos</li>
+<li><strong>SVG optimization</strong>: Minimal path data for performance</li>
+</ul>
+<h3 id="svg-structure"><a class="header" href="#svg-structure">SVG Structure</a></h3>
+<p>Icons use two patterns:</p>
+<ul>
+<li><strong>Filled icons</strong> (Star, Code, Flag, ChevronDown): Use <code>fill="currentColor"</code></li>
+<li><strong>Outline icons</strong> (Hamburger, Close): Use <code>stroke="currentColor"</code></li>
+</ul>
+<p>Both patterns ensure proper color inheritance and dark mode support.</p>
+<h2 id="adding-new-icons"><a class="header" href="#adding-new-icons">Adding New Icons</a></h2>
+<p>To add new icons from Heroicons:</p>
+<ol>
+<li>Add icon variant to <code>IconType</code> enum in <code>icon.rs</code></li>
+<li>Add path data in <code>path_data()</code> method</li>
+<li>Specify viewBox in <code>view_box()</code> method (typically <code>"0 0 20 20"</code> or <code>"0 0 24 24"</code>)</li>
+<li>Indicate if icon uses stroke in <code>uses_stroke()</code> method</li>
+<li>Update documentation with new icon name and use case</li>
+</ol>
+<h2 id="examples-1"><a class="header" href="#examples-1">Examples</a></h2>
+<h3 id="standalone-icons"><a class="header" href="#standalone-icons">Standalone Icons</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>icon::icon(IconType::Star)
+icon::icon(IconType::Code)
+icon::icon(IconType::Flag)
+<span class="boring">}</span></code></pre></pre>
+<h3 id="custom-styled-icons"><a class="header" href="#custom-styled-icons">Custom Styled Icons</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>icon::icon_with_class(IconType::Star, "size-8 text-yellow-500")
+icon::icon_with_class(IconType::Close, "size-6 text-red-500 hover:text-red-700")
+<span class="boring">}</span></code></pre></pre>
+<h3 id="in-menus"><a class="header" href="#in-menus">In Menus</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{menu, menu_item, icon, IconType};
+
+menu::menu()
+    .with_id("actions")
+    .with_item(menu_item::link_menu_item_with_icon(
+        "Favorites",
+        "/favorites",
+        icon::icon(IconType::Star)
+    ))
+    .with_item(menu_item::button_menu_item_with_icon(
+        "Share",
+        icon::icon(IconType::Code)
+    ))
+    .build()
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="link"><a class="header" href="#link">Link</a></h1>
+<p>Hyperlinks for navigation within the application or to external resources.</p>
+<h2 id="usage-guidelines-2"><a class="header" href="#usage-guidelines-2">Usage Guidelines</a></h2>
+<p>Use links for:</p>
+<ul>
+<li>Navigation within the application</li>
+<li>Opening external resources (documentation, GitHub, etc.)</li>
+<li>Triggering actions that navigate to new content</li>
+</ul>
+<p><strong>General design decisions for now:</strong> Links do not have underlines, but visited links are displayed differently than unvisited. Visited have the same color as hovered links for visual consistency.</p>
+<h2 id="basic-usage-2"><a class="header" href="#basic-usage-2">Basic Usage</a></h2>
+<p>The link component uses a builder pattern for flexible configuration:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{link, LinkTarget};
+
+// Simple link (opens in same window)
+let home = link("Go to homepage", "/").build();
+
+// External link with custom configuration
+let github = link("Visit GitHub", "https://github.com")
+    .target(LinkTarget::Blank)
+    .with_id("github-link")
+    .with_test_id("github")
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h2 id="builder-methods-1"><a class="header" href="#builder-methods-1">Builder Methods</a></h2>
+<p>All link builder methods can be chained in any order. Call <code>.build()</code> to render the final component.</p>
+<ul>
+<li><strong><code>.target(LinkTarget)</code></strong> - Sets where the link opens (SelfTarget, Blank, Parent, Top). Default: SelfTarget</li>
+<li><strong><code>.with_id(impl Into&lt;String&gt;)</code></strong> - Sets the HTML <code>id</code> attribute for the link</li>
+<li><strong><code>.with_test_id(impl Into&lt;String&gt;)</code></strong> - Sets the <code>data-testid</code> attribute for testing. Default: "link"</li>
+<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup</li>
+</ul>
+<h3 id="link-targets"><a class="header" href="#link-targets">Link Targets</a></h3>
+<ul>
+<li><strong><code>LinkTarget::SelfTarget</code></strong> - Opens in the same window/tab (default)</li>
+<li><strong><code>LinkTarget::Blank</code></strong> - Opens in a new tab (includes security attributes automatically)</li>
+<li><strong><code>LinkTarget::Parent</code></strong> - Opens in the parent frame</li>
+<li><strong><code>LinkTarget::Top</code></strong> - Opens in the top-most frame</li>
+</ul>
+<h2 id="examples-2"><a class="header" href="#examples-2">Examples</a></h2>
+<h3 id="internal-link"><a class="header" href="#internal-link">Internal Link</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let nav_link = link("About", "/about")
+    .with_id("about-link")
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="external-link"><a class="header" href="#external-link">External Link</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let external = link("Documentation", "https://docs.example.com")
+    .target(LinkTarget::Blank)
+    .with_id("docs-link")
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="convenience-function"><a class="header" href="#convenience-function">Convenience Function</a></h3>
+<p>For external links, use the shorthand function:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let external = link_external("Visit GitHub", "https://github.com");
+// Equivalent to: link(...).target(LinkTarget::Blank).build()
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Note</strong>: Links are for navigation only. If you need to trigger actions or send data via DataStar, use a button component instead.</p>
+<h2 id="security-features"><a class="header" href="#security-features">Security Features</a></h2>
+<p>External links (target="_blank") automatically include <code>rel="noopener noreferrer"</code> to prevent:</p>
+<ul>
+<li><strong>Tabnabbing attacks</strong> - Prevents opened pages from accessing <code>window.opener</code></li>
+<li><strong>Performance issues</strong> - Ensures new page runs in separate process</li>
+<li><strong>Phishing vulnerabilities</strong> - Blocks malicious sites from controlling the opener</li>
+</ul>
+<h2 id="accessibility-notes-2"><a class="header" href="#accessibility-notes-2">Accessibility Notes</a></h2>
+<ul>
+<li>Semantic <code>&lt;a&gt;</code> element for proper navigation</li>
+<li>Clear visual distinction with color and hover states</li>
+<li>Keyboard accessible (Tab navigation, Enter to activate)</li>
+<li>Screen reader friendly with proper href attributes</li>
+<li><code>data-testid</code> attribute support for automated testing</li>
+</ul>
+<h2 id="implementation-status-2"><a class="header" href="#implementation-status-2">Implementation Status</a></h2>
+<p>✅ Complete</p>
+<h2 id="styling"><a class="header" href="#styling">Styling</a></h2>
+<ul>
+<li><strong>Base color</strong>: Indigo-900 (light mode), Indigo-400 (dark mode)</li>
+<li><strong>Hover state</strong>: Indigo-600 (light mode), Indigo-300 (dark mode)</li>
+<li><strong>Visited state</strong>: Same as hover state for consistency</li>
+<li><strong>Underline</strong>: Never shown</li>
+<li><strong>Cursor</strong>: Pointer on hover</li>
+<li><strong>Font weight</strong>: Medium (500)</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="menu"><a class="header" href="#menu">Menu</a></h1>
+<p>Dropdown menu component for displaying lists of actions and navigation links.</p>
+<h2 id="usage-guidelines-3"><a class="header" href="#usage-guidelines-3">Usage Guidelines</a></h2>
+<p>Menus are used to display a list of actions or navigation options triggered by a button or other interactive element. They are ideal for contextual actions, user account options, or navigation shortcuts.</p>
+<h2 id="component-architecture"><a class="header" href="#component-architecture">Component Architecture</a></h2>
+<p>The menu component uses a builder pattern for flexible construction. You can trigger menus using button components, external buttons, or programmatically via DataStar/JavaScript.</p>
+<h3 id="menu-with-button-trigger"><a class="header" href="#menu-with-button-trigger">Menu with Button Trigger</a></h3>
+<p>Use the button builder's <code>.popovertarget()</code> method to connect the button to the menu:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{menu, menu_item, button, icon, IconType};
+
+let star_icon = icon::icon(IconType::Star);
+
+// Build the items vector separately
+let items = vec![
+    // Navigation links
+    menu_item::link_menu_item("Edit", "/edit"),
+    menu_item::link_menu_item("Duplicate", "/duplicate"),
+    menu_item::menu_item_divider(),
+    // Action buttons with icons
+    menu_item::button_menu_item_with_icon("Share", star_icon.clone()),
+    menu_item::button_menu_item_with_icon("Archive", code_icon.clone()),
+    menu_item::menu_item_divider(),
+    // Destructive action
+    menu_item::button_menu_item_with_icon("Delete", flag_icon.clone()),
+];
+
+let my_menu = menu::menu()
+    .with_id("user-menu")
+    .with_trigger(
+        button::button("Open Menu")
+            .with_id("menu-trigger")
+            .popovertarget("user-menu")
+            .build()
+    )
+    .with_items(items)
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="menu-with-icon-button-trigger"><a class="header" href="#menu-with-icon-button-trigger">Menu with Icon Button Trigger</a></h3>
+<p>For a more compact UI, use an icon button trigger:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{menu, menu_item, button, icon, IconType};
+
+let icon_menu = menu::menu()
+    .with_id("actions-menu")
+    .with_trigger(
+        button::icon_button(icon::icon(IconType::Hamburger))
+            .with_id("actions-trigger")
+            .popovertarget("actions-menu")
+            .build()
+    )
+    .with_item(menu_item::link_menu_item("Dashboard", "/dashboard"))
+    .with_item(menu_item::link_menu_item("Profile", "/profile"))
+    .with_item(menu_item::button_menu_item("Sign Out"))
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h3 id="external-trigger-buttons"><a class="header" href="#external-trigger-buttons">External Trigger Buttons</a></h3>
+<p>Create the menu without a trigger and place trigger buttons anywhere in your HTML. Multiple buttons can trigger the same menu:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let my_menu = menu::menu()
+    .with_id("user-menu")
+    .with_item(menu_item::link_menu_item("Profile", "/profile"))
+    .with_item(menu_item::link_menu_item("Settings", "/settings"))
+    .build();
+
+html! {
+    div {
+        (button::button("Trigger 1")
+            .popovertarget("user-menu")
+            .build())
+        (button::button("Trigger 2")
+            .variant(ButtonVariant::Secondary)
+            .popovertarget("user-menu")
+            .build())
+        (my_menu)
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="programmatic-triggering-via-datastar"><a class="header" href="#programmatic-triggering-via-datastar">Programmatic Triggering via DataStar</a></h3>
+<p>Trigger menus programmatically using DataStar onclick handlers or JavaScript:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Using DataStar onclick
+html! {
+    (button::button("Open Menu")
+        .onclick("document.getElementById('my-menu').showPopover()")
+        .build())
+
+    (menu::menu()
+        .with_id("my-menu")
+        .with_item(menu_item::link_menu_item("Dashboard", "/dashboard"))
+        .build())
+}
+
+// Using DataStar with toggle
+html! {
+    (button::button("Toggle Menu")
+        .onclick("document.getElementById('my-menu').togglePopover()")
+        .build())
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="builder-methods-2"><a class="header" href="#builder-methods-2">Builder Methods</a></h2>
+<p>All menu builder methods can be chained in any order. Call <code>.build()</code> to render the final component.</p>
+<ul>
+<li><strong><code>.with_id(impl Into&lt;String&gt;)</code></strong> - Sets the menu ID (required for popover targeting). Must match <code>popovertarget</code> on trigger buttons</li>
+<li><strong><code>.with_test_id(impl Into&lt;String&gt;)</code></strong> - Sets the <code>data-testid</code> attribute for testing. Default: "menu"</li>
+<li><strong><code>.with_trigger(Markup)</code></strong> - Sets a trigger button for the menu. Pass a button with <code>.popovertarget()</code> matching the menu ID</li>
+<li><strong><code>.with_item(Markup)</code></strong> - Adds a single menu item (link, button, or divider from <code>menu_item</code> module)</li>
+<li><strong><code>.with_items(Vec&lt;Markup&gt;)</code></strong> - Adds multiple menu items at once</li>
+<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup</li>
+</ul>
+<h3 id="trigger-button-examples"><a class="header" href="#trigger-button-examples">Trigger Button Examples</a></h3>
+<p><strong>With text button:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>menu::menu()
+    .with_id("my-menu")
+    .with_trigger(
+        button::button("Open")
+            .popovertarget("my-menu")
+            .build()
+    )
+    .build()
+<span class="boring">}</span></code></pre></pre>
+<p><strong>With icon button:</strong></p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>menu::menu()
+    .with_id("my-menu")
+    .with_trigger(
+        button::icon_button(icon::icon(IconType::Hamburger))
+            .popovertarget("my-menu")
+            .build()
+    )
+    .build()
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Note:</strong> If no trigger is provided, control the menu externally using <code>.popovertarget()</code> on any button or via JavaScript/DataStar.</p>
+<h2 id="conditional-menu-building"><a class="header" href="#conditional-menu-building">Conditional Menu Building</a></h2>
+<p>The builder pattern supports conditional item addition:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut builder = menu::menu()
+    .with_id("actions-menu")
+    .with_item(menu_item::link_menu_item("View", "/view"));
+
+if user.is_admin() {
+    builder = builder
+        .with_item(menu_item::menu_item_divider())
+        .with_item(menu_item::link_menu_item("Admin Panel", "/admin"));
+}
+
+let menu = builder.build();
+<span class="boring">}</span></code></pre></pre>
+<h2 id="composition-with-menu-items"><a class="header" href="#composition-with-menu-items">Composition with Menu Items</a></h2>
+<p>Menus work seamlessly with all menu item types:</p>
+<ul>
+<li><strong>Link Menu Items</strong> - For navigation (<code>menu_item::link_menu_item()</code>)</li>
+<li><strong>Button Menu Items</strong> - For actions (<code>menu_item::button_menu_item()</code>)</li>
+<li><strong>Dividers</strong> - For grouping (<code>menu_item::menu_item_divider()</code>)</li>
+<li><strong>Icons</strong> - Using <code>_with_icon</code> variants</li>
+</ul>
+<h2 id="positioning"><a class="header" href="#positioning">Positioning</a></h2>
+<p>The menu automatically positions itself optimally based on available screen space. If the menu would overflow the viewport, it adjusts its position automatically. This is handled by the CSS Anchor Positioning API and TailwindUI Elements.</p>
+<h2 id="accessibility-notes-3"><a class="header" href="#accessibility-notes-3">Accessibility Notes</a></h2>
+<ul>
+<li>Uses native <code>&lt;el-menu&gt;</code> element from TailwindUI (built on Popover API)</li>
+<li>Keyboard accessible (Escape to close, Arrow keys for navigation)</li>
+<li>Focus management handled automatically</li>
+<li>ARIA attributes managed by the browser's Popover API</li>
+<li>Proper semantic structure with menu role</li>
+</ul>
+<h2 id="implementation-status-3"><a class="header" href="#implementation-status-3">Implementation Status</a></h2>
+<p>✅ Complete - Production ready with full dark mode support and animation</p>
+<h2 id="design-notes-2"><a class="header" href="#design-notes-2">Design Notes</a></h2>
+<p>The menu component follows TailwindUI design patterns with DSP brand customizations:</p>
+<ul>
+<li>Fixed width (<code>w-56</code>) for consistency</li>
+<li>Shadow and outline for elevation</li>
+<li>Smooth animations (<code>transition-discrete</code>)</li>
+<li>Entry/exit animations with scale and opacity</li>
+<li>Dark mode support with appropriate contrasts</li>
+<li>Anchor positioning via CSS anchor positioning API</li>
+</ul>
+<h3 id="tailwindui-elements-integration"><a class="header" href="#tailwindui-elements-integration">TailwindUI Elements Integration</a></h3>
+<p>This component uses <code>&lt;el-menu&gt;</code> from TailwindUI Elements, which provides:</p>
+<ul>
+<li>Automatic positioning via CSS anchor positioning</li>
+<li>Built-in animations and transitions</li>
+<li>Popover API integration</li>
+<li>Light dismissal (click outside to close)</li>
+</ul>
+<h3 id="animation-states"><a class="header" href="#animation-states">Animation States</a></h3>
+<ul>
+<li><code>data-closed</code> - Menu is hidden (scaled down, transparent)</li>
+<li><code>data-enter</code> - Menu is appearing (100ms ease-out)</li>
+<li><code>data-leave</code> - Menu is disappearing (75ms ease-in)</li>
+</ul>
+<h2 id="examples-3"><a class="header" href="#examples-3">Examples</a></h2>
+<h3 id="basic-navigation-menu"><a class="header" href="#basic-navigation-menu">Basic Navigation Menu</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>menu::menu()
+    .with_id("nav-menu")
+    .with_item(menu_item::link_menu_item("Dashboard", "/dashboard"))
+    .with_item(menu_item::link_menu_item("Projects", "/projects"))
+    .with_item(menu_item::link_menu_item("Team", "/team"))
+    .build()
+<span class="boring">}</span></code></pre></pre>
+<h3 id="user-account-menu"><a class="header" href="#user-account-menu">User Account Menu</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>menu::menu()
+    .with_id("account-menu")
+    .with_item(menu_item::link_menu_item("Your Profile", "/profile"))
+    .with_item(menu_item::link_menu_item("Settings", "/settings"))
+    .with_item(menu_item::menu_item_divider())
+    .with_item(menu_item::button_menu_item("Sign Out"))
+    .build()
+<span class="boring">}</span></code></pre></pre>
+<h3 id="context-menu-with-actions"><a class="header" href="#context-menu-with-actions">Context Menu with Actions</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{menu, menu_item, icon, IconType};
+
+menu::menu()
+    .with_id("context-menu")
+    .with_item(menu_item::button_menu_item_with_icon(
+        "Share",
+        icon::icon(IconType::Star)
+    ))
+    .with_item(menu_item::button_menu_item_with_icon(
+        "Download",
+        icon::icon(IconType::Code)
+    ))
+    .with_item(menu_item::menu_item_divider())
+    .with_item(menu_item::button_menu_item_with_icon(
+        "Delete",
+        icon::icon(IconType::Flag)
+    ))
+    .build()
+<span class="boring">}</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="menu-item"><a class="header" href="#menu-item">Menu Item</a></h1>
+<p>Menu item components for use in dropdown menus and contextual menus.</p>
+<h2 id="usage-guidelines-4"><a class="header" href="#usage-guidelines-4">Usage Guidelines</a></h2>
+<p>Menu items are low-level building blocks for composing dropdown menus and action menus. Use link menu items for navigation and button menu items for triggering actions.</p>
+<h2 id="component-types"><a class="header" href="#component-types">Component Types</a></h2>
+<h3 id="link-menu-item"><a class="header" href="#link-menu-item">Link Menu Item</a></h3>
+<p>Use <code>link_menu_item()</code> for navigating to different pages or sections. Renders as a semantic <code>&lt;a&gt;</code> tag with proper href attributes.</p>
+<p><strong>When to use:</strong></p>
+<ul>
+<li>Navigating to a different page</li>
+<li>Linking to a different section</li>
+<li>Opening external resources</li>
+<li>Any action that changes the URL</li>
+</ul>
+<h3 id="button-menu-item"><a class="header" href="#button-menu-item">Button Menu Item</a></h3>
+<p>Use <code>button_menu_item()</code> for triggering actions. Renders as a semantic <code>&lt;button&gt;</code> tag with <code>cursor: pointer</code> and suitable for event handlers.</p>
+<p><strong>When to use:</strong></p>
+<ul>
+<li>Triggering in-app actions (delete, share, copy)</li>
+<li>Opening modals or dialogs</li>
+<li>Executing JavaScript functions</li>
+<li>Any action that doesn't change the URL</li>
+</ul>
+<h3 id="menu-item-divider"><a class="header" href="#menu-item-divider">Menu Item Divider</a></h3>
+<p>Use <code>menu_item_divider()</code> to create horizontal separators between groups of menu items. Renders as an <code>&lt;hr&gt;</code> element with consistent styling for light and dark modes.</p>
+<h2 id="icon-support"><a class="header" href="#icon-support">Icon Support</a></h2>
+<p>Both link and button variants support optional icons using the <code>_with_icon</code> variants:</p>
+<ul>
+<li><code>link_menu_item_with_icon(text, href, icon)</code></li>
+<li><code>button_menu_item_with_icon(text, icon)</code></li>
+</ul>
+<p>Icons should be provided as <code>Markup</code>. Use <code>icon::icon()</code> to create icons - the menu item component will apply the appropriate styling:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{menu_item, icon, IconType};
+
+let star_icon = icon::icon(IconType::Star);
+let link_item = menu_item::link_menu_item_with_icon("Favorites", "/favorites", star_icon);
+
+let code_icon = icon::icon(IconType::Code);
+let button_item = menu_item::button_menu_item_with_icon("View Source", code_icon);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="accessibility-notes-4"><a class="header" href="#accessibility-notes-4">Accessibility Notes</a></h2>
+<ul>
+<li>Uses semantic HTML (<code>&lt;a&gt;</code> vs <code>&lt;button&gt;</code>) for proper screen reader support</li>
+<li>Includes proper focus states for keyboard navigation</li>
+<li>Focus outline is visible and meets WCAG contrast requirements</li>
+<li>Interactive elements are keyboard accessible</li>
+</ul>
+<h2 id="implementation-status-4"><a class="header" href="#implementation-status-4">Implementation Status</a></h2>
+<p>✅ Complete - Production ready with full dark mode support</p>
+<h2 id="design-notes-3"><a class="header" href="#design-notes-3">Design Notes</a></h2>
+<p>The menu item component follows TailwindUI design patterns with DSP brand customizations:</p>
+<ul>
+<li>Consistent padding and spacing (<code>px-4 py-2</code>)</li>
+<li>Full width (<code>w-full</code>) to span the entire menu container</li>
+<li>Focus states with background color changes</li>
+<li>Dark mode support with appropriate color contrasts</li>
+<li>Icon alignment and sizing (<code>size-5</code> with <code>mr-3</code> spacing)</li>
+<li>Button elements include <code>cursor: pointer</code> for better UX</li>
+</ul>
+<h3 id="semantic-html-best-practices"><a class="header" href="#semantic-html-best-practices">Semantic HTML Best Practices</a></h3>
+<p>This component enforces the best practice of using:</p>
+<ul>
+<li><code>&lt;a&gt;</code> tags for navigation (with href)</li>
+<li><code>&lt;button&gt;</code> tags for actions (without href)</li>
+</ul>
+<p>This separation ensures proper accessibility, keyboard navigation, and semantic markup.</p>
+<pre><code></code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="shell-1"><a class="header" href="#shell-1">Shell</a></h1>
 <p>Application shell component providing navigation and layout wrapper with configurable navigation elements.</p>
-<h2 id="usage-guidelines-1"><a class="header" href="#usage-guidelines-1">Usage Guidelines</a></h2>
+<h2 id="usage-guidelines-5"><a class="header" href="#usage-guidelines-5">Usage Guidelines</a></h2>
 <p>Use the shell component as the main application wrapper. It provides consistent navigation, theme management, and layout structure across the application.</p>
-<h2 id="api"><a class="header" href="#api">API</a></h2>
-<h3 id="shellheader_nav_elements-vecnavelement-header_config-headerconfig-footer-footerconfig"><a class="header" href="#shellheader_nav_elements-vecnavelement-header_config-headerconfig-footer-footerconfig"><code>shell(header_nav_elements: Vec&lt;NavElement&gt;, header_config: HeaderConfig, footer: FooterConfig)</code></a></h3>
-<p>Create a shell with header navigation and footer using the builder pattern.</p>
+<h2 id="basic-usage-3"><a class="header" href="#basic-usage-3">Basic Usage</a></h2>
+<p>The shell component uses a builder pattern to create the application layout:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use components::shell::shell;
-use components::header::{HeaderConfig, NavElement, NavItem, NavMenu, NavMenuItem};
+use components::header::{HeaderConfig, NavElement, NavItem};
 use components::footer::FooterConfig;
+use maud::html;
 
-// Create navigation elements
-let header_nav = vec![
-    NavElement::Item(NavItem { label: "Home", href: "/" }),
-    NavElement::Item(NavItem { label: "Projects", href: "/projects" }),
-    NavElement::Menu(NavMenu {
-        label: "Resources",
-        items: vec![
-            NavMenuItem { label: "Documentation", href: "/docs" },
-            NavMenuItem { label: "Tutorials", href: "/tutorials" },
-        ],
-    }),
-];
-
-// Create header configuration
-let header_config = HeaderConfig {
+let shell_markup = shell(header_nav, header_config, footer_config)
+    .with_content(html! {
+        div { "Page content here" }
+    })
+    .build();
+<span class="boring">}</span></code></pre></pre>
+<h2 id="builder-methods-3"><a class="header" href="#builder-methods-3">Builder Methods</a></h2>
+<p>The shell builder has only one optional method. Call <code>.build()</code> to render the final component.</p>
+<ul>
+<li><strong><code>.with_content(Markup)</code></strong> - Sets the main content area of the shell. If not provided, displays a default "No content provided" message</li>
+<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup with header, content, and footer</li>
+</ul>
+<p><strong>Note:</strong> The shell constructor requires three parameters: navigation elements, header config, and footer config. These are not builder methods but constructor parameters.</p>
+<h2 id="configuration-structs"><a class="header" href="#configuration-structs">Configuration Structs</a></h2>
+<h3 id="headerconfig"><a class="header" href="#headerconfig">HeaderConfig</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>HeaderConfig {
     company_name: "DaSCH Service Platform",
     logo_light_url: "/assets/logo-light.svg",
     logo_dark_url: "/assets/logo-dark.svg",
     login_href: "/login",
-};
-
-// Create footer configuration
-let footer_config = FooterConfig {
-    company_name: "DaSCH",
-    description: "Digital infrastructure for humanities research data preservation and discovery.",
-    copyright_text: "© 2024 DaSCH, University of Basel. All rights reserved.",
-    logo_light_url: "/assets/footer-logo-light.svg",
-    logo_dark_url: "/assets/footer-logo-dark.svg",
-};
-
-let shell_markup = shell(header_nav, header_config, footer_config).build();
+}
 <span class="boring">}</span></code></pre></pre>
-<h3 id="with_contentcontent-markup"><a class="header" href="#with_contentcontent-markup"><code>with_content(content: Markup)</code></a></h3>
-<p>Add content to the shell's main content area.</p>
+<h3 id="footerconfig"><a class="header" href="#footerconfig">FooterConfig</a></h3>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use maud::html;
-
-let content = html! {
-    div style="padding: 2rem;" {
-        h1 { "Welcome to the Application" }
-        p { "This is the main content area of the shell." }
-    }
-};
-
-let shell_markup = shell(header_nav)
-    .with_content(content)
-    .build();
+</span>FooterConfig {
+    company_name: "DaSCH",
+    description: "Digital infrastructure for humanities research.",
+    copyright_text: "© 2024 DaSCH, University of Basel.",
+    logo_light_url: "/assets/footer-logo-light.svg",
+    logo_dark_url: "/assets/footer-logo-dark.svg",
+}
 <span class="boring">}</span></code></pre></pre>
-<h3 id="complete-example"><a class="header" href="#complete-example">Complete Example</a></h3>
+<h3 id="complete-example-1"><a class="header" href="#complete-example-1">Complete Example</a></h3>
 <p>Full shell configuration with navigation and content:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -799,7 +1436,7 @@ let shell_markup = shell(header_nav, header_config, footer_config)
 <li><strong>Static Branding</strong>: DaSCH Service Platform branding remains consistent</li>
 <li><strong>Accessible ARIA Labels</strong>: Full accessibility support</li>
 </ul>
-<h2 id="accessibility-notes-1"><a class="header" href="#accessibility-notes-1">Accessibility Notes</a></h2>
+<h2 id="accessibility-notes-5"><a class="header" href="#accessibility-notes-5">Accessibility Notes</a></h2>
 <ul>
 <li>Comprehensive ARIA labels and roles</li>
 <li>Keyboard navigation support</li>
@@ -808,9 +1445,9 @@ let shell_markup = shell(header_nav, header_config, footer_config)
 <li>High contrast theme support</li>
 <li>Semantic navigation structure</li>
 </ul>
-<h2 id="implementation-status-1"><a class="header" href="#implementation-status-1">Implementation Status</a></h2>
+<h2 id="implementation-status-5"><a class="header" href="#implementation-status-5">Implementation Status</a></h2>
 <p>✅ Fully functional with configurable navigation</p>
-<h2 id="design-notes-1"><a class="header" href="#design-notes-1">Design Notes</a></h2>
+<h2 id="design-notes-4"><a class="header" href="#design-notes-4">Design Notes</a></h2>
 <p>Currently transitioning from web components to Tailwind Plus implementation. Provides advanced features including responsive navigation, search functionality, and theme management. The shell serves as the primary application wrapper and maintains consistent layout across different pages.</p>
 <p>Navigation content is now configurable while maintaining static branding elements and core functionality.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="web-components-overview"><a class="header" href="#web-components-overview">Web Components Overview</a></h1>
@@ -832,7 +1469,7 @@ The card-like variant has a light and a dark theme.</p>
 <h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
 <p>Currently, the web commponents are not published to a package registry.
 When published, they can be used by importing the them as a JavaScript module.</p>
-<h3 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h3>
+<h3 id="basic-usage-4"><a class="header" href="#basic-usage-4">Basic Usage</a></h3>
 <p>To display the badge, you can use the following HTML:</p>
 <p>For the small variant:</p>
 <pre><code class="language-html">&lt;dsp-attribution-badge&gt;&lt;/dsp-attribution-badge&gt;

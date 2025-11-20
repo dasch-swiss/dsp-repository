@@ -867,7 +867,7 @@ enum Command {
 </style>
 <h1 id="dsp-design-system"><a class="header" href="#dsp-design-system">DSP Design System</a></h1>
 <h2 id="introduction-1"><a class="header" href="#introduction-1">Introduction</a></h2>
-<p>The DSP Design System is built with Tailwind Plus as the foundation, providing a modern, utility-first approach to component design and styling.</p>
+<p>The DSP Design System is built with Tailwind as the foundation, providing a modern, utility-first approach to component design and styling.</p>
 <p>The system is designed with the following principles:</p>
 <ul>
 <li>It is not a general purpose design system, but a purpose-built system. As such, it is much smaller and less complex.</li>
@@ -886,36 +886,7 @@ Additional component variants may be added, when necessary.</li>
 <li>It may have purpose-specific components tailored to the DSP platform's unique requirements.</li>
 </ul>
 <h1 id="current-implementation-status"><a class="header" href="#current-implementation-status">Current Implementation Status</a></h1>
-<p>The DSP Design System is currently in early development with the following components implemented:</p>
-<h2 id="available-components"><a class="header" href="#available-components">Available Components</a></h2>
-<h3 id="button"><a class="header" href="#button">Button</a></h3>
-<ul>
-<li><strong>Implementation</strong>: Native Maud</li>
-<li><strong>Variants</strong>: Primary, Secondary, Outline</li>
-<li><strong>Status</strong>: 🚧 Functional but incomplete (styling verification needed, missing accessibility features)</li>
-<li><strong>Features</strong>: Basic button functionality with variant support, disabled state, custom test IDs</li>
-</ul>
-<h3 id="banner"><a class="header" href="#banner">Banner</a></h3>
-<ul>
-<li><strong>Implementation</strong>: Native Maud</li>
-<li><strong>Variants</strong>: Accent only, with prefix, with suffix, full (prefix + accent + suffix)</li>
-<li><strong>Status</strong>: ✅ Fully functional</li>
-<li><strong>Features</strong>: Semantic HTML with proper structure, configurable text sections with accent styling</li>
-</ul>
-<h3 id="shell"><a class="header" href="#shell">Shell</a></h3>
-<ul>
-<li><strong>Implementation</strong>: Transitioning from web components to Tailwind Plus</li>
-<li><strong>Purpose</strong>: Application navigation and layout wrapper</li>
-<li><strong>Status</strong>: ✅ Fully functional with advanced features</li>
-<li><strong>Features</strong>: Responsive navigation header, search functionality, theme toggle with persistence, side navigation, accessible ARIA labels</li>
-</ul>
-<h3 id="tile"><a class="header" href="#tile">Tile</a></h3>
-<ul>
-<li><strong>Implementation</strong>: Native Maud with Tailwind Plus styling</li>
-<li><strong>Variants</strong>: Base, Clickable</li>
-<li><strong>Status</strong>: 🚧 Functional but incomplete (styling verification needed, missing accessibility features)</li>
-<li><strong>Features</strong>: Content containers accepting arbitrary Markup, custom test IDs</li>
-</ul>
+<p>The DSP Design System is currently in early development.</p>
 <h2 id="development-environment"><a class="header" href="#development-environment">Development Environment</a></h2>
 <h3 id="playground"><a class="header" href="#playground">Playground</a></h3>
 <ul>
@@ -1091,8 +1062,8 @@ pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup
 <li>Use <code>impl Into&lt;String&gt;</code> for text inputs</li>
 <li>Test composition in playground</li>
 </ol>
-<h2 id="migration-to-tailwind-plus"><a class="header" href="#migration-to-tailwind-plus">Migration to Tailwind Plus</a></h2>
-<p><strong>Note</strong>: Some components are currently in transition from web component implementations to native Maud components using Tailwind Plus for styling. This migration provides better performance, type safety, and maintainability while leveraging Tailwind's utility-first approach for consistent styling across the design system.</p>
+<h2 id="migration-to-tailwind"><a class="header" href="#migration-to-tailwind">Migration to Tailwind</a></h2>
+<p><strong>Note</strong>: Some components are currently in transition from web component implementations to native Maud components using Tailwind for styling. This migration provides better performance, type safety, and maintainability while leveraging Tailwind's utility-first approach for consistent styling across the design system.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -1160,7 +1131,7 @@ pub fn page_header(title: impl Into&lt;String&gt;, actions: Markup) -&gt; Markup
 }
 
 </style>
-<h1 id="button-1"><a class="header" href="#button-1">Button</a></h1>
+<h1 id="button"><a class="header" href="#button">Button</a></h1>
 <p>Interactive button component for user actions using the builder pattern.</p>
 <h2 id="usage-guidelines"><a class="header" href="#usage-guidelines">Usage Guidelines</a></h2>
 <p>Use buttons to trigger actions, submit forms, or navigate to different sections of the application. Choose the appropriate variant based on the action's importance and context.</p>
@@ -1295,7 +1266,7 @@ let delete = icon_button(icon::icon(IconType::Flag))
 <h2 id="implementation-status"><a class="header" href="#implementation-status">Implementation Status</a></h2>
 <p>🚧 Functional but incomplete - styling verification needed, missing accessibility features</p>
 <h2 id="design-notes"><a class="header" href="#design-notes">Design Notes</a></h2>
-<p>The button component follows Tailwind Plus design patterns with DSP brand customizations. Spacing and typography align with the design system tokens.</p>
+<p>The button component follows Tailwind design patterns with DSP brand customizations. Spacing and typography align with the design system tokens.</p>
 <h3 id="button-vs-link"><a class="header" href="#button-vs-link">Button vs. Link</a></h3>
 <p>Use buttons for actions that trigger changes or submit data. Use links for navigation to other pages or sections. Buttons should not be used for navigation purposes.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
@@ -1885,10 +1856,10 @@ let menu = builder.build();
 <li><strong>Icons</strong> - Using <code>_with_icon</code> variants</li>
 </ul>
 <h2 id="positioning"><a class="header" href="#positioning">Positioning</a></h2>
-<p>The menu automatically positions itself optimally based on available screen space. If the menu would overflow the viewport, it adjusts its position automatically. This is handled by the CSS Anchor Positioning API and TailwindUI Elements.</p>
+<p>The menu automatically positions itself optimally based on available screen space. If the menu would overflow the viewport, it adjusts its position automatically. This is handled by the CSS Anchor Positioning API and Tailwind Elements.</p>
 <h2 id="accessibility-notes-3"><a class="header" href="#accessibility-notes-3">Accessibility Notes</a></h2>
 <ul>
-<li>Uses native <code>&lt;el-menu&gt;</code> element from TailwindUI (built on Popover API)</li>
+<li>Uses native <code>&lt;el-menu&gt;</code> element from Tailwind (built on Popover API)</li>
 <li>Keyboard accessible (Escape to close, Arrow keys for navigation)</li>
 <li>Focus management handled automatically</li>
 <li>ARIA attributes managed by the browser's Popover API</li>
@@ -1897,7 +1868,7 @@ let menu = builder.build();
 <h2 id="implementation-status-3"><a class="header" href="#implementation-status-3">Implementation Status</a></h2>
 <p>✅ Complete - Production ready with full dark mode support and animation</p>
 <h2 id="design-notes-2"><a class="header" href="#design-notes-2">Design Notes</a></h2>
-<p>The menu component follows TailwindUI design patterns with DSP brand customizations:</p>
+<p>The menu component follows Tailwind design patterns with DSP brand customizations:</p>
 <ul>
 <li>Fixed width (<code>w-56</code>) for consistency</li>
 <li>Shadow and outline for elevation</li>
@@ -1906,8 +1877,8 @@ let menu = builder.build();
 <li>Dark mode support with appropriate contrasts</li>
 <li>Anchor positioning via CSS anchor positioning API</li>
 </ul>
-<h3 id="tailwindui-elements-integration"><a class="header" href="#tailwindui-elements-integration">TailwindUI Elements Integration</a></h3>
-<p>This component uses <code>&lt;el-menu&gt;</code> from TailwindUI Elements, which provides:</p>
+<h3 id="tailwind-elements-integration"><a class="header" href="#tailwind-elements-integration">Tailwind Elements Integration</a></h3>
+<p>This component uses <code>&lt;el-menu&gt;</code> from Tailwind Elements, which provides:</p>
 <ul>
 <li>Automatic positioning via CSS anchor positioning</li>
 <li>Built-in animations and transitions</li>
@@ -2083,7 +2054,7 @@ let button_item = menu_item::button_menu_item_with_icon("View Source", code_icon
 <h2 id="implementation-status-4"><a class="header" href="#implementation-status-4">Implementation Status</a></h2>
 <p>✅ Complete - Production ready with full dark mode support</p>
 <h2 id="design-notes-3"><a class="header" href="#design-notes-3">Design Notes</a></h2>
-<p>The menu item component follows TailwindUI design patterns with DSP brand customizations:</p>
+<p>The menu item component follows Tailwind design patterns with DSP brand customizations:</p>
 <ul>
 <li>Consistent padding and spacing (<code>px-4 py-2</code>)</li>
 <li>Full width (<code>w-full</code>) to span the entire menu container</li>
@@ -2167,7 +2138,7 @@ let button_item = menu_item::button_menu_item_with_icon("View Source", code_icon
 }
 
 </style>
-<h1 id="shell-1"><a class="header" href="#shell-1">Shell</a></h1>
+<h1 id="shell"><a class="header" href="#shell">Shell</a></h1>
 <p>Application shell component providing navigation and layout wrapper with configurable navigation elements.</p>
 <h2 id="usage-guidelines-5"><a class="header" href="#usage-guidelines-5">Usage Guidelines</a></h2>
 <p>Use the shell component as the main application wrapper. It provides consistent navigation, theme management, and layout structure across the application.</p>
@@ -2322,7 +2293,7 @@ let shell_markup = shell(header_nav, header_config, footer_config)
 <h2 id="implementation-status-5"><a class="header" href="#implementation-status-5">Implementation Status</a></h2>
 <p>✅ Fully functional with configurable navigation</p>
 <h2 id="design-notes-4"><a class="header" href="#design-notes-4">Design Notes</a></h2>
-<p>Currently transitioning from web components to Tailwind Plus implementation. Provides advanced features including responsive navigation, search functionality, and theme management. The shell serves as the primary application wrapper and maintains consistent layout across different pages.</p>
+<p>The shell serves as the primary application wrapper and maintains consistent layout across different pages.</p>
 <p>Navigation content is now configurable while maintaining static branding elements and core functionality.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
@@ -2681,7 +2652,7 @@ and identify opportunities for further improvements.</p>
 <li><strong>Axum</strong> - HTTP web framework with WebSocket support</li>
 <li><strong>Maud</strong> - Macro-based templating engine (JSX-like syntax)</li>
 <li><strong>DataStar</strong> - Hypermedia-driven frontend interactivity</li>
-<li><strong>Tailwind Plus</strong> - Design system foundation with utility-first CSS approach</li>
+<li><strong>Tailwind</strong> - Design system foundation with utility-first CSS approach</li>
 <li><strong>Database TBD</strong> - Currently using static JSON files</li>
 </ul>
 <h2 id="development--testing"><a class="header" href="#development--testing">Development &amp; Testing</a></h2>
@@ -2991,10 +2962,10 @@ and designing solutions on top of it ad hoc,
 we are using a purpose-built design system.
 This will help us to keep the design consistent and coherent,
 reduce complexity, and give our products a clearer brand identity.</p>
-<p>This design system is built with Tailwind Plus as its foundation,
+<p>This design system is built with Tailwind as its foundation,
 providing modern, utility-first styling and component patterns.</p>
 <h3 id="concept-aim-and-purpose"><a class="header" href="#concept-aim-and-purpose">Concept, Aim and Purpose</a></h3>
-<p>We build the DSP Design System using Tailwind Plus principles
+<p>We build the DSP Design System using Tailwind
 because it provides a robust foundation for creating consistent, maintainable interfaces
 that communicate the reliability and trustworthiness that users expect from an archive.</p>
 <p>Our approach differs from using design systems as-is for several key reasons:</p>

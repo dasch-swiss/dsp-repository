@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 - **Parameters**: Use `impl Into<String>` for text, `Markup` for rich content
 - **CSS Classes**: `dsp-` prefix with BEM methodology
 - **Structure**: One component per file, export via `lib.rs`
-- **Design Reference**: Use Tailwind Plus components as basis of design patterns and principles
+- **Design Reference**: Use Tailwind components as basis of design patterns and principles
 - **Accessibility**: Use semantic HTML, proper ARIA attributes, keyboard navigation support
 
 ## Patterns
@@ -81,7 +81,7 @@ pub fn component(content: impl Into<String>) -> Markup {
 - [ ] Use `impl Into<String>` for text, `Markup` for content
 - [ ] Use semantic HTML and proper ARIA attributes
 - [ ] Export in `lib.rs`, add playground route
-- [ ] **Verify design with dev against Tailwind Plus patterns**
+- [ ] **Verify design with dev against Tailwind reference implementation**
 - [ ] Test composition with other components
 
 ## Naming
@@ -90,17 +90,11 @@ pub fn component(content: impl Into<String>) -> Markup {
 - **Enums**: `ComponentVariant` pattern
 - **CSS**: `dsp-component`, `dsp-component--variant`
 
-## Current Components
-- **Button**: ✅ Markup-based with Primary/Secondary/Outline variants (TODO: verify Tailwind Plus styling)
-- **Shell**: 🚧 Work in progress - application shell with navigation
-
 ## Visual Design Guidance
 When developing components, use these methods to understand design requirements:
-- **Reference Images**: Screenshots/mockups can be provided and read for visual comparison
-- **Reference URLs**: WebFetch Tailwind Plus and other modern design systems for component patterns
+- **Reference Files**: If provided, use Tailwind reference files for structure and styling
 - **Visual Specifications**: Detailed written descriptions of expected appearance, states, and variants
 - **Design Tokens**: Follow documented color palette, spacing, and typography rules
-- **Visual Testing**: Use WebFetch on playground at `http://localhost:3400/[component]` to compare against targets
 
 ## MCP Testing Workflow
 Interactive component testing using Playwright MCP during development:

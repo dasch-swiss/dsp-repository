@@ -143,24 +143,3 @@ Current status: ✅ Complete / 🚧 In Progress / ⚠️ Needs Work
 
 Design system alignment and visual specifications.
 ```
-
-## TailwindUI Migration (Temporary)
-
-During the ongoing migration from Carbon to TailwindUI:
-
-### Current Status
-- Components being migrated to TailwindUI patterns
-- DaSCH brand customization needed for all components
-- Dark/light mode support being implemented
-
-### Migration Checklist
-- [ ] Update CSS classes to Tailwind utilities
-- [ ] Verify responsive design across breakpoints
-- [ ] Implement DaSCH brand colors and typography
-- [ ] Test dark/light mode functionality
-- [ ] Update component documentation
-
-### Temporary Notes
-- Some components may show placeholder styling during migration
-- Refer to `.claude/tmp/tailwind-migration.md` for migration tasks
-- Brand customization requirements noted in individual component docs with ⚠️ warnings

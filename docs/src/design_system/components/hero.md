@@ -4,7 +4,7 @@ Landing page hero section component with headline, description, call-to-action b
 
 ⚠️ **Usage Note**: This component should not be used directly in applications. Use it through a higher-order shell component that provides complete page layout and structure.
 
-⚠️ **Brand Adjustment Required**: This Tailwind UI component has not yet been adjusted to fit the DaSCH brand identity.
+⚠️ **Brand Adjustment Required**: This component has not yet been adjusted to fit the DaSCH brand identity.
 
 ## Features
 

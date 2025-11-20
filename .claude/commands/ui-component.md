@@ -1,5 +1,5 @@
 ---
-description: Create a new UI component in the design system. Provide TailwindPlus HTML for reference.
+description: Create a new UI component in the design system. Provide Tailwind HTML for reference.
 argument-hint: Component Name | Additional details (optional)
 ---
 
@@ -29,8 +29,8 @@ Create a new UI component for our design system based on the provided component 
 
 ## What to Build
 
-The DSP design system is built on top of TailwindPlus/TailwindUI components. 
-Use the TailwindPlus reference files as a guide for structure, styling, and behavior.
+The DSP design system is built on top of Tailwind components. 
+Use the Tailwind reference files as a guide for structure, styling, and behavior.
 
 The design system's component library is built with Rust using the Maud templating engine for server-side rendering. 
 It is meant to create multi-page web applications with minimal client-side state. 
@@ -44,7 +44,7 @@ To implement the component, follow these steps:
 - Analyze the component requirements based on the name and details provided. If anything is unclear, ask for clarification.
 - Plan the component structure, props, and any necessary state or interactions. 
   Confirm this plan with the developer before proceeding.
-- Check the TailwindPlus reference file. 
+- Check the Tailwind reference file. 
   Unless specified otherwise, assume that the reference file is located in the @.claude/tailwind/ directory.
   If you cannot find it, ask the developer for the correct location.
 - Implement the component, following the reference closely.

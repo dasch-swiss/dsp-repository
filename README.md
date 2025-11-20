@@ -10,3 +10,11 @@ You may also view the rendered documentation by following these steps:
 - Install all dependencies with `just install-requirements`
 - Build and run the documentation with `just docs-serve`
 - Open your browser and navigate to `http://localhost:3000`
+
+## License
+
+This repository contains code under multiple licenses:
+- Apache 2.0: All code except `modules/design_system/components/` directory
+- All Rights Reserved: Code in `modules/design_system/components/` directory
+
+See LICENSE-Apache-2.0 and LICENSE-AllRightsReserved for full terms.

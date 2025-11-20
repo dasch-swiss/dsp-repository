@@ -63,7 +63,7 @@ let button_item = menu_item::button_menu_item_with_icon("View Source", code_icon
 
 ## Design Notes
 
-The menu item component follows TailwindUI design patterns with DSP brand customizations:
+The menu item component follows Tailwind design patterns with DSP brand customizations:
 - Consistent padding and spacing (`px-4 py-2`)
 - Full width (`w-full`) to span the entire menu container
 - Focus states with background color changes

@@ -174,6 +174,6 @@ NavElement::Menu(NavMenu {
 
 ## Design Notes
 
-Currently transitioning from web components to Tailwind Plus implementation. Provides advanced features including responsive navigation, search functionality, and theme management. The shell serves as the primary application wrapper and maintains consistent layout across different pages.
+The shell serves as the primary application wrapper and maintains consistent layout across different pages.
 
 Navigation content is now configurable while maintaining static branding elements and core functionality.

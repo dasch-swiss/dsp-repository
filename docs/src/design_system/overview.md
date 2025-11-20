@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The DSP Design System is built with Tailwind Plus as the foundation, providing a modern, utility-first approach to component design and styling.
+The DSP Design System is built with Tailwind as the foundation, providing a modern, utility-first approach to component design and styling.
 
 The system is designed with the following principles:
 
@@ -21,33 +21,7 @@ The system is designed with the following principles:
 
 # Current Implementation Status
 
-The DSP Design System is currently in early development with the following components implemented:
-
-## Available Components
-
-### Button
-- **Implementation**: Native Maud
-- **Variants**: Primary, Secondary, Outline
-- **Status**: 🚧 Functional but incomplete (styling verification needed, missing accessibility features)
-- **Features**: Basic button functionality with variant support, disabled state, custom test IDs
-
-### Banner  
-- **Implementation**: Native Maud
-- **Variants**: Accent only, with prefix, with suffix, full (prefix + accent + suffix)
-- **Status**: ✅ Fully functional
-- **Features**: Semantic HTML with proper structure, configurable text sections with accent styling
-
-### Shell
-- **Implementation**: Transitioning from web components to Tailwind Plus
-- **Purpose**: Application navigation and layout wrapper
-- **Status**: ✅ Fully functional with advanced features
-- **Features**: Responsive navigation header, search functionality, theme toggle with persistence, side navigation, accessible ARIA labels
-
-### Tile
-- **Implementation**: Native Maud with Tailwind Plus styling
-- **Variants**: Base, Clickable
-- **Status**: 🚧 Functional but incomplete (styling verification needed, missing accessibility features)
-- **Features**: Content containers accepting arbitrary Markup, custom test IDs
+The DSP Design System is currently in early development.
 
 ## Development Environment
 

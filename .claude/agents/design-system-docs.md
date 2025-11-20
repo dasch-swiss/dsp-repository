@@ -99,7 +99,7 @@ Use this structure as a guide (adapt as needed):
 
 1. **Gather Context**:
    - Read the component implementation thoroughly
-   - Review the TailwindUI reference to understand intended behavior
+   - Review the Tailwind reference to understand intended behavior
    - Check existing similar component docs for patterns
    - Note any QA feedback or special considerations
 

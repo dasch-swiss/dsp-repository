@@ -128,12 +128,12 @@ we are using a purpose-built design system.
 This will help us to keep the design consistent and coherent,
 reduce complexity, and give our products a clearer brand identity.
 
-This design system is built with Tailwind Plus as its foundation,
+This design system is built with Tailwind as its foundation,
 providing modern, utility-first styling and component patterns.
 
 ### Concept, Aim and Purpose
 
-We build the DSP Design System using Tailwind Plus principles
+We build the DSP Design System using Tailwind
 because it provides a robust foundation for creating consistent, maintainable interfaces
 that communicate the reliability and trustworthiness that users expect from an archive.
 

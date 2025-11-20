@@ -184,11 +184,11 @@ Menus work seamlessly with all menu item types:
 
 ## Positioning
 
-The menu automatically positions itself optimally based on available screen space. If the menu would overflow the viewport, it adjusts its position automatically. This is handled by the CSS Anchor Positioning API and TailwindUI Elements.
+The menu automatically positions itself optimally based on available screen space. If the menu would overflow the viewport, it adjusts its position automatically. This is handled by the CSS Anchor Positioning API and Tailwind Elements.
 
 ## Accessibility Notes
 
-- Uses native `<el-menu>` element from TailwindUI (built on Popover API)
+- Uses native `<el-menu>` element from Tailwind (built on Popover API)
 - Keyboard accessible (Escape to close, Arrow keys for navigation)
 - Focus management handled automatically
 - ARIA attributes managed by the browser's Popover API
@@ -200,7 +200,7 @@ The menu automatically positions itself optimally based on available screen spac
 
 ## Design Notes
 
-The menu component follows TailwindUI design patterns with DSP brand customizations:
+The menu component follows Tailwind design patterns with DSP brand customizations:
 - Fixed width (`w-56`) for consistency
 - Shadow and outline for elevation
 - Smooth animations (`transition-discrete`)
@@ -208,9 +208,9 @@ The menu component follows TailwindUI design patterns with DSP brand customizati
 - Dark mode support with appropriate contrasts
 - Anchor positioning via CSS anchor positioning API
 
-### TailwindUI Elements Integration
+### Tailwind Elements Integration
 
-This component uses `<el-menu>` from TailwindUI Elements, which provides:
+This component uses `<el-menu>` from Tailwind Elements, which provides:
 - Automatic positioning via CSS anchor positioning
 - Built-in animations and transitions
 - Popover API integration

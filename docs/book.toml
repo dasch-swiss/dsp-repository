@@ -1,7 +1,6 @@
 [book]
 authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
 language = "en"
-multilingual = false
 src = "src"
 title = "DSP-Repository Developer Documentation"
 

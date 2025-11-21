@@ -27,7 +27,7 @@ The DSP Design System is currently in early development.
 
 ### Playground
 - **URL**: http://localhost:3400 (via `just run-watch-playground`)
-- **Architecture**: Full-featured development environment with Rust server, TypeScript testing, and visual regression
+- **Architecture**: Full-featured development environment with Rust server and TypeScript testing
 - **Features**: 
   - **Shell Interface**: Sidebar navigation with component list and active states
   - **Component Isolation**: Iframe-based component rendering with parameter controls
@@ -35,11 +35,10 @@ The DSP Design System is currently in early development.
   - **Theme Switching**: Light/dark theme toggle with live preview
   - **Documentation Tabs**: Component and documentation view switching
   - **Live Reload**: WebSocket-based automatic refresh on file changes
-- **Testing**: Comprehensive TypeScript/Playwright test suite with functional, accessibility, responsive, and visual regression tests
-- **Commands**: 
+- **Testing**: Comprehensive TypeScript/Playwright test suite with functional, accessibility, and responsive tests
+- **Commands**:
   - `just playground install` - Install frontend dependencies and browsers
   - `just playground test` - Run all automated tests
-  - `just playground test-visual` - Run visual regression tests
   - `just playground test-headed` - Run tests with browser visible
 
 <!-- TODO: Add the following pages:

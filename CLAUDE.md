@@ -25,7 +25,7 @@ modules/
 │   └── types/             # Domain models and trait definitions
 └── design_system/         # Custom design system
     ├── components/        # Reusable UI components
-    └── playground/        # Full development environment with Rust server, TypeScript testing, and visual regression
+    └── playground/        # Full development environment with Rust server and TypeScript testing
 ```
 
 ## Development Commands (via justfile)
@@ -43,7 +43,6 @@ just run-watch-playground      # Run design system playground with hot reload
 # Design system playground
 just playground install         # Install frontend dependencies and browsers
 just playground test            # Run TypeScript/Playwright tests
-just playground test-visual     # Run visual regression tests
 just playground test-headed     # Run tests with browser visible
 
 # Code quality
@@ -64,7 +63,7 @@ just install-requirements     # Install cargo-watch, mdbook, mdbook-alerts
 - **Async**: Tokio runtime
 - **Testing**: Cargo nextest for parallel execution
 - **Documentation**: mdBook with alerts plugin
-- **Design System**: TypeScript + Playwright for E2E and visual regression testing
+- **Design System**: TypeScript + Playwright for E2E testing
 
 ## Data Layer
 - **Current**: Static JSON files in `/data/json/` directory
@@ -75,7 +74,6 @@ just install-requirements     # Install cargo-watch, mdbook, mdbook-alerts
 - **Formatting**: .rustfmt.toml with 120 char width, Unix newlines
 - **Linting**: Strict clippy warnings
 - **Testing**: Testing pyramid (unit → integration → E2E with Playwright)
-- **Visual Testing**: Automated visual regression testing for design system components
 - **Git**: Rebase workflow, clean commit history
 
 ## Important Notes

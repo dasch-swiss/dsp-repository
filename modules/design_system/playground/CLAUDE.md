@@ -26,16 +26,6 @@ Live development environment for testing and developing design system components
   - `/button` - Button component examples
   - `/shell` - Shell component examples
 
-## Visual Testing Notes
-
-Visual regression tests are platform-specific and generate different baselines on different operating systems:
-
-- **Platform Dependency**: Visual baselines should be generated on the same OS where tests will run
-- **Local Testing**: Use `just update-visuals` to generate baselines for your platform
-- **CI Considerations**: Visual tests may need to be disabled or run conditionally in CI environments
-
-Visual tests have been separated from functional tests to provide flexibility in testing workflows.
-
 ## File Structure
 
 - `main.rs` - Server setup and routing

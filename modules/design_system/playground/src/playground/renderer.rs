@@ -119,7 +119,7 @@ impl ComponentRendererRegistry {
 /// Registry for component isolation renderers (Component Store tab)
 ///
 /// Maps component names to their renderer implementations for the Component Store tab.
-/// These renderers display isolated component variants for testing and visual regression.
+/// These renderers display isolated component variants for testing.
 pub struct ComponentIsolationRegistry;
 
 impl ComponentIsolationRegistry {

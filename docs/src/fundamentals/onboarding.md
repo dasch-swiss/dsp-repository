@@ -49,10 +49,7 @@ Unit and integration tests are written in Rust, following the Rust testing best 
 End-to-end tests are written either in Rust or in JavaScript using Playwright.
 
 We are looking into how to integrate Playwright into our setup.
-Playwright may be used for the following:
-
-- End-to-end tests simulating *entire user flows*.
-- Visual regression tests.
+Playwright may be used for end-to-end tests simulating *entire user flows*.
 
 For single user interactions, we should not need Playwright.
 For these, we should use the Rust testing framework.
@@ -171,7 +168,7 @@ This playground is a Rust web server with TypeScript testing:
 - Component isolation via iframe rendering
 - Variant selection and theme switching
 - Live reload via WebSocket
-- TypeScript/Playwright tests for functional, accessibility, and visual regression testing
+- TypeScript/Playwright tests for functional and accessibility testing
 
 For each component, we create a page that shows the component in action,
 in all its variants and states.

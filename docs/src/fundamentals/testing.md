@@ -21,7 +21,6 @@ The design system playground includes comprehensive testing infrastructure:
 **Automated Testing (CI/CD)**:
 - TypeScript-based Playwright setup with tooling
 - Functional, accessibility, and responsive design testing in CI
-- Visual regression testing (local development only)
 - ESLint, Prettier, and TypeScript checking
 - HTML + JSON reporters for CI/CD integration
 - Best for: End-to-end user flows, automated regression detection
@@ -30,17 +29,12 @@ The design system playground includes comprehensive testing infrastructure:
 
 **Key Commands**:
 - `just playground test` - Run all tests
-- `just playground test-visual` - Visual regression tests
 - `just playground test-ui` - Interactive test runner
 - `just playground test-debug` - Debug mode with browser DevTools
-- `just playground update-visuals` - Update visual baselines (platform-specific)
 - `just playground type-check` - TypeScript validation
 - `just playground lint-and-format` - Code quality checks
 
-**Visual Testing**: 
-Visual regression tests run locally only to avoid cross-platform font rendering differences. CI runs functional, accessibility, and responsive tests.
-
-For single component interactions, prefer Rust tests. Playwright is for visual verification and complete user flows.
+For single component interactions, prefer Rust tests. Playwright is for complete user flows.
 
 > [!note]
 > We are still evaluating Playwright integration for broader testing use cases.

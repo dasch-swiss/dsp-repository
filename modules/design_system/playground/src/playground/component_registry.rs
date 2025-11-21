@@ -86,6 +86,12 @@ const COMPONENTS: &[ComponentSpec] = &[
         doc_file: "link.md",
     },
     ComponentSpec {
+        name: "Logo Cloud",
+        route_name: "logo-cloud",
+        variants: &[ComponentVariantSpec { name: "Default", value: "default" }],
+        doc_file: "logo-cloud.md",
+    },
+    ComponentSpec {
         name: "Menu",
         route_name: "menu",
         variants: &[

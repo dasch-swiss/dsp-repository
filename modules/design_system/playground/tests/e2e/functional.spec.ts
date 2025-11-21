@@ -53,6 +53,66 @@ test.describe('Design System Components - Functional Tests', () => {
     });
   });
 
+  test.describe('Logo Cloud Component', () => {
+    test('default variant displays correctly', async ({ page }) => {
+      await page.goto('/?component=logo-cloud&theme=light&view=component-store&variant=default');
+
+      // Get logo cloud from iframe
+      const frame = page.locator('#component-store-iframe').contentFrame();
+
+      // Check title is visible
+      await expect(frame.locator('h2')).toBeVisible();
+      await expect(frame.locator('h2')).toHaveText("Trusted by the world's most innovative teams");
+
+      // Check that logos are present
+      const logos = frame.locator('img');
+      await expect(logos).toHaveCount(5);
+
+      // Verify first logo has proper attributes
+      const firstLogo = logos.first();
+      await expect(firstLogo).toBeVisible();
+      await expect(firstLogo).toHaveAttribute('alt', 'Transistor');
+      await expect(firstLogo).toHaveAttribute('width', '158');
+      await expect(firstLogo).toHaveAttribute('height', '48');
+    });
+
+    test('responsive grid classes are present', async ({ page }) => {
+      await page.goto('/?component=logo-cloud&theme=light&view=component-store&variant=default');
+
+      const frame = page.locator('#component-store-iframe').contentFrame();
+
+      // Check grid container exists with responsive classes
+      const gridContainer = frame.locator('div.grid');
+      await expect(gridContainer).toBeVisible();
+
+      // Verify grid has responsive classes
+      const gridClass = await gridContainer.getAttribute('class');
+      expect(gridClass).toContain('grid-cols-4');
+      expect(gridClass).toContain('sm:grid-cols-6');
+      expect(gridClass).toContain('lg:grid-cols-5');
+    });
+
+    test('all logos load successfully', async ({ page }) => {
+      await page.goto('/?component=logo-cloud&theme=light&view=component-store&variant=default');
+
+      const frame = page.locator('#component-store-iframe').contentFrame();
+      const logos = frame.locator('img');
+
+      // Wait for all logos to be visible
+      for (let i = 0; i < (await logos.count()); i++) {
+        await expect(logos.nth(i)).toBeVisible();
+      }
+
+      // Check that images have loaded (naturalWidth > 0)
+      const imageCount = await logos.count();
+      for (let i = 0; i < imageCount; i++) {
+        const logo = logos.nth(i);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const naturalWidth = await logo.evaluate((img: any) => img.naturalWidth);
+        expect(naturalWidth).toBeGreaterThan(0);
+      }
+    });
+  });
 
   test.describe('Shell Component', () => {
     test.skip('default fallback displays correctly', async ({ page }) => {
@@ -67,10 +127,10 @@ test.describe('Design System Components - Functional Tests', () => {
       await expect(frame.getByTestId('shell-header-logo')).toBeVisible();
       await expect(frame.getByTestId('shell-header-search')).toBeVisible();
       await expect(frame.getByTestId('shell-header-theme')).toBeVisible();
-      
+
       // Check content is present
       await expect(frame.getByText('Welcome to the Application Shell')).toBeVisible();
-      
+
       // Check header navigation items
       await expect(frame.locator('cds-header-nav').getByText('Home')).toBeVisible();
       await expect(frame.locator('cds-header-nav').getByText('Projects')).toBeVisible();
@@ -90,18 +150,16 @@ test.describe('Design System Components - Functional Tests', () => {
       await expect(frame.getByTestId('shell-header-logo')).toBeVisible();
       await expect(frame.getByTestId('shell-header-search')).toBeVisible();
       await expect(frame.getByTestId('shell-header-theme')).toBeVisible();
-      
+
       // Check content is present
       await expect(frame.getByText('Welcome to the Application Shell')).toBeVisible();
-      
+
       // Check header navigation items
       await expect(frame.locator('cds-header-nav').getByText('Home')).toBeVisible();
       await expect(frame.locator('cds-header-nav').getByText('Projects')).toBeVisible();
       await expect(frame.locator('cds-header-nav').getByText('Resources')).toBeVisible();
       await expect(frame.locator('cds-header-nav').getByText('Contact')).toBeVisible();
-      
     });
-
 
     test.skip('theme toggle functionality', async ({ page }) => {
       await page.goto('/?component=shell&theme=light&view=component-store');
@@ -114,7 +172,7 @@ test.describe('Design System Components - Functional Tests', () => {
       const themeToggle = frame.getByTestId('shell-header-theme');
       await expect(themeToggle).toBeVisible();
       await expect(themeToggle).toHaveAttribute('aria-label', 'Toggle theme');
-      
+
       // Click theme toggle (functional test - doesn't verify theme change)
       await themeToggle.click();
     });
@@ -130,12 +188,11 @@ test.describe('Design System Components - Functional Tests', () => {
       const searchButton = frame.getByTestId('shell-header-search');
       await expect(searchButton).toBeVisible();
       await expect(searchButton).toHaveAttribute('aria-label', 'Search');
-      
+
       // Click search button (functional test)
       await searchButton.click();
     });
   });
-
 
   test.describe.skip('Responsive Design', () => {
     test('mobile viewport displays correctly', async ({ page }) => {

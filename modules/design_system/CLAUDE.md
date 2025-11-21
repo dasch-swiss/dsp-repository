@@ -127,14 +127,13 @@ Interactive component testing using Playwright MCP during development:
 - **Accessibility**: Use snapshots to verify semantic structure
 
 ## Automated Testing (TypeScript + Playwright)
-Professional test suite with TypeScript, visual regression, and comprehensive tooling:
+Professional test suite with TypeScript and comprehensive tooling:
 
 ### Interactive Commands (for manual use)
 ```bash
 just playground install         # Install dependencies and browsers
 just playground test            # Run all tests (headless)
 just playground test-functional # Run functional tests only
-just playground test-visual     # Run visual regression tests only
 just playground test-headed     # Run with browser visible
 just playground test-ui         # Interactive test runner
 just playground test-debug      # Debug mode
@@ -145,7 +144,6 @@ just playground test-debug      # Debug mode
 just playground::claude::test-quick      # Quick test with first failure feedback
 just playground::claude::test           # Run all tests (non-blocking)
 just playground::claude::test-functional # Run functional tests only
-just playground::claude::test-visual    # Visual regression tests only
 just playground::claude::type-check     # TypeScript validation
 just playground::claude::lint           # Code linting
 just playground::claude::verify         # Silent test verification (exit code only)
@@ -158,32 +156,16 @@ just playground type-check      # TypeScript validation
 just playground lint            # Code linting
 just playground format          # Code formatting
 just playground lint-and-format # Both linting and formatting
+just playground report          # View test reports
 ```
-
-### Visual Testing
-```bash
-# Local visual baseline updates (platform-specific)
-just playground update-visuals         # Update visual baselines for current platform
-
-# Cleanup and reports
-just playground clean-visuals           # Clean visual snapshots
-just playground report                  # View test reports
-```
-
-**Note**: Visual tests are platform-specific and generate different baselines on different operating systems. Generate baselines on the same OS where tests will run.
 
 ### Test Structure
 - **Location**: `playground/tests/e2e/` (TypeScript files)
-- **Configs**: 
-  - `playground/playwright.config.ts` (functional tests only)
-  - `playground/playwright-visual.config.ts` (visual regression tests only)
-- **Test Files**:
-  - `functional.spec.ts` (page loads, interactions, accessibility, responsive)
-  - `visual.spec.ts` (screenshot comparisons)
+- **Config**: `playground/playwright.config.ts` (functional tests)
+- **Test Files**: `functional.spec.ts` (page loads, interactions, accessibility, responsive)
 - **Tooling**: ESLint v9 (flat config), Prettier, TypeScript with strict checking
 - **Linting**: `eslint.config.js` with TypeScript, Playwright, and Prettier integration
 - **Module**: Access via `just playground <command>` from project root
 - **CI**: `.github/workflows/playwright.yml` (automatic on design system changes)
-- **Screenshots**: Visual regression testing with 2% threshold tolerance (platform-specific)
-- **CI Testing**: Functional, accessibility, and responsive tests (visual tests are platform-specific)
+- **CI Testing**: Functional, accessibility, and responsive tests
 - **Reports**: HTML + JSON output for CI/CD integration

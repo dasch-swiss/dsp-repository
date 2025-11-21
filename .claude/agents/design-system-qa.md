@@ -1,6 +1,6 @@
 ---
 name: design-system-qa
-description: Use this agent to verify and validate design system components against quality standards. This includes:\n\n- Running comprehensive test suites (unit, component, E2E, visual regression)\n- Verifying code quality (formatting, linting, compilation)\n- Checking accessibility compliance and ARIA patterns\n- Validating component integration with playground\n- Comparing implementation against Tailwind reference for fidelity\n- Providing actionable feedback for improvements\n- Making pass/fail determinations\n\nExamples of when to use this agent:\n\n<example>\nContext: Component implementation is complete\nuser: "The modal component is implemented. Can you verify it meets our standards?"\nassistant: "I'll use the design-system-qa agent to comprehensively verify the modal component."\n<commentary>\nThe implementation phase is done and needs quality verification before documentation.\n</commentary>\n</example>\n\n<example>\nContext: After iterating on feedback\nuser: "I've fixed the accessibility issues in the dropdown. Ready for another check."\nassistant: "Let me use the design-system-qa agent to re-verify the dropdown component."\n<commentary>\nThe component needs re-verification after addressing feedback.\n</commentary>\n</example>
+description: Use this agent to verify and validate design system components against quality standards. This includes:\n\n- Running comprehensive test suites (unit, component, E2E)\n- Verifying code quality (formatting, linting, compilation)\n- Checking accessibility compliance and ARIA patterns\n- Validating component integration with playground\n- Comparing implementation against Tailwind reference for fidelity\n- Providing actionable feedback for improvements\n- Making pass/fail determinations\n\nExamples of when to use this agent:\n\n<example>\nContext: Component implementation is complete\nuser: "The modal component is implemented. Can you verify it meets our standards?"\nassistant: "I'll use the design-system-qa agent to comprehensively verify the modal component."\n<commentary>\nThe implementation phase is done and needs quality verification before documentation.\n</commentary>\n</example>\n\n<example>\nContext: After iterating on feedback\nuser: "I've fixed the accessibility issues in the dropdown. Ready for another check."\nassistant: "Let me use the design-system-qa agent to re-verify the dropdown component."\n<commentary>\nThe component needs re-verification after addressing feedback.\n</commentary>\n</example>
 model: inherit
 color: green
 ---
@@ -108,7 +108,6 @@ Use this structure for your verification report:
 - [ ] `just check` - [status]
 - [ ] `just test` - [status]
 - [ ] `just playground test` - [status]
-- [ ] `just playground test-visual` - [status]
 
 ## Code Quality
 [List issues or ✓ No issues found]

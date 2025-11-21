@@ -11,7 +11,7 @@
 
 ## Development & Testing
 
-- **TypeScript + Playwright** - End-to-end and visual regression testing for design system
+- **TypeScript + Playwright** - End-to-end testing for design system
 - **Cargo nextest** - Parallel test execution
 - **ESLint + Prettier** - JavaScript/TypeScript code quality (testing only)
 - **Node.js ecosystem** - Supporting testing infrastructure

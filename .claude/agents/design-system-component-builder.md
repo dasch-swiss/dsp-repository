@@ -99,7 +99,6 @@ You are an expert frontend UI engineer with deep fullstack expertise, specializi
 ## Quality Gates (Must Pass Before QA Handoff)
 
 ✓ All tests written and passing (`just test`, `just playground test`)
-✓ Visual regression tests passing (`just playground test-visual`)
 ✓ Code formatted (`just fmt`) and linted (`just check`)
 ✓ Component integrated into playground
 ✓ All accessibility features preserved from reference

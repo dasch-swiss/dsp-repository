@@ -25,15 +25,6 @@ test-file FILE:
 test-headless:
     npm run test -- --reporter=list --headed=false 2>/dev/null | head -20
 
-# Visual regression test only
-test-visual:
-    npm run test:visual -- --reporter=list 2>/dev/null
-
-# Update visual baselines (non-blocking)
-update-visuals:
-    npm run test:visual:update 2>/dev/null
-    @echo "✅ Visual baselines updated"
-
 # TypeScript compilation check
 type-check:
     @npm run type-check 2>/dev/null

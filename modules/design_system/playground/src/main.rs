@@ -37,6 +37,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/reload-ws", get(reload_ws))
         .nest_service("/assets", ServeDir::new("assets"))
         .nest_service("/playground-assets", ServeDir::new("modules/design_system/playground/assets"))
+        .nest_service("/design-system", ServeDir::new("modules/design_system"))
         .layer(Extension(notifier.clone()));
 
     let app = routes.layer(cors);

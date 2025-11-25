@@ -28,6 +28,17 @@ modules/
     └── playground/        # Full development environment with Rust server and TypeScript testing
 ```
 
+## Setup
+
+### First-Time Setup
+
+**Tailwind CSS CLI**: The project uses the Tailwind CSS standalone binary (not npm). First-time setup:
+```bash
+just install-tailwind-cli      # Downloads platform-specific binary to tools/
+```
+
+This downloads the appropriate binary for your platform (macOS/Linux, arm64/x64). The binary is **not** in git and must be downloaded locally.
+
 ## Development Commands (via justfile)
 ```bash
 # Core development
@@ -37,8 +48,13 @@ just test                      # Run all tests
 just run                       # Run main server (release mode)
 
 # Development workflow
-just watch                     # Watch for changes and run tests  
+just watch                     # Watch for changes and run tests
 just run-watch-playground      # Run design system playground with hot reload
+
+# Tailwind CSS
+just tailwind-dev              # Build CSS (development, unminified)
+just tailwind-build            # Build CSS (production, minified)
+just tailwind-watch            # Watch and rebuild CSS on changes
 
 # Design system playground
 just playground install         # Install frontend dependencies and browsers

@@ -20,8 +20,8 @@ export default defineConfig({
 
   // Reporter to use
   reporter: [
-    ['html', { outputFolder: 'playwright-report-visual' }],
-    ['json', { outputFile: 'test-results-visual.json' }],
+    ['html', { outputFolder: 'tests/output/html-report-visual' }],
+    ['json', { outputFile: 'tests/output/test-results-visual.json' }],
   ],
 
   use: {
@@ -100,5 +100,5 @@ export default defineConfig({
   },
 
   // Output directories
-  outputDir: './output/visual-test-results',
+  outputDir: './tests/output/visual-test-results',
 });

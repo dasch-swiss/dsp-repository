@@ -1,0 +1,18 @@
+/**
+ * Tailwind CSS v4 - Input File
+ *
+ * This file imports Tailwind CSS and defines custom theme configuration.
+ * See: https://tailwindcss.com/blog/tailwindcss-v4
+ */
+
+@import "tailwindcss";
+
+/**
+ * Custom theme configuration can be added here using @theme directive
+ *
+ * Example:
+ * @theme {
+ *   --color-primary: #3b82f6;
+ *   --font-display: "Inter", sans-serif;
+ * }
+ */

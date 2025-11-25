@@ -30,13 +30,13 @@ target/
 node_modules/
 
 # Playwright test artifacts (but NOT baseline screenshots)
-test-results/
-playwright-report/
-playwright-report-visual/
-**/playwright/.cache/
-**/output/
-
-modules/design_system/playground/test-results.json
-modules/design_system/playground/test-results-visual.json
+modules/design_system/playground/tests/output/
+modules/design_system/playground/tests/.cache/
 
 .DS_Store
+
+# Tailwind CSS CLI binary (downloaded via `just install-tailwind-cli`)
+tools/tailwindcss
+
+# Generated Tailwind CSS output (built from input.css)
+modules/design_system/tailwind.css

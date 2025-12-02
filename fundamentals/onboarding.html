@@ -278,11 +278,7 @@ the majority of tests are unit tests, with a smaller number of integration tests
 <p>Unit and integration tests are written in Rust, following the Rust testing best practices.
 End-to-end tests are written either in Rust or in JavaScript using Playwright.</p>
 <p>We are looking into how to integrate Playwright into our setup.
-Playwright may be used for the following:</p>
-<ul>
-<li>End-to-end tests simulating <em>entire user flows</em>.</li>
-<li>Visual regression tests.</li>
-</ul>
+Playwright may be used for end-to-end tests simulating <em>entire user flows</em>.</p>
 <p>For single user interactions, we should not need Playwright.
 For these, we should use the Rust testing framework.</p>
 <h3 id="domain-driven-design"><a class="header" href="#domain-driven-design">Domain Driven Design</a></h3>
@@ -373,7 +369,7 @@ where we can test and experiment with the components.</p>
 <li>Component isolation via iframe rendering</li>
 <li>Variant selection and theme switching</li>
 <li>Live reload via WebSocket</li>
-<li>TypeScript/Playwright tests for functional, accessibility, and visual regression testing</li>
+<li>TypeScript/Playwright tests for functional and accessibility testing</li>
 </ul>
 <p>For each component, we create a page that shows the component in action,
 in all its variants and states.

@@ -262,7 +262,6 @@ end-to-end tests are written either in Rust or in JavaScript using Playwright.</
 <ul>
 <li>TypeScript-based Playwright setup with tooling</li>
 <li>Functional, accessibility, and responsive design testing in CI</li>
-<li>Visual regression testing (local development only)</li>
 <li>ESLint, Prettier, and TypeScript checking</li>
 <li>HTML + JSON reporters for CI/CD integration</li>
 <li>Best for: End-to-end user flows, automated regression detection</li>
@@ -271,16 +270,12 @@ end-to-end tests are written either in Rust or in JavaScript using Playwright.</
 <p><strong>Key Commands</strong>:</p>
 <ul>
 <li><code>just playground test</code> - Run all tests</li>
-<li><code>just playground test-visual</code> - Visual regression tests</li>
 <li><code>just playground test-ui</code> - Interactive test runner</li>
 <li><code>just playground test-debug</code> - Debug mode with browser DevTools</li>
-<li><code>just playground update-visuals</code> - Update visual baselines (platform-specific)</li>
 <li><code>just playground type-check</code> - TypeScript validation</li>
 <li><code>just playground lint-and-format</code> - Code quality checks</li>
 </ul>
-<p><strong>Visual Testing</strong>:
-Visual regression tests run locally only to avoid cross-platform font rendering differences. CI runs functional, accessibility, and responsive tests.</p>
-<p>For single component interactions, prefer Rust tests. Playwright is for visual verification and complete user flows.</p>
+<p>For single component interactions, prefer Rust tests. Playwright is for complete user flows.</p>
 <div class="mdbook-alerts mdbook-alerts-note">
 <p class="mdbook-alerts-title">
   <span class="mdbook-alerts-icon"></span>

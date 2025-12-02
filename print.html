@@ -891,7 +891,7 @@ Additional component variants may be added, when necessary.</li>
 <h3 id="playground"><a class="header" href="#playground">Playground</a></h3>
 <ul>
 <li><strong>URL</strong>: http://localhost:3400 (via <code>just run-watch-playground</code>)</li>
-<li><strong>Architecture</strong>: Full-featured development environment with Rust server, TypeScript testing, and visual regression</li>
+<li><strong>Architecture</strong>: Full-featured development environment with Rust server and TypeScript testing</li>
 <li><strong>Features</strong>:
 <ul>
 <li><strong>Shell Interface</strong>: Sidebar navigation with component list and active states</li>
@@ -902,12 +902,11 @@ Additional component variants may be added, when necessary.</li>
 <li><strong>Live Reload</strong>: WebSocket-based automatic refresh on file changes</li>
 </ul>
 </li>
-<li><strong>Testing</strong>: Comprehensive TypeScript/Playwright test suite with functional, accessibility, responsive, and visual regression tests</li>
+<li><strong>Testing</strong>: Comprehensive TypeScript/Playwright test suite with functional, accessibility, and responsive tests</li>
 <li><strong>Commands</strong>:
 <ul>
 <li><code>just playground install</code> - Install frontend dependencies and browsers</li>
 <li><code>just playground test</code> - Run all automated tests</li>
-<li><code>just playground test-visual</code> - Run visual regression tests</li>
 <li><code>just playground test-headed</code> - Run tests with browser visible</li>
 </ul>
 </li>
@@ -3549,7 +3548,7 @@ and identify opportunities for further improvements.</p>
 </ul>
 <h2 id="development--testing"><a class="header" href="#development--testing">Development &amp; Testing</a></h2>
 <ul>
-<li><strong>TypeScript + Playwright</strong> - End-to-end and visual regression testing for design system</li>
+<li><strong>TypeScript + Playwright</strong> - End-to-end testing for design system</li>
 <li><strong>Cargo nextest</strong> - Parallel test execution</li>
 <li><strong>ESLint + Prettier</strong> - JavaScript/TypeScript code quality (testing only)</li>
 <li><strong>Node.js ecosystem</strong> - Supporting testing infrastructure</li>
@@ -3648,7 +3647,6 @@ end-to-end tests are written either in Rust or in JavaScript using Playwright.</
 <ul>
 <li>TypeScript-based Playwright setup with tooling</li>
 <li>Functional, accessibility, and responsive design testing in CI</li>
-<li>Visual regression testing (local development only)</li>
 <li>ESLint, Prettier, and TypeScript checking</li>
 <li>HTML + JSON reporters for CI/CD integration</li>
 <li>Best for: End-to-end user flows, automated regression detection</li>
@@ -3657,16 +3655,12 @@ end-to-end tests are written either in Rust or in JavaScript using Playwright.</
 <p><strong>Key Commands</strong>:</p>
 <ul>
 <li><code>just playground test</code> - Run all tests</li>
-<li><code>just playground test-visual</code> - Visual regression tests</li>
 <li><code>just playground test-ui</code> - Interactive test runner</li>
 <li><code>just playground test-debug</code> - Debug mode with browser DevTools</li>
-<li><code>just playground update-visuals</code> - Update visual baselines (platform-specific)</li>
 <li><code>just playground type-check</code> - TypeScript validation</li>
 <li><code>just playground lint-and-format</code> - Code quality checks</li>
 </ul>
-<p><strong>Visual Testing</strong>:
-Visual regression tests run locally only to avoid cross-platform font rendering differences. CI runs functional, accessibility, and responsive tests.</p>
-<p>For single component interactions, prefer Rust tests. Playwright is for visual verification and complete user flows.</p>
+<p>For single component interactions, prefer Rust tests. Playwright is for complete user flows.</p>
 <div class="mdbook-alerts mdbook-alerts-note">
 <p class="mdbook-alerts-title">
   <span class="mdbook-alerts-icon"></span>
@@ -3793,11 +3787,7 @@ the majority of tests are unit tests, with a smaller number of integration tests
 <p>Unit and integration tests are written in Rust, following the Rust testing best practices.
 End-to-end tests are written either in Rust or in JavaScript using Playwright.</p>
 <p>We are looking into how to integrate Playwright into our setup.
-Playwright may be used for the following:</p>
-<ul>
-<li>End-to-end tests simulating <em>entire user flows</em>.</li>
-<li>Visual regression tests.</li>
-</ul>
+Playwright may be used for end-to-end tests simulating <em>entire user flows</em>.</p>
 <p>For single user interactions, we should not need Playwright.
 For these, we should use the Rust testing framework.</p>
 <h3 id="domain-driven-design"><a class="header" href="#domain-driven-design">Domain Driven Design</a></h3>
@@ -3888,7 +3878,7 @@ where we can test and experiment with the components.</p>
 <li>Component isolation via iframe rendering</li>
 <li>Variant selection and theme switching</li>
 <li>Live reload via WebSocket</li>
-<li>TypeScript/Playwright tests for functional, accessibility, and visual regression testing</li>
+<li>TypeScript/Playwright tests for functional and accessibility testing</li>
 </ul>
 <p>For each component, we create a page that shows the component in action,
 in all its variants and states.

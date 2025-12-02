@@ -109,6 +109,21 @@ stop-playground:
 check-playground:
     @curl -s -o /dev/null -w "%{http_code}" http://localhost:3400 && echo " - Playground server is running at http://localhost:3400" || echo "Playground server is not running"
 
+# Build Tailwind CSS (development - unminified)
+tailwind-dev:
+    #!/usr/bin/env bash
+    cd modules/design_system && npx @tailwindcss/cli -i input.css -o tailwind.css
+
+# Build Tailwind CSS (production - minified)
+tailwind-build:
+    #!/usr/bin/env bash
+    cd modules/design_system && npx @tailwindcss/cli -i input.css -o tailwind.css --minify
+
+# Watch Tailwind CSS for changes (development)
+tailwind-watch:
+    #!/usr/bin/env bash
+    cd modules/design_system && npx @tailwindcss/cli -i input.css -o tailwind.css --watch
+
 # Run an example pages app (e.g., just run-example basic-website)
 run-example APP:
     cargo run --bin {{ APP }}

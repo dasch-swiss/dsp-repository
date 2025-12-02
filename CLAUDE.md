@@ -30,14 +30,28 @@ modules/
 
 ## Setup
 
+### Prerequisites
+
+- **Node.js and npm**: Required for the design system playground and Tailwind CSS CLI
+- **Rust**: Toolchain 1.86.0
+- **Just**: Command runner for development tasks
+
 ### First-Time Setup
 
-**Tailwind CSS CLI**: The project uses the Tailwind CSS standalone binary (not npm). First-time setup:
-```bash
-just install-tailwind-cli      # Downloads platform-specific binary to tools/
-```
+1. Install Rust tools:
+   ```bash
+   just install-requirements
+   ```
 
-This downloads the appropriate binary for your platform (macOS/Linux, arm64/x64). The binary is **not** in git and must be downloaded locally.
+2. Install Node.js dependencies for design system:
+   ```bash
+   cd modules/design_system && npm install
+   ```
+
+3. Install Node.js dependencies for playground (optional, for testing):
+   ```bash
+   just playground install
+   ```
 
 ## Development Commands (via justfile)
 ```bash
@@ -69,7 +83,7 @@ just docs-build               # Build mdBook documentation
 just docs-serve               # Serve docs at localhost:3000
 
 # Setup
-just install-requirements     # Install cargo-watch, mdbook, mdbook-alerts
+just install-requirements     # Install Rust tools: cargo-watch, mdbook, mdbook-alerts
 ```
 
 ## Tech Stack

@@ -35,8 +35,5 @@ modules/design_system/playground/tests/.cache/
 
 .DS_Store
 
-# Tailwind CSS CLI binary (downloaded via `just install-tailwind-cli`)
-tools/tailwindcss
-
 # Generated Tailwind CSS output (built from input.css)
 modules/design_system/tailwind.css

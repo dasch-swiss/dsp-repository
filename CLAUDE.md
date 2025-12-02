@@ -28,6 +28,31 @@ modules/
     └── playground/        # Full development environment with Rust server, TypeScript testing, and visual regression
 ```
 
+## Setup
+
+### Prerequisites
+
+- **Node.js and npm**: Required for the design system playground and Tailwind CSS CLI
+- **Rust**: Toolchain 1.86.0
+- **Just**: Command runner for development tasks
+
+### First-Time Setup
+
+1. Install Rust tools:
+   ```bash
+   just install-requirements
+   ```
+
+2. Install Node.js dependencies for design system:
+   ```bash
+   cd modules/design_system && npm install
+   ```
+
+3. Install Node.js dependencies for playground (optional, for testing):
+   ```bash
+   just playground install
+   ```
+
 ## Development Commands (via justfile)
 ```bash
 # Core development
@@ -37,8 +62,13 @@ just test                      # Run all tests
 just run                       # Run main server (release mode)
 
 # Development workflow
-just watch                     # Watch for changes and run tests  
+just watch                     # Watch for changes and run tests
 just run-watch-playground      # Run design system playground with hot reload
+
+# Tailwind CSS
+just tailwind-dev              # Build CSS (development, unminified)
+just tailwind-build            # Build CSS (production, minified)
+just tailwind-watch            # Watch and rebuild CSS on changes
 
 # Design system playground
 just playground install         # Install frontend dependencies and browsers
@@ -54,7 +84,7 @@ just docs-build               # Build mdBook documentation
 just docs-serve               # Serve docs at localhost:3000
 
 # Setup
-just install-requirements     # Install cargo-watch, mdbook, mdbook-alerts
+just install-requirements     # Install Rust tools: cargo-watch, mdbook, mdbook-alerts
 ```
 
 ## Tech Stack

@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Button - DSP-Repository Developer Documentation</title>
+        <title>Hero - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -242,154 +242,134 @@
 }
 
 </style>
-<h1 id="button"><a class="header" href="#button">Button</a></h1>
-<p>Interactive button component for user actions using the builder pattern.</p>
-<h2 id="usage-guidelines"><a class="header" href="#usage-guidelines">Usage Guidelines</a></h2>
-<p>Use buttons to trigger actions, submit forms, or navigate to different sections of the application. Choose the appropriate variant based on the action's importance and context.</p>
-<h2 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h2>
-<p>The button component uses a builder pattern for flexible configuration:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>use components::{button, ButtonVariant};
-
-// Simple button with default primary variant
-let btn = button("Click me").build();
-
-// Button with custom configuration
-let custom = button("Submit")
-    .variant(ButtonVariant::Secondary)
-    .with_id("submit-btn")
-    .with_test_id("submit-button")
-    .onclick("@post('/api/submit')")
-    .disabled()
-    .build();
-<span class="boring">}</span></code></pre></pre>
-<h2 id="builder-methods"><a class="header" href="#builder-methods">Builder Methods</a></h2>
-<p>All button builder methods can be chained in any order. Call <code>.build()</code> to render the final component.</p>
-<h3 id="text-buttons"><a class="header" href="#text-buttons">Text Buttons</a></h3>
+<h1 id="hero"><a class="header" href="#hero">Hero</a></h1>
+<p>Landing page hero section component with headline, description, call-to-action buttons, and hero image.</p>
+<p>⚠️ <strong>Usage Note</strong>: This component should not be used directly in applications. Use it through a higher-order shell component that provides complete page layout and structure.</p>
+<p>⚠️ <strong>Brand Adjustment Required</strong>: This component has not yet been adjusted to fit the DaSCH brand identity.</p>
+<h2 id="features"><a class="header" href="#features">Features</a></h2>
 <ul>
-<li><strong><code>.variant(ButtonVariant)</code></strong> - Sets the button style (Primary or Secondary). Default: Primary</li>
-<li><strong><code>.with_id(impl Into&lt;String&gt;)</code></strong> - Sets the HTML <code>id</code> attribute for the button</li>
-<li><strong><code>.with_test_id(impl Into&lt;String&gt;)</code></strong> - Sets the <code>data-testid</code> attribute for testing</li>
-<li><strong><code>.onclick(impl Into&lt;String&gt;)</code></strong> - Sets the DataStar action handler for click events</li>
-<li><strong><code>.disabled()</code></strong> - Marks the button as disabled</li>
-<li><strong><code>.with_leading_icon(Markup)</code></strong> - Adds an icon before the button text</li>
-<li><strong><code>.with_trailing_icon(Markup)</code></strong> - Adds an icon after the button text</li>
-<li><strong><code>.popovertarget(impl Into&lt;String&gt;)</code></strong> - Sets the popover target for triggering menus</li>
-<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup</li>
+<li>Large, prominent headline with responsive typography</li>
+<li>Descriptive text with proper text hierarchy</li>
+<li>Announcement banner with link</li>
+<li>Primary and secondary call-to-action buttons</li>
+<li>Hero image with decorative SVG elements</li>
+<li>Responsive design that adapts to different screen sizes</li>
+<li>Dark mode support</li>
 </ul>
-<h3 id="icon-buttons"><a class="header" href="#icon-buttons">Icon Buttons</a></h3>
+<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
+<p>The hero component uses a single <code>HeroConfig</code> struct:</p>
+<h3 id="heroconfig"><a class="header" href="#heroconfig">HeroConfig</a></h3>
 <ul>
-<li><strong><code>.with_id(impl Into&lt;String&gt;)</code></strong> - Sets the HTML <code>id</code> attribute for the button</li>
-<li><strong><code>.with_test_id(impl Into&lt;String&gt;)</code></strong> - Sets the <code>data-testid</code> attribute for testing</li>
-<li><strong><code>.with_color(impl Into&lt;String&gt;)</code></strong> - Sets custom color classes (overrides default gray)</li>
-<li><strong><code>.onclick(impl Into&lt;String&gt;)</code></strong> - Sets the DataStar action handler for click events</li>
-<li><strong><code>.disabled()</code></strong> - Marks the button as disabled</li>
-<li><strong><code>.popovertarget(impl Into&lt;String&gt;)</code></strong> - Sets the popover target for triggering menus</li>
-<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup</li>
+<li><code>headline</code>: Main hero headline text</li>
+<li><code>description</code>: Supporting description text</li>
+<li><code>announcement_text</code>: Text for the announcement banner</li>
+<li><code>announcement_link_text</code>: Link text within announcement</li>
+<li><code>announcement_href</code>: URL for announcement link</li>
+<li><code>primary_button_text</code>: Text for primary CTA button</li>
+<li><code>primary_button_href</code>: URL for primary CTA</li>
+<li><code>secondary_button_text</code>: Text for secondary CTA button</li>
+<li><code>secondary_button_href</code>: URL for secondary CTA</li>
+<li><code>image_url</code>: URL for hero image</li>
+<li><code>image_alt</code>: Alt text for hero image</li>
 </ul>
-<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
-<h3 id="button-with-icon"><a class="header" href="#button-with-icon">Button with Icon</a></h3>
+<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use components::{button, icon, IconType};
+</span>use components::hero::{hero, HeroConfig};
 
-let download = button("Download")
-    .with_leading_icon(icon::icon(IconType::ChevronDown))
-    .onclick("console.log('downloading')")
-    .build();
+let config = HeroConfig {
+    headline: "DaSCH Service Platform",
+    description: "Long-term archive for humanities research data with discovery and presentation tools for researchers worldwide.",
+    announcement_text: "New data management features now available",
+    announcement_link_text: "Learn more",
+    announcement_href: "/news/data-management-update",
+    primary_button_text: "Get Started",
+    primary_button_href: "/register",
+    secondary_button_text: "View Demo",
+    secondary_button_href: "/demo",
+    image_url: "/assets/images/platform-hero.jpg",
+    image_alt: "DaSCH platform interface showing research data",
+};
+
+let markup = hero(&amp;config);
 <span class="boring">}</span></code></pre></pre>
-<h3 id="complete-example"><a class="header" href="#complete-example">Complete Example</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let complex = button("Options")
-    .variant(ButtonVariant::Secondary)
-    .with_id("options-button")
-    .with_test_id("options-btn")
-    .with_leading_icon(icon::icon(IconType::Code))
-    .with_trailing_icon(icon::icon(IconType::ChevronDown))
-    .onclick("@post('/api/options')")
-    .build();
-<span class="boring">}</span></code></pre></pre>
-<h2 id="variants"><a class="header" href="#variants">Variants</a></h2>
-<h3 id="primary"><a class="header" href="#primary">Primary</a></h3>
-<p>The primary button is used for the most important action on a page. Use sparingly - typically only one primary button per page or section.</p>
-<h3 id="secondary"><a class="header" href="#secondary">Secondary</a></h3>
-<p>Secondary buttons are used for less important actions that still need emphasis. They can be used multiple times on a page.</p>
-<h2 id="icon-buttons-1"><a class="header" href="#icon-buttons-1">Icon Buttons</a></h2>
-<p>Icon buttons contain only an icon without text, providing a compact way to represent actions. They use subtle gray colors with hover states by default and are keyboard accessible.</p>
-<h3 id="when-to-use-icon-buttons"><a class="header" href="#when-to-use-icon-buttons">When to use icon buttons</a></h3>
+<h2 id="design-elements"><a class="header" href="#design-elements">Design Elements</a></h2>
+<h3 id="layout"><a class="header" href="#layout">Layout</a></h3>
 <ul>
-<li>Compact UI spaces (toolbars, headers, mobile interfaces)</li>
-<li>Common actions with universally recognized icons (close, menu, search)</li>
-<li>Secondary actions that don't need text labels</li>
-<li>As triggers for menus and popovers</li>
+<li>Two-column layout on large screens</li>
+<li>Single column stacked layout on mobile</li>
+<li>Content area with max-width constraints</li>
+<li>Hero image fills right half on desktop</li>
 </ul>
-<p>Icon buttons should always use semantically meaningful icons that users can recognize. Consider adding tooltips or aria-labels for accessibility.</p>
-<h3 id="basic-icon-button"><a class="header" href="#basic-icon-button">Basic Icon Button</a></h3>
+<h3 id="typography"><a class="header" href="#typography">Typography</a></h3>
+<ul>
+<li>Large headline (text-5xl to text-7xl responsive)</li>
+<li>Medium-weight description text</li>
+<li>Proper text hierarchy and spacing</li>
+</ul>
+<h3 id="interactive-elements"><a class="header" href="#interactive-elements">Interactive Elements</a></h3>
+<ul>
+<li>Primary button with strong visual emphasis</li>
+<li>Secondary button with subtle styling</li>
+<li>Announcement banner with hover effects</li>
+<li>Responsive button sizing</li>
+</ul>
+<h2 id="shell-integration"><a class="header" href="#shell-integration">Shell Integration</a></h2>
+<p>This component is designed to be used within a shell component's main content area:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use components::{icon_button, icon, IconType};
-
-// Default icon button with gray colors
-let close = icon_button(icon::icon(IconType::Close)).build();
-
-// Icon button with onclick handler
-let interactive = icon_button(icon::icon(IconType::Star))
-    .onclick("console.log('starred')")
-    .build();
-
-// Disabled icon button
-let disabled = icon_button(icon::icon(IconType::Close))
-    .disabled()
-    .build();
-
-// Icon button with ID
-let identified = icon_button(icon::icon(IconType::Star))
-    .with_id("star-button")
-    .onclick("console.log('starred')")
-    .build();
+</span>pub fn landing_page_shell() -&gt; Markup {
+    html! {
+        (header(nav_elements, &amp;header_config))
+        main {
+            (hero(&amp;hero_config))
+            // ... other page content
+        }
+        (footer(&amp;footer_config))
+    }
+}
 <span class="boring">}</span></code></pre></pre>
-<h3 id="icon-buttons-with-custom-colors"><a class="header" href="#icon-buttons-with-custom-colors">Icon Buttons with Custom Colors</a></h3>
-<p>Use the <code>.color()</code> method to override the default colors:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>use components::{icon_button, icon, IconType};
-
-// Yellow star button
-let star = icon_button(icon::icon(IconType::Star))
-    .with_color("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950")
-    .onclick("console.log('starred')")
-    .build();
-
-// Indigo close button
-let indigo_close = icon_button(icon::icon(IconType::Close))
-    .with_color("text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400")
-    .build();
-
-// Red danger button with interaction
-let delete = icon_button(icon::icon(IconType::Flag))
-    .with_color("text-red-500 hover:bg-red-50 dark:hover:bg-red-950")
-    .onclick("@post('/api/flag')")
-    .build();
-<span class="boring">}</span></code></pre></pre>
-<h2 id="accessibility-notes"><a class="header" href="#accessibility-notes">Accessibility Notes</a></h2>
+<h2 id="brand-customization-required"><a class="header" href="#brand-customization-required">Brand Customization Required</a></h2>
+<p>Before production use, customize for DaSCH brand:</p>
+<ol>
+<li>Update color scheme (currently uses generic indigo)</li>
+<li>Replace placeholder content with actual DaSCH messaging</li>
+<li>Use actual DaSCH hero images</li>
+<li>Adjust button styling to match DaSCH design</li>
+<li>Update typography to use DaSCH font family</li>
+<li>Customize spacing and sizing for brand requirements</li>
+</ol>
+<h2 id="responsive-behavior"><a class="header" href="#responsive-behavior">Responsive Behavior</a></h2>
+<ul>
+<li><strong>Mobile</strong>: Single column layout with adjusted typography sizes</li>
+<li><strong>Tablet</strong>: Maintains single column with optimized spacing</li>
+<li><strong>Desktop</strong>: Two-column layout with hero image</li>
+<li><strong>Large Screens</strong>: Maximum width constraints with centered content</li>
+</ul>
+<h2 id="accessibility"><a class="header" href="#accessibility">Accessibility</a></h2>
+<ul>
+<li>Semantic HTML structure with proper headings hierarchy</li>
+<li>Alt text support for hero images</li>
+<li>Proper focus management for interactive elements</li>
+<li>Screen reader friendly announcement banner</li>
+<li>Keyboard navigation support</li>
+</ul>
 <h2 id="implementation-status"><a class="header" href="#implementation-status">Implementation Status</a></h2>
-<p>🚧 Functional but incomplete - styling verification needed, missing accessibility features</p>
-<h2 id="design-notes"><a class="header" href="#design-notes">Design Notes</a></h2>
-<p>The button component follows Tailwind design patterns with DSP brand customizations. Spacing and typography align with the design system tokens.</p>
-<h3 id="button-vs-link"><a class="header" href="#button-vs-link">Button vs. Link</a></h3>
-<p>Use buttons for actions that trigger changes or submit data. Use links for navigation to other pages or sections. Buttons should not be used for navigation purposes.</p>
+<p>✅ Migrated from experimental implementation
+✅ Responsive design across all breakpoints
+✅ Semantic HTML and accessibility features
+⚠️ DaSCH brand customization required
+⚠️ Shell component integration pending</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../design_system/component_architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../design_system/components/header.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../../design_system/components/dropdown.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../design_system/components/icon.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -399,11 +379,11 @@ let delete = icon_button(icon::icon(IconType::Flag))
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../design_system/component_architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../design_system/components/header.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../../design_system/components/dropdown.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../design_system/components/icon.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

@@ -1336,6 +1336,687 @@ let delete = icon_button(icon::icon(IconType::Flag))
 }
 
 </style>
+<h1 id="dropdown"><a class="header" href="#dropdown">Dropdown</a></h1>
+<p>A dropdown menu component that combines a trigger button with a menu for displaying actions or navigation options.</p>
+<h2 id="variants-1"><a class="header" href="#variants-1">Variants</a></h2>
+<h3 id="secondary-button"><a class="header" href="#secondary-button">Secondary Button</a></h3>
+<p>A dropdown with a secondary-styled button and chevron down icon. Best for primary dropdown actions with visible labels.</p>
+<h3 id="morevert-icon"><a class="header" href="#morevert-icon">MoreVert Icon</a></h3>
+<p>A dropdown with a three-dot vertical icon button. Best for overflow menus with contextual actions.</p>
+<h3 id="hamburger-icon"><a class="header" href="#hamburger-icon">Hamburger Icon</a></h3>
+<p>A dropdown with a hamburger menu icon button. Best for navigation menus, especially on mobile.</p>
+<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
+<p>The dropdown component composes existing button and menu components. Build a vector of menu items and pass it to the menu builder using <code>with_items()</code>:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::{dropdown, menu, menu_item};
+
+// Secondary button dropdown with label
+let items = vec![
+    menu_item::link_menu_item("Edit", "/edit"),
+    menu_item::link_menu_item("Duplicate", "/duplicate"),
+    menu_item::menu_item_divider(),
+    menu_item::button_menu_item("Delete"),
+];
+
+dropdown::dropdown_secondary(
+    "actions-dropdown",
+    "Options",
+    menu::menu().with_items(items)
+)
+
+// Icon button dropdowns
+let items = vec![
+    menu_item::link_menu_item("Settings", "/settings"),
+    menu_item::link_menu_item("Help", "/help"),
+];
+
+dropdown::dropdown_more_vert(
+    "more-menu",
+    menu::menu().with_items(items)
+)
+
+let items = vec![
+    menu_item::link_menu_item("Home", "/"),
+    menu_item::link_menu_item("About", "/about"),
+    menu_item::link_menu_item("Contact", "/contact"),
+];
+
+dropdown::dropdown_hamburger(
+    "nav-menu",
+    menu::menu().with_items(items)
+)
+<span class="boring">}</span></code></pre></pre>
+<h2 id="accessibility"><a class="header" href="#accessibility">Accessibility</a></h2>
+<ul>
+<li>Uses semantic button elements for triggers</li>
+<li>Menu uses HTML Popover API for proper focus management</li>
+<li>Keyboard navigation supported (Escape to close, arrow keys to navigate)</li>
+<li>ARIA attributes automatically applied via menu component</li>
+</ul>
+<h2 id="implementation-status-1"><a class="header" href="#implementation-status-1">Implementation Status</a></h2>
+<p>✅ Complete</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="footer"><a class="header" href="#footer">Footer</a></h1>
+<p>Comprehensive site footer component with company information, navigation links, social media, and legal information.</p>
+<p>⚠️ <strong>Usage Note</strong>: This component should not be used directly in applications. Use it through a higher-order shell component that provides complete page layout and structure.</p>
+<p>⚠️ <strong>Brand Adjustment Required</strong>: This component has not yet been adjusted to fit the DaSCH brand identity.</p>
+<h2 id="features"><a class="header" href="#features">Features</a></h2>
+<ul>
+<li>Company logo with light/dark mode support</li>
+<li>Company description text</li>
+<li>Social media links with SVG icons</li>
+<li>Multi-column navigation sections</li>
+<li>Copyright information</li>
+<li>Responsive grid layout</li>
+<li>Dark mode support</li>
+<li>Semantic HTML structure</li>
+</ul>
+<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
+<p>The footer uses a single <code>FooterConfig</code> struct:</p>
+<h3 id="footerconfig"><a class="header" href="#footerconfig">FooterConfig</a></h3>
+<ul>
+<li><code>company_name</code>: Company name for logo alt text</li>
+<li><code>description</code>: Company description text</li>
+<li><code>copyright_text</code>: Copyright notice text</li>
+<li><code>logo_light_url</code>: URL for light theme logo</li>
+<li><code>logo_dark_url</code>: URL for dark theme logo</li>
+</ul>
+<h2 id="usage-1"><a class="header" href="#usage-1">Usage</a></h2>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::footer::{footer, FooterConfig};
+
+let config = FooterConfig {
+    company_name: "DaSCH",
+    description: "Digital infrastructure for humanities research data preservation, discovery, and long-term access.",
+    copyright_text: "© 2024 DaSCH, University of Basel. All rights reserved.",
+    logo_light_url: "/assets/logos/dasch-light.svg",
+    logo_dark_url: "/assets/logos/dasch-dark.svg",
+};
+
+let markup = footer(&amp;config);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="content-sections"><a class="header" href="#content-sections">Content Sections</a></h2>
+<h3 id="company-information"><a class="header" href="#company-information">Company Information</a></h3>
+<ul>
+<li>Logo with automatic theme switching</li>
+<li>Descriptive text about the organization</li>
+<li>Social media links</li>
+</ul>
+<h3 id="navigation-links"><a class="header" href="#navigation-links">Navigation Links</a></h3>
+<p>The footer includes four predefined navigation sections:</p>
+<ol>
+<li><strong>Solutions</strong>: Marketing, Analytics, Automation, Commerce, Insights</li>
+<li><strong>Support</strong>: Submit ticket, Documentation, Guides</li>
+<li><strong>Company</strong>: About, Blog, Jobs, Press</li>
+<li><strong>Legal</strong>: Terms of service, Privacy policy, License</li>
+</ol>
+<h3 id="social-media"><a class="header" href="#social-media">Social Media</a></h3>
+<p>Pre-configured social media icons and links:</p>
+<ul>
+<li>Facebook</li>
+<li>Instagram</li>
+<li>X (Twitter)</li>
+<li>GitHub</li>
+<li>YouTube</li>
+</ul>
+<h2 id="layout-structure"><a class="header" href="#layout-structure">Layout Structure</a></h2>
+<h3 id="desktop-layout"><a class="header" href="#desktop-layout">Desktop Layout</a></h3>
+<ul>
+<li>Three-column grid layout</li>
+<li>Company info in first column</li>
+<li>Navigation links in remaining columns</li>
+<li>Copyright section spans full width</li>
+</ul>
+<h3 id="mobile-layout"><a class="header" href="#mobile-layout">Mobile Layout</a></h3>
+<ul>
+<li>Single column stacked layout</li>
+<li>Proper spacing and typography adjustments</li>
+<li>Maintained visual hierarchy</li>
+</ul>
+<h2 id="shell-integration"><a class="header" href="#shell-integration">Shell Integration</a></h2>
+<p>This component is designed to be used at the bottom of shell components:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn page_shell(content: Markup) -&gt; Markup {
+    html! {
+        (header(nav_elements, &amp;header_config))
+        main { (content) }
+        (footer(&amp;footer_config))
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="brand-customization-required"><a class="header" href="#brand-customization-required">Brand Customization Required</a></h2>
+<p>Before production use, customize for DaSCH brand:</p>
+<ol>
+<li>Replace placeholder logos with actual DaSCH logos</li>
+<li>Update navigation sections with relevant DaSCH links</li>
+<li>Update social media links to actual DaSCH accounts</li>
+<li>Customize company description for DaSCH</li>
+<li>Update color scheme to match DaSCH brand</li>
+<li>Adjust typography to use DaSCH font family</li>
+<li>Replace generic footer links with actual page URLs</li>
+</ol>
+<h2 id="accessibility-1"><a class="header" href="#accessibility-1">Accessibility</a></h2>
+<ul>
+<li>Semantic footer element with proper landmarks</li>
+<li>Screen reader friendly structure</li>
+<li>Proper heading hierarchy (h2, h3)</li>
+<li>Alt text support for company logos</li>
+<li>Keyboard navigation support for all links</li>
+<li>Hidden heading for screen readers (<code>sr-only</code>)</li>
+</ul>
+<h2 id="social-media-integration"><a class="header" href="#social-media-integration">Social Media Integration</a></h2>
+<p>The component includes SVG icons for major social platforms:</p>
+<ul>
+<li>Proper <code>aria-hidden</code> attributes on decorative SVGs</li>
+<li>Screen reader text for platform identification</li>
+<li>Hover states for better user interaction</li>
+</ul>
+<h2 id="responsive-features"><a class="header" href="#responsive-features">Responsive Features</a></h2>
+<ul>
+<li><strong>Mobile</strong>: Single column with adjusted spacing</li>
+<li><strong>Medium Screens</strong>: Two-column navigation grid</li>
+<li><strong>Large Screens</strong>: Three-column layout with company info</li>
+<li><strong>Extra Large</strong>: Maximum width constraints</li>
+</ul>
+<h2 id="implementation-status-2"><a class="header" href="#implementation-status-2">Implementation Status</a></h2>
+<p>✅ Migrated from experimental implementation
+✅ Responsive multi-column layout
+✅ Social media icons and accessibility
+✅ Semantic HTML structure
+⚠️ DaSCH brand customization required
+⚠️ Shell component integration pending
+⚠️ Actual navigation links need configuration</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="header"><a class="header" href="#header">Header</a></h1>
+<p>Application header component with responsive navigation and mobile menu support.</p>
+<p>⚠️ <strong>Usage Note</strong>: This component should not be used directly in applications. Use it through a higher-order shell component that provides complete page layout and structure.</p>
+<p>⚠️ <strong>Brand Adjustment Required</strong>: This component has not yet been adjusted to fit the DaSCH brand identity.</p>
+<h2 id="features-1"><a class="header" href="#features-1">Features</a></h2>
+<ul>
+<li>Logo and company branding with light/dark mode support</li>
+<li>Desktop navigation with dropdown menus</li>
+<li>Mobile-responsive hamburger menu</li>
+<li>Login link</li>
+<li>Full accessibility support with ARIA attributes</li>
+<li>DataStar integration for interactive elements</li>
+</ul>
+<h2 id="configuration-1"><a class="header" href="#configuration-1">Configuration</a></h2>
+<p>The header requires two main configuration elements:</p>
+<h3 id="headerconfig"><a class="header" href="#headerconfig">HeaderConfig</a></h3>
+<ul>
+<li><code>company_name</code>: Company name for accessibility</li>
+<li><code>logo_light_url</code>: URL for light theme logo</li>
+<li><code>logo_dark_url</code>: URL for dark theme logo</li>
+<li><code>login_href</code>: URL for login link</li>
+</ul>
+<h3 id="navigation-elements"><a class="header" href="#navigation-elements">Navigation Elements</a></h3>
+<p>Navigation supports both simple items and dropdown menus:</p>
+<ul>
+<li><code>NavElement::Item</code>: Simple navigation link</li>
+<li><code>NavElement::Menu</code>: Dropdown menu with sub-items</li>
+</ul>
+<h2 id="usage-2"><a class="header" href="#usage-2">Usage</a></h2>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::header::{header, HeaderConfig, NavElement, NavItem, NavMenu, NavMenuItem};
+
+let config = HeaderConfig {
+    company_name: "DaSCH Service Platform",
+    logo_light_url: "/assets/logos/dasch-light.svg",
+    logo_dark_url: "/assets/logos/dasch-dark.svg",
+    login_href: "/login",
+};
+
+let nav_elements = vec![
+    NavElement::Item(NavItem {
+        label: "Projects",
+        href: "/projects"
+    }),
+    NavElement::Menu(NavMenu {
+        label: "Resources",
+        items: vec![
+            NavMenuItem { label: "Documentation", href: "/docs" },
+            NavMenuItem { label: "Support", href: "/support" },
+            NavMenuItem { label: "API", href: "/api" },
+        ],
+    }),
+    NavElement::Item(NavItem {
+        label: "About",
+        href: "/about"
+    }),
+];
+
+let markup = header(nav_elements, &amp;config);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="interactive-features"><a class="header" href="#interactive-features">Interactive Features</a></h2>
+<ul>
+<li><strong>Mobile Menu</strong>: Responsive hamburger menu for mobile devices</li>
+<li><strong>Dropdown Menus</strong>: Desktop dropdown navigation with keyboard support</li>
+<li><strong>Dark Mode</strong>: Automatic logo switching based on theme</li>
+<li><strong>DataStar Commands</strong>: Uses DataStar for menu interactions</li>
+</ul>
+<h2 id="shell-integration-1"><a class="header" href="#shell-integration-1">Shell Integration</a></h2>
+<p>This component is designed to be used within a shell component:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn page_shell(content: Markup) -&gt; Markup {
+    html! {
+        (header(nav_elements, &amp;header_config))
+        main { (content) }
+        // ... other shell components
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="brand-customization-required-1"><a class="header" href="#brand-customization-required-1">Brand Customization Required</a></h2>
+<p>Before production use, customize for DaSCH brand:</p>
+<ol>
+<li>Replace placeholder logos with actual DaSCH logos</li>
+<li>Update color scheme to match DaSCH brand colors</li>
+<li>Adjust typography to use DaSCH font family</li>
+<li>Update navigation items for actual site structure</li>
+<li>Customize login link behavior</li>
+</ol>
+<h2 id="accessibility-2"><a class="header" href="#accessibility-2">Accessibility</a></h2>
+<ul>
+<li>Semantic HTML structure with proper navigation landmarks</li>
+<li>Screen reader support with <code>sr-only</code> text</li>
+<li>Keyboard navigation support</li>
+<li>ARIA attributes for interactive elements</li>
+<li>Focus management for mobile menu</li>
+</ul>
+<h2 id="implementation-status-3"><a class="header" href="#implementation-status-3">Implementation Status</a></h2>
+<p>✅ Migrated from experimental implementation
+✅ Responsive design with mobile menu
+✅ DataStar integration for interactions
+⚠️ DaSCH brand customization required
+⚠️ Shell component integration pending</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="hero"><a class="header" href="#hero">Hero</a></h1>
+<p>Landing page hero section component with headline, description, call-to-action buttons, and hero image.</p>
+<p>⚠️ <strong>Usage Note</strong>: This component should not be used directly in applications. Use it through a higher-order shell component that provides complete page layout and structure.</p>
+<p>⚠️ <strong>Brand Adjustment Required</strong>: This component has not yet been adjusted to fit the DaSCH brand identity.</p>
+<h2 id="features-2"><a class="header" href="#features-2">Features</a></h2>
+<ul>
+<li>Large, prominent headline with responsive typography</li>
+<li>Descriptive text with proper text hierarchy</li>
+<li>Announcement banner with link</li>
+<li>Primary and secondary call-to-action buttons</li>
+<li>Hero image with decorative SVG elements</li>
+<li>Responsive design that adapts to different screen sizes</li>
+<li>Dark mode support</li>
+</ul>
+<h2 id="configuration-2"><a class="header" href="#configuration-2">Configuration</a></h2>
+<p>The hero component uses a single <code>HeroConfig</code> struct:</p>
+<h3 id="heroconfig"><a class="header" href="#heroconfig">HeroConfig</a></h3>
+<ul>
+<li><code>headline</code>: Main hero headline text</li>
+<li><code>description</code>: Supporting description text</li>
+<li><code>announcement_text</code>: Text for the announcement banner</li>
+<li><code>announcement_link_text</code>: Link text within announcement</li>
+<li><code>announcement_href</code>: URL for announcement link</li>
+<li><code>primary_button_text</code>: Text for primary CTA button</li>
+<li><code>primary_button_href</code>: URL for primary CTA</li>
+<li><code>secondary_button_text</code>: Text for secondary CTA button</li>
+<li><code>secondary_button_href</code>: URL for secondary CTA</li>
+<li><code>image_url</code>: URL for hero image</li>
+<li><code>image_alt</code>: Alt text for hero image</li>
+</ul>
+<h2 id="usage-3"><a class="header" href="#usage-3">Usage</a></h2>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::hero::{hero, HeroConfig};
+
+let config = HeroConfig {
+    headline: "DaSCH Service Platform",
+    description: "Long-term archive for humanities research data with discovery and presentation tools for researchers worldwide.",
+    announcement_text: "New data management features now available",
+    announcement_link_text: "Learn more",
+    announcement_href: "/news/data-management-update",
+    primary_button_text: "Get Started",
+    primary_button_href: "/register",
+    secondary_button_text: "View Demo",
+    secondary_button_href: "/demo",
+    image_url: "/assets/images/platform-hero.jpg",
+    image_alt: "DaSCH platform interface showing research data",
+};
+
+let markup = hero(&amp;config);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="design-elements"><a class="header" href="#design-elements">Design Elements</a></h2>
+<h3 id="layout"><a class="header" href="#layout">Layout</a></h3>
+<ul>
+<li>Two-column layout on large screens</li>
+<li>Single column stacked layout on mobile</li>
+<li>Content area with max-width constraints</li>
+<li>Hero image fills right half on desktop</li>
+</ul>
+<h3 id="typography"><a class="header" href="#typography">Typography</a></h3>
+<ul>
+<li>Large headline (text-5xl to text-7xl responsive)</li>
+<li>Medium-weight description text</li>
+<li>Proper text hierarchy and spacing</li>
+</ul>
+<h3 id="interactive-elements"><a class="header" href="#interactive-elements">Interactive Elements</a></h3>
+<ul>
+<li>Primary button with strong visual emphasis</li>
+<li>Secondary button with subtle styling</li>
+<li>Announcement banner with hover effects</li>
+<li>Responsive button sizing</li>
+</ul>
+<h2 id="shell-integration-2"><a class="header" href="#shell-integration-2">Shell Integration</a></h2>
+<p>This component is designed to be used within a shell component's main content area:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn landing_page_shell() -&gt; Markup {
+    html! {
+        (header(nav_elements, &amp;header_config))
+        main {
+            (hero(&amp;hero_config))
+            // ... other page content
+        }
+        (footer(&amp;footer_config))
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="brand-customization-required-2"><a class="header" href="#brand-customization-required-2">Brand Customization Required</a></h2>
+<p>Before production use, customize for DaSCH brand:</p>
+<ol>
+<li>Update color scheme (currently uses generic indigo)</li>
+<li>Replace placeholder content with actual DaSCH messaging</li>
+<li>Use actual DaSCH hero images</li>
+<li>Adjust button styling to match DaSCH design</li>
+<li>Update typography to use DaSCH font family</li>
+<li>Customize spacing and sizing for brand requirements</li>
+</ol>
+<h2 id="responsive-behavior"><a class="header" href="#responsive-behavior">Responsive Behavior</a></h2>
+<ul>
+<li><strong>Mobile</strong>: Single column layout with adjusted typography sizes</li>
+<li><strong>Tablet</strong>: Maintains single column with optimized spacing</li>
+<li><strong>Desktop</strong>: Two-column layout with hero image</li>
+<li><strong>Large Screens</strong>: Maximum width constraints with centered content</li>
+</ul>
+<h2 id="accessibility-3"><a class="header" href="#accessibility-3">Accessibility</a></h2>
+<ul>
+<li>Semantic HTML structure with proper headings hierarchy</li>
+<li>Alt text support for hero images</li>
+<li>Proper focus management for interactive elements</li>
+<li>Screen reader friendly announcement banner</li>
+<li>Keyboard navigation support</li>
+</ul>
+<h2 id="implementation-status-4"><a class="header" href="#implementation-status-4">Implementation Status</a></h2>
+<p>✅ Migrated from experimental implementation
+✅ Responsive design across all breakpoints
+✅ Semantic HTML and accessibility features
+⚠️ DaSCH brand customization required
+⚠️ Shell component integration pending</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
 <h1 id="icon"><a class="header" href="#icon">Icon</a></h1>
 <p>Reusable icon component for displaying SVG icons from Heroicons.</p>
 <h2 id="usage-guidelines-1"><a class="header" href="#usage-guidelines-1">Usage Guidelines</a></h2>
@@ -1407,7 +2088,7 @@ icon::icon_with_class(IconType::Code, "size-6 text-blue-500")
 <li>Icons use semantic <code>&lt;svg&gt;</code> elements for proper rendering</li>
 <li>Dark mode compatible through currentColor inheritance</li>
 </ul>
-<h2 id="implementation-status-1"><a class="header" href="#implementation-status-1">Implementation Status</a></h2>
+<h2 id="implementation-status-5"><a class="header" href="#implementation-status-5">Implementation Status</a></h2>
 <p>✅ Complete - Production ready with full dark mode support</p>
 <h2 id="design-notes-1"><a class="header" href="#design-notes-1">Design Notes</a></h2>
 <p>The icon component follows these principles:</p>
@@ -1613,7 +2294,7 @@ let github = link("Visit GitHub", "https://github.com")
 <li>Screen reader friendly with proper href attributes</li>
 <li><code>data-testid</code> attribute support for automated testing</li>
 </ul>
-<h2 id="implementation-status-2"><a class="header" href="#implementation-status-2">Implementation Status</a></h2>
+<h2 id="implementation-status-6"><a class="header" href="#implementation-status-6">Implementation Status</a></h2>
 <p>✅ Complete</p>
 <h2 id="styling"><a class="header" href="#styling">Styling</a></h2>
 <ul>
@@ -1624,6 +2305,217 @@ let github = link("Visit GitHub", "https://github.com")
 <li><strong>Cursor</strong>: Pointer on hover</li>
 <li><strong>Font weight</strong>: Medium (500)</li>
 </ul>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="logo-cloud"><a class="header" href="#logo-cloud">Logo Cloud</a></h1>
+<p>A component for displaying a collection of partner, client, or sponsor logos in a responsive grid layout.</p>
+<p>⚠️ <strong>Brand Adjustment Required</strong>: This component has not yet been adjusted to fit the DaSCH brand identity.</p>
+<h2 id="features-3"><a class="header" href="#features-3">Features</a></h2>
+<ul>
+<li>Responsive grid layout adapting to different screen sizes</li>
+<li>Optimized positioning for visual balance (special handling for 5 logos)</li>
+<li>Consistent logo sizing with aspect ratio preservation</li>
+<li>Semantic HTML structure with accessibility support</li>
+<li>Variable number of logos supported</li>
+</ul>
+<h2 id="basic-usage-3"><a class="header" href="#basic-usage-3">Basic Usage</a></h2>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use components::logo_cloud::{logo_cloud, Logo};
+
+let logos = vec![
+    Logo::new("https://example.com/logo1.svg", "Partner 1", 158, 48),
+    Logo::new("https://example.com/logo2.svg", "Partner 2", 158, 48),
+    Logo::new("https://example.com/logo3.svg", "Partner 3", 158, 48),
+];
+
+let markup = logo_cloud("Trusted by leading research institutions", logos);
+<span class="boring">}</span></code></pre></pre>
+<h2 id="configuration-3"><a class="header" href="#configuration-3">Configuration</a></h2>
+<h3 id="logo_cloud-function"><a class="header" href="#logo_cloud-function">logo_cloud Function</a></h3>
+<ul>
+<li><strong><code>title</code></strong> (<code>impl Into&lt;String&gt;</code>) - Title text displayed above the logo grid</li>
+<li><strong><code>logos</code></strong> (<code>Vec&lt;Logo&gt;</code>) - Collection of Logo instances to display</li>
+</ul>
+<h3 id="logo-struct"><a class="header" href="#logo-struct">Logo Struct</a></h3>
+<p>Represents a single logo with its metadata. Created using <code>Logo::new()</code>:</p>
+<ul>
+<li><strong><code>src</code></strong> - URL or path to the logo image file</li>
+<li><strong><code>alt</code></strong> - Descriptive alt text for accessibility</li>
+<li><strong><code>width</code></strong> - Image width attribute in pixels (recommended: 158)</li>
+<li><strong><code>height</code></strong> - Image height attribute in pixels (recommended: 48)</li>
+</ul>
+<h2 id="layout-behavior"><a class="header" href="#layout-behavior">Layout Behavior</a></h2>
+<h3 id="grid-configuration"><a class="header" href="#grid-configuration">Grid Configuration</a></h3>
+<p>The component uses a responsive CSS grid that adapts to screen size:</p>
+<ul>
+<li><strong>Mobile (default)</strong>: 4 columns with 8-column gap</li>
+<li><strong>Small screens (sm:)</strong>: 6 columns with 10-column gap</li>
+<li><strong>Large screens (lg:)</strong>: 5 columns, full width container</li>
+</ul>
+<h3 id="special-positioning-for-5-logos"><a class="header" href="#special-positioning-for-5-logos">Special Positioning for 5 Logos</a></h3>
+<p>When exactly 5 logos are provided, the component applies special grid positioning to create optimal visual balance:</p>
+<ul>
+<li><strong>Logos 1-3</strong>: Standard 2-column span, evenly distributed</li>
+<li><strong>Logo 4</strong>: Starts at column 2 on small screens (<code>sm:col-start-2</code>)</li>
+<li><strong>Logo 5</strong>: Starts at column 2 on mobile, automatic positioning on larger screens (<code>col-start-2 sm:col-start-auto</code>)</li>
+</ul>
+<p>This creates a visually centered arrangement that prevents awkward spacing on the last row.</p>
+<h3 id="image-sizing"><a class="header" href="#image-sizing">Image Sizing</a></h3>
+<ul>
+<li>Maximum height: 48px (<code>max-h-12</code>)</li>
+<li>Width: Full container width (<code>w-full</code>)</li>
+<li>Object fit: Contain (preserves aspect ratio, no cropping)</li>
+<li>Each logo spans 2 columns on mobile, 1 column on large screens</li>
+</ul>
+<h2 id="use-cases"><a class="header" href="#use-cases">Use Cases</a></h2>
+<ul>
+<li>Displaying partner and sponsor logos</li>
+<li>Showcasing client portfolios</li>
+<li>Technology stack visualization</li>
+<li>Integration partner listings</li>
+<li>Certification and affiliation displays</li>
+</ul>
+<h2 id="example-usage-patterns"><a class="header" href="#example-usage-patterns">Example Usage Patterns</a></h2>
+<h3 id="research-institution-partners"><a class="header" href="#research-institution-partners">Research Institution Partners</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let partners = vec![
+    Logo::new("/logos/university-zurich.svg", "University of Zurich", 158, 48),
+    Logo::new("/logos/eth-zurich.svg", "ETH Zurich", 158, 48),
+    Logo::new("/logos/snf.svg", "Swiss National Science Foundation", 158, 48),
+];
+
+logo_cloud("Supported by", partners)
+<span class="boring">}</span></code></pre></pre>
+<h3 id="technology-stack"><a class="header" href="#technology-stack">Technology Stack</a></h3>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let technologies = vec![
+    Logo::new("/tech/rust.svg", "Rust", 158, 48),
+    Logo::new("/tech/axum.svg", "Axum", 158, 48),
+    Logo::new("/tech/maud.svg", "Maud", 158, 48),
+    Logo::new("/tech/datastar.svg", "DataStar", 158, 48),
+    Logo::new("/tech/tokio.svg", "Tokio", 158, 48),
+];
+
+logo_cloud("Built with", technologies)
+<span class="boring">}</span></code></pre></pre>
+<h2 id="implementation-guidelines"><a class="header" href="#implementation-guidelines">Implementation Guidelines</a></h2>
+<h3 id="recommended-logo-specifications"><a class="header" href="#recommended-logo-specifications">Recommended Logo Specifications</a></h3>
+<ul>
+<li><strong>Format</strong>: SVG preferred, or PNG with transparency</li>
+<li><strong>Dimensions</strong>: 158x48px or similar aspect ratio</li>
+<li><strong>Color</strong>: Grayscale or monochrome for visual consistency</li>
+<li><strong>Background</strong>: Transparent to work with various page backgrounds</li>
+</ul>
+<h3 id="content-guidelines"><a class="header" href="#content-guidelines">Content Guidelines</a></h3>
+<ul>
+<li>Use clear, descriptive alt text (organization or product name)</li>
+<li>Keep title text concise and meaningful</li>
+<li>Ensure all logos are high quality and properly sized</li>
+<li>Maintain consistent visual weight across all logos</li>
+<li>Consider logo legibility at the constrained height (48px max)</li>
+</ul>
+<h2 id="accessibility-4"><a class="header" href="#accessibility-4">Accessibility</a></h2>
+<p>The component implements several accessibility features:</p>
+<ul>
+<li><strong>Semantic HTML</strong>: Uses proper <code>h2</code> heading for the title text</li>
+<li><strong>Image alt text</strong>: Each logo requires descriptive alt text via the <code>alt</code> parameter</li>
+<li><strong>Image dimensions</strong>: Width and height attributes provided to prevent layout shift</li>
+<li><strong>Screen reader support</strong>: Title text is marked with appropriate heading level</li>
+<li><strong>Keyboard navigation</strong>: All elements are keyboard accessible (images are not interactive)</li>
+</ul>
+<p>Screen readers will announce the title followed by each logo's alt text, providing context about the organizations represented.</p>
+<h2 id="responsive-behavior-1"><a class="header" href="#responsive-behavior-1">Responsive Behavior</a></h2>
+<ul>
+<li><strong>Mobile</strong>: Compact 4-column grid with 8-column horizontal spacing</li>
+<li><strong>Tablet (sm)</strong>: 6-column grid with 10-column horizontal spacing</li>
+<li><strong>Desktop (lg)</strong>: 5-column grid with full width container</li>
+<li><strong>Spacing</strong>: Consistent vertical gaps (gap-y-10) across all breakpoints</li>
+</ul>
+<h2 id="brand-customization-required-3"><a class="header" href="#brand-customization-required-3">Brand Customization Required</a></h2>
+<p>Before production use, customize for DaSCH brand:</p>
+<ol>
+<li>Replace placeholder logos with actual DaSCH partner/client logos</li>
+<li>Adjust background color if needed (currently white background)</li>
+<li>Ensure logo styling matches DaSCH design guidelines</li>
+<li>Update title text to match DaSCH brand messaging</li>
+<li>Provide logo assets in appropriate formats and dimensions</li>
+</ol>
+<h2 id="implementation-status-7"><a class="header" href="#implementation-status-7">Implementation Status</a></h2>
+<p>✅ Core component implementation complete
+✅ Responsive grid layout with special 5-logo positioning
+✅ Accessibility features implemented
+✅ Unit tests passing (12/12)
+✅ Playground integration complete
+⚠️ DaSCH brand customization required
+⚠️ Logo assets need to be provided</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -1865,7 +2757,7 @@ let menu = builder.build();
 <li>ARIA attributes managed by the browser's Popover API</li>
 <li>Proper semantic structure with menu role</li>
 </ul>
-<h2 id="implementation-status-3"><a class="header" href="#implementation-status-3">Implementation Status</a></h2>
+<h2 id="implementation-status-8"><a class="header" href="#implementation-status-8">Implementation Status</a></h2>
 <p>✅ Complete - Production ready with full dark mode support and animation</p>
 <h2 id="design-notes-2"><a class="header" href="#design-notes-2">Design Notes</a></h2>
 <p>The menu component follows Tailwind design patterns with DSP brand customizations:</p>
@@ -2051,7 +2943,7 @@ let button_item = menu_item::button_menu_item_with_icon("View Source", code_icon
 <li>Focus outline is visible and meets WCAG contrast requirements</li>
 <li>Interactive elements are keyboard accessible</li>
 </ul>
-<h2 id="implementation-status-4"><a class="header" href="#implementation-status-4">Implementation Status</a></h2>
+<h2 id="implementation-status-9"><a class="header" href="#implementation-status-9">Implementation Status</a></h2>
 <p>✅ Complete - Production ready with full dark mode support</p>
 <h2 id="design-notes-3"><a class="header" href="#design-notes-3">Design Notes</a></h2>
 <p>The menu item component follows Tailwind design patterns with DSP brand customizations:</p>
@@ -2142,7 +3034,7 @@ let button_item = menu_item::button_menu_item_with_icon("View Source", code_icon
 <p>Application shell component providing navigation and layout wrapper with configurable navigation elements.</p>
 <h2 id="usage-guidelines-5"><a class="header" href="#usage-guidelines-5">Usage Guidelines</a></h2>
 <p>Use the shell component as the main application wrapper. It provides consistent navigation, theme management, and layout structure across the application.</p>
-<h2 id="basic-usage-3"><a class="header" href="#basic-usage-3">Basic Usage</a></h2>
+<h2 id="basic-usage-4"><a class="header" href="#basic-usage-4">Basic Usage</a></h2>
 <p>The shell component uses a builder pattern to create the application layout:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -2165,7 +3057,7 @@ let shell_markup = shell(header_nav, header_config, footer_config)
 </ul>
 <p><strong>Note:</strong> The shell constructor requires three parameters: navigation elements, header config, and footer config. These are not builder methods but constructor parameters.</p>
 <h2 id="configuration-structs"><a class="header" href="#configuration-structs">Configuration Structs</a></h2>
-<h3 id="headerconfig"><a class="header" href="#headerconfig">HeaderConfig</a></h3>
+<h3 id="headerconfig-1"><a class="header" href="#headerconfig-1">HeaderConfig</a></h3>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>HeaderConfig {
@@ -2175,7 +3067,7 @@ let shell_markup = shell(header_nav, header_config, footer_config)
     login_href: "/login",
 }
 <span class="boring">}</span></code></pre></pre>
-<h3 id="footerconfig"><a class="header" href="#footerconfig">FooterConfig</a></h3>
+<h3 id="footerconfig-1"><a class="header" href="#footerconfig-1">FooterConfig</a></h3>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>FooterConfig {
@@ -2272,7 +3164,7 @@ let shell_markup = shell(header_nav, header_config, footer_config)
     ],
 })
 <span class="boring">}</span></code></pre></pre>
-<h2 id="features"><a class="header" href="#features">Features</a></h2>
+<h2 id="features-4"><a class="header" href="#features-4">Features</a></h2>
 <ul>
 <li><strong>Configurable Navigation</strong>: Support for both navigation items and dropdown menus</li>
 <li><strong>Responsive Design</strong>: Adapts to different screen sizes with responsive navigation</li>
@@ -2290,7 +3182,7 @@ let shell_markup = shell(header_nav, header_config, footer_config)
 <li>High contrast theme support</li>
 <li>Semantic navigation structure</li>
 </ul>
-<h2 id="implementation-status-5"><a class="header" href="#implementation-status-5">Implementation Status</a></h2>
+<h2 id="implementation-status-10"><a class="header" href="#implementation-status-10">Implementation Status</a></h2>
 <p>✅ Fully functional with configurable navigation</p>
 <h2 id="design-notes-4"><a class="header" href="#design-notes-4">Design Notes</a></h2>
 <p>The shell serves as the primary application wrapper and maintains consistent layout across different pages.</p>
@@ -2445,10 +3337,10 @@ We do not expect this badge to be used for small amounts of data, such as single
 <h2 id="badges"><a class="header" href="#badges">Badges</a></h2>
 <p>The badge comes in two variants, a small "tag-like" variant and a larger "card-like" variant.
 The card-like variant has a light and a dark theme.</p>
-<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
+<h2 id="usage-4"><a class="header" href="#usage-4">Usage</a></h2>
 <p>Currently, the web commponents are not published to a package registry.
 When published, they can be used by importing the them as a JavaScript module.</p>
-<h3 id="basic-usage-4"><a class="header" href="#basic-usage-4">Basic Usage</a></h3>
+<h3 id="basic-usage-5"><a class="header" href="#basic-usage-5">Basic Usage</a></h3>
 <p>To display the badge, you can use the following HTML:</p>
 <p>For the small variant:</p>
 <pre><code class="language-html">&lt;dsp-attribution-badge&gt;&lt;/dsp-attribution-badge&gt;

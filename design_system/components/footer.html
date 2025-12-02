@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Button - DSP-Repository Developer Documentation</title>
+        <title>Footer - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -242,154 +242,148 @@
 }
 
 </style>
-<h1 id="button"><a class="header" href="#button">Button</a></h1>
-<p>Interactive button component for user actions using the builder pattern.</p>
-<h2 id="usage-guidelines"><a class="header" href="#usage-guidelines">Usage Guidelines</a></h2>
-<p>Use buttons to trigger actions, submit forms, or navigate to different sections of the application. Choose the appropriate variant based on the action's importance and context.</p>
-<h2 id="basic-usage"><a class="header" href="#basic-usage">Basic Usage</a></h2>
-<p>The button component uses a builder pattern for flexible configuration:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>use components::{button, ButtonVariant};
-
-// Simple button with default primary variant
-let btn = button("Click me").build();
-
-// Button with custom configuration
-let custom = button("Submit")
-    .variant(ButtonVariant::Secondary)
-    .with_id("submit-btn")
-    .with_test_id("submit-button")
-    .onclick("@post('/api/submit')")
-    .disabled()
-    .build();
-<span class="boring">}</span></code></pre></pre>
-<h2 id="builder-methods"><a class="header" href="#builder-methods">Builder Methods</a></h2>
-<p>All button builder methods can be chained in any order. Call <code>.build()</code> to render the final component.</p>
-<h3 id="text-buttons"><a class="header" href="#text-buttons">Text Buttons</a></h3>
+<h1 id="footer"><a class="header" href="#footer">Footer</a></h1>
+<p>Comprehensive site footer component with company information, navigation links, social media, and legal information.</p>
+<p>⚠️ <strong>Usage Note</strong>: This component should not be used directly in applications. Use it through a higher-order shell component that provides complete page layout and structure.</p>
+<p>⚠️ <strong>Brand Adjustment Required</strong>: This component has not yet been adjusted to fit the DaSCH brand identity.</p>
+<h2 id="features"><a class="header" href="#features">Features</a></h2>
 <ul>
-<li><strong><code>.variant(ButtonVariant)</code></strong> - Sets the button style (Primary or Secondary). Default: Primary</li>
-<li><strong><code>.with_id(impl Into&lt;String&gt;)</code></strong> - Sets the HTML <code>id</code> attribute for the button</li>
-<li><strong><code>.with_test_id(impl Into&lt;String&gt;)</code></strong> - Sets the <code>data-testid</code> attribute for testing</li>
-<li><strong><code>.onclick(impl Into&lt;String&gt;)</code></strong> - Sets the DataStar action handler for click events</li>
-<li><strong><code>.disabled()</code></strong> - Marks the button as disabled</li>
-<li><strong><code>.with_leading_icon(Markup)</code></strong> - Adds an icon before the button text</li>
-<li><strong><code>.with_trailing_icon(Markup)</code></strong> - Adds an icon after the button text</li>
-<li><strong><code>.popovertarget(impl Into&lt;String&gt;)</code></strong> - Sets the popover target for triggering menus</li>
-<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup</li>
+<li>Company logo with light/dark mode support</li>
+<li>Company description text</li>
+<li>Social media links with SVG icons</li>
+<li>Multi-column navigation sections</li>
+<li>Copyright information</li>
+<li>Responsive grid layout</li>
+<li>Dark mode support</li>
+<li>Semantic HTML structure</li>
 </ul>
-<h3 id="icon-buttons"><a class="header" href="#icon-buttons">Icon Buttons</a></h3>
+<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
+<p>The footer uses a single <code>FooterConfig</code> struct:</p>
+<h3 id="footerconfig"><a class="header" href="#footerconfig">FooterConfig</a></h3>
 <ul>
-<li><strong><code>.with_id(impl Into&lt;String&gt;)</code></strong> - Sets the HTML <code>id</code> attribute for the button</li>
-<li><strong><code>.with_test_id(impl Into&lt;String&gt;)</code></strong> - Sets the <code>data-testid</code> attribute for testing</li>
-<li><strong><code>.with_color(impl Into&lt;String&gt;)</code></strong> - Sets custom color classes (overrides default gray)</li>
-<li><strong><code>.onclick(impl Into&lt;String&gt;)</code></strong> - Sets the DataStar action handler for click events</li>
-<li><strong><code>.disabled()</code></strong> - Marks the button as disabled</li>
-<li><strong><code>.popovertarget(impl Into&lt;String&gt;)</code></strong> - Sets the popover target for triggering menus</li>
-<li><strong><code>.build()</code></strong> - Consumes the builder and returns the rendered markup</li>
+<li><code>company_name</code>: Company name for logo alt text</li>
+<li><code>description</code>: Company description text</li>
+<li><code>copyright_text</code>: Copyright notice text</li>
+<li><code>logo_light_url</code>: URL for light theme logo</li>
+<li><code>logo_dark_url</code>: URL for dark theme logo</li>
 </ul>
-<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
-<h3 id="button-with-icon"><a class="header" href="#button-with-icon">Button with Icon</a></h3>
+<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use components::{button, icon, IconType};
+</span>use components::footer::{footer, FooterConfig};
 
-let download = button("Download")
-    .with_leading_icon(icon::icon(IconType::ChevronDown))
-    .onclick("console.log('downloading')")
-    .build();
+let config = FooterConfig {
+    company_name: "DaSCH",
+    description: "Digital infrastructure for humanities research data preservation, discovery, and long-term access.",
+    copyright_text: "© 2024 DaSCH, University of Basel. All rights reserved.",
+    logo_light_url: "/assets/logos/dasch-light.svg",
+    logo_dark_url: "/assets/logos/dasch-dark.svg",
+};
+
+let markup = footer(&amp;config);
 <span class="boring">}</span></code></pre></pre>
-<h3 id="complete-example"><a class="header" href="#complete-example">Complete Example</a></h3>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>let complex = button("Options")
-    .variant(ButtonVariant::Secondary)
-    .with_id("options-button")
-    .with_test_id("options-btn")
-    .with_leading_icon(icon::icon(IconType::Code))
-    .with_trailing_icon(icon::icon(IconType::ChevronDown))
-    .onclick("@post('/api/options')")
-    .build();
-<span class="boring">}</span></code></pre></pre>
-<h2 id="variants"><a class="header" href="#variants">Variants</a></h2>
-<h3 id="primary"><a class="header" href="#primary">Primary</a></h3>
-<p>The primary button is used for the most important action on a page. Use sparingly - typically only one primary button per page or section.</p>
-<h3 id="secondary"><a class="header" href="#secondary">Secondary</a></h3>
-<p>Secondary buttons are used for less important actions that still need emphasis. They can be used multiple times on a page.</p>
-<h2 id="icon-buttons-1"><a class="header" href="#icon-buttons-1">Icon Buttons</a></h2>
-<p>Icon buttons contain only an icon without text, providing a compact way to represent actions. They use subtle gray colors with hover states by default and are keyboard accessible.</p>
-<h3 id="when-to-use-icon-buttons"><a class="header" href="#when-to-use-icon-buttons">When to use icon buttons</a></h3>
+<h2 id="content-sections"><a class="header" href="#content-sections">Content Sections</a></h2>
+<h3 id="company-information"><a class="header" href="#company-information">Company Information</a></h3>
 <ul>
-<li>Compact UI spaces (toolbars, headers, mobile interfaces)</li>
-<li>Common actions with universally recognized icons (close, menu, search)</li>
-<li>Secondary actions that don't need text labels</li>
-<li>As triggers for menus and popovers</li>
+<li>Logo with automatic theme switching</li>
+<li>Descriptive text about the organization</li>
+<li>Social media links</li>
 </ul>
-<p>Icon buttons should always use semantically meaningful icons that users can recognize. Consider adding tooltips or aria-labels for accessibility.</p>
-<h3 id="basic-icon-button"><a class="header" href="#basic-icon-button">Basic Icon Button</a></h3>
+<h3 id="navigation-links"><a class="header" href="#navigation-links">Navigation Links</a></h3>
+<p>The footer includes four predefined navigation sections:</p>
+<ol>
+<li><strong>Solutions</strong>: Marketing, Analytics, Automation, Commerce, Insights</li>
+<li><strong>Support</strong>: Submit ticket, Documentation, Guides</li>
+<li><strong>Company</strong>: About, Blog, Jobs, Press</li>
+<li><strong>Legal</strong>: Terms of service, Privacy policy, License</li>
+</ol>
+<h3 id="social-media"><a class="header" href="#social-media">Social Media</a></h3>
+<p>Pre-configured social media icons and links:</p>
+<ul>
+<li>Facebook</li>
+<li>Instagram</li>
+<li>X (Twitter)</li>
+<li>GitHub</li>
+<li>YouTube</li>
+</ul>
+<h2 id="layout-structure"><a class="header" href="#layout-structure">Layout Structure</a></h2>
+<h3 id="desktop-layout"><a class="header" href="#desktop-layout">Desktop Layout</a></h3>
+<ul>
+<li>Three-column grid layout</li>
+<li>Company info in first column</li>
+<li>Navigation links in remaining columns</li>
+<li>Copyright section spans full width</li>
+</ul>
+<h3 id="mobile-layout"><a class="header" href="#mobile-layout">Mobile Layout</a></h3>
+<ul>
+<li>Single column stacked layout</li>
+<li>Proper spacing and typography adjustments</li>
+<li>Maintained visual hierarchy</li>
+</ul>
+<h2 id="shell-integration"><a class="header" href="#shell-integration">Shell Integration</a></h2>
+<p>This component is designed to be used at the bottom of shell components:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use components::{icon_button, icon, IconType};
-
-// Default icon button with gray colors
-let close = icon_button(icon::icon(IconType::Close)).build();
-
-// Icon button with onclick handler
-let interactive = icon_button(icon::icon(IconType::Star))
-    .onclick("console.log('starred')")
-    .build();
-
-// Disabled icon button
-let disabled = icon_button(icon::icon(IconType::Close))
-    .disabled()
-    .build();
-
-// Icon button with ID
-let identified = icon_button(icon::icon(IconType::Star))
-    .with_id("star-button")
-    .onclick("console.log('starred')")
-    .build();
+</span>pub fn page_shell(content: Markup) -&gt; Markup {
+    html! {
+        (header(nav_elements, &amp;header_config))
+        main { (content) }
+        (footer(&amp;footer_config))
+    }
+}
 <span class="boring">}</span></code></pre></pre>
-<h3 id="icon-buttons-with-custom-colors"><a class="header" href="#icon-buttons-with-custom-colors">Icon Buttons with Custom Colors</a></h3>
-<p>Use the <code>.color()</code> method to override the default colors:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>use components::{icon_button, icon, IconType};
-
-// Yellow star button
-let star = icon_button(icon::icon(IconType::Star))
-    .with_color("text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950")
-    .onclick("console.log('starred')")
-    .build();
-
-// Indigo close button
-let indigo_close = icon_button(icon::icon(IconType::Close))
-    .with_color("text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400")
-    .build();
-
-// Red danger button with interaction
-let delete = icon_button(icon::icon(IconType::Flag))
-    .with_color("text-red-500 hover:bg-red-50 dark:hover:bg-red-950")
-    .onclick("@post('/api/flag')")
-    .build();
-<span class="boring">}</span></code></pre></pre>
-<h2 id="accessibility-notes"><a class="header" href="#accessibility-notes">Accessibility Notes</a></h2>
+<h2 id="brand-customization-required"><a class="header" href="#brand-customization-required">Brand Customization Required</a></h2>
+<p>Before production use, customize for DaSCH brand:</p>
+<ol>
+<li>Replace placeholder logos with actual DaSCH logos</li>
+<li>Update navigation sections with relevant DaSCH links</li>
+<li>Update social media links to actual DaSCH accounts</li>
+<li>Customize company description for DaSCH</li>
+<li>Update color scheme to match DaSCH brand</li>
+<li>Adjust typography to use DaSCH font family</li>
+<li>Replace generic footer links with actual page URLs</li>
+</ol>
+<h2 id="accessibility"><a class="header" href="#accessibility">Accessibility</a></h2>
+<ul>
+<li>Semantic footer element with proper landmarks</li>
+<li>Screen reader friendly structure</li>
+<li>Proper heading hierarchy (h2, h3)</li>
+<li>Alt text support for company logos</li>
+<li>Keyboard navigation support for all links</li>
+<li>Hidden heading for screen readers (<code>sr-only</code>)</li>
+</ul>
+<h2 id="social-media-integration"><a class="header" href="#social-media-integration">Social Media Integration</a></h2>
+<p>The component includes SVG icons for major social platforms:</p>
+<ul>
+<li>Proper <code>aria-hidden</code> attributes on decorative SVGs</li>
+<li>Screen reader text for platform identification</li>
+<li>Hover states for better user interaction</li>
+</ul>
+<h2 id="responsive-features"><a class="header" href="#responsive-features">Responsive Features</a></h2>
+<ul>
+<li><strong>Mobile</strong>: Single column with adjusted spacing</li>
+<li><strong>Medium Screens</strong>: Two-column navigation grid</li>
+<li><strong>Large Screens</strong>: Three-column layout with company info</li>
+<li><strong>Extra Large</strong>: Maximum width constraints</li>
+</ul>
 <h2 id="implementation-status"><a class="header" href="#implementation-status">Implementation Status</a></h2>
-<p>🚧 Functional but incomplete - styling verification needed, missing accessibility features</p>
-<h2 id="design-notes"><a class="header" href="#design-notes">Design Notes</a></h2>
-<p>The button component follows Tailwind design patterns with DSP brand customizations. Spacing and typography align with the design system tokens.</p>
-<h3 id="button-vs-link"><a class="header" href="#button-vs-link">Button vs. Link</a></h3>
-<p>Use buttons for actions that trigger changes or submit data. Use links for navigation to other pages or sections. Buttons should not be used for navigation purposes.</p>
+<p>✅ Migrated from experimental implementation
+✅ Responsive multi-column layout
+✅ Social media icons and accessibility
+✅ Semantic HTML structure
+⚠️ DaSCH brand customization required
+⚠️ Shell component integration pending
+⚠️ Actual navigation links need configuration</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../design_system/component_architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../design_system/components/dropdown.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../../design_system/components/dropdown.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../design_system/components/header.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -399,11 +393,11 @@ let delete = icon_button(icon::icon(IconType::Flag))
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../design_system/component_architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../design_system/components/dropdown.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../../design_system/components/dropdown.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../design_system/components/header.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

@@ -8,6 +8,7 @@ members = [
     "modules/dpe/types",
     "modules/design_system/components",
     "modules/design_system/playground",
+    "modules/design_system/example_pages",
 ]
 resolver = "3"
 
@@ -27,9 +28,7 @@ askama = { version = "0.13.0", features = ["full"] }
 async-stream = "0.3.6"
 axum = { version = "0.8.3", features = ["macros", "ws"] }
 axum-macros = "0.5.0-alpha.1"
-datastar = { git = "https://github.com/starfederation/datastar", tag = "v1.0.0-beta.11", features = [
-    "axum",
-] }
+datastar = { version = "0.3.1", features = ["axum"] }
 futures = "0.3.31"
 log = "0.4.22"
 maud = { version = "0.27.0", features = ["axum"] }

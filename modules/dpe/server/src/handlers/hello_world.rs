@@ -1,11 +1,12 @@
 use core::time::Duration;
+use std::convert::Infallible;
 use std::sync::Arc;
 
 use async_stream::stream;
 use axum::extract::State;
-use axum::response::IntoResponse;
-use datastar::prelude::{MergeFragments, ReadSignals};
-use datastar::Sse;
+use axum::response::{IntoResponse, Sse};
+use datastar::axum::ReadSignals;
+use datastar::prelude::PatchElements;
 use serde::Deserialize;
 
 use crate::app_state::AppState;
@@ -22,9 +23,9 @@ pub(crate) async fn hello_world_handler(
     State(_state): State<Arc<AppState>>,
     ReadSignals(signals): ReadSignals<Signals>,
 ) -> impl IntoResponse {
-    Sse(stream! {
+    Sse::new(stream! {
         for i in 0..MESSAGE.len() {
-            yield MergeFragments::new(format!("<div id='message'>{}</div>", &MESSAGE[0..i + 1])).into();
+            yield Ok::<_, Infallible>(PatchElements::new(format!("<div id='message'>{}</div>", &MESSAGE[0..i + 1])).into());
             tokio::time::sleep(Duration::from_millis(signals.delay)).await;
         }
     })

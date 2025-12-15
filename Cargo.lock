@@ -270,8 +270,10 @@ checksum = "c469d952047f47f91b68d1cba3f10d63c11d73e4636f24f08daf0278abf01c4d"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
+ "js-sys",
  "num-traits",
  "serde",
+ "wasm-bindgen",
  "windows-link",
 ]
 
@@ -362,16 +364,14 @@ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 
 [[package]]
 name = "datastar"
-version = "0.1.0"
-source = "git+https://github.com/starfederation/datastar?tag=v1.0.0-beta.11#70b77cf09273d293d9b353ad02a1e0841994cc44"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0805c542838bb4c0769e26e1cdf70ff913e43e146b7e7563241fe95f32606643"
 dependencies = [
  "axum",
- "futures-util",
- "http-body",
- "pin-project-lite",
+ "chrono",
  "serde",
  "serde_json",
- "sync_wrapper",
 ]
 
 [[package]]
@@ -419,6 +419,25 @@ name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
+
+[[package]]
+name = "example_pages"
+version = "0.1.0"
+dependencies = [
+ "async-stream",
+ "axum",
+ "axum-macros",
+ "chrono",
+ "components",
+ "datastar",
+ "maud",
+ "rand",
+ "serde",
+ "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "fnv"

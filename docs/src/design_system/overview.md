@@ -41,6 +41,26 @@ The DSP Design System is currently in early development.
   - `just playground test` - Run all automated tests
   - `just playground test-headed` - Run tests with browser visible
 
+### Example Pages
+
+The design system includes example applications that showcase components in realistic contexts. These examples demonstrate component usage, identify gaps in the component library, and showcase DataStar integration patterns.
+
+#### Basic Website Example
+- **URL**: http://localhost:3500 (via `just run-watch-example-basic-website`)
+- **Purpose**: Multi-page website demonstrating the design system with server-rendered HTML and hypermedia-driven interactivity
+- **Features**:
+  - Complete website with 9 pages (home, projects, services, knowledge hub, about, FAQ, contact, status, news)
+  - Server-Sent Events (SSE) for live updates (statistics and system status)
+  - Interactive drawer with dynamic content loading
+  - Pagination and search
+  - Responsive design with mobile and desktop layouts
+- **DataStar Integration**: Showcases SSE, fragment merging, signals, event handlers, conditional classes, and dynamic content loading
+- **Commands**:
+  - `just run-example-basic-website` - Run the example
+  - `just run-watch-example-basic-website` - Run with hot reload
+
+See `modules/design_system/example_pages/README.md` for detailed information about the example and the DataStar features demonstrated.
+
 <!-- TODO: Add the following pages:
   - [Aim and Purpose]()
   - [Design Principles]()

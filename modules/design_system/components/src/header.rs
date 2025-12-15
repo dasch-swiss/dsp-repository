@@ -40,7 +40,7 @@ fn generate_menu_id(label: &str) -> String {
 
 fn render_logo(config: &HeaderConfig) -> Markup {
     html! {
-        a href="#" class="-m-1.5 p-1.5" {
+        a href="/" class="-m-1.5 p-1.5" {
             span class="sr-only" { (config.company_name) }
             img src=(config.logo_light_url) alt="" class="h-8 w-auto dark:hidden";
             img src=(config.logo_dark_url) alt="" class="h-8 w-auto not-dark:hidden";

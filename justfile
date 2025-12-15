@@ -109,4 +109,16 @@ stop-playground:
 check-playground:
     @curl -s -o /dev/null -w "%{http_code}" http://localhost:3400 && echo " - Playground server is running at http://localhost:3400" || echo "Playground server is not running"
 
+# Run an example pages app (e.g., just run-example basic-website)
+run-example APP:
+    cargo run --bin {{ APP }}
+
+# Run basic-website example app
+run-example-basic-website:
+    cargo run --bin basic-website
+
+# Watch and run basic-website example app with hot reload
+run-watch-example-basic-website:
+    cargo watch -s 'cargo run --bin basic-website'
+
 mod playground 'modules/design_system/playground'

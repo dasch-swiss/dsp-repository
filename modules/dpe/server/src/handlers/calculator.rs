@@ -1,10 +1,10 @@
+use std::convert::Infallible;
 use std::sync::Arc;
 
 use async_stream::stream;
 use axum::extract::{Query, State};
-use axum::response::{Html, IntoResponse, Response};
-use datastar::prelude::MergeFragments;
-use datastar::Sse;
+use axum::response::{Html, IntoResponse, Response, Sse};
+use datastar::prelude::PatchElements;
 use types::calculator::DcfForm;
 
 use crate::app_state::AppState;
@@ -33,8 +33,8 @@ pub(crate) async fn calculate_action_handler(
             .compute_dcf_result(form.fcf, form.growth, form.discount, form.terminal, form.years);
 
     let res = api::routes::calculator::get_result_table_page_fragment(&dcf_result);
-    Sse(stream! {
-        yield MergeFragments::new(format!("<div id='intrinsic_value' class='value-display'>Intrinsic Value: ${}</div>", dcf_result.total_intrinsic_value)).into();
-        yield MergeFragments::new(res.clone()).into()
+    Sse::new(stream! {
+        yield Ok::<_, Infallible>(PatchElements::new(format!("<div id='intrinsic_value' class='value-display'>Intrinsic Value: ${}</div>", dcf_result.total_intrinsic_value)).into());
+        yield Ok::<_, Infallible>(PatchElements::new(res.clone()).into())
     })
 }

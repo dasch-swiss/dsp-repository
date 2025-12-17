@@ -35,10 +35,7 @@ impl ComponentBuilder for HeroBuilder {
         let has_announcement = self.announcement_text.is_some();
 
         // Compute IDs for attributes
-        let heading_id = self
-            .id
-            .clone()
-            .or_else(|| self.test_id.clone().map(|t| format!("{}-heading", t)));
+        let heading_id = self.id.clone().or_else(|| self.test_id.clone().map(|t| format!("{t}-heading")));
         let section_id = self.id.clone();
         let test_id = self.test_id.as_deref().unwrap_or("hero");
 

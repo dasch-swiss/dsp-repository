@@ -15,13 +15,13 @@ impl fmt::Display for PlaygroundError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             PlaygroundError::InvalidComponent(component) => {
-                write!(f, "Invalid component: '{}'", component)
+                write!(f, "Invalid component: '{component}'")
             }
             PlaygroundError::InvalidVariant { component, variant } => {
-                write!(f, "Invalid variant '{}' for component '{}'", variant, component)
+                write!(f, "Invalid variant '{variant}' for component '{component}'")
             }
             PlaygroundError::ParameterValidationError(msg) => {
-                write!(f, "Parameter validation error: {}", msg)
+                write!(f, "Parameter validation error: {msg}")
             }
         }
     }

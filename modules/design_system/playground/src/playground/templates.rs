@@ -10,13 +10,13 @@ fn build_component_link(component_name: &str, current_params: &str) -> String {
     for param in current_params.split('&') {
         if let Some((key, value)) = param.split_once('=') {
             if key == "theme" {
-                preserved_params.push(format!("{}={}", key, value));
+                preserved_params.push(format!("{key}={value}"));
             }
         }
     }
 
     // Build new URL with component parameter first, defaulting to component-store view
-    let mut url = format!("/?component={}&view=component-store", component_name);
+    let mut url = format!("/?component={component_name}&view=component-store");
 
     if !preserved_params.is_empty() {
         url.push('&');

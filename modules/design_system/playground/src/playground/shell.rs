@@ -27,8 +27,8 @@ fn render_shell_content(data: &ShellData) -> Markup {
         "component={}&variant=default&theme={}&view=examples",
         data.current_component, data.current_theme
     );
-    let iframe_src_component_store = format!("/iframe?{}", component_store_params);
-    let iframe_src_examples = format!("/iframe?{}", examples_params);
+    let iframe_src_component_store = format!("/iframe?{component_store_params}");
+    let iframe_src_examples = format!("/iframe?{examples_params}");
 
     html! {
         div class="grid grid-cols-[250px_1fr] h-screen" {

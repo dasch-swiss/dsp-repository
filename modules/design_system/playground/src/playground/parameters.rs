@@ -87,7 +87,7 @@ impl PlaygroundParams {
         let mut params = vec![format!("component={}", self.component)];
 
         if let Some(variant) = &self.variant {
-            params.push(format!("variant={}", variant));
+            params.push(format!("variant={variant}"));
         }
 
         params.push(format!("theme={}", self.theme));

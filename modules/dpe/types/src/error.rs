@@ -9,8 +9,8 @@ pub enum AppError {
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            AppError::Message(msg) => write!(f, "{}", msg),
-            AppError::Msg(msg) => write!(f, "{}", msg),
+            AppError::Message(msg) => write!(f, "{msg}"),
+            AppError::Msg(msg) => write!(f, "{msg}"),
         }
     }
 }

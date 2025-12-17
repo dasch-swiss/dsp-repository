@@ -4,6 +4,7 @@ mod faq;
 mod home;
 mod knowledge_hub;
 mod news;
+mod project_data;
 pub mod projects;
 mod services;
 mod status;

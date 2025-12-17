@@ -29,7 +29,7 @@ impl InMemoryMetadataRepository {
     }
 
     pub fn new_from_path(data_path: &Path) -> Self {
-        info!("Init Repository {:?}", data_path);
+        info!("Init Repository {data_path:?}");
         let data = Arc::new(RwLock::new(HashMap::new()));
 
         let file_paths = load_json_file_paths(data_path);
@@ -45,7 +45,7 @@ impl InMemoryMetadataRepository {
 
             let shortcode = entity.research_project.shortcode.to_owned();
             if known_shortcodes.contains(&shortcode) {
-                panic!("Duplicate shortcode: {:?}", shortcode);
+                panic!("Duplicate shortcode: {shortcode:?}");
             }
             known_shortcodes.push(shortcode);
 

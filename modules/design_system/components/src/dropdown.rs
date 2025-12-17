@@ -27,7 +27,7 @@ use crate::ComponentBuilder;
 #[must_use]
 pub fn dropdown_secondary(id: impl Into<String>, label: impl Into<String>, menu: MenuBuilder) -> Markup {
     let id = id.into();
-    let trigger_id = format!("{}-trigger", id);
+    let trigger_id = format!("{id}-trigger");
 
     let trigger_button = button::button(label)
         .with_id(&trigger_id)
@@ -59,7 +59,7 @@ pub fn dropdown_secondary(id: impl Into<String>, label: impl Into<String>, menu:
 #[must_use]
 pub fn dropdown_more_vert(id: impl Into<String>, menu: MenuBuilder) -> Markup {
     let id = id.into();
-    let trigger_id = format!("{}-trigger", id);
+    let trigger_id = format!("{id}-trigger");
 
     let trigger_button = button::icon_button(icon::icon(IconType::MoreVert))
         .with_id(&trigger_id)
@@ -89,7 +89,7 @@ pub fn dropdown_more_vert(id: impl Into<String>, menu: MenuBuilder) -> Markup {
 #[must_use]
 pub fn dropdown_hamburger(id: impl Into<String>, menu: MenuBuilder) -> Markup {
     let id = id.into();
-    let trigger_id = format!("{}-trigger", id);
+    let trigger_id = format!("{id}-trigger");
 
     let trigger_button = button::icon_button(icon::icon(IconType::Hamburger))
         .with_id(&trigger_id)

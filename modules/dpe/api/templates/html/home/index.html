@@ -14,18 +14,12 @@
         <p>
             SSE events will be streamed from the backend to the frontend.
         </p>
-        <p>
-        Link to value calculator: <a href="/calculator">Calculator</a>
-        </p>
         <div>
             <label for="delay">
                 Delay in milliseconds
             </label>
             <input data-bind-delay id="delay" type="number" step="100" min="0"  />
         </div>
-        <button data-on-click="@get('/hello-world')" >
-            Start
-        </button>
     </div>
     <div >
         <div id="message">Hello, world!</div>

@@ -7,7 +7,6 @@ use core::error::Error;
 use std::path::Path;
 use std::sync::Arc;
 
-use services::calculator::CalculatorServiceImpl;
 use services::metadata::MetadataServiceImpl;
 use storage::metadata::InMemoryMetadataRepository;
 use tower_http::cors::{Any, CorsLayer};
@@ -28,7 +27,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         metadata_service: MetadataServiceImpl {
             repo: InMemoryMetadataRepository::new_from_path(Path::new("./data")),
         },
-        calculator_service: CalculatorServiceImpl,
     });
 
     let cors = CorsLayer::new()

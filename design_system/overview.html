@@ -288,6 +288,30 @@ Additional component variants may be added, when necessary.</li>
 </ul>
 </li>
 </ul>
+<h3 id="example-pages"><a class="header" href="#example-pages">Example Pages</a></h3>
+<p>The design system includes example applications that showcase components in realistic contexts. These examples demonstrate component usage, identify gaps in the component library, and showcase DataStar integration patterns.</p>
+<h4 id="basic-website-example"><a class="header" href="#basic-website-example">Basic Website Example</a></h4>
+<ul>
+<li><strong>URL</strong>: http://localhost:3500 (via <code>just run-watch-example-basic-website</code>)</li>
+<li><strong>Purpose</strong>: Multi-page website demonstrating the design system with server-rendered HTML and hypermedia-driven interactivity</li>
+<li><strong>Features</strong>:
+<ul>
+<li>Complete website with 9 pages (home, projects, services, knowledge hub, about, FAQ, contact, status, news)</li>
+<li>Server-Sent Events (SSE) for live updates (statistics and system status)</li>
+<li>Interactive drawer with dynamic content loading</li>
+<li>Pagination and search</li>
+<li>Responsive design with mobile and desktop layouts</li>
+</ul>
+</li>
+<li><strong>DataStar Integration</strong>: Showcases SSE, fragment merging, signals, event handlers, conditional classes, and dynamic content loading</li>
+<li><strong>Commands</strong>:
+<ul>
+<li><code>just run-example-basic-website</code> - Run the example</li>
+<li><code>just run-watch-example-basic-website</code> - Run with hot reload</li>
+</ul>
+</li>
+</ul>
+<p>See <code>modules/design_system/example_pages/README.md</code> for detailed information about the example and the DataStar features demonstrated.</p>
 <!-- TODO: Add the following pages:
   - [Aim and Purpose]()
   - [Design Principles]()

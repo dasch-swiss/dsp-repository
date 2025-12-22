@@ -26,22 +26,22 @@ authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
 [workspace.dependencies]
 askama = { version = "0.13.0", features = ["full"] }
 async-stream = "0.3.6"
-axum = { version = "0.8.3", features = ["macros", "ws"] }
+axum = { version = "0.8.8", features = ["macros", "ws"] }
 axum-macros = "0.5.0-alpha.1"
 datastar = { version = "0.3.1", features = ["axum"] }
 futures = "0.3.31"
-log = "0.4.22"
+log = "0.4.29"
 maud = { version = "0.27.0", features = ["axum"] }
-regex = "1.11.1"
+regex = "1.12.2"
 serde = { version = "1", features = ["derive"] }
-serde_with = "3.11.0"
+serde_with = "3.16.1"
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1.17"
 tower = "0.5.1"
-tower-http = { version = "0.6.2", features = ["trace", "fs", "cors"] }
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+tower-http = { version = "0.6.8", features = ["trace", "fs", "cors"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 url = { version = "2", features = ["serde"] }
-uuid = { version = "1.2.2", features = ["v7"] }
+uuid = { version = "1.19.0", features = ["v7"] }
 pulldown-cmark = "0.12"

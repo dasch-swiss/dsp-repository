@@ -11,6 +11,9 @@ You may also view the rendered documentation by following these steps:
 - Build and run the documentation with `just docs-serve`
 - Open your browser and navigate to `http://localhost:3000`
 
+You may start and run the playground of the ui-components by the following steps:
+- Run in playground: `just run-watch-playground` (live css reload via tailwind cli)
+
 ## License
 
 This repository contains code under multiple licenses:

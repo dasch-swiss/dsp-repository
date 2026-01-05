@@ -1,13 +1,9 @@
 {
   "name": "design_system",
   "version": "1.0.0",
-  "description": "DSP Design System",
+  "description": "DSP Design System - Tailwind CSS v4 Build",
   "private": true,
-  "scripts": {
-    "tailwind:dev": "tailwindcss -i input.css -o tailwind.css",
-    "tailwind:build": "tailwindcss -i input.css -o tailwind.css --minify",
-    "tailwind:watch": "tailwindcss -i input.css -o tailwind.css --watch"
-  },
+  "type": "module",
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.17",
     "tailwindcss": "^4.1.17"

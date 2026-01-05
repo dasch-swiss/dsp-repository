@@ -25,7 +25,7 @@ pub async fn iframe_component(Query(params): Query<PlaygroundParams>) -> Result<
     let theme = format!("{}", playground_params.theme);
     let content = render_iframe_content(component_markup);
     // TODO: Build stripped tailwind CSS
-    let html_markup = render_page_shell(&theme, "Component Preview", "/assets/css/styles.css", content);
+    let html_markup = render_page_shell(&theme, "Component Preview", "/playground-assets/css/styles.css", content);
 
     Ok(html_markup)
 }
@@ -73,5 +73,5 @@ fn generate_component_markup(params: &PlaygroundParams) -> Result<Markup, Playgr
 
 fn render_error_page(error: &PlaygroundError) -> Markup {
     let content = render_error_content(&error.to_string());
-    render_page_shell("light", "Error", "/assets/css/styles.css", content)
+    render_page_shell("light", "Error", "/design-system/tailwind.css", content)
 }

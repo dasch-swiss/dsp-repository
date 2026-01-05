@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 - **Structure**: One component per file, export via `lib.rs`
 - **Design Reference**: Use Tailwind components as basis of design patterns and principles
 - **Accessibility**: Use semantic HTML, proper ARIA attributes, keyboard navigation support
+- **Tailwind CSS**: Uses Tailwind CSS v4 with `@tailwindcss/cli` and `tailwindcss` packages. Requires `npm install` before first use. Run `just tailwind-dev` to build CSS, or `just tailwind-watch` for auto-rebuild on changes.
 
 ## Patterns
 

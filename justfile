@@ -93,6 +93,19 @@ docs-test:
     mdbook test docs
 
 run-watch-playground:
+    #!/usr/bin/env bash
+    cleanup() {
+        pkill -f "playground-server" || true
+        pkill -f "cargo-watch.*playground" || true
+    }
+    trap cleanup EXIT INT TERM
+    cargo watch -x 'run --bin playground-server'
+
+# Run playground with Tailwind watch in single terminal (clean shutdown on Ctrl+C)
+run-watch-playground-with-css:
+    #!/usr/bin/env bash
+    trap 'kill 0' EXIT
+    cd modules/design_system && npx @tailwindcss/cli -i input.css -o tailwind.css --watch &
     cargo watch -s 'cargo run --bin playground-server'
 
 # Run playground server in background (for MCP testing)

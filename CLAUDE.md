@@ -32,7 +32,7 @@ modules/
 
 ### Prerequisites
 
-- **Node.js and npm**: Required for the design system playground and Tailwind CSS CLI
+- **Node.js and npm**: Required for the design system playground and Tailwind CSS v4 packages
 - **Rust**: Toolchain 1.86.0
 - **Just**: Command runner for development tasks
 

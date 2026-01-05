@@ -4,7 +4,7 @@
   "description": "End-to-end testing for DSP Repository design system",
   "type": "module",
   "scripts": {
-    "pretest": "node -e \"require('fs').rmSync('tests/output', {recursive:true, force:true})\"",
+    "pretest": "node -e \"import('fs').then(fs => fs.rmSync('tests/output', {recursive:true, force:true}))\"",
     "pretest:functional": "npm run pretest",
     "pretest:visual": "npm run pretest",
     "test": "playwright test",

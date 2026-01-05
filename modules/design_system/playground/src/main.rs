@@ -7,7 +7,7 @@ use axum::routing::get;
 use axum::{Extension, Router};
 use livereload::{reload_ws, trigger_reload, ReloadNotifier};
 use tower_http::cors::{Any, CorsLayer};
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
@@ -37,7 +37,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/reload-ws", get(reload_ws))
         .nest_service("/assets", ServeDir::new("assets"))
         .nest_service("/playground-assets", ServeDir::new("modules/design_system/playground/assets"))
-        .nest_service("/design-system", ServeDir::new("modules/design_system"))
+        .route_service(
+            "/design-system/tailwind.css",
+            ServeFile::new("modules/design_system/tailwind.css"),
+        )
         .layer(Extension(notifier.clone()));
 
     let app = routes.layer(cors);

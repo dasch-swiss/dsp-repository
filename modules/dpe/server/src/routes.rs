@@ -10,5 +10,6 @@ pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .route("/projects", get(handlers::project::projects_list_handler))
         .route("/projects/{id}", get(handlers::project::project_details_handler))
+        .route("/projects/{id}/json", get(handlers::project_v2::project_json_handler))
         .route("/", get(handlers::home::home_page_handler))
 }

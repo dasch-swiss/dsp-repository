@@ -8,6 +8,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use services::metadata::MetadataServiceImpl;
+use services::metadata_v2::project_repository::ProjectRepository;
 use storage::metadata::InMemoryMetadataRepository;
 use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::layer::SubscriberExt;
@@ -27,6 +28,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         metadata_service: MetadataServiceImpl {
             repo: InMemoryMetadataRepository::new_from_path(Path::new("./data")),
         },
+        project_repository: ProjectRepository {},
     });
 
     let cors = CorsLayer::new()

@@ -1,0 +1,296 @@
+{
+    "id": "0806",
+    "pid": "MISSING",
+    "name": "Anton Webern Gesamtausgabe",
+    "shortcode": "0806",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "The Anton Webern Gesamtausgabe (AWG) is a critical-historical edition which aims to make Webern’s entire oeuvre accessible to musical scholarship and practice in a scholarly form.",
+    "description": {
+        "en": "The Anton Webern Gesamtausgabe (AWG) is a critical-historical edition which aims to make Webern’s entire oeuvre accessible to musical scholarship and practice in a scholarly form. The edition includes not only all the works Webern himself had forwarded to be printed but also their unpublished variants. It also includes compositions that were never made public in his lifetime, works from his youth and student years, as well as fragments, sketches, arrangements and revisions of his and other scores."
+    },
+    "startDate": "2006-10-01",
+    "endDate": "2024-12-31",
+    "url": [
+        "https://app.dasch.swiss/project/ot7I2nU-SdeXIf17LX_h3g",
+        "https://www.anton-webern.ch"
+    ],
+    "howToCite": "See https://anton-webern.ch/en/info/citation.html",
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text",
+        "XML"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        }
+    ],
+    "keywords": [
+        {
+            "de": "Anton Webern"
+        },
+        {
+            "de": "Gesamtausgabe"
+        },
+        {
+            "en": "Viennese school"
+        },
+        {
+            "en": "critical edition"
+        },
+        {
+            "en": "digital music edition"
+        },
+        {
+            "en": "musicology"
+        },
+        {
+            "en": "philology"
+        },
+        {
+            "en": "semantic web"
+        },
+        {
+            "en": "source studies"
+        },
+        {
+            "en": "textual criticism"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/620201",
+            "text": "Criticism of texts"
+        },
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/620306",
+            "text": "Music, musicology "
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "1850–today"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/SK/slovakia.html",
+            "text": "Slovakia"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/CH/switzerland.html",
+            "text": "Switzerland"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/US/united-states.html",
+            "text": "United States"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/HR/croatia.html",
+            "text": "Croatia"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/SI/slovenia.html",
+            "text": "Slovenia"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/FR/france.html",
+            "text": "France"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/ES/spain.html",
+            "text": "Spain"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/GB/united-kingdom.html",
+            "text": "United Kingdom"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/PL/poland.html",
+            "text": "Poland"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/DE/germany.html",
+            "text": "Germany"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/AT/austria.html",
+            "text": "Austria"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/CZ/czechia.html",
+            "text": "Czechia"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/IT/italy.html",
+            "text": "Italy"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/HU/hungary.html",
+            "text": "Hungary"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/12217934/baltic-states.html",
+            "text": "Baltic States"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0806-person-000",
+            "contributorType": [
+                "Project manager",
+                "Member of the editorial management"
+            ]
+        },
+        {
+            "contributor": "0806-person-001",
+            "contributorType": [
+                "Member of the editorial management"
+            ]
+        },
+        {
+            "contributor": "0806-person-002",
+            "contributorType": [
+                "Member of the editorial management",
+                "Creator",
+                "Contributor"
+            ]
+        },
+        {
+            "contributor": "0806-person-003",
+            "contributorType": [
+                "Creator",
+                "Contributor"
+            ]
+        },
+        {
+            "contributor": "0806-person-004",
+            "contributorType": [
+                "Creator",
+                "Contributor"
+            ]
+        },
+        {
+            "contributor": "0806-person-005",
+            "contributorType": [
+                "Creator",
+                "Contributor"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The Anton Webern Gesamtausgabe (AWG) is a critical-historical edition of Anton Webern’s oeuvre. This edition makes his work freely accessible to the public in a form that is academically appropriate and serves musical practice. The edition includes not only the works that Webern himself brought to print, but also currently unpublished variants of his works, as well as compositions unpublished during his lifetime, fragments, sketches and arrangements. The AWG will be published in hybrid form. The printed volumes will be published by Universal Edition, Vienna, while the components and databases accessible online will be presented in a dedicated web application, as well as within the generic web application developed by DaSCH - Swiss National Data and Service Center for the Humanities with the aim of securing direct long-term access to the data. The AWG is also working on a documentation of the composer's biography, as well as the history of the creation, publication and performance of his works. To achieve this, information of various kinds has been archived and linked in the database, reflecting a chronology that describes Webern’s private and professional life in detail. The documentation of the development of his works is verified by references to material evidence (e.g. correspondence as archived in the letters section). Furthermore, brief, keyword-based information on relevant persons serves to provide a better overview of the composer’s contacts and social environment."
+    },
+    "contactPoint": [
+        "0806-organization-000"
+    ],
+    "publications": [
+        {
+            "text": "See",
+            "pid": {
+                "url": "https://anton-webern.ch/en/research/publications.html"
+            }
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0806-organization-004"
+            ],
+            "name": "Editionen [2021–2024]"
+        },
+        {
+            "funders": [
+                "0806-organization-003"
+            ],
+            "number": "157968",
+            "name": "Editions",
+            "url": "https://data.snf.ch/grants/grant/157968"
+        },
+        {
+            "funders": [
+                "0806-organization-003"
+            ],
+            "number": "162871",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/162871"
+        },
+        {
+            "funders": [
+                "0806-organization-003"
+            ],
+            "number": "143565",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/143565"
+        },
+        {
+            "funders": [
+                "0806-organization-003"
+            ],
+            "number": "126789",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/126789"
+        },
+        {
+            "funders": [
+                "0806-organization-003"
+            ],
+            "number": "113769",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/113769"
+        },
+        {
+            "funders": [
+                "0806-organization-005"
+            ],
+            "number": "E13_1003",
+            "name": "[2014–2016]",
+            "url": "https://www.old.evs-musikstiftung.ch/de/preise/preise/foerderprojekte/symposienpublikationen/anton-webern-briefwechsel-mit-der-universal-0"
+        },
+        {
+            "funders": [
+                "0806-organization-005"
+            ],
+            "number": "E09_471",
+            "name": "[2010–2012]",
+            "url": "https://www.old.evs-musikstiftung.ch/de/preise/preise/archiv/foerderprojekte/2011/publikationentagungen/historisch-kritische-gesamtausgabe"
+        }
+    ]
+}

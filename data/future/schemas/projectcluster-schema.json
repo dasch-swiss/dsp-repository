@@ -1,0 +1,84 @@
+{
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "pid": {
+      "title": "Pid",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "projects": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Projects",
+      "type": "array"
+    },
+    "projectClusters": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Projectclusters",
+      "type": "array"
+    },
+    "description": {
+      "patternProperties": {
+        "^[a-z]{2}$": {
+          "type": "string"
+        }
+      },
+      "title": "Description",
+      "type": "object"
+    },
+    "url": {
+      "format": "uri",
+      "minLength": 1,
+      "title": "Url",
+      "type": "string"
+    },
+    "howToCite": {
+      "title": "Howtocite",
+      "type": "string"
+    },
+    "alternativeNames": {
+      "items": {
+        "patternProperties": {
+          "^[a-z]{2}$": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "title": "Alternativenames",
+      "type": "array"
+    },
+    "contactPoint": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Contactpoint",
+      "type": "array"
+    },
+    "documentationMaterial": {
+      "items": {
+        "format": "uri",
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Documentationmaterial",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "pid",
+    "name"
+  ],
+  "title": "ProjectCluster",
+  "type": "object"
+}

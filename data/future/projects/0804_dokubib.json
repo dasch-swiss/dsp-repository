@@ -1,0 +1,114 @@
+{
+    "id": "0804",
+    "pid": "MISSING",
+    "name": "Bilddatenbank Bibliothek St. Moritz",
+    "shortcode": "0804",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "Bibliothek St. Moritz Dokumentation is the local history archive of the community of St. Moritz, Switzerland.",
+    "description": {
+        "en": "Bibliothek St. Moritz Dokumentation is the local history archive of the community of St. Moritz, Switzerland. It’s collection contains publications, manuscripts and audiovisual documents of the touristic development of St. Moritz"
+    },
+    "startDate": "1980-04-01",
+    "endDate": "MISSING",
+    "url": [
+        "https://app.dasch.swiss/project/ZjLtCB-rRpG-NglRpxy1dg",
+        "https://www.biblio-stmoritz.ch/dokumentationsbibliothek"
+    ],
+    "howToCite": "Dokumentationsbibliothek St. Moritz",
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Historic photograph"
+        },
+        {
+            "de": "Historisches Foto"
+        },
+        {
+            "en": "Local history"
+        },
+        {
+            "de": "Ortsgeschichte"
+        },
+        {
+            "de": "St. Moritz"
+        },
+        {
+            "en": "Touristic development"
+        },
+        {
+            "de": "Touristische Entwicklung"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/550301",
+            "text": "Local history"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "type": "Chronontology",
+            "url": "http://chronontology.dainst.org/period/mvhEZ4S2qWEa",
+            "text": "19th Century (1800 - 1899)"
+        },
+        {
+            "type": "Chronontology",
+            "url": "http://chronontology.dainst.org/period/INtagfT8h7Fs",
+            "text": "20th and 21st Centuries"
+        },
+        {
+            "type": "Chronontology",
+            "url": "http://chronontology.dainst.org/period/kqORhO4TGm4n",
+            "text": "20th Century (1900 - 1999)"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://geonames.org/2658813",
+            "text": "Saint Moritz"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0804-organization-000",
+            "contributorType": [
+                "creator",
+                "publisher"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Bilddatenbank makes accessible the collection of historic photographs and other graphical representation of St. Moritz Dokumentationsbibliothek"
+    },
+    "funding": "No funding"
+}

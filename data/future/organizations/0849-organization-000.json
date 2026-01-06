@@ -1,0 +1,12 @@
+{
+    "id": "0849-organization-000",
+    "pid": "MISSING",
+    "name": "University of Lausanne (UNIL)",
+    "url": "MISSING",
+    "address": {
+        "street": "Université de Lausanne",
+        "postalCode": "1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+    }
+}

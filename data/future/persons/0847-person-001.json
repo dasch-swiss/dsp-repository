@@ -1,0 +1,24 @@
+{
+    "id": "0847-person-001",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-1525-9205",
+            "text": "ORCID URL: https://orcid.org/0000-0002-1525-9205"
+        }
+    ],
+    "givenNames": [
+        "Alexandra"
+    ],
+    "familyNames": [
+        "Attia"
+    ],
+    "jobTitles": [
+        "Post-doc researcher"
+    ],
+    "affiliations": [
+        "0847-organization-000"
+    ],
+    "email": "alexandra.attia@unifr.ch"
+}

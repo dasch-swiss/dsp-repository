@@ -1,0 +1,23 @@
+{
+    "id": "0820-person-019",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/xavier-droux-230449156/",
+            "text": "https://www.linkedin.com/in/xavier-droux-230449156/"
+        }
+    ],
+    "givenNames": [
+        "Xavier"
+    ],
+    "familyNames": [
+        "Droux"
+    ],
+    "jobTitles": [
+        "Egyptologist"
+    ],
+    "affiliations": [
+        "0820-organization-001"
+    ]
+}

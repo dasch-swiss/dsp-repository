@@ -1,0 +1,24 @@
+{
+    "id": "0820-person-052",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "http://www.leatherandshoes.nl/",
+            "text": "http://www.leatherandshoes.nl"
+        }
+    ],
+    "givenNames": [
+        "André"
+    ],
+    "familyNames": [
+        "Veldmeijer"
+    ],
+    "jobTitles": [
+        "Archaeologist",
+        "Paleontologist"
+    ],
+    "affiliations": [
+        "0820-organization-014"
+    ]
+}

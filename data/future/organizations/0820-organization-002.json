@@ -1,0 +1,13 @@
+{
+    "id": "0820-organization-002",
+    "pid": "MISSING",
+    "name": "Institute of Evolutionary Medicine (IEM)",
+    "url": "http://www.iem.uzh.ch",
+    "address": {
+        "street": "Universität Zürich, Winterthurerstrasse 190",
+        "postalCode": "8057",
+        "locality": "Zürich",
+        "country": "Switzerland"
+    },
+    "email": "info@iem.uzh.ch"
+}

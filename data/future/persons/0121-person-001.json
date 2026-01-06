@@ -1,0 +1,17 @@
+{
+    "id": "0121-person-001",
+    "pid": "MISSING",
+    "givenNames": [
+        "Lauréane"
+    ],
+    "familyNames": [
+        "Badoux"
+    ],
+    "jobTitles": [
+        "SNSF PhD Student"
+    ],
+    "affiliations": [
+        "0121-organization-000"
+    ],
+    "email": "Laureane.Badoux@unil.ch"
+}

@@ -1,0 +1,17 @@
+{
+    "id": "0112-person-007",
+    "pid": "MISSING",
+    "givenNames": [
+        "Loïc"
+    ],
+    "familyNames": [
+        "Jaouen"
+    ],
+    "jobTitles": [
+        "IT support"
+    ],
+    "affiliations": [
+        "0112-organization-000"
+    ],
+    "email": "loic.jaouen@unil.ch"
+}

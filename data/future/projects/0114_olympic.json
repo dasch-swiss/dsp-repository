@@ -1,0 +1,159 @@
+{
+    "id": "0114",
+    "pid": "MISSING",
+    "name": "The International Olympic Committee members (1894-1972). A transnational elite prosopography",
+    "shortcode": "0114",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "Ce projet reconstituera les trajectoires familiales, professionnelles, sociales et politiques des 213 membres du CIO cooptés avant 1972.",
+    "description": {
+        "fr": "Le CIO est la première organisation sportive internationale installée en Suisse, et la plus importante puisqu’elle prétend réguler le système sportif international. Son fondateur, le baron français Pierre de Coubertin (1863-1937), l’a dotée d’un système de valeurs qui emprunte à la culture chevaleresque des élites européennes traditionnelles, à l’humanisme des Lumières, au pacifisme libéral transatlantique du second XIXe siècle, et au conservatisme hygiéniste et social. Percuté par les diplomaties d’Etat qui ont intégré le sport parmi les outils de leur soft power, le CIO a dû affronter les grands enjeux du XXe siècle. Ce projet prévoit de dépasser l’approche institutionnelle classique en étudiant les trajectoires de ses membres qui, pour la plupart, restent méconnus.\n\nDans un premier temps, ce projet reconstituera les trajectoires familiales, professionnelles, sociales et politiques des 213 membres du CIO cooptés avant 1972. Dans un deuxième temps, il décryptera les mécanismes de cooptation ainsi que les modalités de prise de décision propres au CIO. Enfin, il s’agira d’évaluer « le plus petit dénominateur social, culturel et politique » commun à tous ces leaders qui définit leur vision du monde, et de questionner les concepts d’apolitisme (du sport) et de neutralité diplomatique (du CIO).\nFondé sur une approche prosopographique (croisement et mise en série de micro-biographies), le projet se situe au point d’intersection de l’histoire du sport, de la diplomatie culturelle, des cultures politiques, de la circulation des élites à l’échelle mondiale et du cosmopolitisme. Il contribue ainsi à l’histoire des organisations internationales installées en Suisse et à une meilleure compréhension des concepts de pacifisme et de neutralité."
+    },
+    "startDate": "2018-09-01",
+    "endDate": "2022-08-31",
+    "url": [
+        "https://app.ls-prod-server.dasch.swiss/project/0114"
+    ],
+    "howToCite": "Clastres, P., Carpentier, F., Klima, H., Défayes, F., Metzger, C., Rivoal, M., 2020, Les membres du Comité international olympique (CIO) de 1894 à 1972 [database]. DaSCH https://ark.dasch.swiss/ark:/72163/1/0114.",
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Französisch",
+            "en": "French",
+            "fr": "français"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Apolitism"
+        },
+        {
+            "en": "International Olympic Committee"
+        },
+        {
+            "en": "International organisations"
+        },
+        {
+            "en": "Leaders and elites"
+        },
+        {
+            "en": "Neutrality"
+        },
+        {
+            "en": "Pacifism"
+        },
+        {
+            "en": "Sport history"
+        },
+        {
+            "en": "Transnational political cultures"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "https://skos.um.es/unesco6/5502/html",
+            "text": "General History"
+        },
+        {
+            "en": "10301 General history (without pre-and early history)"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "de": "1894-1972",
+            "en": "1894-1972",
+            "fr": "1894-1972"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "URL",
+            "url": "http://vocab.getty.edu/page/tgn/7029392",
+            "text": "World"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0114-person-000",
+            "contributorType": [
+                "Project leader",
+                "Data curator"
+            ]
+        },
+        {
+            "contributor": "0114-person-001",
+            "contributorType": [
+                "Project member",
+                "Data collector",
+                "Data curator"
+            ]
+        },
+        {
+            "contributor": "0114-person-002",
+            "contributorType": [
+                "Project member",
+                "Data collector",
+                "Data curator"
+            ]
+        },
+        {
+            "contributor": "0114-person-003",
+            "contributorType": [
+                "Data collector"
+            ]
+        },
+        {
+            "contributor": "0114-person-004",
+            "contributorType": [
+                "Data collector"
+            ]
+        },
+        {
+            "contributor": "0114-person-005",
+            "contributorType": [
+                "Data curator"
+            ]
+        }
+    ],
+    "abstract": {
+        "fr": "Si la ville de Lausanne a une existence à l'échelle-monde, c'est largement dû à son statut de capitale du sport international. Mais qui sont vraiment les membres du Comité international olympique (CIO) installé sur les bords du Léman depuis 1915 ? De quelle élite transnationale sont-ils le nom ? Constitué en Sorbonne en 1894, le CIO a été doté par son fondateur, le baron français Pierre de Coubertin (1863-1937), d'un système de valeurs qui mêle la culture chevaleresque des aristocraties européennes, l'humanisme de la Renaissance plutôt que celui des Lumières, l'hygiénisme social, l'éducation britannique au struggleforlife, le dogme élitaire de l'amateurisme, et le liberal pacifism transatlantique du second XIXe siècle. Que ce corpus de valeurs ait survécu jusqu'à nos jours s'explique par le principe de cooptation qui prévaut dès l'origine pour le recrutement des membres du CIO. Cela tient également au règlement adopté en 1908 qui stipule que ses membres représentent le CIO dans leurs pays respectifs, et non l'inverse. Au croisement de l'histoire, des sciences politiques, et de la sociologie des élites, notre projet vise donc à connaître les facteurs socio-culturels, économiques et politiques qui ont prévalu dans le self recruitment des 300 membres cooptés avant la mutation commerciale du CIO dans les années 1970-1980. Nous allons reconstituer leurs trajectoires familiales et professionnelles, identifier leurs formes de sociabilité et leurs pratiques culturelles, préciser leurs orientations idéologiques et leurs engagements politiques, et dessiner leurs réseaux. La méthode prosopographique, ou « biographie collective », est accompagnée par l'utilisation d’une base de données comprenant quelque 300 notices biographiques, qui sont mises en ligne à destination des chercheurs et du grand public."
+    },
+    "contactPoint": [
+        "0114-person-000"
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0114-organization-000"
+            ],
+            "number": "179043",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/179043"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "elites-cio"
+        }
+    ]
+}

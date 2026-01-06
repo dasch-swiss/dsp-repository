@@ -1,0 +1,25 @@
+{
+    "id": "0806-person-005",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0744-5374",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0744-5374"
+        }
+    ],
+    "givenNames": [
+        "Stefan"
+    ],
+    "familyNames": [
+        "Münnich"
+    ],
+    "jobTitles": [
+        "Research associate"
+    ],
+    "affiliations": [
+        "0806-organization-000",
+        "0806-organization-001"
+    ],
+    "email": "stefan.muennich@unibas.ch"
+}

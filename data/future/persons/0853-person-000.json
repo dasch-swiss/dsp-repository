@@ -1,0 +1,24 @@
+{
+    "id": "0853-person-000",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://daw.philhist.unibas.ch/de/personen/sandrine-vuilleumier",
+            "text": "https://daw.philhist.unibas.ch/de/personen/sandrine-vuilleumier"
+        }
+    ],
+    "givenNames": [
+        "Sandrine"
+    ],
+    "familyNames": [
+        "Vuilleumier"
+    ],
+    "jobTitles": [
+        "Prof. Dr."
+    ],
+    "affiliations": [
+        "0853-organization-001"
+    ],
+    "email": "sandrine.vuilleumier@unibas.ch"
+}

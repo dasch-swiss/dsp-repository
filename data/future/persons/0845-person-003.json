@@ -1,0 +1,17 @@
+{
+    "id": "0845-person-003",
+    "pid": "MISSING",
+    "givenNames": [
+        "Zoë"
+    ],
+    "familyNames": [
+        "Matthews"
+    ],
+    "jobTitles": [
+        "MA"
+    ],
+    "affiliations": [
+        "0845-organization-000"
+    ],
+    "email": "zoe.matthews@fhnw.ch"
+}

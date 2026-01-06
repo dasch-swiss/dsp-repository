@@ -1,0 +1,211 @@
+{
+  "$defs": {
+    "AccessRights": {
+      "properties": {
+        "accessRights": {
+          "$ref": "#/$defs/AccessRightsType"
+        },
+        "embargoDate": {
+          "format": "date",
+          "title": "Embargodate",
+          "type": "string"
+        }
+      },
+      "required": [
+        "accessRights"
+      ],
+      "title": "AccessRights",
+      "type": "object"
+    },
+    "AccessRightsType": {
+      "description": "The access rights of the record. Literal 'Full Open Access', 'Open Access with Restrictions', 'Embargoed Access', 'Metadata only Access'.",
+      "enum": [
+        "Full Open Access",
+        "Open Access with Restrictions",
+        "Embargoed Access",
+        "Metadata only Access"
+      ],
+      "title": "AccessRightsType",
+      "type": "string"
+    },
+    "LegalInfo": {
+      "properties": {
+        "license": {
+          "$ref": "#/$defs/License"
+        },
+        "copyrightHolder": {
+          "title": "Copyrightholder",
+          "type": "string"
+        },
+        "authorship": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Authorship",
+          "type": "array"
+        }
+      },
+      "required": [
+        "license",
+        "copyrightHolder",
+        "authorship"
+      ],
+      "title": "LegalInfo",
+      "type": "object"
+    },
+    "License": {
+      "properties": {
+        "licenseIdentifier": {
+          "title": "Licenseidentifier",
+          "type": "string"
+        },
+        "licenseDate": {
+          "format": "date",
+          "title": "Licensedate",
+          "type": "string"
+        },
+        "licenseURI": {
+          "format": "uri",
+          "minLength": 1,
+          "title": "Licenseuri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "licenseIdentifier",
+        "licenseDate",
+        "licenseURI"
+      ],
+      "title": "License",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "pid": {
+      "title": "Pid",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "accessRights": {
+      "$ref": "#/$defs/AccessRights"
+    },
+    "legalInfo": {
+      "items": {
+        "$ref": "#/$defs/LegalInfo"
+      },
+      "title": "Legalinfo",
+      "type": "array"
+    },
+    "howToCite": {
+      "title": "Howtocite",
+      "type": "string"
+    },
+    "description": {
+      "patternProperties": {
+        "^[a-z]{2}$": {
+          "type": "string"
+        }
+      },
+      "title": "Description",
+      "type": "object"
+    },
+    "typeOfData": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Typeofdata",
+      "type": "array"
+    },
+    "dateCreated": {
+      "format": "date",
+      "title": "Datecreated",
+      "type": "string"
+    },
+    "dateModified": {
+      "format": "date",
+      "title": "Datemodified",
+      "type": "string"
+    },
+    "languages": {
+      "items": {
+        "patternProperties": {
+          "^[a-z]{2}$": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "minItems": 1,
+      "title": "Languages",
+      "type": "array"
+    },
+    "additionalMaterial": {
+      "items": {
+        "format": "uri",
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Additionalmaterial",
+      "type": "array"
+    },
+    "provenance": {
+      "title": "Provenance",
+      "type": "string"
+    },
+    "keywords": {
+      "items": {
+        "patternProperties": {
+          "^[a-z]{2}$": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "title": "Keywords",
+      "type": "array"
+    },
+    "documentationMaterial": {
+      "items": {
+        "format": "uri",
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Documentationmaterial",
+      "type": "array"
+    },
+    "records": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Records",
+      "type": "array"
+    },
+    "collections": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Collections",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "pid",
+    "name",
+    "accessRights",
+    "legalInfo",
+    "howToCite",
+    "typeOfData",
+    "dateCreated",
+    "languages"
+  ],
+  "title": "Collection",
+  "type": "object"
+}

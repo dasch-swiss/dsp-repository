@@ -1,0 +1,17 @@
+{
+    "id": "REMA-person-005",
+    "pid": "MISSING",
+    "givenNames": [
+        "Serena"
+    ],
+    "familyNames": [
+        "Romano"
+    ],
+    "jobTitles": [
+        "Professor Emeritus"
+    ],
+    "affiliations": [
+        "REMA-organization-000"
+    ],
+    "email": "Serena.Romano@unil.ch"
+}

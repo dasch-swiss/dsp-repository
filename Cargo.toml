@@ -45,3 +45,4 @@ tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 url = { version = "2", features = ["serde"] }
 uuid = { version = "1.2.2", features = ["v7"] }
 pulldown-cmark = "0.12"
+glob = "0.3.3"

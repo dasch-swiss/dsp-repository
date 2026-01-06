@@ -1,0 +1,167 @@
+{
+    "id": "0108",
+    "pid": "MISSING",
+    "name": "Le campane del Canton Ticino. Studio di un patrimonio materiale e immateriale",
+    "shortcode": "0108",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "Ricerca interdisciplinare sulle campane del Canton Ticino, come oggetti storici, artistici e musicali ma anche come mezzi di comunicazione per le comunità, tramite specifici codici tradizionali.",
+    "description": {
+        "it": "Le campane possono essere definite, tra le varie possibilità, come strumenti musicali, sculture in bronzo o mezzi di comunicazione; in realtà, esse racchiudono in sé tutte queste e anche altre definizioni. Molto presenti nel panorama sonoro occidentale, ma spesso anche dimenticate o ignorate, le campane sono al centro di un grande patrimonio materiale e immateriale. Questa ricerca si propone di studiare in modo completo e interdisciplinare le campane del Canton Ticino, con l'obiettivo di produrre una pubblicazione ma anche di sensibilizzare la popolazione ticinese e il mondo accademico (svizzero e internazionale) sull'importanza degli studi campanologici. Tramite lo studio delle campane come prodotti di un sapere specializzato (dati raccolti in un censimento completo già effettuato dall'autore) e l'analisi delle tradizioni di suono come codici comunicativi propri a ciascuna comunità (documentati prima della loro inevitabile scomparsa), si vuole fornire un quadro più ampio possibile di un fenomeno che riguarda in modi molteplici la società ticinese del passato e del presente. Questa ricerca, una volta pubblicata in forma cartacea e digitale, sarà un elemento importante della produzione scientifica ticinese e un punto di riferimento per le ricerche campanologiche su scala internazionale.",
+        "en": "Bells can be defined, among other things, as musical instruments, bronze sculptures or communication devices; in reality, they encompass all these definitions and more. Very present in the Western soundscape, but often forgotten or ignored, bells are at the centre of a great tangible and intangible heritage. This research aims to study the bells of Canton Ticino in a comprehensive and interdisciplinary manner, with the aim of producing a publication but also of raising awareness of the importance of bell studies among the population of Ticino and the academic world (both Swiss and international). Through the study of bells as products of specialised knowledge (data collected in a comprehensive census already carried out by the author) and the analysis of sound traditions as communication codes specific to each community (documented before their inevitable disappearance), the aim is to provide a picture as broad as possible of a phenomenon that affects Ticino society in many ways, both past and present. Once published in print and digital form, this research will be an important element of Ticino's scientific output and a point of reference for bell studies on an international scale."
+    },
+    "startDate": "2024-05-01",
+    "endDate": "2026-08-31",
+    "url": [
+        "MISSING"
+    ],
+    "howToCite": "Dell'Era R., Rivoal M., Jaouen L. (2025). Le campane del Canton Ticino [database]. Swiss National Data and Service Center for the Humanities (DaSCH). https://ark.dasch.swiss/ark:/72163/1/0108",
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-05-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Audio",
+        "Image",
+        "Text",
+        "Video"
+    ],
+    "dataLanguage": [
+        {
+            "en": "Italian"
+        },
+        {
+            "it": "italiano"
+        }
+    ],
+    "keywords": [
+        {
+            "it": "campane"
+        },
+        {
+            "en": "bells"
+        },
+        {
+            "it": "Canton Ticino"
+        },
+        {
+            "en": "Canton Ticino"
+        },
+        {
+            "it": "campanologia"
+        },
+        {
+            "en": "campanology"
+        },
+        {
+            "it": "patrimonio"
+        },
+        {
+            "en": "heritage"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10302 Swiss history"
+        },
+        {
+            "en": "10301 General history (without pre-and early history)"
+        },
+        {
+            "en": "10402 Archaeology"
+        },
+        {
+            "en": "10103 Ecclesiastical history"
+        },
+        {
+            "en": "10404 Visual arts and Art history"
+        },
+        {
+            "en": "10405 Musicology"
+        },
+        {
+            "en": "10403 Ethnology"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "type": "Periodo",
+            "url": "http://n2t.net/ark:/99152/p06c6g32z39",
+            "text": "Middle Ages"
+        },
+        {
+            "type": "Periodo",
+            "url": "http://n2t.net/ark:/99152/p06c6g39bvp",
+            "text": "Early Modern"
+        },
+        {
+            "en": "Modern period"
+        },
+        {
+            "en": "Contemporary period"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658370/ticino.html",
+            "text": "Canton Ticino"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0108-person-001",
+            "contributorType": [
+                "Project Leader",
+                "Data Collector",
+                "Data Curator"
+            ]
+        },
+        {
+            "contributor": "0108-person-002",
+            "contributorType": [
+                "Data Curator"
+            ]
+        },
+        {
+            "contributor": "0108-person-003",
+            "contributorType": [
+                "Other"
+            ]
+        }
+    ],
+    "contactPoint": [
+        "0108-person-001"
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0108-organization-001"
+            ],
+            "number": "2024/26",
+            "name": "Borsa di ricerca, cat. B",
+            "url": "https://www4.ti.ch/decs/dcsu/usc/promozione-culturale/borse-di-ricerca"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "campane-ticino"
+        },
+        {
+            "en": "The bells of Canton Ticino. Study of a tangible and intangible heritage"
+        }
+    ]
+}

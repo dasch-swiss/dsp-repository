@@ -1,0 +1,24 @@
+{
+    "id": "083B-person-003",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0003-8701-6629",
+            "text": "ORCID URL: https://orcid.org/0009-0003-8701-6629"
+        }
+    ],
+    "givenNames": [
+        "Kristen"
+    ],
+    "familyNames": [
+        "Haas Curtis"
+    ],
+    "jobTitles": [
+        "Doctoral Researcher"
+    ],
+    "affiliations": [
+        "083B-organization-000"
+    ],
+    "email": "kristen.curtis@unibe.ch"
+}

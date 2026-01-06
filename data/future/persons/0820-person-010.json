@@ -1,0 +1,23 @@
+{
+    "id": "0820-person-010",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.aeschlimann-illustration.ch/",
+            "text": "https://www.aeschlimann-illustration.ch/"
+        }
+    ],
+    "givenNames": [
+        "Martina"
+    ],
+    "familyNames": [
+        "Aeschlimann-Langer"
+    ],
+    "jobTitles": [
+        "Illustrator"
+    ],
+    "affiliations": [
+        "0820-organization-001"
+    ]
+}

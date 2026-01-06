@@ -1,0 +1,17 @@
+{
+    "id": "082B-person-002",
+    "pid": "MISSING",
+    "givenNames": [
+        "Niki"
+    ],
+    "familyNames": [
+        "Rhyner"
+    ],
+    "jobTitles": [
+        "Historian"
+    ],
+    "affiliations": [
+        "082B-organization-001"
+    ],
+    "email": "niki.rhyner@wiss.gess.ethz.ch"
+}

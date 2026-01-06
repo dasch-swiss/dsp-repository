@@ -1,0 +1,24 @@
+{
+    "id": "0105-person-005",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-6684-9806",
+            "text": "ORCID URL: https://orcid.org/0000-0001-6684-9806"
+        }
+    ],
+    "givenNames": [
+        "Christelle"
+    ],
+    "familyNames": [
+        "Cocco"
+    ],
+    "jobTitles": [
+        "Post-doctoral researcher"
+    ],
+    "affiliations": [
+        "0105-organization-001"
+    ],
+    "email": "christelle.cocco@unil.ch"
+}

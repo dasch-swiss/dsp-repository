@@ -1,0 +1,24 @@
+{
+    "id": "0820-person-017",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://unibas.academia.edu/AlexisDenDoncker",
+            "text": "https://unibas.academia.edu/AlexisDenDoncker"
+        }
+    ],
+    "givenNames": [
+        "Alexis"
+    ],
+    "familyNames": [
+        "Den Doncker"
+    ],
+    "jobTitles": [
+        "Assistant Post-Doc (Chair of Egyptology)"
+    ],
+    "affiliations": [
+        "0820-organization-001"
+    ],
+    "email": "alexis.dendoncker@unibas.ch"
+}

@@ -1,0 +1,17 @@
+{
+    "id": "083E-person-001",
+    "pid": "MISSING",
+    "givenNames": [
+        "Gregor"
+    ],
+    "familyNames": [
+        "von Kerssenbrock-Krosigk"
+    ],
+    "jobTitles": [
+        "Student"
+    ],
+    "affiliations": [
+        "083E-organization-000"
+    ],
+    "email": "gregor.krosigk@unibas.ch"
+}

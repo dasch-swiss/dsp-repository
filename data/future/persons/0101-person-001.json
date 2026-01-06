@@ -1,0 +1,24 @@
+{
+    "id": "0101-person-001",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-8156-2712",
+            "text": "ORCID URL: https://orcid.org/0000-0002-8156-2712"
+        }
+    ],
+    "givenNames": [
+        "Marta"
+    ],
+    "familyNames": [
+        "Roca Escoda"
+    ],
+    "jobTitles": [
+        "Senior lecturer"
+    ],
+    "affiliations": [
+        "0101-organization-000"
+    ],
+    "email": "marta.rocaescoda@unil.ch"
+}

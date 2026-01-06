@@ -1,0 +1,13 @@
+{
+    "id": "0812-organization-001",
+    "pid": "MISSING",
+    "name": "Digital Humanities Lab (DHLab), University of Basel",
+    "url": "https://dhlab.philhist.unibas.ch/",
+    "address": {
+        "street": "Spalenberg 65",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+    },
+    "email": "sekretariat-dhlab@unibas.ch"
+}

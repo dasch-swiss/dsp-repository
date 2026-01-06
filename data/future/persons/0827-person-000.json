@@ -1,0 +1,25 @@
+{
+    "id": "0827-person-000",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-0473-5883",
+            "text": "ORCID URL: https://orcid.org/0000-0003-0473-5883"
+        }
+    ],
+    "givenNames": [
+        "Zeynep",
+        "Devrim"
+    ],
+    "familyNames": [
+        "Gürsel"
+    ],
+    "jobTitles": [
+        "Associate Professor"
+    ],
+    "affiliations": [
+        "0827-organization-001"
+    ],
+    "email": "z.gursel@rutgers.edu"
+}

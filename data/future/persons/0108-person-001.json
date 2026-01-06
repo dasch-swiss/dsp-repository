@@ -1,0 +1,25 @@
+{
+    "id": "0108-person-001",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-9236-6058",
+            "text": "ORCID URL: https://orcid.org/0000-0001-9236-6058"
+        }
+    ],
+    "givenNames": [
+        "Romeo"
+    ],
+    "familyNames": [
+        "Dell'Era"
+    ],
+    "jobTitles": [
+        "associate researcher",
+        "ricercatore associato"
+    ],
+    "affiliations": [
+        "0108-organization-002"
+    ],
+    "email": "romeo.dellera@unil.ch"
+}

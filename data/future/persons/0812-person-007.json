@@ -1,0 +1,17 @@
+{
+    "id": "0812-person-007",
+    "pid": "MISSING",
+    "givenNames": [
+        "Aila"
+    ],
+    "familyNames": [
+        "Özvegyi"
+    ],
+    "jobTitles": [
+        "Research associate"
+    ],
+    "affiliations": [
+        "0812-organization-000",
+        "0812-organization-003"
+    ]
+}

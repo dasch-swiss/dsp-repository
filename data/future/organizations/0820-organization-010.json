@@ -1,0 +1,12 @@
+{
+    "id": "0820-organization-010",
+    "pid": "MISSING",
+    "name": "University of Geneva",
+    "url": "http://www.unige.ch",
+    "address": {
+        "street": "24, rue du Général-Dufour",
+        "postalCode": "1211",
+        "locality": "Geneva",
+        "country": "Switzerland"
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "id": "0820-person-015",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://archaeovisual.ch/",
+            "text": "https://archaeovisual.ch/"
+        }
+    ],
+    "givenNames": [
+        "Oliver"
+    ],
+    "familyNames": [
+        "Bruderer"
+    ],
+    "jobTitles": [
+        "Scientific Illustrator"
+    ],
+    "affiliations": [
+        "0820-organization-004"
+    ]
+}

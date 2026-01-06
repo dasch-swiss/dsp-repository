@@ -1,0 +1,210 @@
+{
+    "id": "0805",
+    "pid": "MISSING",
+    "name": "University of Basel Kings’ Valley Project",
+    "shortcode": "0805",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "Assessment of tombs in the Kings’ Valley used for burials of royal family and entourage (ca. 1350 BCE), looted (ca. 1000 BCE), and reused for burials of members of priestly families (ca. 800–700 BCE).",
+    "description": {
+        "en": "Archaeological Project exploring undecorated tombs in the Valley of the Kings, Egypt"
+    },
+    "startDate": "2015-03-01",
+    "endDate": "MISSING",
+    "url": [
+        "https://aegyptologie.philhist.unibas.ch/de/forschung/forschungsprojekte/university-of-basel-kings-valley-project/"
+    ],
+    "howToCite": "University of Basel Kings’ Valley Project Online (UBKVP), 2021, DaSCH. ark.dasch.swiss/ark:/72163/1/0805",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-30",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Archaeology"
+        },
+        {
+            "en": "Egypt"
+        },
+        {
+            "en": "Valley of the Kings"
+        },
+        {
+            "en": "funerary culture"
+        },
+        {
+            "en": "royal family"
+        },
+        {
+            "en": "tomb"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10402 Archaeology"
+        },
+        {
+            "en": "Egyptian Archaeology"
+        },
+        {
+            "en": "Funerary Archaeology"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "type": "Chronontology",
+            "url": "https://chronontology.dainst.org/period/K5glD8hjpaZB",
+            "text": "18th dynasty"
+        },
+        {
+            "type": "Chronontology",
+            "url": "https://chronontology.dainst.org/period/eY4hrsm2FVJs",
+            "text": "22nd dynasty"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Pleiades",
+            "url": "https://pleiades.stoa.org/places/384697574",
+            "text": "Valley of the Kings"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0805-person-000",
+            "contributorType": [
+                "Project Director"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Archaeological Project exploring undecorated tombs in the Valley of the Kings, Egypt"
+    },
+    "publications": [
+        {
+            "text": "Bickel, Susanne (ed.), Priester – Räuber – Königskinder. Die Gräber KV 40 und KV 64 im Tal der Könige. vol. 1. Die beschrifteten Objekte der 18. Dynastie und die Keramik Swiss Egyptological Studies 2.1, Basel 2021."
+        },
+        {
+            "text": "Hunkeler, Charlotte, «New results on the manufacture and durability of cartonnage: experimental archaeology as a method to understand the history of 22nd Dynasty cartonnage cases from KV40 (Thebes, Egypt)», Journal of Archaeological Science: Reports 36, 2021,",
+            "pid": {
+                "url": "https://doi.org/10.1016/j.jasrep.2021.102836"
+            }
+        },
+        {
+            "text": "Bickel Susanne, «Retrieving the king’s treasure – reburying the king’s body: Contexts of 21st Dynasty activities in the Valley of the Kings» in: Rogério Sousa, Alessia Amenta, Kathlyn M. Cooney (ed.), Bab el-Gasus in Context. Rediscovering the Tomb of the Priests of Amun, Rom/Bristol, 2020, 69–79."
+        },
+        {
+            "text": "Meyer, Sabrina; Frater, Nakita; Seiler, Roger; Bickel, Susanne; Böni, Thomas; Eppenberger, Patrick; Ruehli, Frank J., «Multidisciplinary studies of heavily fragmented and commingled ancient Egyptian human remains found in tomb KV 40 (Valley of the Kings, Luxor, Egypt): A pragmatic workflow and first results», Journal of Archaeological Science: Reports 29, 2020",
+            "pid": {
+                "url": "https://doi.org/10.1016/j.jasrep.2019.102069"
+            }
+        },
+        {
+            "text": "Gamma, Claudia; Schlick-Nolte, Birgit, «Ein gläserner Krateriskos aus dem Tal der Könige», Antike Kunst 62, 2019, 3–12."
+        },
+        {
+            "text": "Meyer Sabrina; Galassi Francesco; Böni Thomas; Seiler Roger; Bickel Susanne; Ruehli, Frank J., «Mummified proportionate dwarfs from the Valley of the Kings», in: The Lancet: Diabetes -Endocrinology, 7/1, 2019, 173–174."
+        },
+        {
+            "text": "Münch, Hans-Hubertus, «Noble Burials? Notes on the Use of Black Coffins in KV40», in: Strudwick Helen, Dawson Julie (ed.), Ancient Egyptian Coffins: Past – Present – Future, Oxbow: Oxford, 2018, 52–57."
+        },
+        {
+            "text": "Bickel, Susanne, «Les tombes non-décorées de la Vallée des Rois: perspectives sociales et historiques», Bulletin de la Société française d’égyptologie 197, 2017, 12–28."
+        },
+        {
+            "text": "Bickel, Susanne, «KV 64. An intact 22nd dynasty burial in the Valley of the Kings. Preliminary description», in Alessia Amenta (ed.), Acts of the First Vatican Coffin Conference, Rome, 2017, 79–84."
+        },
+        {
+            "text": "Bickel, Susanne, «Konstruktion und Praxis einer Sakrallandschaft: das Beispiel Tal der Könige», in: Susanne Beck, Burkhard Backes, I-Ting Liao, Heike Simon, Alexandra Verbovsek (ed.), Gebauter Raum: Architektur – Landschaft – Mensch, Göttinger Orientforschungen 62, 2016, 11–26."
+        },
+        {
+            "text": "Bickel, Susanne, «Other tombs: queens and commoners in KV», in: Richard H. Wilkinson & Kent R. Weeks (ed.), The Oxford Handbook of the Valley of the Kings, Oxford, 2016, 230–242."
+        },
+        {
+            "text": "Bickel, Susanne, «Prinsessen, plunderaars en priesters. Nieuwe onderzoeken naar de niet-koninklijke graven in het Dal der Koningen», Mehen. Essays over het oude Egypte 2015, 160-175."
+        },
+        {
+            "text": "Bickel, Susanne, «Das Grab KV 40 im Tal der Könige. Eine Familiengruft Amenophis’ III.», Sokar, Geschichte & Archäologie Altägyptens 30, 2015, 78–89."
+        },
+        {
+            "text": "Rühli, Frank; Ikram, Salima; Bickel, Susanne, «New Ancient Egyptian Human Mummies from the Valley of the Kings, Luxor: Anthropological, Radiological, and Egyptological Investigations», BioMed Research International, 2015, 8p.",
+            "pid": {
+                "url": "http://dx.doi.org/10.1155/2015/530362"
+            }
+        },
+        {
+            "text": "Bickel, Susanne; Paulin-Grothe, Elina, «KV 40: a burial place for the royal entourage», Egyptian Archaeology 45, 2014, 21–24."
+        },
+        {
+            "text": "Bickel, Susanne; Gautschy, Rita, «Eine Ramessidische Sonnenuhr im Tal der Könige», Zeitschrift für ägyptische Sprache und Altertumskunde 141, 2014, 3–14."
+        },
+        {
+            "text": "Bickel, Susanne, «KV 40. The Tomb of 18th Dynasty Princesses and Princes», Kmt. A Modern Journal of Ancient Egypt 25/3, 2014, 22–32."
+        },
+        {
+            "text": "Bickel, Susanne; Gautschy, Rita, «A Sundial found in the Egyptian Valley of the Kings», British Sundial Society Bulletin 25/4, 2013, 2-7."
+        },
+        {
+            "text": "Bickel, Susanne, «Nicht nur Pharaonen. Neue Untersuchungen zu nicht-königlichen Gräbern im Tal der Könige», Susanne Bickel, Sokar 26/1, 2013, 60-71."
+        },
+        {
+            "text": "Bickel, Susanne, «Waking an Egyptian Chantress», Current World Archaeology 56, 2013, 16–19."
+        },
+        {
+            "text": "Adrom, Faried; Bickel, Susanne; Münch, Hans-Hubertus and Peintner, Erico, «Die Holzstele der Nehemesbastet aus KV 64», in: Mitteilungen des Deutschen Archäologischen Instituts Kairo 67, 2011/2013, 1–15."
+        },
+        {
+            "text": "Bickel, Susanne, «Ein neues Grab im Tal der Könige. Untersuchungen zu nicht-königlichen Grabstätten in der Pharaonen-Nekropole», Antike Welt 1/2013, 75–82."
+        },
+        {
+            "text": "Bickel, Susanne; Paulin-Grothe, Elina, «A New Tomb in the VoK: KV 64», in: Kmt. A Modern Journal of Ancient Egypt 23/2, 2012, 18–31."
+        },
+        {
+            "text": "Bickel, Susanne; Paulin-Grothe, Elina, «KV 64: Two Burials in one Tomb», Egyptian Archaeology 41, 2012, 36–40."
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0805-organization-001"
+            ],
+            "number": "156046",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/156046"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "UBKVP"
+        }
+    ]
+}

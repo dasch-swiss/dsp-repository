@@ -1,0 +1,24 @@
+{
+    "id": "0820-person-038",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://daw.philhist.unibas.ch/en/persons/matthias-mueller-kraehenbuehl-1/",
+            "text": "https://daw.philhist.unibas.ch/en/persons/matthias-mueller-kraehenbuehl-1/"
+        }
+    ],
+    "givenNames": [
+        "Matthias"
+    ],
+    "familyNames": [
+        "Müller"
+    ],
+    "jobTitles": [
+        "Coptologist",
+        "Egyptologist"
+    ],
+    "affiliations": [
+        "0820-organization-001"
+    ]
+}

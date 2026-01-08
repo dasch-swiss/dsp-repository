@@ -43,6 +43,10 @@ pub fn page_layout(title: &str, content: Markup) -> Markup {
 
                 // DataStar
                 script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.6/bundles/datastar.js" {}
+
+                // OpenSeadragon
+                script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/5.0.1/openseadragon.min.js" {}
+                script src="/assets/openseadragon-init.js" {}
             }
             body {
                 (shell::shell(nav_elements, header_config, footer_config)

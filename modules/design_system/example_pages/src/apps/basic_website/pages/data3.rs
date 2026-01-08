@@ -4,7 +4,7 @@ use maud::{html, Markup};
 use crate::layout::page_layout;
 
 /// Data page with column2 and column3 parameters
-pub async fn data_with_column3(Path((column2, column3)): Path<(String, String)>) -> Markup {
+pub async fn data_with_column3(Path((column2, _column3)): Path<(String, String)>) -> Markup {
     let fruits = vec!["apple", "pear", "banana"];
 
     let content = html! {
@@ -54,18 +54,9 @@ pub async fn data_with_column3(Path((column2, column3)): Path<(String, String)>)
                         }
                     }
 
-                    // Column 3
+                    // Column 3 - OpenSeadragon Viewer
                     div class="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800" {
-                        h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white" {
-                            "Column 3 (" (column3) ")"
-                        }
-                        ul class="space-y-2" {
-                            @for fruit in &fruits {
-                                li class="block rounded px-3 py-2 text-gray-700 dark:text-gray-300" {
-                                    (fruit)
-                                }
-                            }
-                        }
+                        div id="openseadragon-viewer" style="width: 100%; height: 600px;" {}
                     }
                 }
             }

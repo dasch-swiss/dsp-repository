@@ -45,7 +45,7 @@ async fn main() {
     let app = Router::new()
         .merge(pages_router)
         .nest("/api", api_router)
-        .nest_service("/assets", ServeDir::new("assets"));
+        .nest_service("/assets", ServeDir::new("modules/design_system/example_pages/assets"));
 
     // Determine port (default to 3500)
     let port = std::env::var("PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(3500);

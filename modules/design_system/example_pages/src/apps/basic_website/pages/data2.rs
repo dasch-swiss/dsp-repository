@@ -1,9 +1,10 @@
+use axum::extract::Path;
 use maud::{html, Markup};
 
 use crate::layout::page_layout;
 
-/// Data page - base route showing only column 1
-pub async fn data() -> Markup {
+/// Data page with column2 parameter
+pub async fn data_with_column2(Path(column2): Path<String>) -> Markup {
     let fruits = vec!["apple", "pear", "banana"];
 
     let content = html! {
@@ -13,8 +14,8 @@ pub async fn data() -> Markup {
                     "Data Page"
                 }
 
-                // Single column grid
-                div class="grid grid-cols-1 gap-8 md:grid-cols-1" {
+                // Two column grid
+                div class="grid grid-cols-1 gap-8 md:grid-cols-2" {
                     // Column 1 - always visible
                     div class="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800" {
                         h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white" {
@@ -25,6 +26,25 @@ pub async fn data() -> Markup {
                                 li {
                                     a
                                         href=(format!("/data/{}", fruit))
+                                        class="block rounded px-3 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                                    {
+                                        (fruit)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Column 2
+                    div class="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800" {
+                        h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white" {
+                            "Column 2 (" (column2) ")"
+                        }
+                        ul class="space-y-2" {
+                            @for fruit in &fruits {
+                                li {
+                                    a
+                                        href=(format!("/data/{}/{}", column2, fruit))
                                         class="block rounded px-3 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                                     {
                                         (fruit)

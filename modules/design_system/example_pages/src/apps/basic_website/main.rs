@@ -32,12 +32,13 @@ async fn main() {
         .route("/faq", get(pages::faq))
         .route("/contact", get(pages::contact))
         .route("/news", get(pages::news))
-        .route("/status", get(pages::status));
+        .route("/status", get(pages::status))
+        .route("/data", get(pages::data));
 
     let api_router = Router::new()
         .route("/stats/stream", get(api::stats_stream_handler))
         .route("/status/stream", get(api::status_stream_handler))
-        .route("/project/{id}", get(api::project_detail_handler));
+        .route("/projects/{id}", get(api::project_detail_handler));
 
     let app = Router::new()
         .merge(pages_router)

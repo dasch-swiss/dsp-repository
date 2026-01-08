@@ -12,6 +12,7 @@ pub fn page_layout(title: &str, content: Markup) -> Markup {
     };
 
     let nav_elements = vec![
+        header::NavElement::Item(header::NavItem { label: "Data DPE", href: "/data" }),
         header::NavElement::Item(header::NavItem { label: "Explore Data", href: "/projects" }),
         header::NavElement::Item(header::NavItem { label: "Our Services", href: "/services" }),
         header::NavElement::Item(header::NavItem { label: "Knowledge Hub", href: "/knowledge-hub" }),

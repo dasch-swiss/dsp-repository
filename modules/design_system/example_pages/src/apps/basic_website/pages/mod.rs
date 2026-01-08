@@ -1,5 +1,6 @@
 mod about_us;
 mod contact;
+mod data;
 mod faq;
 mod home;
 mod knowledge_hub;
@@ -11,6 +12,7 @@ mod status;
 
 pub use about_us::about_us;
 pub use contact::contact;
+pub use data::data;
 pub use faq::faq;
 pub use home::home;
 pub use knowledge_hub::knowledge_hub;

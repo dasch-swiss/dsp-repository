@@ -30,7 +30,7 @@ pub fn render_project_cards(projects: &[ProjectCard], start_idx: usize) -> Marku
             // DataStar: data-on:click sets signal and fetches content via @get()
             div
                 class="relative cursor-pointer transition-transform hover:scale-105"
-                "data-on:click"=(format!("$drawerOpen = true; @get('/api/project/{}')", project_idx))
+                "data-on:click"=(format!("$drawerOpen = true; @get('/api/projects/{}')", project_idx))
             {
                 div class="absolute left-4 top-4 z-10" {
                     (status_badge_active())

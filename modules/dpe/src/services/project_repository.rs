@@ -3,6 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::domain::project::Project;
+use crate::domain::shortcode::Shortcode;
 use glob::glob;
 use regex::Regex;
 
@@ -17,14 +18,14 @@ impl ProjectRepository {
             .collect::<Vec<_>>()
     }
 
-    pub fn find(&self, shortcode: String) -> Option<PathBuf> {
+    pub fn find(&self, shortcode: Shortcode) -> Option<PathBuf> {
         // data/future/projects/0101_religious-speech.json
         let regex = Regex::new(r"^data/future/projects/(?<shortcode>[A-Z0-9]{4})_.*.json").unwrap();
 
         self.list().into_iter().find_map(|path| {
             let path_str = identity::<&str>(path.to_str().unwrap());
 
-            if regex.captures(path_str).iter().any(|c| shortcode == c["shortcode"]) {
+            if regex.captures(path_str).iter().any(|c| shortcode.to_string() == c["shortcode"]) {
                 Some(path)
             } else {
                 None
@@ -32,11 +33,11 @@ impl ProjectRepository {
         })
     }
 
-    pub fn read_contents(&self, shortcode: String) -> Option<String> {
+    pub fn read_contents(&self, shortcode: Shortcode) -> Option<String> {
         self.find(shortcode).map(|path| fs::read_to_string(path).unwrap())
     }
 
-    pub fn read(&self, shortcode: String) -> Option<Project> {
+    pub fn read(&self, shortcode: Shortcode) -> Option<Project> {
         self.read_contents(shortcode).map(|json| serde_json::from_str(&json).unwrap())
     }
 }

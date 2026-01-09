@@ -5,6 +5,7 @@ use axum::http::StatusCode;
 use axum::response::Html;
 
 use crate::app_state::AppState;
+use crate::domain::shortcode::Shortcode;
 use crate::error::ServerError;
 
 fn return_ok_or_404<B>(body: Option<B>, otherwise: B) -> (StatusCode, B) {
@@ -16,7 +17,7 @@ fn return_ok_or_404<B>(body: Option<B>, otherwise: B) -> (StatusCode, B) {
 
 // GET /v2/projects/:id.json — returns a single project as HTML
 pub(crate) async fn project_json_handler(
-    Path(shortcode): Path<String>,
+    Path(shortcode): Path<Shortcode>,
     State(state): State<Arc<AppState>>,
 ) -> Result<(StatusCode, Html<String>), ServerError> {
     let project_json: Option<String> = state

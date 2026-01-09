@@ -1,11 +1,6 @@
 [workspace]
 members = [
-    "modules/dpe/api",
-    "modules/dpe/dto",
-    "modules/dpe/server",
-    "modules/dpe/services",
-    "modules/dpe/storage",
-    "modules/dpe/types",
+    "modules/dpe",
     "modules/design_system/components",
     "modules/design_system/playground",
     "modules/design_system/example_pages",

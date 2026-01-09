@@ -201,7 +201,7 @@ mod tests {
 
     #[test]
     fn test_parse_project_json() {
-        let json_str = include_str!("../../../../../data/future/projects/0101_religious-speech.json");
+        let json_str = include_str!("../../../../data/future/projects/0101_religious-speech.json");
         let project: Result<Project, _> = serde_json::from_str(json_str).map_err(|_| ());
 
         let p2: Project = project.clone().unwrap();

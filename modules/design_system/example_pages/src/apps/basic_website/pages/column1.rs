@@ -3,7 +3,7 @@ use maud::{html, Markup};
 use crate::layout::page_layout;
 
 /// Data page - base route showing only column 1
-pub async fn data() -> Markup {
+pub async fn column1() -> Markup {
     let fruits = vec!["apple", "pear", "banana"];
 
     let content = html! {
@@ -16,7 +16,7 @@ pub async fn data() -> Markup {
                 // Single column grid
                 div class="grid grid-cols-1 gap-8 md:grid-cols-1" {
                     // Column 1 - always visible
-                    div class="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800" {
+                    divs class="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800" {
                         h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white" {
                             "Column 1"
                         }

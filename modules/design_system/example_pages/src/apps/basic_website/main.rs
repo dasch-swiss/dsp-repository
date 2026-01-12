@@ -33,9 +33,9 @@ async fn main() {
         .route("/contact", get(pages::contact))
         .route("/news", get(pages::news))
         .route("/status", get(pages::status))
-        .route("/data", get(pages::data))
-        .route("/data/{column2}", get(pages::data_with_column2))
-        .route("/data/{column2}/{column3}", get(pages::data_with_column3));
+        .route("/data", get(pages::column1))
+        .route("/data/{column2}", get(pages::column2))
+        .route("/data/{column2}/{column3}", get(pages::column3));
 
     let api_router = Router::new()
         .route("/stats/stream", get(api::stats_stream_handler))

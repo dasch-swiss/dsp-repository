@@ -1,8 +1,8 @@
 mod about_us;
 mod contact;
-mod data;
-mod data2;
-mod data3;
+mod column1;
+mod column2;
+mod column3;
 mod faq;
 mod home;
 mod knowledge_hub;
@@ -14,9 +14,9 @@ mod status;
 
 pub use about_us::about_us;
 pub use contact::contact;
-pub use data::data;
-pub use data2::data_with_column2;
-pub use data3::data_with_column3;
+pub use column1::column1;
+pub use column2::column2;
+pub use column3::column3;
 pub use faq::faq;
 pub use home::home;
 pub use knowledge_hub::knowledge_hub;

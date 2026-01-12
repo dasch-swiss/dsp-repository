@@ -4,7 +4,7 @@ use maud::{html, Markup};
 use crate::layout::page_layout;
 
 /// Data page with column2 parameter
-pub async fn data_with_column2(Path(column2): Path<String>) -> Markup {
+pub async fn column2(Path(column2): Path<String>) -> Markup {
     let fruits = vec!["apple", "pear", "banana"];
 
     let content = html! {

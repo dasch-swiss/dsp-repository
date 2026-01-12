@@ -2,10 +2,11 @@ use std::convert::identity;
 use std::fs;
 use std::path::PathBuf;
 
-use crate::domain::project::Project;
-use crate::domain::shortcode::Shortcode;
 use glob::glob;
 use regex::Regex;
+
+use crate::domain::project::Project;
+use crate::domain::shortcode::Shortcode;
 
 #[derive(Debug, Clone)]
 pub struct ProjectRepository {}

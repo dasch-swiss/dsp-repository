@@ -1,0 +1,29 @@
+<div class="max-w-md mx-auto w-full md:max-w-none md:mx-0 h-full">
+  <button class="h-full border border-gray-200 rounded-lg bg-white hover:shadow-lg transition-all text-left flex flex-col">
+    <div class="relative flex-shrink-0">
+      <div class="overflow-hidden rounded-t-lg">
+        <img src="/assets/crab.jpg" alt="« Théâtre de société » (Age of Enlightenment - Second French Empire)" class="w-full h-48 object-cover">
+      </div>
+    </div>
+    <div class="p-4 flex flex-col flex-1 min-h-0">
+      <div>
+        <h3 class="text-lg font-semibold text-gray-900 line-clamp-2">
+          {{ project.name }}
+        </h3>
+        <p class="text-sm text-gray-600 line-clamp-4 mt-2">
+          {{ project.description.get("en").unwrap_or(&"".to_string()) }}
+        </p>
+      </div>
+      <div class="mt-auto pt-4 space-y-3">
+        <div class="flex flex-wrap gap-1.5">
+          {% for keyword in project.keywords %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+              keyword
+              {{ keyword.get("en").unwrap_or(&"".to_string()) }}
+            </span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </button>
+</div>

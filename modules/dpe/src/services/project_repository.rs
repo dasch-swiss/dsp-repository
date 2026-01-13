@@ -19,18 +19,23 @@ impl ProjectRepository {
             .collect::<Vec<_>>()
     }
 
-    pub fn find(&self, shortcode: Shortcode) -> Option<PathBuf> {
+    pub fn find_shortcode(&self, path: PathBuf) -> Option<Shortcode> {
         // data/future/projects/0101_religious-speech.json
         let regex = Regex::new(r"^data/future/projects/(?<shortcode>[A-Z0-9]{4})_.*.json").unwrap();
 
-        self.list().into_iter().find_map(|path| {
-            let path_str = identity::<&str>(path.to_str().unwrap());
+        let path_str = identity::<&str>(path.to_str().unwrap());
 
-            if regex.captures(path_str).iter().any(|c| shortcode.to_string() == c["shortcode"]) {
-                Some(path)
-            } else {
-                None
-            }
+        regex
+            .captures(path_str)
+            .iter()
+            .flat_map(|c| TryFrom::try_from(c["shortcode"].to_string()).ok())
+            .next()
+    }
+
+    pub fn find(&self, shortcode: Shortcode) -> Option<PathBuf> {
+        self.list().into_iter().find_map(|path| {
+            self.find_shortcode(path.clone())
+                .and_then(|needle| if needle == shortcode { Some(path) } else { None })
         })
     }
 

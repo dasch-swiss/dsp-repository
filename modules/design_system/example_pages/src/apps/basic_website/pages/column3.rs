@@ -1,7 +1,18 @@
 use axum::extract::Path;
 use maud::{html, Markup};
 
+use super::column1::render_column1;
+use super::column2::render_column2;
 use crate::layout::page_layout;
+
+/// Renders Column 3 content - OpenSeadragon viewer
+pub fn render_column3() -> Markup {
+    html! {
+        div class="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800" {
+            div id="openseadragon-viewer" style="width: 100%; height: 600px;" {}
+        }
+    }
+}
 
 /// Data page with column2 and column3 parameters
 pub async fn column3(Path((column2, _column3)): Path<(String, String)>) -> Markup {
@@ -16,48 +27,9 @@ pub async fn column3(Path((column2, _column3)): Path<(String, String)>) -> Marku
 
                 // Three column grid
                 div class="grid grid-cols-1 gap-8 md:grid-cols-3" {
-                    // Column 1 - always visible
-                    div class="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800" {
-                        h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white" {
-                            "Column 1"
-                        }
-                        ul class="space-y-2" {
-                            @for fruit in &fruits {
-                                li {
-                                    a
-                                        href=(format!("/data/{}", fruit))
-                                        class="block rounded px-3 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                                    {
-                                        (fruit)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Column 2
-                    div class="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800" {
-                        h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-white" {
-                            "Column 2 (" (column2) ")"
-                        }
-                        ul class="space-y-2" {
-                            @for fruit in &fruits {
-                                li {
-                                    a
-                                        href=(format!("/data/{}/{}", column2, fruit))
-                                        class="block rounded px-3 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                                    {
-                                        (fruit)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Column 3 - OpenSeadragon Viewer
-                    div class="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800" {
-                        div id="openseadragon-viewer" style="width: 100%; height: 600px;" {}
-                    }
+                    (render_column1(&fruits))
+                    (render_column2(&column2, &fruits))
+                    (render_column3())
                 }
             }
         }

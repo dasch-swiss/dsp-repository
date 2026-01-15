@@ -46,7 +46,7 @@ impl ProjectShowTemplate {
             .keywords
             .clone()
             .into_iter()
-            .flat_map(|map| map.get("en").map(|s| s.clone()))
+            .flat_map(|map| map.get("en").cloned())
             .collect()
     }
 }

@@ -1,0 +1,17 @@
+{
+    "id": "0801-person-003",
+    "pid": "MISSING",
+    "givenNames": [
+        "Sulamith"
+    ],
+    "familyNames": [
+        "Gehr"
+    ],
+    "jobTitles": [
+        "Wissenschaftliche Mitarbeiterin"
+    ],
+    "affiliations": [
+        "0801-organization-003"
+    ],
+    "email": "sulamith.gehr@unibas.ch"
+}

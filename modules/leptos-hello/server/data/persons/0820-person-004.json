@@ -1,0 +1,24 @@
+{
+    "id": "0820-person-004",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://wwz.unibas.ch/de/personen/antonio-loprieno/",
+            "text": "https://wwz.unibas.ch/de/personen/antonio-loprieno/"
+        }
+    ],
+    "givenNames": [
+        "Antonio"
+    ],
+    "familyNames": [
+        "Loprieno"
+    ],
+    "jobTitles": [
+        "Professor (Egyptology, History of Institutions)"
+    ],
+    "affiliations": [
+        "0820-organization-001"
+    ],
+    "email": "a.loprieno@unibas.ch"
+}

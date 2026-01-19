@@ -1,0 +1,18 @@
+{
+    "id": "083C-person-003",
+    "pid": "MISSING",
+    "givenNames": [
+        "Dominik"
+    ],
+    "familyNames": [
+        "Müller"
+    ],
+    "jobTitles": [
+        "Dr. phil."
+    ],
+    "affiliations": [
+        "083C-organization-000",
+        "083C-organization-006"
+    ],
+    "email": "dom.muller@bluewin.ch"
+}

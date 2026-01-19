@@ -1,0 +1,24 @@
+{
+    "id": "084C-person-000",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-1918-1038",
+            "text": "ORCID URL: https://orcid.org/0000-0002-1918-1038"
+        }
+    ],
+    "givenNames": [
+        "Daniela"
+    ],
+    "familyNames": [
+        "Mondini"
+    ],
+    "jobTitles": [
+        "Prof. Dr., full professor of art history, vice-director of research"
+    ],
+    "affiliations": [
+        "084C-organization-001"
+    ],
+    "email": "daniela.mondini@usi.ch"
+}

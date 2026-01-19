@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  leptos-meta2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - RUST_LOG=info
+      - LEPTOS_OUTPUT_NAME=leptos-meta2
+      - LEPTOS_SITE_ROOT=site
+      - LEPTOS_SITE_PKG_DIR=pkg
+      - LEPTOS_SITE_ADDR=0.0.0.0:8080
+      - LEPTOS_RELOAD_PORT=8081
+      - LEPTOS_ENV=PROD
+    volumes:
+      - ./server/data:/app/server/data:ro
+    restart: unless-stopped
+    # Optional: Add health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

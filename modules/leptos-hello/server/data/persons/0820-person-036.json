@@ -1,0 +1,23 @@
+{
+    "id": "0820-person-036",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/sabrina-meyer-12977814b/",
+            "text": "https://www.linkedin.com/in/sabrina-meyer-12977814b/"
+        }
+    ],
+    "givenNames": [
+        "Sabrina"
+    ],
+    "familyNames": [
+        "Meyer"
+    ],
+    "jobTitles": [
+        "Anthropologist"
+    ],
+    "affiliations": [
+        "0820-organization-002"
+    ]
+}

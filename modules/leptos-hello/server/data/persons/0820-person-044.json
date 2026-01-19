@@ -1,0 +1,23 @@
+{
+    "id": "0820-person-044",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://jacquesreinhard.com/",
+            "text": "https://jacquesreinhard.com/"
+        }
+    ],
+    "givenNames": [
+        "Jacques"
+    ],
+    "familyNames": [
+        "Reinhard"
+    ],
+    "jobTitles": [
+        "Basketry and Wickerwork Specialist"
+    ],
+    "affiliations": [
+        "0820-organization-014"
+    ]
+}

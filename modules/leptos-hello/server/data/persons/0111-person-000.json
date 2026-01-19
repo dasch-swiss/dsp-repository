@@ -1,0 +1,24 @@
+{
+    "id": "0111-person-000",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-1930-6275",
+            "text": "ORCID URL: https://orcid.org/0000-0002-1930-6275"
+        }
+    ],
+    "givenNames": [
+        "Christian"
+    ],
+    "familyNames": [
+        "Grosse"
+    ],
+    "jobTitles": [
+        "Full professor"
+    ],
+    "affiliations": [
+        "0111-organization-001"
+    ],
+    "email": "christian.grosse@unil.ch"
+}

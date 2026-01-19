@@ -1,0 +1,17 @@
+{
+    "id": "0849-person-002",
+    "pid": "MISSING",
+    "givenNames": [
+        "Sébastien"
+    ],
+    "familyNames": [
+        "Scheiwiller"
+    ],
+    "jobTitles": [
+        "PhD candidate"
+    ],
+    "affiliations": [
+        "0849-organization-000"
+    ],
+    "email": "sebastien.scheiwiller@unil.ch"
+}

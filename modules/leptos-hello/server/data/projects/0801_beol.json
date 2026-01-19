@@ -1,0 +1,247 @@
+{
+    "id": "0801",
+    "pid": "MISSING",
+    "name": "Bernoulli-Euler Online (BEOL)",
+    "shortcode": "0801",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "The project Bernoulli-Euler Online (BEOL) focuses on the mathematics influenced by the Bernoulli dynasty and Leonhard Euler and presents these materials to the public and researchers.",
+    "description": {
+        "en": "The project Bernoulli-Euler Online (BEOL) integrates the two edition projects Basler Edition der Bernoulli-Briefwechsel (BEBB) and Leonhardi Euleri Opera Omnia (LEOO) into one digital platform available on the web. In addition, Jacob Bernoulli's scientific notebook Meditationes - a document of outstanding significance for the history of mathematics at its turning point around 1700 - is published for the first time in its entirety on the BEOL platform as a region-based multilayer interactive digital edition providing access to facsimiles, transcriptions, translations, indices, and commentaries. Besides being an edition platform, BEOL is a virtual research environment for the study of early modern mathematics and science as a data graph using sophisticated analysis tools. Currently BEOL is connected to two third-party repositories: The Newton Project and the Briefportal Leibniz, initiating the formation of a network of digital editions of the early modern scientific correspondence data. The goal of BEOL is thus twofold: it focuses on the mathematics influenced by the Bernoulli dynasty and Leonhard Euler and undertakes a methodological effort to present these materials to the public and researchers in a highly functional way."
+    },
+    "startDate": "2016-07-01",
+    "endDate": "MISSING",
+    "url": [
+        "https://app.dasch.swiss/project/yTerZGyxjZVqFMNNKXCDPF",
+        "https://bernoulli-euler.dhlab.unibas.ch/"
+    ],
+    "howToCite": "Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text",
+        "XML"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        },
+        {
+            "de": "Französisch",
+            "en": "French",
+            "fr": "français"
+        },
+        {
+            "de": "Latein",
+            "en": "Latin",
+            "fr": "latin"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Bernoulli"
+        },
+        {
+            "en": "Condorcet"
+        },
+        {
+            "en": "Euler"
+        },
+        {
+            "en": "Goldbach"
+        },
+        {
+            "de": "Leibniz"
+        },
+        {
+            "en": "Mathematics"
+        },
+        {
+            "en": "Newton"
+        },
+        {
+            "en": "Science"
+        },
+        {
+            "en": "Turgot"
+        },
+        {
+            "en": "history of mathematics"
+        },
+        {
+            "en": "history of science"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/12",
+            "text": "Mathematics"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "17th century and18th century CE"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3175395",
+            "text": "Italy"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/6255148",
+            "text": "Europe"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/11961320",
+            "text": "European Russia"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434",
+            "text": "Switzerland"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2921044",
+            "text": "Germany"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3017382",
+            "text": "France"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2635167",
+            "text": "United Kingdom"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0801-person-000",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "0801-person-001",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "0801-person-004",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "0801-person-005",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "0801-person-000",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "0801-person-002",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "0801-person-003",
+            "contributorType": [
+                "author"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Edition of Jacob Bernoulli's Scientific Notebook (Meditationes)."
+    },
+    "funding": [
+        {
+            "funders": [
+                "0801-organization-000"
+            ],
+            "number": "166072",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/166072"
+        },
+        {
+            "funders": [
+                "0801-organization-002"
+            ]
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "BEOL"
+        }
+    ]
+}

@@ -1,0 +1,170 @@
+{
+    "id": "0116",
+    "pid": "MISSING",
+    "name": "The Medieval Frame of Monumental Portal Sculpture (Pedestals, Canopies, Niches) : Cultural Transfers and Agency (12th-13th Centuries)",
+    "shortcode": "0116",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "This project aims to valorise and better comprehend the various elements surrounding monumental statues of church portals, namely pedestals, canopies, and niches.",
+    "description": {
+        "en": "This project aims to valorise and better comprehend the various elements surrounding monumental statues of church portals, namely pedestals, canopies, and niches. Their analysis will be integrated within four research axes: cultural transfers, relationships between the central representation and that at the margins, the communication potential of the objects (agency), and their strategic arrangement within the composition (display). Based on a corpus constituted of over a hundred portals located in the Western part of gothic art penetration (Germany, Belgium, England, France, Iberian Peninsula, and Switzerland), the project will aim to determine the conditions within which technological and formal innovations emerged, and to evaluate their local impact and diffusion. Moreover, it will attempt to understand their significance and their function within the visual message developed at the doorstep of sacred buildings.\nThe project will create synergies with research concerned by the communicative function of religious building portals, and will allow for a better understanding of the semiological stakes of sculpted pedestals and microarchitecture canopies."
+    },
+    "startDate": "2018-12-01",
+    "endDate": "2023-11-30",
+    "url": [
+        "https://app.ls-prod-server.dasch.swiss/project/0116"
+    ],
+    "howToCite": "Terrier Aliferis, L., Acosta, L., Ciardo, S., Rivoal, M., 2020, MedFrameS [database] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0116.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Französisch",
+            "en": "French",
+            "fr": "français"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Agency"
+        },
+        {
+            "en": "Artistic geography"
+        },
+        {
+            "en": "Canopies"
+        },
+        {
+            "en": "Cultural transfers"
+        },
+        {
+            "en": "Devices"
+        },
+        {
+            "en": "Display"
+        },
+        {
+            "en": "Frame"
+        },
+        {
+            "en": "Gothic sculpture"
+        },
+        {
+            "de": "Niches"
+        },
+        {
+            "en": "Pedestals"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "https://skos.um.es/unesco6/550602/",
+            "text": "History of art"
+        },
+        {
+            "en": "10404 Visual arts and Art history"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "type": "Chronontology",
+            "url": "http://chronontology.dainst.org/period/ROL7rN1qOgMe",
+            "text": "Gothic (Medieval)"
+        },
+        {
+            "type": "Periodo",
+            "url": "http://n2t.net/ark:/99152/p0qhb66xnj2",
+            "text": "Moyen Âge classique"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/6255148/",
+            "text": "Europe"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2510769/",
+            "text": "Spain"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3017382/",
+            "text": "France"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0116-person-000",
+            "contributorType": [
+                "Project leader",
+                "Data collector",
+                "Data curator"
+            ]
+        },
+        {
+            "contributor": "0116-person-001",
+            "contributorType": [
+                "Project member",
+                "Data collector",
+                "Data curator"
+            ]
+        },
+        {
+            "contributor": "0116-person-002",
+            "contributorType": [
+                "Project member",
+                "Data collector",
+                "Data curator"
+            ]
+        },
+        {
+            "contributor": "0116-person-003",
+            "contributorType": [
+                "Data curator"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The database regroups the portals of monuments included in the project’s corpus. It is structured by building, and gives access to the photographs as well as the bibliographic and descriptive data of each edifice. The photographs of each portal are presented from general to particular, going from the embrasures to the statues, and to their surrounding elements (pedestals, canopies, capitals). This database is conceived as a working tool allowing for typological groupings to be made between buildings, as well as to conduct comparative analyses. Consequently, the research results can be verified and the data reused to other ends if desired."
+    },
+    "contactPoint": [
+        "0116-person-000"
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0116-organization-002"
+            ],
+            "number": "179787",
+            "name": "PRIMA",
+            "url": "https://data.snf.ch/grants/grant/179787"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "medframes"
+        }
+    ]
+}

@@ -1,0 +1,133 @@
+{
+    "id": "084A",
+    "pid": "MISSING",
+    "name": "Globalgeschichtliche Perspektiven im Schweizer Geschichtsunterricht",
+    "shortcode": "084A",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "Das Forschungsprojekt liefert empirische Ergebnisse auf breiter Basis zu Potentialen von globalgeschichtlichen Perspektiven im Geschichtsunterricht.",
+    "description": {
+        "de": "Für Geschichtslernen, das zur Orientierung in der Lebenswelt heutiger Lernender beitragen soll, ist die Einsicht in die historischen Hintergründe von Gegenwartsphänomenen wie der Globalisierung, Migration und gesellschaftlicher Heterogenität sehr bedeutsam. Als fachwissenschaftlicher Zugang bietet sich der Ansatz der Globalgeschichte an. Dieser wird in der Geschichtsdidaktik diskutiert, ist dort empirisch aber bislang wenig erforscht. Die Studie setzt an dieser Lücke an. Sie ist im Geschichtsunterricht der gymnasialen Sekundarstufe II angesiedelt und methodisch der partizipativen Praxisforschung zugeordnet. Gemeinsam mit Lehrpersonen werden Unterrichtseinheiten entwickelt und die so angestossene Unterrichtsentwicklung durch video-, interview- und fragebogenbasierte Erhebungen empirisch untersucht."
+    },
+    "startDate": "2020-07-01",
+    "endDate": "2024-02-29",
+    "url": [
+        "https://app.dasch.swiss/project/iM_un1y7SVa-Fny6yN51-A",
+        "https://irf.fhnw.ch/handle/11654/31495"
+    ],
+    "howToCite": "Marti, P., Studer, D., Affolter, S. (2024). Globalgeschichtliche Perspektiven im Schweizer Geschichtsunterricht [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084A",
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-02-21",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        }
+    ],
+    "keywords": [
+        {
+            "de": "Geschichtsdidaktik"
+        },
+        {
+            "de": "Geschichtsunterricht"
+        },
+        {
+            "de": "Globalgeschichte"
+        },
+        {
+            "de": "Partizipative Unterrichtsentwicklung"
+        },
+        {
+            "de": "Praxisforschung"
+        },
+        {
+            "de": "Sekundarstufe II"
+        },
+        {
+            "de": "Videoanalyse"
+        }
+    ],
+    "disciplines": [
+        {
+            "de": "10104 Erziehungs- und Bildungswissenschaften, Fachdidaktiken"
+        },
+        {
+            "de": "10301 Allgemeine Geschichte (ohne Ur- und Frühgeschichte)"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "21. Jhd."
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434/switzerland.html",
+            "text": "Switzerland"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "084A-person-000",
+            "contributorType": [
+                "Projektleitung"
+            ]
+        },
+        {
+            "contributor": "084A-person-001",
+            "contributorType": [
+                "Projektmitarbeit"
+            ]
+        },
+        {
+            "contributor": "084A-person-002",
+            "contributorType": [
+                "Projektmitarbeit"
+            ]
+        }
+    ],
+    "abstract": {
+        "de": "Das Dataset beinhaltet im Projekt erhobene Daten aus Lehrer:innen- und Schüler:innenperspektive: Transkripte der «Stimulated Recall»-Interviews, Transkripte der Eingangsinterviews, soziodemographische Angaben, Fragebögen der Schüler:innen sowie die Dokumentation der entsprechenden Erhebungsinstrumente."
+    },
+    "contactPoint": [
+        "084A-person-000"
+    ],
+    "publications": [
+        {
+            "text": "",
+            "pid": {
+                "url": "https://irf.fhnw.ch/handle/11654/31495"
+            }
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "084A-organization-001"
+            ],
+            "number": "192169",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/192169"
+        }
+    ]
+}

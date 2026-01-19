@@ -154,8 +154,15 @@ mod playground 'modules/design_system/playground'
 # Ensure that the wasm32-unknown-unknown target is installed and cargo leptos is installed
 setup-leptos:
   #!/usr/bin/env sh
-   rustup target add wasm32-unknown-unknown
+  npm install --global corepack@latest	
+  corepack enable pnpm
+  rustup target add wasm32-unknown-unknown
   # if leptops install fails follow https://docs.rs/openssl/latest/openssl/#automatic
   cargo install --locked cargo-leptos
 
+leptos-hello-serve:
+  #!/usr/bin/env sh
+  cd modules/leptos-hello
+  pnpm i
+  cargo-leptos watch
 

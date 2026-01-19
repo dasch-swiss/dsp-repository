@@ -1,0 +1,17 @@
+{
+    "id": "REMA-person-001",
+    "pid": "MISSING",
+    "givenNames": [
+        "Irene"
+    ],
+    "familyNames": [
+        "Quadri"
+    ],
+    "jobTitles": [
+        "Post-doctoral researcher"
+    ],
+    "affiliations": [
+        "REMA-organization-000"
+    ],
+    "email": "Irene.Quadri@unil.ch"
+}

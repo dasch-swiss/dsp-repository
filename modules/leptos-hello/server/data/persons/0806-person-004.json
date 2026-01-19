@@ -1,0 +1,25 @@
+{
+    "id": "0806-person-004",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "GND",
+            "url": "http://d-nb.info/gnd/1069569267",
+            "text": "GND URL: http://d-nb.info/gnd/1069569267"
+        }
+    ],
+    "givenNames": [
+        "Michael"
+    ],
+    "familyNames": [
+        "Matter"
+    ],
+    "jobTitles": [
+        "Research associate"
+    ],
+    "affiliations": [
+        "0806-organization-000",
+        "0806-organization-001"
+    ],
+    "email": "michael.matter@unibas.ch"
+}

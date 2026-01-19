@@ -1,0 +1,23 @@
+{
+    "id": "0820-person-035",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/evelyne-marty-80257419a/",
+            "text": "https://www.linkedin.com/in/evelyne-marty-80257419a/"
+        }
+    ],
+    "givenNames": [
+        "Evelyne"
+    ],
+    "familyNames": [
+        "Marty"
+    ],
+    "jobTitles": [
+        "Student"
+    ],
+    "affiliations": [
+        "0820-organization-001"
+    ]
+}

@@ -1,0 +1,12 @@
+{
+    "id": "0820-organization-005",
+    "pid": "MISSING",
+    "name": "University of Zurich",
+    "url": "http://www.uzh.ch",
+    "address": {
+        "street": "Rämistrasse 71",
+        "postalCode": "8006",
+        "locality": "Zürich",
+        "country": "Switzerland"
+    }
+}

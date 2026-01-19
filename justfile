@@ -150,3 +150,12 @@ run-watch-example-basic-website:
     cargo watch -s 'cargo run --bin basic-website'
 
 mod playground 'modules/design_system/playground'
+
+# Ensure that the wasm32-unknown-unknown target is installed and cargo leptos is installed
+setup-leptos:
+  #!/usr/bin/env sh
+   rustup target add wasm32-unknown-unknown
+  # if leptops install fails follow https://docs.rs/openssl/latest/openssl/#automatic
+  cargo install --locked cargo-leptos
+
+

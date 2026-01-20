@@ -2,8 +2,7 @@ use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::components::{Route, Router, Routes};
 use leptos_router::StaticSegment;
-
-use crate::components::Counter;
+use mosaic_tiles::Counter;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {

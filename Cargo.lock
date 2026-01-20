@@ -1496,7 +1496,17 @@ dependencies = [
  "leptos_axum",
  "leptos_meta",
  "leptos_router",
+ "mosaic-tiles",
  "tokio",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "mosaic-tiles"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "leptos",
  "wasm-bindgen",
 ]
 

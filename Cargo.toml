@@ -1,9 +1,10 @@
 [workspace]
 members = [
-    "modules/dpe",
-    "modules/design_system/components",
-    "modules/design_system/playground",
-    "modules/design_system/example_pages",
+  "modules/dpe",
+  "modules/design_system/components",
+  "modules/design_system/playground",
+  "modules/design_system/example_pages",
+  "modules/mosaic/*",
 ]
 resolver = "3"
 

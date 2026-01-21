@@ -149,4 +149,8 @@ run-example-basic-website:
 run-watch-example-basic-website:
     cargo watch -s 'cargo run --bin basic-website'
 
-mod playground 'modules/design_system/playground'
+setup-leptos:
+    #!/usr/bin/env sh
+    rustup target add wasm32-unknown-unknown
+    cargo install --locked leptosfmt
+    cargo install --locked cargo-leptos

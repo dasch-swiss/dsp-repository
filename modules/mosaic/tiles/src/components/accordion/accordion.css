@@ -20,7 +20,7 @@
   }
 
   .accordion-icon-open {
-    @apply rotate-180;
+    @apply rotate-90;
   }
 
   .accordion-content {

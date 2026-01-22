@@ -2,6 +2,8 @@ use leptos::either::Either;
 use leptos::ev::MouseEvent;
 use leptos::prelude::*;
 
+use crate::components::icon::{Icon, IconChevronRight};
+
 #[component]
 pub fn Accordion(
     /// Optional children content (AccordionItem components)
@@ -46,26 +48,16 @@ pub fn AccordionItem(
                 aria-expanded=move || is_open.get()
             >
                 <span class="accordion-title">{title}</span>
-                <svg
-                    class=move || {
+                <Icon
+                    icon=IconChevronRight
+                    class=Signal::derive(move || {
                         if is_open.get() {
-                            "accordion-icon accordion-icon-open"
+                            "accordion-icon accordion-icon-open".to_string()
                         } else {
-                            "accordion-icon"
+                            "accordion-icon".to_string()
                         }
-                    }
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
+                    })
+                />
             </button>
             <div
                 class=move || {

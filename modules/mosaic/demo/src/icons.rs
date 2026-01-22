@@ -8,7 +8,7 @@ pub fn IconExamples() -> impl IntoView {
             <div>
                 <h1 class="text-3xl font-bold mb-2">"Icon Component"</h1>
                 <p class="text-gray-600 dark:text-gray-400 mb-6">
-                    "A collection of 10 carefully selected icons with automatic tree-shaking. Only icons used in your code are included in the WASM bundle."
+                    "A collection of 12 carefully selected icons with automatic tree-shaking. Only icons used in your code are included in the WASM bundle."
                 </p>
             </div>
 
@@ -23,6 +23,14 @@ pub fn IconExamples() -> impl IntoView {
                     <div class="flex flex-col items-center gap-2 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                         <Icon icon=IconChevronDown class="w-6 h-6" />
                         <span class="text-sm text-gray-600 dark:text-gray-400">"ChevronDown"</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <Icon icon=IconChevronLeft class="w-6 h-6" />
+                        <span class="text-sm text-gray-600 dark:text-gray-400">"ChevronLeft"</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <Icon icon=IconChevronRight class="w-6 h-6" />
+                        <span class="text-sm text-gray-600 dark:text-gray-400">"ChevronRight"</span>
                     </div>
                     <div class="flex flex-col items-center gap-2 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                         <Icon icon=IconSearch class="w-6 h-6" />
@@ -179,6 +187,17 @@ pub fn IconExamples() -> impl IntoView {
                         <Icon icon=CopyPaste class="w-4 h-4 text-gray-600 dark:text-gray-400" />
                         <span class="text-sm">"Copy to clipboard"</span>
                     </button>
+
+                    // Pagination controls
+                    <div class="flex items-center gap-2">
+                        <button class="p-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" aria-label="Previous">
+                            <Icon icon=IconChevronLeft class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        </button>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">"Page 1 of 10"</span>
+                        <button class="p-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" aria-label="Next">
+                            <Icon icon=IconChevronRight class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        </button>
+                    </div>
                 </div>
             </section>
 

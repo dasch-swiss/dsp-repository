@@ -37,9 +37,10 @@
 /// }
 /// ```
 pub use icondata::{
-    AiDownOutlined as IconChevronUp, AiInfoCircleOutlined as Info, AiLinkedinOutlined as IconLinkedIn,
-    AiMailOutlined as Mail, AiSearchOutlined as IconSearch, AiUpOutlined as IconChevronDown, Icon as IconData,
-    IoCopyOutline as CopyPaste, OcLinkExternalLg as LinkExternal, SiGithub as IconGitHub, SiX as IconX,
+    AiDownOutlined as IconChevronUp, AiInfoCircleOutlined as Info, AiLeftOutlined as IconChevronLeft,
+    AiLinkedinOutlined as IconLinkedIn, AiMailOutlined as Mail, AiRightOutlined as IconChevronRight,
+    AiSearchOutlined as IconSearch, AiUpOutlined as IconChevronDown, Icon as IconData, IoCopyOutline as CopyPaste,
+    OcLinkExternalLg as LinkExternal, SiGithub as IconGitHub, SiX as IconX,
 };
 use leptos::prelude::*;
 
@@ -69,12 +70,9 @@ pub fn Icon(
     #[prop(optional, into)]
     class: MaybeProp<String>,
 ) -> impl IntoView {
-    let custom_class = class.get().unwrap_or_default();
-    let combined_class = format!("icon {}", custom_class);
-
     view! {
         <svg
-            class=combined_class
+            class=move || format!("icon {}", class.get().unwrap_or_default())
             xmlns="http://www.w3.org/2000/svg"
             viewBox=icon.view_box
             fill="currentColor"

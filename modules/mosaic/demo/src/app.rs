@@ -38,11 +38,15 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                                 }
                             }, 100);
                         });
-                        // Also trigger on route changes
+                        // Also trigger on route changes and close all details elements
                         let lastPath = window.location.pathname;
                         setInterval(function() {
                             if (window.location.pathname !== lastPath) {
                                 lastPath = window.location.pathname;
+                                // Close all open details elements
+                                document.querySelectorAll('details[open]').forEach(function(details) {
+                                    details.removeAttribute('open');
+                                });
                                 setTimeout(function() {
                                     if (window.Prism) {
                                         Prism.highlightAll();

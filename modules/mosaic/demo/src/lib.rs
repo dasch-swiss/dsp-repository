@@ -1,3 +1,4 @@
+pub mod accordions;
 pub mod app;
 pub mod badges;
 pub mod buttons;

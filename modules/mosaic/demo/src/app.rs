@@ -4,6 +4,7 @@ use leptos_router::components::{Route, Router, Routes, A};
 use leptos_router::StaticSegment;
 use mosaic_tiles::ThemeProvider;
 
+use crate::accordions::AccordionExamples;
 use crate::badges::BadgeExamples;
 use crate::buttons::ButtonExamples;
 use crate::cards::CardExamples;
@@ -38,7 +39,7 @@ pub fn App() -> impl IntoView {
         <Stylesheet id="leptos" href="/pkg/mosaic-demo.css" />
 
         // sets the document title
-        <Title text="Welcome to Leptos" />
+        <Title text="Welcome to the Mosaic component library demo" />
 
         // content for this welcome page
         <ThemeProvider>
@@ -48,6 +49,7 @@ pub fn App() -> impl IntoView {
                         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div class="flex gap-8 h-16 items-center">
                                 <A href="/" attr:class="text-gray-700 hover:text-gray-900">"Home"</A>
+                                <A href="/accordions" attr:class="text-gray-700 hover:text-gray-900">"Accordions"</A>
                                 <A href="/badges" attr:class="text-gray-700 hover:text-gray-900">"Badges"</A>
                                 <A href="/buttons" attr:class="text-gray-700 hover:text-gray-900">"Buttons"</A>
                                 <A href="/cards" attr:class="text-gray-700 hover:text-gray-900">"Cards"</A>
@@ -57,6 +59,7 @@ pub fn App() -> impl IntoView {
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                         <Routes fallback=|| "Page not found.".into_view()>
                             <Route path=StaticSegment("") view=HomePage />
+                            <Route path=StaticSegment("accordions") view=AccordionsPage />
                             <Route path=StaticSegment("badges") view=BadgesPage />
                             <Route path=StaticSegment("buttons") view=ButtonsPage />
                             <Route path=StaticSegment("cards") view=CardsPage />
@@ -74,6 +77,14 @@ fn HomePage() -> impl IntoView {
     view! {
         <h1 class="text-3xl font-bold mb-6">"Welcome to Leptos!"</h1>
         <Counter />
+    }
+}
+
+/// Renders the accordions demo page.
+#[component]
+fn AccordionsPage() -> impl IntoView {
+    view! {
+        <AccordionExamples />
     }
 }
 

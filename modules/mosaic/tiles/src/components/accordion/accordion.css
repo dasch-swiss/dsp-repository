@@ -1,0 +1,42 @@
+@layer components {
+  .accordion {
+    @apply w-full space-y-2;
+  }
+
+  .accordion-item {
+    @apply border border-gray-200 rounded-md overflow-hidden;
+  }
+
+  .accordion-header {
+    @apply w-full flex items-center justify-between px-4 py-3 text-left font-medium text-gray-900 bg-white hover:bg-gray-50 transition-colors;
+  }
+
+  .accordion-title {
+    @apply flex-1;
+  }
+
+  .accordion-icon {
+    @apply w-5 h-5 text-gray-500 transition-transform duration-200;
+  }
+
+  .accordion-icon-open {
+    @apply rotate-180;
+  }
+
+  .accordion-content {
+    @apply grid transition-all duration-200 ease-in-out;
+    grid-template-rows: 0fr;
+  }
+
+  .accordion-content-open {
+    grid-template-rows: 1fr;
+  }
+
+  .accordion-body {
+    @apply overflow-hidden px-4 py-0;
+  }
+
+  .accordion-content-open .accordion-body {
+    @apply py-4;
+  }
+}

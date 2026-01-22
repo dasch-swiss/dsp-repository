@@ -1,3 +1,6 @@
+#[cfg(feature = "accordion")]
+pub mod accordion;
+
 #[cfg(feature = "badge")]
 pub mod badge;
 

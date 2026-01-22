@@ -1,35 +1,37 @@
-.card {
-  @apply rounded-lg bg-white overflow-hidden;
-}
+ @layer components {
+  .card {
+    @apply rounded-lg bg-white overflow-hidden;
+  }
 
-.card-default {
-  @apply bg-white;
-}
+  .card-default {
+    @apply bg-white;
+  }
 
-.card-bordered {
-  @apply border border-gray-200;
-}
+  .card-bordered {
+    @apply border border-gray-200;
+  }
 
-.card-elevated {
-  @apply shadow-md;
-}
+  .card-elevated {
+    @apply shadow-md;
+  }
 
-.card-autohover {
-  @apply border border-gray-200 transition-shadow duration-300;
-}
+  .card-autohover {
+    @apply border border-gray-200 transition-shadow duration-300;
+  }
 
-.card-autohover:hover {
-  @apply shadow-md;
-}
+  .card-autohover:hover {
+    @apply shadow-md;
+  }
 
-.card-header {
-  @apply px-6 py-4 border-b border-gray-200;
-}
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-200;
+  }
 
-.card-body {
-  @apply px-6 py-4;
-}
+  .card-body {
+    @apply px-6 py-4;
+  }
 
-.card-footer {
-  @apply px-6 py-4 border-t border-gray-200 bg-gray-50;
+  .card-footer {
+    @apply px-6 py-4 border-t border-gray-200 bg-gray-50;
+  }
 }

@@ -1,11 +1,6 @@
-pub mod accordions;
 pub mod app;
-pub mod badges;
-pub mod buttons;
-pub mod cards;
 pub mod components;
 pub mod counter;
-pub mod icons;
 
 // Generate component documentation pages from TOML
 demo_macro::generate_component_pages!();

@@ -18,9 +18,40 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <AutoReload options=options.clone() />
                 <HydrationScripts options />
                 <MetaTags />
+                // Prism.js for syntax highlighting
+                <link
+                    rel="stylesheet"
+                    href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"
+                />
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" data-manual></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
             </head>
             <body>
                 <App />
+                // Trigger Prism.js after Leptos hydration
+                <script>
+                    {r#"
+                        window.addEventListener('load', function() {
+                            setTimeout(function() {
+                                if (window.Prism) {
+                                    Prism.highlightAll();
+                                }
+                            }, 100);
+                        });
+                        // Also trigger on route changes
+                        let lastPath = window.location.pathname;
+                        setInterval(function() {
+                            if (window.location.pathname !== lastPath) {
+                                lastPath = window.location.pathname;
+                                setTimeout(function() {
+                                    if (window.Prism) {
+                                        Prism.highlightAll();
+                                    }
+                                }, 100);
+                            }
+                        }, 500);
+                    "#}
+                </script>
             </body>
         </html>
     }

@@ -180,7 +180,7 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
                             "View Code"
                         </summary>
                         <div class="mt-2 p-4 bg-gray-50 rounded overflow-x-auto">
-                            <pre class="text-sm"><code>{#example_code}</code></pre>
+                            <pre><code class="language-rust">{#example_code}</code></pre>
                         </div>
                     </details>
                 </div>
@@ -195,7 +195,7 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
                 <div class="mb-8">
                     <h2 class="text-2xl font-bold mb-4">"Anatomy"</h2>
                     <div class="p-4 bg-gray-50 rounded overflow-x-auto">
-                        <pre class="text-sm"><code>{#code}</code></pre>
+                        <pre><code class="language-rust">{#code}</code></pre>
                     </div>
                 </div>
             }

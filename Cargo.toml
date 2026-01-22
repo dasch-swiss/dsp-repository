@@ -5,6 +5,7 @@ members = [
   "modules/design_system/playground",
   "modules/design_system/example_pages",
   "modules/mosaic/demo",
+  "modules/mosaic/demo_macro",
   "modules/mosaic/tiles",
 ]
 resolver = "3"

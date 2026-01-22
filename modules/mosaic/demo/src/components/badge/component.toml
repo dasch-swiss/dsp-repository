@@ -1,0 +1,39 @@
+name = "Badge"
+description = "A small label component for highlighting status, categories, and metadata."
+
+[[examples]]
+name = "variants"
+title = "Badge Variants"
+description = "Available badge colors: Primary, Secondary, Success, Warning, Danger, and Info"
+
+[[examples]]
+name = "sizes"
+title = "Badge Sizes"
+description = "Available sizes: Small, Medium, and Large"
+
+[[examples]]
+name = "usage"
+title = "Usage Examples"
+description = "Common use cases: status indicators, categories, counts, and priority levels"
+
+[[examples]]
+name = "with_icons"
+title = "Badges with Icons"
+description = "Combining badges with icon components"
+
+[[references]]
+name = "Badge"
+description = "A label component for displaying status and metadata."
+extra = "Implements standard HTML span attributes."
+
+[[references.attrs]]
+attr = "variant"
+attr_type = "BadgeVariant"
+default = "Primary"
+description = "Color variant: Primary, Secondary, Success, Warning, Danger, or Info"
+
+[[references.attrs]]
+attr = "size"
+attr_type = "BadgeSize"
+default = "Medium"
+description = "Size variant: Small, Medium, or Large"

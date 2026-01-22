@@ -1,0 +1,50 @@
+name = "Button"
+description = "A clickable button component with multiple variants and states."
+
+[[examples]]
+name = "variants"
+title = "Button Variants"
+description = "Available button styles: Primary and Secondary"
+
+[[examples]]
+name = "types"
+title = "Button Types"
+description = "HTML button types: Button, Submit, and Reset"
+
+[[examples]]
+name = "disabled"
+title = "Disabled State"
+description = "Buttons in disabled state"
+
+[[examples]]
+name = "interactive"
+title = "Interactive Example"
+description = "Buttons with click handlers and reactive state"
+
+[[examples]]
+name = "with_icons"
+title = "Buttons with Icons"
+description = "Buttons combined with icon components"
+
+[[references]]
+name = "Button"
+description = "Main button component for user interactions."
+extra = "Implements standard HTML button attributes."
+
+[[references.attrs]]
+attr = "variant"
+attr_type = "ButtonVariant"
+default = "Primary"
+description = "Visual style variant: Primary or Secondary"
+
+[[references.attrs]]
+attr = "button_type"
+attr_type = "ButtonType"
+default = "Button"
+description = "HTML button type: Button, Submit, or Reset"
+
+[[references.attrs]]
+attr = "disabled"
+attr_type = "bool"
+default = "false"
+description = "Whether the button is disabled"

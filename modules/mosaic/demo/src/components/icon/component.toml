@@ -1,0 +1,28 @@
+name = "Icon"
+description = "A collection of 12 SVG icons with automatic tree-shaking. Only icons used in your code are included in the WASM bundle."
+
+[[examples]]
+name = "all_icons"
+title = "All Available Icons"
+description = "Complete set of 12 icons: chevrons, search, external link, info, mail, copy, and social media icons"
+
+[[examples]]
+name = "sizes_and_colors"
+title = "Sizes and Colors"
+description = "Control icon size with Tailwind width/height classes and color with text color classes"
+
+[[examples]]
+name = "usage"
+title = "Real-World Usage"
+description = "Icons in buttons, links, alerts, and other UI elements"
+
+[[references]]
+name = "Icon"
+description = "SVG icon component with tree-shaking support."
+extra = "Icons use currentColor and inherit text color from parent elements. Size is controlled via Tailwind width and height classes."
+
+[[references.attrs]]
+attr = "icon"
+attr_type = "IconType"
+default = ""
+description = "The icon to display. Available icons: IconChevronUp, IconChevronDown, IconChevronLeft, IconChevronRight, IconSearch, LinkExternal, Info, Mail, CopyPaste, IconLinkedIn, IconX, IconGitHub"

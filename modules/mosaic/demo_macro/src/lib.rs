@@ -151,88 +151,60 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
             quote! {}
         };
 
-        // Generate examples - collect both const definitions and view code
-        let example_data: Vec<_> = page
-            .examples
-            .iter()
-            .enumerate()
-            .map(|(idx, example)| {
-                let example_name = &example.name;
-                let example_title = example.title.as_deref().unwrap_or(example_name);
-                let example_description = example.description.as_deref();
+        // Generate examples with explicit module paths
+        let examples = page.examples.iter().map(|example| {
+            let example_name = &example.name;
+            let example_title = example.title.as_deref().unwrap_or(example_name);
+            let example_description = example.description.as_deref();
 
-                let example_file = path.join(format!("examples/{}.rs", example_name));
-                let example_code = read_file_as_string(&example_file);
+            let example_file = path.join(format!("examples/{}.rs", example_name));
+            let example_code = read_file_as_string(&example_file);
 
-                let example_component = format_ident!("{}Example", to_pascal_case(example_name));
-                let code_const = format_ident!("{}_{}_CODE", name.to_uppercase(), idx);
+            let example_component = format_ident!("{}Example", to_pascal_case(example_name));
 
-                (
-                    code_const,
-                    example_code,
-                    example_component,
-                    example_title.to_string(),
-                    example_description.map(|s| s.to_string()),
-                )
-            })
-            .collect();
+            // Create unique key for this example to force re-render on navigation
+            let example_key = format!("{}-{}", name, example_name);
 
-        // Generate const definitions
-        let example_consts = example_data.iter().map(|(code_const, example_code, _, _, _)| {
+            let description_view = if let Some(desc) = example_description {
+                quote! { <p class="text-gray-600 mb-3">{#desc}</p> }
+            } else {
+                quote! {}
+            };
+
             quote! {
-                const #code_const: &str = #example_code;
+                <div class="mb-8" attr:data-example-key=#example_key>
+                    <h3 class="text-xl font-semibold mb-2">{#example_title}</h3>
+                    #description_view
+                    <div class="mb-4 p-6 border rounded bg-white">
+                        {components::#module_name::#example_component().into_any()}
+                    </div>
+                    <details class="mt-2" attr:data-code-key=#example_key>
+                        <summary class="cursor-pointer text-sm text-blue-600 hover:text-blue-800">
+                            "View Code"
+                        </summary>
+                        <div class="mt-2 p-4 bg-gray-50 rounded overflow-x-auto">
+                            <pre attr:data-pre-key=#example_key><code class="language-rust" prop:textContent={move || #example_code}></code></pre>
+                        </div>
+                    </details>
+                </div>
             }
         });
 
-        // Generate example views
-        let examples =
-            example_data
-                .iter()
-                .map(|(code_const, _, example_component, example_title, example_description)| {
-                    let description_view = if let Some(desc) = example_description {
-                        quote! { <p class="text-gray-600 mb-3">{#desc}</p> }
-                    } else {
-                        quote! {}
-                    };
-
-                    quote! {
-                        <div class="mb-8">
-                            <h3 class="text-xl font-semibold mb-2">{#example_title}</h3>
-                            #description_view
-                            <div class="mb-4 p-6 border rounded bg-white">
-                                {#example_component().into_any()}
-                            </div>
-                            <details class="mt-2">
-                                <summary class="cursor-pointer text-sm text-blue-600 hover:text-blue-800">
-                                    "View Code"
-                                </summary>
-                                <div class="mt-2 p-4 bg-gray-50 rounded overflow-x-auto">
-                                    <pre><code class="language-rust">{#code_const}</code></pre>
-                                </div>
-                            </details>
-                        </div>
-                    }
-                });
-
         // Generate anatomy section
         let anatomy_file = path.join("anatomy.rs");
-        let (anatomy_const_def, anatomy_view) = if anatomy_file.exists() {
+        let anatomy_view = if anatomy_file.exists() {
             let code = read_file_as_string(&anatomy_file);
-            let anatomy_const = format_ident!("{}_ANATOMY", name.to_uppercase());
-            let const_def = quote! {
-                const #anatomy_const: &str = #code;
-            };
-            let view = quote! {
+            let anatomy_key = format!("{}-anatomy", name);
+            quote! {
                 <div class="mb-8">
                     <h2 class="text-2xl font-bold mb-4">"Anatomy"</h2>
                     <div class="p-4 bg-gray-50 rounded overflow-x-auto">
-                        <pre><code class="language-rust">{#anatomy_const}</code></pre>
+                        <pre attr:data-anatomy-key=#anatomy_key><code class="language-rust" prop:textContent={move || #code}></code></pre>
                     </div>
                 </div>
-            };
-            (const_def, view)
+            }
         } else {
-            (quote! {}, quote! {})
+            quote! {}
         };
 
         // Generate API references
@@ -305,18 +277,17 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
         };
 
         // Generate the page component
+        // Create a unique ID for this component's page to help Leptos distinguish between routes
+        let page_id = format!("component-page-{}", name);
+
         quote! {
             #[::leptos::component]
             pub fn #component_ident() -> impl ::leptos::IntoView {
                 use ::leptos::prelude::*;
-                use crate::components::#module_name::*;
-
-                // Const definitions for code examples
-                #(#example_consts)*
-                #anatomy_const_def
+                use crate::components;
 
                 view! {
-                    <div class="max-w-5xl mx-auto p-6">
+                    <div class="max-w-5xl mx-auto p-6" id=#page_id>
                         <h1 class="text-4xl font-bold mb-3">{#component_name}</h1>
                         <p class="text-xl text-gray-600 mb-6">{#component_description}</p>
 

@@ -151,56 +151,88 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
             quote! {}
         };
 
-        // Generate examples
-        let examples = page.examples.iter().map(|example| {
-            let example_name = &example.name;
-            let example_title = example.title.as_deref().unwrap_or(example_name);
-            let example_description = example.description.as_deref();
+        // Generate examples - collect both const definitions and view code
+        let example_data: Vec<_> = page
+            .examples
+            .iter()
+            .enumerate()
+            .map(|(idx, example)| {
+                let example_name = &example.name;
+                let example_title = example.title.as_deref().unwrap_or(example_name);
+                let example_description = example.description.as_deref();
 
-            let example_file = path.join(format!("examples/{}.rs", example_name));
-            let example_code = read_file_as_string(&example_file);
+                let example_file = path.join(format!("examples/{}.rs", example_name));
+                let example_code = read_file_as_string(&example_file);
 
-            let example_component = format_ident!("{}Example", to_pascal_case(example_name));
+                let example_component = format_ident!("{}Example", to_pascal_case(example_name));
+                let code_const = format_ident!("{}_{}_CODE", name.to_uppercase(), idx);
 
-            let description_view = if let Some(desc) = example_description {
-                quote! { <p class="text-gray-600 mb-3">{#desc}</p> }
-            } else {
-                quote! {}
-            };
+                (
+                    code_const,
+                    example_code,
+                    example_component,
+                    example_title.to_string(),
+                    example_description.map(|s| s.to_string()),
+                )
+            })
+            .collect();
 
+        // Generate const definitions
+        let example_consts = example_data.iter().map(|(code_const, example_code, _, _, _)| {
             quote! {
-                <div class="mb-8">
-                    <h3 class="text-xl font-semibold mb-2">{#example_title}</h3>
-                    #description_view
-                    <div class="mb-4 p-6 border rounded bg-white">
-                        {#example_component().into_any()}
-                    </div>
-                    <details class="mt-2">
-                        <summary class="cursor-pointer text-sm text-blue-600 hover:text-blue-800">
-                            "View Code"
-                        </summary>
-                        <div class="mt-2 p-4 bg-gray-50 rounded overflow-x-auto">
-                            <pre><code class="language-rust">{#example_code}</code></pre>
-                        </div>
-                    </details>
-                </div>
+                const #code_const: &str = #example_code;
             }
         });
 
+        // Generate example views
+        let examples =
+            example_data
+                .iter()
+                .map(|(code_const, _, example_component, example_title, example_description)| {
+                    let description_view = if let Some(desc) = example_description {
+                        quote! { <p class="text-gray-600 mb-3">{#desc}</p> }
+                    } else {
+                        quote! {}
+                    };
+
+                    quote! {
+                        <div class="mb-8">
+                            <h3 class="text-xl font-semibold mb-2">{#example_title}</h3>
+                            #description_view
+                            <div class="mb-4 p-6 border rounded bg-white">
+                                {#example_component().into_any()}
+                            </div>
+                            <details class="mt-2">
+                                <summary class="cursor-pointer text-sm text-blue-600 hover:text-blue-800">
+                                    "View Code"
+                                </summary>
+                                <div class="mt-2 p-4 bg-gray-50 rounded overflow-x-auto">
+                                    <pre><code class="language-rust">{#code_const}</code></pre>
+                                </div>
+                            </details>
+                        </div>
+                    }
+                });
+
         // Generate anatomy section
         let anatomy_file = path.join("anatomy.rs");
-        let anatomy_code = if anatomy_file.exists() {
+        let (anatomy_const_def, anatomy_view) = if anatomy_file.exists() {
             let code = read_file_as_string(&anatomy_file);
-            quote! {
+            let anatomy_const = format_ident!("{}_ANATOMY", name.to_uppercase());
+            let const_def = quote! {
+                const #anatomy_const: &str = #code;
+            };
+            let view = quote! {
                 <div class="mb-8">
                     <h2 class="text-2xl font-bold mb-4">"Anatomy"</h2>
                     <div class="p-4 bg-gray-50 rounded overflow-x-auto">
-                        <pre><code class="language-rust">{#code}</code></pre>
+                        <pre><code class="language-rust">{#anatomy_const}</code></pre>
                     </div>
                 </div>
-            }
+            };
+            (const_def, view)
         } else {
-            quote! {}
+            (quote! {}, quote! {})
         };
 
         // Generate API references
@@ -279,6 +311,10 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
                 use ::leptos::prelude::*;
                 use crate::components::#module_name::*;
 
+                // Const definitions for code examples
+                #(#example_consts)*
+                #anatomy_const_def
+
                 view! {
                     <div class="max-w-5xl mx-auto p-6">
                         <h1 class="text-4xl font-bold mb-3">{#component_name}</h1>
@@ -291,7 +327,7 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
                             #(#examples)*
                         </div>
 
-                        #anatomy_code
+                        #anatomy_view
 
                         #api_section
                     </div>

@@ -269,7 +269,7 @@ pub fn Demo() -> impl IntoView {
 
 #### Adding Component Examples
 
-For complete component documentation with multiple examples, see the Demo CLAUDE.md file at `modules/mosaic/demo/CLAUDE.md` for detailed instructions on:
+For complete component documentation with multiple examples, see the Demo claude.md file at `modules/mosaic/demo/claude.md` for detailed instructions on:
 
 - Creating component example pages
 - Setting up anatomy demonstrations

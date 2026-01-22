@@ -8,13 +8,13 @@ pub fn CardExamples() -> impl IntoView {
     view! {
         <div class="space-y-8">
             <section>
-                <h2 class="text-2xl font-bold mb-4">"Card Component Examples"</h2>
+                <h2 class="text-2xl font-bold mb-4">"Card Variants"</h2>
 
                 <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     // Simple card
                     <Card>
                         <CardBody>
-                            <h3 class="text-lg font-semibold mb-2">"Simple Card"</h3>
+                            <h3 class="text-lg font-semibold mb-2">"Simple"</h3>
                             <p class="text-gray-600">
                                 "This is a basic card with default styling."
                             </p>
@@ -24,7 +24,7 @@ pub fn CardExamples() -> impl IntoView {
                     // Bordered card
                     <Card variant=CardVariant::Bordered>
                         <CardBody>
-                            <h3 class="text-lg font-semibold mb-2">"Bordered Card"</h3>
+                            <h3 class="text-lg font-semibold mb-2">"Bordered"</h3>
                             <p class="text-gray-600">"This card has a visible border."</p>
                         </CardBody>
                     </Card>
@@ -32,9 +32,19 @@ pub fn CardExamples() -> impl IntoView {
                     // Elevated card
                     <Card variant=CardVariant::Elevated>
                         <CardBody>
-                            <h3 class="text-lg font-semibold mb-2">"Elevated Card"</h3>
+                            <h3 class="text-lg font-semibold mb-2">"Elevated"</h3>
                             <p class="text-gray-600">
                                 "This card has a shadow to create elevation."
+                            </p>
+                        </CardBody>
+                    </Card>
+
+                    // AutoHover card
+                    <Card variant=CardVariant::AutoHover>
+                        <CardBody>
+                            <h3 class="text-lg font-semibold mb-2">"AutoHover"</h3>
+                            <p class="text-gray-600">
+                                "This card starts with a bordered style and smoothly transitions to an elevated appearance when you hover over it."
                             </p>
                         </CardBody>
                     </Card>
@@ -91,31 +101,6 @@ pub fn CardExamples() -> impl IntoView {
                         </CardBody>
                         <CardFooter>
                             <div class="text-sm text-gray-500">"Last updated: 2026-01-22"</div>
-                        </CardFooter>
-                    </Card>
-                </div>
-            </section>
-
-            <section>
-                <h3 class="text-xl font-bold mb-4">"Interactive Hover Card"</h3>
-
-                <div class="max-w-md">
-                    <Card variant=CardVariant::AutoHover>
-                        <CardHeader>
-                            <h3 class="text-lg font-semibold">"Hover Me"</h3>
-                            <p class="text-sm text-gray-500">"Transitions on hover"</p>
-                        </CardHeader>
-                        <CardBody>
-                            <p class="text-gray-700">
-                                "This card uses the AutoHover variant which starts with a bordered "
-                                "style and smoothly transitions to an elevated appearance when you "
-                                "hover over it."
-                            </p>
-                        </CardBody>
-                        <CardFooter>
-                            <div class="text-sm text-gray-500">
-                                "Hover to see the elevation effect"
-                            </div>
                         </CardFooter>
                     </Card>
                 </div>

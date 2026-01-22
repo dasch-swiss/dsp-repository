@@ -118,7 +118,10 @@ pub fn IconExamples() -> impl IntoView {
                         <Icon icon=IconChevronUp class="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     </button>
                     <button class="p-3 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                        <Icon icon=IconChevronDown class="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                        <Icon
+                            icon=IconChevronDown
+                            class="w-5 h-5 text-gray-600 dark:text-gray-400"
+                        />
                     </button>
                 </div>
             </section>
@@ -135,9 +138,13 @@ pub fn IconExamples() -> impl IntoView {
                         <Icon icon=IconSearch class="w-4 h-4" />
                         "Search"
                     </button>
-
+                </div>
+                <div class="space-y-4">
                     // Link with external icon
-                    <a href="#" class="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:underline">
+                    <a
+                        href="#"
+                        class="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
                         "Visit Documentation"
                         <Icon icon=LinkExternal class="w-4 h-4" />
                     </a>
@@ -151,15 +158,22 @@ pub fn IconExamples() -> impl IntoView {
                     // Info alert
                     <div class="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                         <Icon icon=Info class="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                        <span class="text-sm text-blue-800 dark:text-blue-300">"This is an informational message"</span>
+                        <span class="text-sm text-blue-800 dark:text-blue-300">
+                            "This is an informational message"
+                        </span>
                     </div>
 
                     // Contact with mail icon
-                    <a href="mailto:contact@example.com" class="inline-flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">
+                    <a
+                        href="mailto:contact@example.com"
+                        class="inline-flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400"
+                    >
                         <Icon icon=Mail class="w-5 h-5" />
                         "contact@example.com"
                     </a>
 
+                </div>
+                <div>
                     // Copy button
                     <button class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <Icon icon=CopyPaste class="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -175,13 +189,25 @@ pub fn IconExamples() -> impl IntoView {
                     "Social media icons with appropriate styling."
                 </p>
                 <div class="flex gap-4">
-                    <a href="#" class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors" aria-label="GitHub">
+                    <a
+                        href="#"
+                        class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+                        aria-label="GitHub"
+                    >
                         <Icon icon=IconGitHub class="w-6 h-6" />
                     </a>
-                    <a href="#" class="p-2 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors" aria-label="LinkedIn">
+                    <a
+                        href="#"
+                        class="p-2 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+                        aria-label="LinkedIn"
+                    >
                         <Icon icon=IconLinkedIn class="w-6 h-6" />
                     </a>
-                    <a href="#" class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors" aria-label="X (Twitter)">
+                    <a
+                        href="#"
+                        class="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+                        aria-label="X (Twitter)"
+                    >
                         <Icon icon=IconX class="w-6 h-6" />
                     </a>
                 </div>
@@ -193,21 +219,21 @@ pub fn IconExamples() -> impl IntoView {
                 <div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
                     <pre class="text-sm">
                         <code>
-"use mosaic_tiles::icon::*;
-
-// Basic usage
-view! { <Icon icon=IconSearch /> }
-
-// With size and color
-view! { <Icon icon=IconGitHub class=\"w-6 h-6 text-gray-600\" /> }
-
-// In a button
-view! {
-    <button class=\"inline-flex items-center gap-2\">
-        <Icon icon=IconSearch class=\"w-4 h-4\" />
-        \"Search\"
-    </button>
-}"
+                            "use mosaic_tiles::icon::*;
+                            
+                            // Basic usage
+                            view! { <Icon icon=IconSearch /> }
+                            
+                            // With size and color
+                            view! { <Icon icon=IconGitHub class=\"w-6 h-6 text-gray-600\" /> }
+                            
+                            // In a button
+                            view! {
+                                <button class=\"inline-flex items-center gap-2\">
+                                    <Icon icon=IconSearch class=\"w-4 h-4\" />
+                                    \"Search\"
+                                </button>
+                            }"
                         </code>
                     </pre>
                 </div>

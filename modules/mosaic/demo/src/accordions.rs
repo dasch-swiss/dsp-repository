@@ -31,7 +31,9 @@ pub fn AccordionExamples() -> impl IntoView {
                     </div>
 
                     <div>
-                        <h3 class="text-lg font-semibold mb-3">"Accordion with Default Open Item"</h3>
+                        <h3 class="text-lg font-semibold mb-3">
+                            "Accordion with Default Open Item"
+                        </h3>
                         <Accordion>
                             <AccordionItem title="Getting Started".to_string() default_open=true>
                                 <p class="text-gray-700 mb-2">
@@ -76,9 +78,13 @@ pub fn AccordionExamples() -> impl IntoView {
                                 <div class="text-gray-700 space-y-2">
                                     <p>"Leptos is designed for exceptional performance:"</p>
                                     <div class="bg-gray-50 p-4 rounded-md mt-2">
-                                        <p class="font-mono text-sm">"Bundle size: ~50KB minified"</p>
+                                        <p class="font-mono text-sm">
+                                            "Bundle size: ~50KB minified"
+                                        </p>
                                         <p class="font-mono text-sm">"Initial load: < 100ms"</p>
-                                        <p class="font-mono text-sm">"Reactivity overhead: ~1μs"</p>
+                                        <p class="font-mono text-sm">
+                                            "Reactivity overhead: ~1μs"
+                                        </p>
                                     </div>
                                 </div>
                             </AccordionItem>
@@ -86,10 +92,18 @@ pub fn AccordionExamples() -> impl IntoView {
                                 <div class="text-gray-700">
                                     <p class="mb-3">"Join the growing Leptos community:"</p>
                                     <div class="flex flex-wrap gap-2">
-                                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-md text-sm">"Discord"</span>
-                                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-md text-sm">"GitHub"</span>
-                                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-md text-sm">"Reddit"</span>
-                                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-md text-sm">"Twitter"</span>
+                                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-md text-sm">
+                                            "Discord"
+                                        </span>
+                                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-md text-sm">
+                                            "GitHub"
+                                        </span>
+                                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-md text-sm">
+                                            "Reddit"
+                                        </span>
+                                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-md text-sm">
+                                            "Twitter"
+                                        </span>
                                     </div>
                                 </div>
                             </AccordionItem>
@@ -111,7 +125,8 @@ pub fn AccordionExamples() -> impl IntoView {
                             "Yes! Leptos is being used in production by various companies and projects. The API is stabilizing with each release."
                         </p>
                     </AccordionItem>
-                    <AccordionItem title="Can I use Leptos with existing JavaScript libraries?".to_string()>
+                    <AccordionItem title="Can I use Leptos with existing JavaScript libraries?"
+                        .to_string()>
                         <p class="text-gray-700">
                             "Yes, through wasm-bindgen you can interoperate with JavaScript libraries. Leptos also provides web-sys bindings for DOM APIs."
                         </p>

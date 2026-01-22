@@ -24,9 +24,7 @@ pub fn CardExamples() -> impl IntoView {
                     <Card variant=CardVariant::Bordered>
                         <CardBody>
                             <h3 class="text-lg font-semibold mb-2">"Bordered Card"</h3>
-                            <p class="text-gray-600">
-                                "This card has a visible border."
-                            </p>
+                            <p class="text-gray-600">"This card has a visible border."</p>
                         </CardBody>
                     </Card>
 
@@ -59,12 +57,8 @@ pub fn CardExamples() -> impl IntoView {
                     </CardBody>
                     <CardFooter>
                         <div class="flex gap-2 justify-end">
-                            <Button variant=ButtonVariant::Secondary>
-                                "Cancel"
-                            </Button>
-                            <Button variant=ButtonVariant::Primary>
-                                "Save"
-                            </Button>
+                            <Button variant=ButtonVariant::Secondary>"Cancel"</Button>
+                            <Button variant=ButtonVariant::Primary>"Save"</Button>
                         </div>
                     </CardFooter>
                 </Card>
@@ -95,9 +89,7 @@ pub fn CardExamples() -> impl IntoView {
                             </div>
                         </CardBody>
                         <CardFooter>
-                            <div class="text-sm text-gray-500">
-                                "Last updated: 2026-01-22"
-                            </div>
+                            <div class="text-sm text-gray-500">"Last updated: 2026-01-22"</div>
                         </CardFooter>
                     </Card>
                 </div>
@@ -162,12 +154,8 @@ pub fn CardExamples() -> impl IntoView {
                         </CardBody>
                         <CardFooter>
                             <div class="flex gap-2 justify-end">
-                                <Button variant=ButtonVariant::Secondary>
-                                    "Share"
-                                </Button>
-                                <Button variant=ButtonVariant::Primary>
-                                    "View"
-                                </Button>
+                                <Button variant=ButtonVariant::Secondary>"Share"</Button>
+                                <Button variant=ButtonVariant::Primary>"View"</Button>
                             </div>
                         </CardFooter>
                     </Card>

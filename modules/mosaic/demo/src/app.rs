@@ -49,12 +49,27 @@ pub fn App() -> impl IntoView {
                     <nav class="bg-white border-b border-gray-200">
                         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div class="flex gap-8 h-16 items-center">
-                                <A href="/" attr:class="text-gray-700 hover:text-gray-900">"Home"</A>
-                                <A href="/accordions" attr:class="text-gray-700 hover:text-gray-900">"Accordions"</A>
-                                <A href="/badges" attr:class="text-gray-700 hover:text-gray-900">"Badges"</A>
-                                <A href="/buttons" attr:class="text-gray-700 hover:text-gray-900">"Buttons"</A>
-                                <A href="/cards" attr:class="text-gray-700 hover:text-gray-900">"Cards"</A>
-                                <A href="/icons" attr:class="text-gray-700 hover:text-gray-900">"Icons"</A>
+                                <A href="/" attr:class="text-gray-700 hover:text-gray-900">
+                                    "Home"
+                                </A>
+                                <A
+                                    href="/accordions"
+                                    attr:class="text-gray-700 hover:text-gray-900"
+                                >
+                                    "Accordions"
+                                </A>
+                                <A href="/badges" attr:class="text-gray-700 hover:text-gray-900">
+                                    "Badges"
+                                </A>
+                                <A href="/buttons" attr:class="text-gray-700 hover:text-gray-900">
+                                    "Buttons"
+                                </A>
+                                <A href="/cards" attr:class="text-gray-700 hover:text-gray-900">
+                                    "Cards"
+                                </A>
+                                <A href="/icons" attr:class="text-gray-700 hover:text-gray-900">
+                                    "Icons"
+                                </A>
                             </div>
                         </div>
                     </nav>
@@ -86,39 +101,29 @@ fn HomePage() -> impl IntoView {
 /// Renders the accordions demo page.
 #[component]
 fn AccordionsPage() -> impl IntoView {
-    view! {
-        <AccordionExamples />
-    }
+    view! { <AccordionExamples /> }
 }
 
 /// Renders the badges demo page.
 #[component]
 fn BadgesPage() -> impl IntoView {
-    view! {
-        <BadgeExamples />
-    }
+    view! { <BadgeExamples /> }
 }
 
 /// Renders the buttons demo page.
 #[component]
 fn ButtonsPage() -> impl IntoView {
-    view! {
-        <ButtonExamples />
-    }
+    view! { <ButtonExamples /> }
 }
 
 /// Renders the cards demo page.
 #[component]
 fn CardsPage() -> impl IntoView {
-    view! {
-        <CardExamples />
-    }
+    view! { <CardExamples /> }
 }
 
 /// Renders the icons demo page.
 #[component]
 fn IconsPage() -> impl IntoView {
-    view! {
-        <IconExamples />
-    }
+    view! { <IconExamples /> }
 }

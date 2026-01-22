@@ -15,27 +15,17 @@ pub fn ButtonExamples() -> impl IntoView {
                     <div>
                         <h3 class="text-lg font-semibold mb-3">"Variants"</h3>
                         <div class="flex gap-4 items-center">
-                            <Button variant=ButtonVariant::Primary>
-                                "Primary Button"
-                            </Button>
-                            <Button variant=ButtonVariant::Secondary>
-                                "Secondary Button"
-                            </Button>
+                            <Button variant=ButtonVariant::Primary>"Primary Button"</Button>
+                            <Button variant=ButtonVariant::Secondary>"Secondary Button"</Button>
                         </div>
                     </div>
 
                     <div>
                         <h3 class="text-lg font-semibold mb-3">"Button Types"</h3>
                         <div class="flex gap-4 items-center">
-                            <Button button_type=ButtonType::Button>
-                                "Button"
-                            </Button>
-                            <Button button_type=ButtonType::Submit>
-                                "Submit"
-                            </Button>
-                            <Button button_type=ButtonType::Reset>
-                                "Reset"
-                            </Button>
+                            <Button button_type=ButtonType::Button>"Button"</Button>
+                            <Button button_type=ButtonType::Submit>"Submit"</Button>
+                            <Button button_type=ButtonType::Reset>"Reset"</Button>
                         </div>
                     </div>
 
@@ -59,7 +49,8 @@ pub fn ButtonExamples() -> impl IntoView {
                 <div class="space-y-4">
                     <div class="flex gap-4 items-center">
                         <Button disabled=disabled on_click=move |_| set_count.update(|n| *n += 1)>
-                            "Increment: " {count}
+                            "Increment: "
+                            {count}
                         </Button>
                         <Button variant=ButtonVariant::Secondary on_click=move |_| set_count.set(0)>
                             "Reset"
@@ -68,11 +59,17 @@ pub fn ButtonExamples() -> impl IntoView {
 
                     <div class="flex gap-4 items-center">
                         <span class="text-gray-700">"Counter: " {count}</span>
-                        <span class="text-gray-700">"Button disabled: " {move || disabled.get().to_string()}</span>
+                        <span class="text-gray-700">
+                            "Button disabled: " {move || disabled.get().to_string()}
+                        </span>
                     </div>
 
-                    <Button variant=ButtonVariant::Secondary on_click=move |_| set_disabled.update(|b| *b = !*b)>
-                        {move || if disabled.get() { "Enable" } else { "Disable" }} " increment button"
+                    <Button
+                        variant=ButtonVariant::Secondary
+                        on_click=move |_| set_disabled.update(|b| *b = !*b)
+                    >
+                        {move || if disabled.get() { "Enable" } else { "Disable" }}
+                        " increment button"
                     </Button>
                 </div>
             </section>

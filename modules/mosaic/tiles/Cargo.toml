@@ -15,8 +15,9 @@ wasm-bindgen = { version = "0.2.106", optional = true }
 [features]
 hydrate = ["leptos/hydrate", "dep:console_error_panic_hook", "dep:wasm-bindgen"]
 ssr = ["leptos/ssr"]
-default = ["button", "theme_provider"]
+default = ["button", "card", "theme_provider"]
 button = []
+card = []
 theme_provider = []
 
 [build-dependencies]

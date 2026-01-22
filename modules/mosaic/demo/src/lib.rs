@@ -1,4 +1,6 @@
 pub mod app;
+pub mod buttons;
+pub mod cards;
 pub mod counter;
 
 #[cfg(feature = "hydrate")]

@@ -1,9 +1,11 @@
 use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
-use leptos_router::components::{Route, Router, Routes};
+use leptos_router::components::{Route, Router, Routes, A};
 use leptos_router::StaticSegment;
 use mosaic_tiles::ThemeProvider;
 
+use crate::buttons::ButtonExamples;
+use crate::cards::CardExamples;
 use crate::counter::Counter;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -40,10 +42,23 @@ pub fn App() -> impl IntoView {
         // content for this welcome page
         <ThemeProvider>
             <Router>
-                <main>
-                    <Routes fallback=|| "Page not found.".into_view()>
-                        <Route path=StaticSegment("") view=HomePage />
-                    </Routes>
+                <main class="min-h-screen bg-gray-50">
+                    <nav class="bg-white border-b border-gray-200">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="flex gap-8 h-16 items-center">
+                                <A href="/" attr:class="text-gray-700 hover:text-gray-900">"Home"</A>
+                                <A href="/buttons" attr:class="text-gray-700 hover:text-gray-900">"Buttons"</A>
+                                <A href="/cards" attr:class="text-gray-700 hover:text-gray-900">"Cards"</A>
+                            </div>
+                        </div>
+                    </nav>
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <Routes fallback=|| "Page not found.".into_view()>
+                            <Route path=StaticSegment("") view=HomePage />
+                            <Route path=StaticSegment("buttons") view=ButtonsPage />
+                            <Route path=StaticSegment("cards") view=CardsPage />
+                        </Routes>
+                    </div>
                 </main>
             </Router>
         </ThemeProvider>
@@ -54,7 +69,23 @@ pub fn App() -> impl IntoView {
 #[component]
 fn HomePage() -> impl IntoView {
     view! {
-        <h1>"Welcome to Leptos!"</h1>
+        <h1 class="text-3xl font-bold mb-6">"Welcome to Leptos!"</h1>
         <Counter />
+    }
+}
+
+/// Renders the buttons demo page.
+#[component]
+fn ButtonsPage() -> impl IntoView {
+    view! {
+        <ButtonExamples />
+    }
+}
+
+/// Renders the cards demo page.
+#[component]
+fn CardsPage() -> impl IntoView {
+    view! {
+        <CardExamples />
     }
 }

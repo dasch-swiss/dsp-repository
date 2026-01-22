@@ -23,6 +23,12 @@ extra = "Icons use currentColor and inherit text color from parent elements. Siz
 
 [[references.attrs]]
 attr = "icon"
-attr_type = "IconType"
-default = ""
+attr_type = "IconData"
+default = "(required)"
 description = "The icon to display. Available icons: IconChevronUp, IconChevronDown, IconChevronLeft, IconChevronRight, IconSearch, LinkExternal, Info, Mail, CopyPaste, IconLinkedIn, IconX, IconGitHub"
+
+[[references.attrs]]
+attr = "class"
+attr_type = "String"
+default = "\"\""
+description = "Optional CSS classes for custom styling (e.g., w-6 h-6 text-gray-600)"

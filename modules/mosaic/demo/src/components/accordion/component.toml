@@ -25,7 +25,12 @@ description = "Common FAQ use case with questions and answers"
 name = "Accordion"
 description = "Container for accordion items."
 extra = "Groups related AccordionItem components."
-attrs = []
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Accordion content (typically AccordionItem components)"
 
 [[references]]
 name = "AccordionItem"
@@ -35,7 +40,7 @@ extra = "Implements standard HTML attributes."
 [[references.attrs]]
 attr = "title"
 attr_type = "String"
-default = ""
+default = "(required)"
 description = "The title text displayed in the accordion header"
 
 [[references.attrs]]
@@ -43,3 +48,9 @@ attr = "default_open"
 attr_type = "bool"
 default = "false"
 description = "Whether the item starts in an expanded state"
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Accordion item content (visible when expanded)"

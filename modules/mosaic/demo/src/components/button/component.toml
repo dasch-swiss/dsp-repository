@@ -48,3 +48,15 @@ attr = "disabled"
 attr_type = "bool"
 default = "false"
 description = "Whether the button is disabled"
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Button content (text, icons, etc.)"
+
+[[references.attrs]]
+attr = "on_click"
+attr_type = "Option<Callback<MouseEvent>>"
+default = "None"
+description = "Click event handler"

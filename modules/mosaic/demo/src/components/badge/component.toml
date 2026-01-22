@@ -37,3 +37,9 @@ attr = "size"
 attr_type = "BadgeSize"
 default = "Medium"
 description = "Size variant: Small, Medium, or Large"
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Badge content (text, icons, etc.)"

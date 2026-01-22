@@ -34,23 +34,50 @@ extra = "Implements standard HTML attributes."
 [[references.attrs]]
 attr = "variant"
 attr_type = "CardVariant"
-default = "Simple"
-description = "Visual style variant: Simple, Bordered, Elevated, or AutoHover"
+default = "Default"
+description = "Visual style variant: Default, Bordered, Elevated, or AutoHover"
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Card content (typically CardHeader, CardBody, CardFooter)"
+
+[[references.attrs]]
+attr = "class"
+attr_type = "String"
+default = "\"\""
+description = "Additional CSS classes"
 
 [[references]]
 name = "CardHeader"
 description = "Top section of the card, typically containing titles and metadata."
 extra = "Implements standard HTML attributes."
-attrs = []
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Header content"
 
 [[references]]
 name = "CardBody"
 description = "Main content area of the card."
 extra = "Implements standard HTML attributes."
-attrs = []
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Body content"
 
 [[references]]
 name = "CardFooter"
 description = "Bottom section of the card, typically containing actions or supplementary information."
 extra = "Implements standard HTML attributes."
-attrs = []
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Footer content"

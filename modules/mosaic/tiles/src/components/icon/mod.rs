@@ -37,9 +37,9 @@
 /// }
 /// ```
 pub use icondata::{
-    AiDownOutlined as IconChevronUp, AiInfoCircleOutlined as Info, AiLeftOutlined as IconChevronLeft,
+    AiDownOutlined as IconChevronDown, AiInfoCircleOutlined as Info, AiLeftOutlined as IconChevronLeft,
     AiLinkedinOutlined as IconLinkedIn, AiMailOutlined as Mail, AiRightOutlined as IconChevronRight,
-    AiSearchOutlined as IconSearch, AiUpOutlined as IconChevronDown, Icon as IconData, IoCopyOutline as CopyPaste,
+    AiSearchOutlined as IconSearch, AiUpOutlined as IconChevronUp, Icon as IconData, IoCopyOutline as CopyPaste,
     OcLinkExternalLg as LinkExternal, SiGithub as IconGitHub, SiX as IconX,
 };
 use leptos::prelude::*;

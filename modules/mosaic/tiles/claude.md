@@ -5,6 +5,7 @@ This guide explains how to create new Leptos components in the mosaic-tiles crat
 ## Overview
 
 Mosaic Tiles is a Leptos component library that uses:
+
 - **Leptos 0.8**: Web framework for Rust
 - **Tailwind CSS v4**: Styling with utility classes
 - **Feature flags**: Each component is opt-in via Cargo features
@@ -25,11 +26,13 @@ src/components/[component_name]/
 ### 1. Create Component Directory and Files
 
 Create the component directory:
+
 ```bash
 mkdir -p src/components/[component_name]
 ```
 
 Create `src/components/[component_name]/mod.rs`:
+
 ```rust
 use leptos::prelude::*;
 
@@ -53,6 +56,7 @@ pub fn ComponentName(
 ```
 
 Create `src/components/[component_name]/[component_name].css`:
+
 ```css
 .component-class {
   @apply /* tailwind utility classes */;
@@ -62,6 +66,7 @@ Create `src/components/[component_name]/[component_name].css`:
 ### 2. Register Component in Module System
 
 Add to `src/components/mod.rs`:
+
 ```rust
 #[cfg(feature = "component_name")]
 pub mod component_name;
@@ -70,6 +75,7 @@ pub mod component_name;
 ### 3. Add Feature Flag to Cargo.toml
 
 Add the feature to the `[features]` section:
+
 ```toml
 [features]
 default = ["button", "theme_provider"]
@@ -83,6 +89,7 @@ Add to `default` if the component should be included by default.
 ### 4. Register CSS in Build Script
 
 Edit `build.rs` and add your component to the `features!` macro on line 108:
+
 ```rust
 let features = features!("button", "component_name");
 ```
@@ -90,11 +97,13 @@ let features = features!("button", "component_name");
 ### 5. Export from Library Root (Optional)
 
 If the component should be available at the crate root, add to `src/lib.rs`:
+
 ```rust
 pub use components::component_name::ComponentName;
 ```
 
 Otherwise, users can import via:
+
 ```rust
 use mosaic_tiles::component_name::ComponentName;
 ```
@@ -104,6 +113,7 @@ use mosaic_tiles::component_name::ComponentName;
 ### Props
 
 Use Leptos prop attributes:
+
 - `#[prop(optional)]` - Optional prop
 - `#[prop(optional, into)]` - Optional prop with Into conversion
 - `#[prop(default = value)]` - Prop with default value
@@ -111,6 +121,7 @@ Use Leptos prop attributes:
 ### Variants
 
 Use enums for variant types:
+
 ```rust
 #[derive(Debug, Clone, Default)]
 pub enum ComponentVariant {
@@ -123,6 +134,7 @@ pub enum ComponentVariant {
 ### Children
 
 Handle optional children with `Either`:
+
 ```rust
 use leptos::either::Either;
 
@@ -147,6 +159,7 @@ pub fn Component(
 ### Event Handlers
 
 Use callbacks for event handlers:
+
 ```rust
 use leptos::ev::MouseEvent;
 
@@ -170,6 +183,7 @@ pub fn Component(
 ### Reactive State
 
 Use `Memo` for derived reactive values:
+
 ```rust
 let is_disabled = Memo::new(move |_| disabled.get().unwrap_or(false));
 ```
@@ -177,10 +191,13 @@ let is_disabled = Memo::new(move |_| disabled.get().unwrap_or(false));
 ## CSS Styling
 
 ### File Location
+
 Each component has its own CSS file: `src/components/[component_name]/[component_name].css`
 
 ### Tailwind CSS Classes
+
 Use `@apply` to compose utility classes:
+
 ```css
 .btn {
   @apply inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold;
@@ -192,7 +209,9 @@ Use `@apply` to compose utility classes:
 ```
 
 ### Dark Mode
+
 Use `dark:` variants:
+
 ```css
 .btn-primary {
   @apply bg-indigo-600 dark:bg-indigo-500;
@@ -200,7 +219,9 @@ Use `dark:` variants:
 ```
 
 ### Dynamic Classes
+
 Build class strings dynamically in Rust:
+
 ```rust
 view! {
     <button class=move || {
@@ -228,6 +249,7 @@ The demo app (`modules/mosaic/demo`) is for testing components:
 3. Run the demo: `cargo leptos watch` (from the demo directory)
 
 Example:
+
 ```rust
 use mosaic_tiles::component_name::ComponentName;
 
@@ -246,6 +268,7 @@ pub fn Demo() -> impl IntoView {
 ### How CSS Bundling Works
 
 The `build.rs` script:
+
 1. Collects CSS files for enabled features
 2. Bundles them into a single file
 3. Runs Tailwind CSS to process utility classes
@@ -255,6 +278,7 @@ The `build.rs` script:
 ### ThemeProvider
 
 The `ThemeProvider` component injects the bundled CSS:
+
 ```rust
 use mosaic_tiles::ThemeProvider;
 

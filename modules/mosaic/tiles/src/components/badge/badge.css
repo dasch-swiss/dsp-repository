@@ -1,6 +1,6 @@
 @layer components {
   .badge {
-    @apply inline-flex items-center justify-center gap-1 rounded-md font-medium;
+    @apply inline-flex items-center justify-center gap-1 rounded-md;
   }
 
   /* Sizes */

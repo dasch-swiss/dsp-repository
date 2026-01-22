@@ -4,7 +4,7 @@ use mosaic_tiles::button::*;
 #[component]
 pub fn ButtonAnatomy() -> impl IntoView {
     view! {
-        <Button>// Button content goes here
-        </Button>
+        // Button content goes here
+        <Button></Button>
     }
 }

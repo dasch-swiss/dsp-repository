@@ -242,9 +242,13 @@ view! {
 
 ### In the Demo Application
 
-The demo app (`modules/mosaic/demo`) is for testing components:
+The demo app (`modules/mosaic/demo`) provides a full showcase environment for testing and documenting components.
 
-1. Import your component in `demo/src/counter.rs` or create a new demo file
+#### Quick Testing
+
+For quick testing during development:
+
+1. Import your component in `demo/src/counter.rs` or the HomePage
 2. Use the component in a view
 3. Run the demo: `cargo leptos watch` (from the demo directory)
 
@@ -262,6 +266,16 @@ pub fn Demo() -> impl IntoView {
     }
 }
 ```
+
+#### Adding Component Examples
+
+For complete component documentation with multiple examples, see the Demo CLAUDE.md file at `modules/mosaic/demo/CLAUDE.md` for detailed instructions on:
+
+- Creating component example pages
+- Setting up anatomy demonstrations
+- Adding multiple usage examples
+- Configuring component metadata via TOML
+- Integrating with the demo routing system
 
 ## Build Process
 

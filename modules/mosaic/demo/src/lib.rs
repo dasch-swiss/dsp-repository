@@ -4,6 +4,7 @@ pub mod badges;
 pub mod buttons;
 pub mod cards;
 pub mod counter;
+pub mod icons;
 
 #[cfg(feature = "hydrate")]
 #[wasm_bindgen::prelude::wasm_bindgen]

@@ -9,6 +9,7 @@ use crate::badges::BadgeExamples;
 use crate::buttons::ButtonExamples;
 use crate::cards::CardExamples;
 use crate::counter::Counter;
+use crate::icons::IconExamples;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -53,6 +54,7 @@ pub fn App() -> impl IntoView {
                                 <A href="/badges" attr:class="text-gray-700 hover:text-gray-900">"Badges"</A>
                                 <A href="/buttons" attr:class="text-gray-700 hover:text-gray-900">"Buttons"</A>
                                 <A href="/cards" attr:class="text-gray-700 hover:text-gray-900">"Cards"</A>
+                                <A href="/icons" attr:class="text-gray-700 hover:text-gray-900">"Icons"</A>
                             </div>
                         </div>
                     </nav>
@@ -63,6 +65,7 @@ pub fn App() -> impl IntoView {
                             <Route path=StaticSegment("badges") view=BadgesPage />
                             <Route path=StaticSegment("buttons") view=ButtonsPage />
                             <Route path=StaticSegment("cards") view=CardsPage />
+                            <Route path=StaticSegment("icons") view=IconsPage />
                         </Routes>
                     </div>
                 </main>
@@ -109,5 +112,13 @@ fn ButtonsPage() -> impl IntoView {
 fn CardsPage() -> impl IntoView {
     view! {
         <CardExamples />
+    }
+}
+
+/// Renders the icons demo page.
+#[component]
+fn IconsPage() -> impl IntoView {
+    view! {
+        <IconExamples />
     }
 }

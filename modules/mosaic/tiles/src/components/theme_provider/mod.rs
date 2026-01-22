@@ -9,7 +9,7 @@ pub fn ThemeProvider(
     children: Children,
 ) -> impl IntoView {
     view! {
-        <Style id="mosaic">{CSS} </Style>
-            { children() }
+        <Style id="mosaic">{CSS}</Style>
+        {children()}
     }
 }

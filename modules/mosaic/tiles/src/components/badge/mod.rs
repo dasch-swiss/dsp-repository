@@ -48,16 +48,14 @@ pub fn Badge(
                     BadgeSize::Small => "badge-sm",
                     BadgeSize::Medium => "badge-md",
                     BadgeSize::Large => "badge-lg",
-                }
+                },
             )
         }>
-            {
-                if let Some(children) = children {
-                    Either::Left(children())
-                } else {
-                    Either::Right(())
-                }
-            }
+            {if let Some(children) = children {
+                Either::Left(children())
+            } else {
+                Either::Right(())
+            }}
         </span>
     }
 }

@@ -7,6 +7,7 @@ pub fn VariantsExample() -> impl IntoView {
         <div class="flex gap-4 items-center">
             <Button variant=ButtonVariant::Primary>"Primary Button"</Button>
             <Button variant=ButtonVariant::Secondary>"Secondary Button"</Button>
+            <Button variant=ButtonVariant::Outline>"Outline Button"</Button>
         </div>
     }
 }

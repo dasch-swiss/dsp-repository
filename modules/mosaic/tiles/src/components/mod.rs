@@ -7,6 +7,9 @@ pub mod badge;
 #[cfg(feature = "button")]
 pub mod button;
 
+#[cfg(feature = "button_group")]
+pub mod button_group;
+
 #[cfg(feature = "card")]
 pub mod card;
 

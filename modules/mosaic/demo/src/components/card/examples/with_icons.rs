@@ -33,14 +33,11 @@ pub fn WithIconsExample() -> impl IntoView {
                     </div>
                 </CardHeader>
                 <CardBody>
-                    <p class="text-gray-600">
-                        "You have 3 new messages waiting for your review."
-                    </p>
+                    <p class="text-gray-600">"You have 3 new messages waiting for your review."</p>
                 </CardBody>
                 <CardFooter>
                     <Button variant=ButtonVariant::Primary>
-                        "View Messages"
-                        <Icon icon=IconChevronRight class="w-4 h-4 inline ml-1" />
+                        "View Messages" <Icon icon=IconChevronRight class="w-4 h-4 inline ml-1" />
                     </Button>
                 </CardFooter>
             </Card>

@@ -18,8 +18,7 @@ pub fn WithIconsExample() -> impl IntoView {
                         "Send Email"
                     </Button>
                     <Button variant=ButtonVariant::Primary>
-                        "Visit Docs"
-                        <Icon icon=LinkExternal class="w-4 h-4 inline ml-2" />
+                        "Visit Docs" <Icon icon=LinkExternal class="w-4 h-4 inline ml-2" />
                     </Button>
                 </div>
             </div>

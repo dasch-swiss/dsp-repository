@@ -15,7 +15,9 @@ pub fn WithImagesExample() -> impl IntoView {
                 />
                 <CardBody>
                     <h3 class="text-lg font-semibold mb-2">"Image Card"</h3>
-                    <p class="text-gray-600">"Cards can feature images at the top for visual appeal."</p>
+                    <p class="text-gray-600">
+                        "Cards can feature images at the top for visual appeal."
+                    </p>
                 </CardBody>
             </Card>
 
@@ -28,7 +30,9 @@ pub fn WithImagesExample() -> impl IntoView {
                 />
                 <CardBody>
                     <h3 class="text-lg font-semibold mb-2">"Gallery Item"</h3>
-                    <p class="text-gray-600 text-sm">"Perfect for galleries or portfolios with actions."</p>
+                    <p class="text-gray-600 text-sm">
+                        "Perfect for galleries or portfolios with actions."
+                    </p>
                 </CardBody>
                 <CardFooter>
                     <div class="flex gap-2 justify-end">

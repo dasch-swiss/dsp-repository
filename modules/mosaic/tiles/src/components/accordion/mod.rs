@@ -12,13 +12,11 @@ pub fn Accordion(
 ) -> impl IntoView {
     view! {
         <div class="accordion">
-            {
-                if let Some(children) = children {
-                    Either::Left(children())
-                } else {
-                    Either::Right(())
-                }
-            }
+            {if let Some(children) = children {
+                Either::Left(children())
+            } else {
+                Either::Right(())
+            }}
         </div>
     }
 }
@@ -42,11 +40,7 @@ pub fn AccordionItem(
 
     view! {
         <div class="accordion-item">
-            <button
-                class="accordion-header"
-                on:click=toggle
-                aria-expanded=move || is_open.get()
-            >
+            <button class="accordion-header" on:click=toggle aria-expanded=move || is_open.get()>
                 <span class="accordion-title">{title}</span>
                 <Icon
                     icon=IconChevronRight
@@ -59,23 +53,19 @@ pub fn AccordionItem(
                     })
                 />
             </button>
-            <div
-                class=move || {
-                    if is_open.get() {
-                        "accordion-content accordion-content-open"
-                    } else {
-                        "accordion-content"
-                    }
+            <div class=move || {
+                if is_open.get() {
+                    "accordion-content accordion-content-open"
+                } else {
+                    "accordion-content"
                 }
-            >
+            }>
                 <div class="accordion-body">
-                    {
-                        if let Some(children) = children {
-                            Either::Left(children())
-                        } else {
-                            Either::Right(())
-                        }
-                    }
+                    {if let Some(children) = children {
+                        Either::Left(children())
+                    } else {
+                        Either::Right(())
+                    }}
                 </div>
             </div>
         </div>

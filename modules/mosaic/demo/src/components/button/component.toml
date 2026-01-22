@@ -4,7 +4,7 @@ description = "A clickable button component with multiple variants and states."
 [[examples]]
 name = "variants"
 title = "Button Variants"
-description = "Available button styles: Primary and Secondary"
+description = "Available button styles: Primary, Secondary, and Outline"
 
 [[examples]]
 name = "types"
@@ -35,7 +35,7 @@ extra = "Implements standard HTML button attributes."
 attr = "variant"
 attr_type = "ButtonVariant"
 default = "Primary"
-description = "Visual style variant: Primary or Secondary"
+description = "Visual style variant: Primary, Secondary, or Outline"
 
 [[references.attrs]]
 attr = "button_type"

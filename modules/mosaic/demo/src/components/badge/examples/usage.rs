@@ -62,9 +62,7 @@ pub fn UsageExample() -> impl IntoView {
                     </div>
                     <div class="flex items-center gap-3">
                         <Badge variant=BadgeVariant::Warning>"Medium Priority"</Badge>
-                        <span class="text-sm text-gray-600">
-                            "Important but not urgent"
-                        </span>
+                        <span class="text-sm text-gray-600">"Important but not urgent"</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <Badge variant=BadgeVariant::Info>"Low Priority"</Badge>

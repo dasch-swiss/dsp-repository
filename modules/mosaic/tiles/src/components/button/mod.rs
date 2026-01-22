@@ -7,6 +7,7 @@ pub enum ButtonVariant {
     #[default]
     Primary,
     Secondary,
+    Outline,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -53,24 +54,28 @@ pub fn Button(
     };
 
     view! {
-    <button class=move || { format!("{} {} {}","btn",
-        match  variant {
-            ButtonVariant::Primary =>"btn-primary",
-            ButtonVariant::Secondary=>"btn-secondary"
-        },
-        if btn_disabled.get() { "btn-disabled" } else {""}
-        )}
-        disabled=btn_disabled.get()
-        on:click=on_click
-        type = move || button_type.get().unwrap_or_default().to_string()
-    >
-    {
-        if let Some(children) = children {
+        <button
+            class=move || {
+                format!(
+                    "{} {} {}",
+                    "btn",
+                    match variant {
+                        ButtonVariant::Primary => "btn-primary",
+                        ButtonVariant::Secondary => "btn-secondary",
+                        ButtonVariant::Outline => "btn-outline",
+                    },
+                    if btn_disabled.get() { "btn-disabled" } else { "" },
+                )
+            }
+            disabled=btn_disabled.get()
+            on:click=on_click
+            type=move || button_type.get().unwrap_or_default().to_string()
+        >
+            {if let Some(children) = children {
                 Either::Left(children())
             } else {
                 Either::Right(())
-            }
-    }
-    </button>
+            }}
+        </button>
     }
 }

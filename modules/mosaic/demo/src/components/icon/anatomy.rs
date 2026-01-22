@@ -3,7 +3,5 @@ use mosaic_tiles::icon::*;
 
 #[component]
 pub fn IconAnatomy() -> impl IntoView {
-    view! {
-        <Icon icon=IconSearch />
-    }
+    view! { <Icon icon=IconSearch /> }
 }

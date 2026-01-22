@@ -37,13 +37,11 @@ pub fn Card(
 
     view! {
         <div class=card_class>
-            {
-                if let Some(children) = children {
-                    Either::Left(children())
-                } else {
-                    Either::Right(())
-                }
-            }
+            {if let Some(children) = children {
+                Either::Left(children())
+            } else {
+                Either::Right(())
+            }}
         </div>
     }
 }
@@ -52,13 +50,11 @@ pub fn Card(
 pub fn CardHeader(#[prop(optional)] children: Option<Children>) -> impl IntoView {
     view! {
         <div class="card-header">
-            {
-                if let Some(children) = children {
-                    Either::Left(children())
-                } else {
-                    Either::Right(())
-                }
-            }
+            {if let Some(children) = children {
+                Either::Left(children())
+            } else {
+                Either::Right(())
+            }}
         </div>
     }
 }
@@ -67,13 +63,11 @@ pub fn CardHeader(#[prop(optional)] children: Option<Children>) -> impl IntoView
 pub fn CardBody(#[prop(optional)] children: Option<Children>) -> impl IntoView {
     view! {
         <div class="card-body">
-            {
-                if let Some(children) = children {
-                    Either::Left(children())
-                } else {
-                    Either::Right(())
-                }
-            }
+            {if let Some(children) = children {
+                Either::Left(children())
+            } else {
+                Either::Right(())
+            }}
         </div>
     }
 }
@@ -82,13 +76,11 @@ pub fn CardBody(#[prop(optional)] children: Option<Children>) -> impl IntoView {
 pub fn CardFooter(#[prop(optional)] children: Option<Children>) -> impl IntoView {
     view! {
         <div class="card-footer">
-            {
-                if let Some(children) = children {
-                    Either::Left(children())
-                } else {
-                    Either::Right(())
-                }
-            }
+            {if let Some(children) = children {
+                Either::Left(children())
+            } else {
+                Either::Right(())
+            }}
         </div>
     }
 }

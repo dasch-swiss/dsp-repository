@@ -1,0 +1,50 @@
+name = "ButtonGroup"
+description = "A group of buttons visually connected together. Use regular Button components as children."
+
+[[examples]]
+name = "basic"
+title = "Basic Usage"
+description = "Button groups can be oriented horizontally or vertically"
+
+[[examples]]
+name = "sizes"
+title = "Size Variants"
+description = "Button groups in small, medium, and large sizes"
+
+[[examples]]
+name = "selection"
+title = "Interactive Example"
+description = "Interactive button group with click handlers"
+
+[[examples]]
+name = "disabled"
+title = "Disabled State"
+description = "Button group with disabled items"
+
+[[examples]]
+name = "with_icons"
+title = "With Icons"
+description = "Button groups containing icons"
+
+[[references]]
+name = "ButtonGroup"
+description = "Container component that visually groups Button components together."
+extra = "Automatically applies connected styling to Button children. Use regular Button components as children."
+
+[[references.attrs]]
+attr = "size"
+attr_type = "ButtonGroupSize"
+default = "Medium"
+description = "Size of the button group: Small, Medium, or Large"
+
+[[references.attrs]]
+attr = "orientation"
+attr_type = "ButtonGroupOrientation"
+default = "Horizontal"
+description = "Orientation of the button group: Horizontal or Vertical"
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Button components to display in the group"

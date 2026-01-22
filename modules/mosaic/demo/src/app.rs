@@ -21,7 +21,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 // Prism.js for syntax highlighting
                 <link
                     rel="stylesheet"
-                    href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"
+                    href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-coy.min.css"
                 />
                 <script
                     src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"

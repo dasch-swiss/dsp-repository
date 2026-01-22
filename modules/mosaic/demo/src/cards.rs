@@ -104,6 +104,31 @@ pub fn CardExamples() -> impl IntoView {
             </section>
 
             <section>
+                <h3 class="text-xl font-bold mb-4">"Interactive Hover Card"</h3>
+
+                <div class="max-w-md">
+                    <Card variant=CardVariant::AutoHover>
+                        <CardHeader>
+                            <h3 class="text-lg font-semibold">"Hover Me"</h3>
+                            <p class="text-sm text-gray-500">"Transitions on hover"</p>
+                        </CardHeader>
+                        <CardBody>
+                            <p class="text-gray-700">
+                                "This card uses the AutoHover variant which starts with a bordered "
+                                "style and smoothly transitions to an elevated appearance when you "
+                                "hover over it."
+                            </p>
+                        </CardBody>
+                        <CardFooter>
+                            <div class="text-sm text-gray-500">
+                                "Hover to see the elevation effect"
+                            </div>
+                        </CardFooter>
+                    </Card>
+                </div>
+            </section>
+
+            <section>
                 <h3 class="text-xl font-bold mb-4">"Cards with Images"</h3>
 
                 <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

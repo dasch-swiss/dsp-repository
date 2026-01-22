@@ -14,6 +14,14 @@
   @apply shadow-md;
 }
 
+.card-autohover {
+  @apply border border-gray-200 transition-shadow duration-300;
+}
+
+.card-autohover:hover {
+  @apply shadow-md;
+}
+
 .card-header {
   @apply px-6 py-4 border-b border-gray-200;
 }

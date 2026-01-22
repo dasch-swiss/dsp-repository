@@ -7,6 +7,7 @@ pub enum CardVariant {
     Default,
     Bordered,
     Elevated,
+    AutoHover,
 }
 
 #[component]
@@ -26,6 +27,7 @@ pub fn Card(
             CardVariant::Default => "card-default",
             CardVariant::Bordered => "card-bordered",
             CardVariant::Elevated => "card-elevated",
+            CardVariant::AutoHover => "card-autohover",
         };
 
         let additional_class = class.get().unwrap_or_default();

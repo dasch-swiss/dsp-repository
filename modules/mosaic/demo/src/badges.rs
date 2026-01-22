@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use mosaic_tiles::badge::{Badge, BadgeSize, BadgeVariant};
+use mosaic_tiles::icon::*;
 
 #[component]
 pub fn BadgeExamples() -> impl IntoView {
@@ -178,6 +179,24 @@ pub fn BadgeExamples() -> impl IntoView {
                                 <Badge variant=BadgeVariant::Info>"Low Priority"</Badge>
                                 <span class="text-sm text-gray-600">"Can be addressed later"</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-base font-semibold mb-2">"Badges with Icons"</h4>
+                        <div class="flex flex-wrap gap-3 items-center">
+                            <Badge variant=BadgeVariant::Info>
+                                <Icon icon=Info class="w-3 h-3 inline mr-1" />
+                                "New"
+                            </Badge>
+                            <Badge variant=BadgeVariant::Success>
+                                <Icon icon=IconChevronUp class="w-3 h-3 inline mr-1" />
+                                "Trending"
+                            </Badge>
+                            <Badge variant=BadgeVariant::Warning>
+                                <Icon icon=Mail class="w-3 h-3 inline mr-1" />
+                                "5 Messages"
+                            </Badge>
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 pub mod app;
+pub mod badges;
 pub mod buttons;
 pub mod cards;
 pub mod counter;

@@ -105,7 +105,7 @@ fn main() {
     }
 
     // Build list of css files to include
-    let features = features!("button", "card");
+    let features = features!("badge", "button", "card");
 
     // Start merging css for selected features
     let bundle = fs::OpenOptions::new()

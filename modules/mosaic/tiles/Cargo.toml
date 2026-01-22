@@ -8,9 +8,17 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 leptos = { version = "0.8.0" }
+leptos_meta = "0.8.5"
 console_error_panic_hook = { version = "0.1", optional = true }
 wasm-bindgen = { version = "0.2.106", optional = true }
 
 [features]
 hydrate = ["leptos/hydrate", "dep:console_error_panic_hook", "dep:wasm-bindgen"]
 ssr = ["leptos/ssr"]
+default = ["button", "theme_provider"]
+button = []
+theme_provider = []
+
+[build-dependencies]
+reqwest = { version = "0.13.1", features = ["blocking"] }
+sha256 = { version = "1.6.0" }

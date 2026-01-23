@@ -1,6 +1,11 @@
+---
+name: create-mosaic-component
+description: Create a new reusable leptos component in the modules/mosaic/tiles create
+---
+
 # Mosaic Tiles - Component Creation Guide
 
-This guide explains how to create new Leptos components in the mosaic-tiles crate.
+This guide explains how to create new Leptos components in the modules/mosaic/tiles crate.
 
 ## Overview
 
@@ -55,11 +60,16 @@ pub fn ComponentName(
 }
 ```
 
+Next create the styling for the component in a separate file.
+Whenever possible use tailwind css classes.
+Do not add styles for a dark mode prefixed with `dark:`.
 Create `src/components/[component_name]/[component_name].css`:
 
 ```css
-.component-class {
-  @apply /* tailwind utility classes */;
+@layer components {
+  .component-class {
+    @apply /* tailwind utility classes */;
+  }
 }
 ```
 
@@ -84,7 +94,7 @@ component_name = []  # Add your new component here
 theme_provider = []
 ```
 
-Add to `default` if the component should be included by default.
+Add to `default` always.
 
 ### 4. Register CSS in Build Script
 
@@ -96,16 +106,18 @@ let features = features!("button", "component_name");
 
 ### 5. Export from Library Root (Optional)
 
-If the component should be available at the crate root, add to `src/lib.rs`:
+The component should be available at the crate root.
+
+Add to `src/lib.rs`:
 
 ```rust
 pub use components::component_name::ComponentName;
 ```
 
-Otherwise, users can import via:
+This way users can import via:
 
 ```rust
-use mosaic_tiles::component_name::ComponentName;
+use mosaic_tiles::ComponentName;
 ```
 
 ## Component Implementation Patterns
@@ -208,16 +220,6 @@ Use `@apply` to compose utility classes:
 }
 ```
 
-### Dark Mode
-
-Use `dark:` variants:
-
-```css
-.btn-primary {
-  @apply bg-indigo-600 dark:bg-indigo-500;
-}
-```
-
 ### Dynamic Classes
 
 Build class strings dynamically in Rust:
@@ -267,16 +269,6 @@ pub fn Demo() -> impl IntoView {
 }
 ```
 
-#### Adding Component Examples
-
-For complete component documentation with multiple examples, see the Demo claude.md file at `modules/mosaic/demo/claude.md` for detailed instructions on:
-
-- Creating component example pages
-- Setting up anatomy demonstrations
-- Adding multiple usage examples
-- Configuring component metadata via TOML
-- Integrating with the demo routing system
-
 ## Build Process
 
 ### How CSS Bundling Works
@@ -289,22 +281,6 @@ The `build.rs` script:
 4. Minifies the output
 5. Embeds the CSS via `include_str!` in `lib.rs`
 
-### ThemeProvider
-
-The `ThemeProvider` component injects the bundled CSS:
-
-```rust
-use mosaic_tiles::ThemeProvider;
-
-view! {
-    <ThemeProvider>
-        // Your components here
-    </ThemeProvider>
-}
-```
-
-Always wrap your app with `ThemeProvider` to ensure styles are loaded.
-
 ## Checklist
 
 When creating a new component:
@@ -315,6 +291,4 @@ When creating a new component:
 - [ ] Add to `src/components/mod.rs` with `#[cfg(feature = "...")]`
 - [ ] Add to `build.rs` features macro
 - [ ] Export from `src/lib.rs` if needed
-- [ ] Test in demo application
 - [ ] Verify CSS is bundled correctly
-- [ ] Check both light and dark mode if applicable

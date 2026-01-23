@@ -1,6 +1,10 @@
+---
+name: add-new-mosaic-component-to-demo
+description: Adds a newly created component to the demo crate
+---
 # Mosaic Demo - Component Examples Guide
 
-This guide explains how to add component demonstration pages to the mosaic-demo application.
+This guide explains how to add component demonstration pages to the mosaic-demo application found in modules/mosaic/demo.
 
 ## Overview
 
@@ -181,7 +185,7 @@ pub mod component_name;
 
 ### 8. Add Navigation Link
 
-Edit `src/app.rs` to add a navigation link in the navbar (around line 87-101):
+Edit `src/app.rs` to add a navigation link in the sidebar.
 
 ```rust
 <A href="/component-name" attr:class="text-gray-700 hover:text-gray-900">
@@ -281,14 +285,6 @@ view! {
 5. Test dark mode if applicable
 6. Check syntax highlighting displays correctly
 
-### End-to-End Tests
-
-E2E tests are located in `end2end/tests/`:
-
-1. Install dependencies: `cd end2end && npm install`
-2. Run tests: `npm test`
-3. Run headed tests: `npm run test:headed`
-
 ## Checklist
 
 When adding a new component demo:
@@ -303,7 +299,6 @@ When adding a new component demo:
 - [ ] Add navigation link in `src/app.rs`
 - [ ] Add route in `src/app.rs`
 - [ ] Verify all examples compile and display correctly
-- [ ] Test interactive functionality if applicable
 - [ ] Check source code syntax highlighting
 - [ ] Ensure example names in TOML match file names exactly
 
@@ -385,4 +380,4 @@ pub fn VariantsExample() -> impl IntoView {
 
 - Check that the link is added in `src/app.rs` within the nav element
 - Verify the href matches the route path
-- Ensure the Route component is added to the Routes section
+-

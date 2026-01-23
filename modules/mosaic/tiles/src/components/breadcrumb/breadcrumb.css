@@ -1,0 +1,26 @@
+@layer components {
+  .breadcrumb {
+    @apply flex;
+  }
+
+  .breadcrumb-list {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .breadcrumb-item {
+    @apply flex items-center gap-2;
+  }
+
+  .breadcrumb-item:not(:last-child)::after {
+    content: '›';
+    @apply text-lg text-gray-400;
+  }
+
+  .breadcrumb-link {
+    @apply text-sm text-indigo-600 hover:text-indigo-800;
+  }
+
+  .breadcrumb-current {
+    @apply text-sm;
+  }
+}

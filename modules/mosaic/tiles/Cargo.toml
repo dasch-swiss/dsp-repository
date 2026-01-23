@@ -19,6 +19,7 @@ ssr = ["leptos/ssr"]
 default = [
   "accordion",
   "badge",
+  "breadcrumb",
   "button",
   "button_group",
   "card",
@@ -28,6 +29,7 @@ default = [
 ]
 accordion = ["icon"]
 badge = []
+breadcrumb = []
 button = []
 button_group = ["button"]
 card = []

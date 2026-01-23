@@ -3,7 +3,8 @@
     "allow": [
       "Bash(cargo build:*)",
       "Bash(cargo check:*)",
-      "Bash(bash -c:*)"
+      "Bash(bash -c:*)",
+      "Bash(just check:*)"
     ]
   }
 }

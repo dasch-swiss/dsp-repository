@@ -3,6 +3,11 @@ mod components;
 pub use components::theme_provider::ThemeProvider;
 pub use components::*;
 
+#[cfg(feature = "breadcrumb")]
+pub mod breadcrumb {
+    pub use crate::components::breadcrumb::*;
+}
+
 #[cfg(feature = "button_group")]
 pub mod button_group {
     pub use crate::components::button_group::*;

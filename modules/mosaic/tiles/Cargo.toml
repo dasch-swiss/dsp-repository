@@ -35,7 +35,7 @@ button = []
 button_group = ["button"]
 card = []
 icon = []
-sidebar = []
+sidebar = ["icon"]
 tabs = []
 theme_provider = []
 

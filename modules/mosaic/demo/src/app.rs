@@ -3,7 +3,6 @@ use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::components::{Route, Router, Routes, A};
 use leptos_router::hooks::use_location;
 use leptos_router::StaticSegment;
-use mosaic_tiles::icon::{Hamburger, Icon};
 use mosaic_tiles::sidebar::{Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarTrigger};
 use mosaic_tiles::ThemeProvider;
 
@@ -104,10 +103,11 @@ fn AppContent() -> impl IntoView {
                     // Top bar with sidebar trigger
                     <div class="bg-white border-b border-gray-200 sticky top-0 z-40">
                         <div class="flex items-center h-16 px-4 sm:px-6 lg:px-8">
-                            <SidebarTrigger is_open=sidebar_open class="mr-4">
-                                <Icon icon=Hamburger class="w-6 h-6" />
-                            </SidebarTrigger>
-                            <h1 class="text-xl font-semibold text-gray-900">"Mosaic Tiles Demo"</h1>
+                            <SidebarTrigger is_open=sidebar_open class="mr-4" />
+                            <A href="/" attr:class="flex items-center hover:opacity-80 transition-opacity">
+                                <img src="/mosaic_logo_sm.svg" alt="Mosaic Logo" class="h-6 w-6 mr-3" />
+                                <h1 class="text-xl font-semibold text-gray-900">"Mosaic Tiles Demo"</h1>
+                            </A>
                         </div>
                     </div>
 
@@ -258,7 +258,9 @@ fn AppContent() -> impl IntoView {
 fn HomePage() -> impl IntoView {
     view! {
         <div class="max-w-4xl mx-auto px-4 py-12">
-            <h1 class="text-4xl font-bold mb-6">"Mosaic Tiles"</h1>
+            <div class="flex justify-center mb-3">
+                <img src="/mosaic_logo.svg" alt="Mosaic Logo" class="h-[576px] w-[576px]" />
+            </div>
 
             <p class="text-lg text-gray-700 mb-8">
                 "A Leptos component library built with Tailwind CSS v4. Components use feature flags for selective inclusion and compile styles at build time."

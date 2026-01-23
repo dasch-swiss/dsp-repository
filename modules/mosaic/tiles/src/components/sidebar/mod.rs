@@ -1,6 +1,9 @@
 use leptos::either::Either;
 use leptos::prelude::*;
 
+#[cfg(feature = "icon")]
+use crate::components::icon::{Hamburger, Icon};
+
 /// Context for managing sidebar state
 #[derive(Clone, Copy)]
 struct SidebarContext {
@@ -235,9 +238,18 @@ pub fn SidebarTrigger(
             {if let Some(children) = children {
                 Either::Left(children())
             } else {
-                Either::Right(view! {
-                    <span class="sidebar-trigger-icon"></span>
-                })
+                #[cfg(feature = "icon")]
+                {
+                    Either::Right(view! {
+                        <Icon icon=Hamburger class="w-6 h-6" />
+                    })
+                }
+                #[cfg(not(feature = "icon"))]
+                {
+                    Either::Right(view! {
+                        <span class="sidebar-trigger-icon"></span>
+                    })
+                }
             }}
         </button>
     }

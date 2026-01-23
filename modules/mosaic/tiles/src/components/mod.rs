@@ -19,6 +19,9 @@ pub mod card;
 #[cfg(feature = "icon")]
 pub mod icon;
 
+#[cfg(feature = "link")]
+pub mod link;
+
 #[cfg(feature = "sidebar")]
 pub mod sidebar;
 

@@ -1,0 +1,63 @@
+name = "Link"
+description = "A navigation link component with optional button styling."
+
+[[examples]]
+name = "basic"
+title = "Basic Links"
+description = "Standard link styling"
+
+[[examples]]
+name = "as_button"
+title = "Links as Buttons"
+description = "Links styled as button components"
+
+[[examples]]
+name = "disabled"
+title = "Disabled State"
+description = "Links in disabled state"
+
+[[examples]]
+name = "external"
+title = "External Links"
+description = "Links to external websites with target and rel attributes"
+
+[[references]]
+name = "Link"
+description = "Navigation link component that can be styled as a button."
+extra = "Supports standard anchor attributes like href, target, and rel."
+
+[[references.attrs]]
+attr = "href"
+attr_type = "String"
+default = "required"
+description = "The URL to navigate to"
+
+[[references.attrs]]
+attr = "as_button"
+attr_type = "bool"
+default = "false"
+description = "Render the link as a button component"
+
+[[references.attrs]]
+attr = "target"
+attr_type = "Option<String>"
+default = "None"
+description = "Target attribute (e.g., '_blank', '_self')"
+
+[[references.attrs]]
+attr = "rel"
+attr_type = "Option<String>"
+default = "None"
+description = "Rel attribute (e.g., 'noopener noreferrer')"
+
+[[references.attrs]]
+attr = "disabled"
+attr_type = "bool"
+default = "false"
+description = "Whether the link is disabled"
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Link content (text, icons, etc.)"

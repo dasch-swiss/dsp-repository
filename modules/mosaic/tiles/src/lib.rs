@@ -18,6 +18,11 @@ pub mod icon {
     pub use crate::components::icon::*;
 }
 
+#[cfg(feature = "link")]
+pub mod link {
+    pub use crate::components::link::*;
+}
+
 #[cfg(feature = "sidebar")]
 pub mod sidebar {
     pub use crate::components::sidebar::*;

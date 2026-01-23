@@ -113,6 +113,7 @@ fn main() {
         "button_group",
         "card",
         "icon",
+        "link",
         "sidebar",
         "tabs"
     );

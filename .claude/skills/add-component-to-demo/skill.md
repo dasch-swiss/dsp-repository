@@ -1,14 +1,18 @@
 ---
-name: add-new-mosaic-component-to-demo
+name: add-component-to-demo
 description: Adds a newly created component to the demo crate
 ---
 # Mosaic Demo - Component Examples Guide
 
-This guide explains how to add component demonstration pages to the mosaic-demo application found in modules/mosaic/demo.
+This guide explains how to add a component demo page to the demo application.
+The crate is found in modules/mosaic/demo.
 
 ## Overview
 
-The Mosaic Demo application provides a showcase environment for testing and documenting components from the mosaic-tiles library. It features:
+The Mosaic Demo application provides a showcase environment for testing and documenting components from the mosaic-tiles library.
+Its audience is developers and project managers.
+
+It features:
 
 - **Leptos 0.8**: Web framework for server-side rendering and hydration
 - **Automatic routing**: Routes generated from component TOML metadata
@@ -19,6 +23,7 @@ The Mosaic Demo application provides a showcase environment for testing and docu
 ## Demo Structure
 
 Each component demo follows this structure:
+The `component_name` is ${ARGUMENTS}.
 
 ```
 src/components/[component_name]/
@@ -31,6 +36,8 @@ src/components/[component_name]/
     ├── example_name_2.rs
     └── ...
 ```
+
+You can find the code of the component in the /modules/mosaic/tiles/component/[component_name] folder.
 
 ## Step-by-Step: Adding a New Component Demo
 

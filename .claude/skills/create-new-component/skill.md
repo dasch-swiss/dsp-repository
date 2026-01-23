@@ -19,6 +19,7 @@ Mosaic Tiles is a Leptos component library that uses:
 ## Component Structure
 
 Each component follows this structure:
+The `component_name` is ${ARGUMENTS}.
 
 ```
 src/components/[component_name]/

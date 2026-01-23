@@ -12,6 +12,11 @@ title = "Links as Buttons"
 description = "Links styled as button components"
 
 [[examples]]
+name = "target_attribute"
+title = "Target Attribute"
+description = "Different target attribute values: _self, _blank, _parent, _top"
+
+[[examples]]
 name = "disabled"
 title = "Disabled State"
 description = "Links in disabled state"

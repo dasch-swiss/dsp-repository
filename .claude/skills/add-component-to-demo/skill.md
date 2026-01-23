@@ -1,5 +1,5 @@
 ---
-name: add-component-to-demo
+name: add-mosaic-component-to-demo
 description: Adds a newly created component to the demo crate
 ---
 # Mosaic Demo - Component Examples Guide

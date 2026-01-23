@@ -1,10 +1,10 @@
 name = "Icon"
-description = "A collection of 12 SVG icons with automatic tree-shaking. Only icons used in your code are included in the WASM bundle."
+description = "A collection SVG icons with automatic tree-shaking. Only icons used in your code are included in the WASM bundle."
 
 [[examples]]
 name = "all_icons"
 title = "All Available Icons"
-description = "Complete set of 12 icons: chevrons, search, external link, info, mail, copy, and social media icons"
+description = "All available icons with their names"
 
 [[examples]]
 name = "sizes_and_colors"

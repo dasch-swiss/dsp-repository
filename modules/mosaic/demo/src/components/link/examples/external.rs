@@ -5,11 +5,11 @@ use mosaic_tiles::link::Link;
 pub fn ExternalExample() -> impl IntoView {
     view! {
         <div class="flex gap-4 items-center">
-            <Link href="https://example.com" target="_blank" rel="noopener noreferrer">
-                "External Link"
+            <Link href="/link" target="_blank" rel="noopener noreferrer">
+                "External Link (Demo)"
             </Link>
-            <Link href="https://github.com" target="_blank" rel="noopener noreferrer">
-                "GitHub"
+            <Link href="/link" target="_blank" rel="noopener noreferrer">
+                "Opens in New Tab (Demo)"
             </Link>
         </div>
     }

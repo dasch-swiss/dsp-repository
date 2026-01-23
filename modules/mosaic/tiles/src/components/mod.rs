@@ -16,5 +16,8 @@ pub mod card;
 #[cfg(feature = "icon")]
 pub mod icon;
 
+#[cfg(feature = "tabs")]
+pub mod tabs;
+
 #[cfg(feature = "theme_provider")]
 pub mod theme_provider;

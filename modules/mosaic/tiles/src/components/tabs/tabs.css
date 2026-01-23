@@ -1,0 +1,49 @@
+/* Tabs Container */
+.tabs {
+  @apply w-full border-b border-gray-200;
+  display: flex;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+/* Hide radio inputs */
+.tab-input {
+  @apply sr-only;
+}
+
+/* Tab Labels (the clickable tab buttons) */
+.tab-label {
+  @apply flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-gray-600 cursor-pointer transition-colors border-b-2 border-transparent hover:text-gray-950 hover:border-gray-400 whitespace-nowrap -mb-px mr-4 select-none;
+}
+
+/* Active tab label (underlined style) */
+.tab-input:checked + .tab-label {
+  @apply text-indigo-600 border-indigo-600;
+}
+
+/* Tab icon */
+.tab-icon {
+  @apply w-5 h-5;
+}
+
+/* Tab Panels */
+.tab-panel {
+  @apply hidden p-4 border-t border-gray-200;
+  width: 100%;
+  order: 999;
+}
+
+/* Show panel when corresponding radio is checked */
+.tab-input:checked + .tab-label + .tab-panel {
+  @apply block;
+}
+
+/* Focus styles for accessibility */
+.tab-input:focus-visible + .tab-label {
+  @apply outline outline-2 outline-offset-2 outline-indigo-600;
+}
+
+/* Disabled state (if needed in the future) */
+.tab-input:disabled + .tab-label {
+  @apply opacity-50 cursor-not-allowed;
+}

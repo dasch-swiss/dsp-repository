@@ -4,3 +4,4 @@ pub mod button;
 pub mod button_group;
 pub mod card;
 pub mod icon;
+pub mod tabs;

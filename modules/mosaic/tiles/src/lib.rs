@@ -13,4 +13,9 @@ pub mod icon {
     pub use crate::components::icon::*;
 }
 
+#[cfg(feature = "tabs")]
+pub mod tabs {
+    pub use crate::components::tabs::*;
+}
+
 static CSS: &str = include_str!(concat!(env!("OUT_DIR"), "/singlestage.css"));

@@ -62,6 +62,10 @@ pub fn AllIconsExample() -> impl IntoView {
                 <span class="text-sm text-gray-600">"Hamburger"</span>
             </div>
             <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=Sidebar class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"Sidebar"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
                 <Icon icon=Document class="w-6 h-6" />
                 <span class="text-sm text-gray-600">"Document"</span>
             </div>

@@ -43,8 +43,8 @@ pub use icondata::{
     AiUpOutlined as IconChevronUp, BiDataRegular as Data, BiGridRegular as Grid, BiSearchRegular as IconSearch,
     BsPeople as People, CgFileDocument as Document, CgLock as LockClosed, CgLockUnlock as LockOpen, Icon as IconData,
     IoCopyOutline as CopyPaste, IoFlagOutline as Flag, MdiFileDownloadOutline as DownloadFile, MdiTune as Tune,
-    OcLinkExternalLg as LinkExternal, OcThreeBarsSm as Hamburger, RiBookOpenDocumentLine as OpenDocument,
-    SiGithub as IconGitHub, SiX as IconX,
+    OcLinkExternalLg as LinkExternal, OcSidebarCollapseLg as Sidebar, OcThreeBarsSm as Hamburger,
+    RiBookOpenDocumentLine as OpenDocument, SiGithub as IconGitHub, SiX as IconX,
 };
 use leptos::prelude::*;
 

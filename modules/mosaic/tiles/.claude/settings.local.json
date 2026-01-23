@@ -4,7 +4,9 @@
       "Bash(cargo build:*)",
       "Bash(cargo check:*)",
       "Bash(bash -c:*)",
-      "Bash(just check:*)"
+      "Bash(just check:*)",
+      "Bash(just fmt:*)",
+      "Bash(just build:*)"
     ]
   }
 }

@@ -101,6 +101,10 @@ pub fn AllIconsExample() -> impl IntoView {
                 <Icon icon=Grid class="w-6 h-6" />
                 <span class="text-sm text-gray-600">"Grid"</span>
             </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=DownloadFile class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"DownloadFile"</span>
+            </div>
         </div>
     }
 }

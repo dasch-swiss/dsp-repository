@@ -42,8 +42,9 @@ pub use icondata::{
     AiMailOutlined as Mail, AiQuestionCircleOutlined as Question, AiRightOutlined as IconChevronRight,
     AiUpOutlined as IconChevronUp, BiDataRegular as Data, BiGridRegular as Grid, BiSearchRegular as IconSearch,
     BsPeople as People, CgFileDocument as Document, CgLock as LockClosed, CgLockUnlock as LockOpen, Icon as IconData,
-    IoCopyOutline as CopyPaste, IoFlagOutline as Flag, MdiTune as Tune, OcLinkExternalLg as LinkExternal,
-    OcThreeBarsSm as Hamburger, RiBookOpenDocumentLine as OpenDocument, SiGithub as IconGitHub, SiX as IconX,
+    IoCopyOutline as CopyPaste, IoFlagOutline as Flag, MdiFileDownloadOutline as DownloadFile, MdiTune as Tune,
+    OcLinkExternalLg as LinkExternal, OcThreeBarsSm as Hamburger, RiBookOpenDocumentLine as OpenDocument,
+    SiGithub as IconGitHub, SiX as IconX,
 };
 use leptos::prelude::*;
 

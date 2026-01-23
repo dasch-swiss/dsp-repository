@@ -25,7 +25,7 @@ extra = "Icons use currentColor and inherit text color from parent elements. Siz
 attr = "icon"
 attr_type = "IconData"
 default = "(required)"
-description = "The icon to display. Available icons: IconChevronUp, IconChevronDown, IconChevronLeft, IconChevronRight, IconSearch, LinkExternal, Info, Mail, CopyPaste, IconLinkedIn, IconX, IconGitHub"
+description = "The icon to display. Available icons: IconChevronUp, IconChevronDown, IconChevronLeft, IconChevronRight, IconSearch, LinkExternal, Info, Mail, CopyPaste, IconLinkedIn, IconX, IconGitHub, People, Hamburger, Document, Data, Question, LockClosed, LockOpen, Clock, Flag, OpenDocument, Tune, Grid, DownloadFile"
 
 [[references.attrs]]
 attr = "class"

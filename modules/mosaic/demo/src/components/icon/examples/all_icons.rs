@@ -43,15 +43,63 @@ pub fn AllIconsExample() -> impl IntoView {
             </div>
             <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
                 <Icon icon=IconLinkedIn class="w-6 h-6" />
-                <span class="text-sm text-gray-600">"LinkedIn"</span>
+                <span class="text-sm text-gray-600">"IconLinkedIn"</span>
             </div>
             <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
                 <Icon icon=IconX class="w-6 h-6" />
-                <span class="text-sm text-gray-600">"X (Twitter)"</span>
+                <span class="text-sm text-gray-600">"IconX"</span>
             </div>
             <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
                 <Icon icon=IconGitHub class="w-6 h-6" />
-                <span class="text-sm text-gray-600">"GitHub"</span>
+                <span class="text-sm text-gray-600">"IconGitHub"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=People class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"People"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=Hamburger class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"Hamburger"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=Document class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"Document"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=Data class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"Data"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=Question class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"Question"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=LockClosed class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"LockClosed"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=LockOpen class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"LockOpen"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=Clock class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"Clock"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=Flag class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"Flag"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=OpenDocument class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"OpenDocument"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=Tune class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"Tune"</span>
+            </div>
+            <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
+                <Icon icon=Grid class="w-6 h-6" />
+                <span class="text-sm text-gray-600">"Grid"</span>
             </div>
         </div>
     }

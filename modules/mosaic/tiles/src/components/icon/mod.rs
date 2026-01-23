@@ -37,10 +37,13 @@
 /// }
 /// ```
 pub use icondata::{
-    AiDownOutlined as IconChevronDown, AiInfoCircleOutlined as Info, AiLeftOutlined as IconChevronLeft,
-    AiLinkedinOutlined as IconLinkedIn, AiMailOutlined as Mail, AiRightOutlined as IconChevronRight,
-    AiSearchOutlined as IconSearch, AiUpOutlined as IconChevronUp, Icon as IconData, IoCopyOutline as CopyPaste,
-    OcLinkExternalLg as LinkExternal, SiGithub as IconGitHub, SiX as IconX,
+    AiBarsOutlined as Bars, AiClockCircleOutlined as Clock, AiDownOutlined as IconChevronDown,
+    AiInfoCircleOutlined as Info, AiLeftOutlined as IconChevronLeft, AiLinkedinOutlined as IconLinkedIn,
+    AiMailOutlined as Mail, AiQuestionCircleOutlined as Question, AiRightOutlined as IconChevronRight,
+    AiUpOutlined as IconChevronUp, BiDataRegular as Data, BiGridRegular as Grid, BiSearchRegular as IconSearch,
+    BsPeople as People, CgFileDocument as Document, CgLock as LockClosed, CgLockUnlock as LockOpen, Icon as IconData,
+    IoCopyOutline as CopyPaste, IoFlagOutline as Flag, MdiTune as Tune, OcLinkExternalLg as LinkExternal,
+    OcThreeBarsSm as Hamburger, RiBookOpenDocumentLine as OpenDocument, SiGithub as IconGitHub, SiX as IconX,
 };
 use leptos::prelude::*;
 

@@ -1,8 +1,6 @@
 use leptos::prelude::*;
-use mosaic_tiles::{
-    icon::{Icon, IconGitHub, LinkExternal},
-    link::Link,
-};
+use mosaic_tiles::icon::{Icon, IconGitHub, LinkExternal};
+use mosaic_tiles::link::Link;
 
 #[component]
 pub fn ExternalExample() -> impl IntoView {

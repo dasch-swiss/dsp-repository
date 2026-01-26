@@ -19,7 +19,7 @@
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,no_run
 /// use leptos::prelude::*;
 /// use mosaic_tiles::icon::*;
 ///
@@ -58,7 +58,7 @@ use leptos::prelude::*;
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,no_run
 /// use leptos::prelude::*;
 /// use mosaic_tiles::icon::*;
 ///

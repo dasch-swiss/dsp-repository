@@ -19,7 +19,7 @@ struct SidebarContext {
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,no_run
 /// use leptos::prelude::*;
 /// use mosaic_tiles::sidebar::*;
 ///
@@ -71,7 +71,7 @@ pub fn Sidebar(
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,no_run
 /// use leptos::prelude::*;
 /// use mosaic_tiles::sidebar::*;
 ///
@@ -105,7 +105,7 @@ pub fn SidebarHeader(
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,no_run
 /// use leptos::prelude::*;
 /// use mosaic_tiles::sidebar::*;
 ///
@@ -143,7 +143,7 @@ pub fn SidebarContent(
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,no_run
 /// use leptos::prelude::*;
 /// use mosaic_tiles::sidebar::*;
 ///

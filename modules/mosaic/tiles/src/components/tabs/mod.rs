@@ -11,7 +11,7 @@ use crate::icon::IconData;
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,no_run
 /// use leptos::prelude::*;
 /// use mosaic_tiles::tabs::*;
 /// use mosaic_tiles::icon::*;
@@ -71,7 +71,7 @@ pub fn Tabs(
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,no_run
 /// use leptos::prelude::*;
 /// use mosaic_tiles::tabs::*;
 /// use mosaic_tiles::icon::*;

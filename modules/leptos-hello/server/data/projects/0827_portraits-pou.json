@@ -1,0 +1,139 @@
+{
+    "id": "0827",
+    "pid": "MISSING",
+    "name": "Portraits of Unbelonging: Photography, the Ottoman State, and the making of Armenian emigrants 1896-1908",
+    "shortcode": "0827",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "How do photography and statecraft intersect in the making and unmaking of citizens?  How and why did photography become a new media for unmaking subjects in late 19th c Ottoman empire?",
+    "description": {
+        "en": "This database lists all individuals who left the Ottoman empire through the terk-i tabiiyet process based on documents in the Ottoman archives in Istanbul.  These Ottoman Armenians were permitted to leave on the condition that they expatriate and never return hence these photographs that predate passport photographs by a decade or more are bureaucratic documents of exclusion, taken as part of unmaking these individuals as Ottoman subjects.  Hence, they are portraits of unbelonging.  This database lists every glass negative that must have existed at some point with the names of all individuals whose likeness would have been captured in the negative.  Moreover it charts the circulation of all bureaucratic documents pertaining to the terk-I tabiiyet process."
+    },
+    "startDate": "2019-03-01",
+    "endDate": "2024-12-31",
+    "url": [
+        "MISSING"
+    ],
+    "howToCite": "Portraits of Unbelonging (POU), 2021, DaSCH. ark.dasch.swiss/ark:/72163/1/0827",
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-05-06",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        },
+        {
+            "en": "Armenian"
+        },
+        {
+            "en": "Turkish"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Ottoman empire"
+        },
+        {
+            "en": "citizenship"
+        },
+        {
+            "en": "emigration"
+        },
+        {
+            "en": "expatriation"
+        },
+        {
+            "en": "migration"
+        },
+        {
+            "en": "mobility"
+        },
+        {
+            "en": "nationality"
+        },
+        {
+            "en": "photography"
+        },
+        {
+            "en": "subjecthood"
+        },
+        {
+            "en": "surveillance"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "https://skos.um.es/unesco6/5101/html",
+            "text": "Cultural anthropology"
+        },
+        {
+            "type": "Skos",
+            "url": "https://skos.um.es/unesco6/5901/html",
+            "text": "International relations "
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "type": "Chronontology",
+            "url": "https://chronontology.dainst.org/period/nFHLcF9nTOUL",
+            "text": "Ottoman"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/298795/republic-of-turkey.html",
+            "text": "Turkey"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0827-person-000",
+            "contributorType": [
+                "Principal Investigator"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The dataset lists all individuals who left the Ottoman empire through the terk-i tabiiyet process based on documents in the Ottoman archives in Istanbul. These Ottoman Armenians were permitted to leave on the condition that they expatriate and never return, hence these photographs that predate passport photographs by a decade or more are bureaucratic documents of exclusion, taken as part of unmaking these individuals as Ottoman subjects. Hence, they are portraits of unbelonging. This dataset lists every glass negative that must have existed at some point with the names of all individuals whose likeness would have been captured in the negative.  Moreover, it charts the circulation of all bureaucratic documents pertaining to the terk-I tabiiyet process."
+    },
+    "contactPoint": [
+        "0827-person-000"
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0827-organization-000"
+            ]
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "POU"
+        },
+        {
+            "en": "Portraits of Unbelonging (POU)"
+        }
+    ]
+}

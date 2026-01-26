@@ -1,0 +1,18 @@
+{
+    "id": "0811-person-000",
+    "pid": "MISSING",
+    "givenNames": [
+        "Frithjof",
+        "Benjamin"
+    ],
+    "familyNames": [
+        "Schenk"
+    ],
+    "jobTitles": [
+        "Professor für Osteuropäische Geschichte"
+    ],
+    "affiliations": [
+        "0811-organization-000"
+    ],
+    "email": "benjamin.schenk@unibas.ch"
+}

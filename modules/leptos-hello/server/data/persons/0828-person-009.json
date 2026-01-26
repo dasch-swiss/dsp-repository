@@ -1,0 +1,23 @@
+{
+    "id": "0828-person-009",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-8238-7859",
+            "text": "ORCID URL: https://orcid.org/0000-0001-8238-7859"
+        }
+    ],
+    "givenNames": [
+        "Anja"
+    ],
+    "familyNames": [
+        "Giudici"
+    ],
+    "jobTitles": [
+        "Project staff"
+    ],
+    "affiliations": [
+        "0828-organization-000"
+    ]
+}

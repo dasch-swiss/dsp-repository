@@ -1,0 +1,17 @@
+{
+    "id": "0111-person-001",
+    "pid": "MISSING",
+    "givenNames": [
+        "Anouk"
+    ],
+    "familyNames": [
+        "Dunant Gonzenbach"
+    ],
+    "jobTitles": [
+        "Archivist"
+    ],
+    "affiliations": [
+        "0111-organization-000"
+    ],
+    "email": "anouk.dunant-gonzenbach@etat.ge.ch"
+}

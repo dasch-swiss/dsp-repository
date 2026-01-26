@@ -1,0 +1,193 @@
+{
+    "id": "0112",
+    "pid": "MISSING",
+    "name": "Gustave Roud, Complete works",
+    "shortcode": "0112",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "This database is the accompaniment of the critical edition of Gustave Roud’s work. It hosts the digital facsimiles of Gustave Roud’s archive, which includes manuscripts and printed materials.",
+    "description": {
+        "en": "Gustave Roud’s work includes several volumes of poetic prose, diary notes, translations, as well as  texts on literature and fine arts. The first critical edition of the poet will be published in two complementary formats: in several volumes, with the publisher Zoé (Carouge-Geneva) and, at the same time, on a digital platform. This platform will constitute the genetic accompaniment of the publication: it will host the digital facsimiles of Gustave Roud’s archive, which includes manuscripts and printed materials.\n\nIn these two formats the publication will enhance the exposure of one of the most important works of the 20th century Swiss literature and it will stimulate studies that respond to contemporary critical orientations: ecocriticism, literary geography and landscape studies, intermediality studies, and queer studies. Furthermore, the digital facsimiles of the archival materials will give the project a strong interdisciplinary dimension: taking into account the diversity of Roud’s practices – diary, poetry, photography, art criticism, literary criticism, translation – it will inspire a renewal of the approach to the work and to its author for the academic as well as the general public."
+    },
+    "startDate": "2017-11-01",
+    "endDate": "2021-12-31",
+    "url": [
+        "https://app.ls-prod-server.dasch.swiss/project/0112"
+    ],
+    "howToCite": "Maggetti, D., Jacquier Kaempfer, C., Spadini, E., Pellegrino, B., Burri, J., Lacord, R., Peterman, S., Christen, A., Jaouen, L., Rivoal, M., 2020, Gustave Roud, oeuvres [database] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0112.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text",
+        "XML"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Französisch",
+            "en": "French",
+            "fr": "français"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "20th century French literature"
+        },
+        {
+            "en": "Digital edition"
+        },
+        {
+            "en": "Edition"
+        },
+        {
+            "en": "Gustave Roud"
+        },
+        {
+            "en": "Literary criticism"
+        },
+        {
+            "en": "Literature from French-speaking Switzerland"
+        },
+        {
+            "en": "Manuscripts"
+        },
+        {
+            "en": "Photography"
+        },
+        {
+            "en": "Poetry"
+        },
+        {
+            "en": "Textual genetics"
+        },
+        {
+            "en": "Translation"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/570107",
+            "text": "Language and literature"
+        },
+        {
+            "en": "10502 Romance languages and literature"
+        },
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/550613",
+            "text": "History of Literature"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "fr": "20e siècle"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434/",
+            "text": "Switzerland"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0112-person-000",
+            "contributorType": [
+                "Project leader"
+            ]
+        },
+        {
+            "contributor": "0112-person-001",
+            "contributorType": [
+                "Project leader"
+            ]
+        },
+        {
+            "contributor": "0112-person-002",
+            "contributorType": [
+                "Project member",
+                "Data collector",
+                "Data curator",
+                "Data manager"
+            ]
+        },
+        {
+            "contributor": "0112-person-003",
+            "contributorType": [
+                "Project member",
+                "Data collector"
+            ]
+        },
+        {
+            "contributor": "0112-person-004",
+            "contributorType": [
+                "Project member",
+                "Data collector"
+            ]
+        },
+        {
+            "contributor": "0112-person-005",
+            "contributorType": [
+                "Project member",
+                "Data collector"
+            ]
+        },
+        {
+            "contributor": "0112-person-006",
+            "contributorType": [
+                "Project member",
+                "Data collector"
+            ]
+        },
+        {
+            "contributor": "0112-person-008",
+            "contributorType": [
+                "Data curator"
+            ]
+        },
+        {
+            "contributor": "0112-person-007",
+            "contributorType": [
+                "Other"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The dataset includes information about Roud’s publications (complete bibliographic records, facsimiles) and about the materials in his archive at the University of Lausanne (document descriptions, facsimiles). Each work has attached a critical text and a genetic network; the latter links publications and archival materials. The dataset also includes information about persons, places and artistic works (music, literature, visual arts) mentioned in the texts, and short essays about Roud’s artistic production."
+    },
+    "contactPoint": [
+        "0112-person-000"
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0112-organization-001"
+            ],
+            "number": "157970",
+            "name": "Editions",
+            "url": "https://data.snf.ch/grants/grant/157970"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "fr": "roud-oeuvres"
+        }
+    ]
+}

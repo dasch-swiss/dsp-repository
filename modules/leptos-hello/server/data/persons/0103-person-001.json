@@ -1,0 +1,25 @@
+{
+    "id": "0103-person-001",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-3788-9785",
+            "text": "ORCID URL: https://orcid.org/0000-0002-3788-9785"
+        }
+    ],
+    "givenNames": [
+        "Jennifer"
+    ],
+    "familyNames": [
+        "Ruimi"
+    ],
+    "jobTitles": [
+        "Post-doctoral researcher",
+        "Senior SNSF Researcher"
+    ],
+    "affiliations": [
+        "0103-organization-000"
+    ],
+    "email": "jennifer.ruimi@unil.ch"
+}

@@ -1,0 +1,12 @@
+{
+    "id": "0108-organization-002",
+    "pid": "MISSING",
+    "name": "Université de Lausanne",
+    "url": "https://www.unil.ch/",
+    "address": {
+        "street": "Unicentre",
+        "postalCode": "1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+    }
+}

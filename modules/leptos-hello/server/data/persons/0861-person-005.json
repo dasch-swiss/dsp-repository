@@ -1,0 +1,24 @@
+{
+    "id": "0861-person-005",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5470-8720",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5470-8720"
+        }
+    ],
+    "givenNames": [
+        "Rita"
+    ],
+    "familyNames": [
+        "Gautschy"
+    ],
+    "jobTitles": [
+        "Prof. Dr."
+    ],
+    "affiliations": [
+        "0861-organization-005"
+    ],
+    "email": "rita.gautschy@dasch.swiss"
+}

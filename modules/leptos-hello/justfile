@@ -1,0 +1,9 @@
+setup:
+  #!/bin/bash
+  npm install --global corepack@latest	
+  corepack enable pnpm
+  pnpm i
+  rustup target add wasm32-unknown-unknown
+  # if leptops install fails follow https://docs.rs/openssl/latest/openssl/#automatic
+  cargo install --locked cargo-leptos
+

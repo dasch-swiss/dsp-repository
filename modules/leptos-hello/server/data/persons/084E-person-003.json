@@ -1,0 +1,24 @@
+{
+    "id": "084E-person-003",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0633-4509",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0633-4509"
+        }
+    ],
+    "givenNames": [
+        "Julia"
+    ],
+    "familyNames": [
+        "Thyroff"
+    ],
+    "jobTitles": [
+        "Wissenschaftliche Mitarbeiterin"
+    ],
+    "affiliations": [
+        "084E-organization-000"
+    ],
+    "email": "julia.thyroff@fhnw.ch"
+}

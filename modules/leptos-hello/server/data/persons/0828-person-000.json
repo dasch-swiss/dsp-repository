@@ -1,0 +1,24 @@
+{
+    "id": "0828-person-000",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.ife.uzh.ch/de/institut/emeritiundemeritae/criblezlucien.html",
+            "text": "https://www.ife.uzh.ch/de/institut/emeritiundemeritae/criblezlucien.html"
+        }
+    ],
+    "givenNames": [
+        "Lucien"
+    ],
+    "familyNames": [
+        "Criblez"
+    ],
+    "jobTitles": [
+        "Professor Emeritus of Historical Research in Education and Governance of the Education System"
+    ],
+    "affiliations": [
+        "0828-organization-000"
+    ],
+    "email": "lcriblez@ife.uzh.ch"
+}

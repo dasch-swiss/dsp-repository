@@ -1,0 +1,224 @@
+{
+    "id": "0838",
+    "pid": "MISSING",
+    "name": "I-GEOARCHive",
+    "shortcode": "0838",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "I-GEOARCHive provides geoarchaeological data and images (profile photos, thin section scans, microscope photos, layer descriptions, mortar and ceramic samples, etc.) from various archaeological sites.",
+    "description": {
+        "en": "The geoarchaeological collection of IPAS (Integrative Prehistory and Archaeological Science) at the University of Basel and of AMGC (Archaeology, Environmental Changes & Geo-Chemistry) at the Vrije Universiteit Brussel includes block and sediment samples of soils and archaeological deposits as well as rocks, flints, ceramics and mortar samples etc. The „I-GEOARCHive“ image database of thin section scans (and corresponding microscope photos) makes the collection digitally accessible to the public and in particular to research and teaching. The freely accessible „I-GEOARCHive“ database enables users to keyword, analyse, publish and archive geoarchaeological samples. Furthermore, micromorphological observations are linked to the thin section scans and thus to the block samples and profiles. This cross-linking enables multidimensional publication and archiving of micromorphological image data and their relation to original archaeological features."
+    },
+    "startDate": "2020-02-06",
+    "endDate": "MISSING",
+    "url": [
+        "https://app.dasch.swiss/project/n0eRr0vWTDOArdaBAZ-jQQ"
+    ],
+    "howToCite": "Brönnimann, D., Lo Russo, S., Pümpin, Ch., Ismail-Meyer, K., Devos, Y., Kübler, S., Rentzel, Ph. (2024). I-GEOARCHive [Database]. DaSCH. http://ark.dasch.swiss/ark:/72163/1/0838",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-01-22",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "https://zenodo.org/doi/10.5281/zenodo.10514612",
+    "typeOfData": [
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Geoarchaeology"
+        },
+        {
+            "en": "Archaeology"
+        },
+        {
+            "en": "Geology"
+        },
+        {
+            "en": "Micromorphology"
+        },
+        {
+            "en": "Petrography"
+        },
+        {
+            "en": "Thin Section"
+        },
+        {
+            "en": "Microphotographs"
+        },
+        {
+            "en": "Microartifacts"
+        },
+        {
+            "de": "Geoarchäologie"
+        },
+        {
+            "de": "Archäologie"
+        },
+        {
+            "de": "Geologie"
+        },
+        {
+            "de": "Mikromorphologie"
+        },
+        {
+            "de": "Petrographie"
+        },
+        {
+            "de": "Dünnschliff"
+        },
+        {
+            "de": "Mikroskopie"
+        },
+        {
+            "de": "Mikroskopfoto"
+        },
+        {
+            "de": "Mikroartefakte"
+        },
+        {
+            "de": "Archäologische Schichten"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "https://skos.um.es/unesco6/550512/html",
+            "text": "Stratigraphy"
+        },
+        {
+            "type": "Skos",
+            "url": "https://skos.um.es/unesco6/2506/html",
+            "text": "Geology"
+        },
+        {
+            "type": "Skos",
+            "url": "https://skos.um.es/unesco6/2511/html",
+            "text": "Soil Science (Soil Science)"
+        },
+        {
+            "type": "Skos",
+            "url": "https://skos.um.es/unesco6/550502/html",
+            "text": "Ceramology"
+        },
+        {
+            "type": "Skos",
+            "url": "https://skos.um.es/unesco6/550501/html",
+            "text": "Archaeology"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "Palaeolithic to Modern"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434",
+            "text": "Switzerland"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/9408659",
+            "text": "Western Europe"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0838-person-000",
+            "contributorType": [
+                "Project Leader, Data Collector"
+            ]
+        },
+        {
+            "contributor": "0838-person-001",
+            "contributorType": [
+                "Project Leader, Data Collector"
+            ]
+        },
+        {
+            "contributor": "0838-person-002",
+            "contributorType": [
+                "Data Collector"
+            ]
+        },
+        {
+            "contributor": "0838-person-003",
+            "contributorType": [
+                "Data Collector"
+            ]
+        },
+        {
+            "contributor": "0838-person-004",
+            "contributorType": [
+                "Data Collector"
+            ]
+        },
+        {
+            "contributor": "0838-person-005",
+            "contributorType": [
+                "Data Collector"
+            ]
+        },
+        {
+            "contributor": "0838-person-006",
+            "contributorType": [
+                "Project Leader, Data Collector"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The geoarchaeological collection of  IPAS (Integrative Prehistory and Archaeological Science) at the University of Basel and of  AMGC (Archaeology, Environmental Changes & Geo-Chemistry) at the Vrije Universiteit Brussel includes block and sediment samples of soils and archaeological deposits as well as rocks, flints, ceramics and mortar samples. The I-GEOARCHive image database of thin section scans and microphotographs makes the collection digitally accessible to research and teaching. The freely accessible I-GEOARCHive database enables users to keyword, analyse, publish and archive geoarchaeological samples. Furthermore, micromorphological observations are linked to the thin section scans and thus to the block samples and profiles. This cross-linking enables multidimensional publication and archiving of micromorphological image data and their relation to original archaeological features."
+    },
+    "contactPoint": [
+        "0838-person-000"
+    ],
+    "publications": [
+        {
+            "text": "Lo Russo, S., Brönnimann, D., Pümpin, C., Ismail-Meyer, K., Rentzel, P., Gautschy, R., Wimmer, J., Devos, Y., Nys, K: Recording, sharing and linking micromorphological data: A two-pillar database system, Open Archaeology (submitted)."
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0838-organization-002"
+            ],
+            "number": "205278",
+            "name": "Weave (SNSF)",
+            "url": "https://data.snf.ch/grants/grant/205278"
+        },
+        {
+            "funders": [
+                "0838-organization-003"
+            ],
+            "number": "FWOAL1057",
+            "name": "Weave (FWO)",
+            "url": "https://researchportal.vub.be/en/projects/welcome-to-the-dark-side-disclosing-the-invisible-stages-of-medie"
+        }
+    ]
+}

@@ -1,0 +1,17 @@
+{
+    "id": "0105-person-004",
+    "pid": "MISSING",
+    "givenNames": [
+        "Olga"
+    ],
+    "familyNames": [
+        "Serbaeva Saraogi"
+    ],
+    "jobTitles": [
+        "Developer"
+    ],
+    "affiliations": [
+        "0105-organization-001"
+    ],
+    "email": "olga.serbaeva@aoi.uzh.ch"
+}

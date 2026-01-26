@@ -1,0 +1,185 @@
+{
+    "id": "0853",
+    "pid": "MISSING",
+    "name": "Hieroglyphic Palaeography of the Ptolemaic Temple at Deir el-Medina",
+    "shortcode": "0853",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "An online palaeography of hieroglyphs from the Ptolemaic temple of Deir el-Medina",
+    "description": {
+        "en": "An online palaeography of hieroglyphs using photographs, drawings, 3D models and epigraphic tools to explore the shapes, colours and meanings of the hieroglyphs in the temple of Deir el-Medina and to document engraving techniques."
+    },
+    "startDate": "2021-02-01",
+    "endDate": "2027-12-31",
+    "url": [
+        "https://beyondthetext.ch/deir-el-medina"
+    ],
+    "howToCite": "Deir el-Medina Hieroglyph Palaeography (2028). DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853",
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "en": "English"
+        },
+        {
+            "en": "French"
+        },
+        {
+            "en": "German"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "hieroglyphic palaeography"
+        },
+        {
+            "en": "hieroglyphs"
+        },
+        {
+            "en": "Graeco-Roman temples"
+        },
+        {
+            "en": "Deir el-Medina"
+        },
+        {
+            "en": "engraving techniques"
+        },
+        {
+            "en": "colours"
+        },
+        {
+            "fr": "paléographie hiéroglyphique"
+        },
+        {
+            "fr": "hiéroglyphes"
+        },
+        {
+            "fr": "temples gréco-romains"
+        },
+        {
+            "fr": "Deir el-Médina"
+        },
+        {
+            "fr": "techniques de gravure"
+        },
+        {
+            "fr": "couleurs"
+        },
+        {
+            "de": "hieroglyphische Paläographie"
+        },
+        {
+            "de": "Hieroglyphen"
+        },
+        {
+            "de": "griechisch-römische Tempel"
+        },
+        {
+            "de": "Deir el-Medina"
+        },
+        {
+            "de": "Gravur Techniken"
+        },
+        {
+            "de": "Farben"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10303 Ancient History and Classical studies"
+        },
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unescothes/C01302",
+            "text": "Egyptology"
+        },
+        {
+            "en": "10402 Archaeology"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "300 BC"
+        },
+        {
+            "en": "AD 200"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/357994",
+            "text": "Egypt"
+        },
+        {
+            "type": "Geonames",
+            "url": "http://www.geonames.org/347342",
+            "text": "Thebes"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0853-person-000",
+            "contributorType": [
+                "Project Leader",
+                "Creator"
+            ]
+        },
+        {
+            "contributor": "0853-person-001",
+            "contributorType": [
+                "Project Member",
+                "Creator",
+                "Epigrapher"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The dataset consists of elements documenting the paleography of the hieroglyphs from the temple of Deir el-Medina. It includes images, orthophotos, DEMs, sections associated with external 3D models and drawings. It includes descriptive, analytical and bibliographical information relating to each sign associated with a hieroglyph."
+    },
+    "contactPoint": [
+        "0853-person-000"
+    ],
+    "publications": [
+        {
+            "text": " Sandrine Vuilleumier, Laurence Cappa Dafflon, Paléographie hiéroglyphique du temple de Deir el-Médina, PalHier, Le Caire, Ifao, 2027. (in preparation)"
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0853-organization-000"
+            ],
+            "number": "193226",
+            "name": "PRIMA",
+            "url": "https://data.snf.ch/grants/grant/193226"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "fr": "Paléographie hiéroglyphique du temple ptolémaïque de Deir el-Medina"
+        },
+        {
+            "de": "Hieroglyphische Paläographie des ptolemäischen Tempels von Deir el-Medina"
+        }
+    ]
+}

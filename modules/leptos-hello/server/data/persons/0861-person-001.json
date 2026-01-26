@@ -1,0 +1,24 @@
+{
+    "id": "0861-person-001",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0002-7956-5655",
+            "text": "ORCID URL: https://orcid.org/0009-0002-7956-5655"
+        }
+    ],
+    "givenNames": [
+        "Elias"
+    ],
+    "familyNames": [
+        "Zimmermann"
+    ],
+    "jobTitles": [
+        "Dr."
+    ],
+    "affiliations": [
+        "0861-organization-001"
+    ],
+    "email": "elias.zimmermann@uzh.ch"
+}

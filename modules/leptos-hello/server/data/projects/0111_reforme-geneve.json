@@ -1,0 +1,153 @@
+{
+    "id": "0111",
+    "pid": "MISSING",
+    "name": "Côté chaire, côté rue, La Réforme à Genève (1517-1617)",
+    "shortcode": "0111",
+    "officialName": "MISSING",
+    "status": "Finished",
+    "shortDescription": "The database is the result of the transposition of a virtual exhibition realized in the context of the 500th anniversary of the Lutheran Reformation (1517).",
+    "description": {
+        "en": "In the context of the 500th anniversary of the Lutheran Reformation (1517), The Archives of the State of Geneva, in collaboration with historians from the University of Geneva and from the University of Lausanne, have created an exhibition that presents the impact of the Reformation on daily life in Geneva. This means demonstrating at the same time how the Genevans were involved in this process of Reformation and how the religious conversion of the city affected their daily lives. The archives are in fact the echo of the activism, resistance or the adaptation of various players – men, women, and children – and underline the real – or mythologized – changes imposed by the practice of the new form of worship. The exhibition approaches this topic in three stages. The first period (1517-1555) charts the introduction of the Reformation in Geneva. Guillaume Farel’s (1489-1565) sermons feed the religious stirrings which sometimes manifest themselves in iconoclasm. The second period (1555-1575), describes the Reformation as it was lived in daily life. The population adjusted to the new liturgies, mixed with students of the Academy, took in the influx of refugees and submitted to disciplinary constraints. Finally, the third period (1575-1617) saw tempers calming down and discipline being relaxed. The people of Geneva slowly found a new equilibrium and the year 1617 provided the opportunity to celebrate the first hundred years of the Reformation. The Archives of the State of Geneva maintain, restore and digitalise the documents that historians use in their work. The presentation of a digitalisation project and the restoration of the archives of the Protestant Church complete this exhibition and highlight the historical work linked to the archives."
+    },
+    "startDate": "2017-03-31",
+    "endDate": "2018-03-31",
+    "url": [
+        "https://app.ls-prod-server.dasch.swiss/project/0111"
+    ],
+    "howToCite": "Grosse, Ch., Dunant Gonzenbach, A., Matthey-Doret, A., 2019, Côté chaire, côté rue, La Réforme à Genève (1517-1617) [database] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0111.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Audio",
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Französisch",
+            "en": "French",
+            "fr": "français"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Archival turn"
+        },
+        {
+            "en": "Calvin"
+        },
+        {
+            "en": "Church History"
+        },
+        {
+            "en": "Ecclesiastical discipline"
+        },
+        {
+            "en": "History of Geneva"
+        },
+        {
+            "en": "History of the  Reformation"
+        },
+        {
+            "en": "Paleography"
+        },
+        {
+            "en": "Social control"
+        },
+        {
+            "en": "Woman history"
+        },
+        {
+            "en": "Written culture"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10103 Ecclesiastical history"
+        },
+        {
+            "en": "10301 General history (without pre-and early history)"
+        },
+        {
+            "en": "10102 Religious studies, Theology"
+        },
+        {
+            "en": "10302 Swiss history"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "type": "Periodo",
+            "url": "http://n2t.net/ark:/99152/p0367jz",
+            "text": "Century of Reformation (Europe)"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2660646/",
+            "text": "Geneva"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0111-person-000",
+            "contributorType": [
+                "Project leader",
+                "Data collector"
+            ]
+        },
+        {
+            "contributor": "0111-person-001",
+            "contributorType": [
+                "Project leader",
+                "Data curator"
+            ]
+        },
+        {
+            "contributor": "0111-person-002",
+            "contributorType": [
+                "Project member",
+                "Data curator"
+            ]
+        },
+        {
+            "contributor": "0111-person-003",
+            "contributorType": [
+                "Data curator"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The database is the result of the transposition of a virtual exhibition realised with the web application StoryMap, from ArcGIS. It also integrates the transcriptions of archive documents initially published on the website of the State Archives of Geneva.\r The database is structured around three main chronological showcases, which bring together thematic showcases. The showcases are composed of different images, associated with geographical coordinates, and to which transcriptions of archival documents may be associated. Facsimiles are presented next to transcriptions.\r"
+    },
+    "contactPoint": [
+        "0111-person-000"
+    ],
+    "publications": [
+        {
+            "text": "Grosse, Ch., Dunant Gonzenbach, A., Fornerod, N., Gross, G., Solfaroli Camillocci, D., Vernhes Rappaz, S., Coté chaire, côté rue. L’impact de la Réforme sur la vie quotidienne à Genève (1517-1617), Genève, La Baconnière, 2018."
+        }
+    ],
+    "funding": "No funding",
+    "alternativeNames": [
+        {
+            "en": "reforme-religieuse"
+        }
+    ]
+}

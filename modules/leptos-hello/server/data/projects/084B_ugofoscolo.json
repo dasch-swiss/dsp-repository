@@ -1,0 +1,119 @@
+{
+    "id": "084B",
+    "pid": "MISSING",
+    "name": "L’epistolario di Ugo Foscolo: catalogo",
+    "shortcode": "084B",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "The catalogue of the Foscolo epistolary contains the data, metadata and images relating to the letters, documents, witnesses, holding institutions and editions of the letters.",
+    "description": {
+        "it": "“L'epistolario di Ugo Foscolo: catalogo” costituisce l'esito del sottoprogetto dottorale del progetto di ricerca \"Ugo Foscolo, Epistolario 1825-1827\". All'interno del catalogo sono descritte tutte le lettere note dell'epistolario del poeta italo-greco in relazione con i manoscritti e le copie, i soggetti conservatori che le custodiscono, le edizioni, le persone e i luoghi: lo scopo del lavoro è offrire un catalogo che consenta di accedere a tutte le informazioni note su una lettera, un personaggio, un particolare manoscritto in rapporto alla tradizione foscoliana.",
+        "en": "“L'epistolario di Ugo Foscolo: catalogo” is the outcome of the doctoral sub-project of the research project \"Ugo Foscolo, Epistolario 1825-1827\" (https://data.snf.ch/grants/grant/197859). The catalogue describes all the known letters of the Italian-Greek poet's epistolary in relation to manuscripts and copies, the subjects that conserve them, editions, people and places: the aim of the work is to offer a catalogue that provides access to all known information on a letter, a character, a particular manuscript in relation to the Foscolo tradition."
+    },
+    "startDate": "2021-01-01",
+    "endDate": "2024-06-30",
+    "url": [
+        "https://app.dasch.swiss/project/dRHtOCjWRZe6qyixRRz9wQ"
+    ],
+    "howToCite": "Michele Stefani (2025). L’epistolario di Ugo Foscolo: catalogo. [Dataset]. https://ark.dasch.swiss/ark:/72163/1/084B",
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-07-08",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        },
+        {
+            "de": "Italienisch",
+            "en": "Italian",
+            "fr": "italien"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Letters"
+        },
+        {
+            "en": "Ugo Foscolo"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/62",
+            "text": "Science of Arts and Letters"
+        },
+        {
+            "fr": "10502 Langues romanes"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "de": "1794-1871",
+            "en": "1794-1871",
+            "fr": "1794-1871"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/6255148/",
+            "text": "Europe"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "084B-person-001",
+            "contributorType": [
+                "Project Leader"
+            ]
+        },
+        {
+            "contributor": "084B-person-000",
+            "contributorType": [
+                "Creator"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The catalogue of the Foscolo epistolary contains the data, metadata and images relating to the letters, documents, witnesses, preserving institutions and editions of the letters."
+    },
+    "contactPoint": [
+        "084B-person-001"
+    ],
+    "funding": [
+        {
+            "funders": [
+                "084B-organization-001"
+            ],
+            "number": "197859",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/197859"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "ugofoscolo"
+        }
+    ]
+}

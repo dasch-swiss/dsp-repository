@@ -1,0 +1,17 @@
+{
+    "id": "0860-person-003",
+    "pid": "MISSING",
+    "givenNames": [
+        "Katharina"
+    ],
+    "familyNames": [
+        "Theil"
+    ],
+    "jobTitles": [
+        "Doctoral student"
+    ],
+    "affiliations": [
+        "0860-organization-001"
+    ],
+    "email": "katharina.theil@uzh.ch"
+}

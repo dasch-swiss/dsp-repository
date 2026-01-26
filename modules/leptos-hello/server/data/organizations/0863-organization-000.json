@@ -1,0 +1,12 @@
+{
+    "id": "0863-organization-000",
+    "pid": "MISSING",
+    "name": "University of Bern",
+    "url": "https://www.unibe.ch/index_eng.html",
+    "address": {
+        "street": "Hochschulstrasse 6",
+        "postalCode": "3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+    }
+}

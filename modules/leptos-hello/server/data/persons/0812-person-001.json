@@ -1,0 +1,20 @@
+{
+    "id": "0812-person-001",
+    "pid": "MISSING",
+    "givenNames": [
+        "Nicole"
+    ],
+    "familyNames": [
+        "Peduzzi Longhitano"
+    ],
+    "jobTitles": [
+        "Curator photo archive",
+        "Project coordinator",
+        "Senior Research Associate"
+    ],
+    "affiliations": [
+        "0812-organization-000",
+        "0812-organization-003"
+    ],
+    "email": "nicole.peduzzi@ekws.ch"
+}

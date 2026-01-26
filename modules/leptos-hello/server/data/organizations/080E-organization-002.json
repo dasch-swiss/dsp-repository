@@ -1,0 +1,12 @@
+{
+    "id": "080E-organization-002",
+    "pid": "MISSING",
+    "name": "Ernst Göhner Stiftung",
+    "url": "http://www.ernst-goehner-stiftung.ch/index.php/de",
+    "address": {
+        "street": "Artherstrasse 19",
+        "postalCode": "6300",
+        "locality": "Zug",
+        "country": "Switzerland"
+    }
+}

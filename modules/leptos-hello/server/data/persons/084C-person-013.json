@@ -1,0 +1,23 @@
+{
+    "id": "084C-person-013",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.ru.nl/en/people/blaauw-s-de",
+            "text": "https://www.ru.nl/en/people/blaauw-s-de"
+        }
+    ],
+    "givenNames": [
+        "Sible"
+    ],
+    "familyNames": [
+        "de Blaauw"
+    ],
+    "jobTitles": [
+        "Prof. ermeritus of Art History"
+    ],
+    "affiliations": [
+        "084C-organization-005"
+    ]
+}

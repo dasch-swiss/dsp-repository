@@ -1,0 +1,169 @@
+{
+    "id": "085E",
+    "pid": "MISSING",
+    "name": "Tall al-Hamidiya Online",
+    "shortcode": "085E",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "The Swiss excavations at Tall al-Hamidiya (NE Syria) revealed a 245-ha Late Bronze Age city. Architecture and texts make it likely that the site was Taidu, the royal residence of the Mitanni empire.",
+    "description": {
+        "en": "From 1984 to 2011, the Swiss Archaeological Mission excavated Tall al-Hamidiya in Northeast Syria. The Late Bronze Age acropolis, with its monumental structures, including the Southwest Palace (approx. 14,500 m²) and the Central Palace (approx. 38,500 m²), was central to a city of approximately 245 ha. The impressive structures and Hurro-Akkadian texts suggest that Tall al-Hamidiya was Taidu, the royal city of the Mitannian empire, which had dominated Northern Mesopotamia and the Levant (ca. 16th-13th century BCE). Middle Assyrian kings conquered the site (13th-11th century BCE) and continued its occupation into the Neo-Assyrian period (9th-8th century BCE). This makes Tall al-Hamidiya one of the few sites in the region with a well-documented sequence of Mitanni—Middle Assyrian—Neo Assyrian habitation. From 1984 to 2020, Prof. Dr. Markus Wäfler (University of Bern) directed and funded the excavations. Since 2010/2011, the project has been situated at the University of Basel, where Dr. Oskar Kaelin (https: //whitelevy.fas.harvard.edu/people/oskar-kaelin), a project member since 1995 and co-director since 2008, has been affiliated. The main goals of the project supported by the Shelby White and Leon Levy Program for Archaeological Publications and directed by Dr. Oskar Kaelin are: Ensure that all excavated data (photos, plans, drawings) is freely accessible online (in English) through the long-term preservation center DaSCH – Swiss National Data and Service Center for the Humanities to guarantee future accessibility (with Prof. Dr. Rita Gautschy and her team). Produce a monograph (as a free e-book) analyzing the findings at Tall al-Hamidiya, contextualizing them within the history of the Khabur region and the Ancient Near East, particularly the Mitannian, Middle, and Neo-Assyrian periods."
+    },
+    "startDate": "2025-07-01",
+    "endDate": "2028-07-31",
+    "url": [
+        "https://sites.google.com/site/hamidiyataidu/home"
+    ],
+    "howToCite": "© Tall al-Hamidiya Online project. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085E.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-07-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.en"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text",
+        "Video"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Mitanni"
+        },
+        {
+            "en": "Assyria"
+        },
+        {
+            "en": "palaces"
+        },
+        {
+            "en": "cemeteries"
+        },
+        {
+            "en": "Syria"
+        },
+        {
+            "en": "Khabur river"
+        },
+        {
+            "en": "Jaghjagh river"
+        },
+        {
+            "en": "Near Eastern Archaeology"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10303 Ancient history and Classical studies"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "Late Bronze Age"
+        },
+        {
+            "en": "Iron Age"
+        },
+        {
+            "en": "Mitanni"
+        },
+        {
+            "en": "Middle Assyrian"
+        },
+        {
+            "en": "Neo-Assyrian"
+        },
+        {
+            "en": "Hellenistic"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/169996/tall-hamidi.html",
+            "text": "Tall Hamidi"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "085E-person-001",
+            "contributorType": [
+                "Project Leader",
+                "Editor",
+                "Data Curator"
+            ]
+        },
+        {
+            "contributor": "085E-person-002",
+            "contributorType": [
+                "Related Person"
+            ]
+        },
+        {
+            "contributor": "085E-person-003",
+            "contributorType": [
+                "Data Curator"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Materials from the excavations of the Swiss Archaeological Mission at Tall al-Hamidiya, Northeast Syria (1984-2011)"
+    },
+    "contactPoint": [
+        "085E-person-001"
+    ],
+    "publications": [
+        {
+            "text": "See",
+            "pid": {
+                "url": "https://sites.google.com/site/hamidiyataidu/home/publications?authuser=0"
+            }
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "085E-organization-001"
+            ],
+            "name": "Shelby White and Leon Levy Program for Archaeological Publications",
+            "url": "https://whitelevy.fas.harvard.edu/digitisation-and-publication-finds-swiss-archaeological-mission-tall-al-hamidiya-northeast-syria"
+        },
+        {
+            "funders": [
+                "085E-organization-003"
+            ],
+            "number": "120549",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/120549"
+        },
+        {
+            "funders": [
+                "085E-person-002"
+            ],
+            "name": "Private funding"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "hamidi"
+        }
+    ]
+}

@@ -1941,6 +1941,7 @@ dependencies = [
  "leptos_meta",
  "reqwest",
  "sha256",
+ "uuid",
  "wasm-bindgen",
 ]
 

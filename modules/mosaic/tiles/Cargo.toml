@@ -12,6 +12,7 @@ leptos_meta = "0.8.5"
 console_error_panic_hook = { version = "0.1", optional = true }
 wasm-bindgen = { version = "0.2.106", optional = true }
 icondata = { version = "0.7" }
+uuid = { version = "1.11", features = ["v4", "js"] }
 
 [features]
 hydrate = ["leptos/hydrate", "dep:console_error_panic_hook", "dep:wasm-bindgen"]

@@ -1,17 +1,21 @@
+use leptos::context::Provider;
 use leptos::either::Either;
-use leptos::ev::MouseEvent;
 use leptos::prelude::*;
 
-/// Context for managing popover state
-#[derive(Clone, Copy)]
-struct PopoverContext {
-    is_open: RwSignal<bool>,
+/// Context for managing popover IDs to connect trigger and content
+#[derive(Clone)]
+pub struct PopoverContext {
+    pub menu_id: RwSignal<String>,
 }
+
+/// Context provided by PopoverTrigger to its children
+#[derive(Clone)]
+pub struct PopoverTriggerContext {}
 
 /// Main Popover container component that manages popover state.
 ///
 /// The Popover component provides context for PopoverTrigger and PopoverContent
-/// to communicate and manage the open/close state of the popover.
+/// to communicate using the native browser Popover API.
 ///
 /// # Examples
 ///
@@ -36,8 +40,8 @@ pub fn Popover(
     #[prop(optional)]
     children: Option<Children>,
 ) -> impl IntoView {
-    let is_open = RwSignal::new(false);
-    let context = PopoverContext { is_open };
+    let menu_id = RwSignal::new(String::new());
+    let context = PopoverContext { menu_id };
 
     provide_context(context);
 
@@ -54,7 +58,9 @@ pub fn Popover(
 
 /// PopoverTrigger wraps the trigger element (typically a Button) that opens the popover.
 ///
-/// The trigger element will toggle the popover visibility when clicked.
+/// The trigger element will use the native popover API to toggle visibility.
+/// When wrapping a Button component, the Button will automatically receive
+/// the popovertarget attribute to control the associated popover.
 ///
 /// # Examples
 ///
@@ -74,28 +80,23 @@ pub fn PopoverTrigger(
     #[prop(optional)]
     children: Option<Children>,
 ) -> impl IntoView {
-    let context = expect_context::<PopoverContext>();
-
-    let toggle = move |e: MouseEvent| {
-        e.stop_propagation();
-        context.is_open.update(|open| *open = !*open);
-    };
+    let trigger_context = PopoverTriggerContext {};
 
     view! {
-        <div class="popover-trigger" on:click=toggle>
+        <Provider value=trigger_context>
             {if let Some(children) = children {
                 Either::Left(children())
             } else {
                 Either::Right(())
             }}
-        </div>
+        </Provider>
     }
 }
 
-/// PopoverContent displays the content in a portal when the popover is open.
+/// PopoverContent displays the content using the native browser Popover API.
 ///
-/// The content is rendered conditionally based on the popover state and is
-/// positioned absolutely relative to the trigger.
+/// The content is automatically shown/hidden by the browser when the associated
+/// trigger is activated. The native API handles positioning, z-index, and light dismiss.
 ///
 /// # Examples
 ///
@@ -116,33 +117,42 @@ pub fn PopoverContent(
     /// The content to display in the popover
     #[prop(optional)]
     children: Option<Children>,
+    /// Optional additional CSS classes
+    #[prop(optional, into)]
+    class: MaybeProp<String>,
+    /// Optional explicit ID for the popover (for islands mode or custom control)
+    #[prop(optional, into)]
+    id: MaybeProp<String>,
 ) -> impl IntoView {
     let context = expect_context::<PopoverContext>();
 
-    let close_popover = move |_e: MouseEvent| {
-        context.is_open.set(false);
-    };
+    // Generate ID once using StoredValue to ensure consistency across SSR and hydration
+    let menu_id = StoredValue::new(
+        id.get()
+            .unwrap_or_else(|| format!("popover-{}", uuid::Uuid::new_v4())),
+    );
 
-    let prevent_close = move |e: MouseEvent| {
-        e.stop_propagation();
-    };
+    // Set the menu_id in context so the trigger can access it
+    Effect::new(move |_| {
+        context.menu_id.set(menu_id.get_value());
+    });
 
     view! {
-        <div class=move || {
-            if context.is_open.get() {
-                "popover-wrapper popover-wrapper-open"
-            } else {
-                "popover-wrapper"
+        <div
+            class=move || {
+                format!(
+                    "popover-content {}",
+                    class.get().unwrap_or_default(),
+                )
             }
-        }>
-            <div class="popover-overlay" on:click=close_popover></div>
-            <div class="popover-content" on:click=prevent_close>
-                {if let Some(children) = children {
-                    Either::Left(children())
-                } else {
-                    Either::Right(())
-                }}
-            </div>
+            id=menu_id.get_value()
+            popover="manual"
+        >
+            {if let Some(children) = children {
+                Either::Left(children())
+            } else {
+                Either::Right(())
+            }}
         </div>
     }
 }

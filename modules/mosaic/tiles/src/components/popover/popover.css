@@ -4,33 +4,16 @@
     @apply relative inline-block;
   }
 
-  /* Popover Trigger */
-  .popover-trigger {
-    @apply inline-block cursor-pointer;
-  }
-
-  /* Popover Wrapper - positioned relative to trigger */
-  .popover-wrapper {
-    @apply absolute left-0 mt-2 invisible opacity-0 pointer-events-none;
-    transition: opacity 0.15s ease-out, visibility 0.15s ease-out;
-    z-index: 50;
-  }
-
-  .popover-wrapper-open {
-    @apply visible opacity-100 pointer-events-auto;
-  }
-
-  /* Popover Overlay - invisible backdrop for click-outside detection */
-  .popover-overlay {
-    @apply fixed inset-0;
-    z-index: 40;
-  }
-
-  /* Popover Content - the dropdown menu */
+  /* Popover Content - using native popover API */
   .popover-content {
-    @apply relative bg-white rounded-lg shadow-lg border border-gray-200 min-w-[200px];
-    z-index: 50;
+    @apply bg-white rounded-lg shadow-lg border border-gray-200 min-w-[200px];
     max-height: 400px;
     overflow-y: auto;
+  }
+
+  /* Native popover positioning fallback for browsers without anchor positioning support */
+  .popover-content:popover-open {
+    @apply relative;
+    inset: unset;
   }
 }

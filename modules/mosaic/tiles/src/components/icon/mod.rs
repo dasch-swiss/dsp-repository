@@ -20,13 +20,14 @@
 /// # Examples
 ///
 /// ```rust
+/// use leptos::prelude::*;
 /// use mosaic_tiles::icon::*;
 ///
 /// // Default size
-/// view! { <Icon icon=IconSearch /> }
+/// view! { <Icon icon=IconSearch /> };
 ///
 /// // Explicit size
-/// view! { <Icon icon=IconGitHub class="w-6 h-6 text-gray-600" /> }
+/// view! { <Icon icon=IconGitHub class="w-6 h-6 text-gray-600" /> };
 ///
 /// // Size inherits from parent
 /// view! {
@@ -34,7 +35,7 @@
 ///         <Icon icon=IconSearch class="inline mr-2" />
 ///         "Search"
 ///     </button>
-/// }
+/// };
 /// ```
 pub use icondata::{
     AiBarsOutlined as Bars, AiClockCircleOutlined as Clock, AiDownOutlined as IconChevronDown,
@@ -58,13 +59,14 @@ use leptos::prelude::*;
 /// # Examples
 ///
 /// ```rust
+/// use leptos::prelude::*;
 /// use mosaic_tiles::icon::*;
 ///
 /// // Basic usage
-/// view! { <Icon icon=IconSearch /> }
+/// view! { <Icon icon=IconSearch /> };
 ///
 /// // With size and color
-/// view! { <Icon icon=IconGitHub class="w-6 h-6 text-gray-600 hover:text-gray-900" /> }
+/// view! { <Icon icon=IconGitHub class="w-6 h-6 text-gray-600 hover:text-gray-900" /> };
 /// ```
 #[component]
 pub fn Icon(

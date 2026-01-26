@@ -12,6 +12,7 @@ use crate::icon::IconData;
 /// # Examples
 ///
 /// ```rust
+/// use leptos::prelude::*;
 /// use mosaic_tiles::tabs::*;
 /// use mosaic_tiles::icon::*;
 ///
@@ -34,7 +35,7 @@ use crate::icon::IconData;
 ///             <p>"Content of second tab"</p>
 ///         </Tab>
 ///     </Tabs>
-/// }
+/// };
 /// ```
 #[component]
 pub fn Tabs(
@@ -71,6 +72,7 @@ pub fn Tabs(
 /// # Examples
 ///
 /// ```rust
+/// use leptos::prelude::*;
 /// use mosaic_tiles::tabs::*;
 /// use mosaic_tiles::icon::*;
 ///
@@ -85,7 +87,7 @@ pub fn Tabs(
 ///     >
 ///         <p>"Search content"</p>
 ///     </Tab>
-/// }
+/// };
 ///
 /// // Simple tab without icon
 /// view! {
@@ -96,7 +98,7 @@ pub fn Tabs(
 ///     >
 ///         <p>"Settings content"</p>
 ///     </Tab>
-/// }
+/// };
 /// ```
 #[component]
 pub fn Tab(

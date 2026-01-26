@@ -20,6 +20,7 @@ struct SidebarContext {
 /// # Example
 ///
 /// ```rust
+/// use leptos::prelude::*;
 /// use mosaic_tiles::sidebar::*;
 ///
 /// view! {
@@ -31,7 +32,7 @@ struct SidebarContext {
 ///             </SidebarGroup>
 ///         </SidebarContent>
 ///     </Sidebar>
-/// }
+/// };
 /// ```
 #[component]
 pub fn Sidebar(
@@ -71,11 +72,12 @@ pub fn Sidebar(
 /// # Example
 ///
 /// ```rust
+/// use leptos::prelude::*;
 /// use mosaic_tiles::sidebar::*;
 ///
 /// view! {
 ///     <SidebarHeader>"Navigation"</SidebarHeader>
-/// }
+/// };
 /// ```
 #[component]
 pub fn SidebarHeader(
@@ -104,6 +106,7 @@ pub fn SidebarHeader(
 /// # Example
 ///
 /// ```rust
+/// use leptos::prelude::*;
 /// use mosaic_tiles::sidebar::*;
 ///
 /// view! {
@@ -112,7 +115,7 @@ pub fn SidebarHeader(
 ///             // Menu items
 ///         </SidebarGroup>
 ///     </SidebarContent>
-/// }
+/// };
 /// ```
 #[component]
 pub fn SidebarContent(
@@ -141,6 +144,7 @@ pub fn SidebarContent(
 /// # Example
 ///
 /// ```rust
+/// use leptos::prelude::*;
 /// use mosaic_tiles::sidebar::*;
 ///
 /// view! {
@@ -148,7 +152,7 @@ pub fn SidebarContent(
 ///         <a href="/dashboard">"Dashboard"</a>
 ///         <a href="/settings">"Settings"</a>
 ///     </SidebarGroup>
-/// }
+/// };
 /// ```
 #[component]
 pub fn SidebarGroup(
@@ -190,13 +194,14 @@ pub fn SidebarGroup(
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,no_run
+/// use leptos::prelude::*;
 /// use mosaic_tiles::sidebar::*;
 ///
 /// // With context (inside Sidebar)
 /// view! {
 ///     <SidebarTrigger />
-/// }
+/// };
 ///
 /// // With explicit signal (outside Sidebar)
 /// let is_open = RwSignal::new(false);
@@ -205,7 +210,7 @@ pub fn SidebarGroup(
 ///     <Sidebar open=is_open>
 ///         // ...
 ///     </Sidebar>
-/// }
+/// };
 /// ```
 #[component]
 pub fn SidebarTrigger(

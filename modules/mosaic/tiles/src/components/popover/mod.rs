@@ -19,7 +19,8 @@ pub struct PopoverTriggerContext {}
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,no_run
+/// use leptos::prelude::*;
 /// use mosaic_tiles::popover::*;
 /// use mosaic_tiles::button::*;
 ///
@@ -32,7 +33,7 @@ pub struct PopoverTriggerContext {}
 ///             <p>"Popover content goes here"</p>
 ///         </PopoverContent>
 ///     </Popover>
-/// }
+/// };
 /// ```
 #[component]
 pub fn Popover(
@@ -64,7 +65,8 @@ pub fn Popover(
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,no_run
+/// use leptos::prelude::*;
 /// use mosaic_tiles::popover::*;
 /// use mosaic_tiles::button::*;
 ///
@@ -72,7 +74,7 @@ pub fn Popover(
 ///     <PopoverTrigger>
 ///         <Button>"Click me"</Button>
 ///     </PopoverTrigger>
-/// }
+/// };
 /// ```
 #[component]
 pub fn PopoverTrigger(
@@ -100,7 +102,8 @@ pub fn PopoverTrigger(
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,no_run
+/// use leptos::prelude::*;
 /// use mosaic_tiles::popover::*;
 ///
 /// view! {
@@ -110,7 +113,7 @@ pub fn PopoverTrigger(
 ///             <p>"Content goes here"</p>
 ///         </div>
 ///     </PopoverContent>
-/// }
+/// };
 /// ```
 #[component]
 pub fn PopoverContent(

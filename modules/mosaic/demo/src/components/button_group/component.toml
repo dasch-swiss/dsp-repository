@@ -12,7 +12,7 @@ title = "Size Variants"
 description = "Button groups in small, medium, and large sizes"
 
 [[examples]]
-name = "selection"
+name = "interactive"
 title = "Interactive Example"
 description = "Interactive button group with click handlers"
 

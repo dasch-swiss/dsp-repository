@@ -3,7 +3,7 @@ use mosaic_tiles::button::{Button, ButtonVariant};
 use mosaic_tiles::button_group::*;
 
 #[component]
-pub fn SelectionExample() -> impl IntoView {
+pub fn InteractiveExample() -> impl IntoView {
     let (count, set_count) = signal(0);
 
     view! {

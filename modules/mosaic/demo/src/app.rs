@@ -39,27 +39,27 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <script>
                     {r#"
                     window.addEventListener('load', function() {
-                       setTimeout(function() {
-                           if (window.Prism) {
-                               Prism.highlightAll();
-                           }
-                       }, 100);
+                      setTimeout(function() {
+                          if (window.Prism) {
+                              Prism.highlightAll();
+                          }
+                      }, 100);
                     });
                     // Also trigger on route changes and close all details elements
                     let lastPath = window.location.pathname;
                     setInterval(function() {
-                       if (window.location.pathname !== lastPath) {
-                           lastPath = window.location.pathname;
-                           // Close all open details elements
-                           document.querySelectorAll('details[open]').forEach(function(details) {
-                               details.removeAttribute('open');
-                           });
-                           setTimeout(function() {
-                               if (window.Prism) {
-                                   Prism.highlightAll();
-                               }
-                           }, 100);
-                       }
+                      if (window.location.pathname !== lastPath) {
+                          lastPath = window.location.pathname;
+                          // Close all open details elements
+                          document.querySelectorAll('details[open]').forEach(function(details) {
+                              details.removeAttribute('open');
+                          });
+                          setTimeout(function() {
+                              if (window.Prism) {
+                                  Prism.highlightAll();
+                              }
+                          }, 100);
+                      }
                     }, 500);
                     "#}
                 </script>

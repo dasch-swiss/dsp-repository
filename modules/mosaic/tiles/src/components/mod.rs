@@ -22,6 +22,9 @@ pub mod icon;
 #[cfg(feature = "link")]
 pub mod link;
 
+#[cfg(feature = "popover")]
+pub mod popover;
+
 #[cfg(feature = "sidebar")]
 pub mod sidebar;
 

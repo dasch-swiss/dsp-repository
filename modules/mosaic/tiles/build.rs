@@ -114,6 +114,7 @@ fn main() {
         "card",
         "icon",
         "link",
+        "popover",
         "sidebar",
         "tabs"
     );

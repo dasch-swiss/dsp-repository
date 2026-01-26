@@ -23,6 +23,11 @@ pub mod link {
     pub use crate::components::link::*;
 }
 
+#[cfg(feature = "popover")]
+pub mod popover {
+    pub use crate::components::popover::*;
+}
+
 #[cfg(feature = "sidebar")]
 pub mod sidebar {
     pub use crate::components::sidebar::*;

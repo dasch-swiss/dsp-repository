@@ -6,4 +6,5 @@ pub mod button_group;
 pub mod card;
 pub mod icon;
 pub mod link;
+pub mod popover;
 pub mod tabs;

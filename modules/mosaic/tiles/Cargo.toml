@@ -25,6 +25,7 @@ default = [
   "card",
   "icon",
   "link",
+  "popover",
   "sidebar",
   "tabs",
   "theme_provider",
@@ -37,6 +38,7 @@ button_group = ["button"]
 card = []
 icon = []
 link = ["button"]
+popover = ["button"]
 sidebar = ["icon"]
 tabs = []
 theme_provider = []

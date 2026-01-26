@@ -127,10 +127,7 @@ pub fn PopoverContent(
     let context = expect_context::<PopoverContext>();
 
     // Generate ID once using StoredValue to ensure consistency across SSR and hydration
-    let menu_id = StoredValue::new(
-        id.get()
-            .unwrap_or_else(|| format!("popover-{}", uuid::Uuid::new_v4())),
-    );
+    let menu_id = StoredValue::new(id.get().unwrap_or_else(|| format!("popover-{}", uuid::Uuid::new_v4())));
 
     // Set the menu_id in context so the trigger can access it
     Effect::new(move |_| {

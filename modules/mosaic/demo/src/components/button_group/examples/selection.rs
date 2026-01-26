@@ -11,8 +11,11 @@ pub fn SelectionExample() -> impl IntoView {
             <p class="text-sm text-gray-600">"Count: " {move || count.get()}</p>
 
             <ButtonGroup>
-                <Button variant=ButtonVariant::Outline>
-                    on:click=move |_| set_count.update(|n| *n -= 1) "-"
+                <Button
+                    variant=ButtonVariant::Outline
+                    on:click=move |_| set_count.update(|n| *n -= 1)
+                >
+                    "-"
                 </Button>
                 <Button variant=ButtonVariant::Outline on:click=move |_| set_count.set(0)>
                     "Reset"

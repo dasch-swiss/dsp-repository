@@ -38,10 +38,10 @@ tower-http = { version = "0.6.8", features = ["trace", "fs", "cors"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 url = { version = "2", features = ["serde"] }
-uuid = { version = "1.2.2", features = ["v7"] }
+uuid = { version = "1.20.0", features = ["v7"] }
 pulldown-cmark = "0.12"
 glob = "0.3.3"
 rusqlite = { version = "0.38.0", features = ["bundled"] }
-rusqlite_migration = { version = "2.4.0" }
+rusqlite_migration = { version = "2.4.1" }
 r2d2 = { version = "0.8.10" }
 r2d2_sqlite = { version = "0.32.0" }

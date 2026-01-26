@@ -52,10 +52,7 @@ pub fn Link(
         <a
             href=move || if is_disabled.get() { "#".to_string() } else { href.clone() }
             class=move || {
-                format!(
-                    "link {}",
-                    if is_disabled.get() { "link-disabled" } else { "" },
-                )
+                format!("link {}", if is_disabled.get() { "link-disabled" } else { "" })
             }
             target=target
             rel=rel

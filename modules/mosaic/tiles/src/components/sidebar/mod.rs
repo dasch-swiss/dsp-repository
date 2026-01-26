@@ -50,15 +50,13 @@ pub fn Sidebar(
     provide_context(SidebarContext { is_open });
 
     view! {
-        <aside
-            class=move || {
-                format!(
-                    "sidebar {} {}",
-                    if is_open.get() { "sidebar-open" } else { "sidebar-closed" },
-                    class.get().unwrap_or_default()
-                )
-            }
-        >
+        <aside class=move || {
+            format!(
+                "sidebar {} {}",
+                if is_open.get() { "sidebar-open" } else { "sidebar-closed" },
+                class.get().unwrap_or_default(),
+            )
+        }>
             {if let Some(children) = children {
                 Either::Left(children())
             } else {
@@ -89,7 +87,9 @@ pub fn SidebarHeader(
     children: Option<Children>,
 ) -> impl IntoView {
     view! {
-        <div class=move || format!("sidebar-header {}", class.get().unwrap_or_default())>
+        <div class=move || {
+            format!("sidebar-header {}", class.get().unwrap_or_default())
+        }>
             {if let Some(children) = children {
                 Either::Left(children())
             } else {
@@ -124,7 +124,9 @@ pub fn SidebarContent(
     children: Option<Children>,
 ) -> impl IntoView {
     view! {
-        <div class=move || format!("sidebar-content {}", class.get().unwrap_or_default())>
+        <div class=move || {
+            format!("sidebar-content {}", class.get().unwrap_or_default())
+        }>
             {if let Some(children) = children {
                 Either::Left(children())
             } else {
@@ -161,12 +163,12 @@ pub fn SidebarGroup(
     children: Option<Children>,
 ) -> impl IntoView {
     view! {
-        <div class=move || format!("sidebar-group {}", class.get().unwrap_or_default())>
+        <div class=move || {
+            format!("sidebar-group {}", class.get().unwrap_or_default())
+        }>
             {move || {
                 if let Some(label_text) = label.get() {
-                    Either::Left(view! {
-                        <div class="sidebar-group-label">{label_text}</div>
-                    })
+                    Either::Left(view! { <div class="sidebar-group-label">{label_text}</div> })
                 } else {
                     Either::Right(())
                 }
@@ -239,17 +241,9 @@ pub fn SidebarTrigger(
                 Either::Left(children())
             } else {
                 #[cfg(feature = "icon")]
-                {
-                    Either::Right(view! {
-                        <Icon icon=Hamburger class="w-6 h-6" />
-                    })
-                }
+                { Either::Right(view! { <Icon icon=Hamburger class="w-6 h-6" /> }) }
                 #[cfg(not(feature = "icon"))]
-                {
-                    Either::Right(view! {
-                        <span class="sidebar-trigger-icon"></span>
-                    })
-                }
+                { Either::Right(view! { <span class="sidebar-trigger-icon"></span> }) }
             }}
         </button>
     }

@@ -6,13 +6,7 @@ use mosaic_tiles::tabs::*;
 pub fn WithIconsExample() -> impl IntoView {
     view! {
         <Tabs>
-            <Tab
-                name="icon-tabs"
-                value="search"
-                label="Search"
-                icon=IconSearch
-                checked=true
-            >
+            <Tab name="icon-tabs" value="search" label="Search" icon=IconSearch checked=true>
                 <div class="space-y-2">
                     <h3 class="text-lg font-semibold flex items-center gap-2">
                         <Icon icon=IconSearch class="w-5 h-5" />
@@ -28,12 +22,7 @@ pub fn WithIconsExample() -> impl IntoView {
                     </div>
                 </div>
             </Tab>
-            <Tab
-                name="icon-tabs"
-                value="github"
-                label="GitHub"
-                icon=IconGitHub
-            >
+            <Tab name="icon-tabs" value="github" label="GitHub" icon=IconGitHub>
                 <div class="space-y-2">
                     <h3 class="text-lg font-semibold flex items-center gap-2">
                         <Icon icon=IconGitHub class="w-5 h-5" />
@@ -48,12 +37,7 @@ pub fn WithIconsExample() -> impl IntoView {
                     </a>
                 </div>
             </Tab>
-            <Tab
-                name="icon-tabs"
-                value="linkedin"
-                label="LinkedIn"
-                icon=IconLinkedIn
-            >
+            <Tab name="icon-tabs" value="linkedin" label="LinkedIn" icon=IconLinkedIn>
                 <div class="space-y-2">
                     <h3 class="text-lg font-semibold flex items-center gap-2">
                         <Icon icon=IconLinkedIn class="w-5 h-5" />

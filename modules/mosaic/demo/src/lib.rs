@@ -1,6 +1,5 @@
 pub mod app;
 pub mod components;
-pub mod counter;
 
 // Generate component documentation pages from TOML
 demo_macro::generate_component_pages!();

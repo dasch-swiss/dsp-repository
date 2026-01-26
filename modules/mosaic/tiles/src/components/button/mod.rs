@@ -1,5 +1,4 @@
 use leptos::either::Either;
-use leptos::ev::MouseEvent;
 use leptos::prelude::*;
 
 #[derive(Debug, Clone, Default)]
@@ -39,19 +38,9 @@ pub fn Button(
     #[prop(optional, into)]
     button_type: MaybeProp<ButtonType>,
     #[prop(optional)] children: Option<Children>,
-    #[prop(optional, into)] on_click: Option<Callback<MouseEvent>>,
     #[prop(optional)] variant: ButtonVariant,
 ) -> impl IntoView {
     let btn_disabled = Memo::new(move |_| disabled.get().unwrap_or(false));
-    let on_click = move |e| {
-        if btn_disabled.get() {
-            return;
-        }
-        let Some(on_click) = on_click.as_ref() else {
-            return;
-        };
-        on_click.run(e);
-    };
 
     view! {
         <button
@@ -68,7 +57,6 @@ pub fn Button(
                 )
             }
             disabled=btn_disabled.get()
-            on:click=on_click
             type=move || button_type.get().unwrap_or_default().to_string()
         >
             {if let Some(children) = children {

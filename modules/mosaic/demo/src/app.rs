@@ -38,29 +38,29 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 // Trigger Prism.js after Leptos hydration
                 <script>
                     {r#"
-                      window.addEventListener('load', function() {
-                          setTimeout(function() {
-                              if (window.Prism) {
-                                  Prism.highlightAll();
-                              }
-                          }, 100);
-                      });
-                      // Also trigger on route changes and close all details elements
-                      let lastPath = window.location.pathname;
-                      setInterval(function() {
-                          if (window.location.pathname !== lastPath) {
-                              lastPath = window.location.pathname;
-                              // Close all open details elements
-                              document.querySelectorAll('details[open]').forEach(function(details) {
-                                  details.removeAttribute('open');
-                              });
-                              setTimeout(function() {
-                                  if (window.Prism) {
-                                      Prism.highlightAll();
-                                  }
-                              }, 100);
-                          }
-                      }, 500);
+                    window.addEventListener('load', function() {
+                        setTimeout(function() {
+                            if (window.Prism) {
+                                Prism.highlightAll();
+                            }
+                        }, 100);
+                    });
+                    // Also trigger on route changes and close all details elements
+                    let lastPath = window.location.pathname;
+                    setInterval(function() {
+                        if (window.location.pathname !== lastPath) {
+                            lastPath = window.location.pathname;
+                            // Close all open details elements
+                            document.querySelectorAll('details[open]').forEach(function(details) {
+                                details.removeAttribute('open');
+                            });
+                            setTimeout(function() {
+                                if (window.Prism) {
+                                    Prism.highlightAll();
+                                }
+                            }, 100);
+                        }
+                    }, 500);
                     "#}
                 </script>
             </body>
@@ -100,183 +100,183 @@ fn AppContent() -> impl IntoView {
     let is_active = move |path: &str| location.pathname.get() == path;
 
     view! {
-                <div class="min-h-screen bg-gray-50 flex flex-col">
-                    // Top bar with sidebar trigger
-                    <div class="bg-white border-b border-gray-200 sticky top-0 z-40">
-                        <div class="flex items-center h-16 px-4 sm:px-6 lg:px-8">
-                            <SidebarTrigger is_open=sidebar_open class="mr-4" />
-                            <A href="/" attr:class="flex items-center hover:opacity-80 transition-opacity">
-                                <img src="/mosaic_logo_sm.svg" alt="Mosaic Logo" class="h-6 w-6 mr-3" />
-                                <h1 class="text-xl font-semibold text-gray-900">"Mosaic Tiles Demo"</h1>
-                            </A>
-                        </div>
-                    </div>
-
-                    // Flex container for sidebar and content
-                    <div class="flex flex-1 overflow-hidden">
-                        // Sidebar navigation
-                        <Sidebar open=sidebar_open>
-                            <SidebarHeader>"Navigation"</SidebarHeader>
-                            <SidebarContent>
-                                <SidebarGroup>
-                                    <A
-                                        href="/"
-                                        attr:class=move || {
-                                            if is_active("/") {
-                                                "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
-                                            } else {
-                                                "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                            }
-                                        }
-                                    >
-                                        "Home"
-                                    </A>
-                                </SidebarGroup>
-                                <SidebarGroup label="Components">
-                                    <A
-                                        href="/accordion"
-                                        attr:class=move || {
-                                            if is_active("/accordion") {
-                                                "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
-                                            } else {
-                                                "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                            }
-                                        }
-                                    >
-                                        "Accordion"
-                                    </A>
-                                    <A
-                                        href="/badge"
-                                        attr:class=move || {
-                                            if is_active("/badge") {
-                                                "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
-                                            } else {
-                                                "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                            }
-                                        }
-                                    >
-                                        "Badge"
-                                    </A>
-                                    <A
-                                        href="/breadcrumb"
-                                        attr:class=move || {
-                                            if is_active("/breadcrumb") {
-                                                "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
-                                            } else {
-                                                "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                            }
-                                        }
-                                    >
-                                        "Breadcrumb"
-                                    </A>
-                                    <A
-                                        href="/button"
-                                        attr:class=move || {
-                                            if is_active("/button") {
-                                                "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
-                                            } else {
-                                                "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                            }
-                                        }
-                                    >
-                                        "Button"
-                                    </A>
-                                    <A
-                                        href="/button-group"
-                                        attr:class=move || {
-                                            if is_active("/button-group") {
-                                                "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
-                                            } else {
-                                                "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                            }
-                                        }
-                                    >
-                                        "Button Group"
-                                    </A>
-                                    <A
-                                        href="/card"
-                                        attr:class=move || {
-                                            if is_active("/card") {
-                                                "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
-                                            } else {
-                                                "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                            }
-                                        }
-                                    >
-                                        "Card"
-                                    </A>
-                                    <A
-                                        href="/icon"
-                                        attr:class=move || {
-                                            if is_active("/icon") {
-                                                "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
-                                            } else {
-                                                "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                            }
-                                        }
-                                    >
-                                        "Icon"
-                                    </A>
-                                    <A
-                                        href="/link"
-                                        attr:class=move || {
-                                            if is_active("/link") {
-                                                "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
-                                            } else {
-                                                "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                            }
-                                        }
-                                    >
-                                        "Link"
-                                    </A>
-                                    <A
-                                        href="/popover"
-                                        attr:class=move || {
-                                            if is_active("/popover") {
-                                                "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
-                                            } else {
-                                                "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                            }
-                                        }
-                                    >
-                                        "Popover"
-                                    </A>
-                                    <A
-                                        href="/tabs"
-                                        attr:class=move || {
-                                            if is_active("/tabs") {
-                                                "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
-                                            } else {
-                                                "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                            }
-                                        }
-                                    >
-                                        "Tabs"
-                                    </A>
-                                </SidebarGroup>
-                            </SidebarContent>
-                        </Sidebar>
-
-                        // Main content area
-                        <main class="flex-1 overflow-y-auto">
-                            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                                <Routes fallback=|| "Page not found.".into_view()>
-                                    <Route path=StaticSegment("") view=HomePage />
-                                    <Route path=StaticSegment("accordion") view=AccordionRoute />
-                                    <Route path=StaticSegment("badge") view=BadgeRoute />
-                                    <Route path=StaticSegment("breadcrumb") view=BreadcrumbRoute />
-                                    <Route path=StaticSegment("button") view=ButtonRoute />
-                                    <Route path=StaticSegment("button-group") view=ButtonGroupRoute />
-                                    <Route path=StaticSegment("card") view=CardRoute />
-                                    <Route path=StaticSegment("icon") view=IconRoute />
-                                    <Route path=StaticSegment("link") view=LinkRoute />
-                                    <Route path=StaticSegment("popover") view=PopoverRoute />
-                                    <Route path=StaticSegment("tabs") view=TabsRoute />
-                                </Routes>
-                            </div>
-                        </main>
-                    </div>
+        <div class="min-h-screen bg-gray-50 flex flex-col">
+            // Top bar with sidebar trigger
+            <div class="bg-white border-b border-gray-200 sticky top-0 z-40">
+                <div class="flex items-center h-16 px-4 sm:px-6 lg:px-8">
+                    <SidebarTrigger is_open=sidebar_open class="mr-4" />
+                    <A href="/" attr:class="flex items-center hover:opacity-80 transition-opacity">
+                        <img src="/mosaic_logo_sm.svg" alt="Mosaic Logo" class="h-6 w-6 mr-3" />
+                        <h1 class="text-xl font-semibold text-gray-900">"Mosaic Tiles Demo"</h1>
+                    </A>
                 </div>
+            </div>
+
+            // Flex container for sidebar and content
+            <div class="flex flex-1 overflow-hidden">
+                // Sidebar navigation
+                <Sidebar open=sidebar_open>
+                    <SidebarHeader>"Navigation"</SidebarHeader>
+                    <SidebarContent>
+                        <SidebarGroup>
+                            <A
+                                href="/"
+                                attr:class=move || {
+                                    if is_active("/") {
+                                        "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
+                                    } else {
+                                        "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    }
+                                }
+                            >
+                                "Home"
+                            </A>
+                        </SidebarGroup>
+                        <SidebarGroup label="Components">
+                            <A
+                                href="/accordion"
+                                attr:class=move || {
+                                    if is_active("/accordion") {
+                                        "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
+                                    } else {
+                                        "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    }
+                                }
+                            >
+                                "Accordion"
+                            </A>
+                            <A
+                                href="/badge"
+                                attr:class=move || {
+                                    if is_active("/badge") {
+                                        "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
+                                    } else {
+                                        "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    }
+                                }
+                            >
+                                "Badge"
+                            </A>
+                            <A
+                                href="/breadcrumb"
+                                attr:class=move || {
+                                    if is_active("/breadcrumb") {
+                                        "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
+                                    } else {
+                                        "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    }
+                                }
+                            >
+                                "Breadcrumb"
+                            </A>
+                            <A
+                                href="/button"
+                                attr:class=move || {
+                                    if is_active("/button") {
+                                        "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
+                                    } else {
+                                        "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    }
+                                }
+                            >
+                                "Button"
+                            </A>
+                            <A
+                                href="/button-group"
+                                attr:class=move || {
+                                    if is_active("/button-group") {
+                                        "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
+                                    } else {
+                                        "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    }
+                                }
+                            >
+                                "Button Group"
+                            </A>
+                            <A
+                                href="/card"
+                                attr:class=move || {
+                                    if is_active("/card") {
+                                        "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
+                                    } else {
+                                        "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    }
+                                }
+                            >
+                                "Card"
+                            </A>
+                            <A
+                                href="/icon"
+                                attr:class=move || {
+                                    if is_active("/icon") {
+                                        "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
+                                    } else {
+                                        "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    }
+                                }
+                            >
+                                "Icon"
+                            </A>
+                            <A
+                                href="/link"
+                                attr:class=move || {
+                                    if is_active("/link") {
+                                        "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
+                                    } else {
+                                        "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    }
+                                }
+                            >
+                                "Link"
+                            </A>
+                            <A
+                                href="/popover"
+                                attr:class=move || {
+                                    if is_active("/popover") {
+                                        "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
+                                    } else {
+                                        "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    }
+                                }
+                            >
+                                "Popover"
+                            </A>
+                            <A
+                                href="/tabs"
+                                attr:class=move || {
+                                    if is_active("/tabs") {
+                                        "block px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900"
+                                    } else {
+                                        "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    }
+                                }
+                            >
+                                "Tabs"
+                            </A>
+                        </SidebarGroup>
+                    </SidebarContent>
+                </Sidebar>
+
+                // Main content area
+                <main class="flex-1 overflow-y-auto">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <Routes fallback=|| "Page not found.".into_view()>
+                            <Route path=StaticSegment("") view=HomePage />
+                            <Route path=StaticSegment("accordion") view=AccordionRoute />
+                            <Route path=StaticSegment("badge") view=BadgeRoute />
+                            <Route path=StaticSegment("breadcrumb") view=BreadcrumbRoute />
+                            <Route path=StaticSegment("button") view=ButtonRoute />
+                            <Route path=StaticSegment("button-group") view=ButtonGroupRoute />
+                            <Route path=StaticSegment("card") view=CardRoute />
+                            <Route path=StaticSegment("icon") view=IconRoute />
+                            <Route path=StaticSegment("link") view=LinkRoute />
+                            <Route path=StaticSegment("popover") view=PopoverRoute />
+                            <Route path=StaticSegment("tabs") view=TabsRoute />
+                        </Routes>
+                    </div>
+                </main>
+            </div>
+        </div>
     }
 }
 
@@ -297,7 +297,9 @@ fn HomePage() -> impl IntoView {
                 <section>
                     <h2 class="text-2xl font-semibold mb-4">"Architecture"</h2>
                     <ul class="space-y-2 text-gray-700">
-                        <li>"• Built on Leptos 0.8 for server-side rendering and reactive web applications"</li>
+                        <li>
+                            "• Built on Leptos 0.8 for server-side rendering and reactive web applications"
+                        </li>
                         <li>"• Styled with Tailwind CSS v4 utility classes"</li>
                         <li>"• Feature flags enable opt-in component inclusion"</li>
                         <li>"• CSS bundling happens at build time via build.rs"</li>
@@ -328,20 +330,14 @@ fn HomePage() -> impl IntoView {
                         <code class="language-rust">
                             {"use leptos::prelude::*;\n"}
                             {"use leptos_router::components::{Router, Routes, Route};\n"}
-                            {"use mosaic_tiles::{ThemeProvider, Button};\n\n"}
-                            {"#[component]\n"}
-                            {"pub fn App() -> impl IntoView {\n"}
-                            {"    view! {\n"}
-                            {"        <ThemeProvider>\n"}
-                            {"            <Router>\n"}
+                            {"use mosaic_tiles::{ThemeProvider, Button};\n\n"} {"#[component]\n"}
+                            {"pub fn App() -> impl IntoView {\n"} {"    view! {\n"}
+                            {"        <ThemeProvider>\n"} {"            <Router>\n"}
                             {"                <main>\n"}
                             {"                    <Routes fallback=|| \"Not found\".into_view()>\n"}
                             {"                        <Route path=StaticSegment(\"\") view=HomePage />\n"}
-                            {"                    </Routes>\n"}
-                            {"                </main>\n"}
-                            {"            </Router>\n"}
-                            {"        </ThemeProvider>\n"}
-                            {"    }\n"}
+                            {"                    </Routes>\n"} {"                </main>\n"}
+                            {"            </Router>\n"} {"        </ThemeProvider>\n"} {"    }\n"}
                             {"}"}
                         </code>
                     </pre>

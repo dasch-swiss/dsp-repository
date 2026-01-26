@@ -128,7 +128,13 @@ pub fn PopoverContent(
     };
 
     view! {
-        <div class=move || if context.is_open.get() { "popover-wrapper popover-wrapper-open" } else { "popover-wrapper" }>
+        <div class=move || {
+            if context.is_open.get() {
+                "popover-wrapper popover-wrapper-open"
+            } else {
+                "popover-wrapper"
+            }
+        }>
             <div class="popover-overlay" on:click=close_popover></div>
             <div class="popover-content" on:click=prevent_close>
                 {if let Some(children) = children {

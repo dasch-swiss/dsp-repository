@@ -27,25 +27,29 @@ pub fn BreadcrumbItem(
     view! {
         <li class="breadcrumb-item">
             {if let Some(href) = href {
-                Either::Left(view! {
-                    <a href=href class="breadcrumb-link">
-                        {if let Some(children) = children {
-                            Either::Left(children())
-                        } else {
-                            Either::Right(())
-                        }}
-                    </a>
-                })
+                Either::Left(
+                    view! {
+                        <a href=href class="breadcrumb-link">
+                            {if let Some(children) = children {
+                                Either::Left(children())
+                            } else {
+                                Either::Right(())
+                            }}
+                        </a>
+                    },
+                )
             } else {
-                Either::Right(view! {
-                    <span class="breadcrumb-current" aria-current="page">
-                        {if let Some(children) = children {
-                            Either::Left(children())
-                        } else {
-                            Either::Right(())
-                        }}
-                    </span>
-                })
+                Either::Right(
+                    view! {
+                        <span class="breadcrumb-current" aria-current="page">
+                            {if let Some(children) = children {
+                                Either::Left(children())
+                            } else {
+                                Either::Right(())
+                            }}
+                        </span>
+                    },
+                )
             }}
         </li>
     }

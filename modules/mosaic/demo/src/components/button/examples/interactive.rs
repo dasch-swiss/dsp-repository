@@ -9,11 +9,18 @@ pub fn InteractiveExample() -> impl IntoView {
     view! {
         <div class="space-y-4">
             <div class="flex gap-4 items-center">
-                <Button disabled=disabled on_click=move |_| set_count.update(|n| *n += 1)>
+                <Button
+                    disabled=disabled
+                    on:click=move |_| {
+                        if !disabled.get() {
+                            set_count.update(|n| *n += 1)
+                        }
+                    }
+                >
                     "Increment: "
                     {count}
                 </Button>
-                <Button variant=ButtonVariant::Secondary on_click=move |_| set_count.set(0)>
+                <Button variant=ButtonVariant::Secondary on:click=move |_| set_count.set(0)>
                     "Reset"
                 </Button>
             </div>
@@ -27,7 +34,7 @@ pub fn InteractiveExample() -> impl IntoView {
 
             <Button
                 variant=ButtonVariant::Secondary
-                on_click=move |_| set_disabled.update(|b| *b = !*b)
+                on:click=move |_| set_disabled.update(|b| *b = !*b)
             >
                 {move || if disabled.get() { "Enable" } else { "Disable" }}
                 " increment button"

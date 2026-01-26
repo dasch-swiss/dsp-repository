@@ -133,10 +133,10 @@ pub fn Tab(
             checked=is_checked.get()
         />
         <label class="tab-label" for=input_id>
-            {
-                #[cfg(feature = "icon")]
-                if let Some(icon_data) = icon {
-                    Either::Left(view! {
+            {#[cfg(feature = "icon")]
+            if let Some(icon_data) = icon {
+                Either::Left(
+                    view! {
                         <svg
                             class="tab-icon"
                             xmlns="http://www.w3.org/2000/svg"
@@ -144,15 +144,13 @@ pub fn Tab(
                             fill="currentColor"
                             inner_html=icon_data.data
                         ></svg>
-                    })
-                } else {
-                    Either::Right(())
-                }
-            }
-            {
-                #[cfg(not(feature = "icon"))]
-                ()
-            }
+                    },
+                )
+            } else {
+                Either::Right(())
+            }}
+            {#[cfg(not(feature = "icon"))]
+            ()}
             <span>{label}</span>
         </label>
         <div class="tab-panel">

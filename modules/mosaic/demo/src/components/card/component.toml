@@ -1,0 +1,83 @@
+name = "Card"
+description = "A flexible container component for grouping related content with optional header, body, and footer sections."
+
+[[examples]]
+name = "variants"
+title = "Card Variants"
+description = "Available card styles: Simple, Bordered, Elevated, and AutoHover"
+
+[[examples]]
+name = "with_header_footer"
+title = "Card with Header and Footer"
+description = "Complete card with all sections and action buttons"
+
+[[examples]]
+name = "interactive"
+title = "Interactive Card"
+description = "Card with structured content for user profiles"
+
+[[examples]]
+name = "with_images"
+title = "Cards with Images"
+description = "Various ways to incorporate images in cards"
+
+[[examples]]
+name = "with_icons"
+title = "Cards with Icons"
+description = "Using icons to enhance card content"
+
+[[references]]
+name = "Card"
+description = "Main card container component."
+extra = "Implements standard HTML attributes."
+
+[[references.attrs]]
+attr = "variant"
+attr_type = "CardVariant"
+default = "Default"
+description = "Visual style variant: Default, Bordered, Elevated, or AutoHover"
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Card content (typically CardHeader, CardBody, CardFooter)"
+
+[[references.attrs]]
+attr = "class"
+attr_type = "String"
+default = "\"\""
+description = "Additional CSS classes"
+
+[[references]]
+name = "CardHeader"
+description = "Top section of the card, typically containing titles and metadata."
+extra = "Implements standard HTML attributes."
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Header content"
+
+[[references]]
+name = "CardBody"
+description = "Main content area of the card."
+extra = "Implements standard HTML attributes."
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Body content"
+
+[[references]]
+name = "CardFooter"
+description = "Bottom section of the card, typically containing actions or supplementary information."
+extra = "Implements standard HTML attributes."
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Footer content"

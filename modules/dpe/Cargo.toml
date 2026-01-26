@@ -32,3 +32,7 @@ tower-http.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
 url.workspace = true
+rusqlite.workspace = true
+rusqlite_migration.workspace = true
+r2d2.workspace = true
+r2d2_sqlite.workspace = true

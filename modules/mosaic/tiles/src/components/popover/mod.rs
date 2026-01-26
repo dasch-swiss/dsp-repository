@@ -146,7 +146,7 @@ pub fn PopoverContent(
                 )
             }
             id=menu_id.get_value()
-            popover="manual"
+            popover="auto"
         >
             {if let Some(children) = children {
                 Either::Left(children())

@@ -7,12 +7,12 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-leptos = { version = "0.8.0" }
-leptos_meta = "0.8.5"
-console_error_panic_hook = { version = "0.1", optional = true }
-wasm-bindgen = { version = "0.2.106", optional = true }
-icondata = { version = "0.7" }
-uuid = { version = "1.11", features = ["v4", "js"] }
+leptos.workspace = true
+leptos_meta.workspace = true
+console_error_panic_hook = { workspace = true, optional = true }
+wasm-bindgen = { workspace = true, optional = true }
+icondata = "0.7"
+uuid.workspace = true
 
 [features]
 hydrate = ["leptos/hydrate", "dep:console_error_panic_hook", "dep:wasm-bindgen"]
@@ -46,4 +46,4 @@ theme_provider = []
 
 [build-dependencies]
 reqwest = { version = "0.13.1", features = ["blocking"] }
-sha256 = { version = "1.6.0" }
+sha256 = "1.6.0"

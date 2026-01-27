@@ -15,6 +15,7 @@ pub mod table_of_contents;
 pub mod themeswitcher;
 pub mod url_badge;
 pub mod project_filters;
+pub mod project_pagination;
 
 pub use card::ProjectCard;
 pub use contributor::Contributor;
@@ -33,3 +34,4 @@ pub use statusbadge::ProjectStatusBadge;
 pub use table_of_contents::TableOfContents;
 pub use themeswitcher::ThemeSwitcher;
 pub use url_badge::UrlBadge;
+pub use project_pagination::ProjectPagination;

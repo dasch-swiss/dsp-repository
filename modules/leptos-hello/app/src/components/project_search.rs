@@ -7,13 +7,10 @@ use leptos::prelude::*;
 #[component]
 pub fn ProjectSearch(nr_pages: i32, total_items: i32, query: ProjectQuery) -> impl IntoView {
     let current_page = query.page();
-    let ongoing = query.ongoing();
-    let finished = query.finished();
-    let search = query.search();
     view! {
         <div class="flex flex-col gap-4">
-            // Filters island - programmatic navigation
-            <ProjectFilters ongoing=ongoing search=search.clone() />
+            // Filters component - reads URL parameters directly
+            <ProjectFilters />
 
             // Pagination - plain HTML links (MPA style)
             <div class="flex items-center gap-4">

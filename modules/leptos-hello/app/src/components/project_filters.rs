@@ -1,8 +1,17 @@
 use leptos::prelude::*;
+use leptos_router::hooks::use_query;
+use crate::domain::ProjectQuery;
 
 // Regular component for filters and search - uses simple links that reload the page
 #[component]
-pub fn ProjectFilters(ongoing: bool, search: String) -> impl IntoView {
+pub fn ProjectFilters() -> impl IntoView {
+    // Use Leptos query for reading URL query parameters
+    let query = use_query::<ProjectQuery>();
+    let current_query = query.get().unwrap_or_default();
+
+    let ongoing = current_query.ongoing();
+    let search = current_query.search();
+
     // Build URL with updated ongoing parameter
     let toggle_ongoing_url = if search.is_empty() {
         format!("/projects?ongoing={}", !ongoing)

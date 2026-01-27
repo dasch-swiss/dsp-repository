@@ -13,7 +13,7 @@ pub fn ProjectSearch(nr_pages: i32, total_items: i32, query: ProjectQuery) -> im
     view! {
         <div class="flex flex-col gap-4">
             // Filters island - programmatic navigation
-            <ProjectFilters ongoing=ongoing finished=finished search=search.clone() />
+            <ProjectFilters ongoing=ongoing search=search.clone() />
 
             // Pagination - plain HTML links (MPA style)
             <div class="flex items-center gap-4">

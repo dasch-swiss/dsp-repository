@@ -2,7 +2,7 @@ use leptos::prelude::*;
 
 #[cfg(feature = "hydrate")]
 use crate::domain::project::ProjectQuery;
-#[cfg(feature = "hydrate")]
+use leptos::logging::log;
 use gloo_history::{BrowserHistory, History};
 
 // Helper function to parse query params from URL
@@ -41,16 +41,15 @@ fn parse_url_params() -> (bool, bool, String) {
 #[allow(unused_variables)]
 pub fn ProjectFilters(ongoing: bool, finished: bool, search: String) -> impl IntoView {
     // Initialize state from URL params on hydration, fallback to props
-    #[cfg(feature = "hydrate")]
+    #[cfg(feature = "hydrate")] {
     let (url_ongoing, url_finished, url_search) = parse_url_params();
-
-    #[cfg(not(feature = "hydrate"))]
-    let (url_ongoing, url_finished, url_search) = (ongoing, finished, search.clone());
+    log!("test hydrate finished: {}", finished);
+    }
 
     // Local state - use URL params if available
-    let (ongoing_checked, set_ongoing_checked) = signal(url_ongoing);
-    let (finished_checked, set_finished_checked) = signal(url_finished);
-    let (search_value, set_search_value) = signal(url_search);
+    let (ongoing_checked, set_ongoing_checked) = signal(ongoing);
+    let (finished_checked, set_finished_checked) = signal(finished);
+    let (search_value, set_search_value) = signal(search);
 
     // Focus the search input on mount
     let search_input_ref = NodeRef::<leptos::html::Input>::new();
@@ -97,7 +96,6 @@ pub fn ProjectFilters(ongoing: bool, finished: bool, search: String) -> impl Int
                     <input
                         type="checkbox"
                         class="checkbox checkbox-primary"
-                        checked
                         prop:checked=move || ongoing_checked.get()
                         on:change=move |ev| {
                             let checked = event_target_checked(&ev);
@@ -115,7 +113,6 @@ pub fn ProjectFilters(ongoing: bool, finished: bool, search: String) -> impl Int
                     <input
                         type="checkbox"
                         class="checkbox checkbox-primary"
-                        checked
                         prop:checked=move || finished_checked.get()
                         on:change=move |ev| {
                             let checked = event_target_checked(&ev);

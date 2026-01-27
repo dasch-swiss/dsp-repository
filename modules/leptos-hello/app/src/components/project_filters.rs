@@ -10,28 +10,46 @@ pub fn ProjectFilters() -> impl IntoView {
     let current_query = query.get().unwrap_or_default();
 
     let ongoing = current_query.ongoing();
+    let finished = current_query.finished();
+    let other = current_query.other();
     let search = current_query.search();
 
-    // Build URL with updated ongoing parameter
-    let toggle_ongoing_url = if search.is_empty() {
-        format!("/projects?ongoing={}", !ongoing)
-    } else {
-        format!("/projects?ongoing={}&search={}", !ongoing, urlencoding::encode(&search))
+    // Helper function to build URL with one parameter toggled
+    let build_url = |toggle_param: &str| {
+        let new_query = ProjectQuery {
+            ongoing: Some(if toggle_param == "ongoing" { !ongoing } else { ongoing }),
+            finished: Some(if toggle_param == "finished" { !finished } else { finished }),
+            other: Some(if toggle_param == "other" { !other } else { other }),
+            search: if search.is_empty() { None } else { Some(search.clone()) },
+            page: Some(1),
+        };
+        format!("/projects{}", new_query.to_query_string())
     };
+
+    // Filter checkbox data
+    let filters = [
+        ("ongoing", "Ongoing", ongoing),
+        ("finished", "Finished", finished),
+        ("other", "other", other),
+    ];
 
     view! {
         <div class="flex flex-col gap-4">
-            // Status filter checkbox
+            // Status filter checkboxes
             <div class="flex gap-4 items-center">
                 <span class="font-semibold">"Filter by Status:"</span>
-                <a href=toggle_ongoing_url class="flex items-center gap-2 cursor-pointer hover:opacity-80">
-                    <input
-                        type="checkbox"
-                        class="checkbox checkbox-primary pointer-events-none"
-                        checked=ongoing
-                    />
-                    <span>"Ongoing"</span>
-                </a>
+                {filters.iter().map(|(param, label, checked)| {
+                    view! {
+                        <a href=build_url(param) class="flex items-center gap-2 cursor-pointer hover:opacity-80">
+                            <input
+                                type="checkbox"
+                                class="checkbox checkbox-primary pointer-events-none"
+                                checked=*checked
+                            />
+                            <span>{*label}</span>
+                        </a>
+                    }
+                }).collect_view()}
             </div>
 
             // Search form
@@ -40,7 +58,11 @@ pub fn ProjectFilters() -> impl IntoView {
                 action="/projects"
                 class="flex gap-4 items-center"
             >
-                <input type="hidden" name="ongoing" value=ongoing.to_string() />
+                {filters.iter().map(|(param, _, checked)| {
+                    view! {
+                        <input type="hidden" name=*param value=checked.to_string() />
+                    }
+                }).collect_view()}
                 <span class="font-semibold">"Search:"</span>
                 <input
                     type="text"

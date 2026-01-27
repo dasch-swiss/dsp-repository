@@ -17,6 +17,7 @@ pub fn ProjectsPage() -> impl IntoView {
             list_projects(
                 query_data.ongoing,
                 query_data.finished,
+                query_data.other,
                 query_data.search,
                 query_data.page,
                 None,

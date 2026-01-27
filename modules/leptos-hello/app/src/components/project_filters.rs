@@ -97,6 +97,7 @@ pub fn ProjectFilters(ongoing: bool, finished: bool, search: String) -> impl Int
                     <input
                         type="checkbox"
                         class="checkbox checkbox-primary"
+                        checked
                         prop:checked=move || ongoing_checked.get()
                         on:change=move |ev| {
                             let checked = event_target_checked(&ev);
@@ -114,6 +115,7 @@ pub fn ProjectFilters(ongoing: bool, finished: bool, search: String) -> impl Int
                     <input
                         type="checkbox"
                         class="checkbox checkbox-primary"
+                        checked
                         prop:checked=move || finished_checked.get()
                         on:change=move |ev| {
                             let checked = event_target_checked(&ev);

@@ -14,6 +14,7 @@ pub mod statusbadge;
 pub mod table_of_contents;
 pub mod themeswitcher;
 pub mod url_badge;
+pub mod project_filters;
 
 pub use card::ProjectCard;
 pub use contributor::Contributor;
@@ -26,6 +27,7 @@ pub use navbar::NavBar;
 pub use organization::Organization;
 pub use organization_name::OrganizationName;
 pub use person::Person;
+pub use project_filters::ProjectFilters;
 pub use project_search::ProjectSearch;
 pub use statusbadge::ProjectStatusBadge;
 pub use table_of_contents::TableOfContents;

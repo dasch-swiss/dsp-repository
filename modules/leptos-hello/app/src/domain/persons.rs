@@ -1,12 +1,15 @@
 use leptos::prelude::*;
 
 use super::person::Person;
+use super::utils::get_data_dir;
 
 #[server]
 pub async fn get_person(id: String) -> Result<Option<Person>, ServerFnError> {
     use std::fs;
+    use std::path::PathBuf;
 
-    let persons_dir = "server/data/persons";
+    let data_dir = get_data_dir();
+    let persons_dir = PathBuf::from(data_dir).join("persons");
 
     // Read all entries in the persons directory
     let entries = fs::read_dir(persons_dir)

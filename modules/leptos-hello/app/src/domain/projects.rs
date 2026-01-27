@@ -2,6 +2,7 @@ use leptos::prelude::*;
 
 use super::models::Page;
 use super::project::{Project, ProjectQuery, ProjectStatus};
+use super::utils::get_data_dir;
 
 #[server]
 pub async fn list_projects(
@@ -18,10 +19,12 @@ pub async fn list_projects(
         page,
     };
     use std::fs;
+    use std::path::PathBuf;
 
     let items_per_page = page_size.unwrap_or(9).max(1) as usize;
 
-    let projects_dir = "server/data/projects";
+    let data_dir = get_data_dir();
+    let projects_dir = PathBuf::from(data_dir).join("projects");
     let mut projects = Vec::new();
 
     // Read all entries in the projects directory
@@ -116,8 +119,10 @@ pub async fn list_projects(
 #[server]
 pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnError> {
     use std::fs;
+    use std::path::PathBuf;
 
-    let projects_dir = "server/data/projects";
+    let data_dir = get_data_dir();
+    let projects_dir = PathBuf::from(data_dir).join("projects");
 
     // Read all entries in the projects directory
     let entries = fs::read_dir(projects_dir)

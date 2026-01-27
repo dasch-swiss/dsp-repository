@@ -5,6 +5,7 @@ pub mod person;
 pub mod persons;
 pub mod project;
 pub mod projects;
+pub mod utils;
 
 pub use organizations::get_organization;
 pub use persons::get_person;

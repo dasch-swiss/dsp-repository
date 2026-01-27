@@ -20,8 +20,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
       id-token: write
     steps:
       - name: Checkout repository
@@ -81,8 +80,8 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
+      issues: write
       id-token: write
       actions: read
     steps:
@@ -95,8 +94,6 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          additional_permissions: |
-            actions: read
 
       - name: Notify on failure
         if: failure()

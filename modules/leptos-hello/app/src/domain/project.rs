@@ -8,7 +8,6 @@ use super::models::AuthorityFileReference;
 pub struct ProjectQuery {
     pub ongoing: Option<bool>,
     pub finished: Option<bool>,
-    pub other: Option<bool>,
     pub search: Option<String>,
     pub page: Option<i32>,
 }
@@ -20,10 +19,6 @@ impl ProjectQuery {
 
     pub fn finished(&self) -> bool {
         self.finished.unwrap_or(true)
-    }
-
-    pub fn other(&self) -> bool {
-        self.other.unwrap_or(true)
     }
 
     pub fn search(&self) -> String {
@@ -42,9 +37,6 @@ impl ProjectQuery {
         }
         if let Some(false) = self.finished {
             parts.push("finished=false".to_string());
-        }
-        if let Some(false) = self.other {
-            parts.push("julien=false".to_string());
         }
         if let Some(ref search) = self.search {
             if !search.is_empty() {

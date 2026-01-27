@@ -13,7 +13,6 @@ pub fn ProjectPagination(nr_pages: i32, total_items: i32, query: ProjectQuery) -
                             page: Some(current_page - 1),
                             ongoing: query.ongoing,
                             finished: query.finished,
-                            other: query.other,
                             search: query.search.clone(),
                         };
                         let prev_url = format!("/projects{}", prev_query.to_query_string());
@@ -37,7 +36,6 @@ pub fn ProjectPagination(nr_pages: i32, total_items: i32, query: ProjectQuery) -
                                 page: Some(page),
                                 ongoing: query.ongoing,
                                 finished: query.finished,
-                                other: query.other,
                                 search: query.search.clone(),
                             };
                             let page_url = format!("/projects{}", page_query.to_query_string());
@@ -58,7 +56,6 @@ pub fn ProjectPagination(nr_pages: i32, total_items: i32, query: ProjectQuery) -
                             page: Some(current_page + 1),
                             ongoing: query.ongoing,
                             finished: query.finished,
-                            other: query.other,
                             search: query.search.clone(),
                         };
                         let next_url = format!("/projects{}", next_query.to_query_string());

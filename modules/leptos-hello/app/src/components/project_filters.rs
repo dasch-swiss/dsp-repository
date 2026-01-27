@@ -11,7 +11,6 @@ pub fn ProjectFilters() -> impl IntoView {
 
     let ongoing = current_query.ongoing();
     let finished = current_query.finished();
-    let other = current_query.other();
     let search = current_query.search();
 
     // Helper function to build URL with one parameter toggled
@@ -19,7 +18,6 @@ pub fn ProjectFilters() -> impl IntoView {
         let new_query = ProjectQuery {
             ongoing: Some(if toggle_param == "ongoing" { !ongoing } else { ongoing }),
             finished: Some(if toggle_param == "finished" { !finished } else { finished }),
-            other: Some(if toggle_param == "other" { !other } else { other }),
             search: if search.is_empty() { None } else { Some(search.clone()) },
             page: Some(1),
         };
@@ -30,7 +28,6 @@ pub fn ProjectFilters() -> impl IntoView {
     let filters = [
         ("ongoing", "Ongoing", ongoing),
         ("finished", "Finished", finished),
-        ("other", "other", other),
     ];
 
     view! {

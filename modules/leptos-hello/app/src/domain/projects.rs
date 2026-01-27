@@ -8,7 +8,6 @@ use super::utils::get_data_dir;
 pub async fn list_projects(
     ongoing: Option<bool>,
     finished: Option<bool>,
-    other: Option<bool>,
     search: Option<String>,
     page: Option<i32>,
     page_size: Option<i32>,
@@ -16,7 +15,6 @@ pub async fn list_projects(
     let query = ProjectQuery {
         ongoing,
         finished,
-        other,
         search,
         page,
     };

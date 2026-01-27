@@ -29,6 +29,13 @@ impl ProjectQuery {
         self.page.unwrap_or(1)
     }
 
+    pub fn with_page(self, page: i32) -> Self {
+        Self {
+            page: Some(page),
+            ..self
+        }
+    }
+
     pub fn to_query_string(&self) -> String {
         let mut parts = Vec::new();
 

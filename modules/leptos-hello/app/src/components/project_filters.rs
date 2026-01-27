@@ -4,13 +4,53 @@ use leptos::prelude::*;
 use crate::domain::project::ProjectQuery;
 #[cfg(feature = "hydrate")]
 use gloo_history::{BrowserHistory, History};
+
+// Helper function to parse query params from URL
+#[cfg(feature = "hydrate")]
+fn parse_url_params() -> (bool, bool, String) {
+    use web_sys::window;
+
+    if let Some(window) = window() {
+        if let Ok(search) = window.location().search() {
+            let params = web_sys::UrlSearchParams::new_with_str(&search).ok();
+            if let Some(params) = params {
+                // If ongoing param exists, parse it; if "false", set to false; otherwise true
+                // If not present at all, default to true
+                let ongoing = match params.get("ongoing") {
+                    Some(v) => v != "false",
+                    None => true,
+                };
+
+                // Same logic for finished
+                let finished = match params.get("finished") {
+                    Some(v) => v != "false",
+                    None => true,
+                };
+
+                let search_text = params.get("search").unwrap_or_default();
+
+                return (ongoing, finished, search_text);
+            }
+        }
+    }
+    (true, true, String::new())
+}
+
 // Island for filters and search - uses programmatic navigation
 #[island]
+#[allow(unused_variables)]
 pub fn ProjectFilters(ongoing: bool, finished: bool, search: String) -> impl IntoView {
-    // Local state
-    let (ongoing_checked, set_ongoing_checked) = signal(ongoing);
-    let (finished_checked, set_finished_checked) = signal(finished);
-    let (search_value, set_search_value) = signal(search);
+    // Initialize state from URL params on hydration, fallback to props
+    #[cfg(feature = "hydrate")]
+    let (url_ongoing, url_finished, url_search) = parse_url_params();
+
+    #[cfg(not(feature = "hydrate"))]
+    let (url_ongoing, url_finished, url_search) = (ongoing, finished, search.clone());
+
+    // Local state - use URL params if available
+    let (ongoing_checked, set_ongoing_checked) = signal(url_ongoing);
+    let (finished_checked, set_finished_checked) = signal(url_finished);
+    let (search_value, set_search_value) = signal(url_search);
 
     // Focus the search input on mount
     let search_input_ref = NodeRef::<leptos::html::Input>::new();

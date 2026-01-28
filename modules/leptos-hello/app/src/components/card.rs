@@ -23,7 +23,7 @@ pub fn ProjectCard(
                     <button class="btn btn-primary">
                         <a href=btn_target>{btn_text}</a>
                     </button>
-                    <ResourceExplorerButton button_text="Explore Resources".to_string() />
+                    <ResourceExplorerButton />
                 </div>
             </div>
         </div>

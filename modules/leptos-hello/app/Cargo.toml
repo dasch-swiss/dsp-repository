@@ -21,7 +21,7 @@ urlencoding = "2.1"
 wasm-bindgen.workspace = true
 gloo-history = "0.2"
 gloo-storage = "0.3"
-web-sys = { version = "0.3", features = ["PopStateEvent", "Window", "Location", "UrlSearchParams", "Storage", "Document", "HtmlDocument", "HtmlElement"] }
+web-sys = { version = "0.3", features = ["PopStateEvent", "Window", "Location", "UrlSearchParams", "Storage", "Document", "HtmlDocument", "HtmlElement", "HtmlDialogElement"] }
 
 [features]
 default = []

@@ -26,6 +26,7 @@ default = [
   "icon",
   "link",
   "popover",
+  "resource_explorer_button",
   "sidebar",
   "tabs",
   "theme_provider",
@@ -39,6 +40,7 @@ card = []
 icon = []
 link = ["button"]
 popover = ["button"]
+resource_explorer_button = ["button"]
 sidebar = ["icon"]
 tabs = []
 theme_provider = []

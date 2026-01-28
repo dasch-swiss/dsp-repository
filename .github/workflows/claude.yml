@@ -10,8 +10,13 @@ on:
   issues:
     types: [ opened, assigned ]
 
+# Prevent multiple Claude runs from interfering with each other
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.number || github.run_id }}
+  cancel-in-progress: false
+
 jobs:
-  # Job 1: Dedicated code review with predefined prompt which triggers on commands: '@claude review' or '/claude-review' posted in the comments of a PR
+  # Job 1: Dedicated code review with predefined prompt which triggers on commands: '@claude review' posted in the comments of a PR
   claude-code-review:
     if: |
       github.event.issue.pull_request &&
@@ -66,11 +71,13 @@ jobs:
       - name: Notify on failure
         if: failure()
         run: |
-          gh pr comment ${{ github.event.issue.number }} --body "⚠️ Claude Code Review failed. Check [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
+          if [ -n "${{ github.event.issue.number }}" ]; then
+            gh pr comment ${{ github.event.issue.number }} --body "⚠️ Claude Code Review failed. Check [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
+          fi
         env:
           GH_TOKEN: ${{ github.token }}
 
-  # Job 2: General Claude assistant (flexible)
+  # Job 2: General Claude assistant (flexible) available on this repository PRs, issues etc. triggered by "@claude <PROMPT>"
   claude-general:
     if: |
       (contains(github.event.comment.body, '@claude') && !contains(github.event.comment.body, '@claude review')) ||

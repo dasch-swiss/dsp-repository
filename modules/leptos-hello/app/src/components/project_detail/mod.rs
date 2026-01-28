@@ -1,0 +1,10 @@
+pub mod project_details;
+pub mod language_tabs;
+pub mod organization_name;
+pub mod url_badge;
+pub mod legal_info;
+pub mod how_to_cite;
+pub mod contributor;
+pub mod person;
+pub mod organization;
+pub mod table_of_contents;

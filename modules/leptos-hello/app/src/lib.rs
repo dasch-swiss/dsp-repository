@@ -71,6 +71,7 @@ pub fn App() -> impl IntoView {
                         <Route path=StaticSegment("about") view=AboutPage />
                         <Route path=path!("projects/:id") view=ProjectPage />
                         <Route path=StaticSegment("data-browser") view=DataBrowserPage />
+                        <Route path=path!("data-browser/:id") view=DataBrowserPage />
                     </Routes>
                 </main>
             </Router>

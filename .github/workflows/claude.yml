@@ -72,7 +72,7 @@ jobs:
         if: failure()
         run: |
           if [ -n "${{ github.event.issue.number }}" ]; then
-            gh pr comment ${{ github.event.issue.number }} --body "⚠️ Claude Code Review failed. Check [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
+            gh issue comment ${{ github.event.issue.number }} --body "⚠️ Claude Code Review failed. Check [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
           fi
         env:
           GH_TOKEN: ${{ github.token }}

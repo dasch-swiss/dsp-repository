@@ -12,14 +12,14 @@ on:
 
 # Prevent multiple Claude runs from interfering with each other
 concurrency:
-  group: claude-${{ github.event.issue.number || github.event.number || github.run_id }}
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number || github.event.number || github.run_id }}
   cancel-in-progress: false
 
 jobs:
   # Job 1: Dedicated code review with predefined prompt which triggers on commands: '@claude review' posted in the comments of a PR
   claude-code-review:
     if: |
-      github.event.issue.pull_request &&
+      (github.event.issue.pull_request || github.event.pull_request) &&
       (contains(github.event.comment.body, '@claude review') || contains(github.event.review.body, '@claude review'))
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -31,7 +31,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number) || github.ref }}
+          ref: ${{ (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || (github.event.pull_request && format('refs/pull/{0}/head', github.event.pull_request.number)) || github.ref }}
           fetch-depth: 1
 
       - name: Run Claude Code Review
@@ -40,7 +40,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
             REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.issue.number }}
+            PR NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
 
             Please review this pull request and provide feedback on:
             - Code quality and best practices
@@ -71,8 +71,9 @@ jobs:
       - name: Notify on failure
         if: failure()
         run: |
-          if [ -n "${{ github.event.issue.number }}" ]; then
-            gh issue comment ${{ github.event.issue.number }} --body "⚠️ Claude Code Review failed. Check [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
+          PR_NUMBER="${{ github.event.issue.number || github.event.pull_request.number }}"
+          if [ -n "$PR_NUMBER" ]; then
+            gh issue comment "$PR_NUMBER" --body "⚠️ Claude Code Review failed. Check [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
           fi
         env:
           GH_TOKEN: ${{ github.token }}
@@ -95,7 +96,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number) || github.ref }}
+          ref: ${{ (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || (github.event.pull_request && format('refs/pull/{0}/head', github.event.pull_request.number)) || github.ref }}
           fetch-depth: 1
 
       - name: Run Claude Code
@@ -106,8 +107,9 @@ jobs:
       - name: Notify on failure
         if: failure()
         run: |
-          if [ -n "${{ github.event.issue.number }}" ]; then
-            gh issue comment ${{ github.event.issue.number }} --body "⚠️ Claude Code failed. Check [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
+          PR_NUMBER="${{ github.event.issue.number || github.event.pull_request.number }}"
+          if [ -n "$PR_NUMBER" ]; then
+            gh issue comment "$PR_NUMBER" --body "⚠️ Claude Code failed. Check [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
           fi
         env:
           GH_TOKEN: ${{ github.token }}

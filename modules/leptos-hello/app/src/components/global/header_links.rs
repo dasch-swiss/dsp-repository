@@ -7,13 +7,13 @@ pub fn HeaderLinks() -> impl IntoView {
     view! {
         <ul class="menu menu-horizontal px-1">
             <li>
-                <a href="/projects">"Three columns"</a>
+                <a href="/data-browser">Data Browser</a>
                         </li>
             <li>
-                <a href="/projects">"Projects"</a>
+                <a href="/projects">Projects</a>
             </li>
             <li>
-                <a href="/about">"About"</a>
+                <a href="/about">About</a>
             </li>
             <li><ThemeSwitcher /></li>
         </ul>

@@ -3,7 +3,6 @@ pub mod project_loader;
 mod project_detail;
 mod dashboard;
 mod global;
-
 pub use dashboard::card::ProjectCard;
 pub use project_detail::contributor::Contributor;
 pub use global::footer::Footer;

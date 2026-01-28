@@ -10,6 +10,7 @@ pub fn ProjectCard(
     status: ProjectStatus,
     btn_text: String,
     btn_target: String,
+    shortcode: String,
 ) -> impl IntoView {
     view! {
         <div class="card bg-base-300 shadow w-96">
@@ -20,10 +21,10 @@ pub fn ProjectCard(
                 <h2 class="card-title">{title}</h2>
                 <p>{content}</p>
                 <div class="card-actions justify-end">
+                    <ResourceExplorerButton shortcode=shortcode />
                     <button class="btn btn-primary">
                         <a href=btn_target>{btn_text}</a>
                     </button>
-                    <ResourceExplorerButton />
                 </div>
             </div>
         </div>

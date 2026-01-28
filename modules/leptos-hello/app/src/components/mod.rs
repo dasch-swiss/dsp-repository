@@ -14,7 +14,9 @@ pub mod statusbadge;
 pub mod table_of_contents;
 pub mod themeswitcher;
 pub mod url_badge;
+pub mod project_details;
 pub mod project_filters;
+pub mod project_loader;
 pub mod project_pagination;
 pub mod resource_explorer_button;
 
@@ -35,5 +37,7 @@ pub use statusbadge::ProjectStatusBadge;
 pub use table_of_contents::TableOfContents;
 pub use themeswitcher::ThemeSwitcher;
 pub use url_badge::UrlBadge;
+pub use project_details::ProjectDetails;
+pub use project_loader::ProjectLoader;
 pub use project_pagination::ProjectPagination;
 pub use resource_explorer_button::ResourceExplorerButton;

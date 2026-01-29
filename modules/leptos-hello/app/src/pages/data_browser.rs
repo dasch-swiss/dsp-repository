@@ -23,6 +23,17 @@ fn DataBrowserContainer() -> impl IntoView {
                         <div
                             on:click=move |_| {
                                 set_selected_element.set(Some(id));
+                                // Update URL without navigation
+                                if let Some(window) = web_sys::window() {
+                                    if let Ok(history) = window.history() {
+                                        let url = format!("/data-browser/element-{}", id);
+                                        let _ = history.push_state_with_url(
+                                            &wasm_bindgen::JsValue::NULL,
+                                            "",
+                                            Some(&url)
+                                        );
+                                    }
+                                }
                             }
                             class="cursor-pointer hover:bg-gray-100 p-2"
                         >

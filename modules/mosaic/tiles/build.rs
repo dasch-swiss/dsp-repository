@@ -89,11 +89,6 @@ fn run_tailwind(tailwind_path: Option<&Path>, bundle_path: &PathBuf, singlestage
 }
 
 fn main() {
-    // Skip css bundling and tailwind if the user doesn't use theme_provider
-    if cfg!(not(feature = "theme_provider")) {
-        return;
-    }
-
     let out_dir = env::var_os("OUT_DIR").expect("\nError reading OUT_DIR from env. (1)\n");
     let bundle_path = Path::new(&out_dir).join("bundle.css");
     let singlestage_path = Path::new(&out_dir).join("singlestage.css");
@@ -128,9 +123,7 @@ fn main() {
         .expect("\nError opening bundle file.\n");
 
     // Theme provider goes first
-    #[cfg(feature = "theme_provider")]
     let main_css_path = Path::new("src").join("components").join("theme_provider").join("main.css");
-    #[cfg(feature = "theme_provider")]
     bundle_css(main_css_path, &bundle);
 
     // Bundle css for each feature

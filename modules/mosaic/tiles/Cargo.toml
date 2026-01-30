@@ -29,7 +29,6 @@ default = [
   "popover",
   "sidebar",
   "tabs",
-  "theme_provider",
 ]
 accordion = ["icon"]
 badge = []
@@ -42,7 +41,6 @@ link = ["button"]
 popover = ["button"]
 sidebar = ["icon"]
 tabs = []
-theme_provider = []
 
 [build-dependencies]
 reqwest = { version = "0.13.1", features = ["blocking"] }

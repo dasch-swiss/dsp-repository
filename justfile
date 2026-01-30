@@ -158,4 +158,3 @@ run-example-basic-website:
 # Watch and run basic-website example app with hot reload
 run-watch-example-basic-website:
     cargo watch -s 'cargo run --bin basic-website'
-

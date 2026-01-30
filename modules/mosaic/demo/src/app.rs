@@ -303,7 +303,9 @@ fn HomePage() -> impl IntoView {
                         <li>"• Styled with Tailwind CSS v4 utility classes"</li>
                         <li>"• Feature flags enable opt-in component inclusion"</li>
                         <li>"• CSS bundling happens at build time via build.rs"</li>
-                        <li>"• ThemeProvider component injects bundled styles"</li>
+                        <li>
+                            "• ThemeProvider component injects bundled styles (always available, not a feature flag)"
+                        </li>
                     </ul>
                 </section>
 

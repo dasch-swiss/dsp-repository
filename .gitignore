@@ -23,8 +23,9 @@ target/
 
 /docs/book
 
-# Claude temporary files
+# Claude files
 .claude/tmp/
+.claude/settings.local.json
 
 # Node.js dependencies
 node_modules/
@@ -38,4 +39,6 @@ modules/design_system/playground/tests/.cache/
 # Generated Tailwind CSS output (built from input.css)
 modules/design_system/tailwind.css
 
-.claude/settings.local.json
+
+# IDE related
+/.vscode

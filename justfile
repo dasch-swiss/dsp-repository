@@ -22,7 +22,7 @@ install-requirements:
 # Start the mosaic demo and watch mosaic tiles
 watch-mosaic-demo:
     #!/usr/bin/env sh
-    cd modules/demo
+    cd modules/mosaic/demo
     cargo leptos watch -- --watch ../tiles
 
 # Run all fmt and clippy checks

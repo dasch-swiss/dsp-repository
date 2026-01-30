@@ -1,91 +1,39 @@
-<picture>
-    <source srcset="https://raw.githubusercontent.com/leptos-rs/leptos/main/docs/logos/Leptos_logo_Solid_White.svg" media="(prefers-color-scheme: dark)">
-    <img src="https://raw.githubusercontent.com/leptos-rs/leptos/main/docs/logos/Leptos_logo_RGB.svg" alt="Leptos Logo">
-</picture>
+# Mosaic Demo
 
-# Leptos Axum Starter Template
+A demo and documentation application for the [mosaic-tiles](../tiles) component library. It serves as both a development playground and a storybook for exploring components with live examples, anatomy diagrams, and API references.
 
-This is a template for use with the [Leptos](https://github.com/leptos-rs/leptos) web framework and the [cargo-leptos](https://github.com/akesson/cargo-leptos) tool using [Axum](https://github.com/tokio-rs/axum).
-
-## Creating your template repo
-
-If you don't have `cargo-leptos` installed you can install it with
-
-```bash
-cargo install cargo-leptos --locked
-```
-
-Then run
-```bash
-cargo leptos new --git https://github.com/leptos-rs/start-axum
-```
-
-to generate a new project template.
-
-```bash
-cd mosaic-demo
-```
-
-to go to your newly created project.
-Feel free to explore the project structure, but the best place to start with your application code is in `src/app.rs`.
-Additionally, Cargo.toml may need updating as new versions of the dependencies are released, especially if things are not working after a `cargo update`.
-
-## Running your project
+## Running
 
 ```bash
 cargo leptos watch
 ```
 
-## Installing Additional Tools
+The application will be available at `http://localhost:3000`.
 
-By default, `cargo-leptos` uses `nightly` Rust, `cargo-generate`, and `sass`. If you run into any trouble, you may need to install one or more of these tools.
+## Structure
 
-1. `rustup toolchain install nightly --allow-downgrade` - make sure you have Rust nightly
-2. `rustup target add wasm32-unknown-unknown` - add the ability to compile Rust to WebAssembly
-3. `cargo install cargo-generate` - install `cargo-generate` binary (should be installed automatically in future)
-4. `npm install -g sass` - install `dart-sass` (should be optional in future
-5. Run `npm install` in end2end subdirectory before test
+Each component demo lives in `src/components/[name]/` with:
 
-## Compiling for Release
-```bash
-cargo leptos build --release
-```
+- `anatomy.rs` - Component structure visualization
+- `component.toml` - Metadata, example definitions, and API docs
+- `examples/` - Individual example files demonstrating usage patterns
 
-Will generate your server binary in target/release and your site package in target/site
+The `component.toml` defines:
 
-## Testing Your Project
-```bash
-cargo leptos end-to-end
-```
+- `name` - Component display name
+- `description` - Summary of what the components is
+- `[[examples]]` - Array of example
+  - with `name` must match the Rust file
+  - with `title` of the example page
+  - and `description` of the example
+- `[[references]]` - API documentation with component attributes
+  - `attr` - Attribute name
+  - `attr_type` - Rust type
+  - `default` - Default value
+  - `description` - What this attribute does
 
-```bash
-cargo leptos end-to-end --release
-```
+Routes and pages are auto-generated from the TOML metadata via a procedural macro.
 
-Cargo-leptos uses Playwright as the end-to-end test tool.
-Tests are located in end2end/tests directory.
+## Adding Components
 
-## Executing a Server on a Remote Machine Without the Toolchain
-After running a `cargo leptos build --release` the minimum files needed are:
-
-1. The server binary located in `target/server/release`
-2. The `site` directory and all files within located in `target/site`
-
-Copy these files to your remote server. The directory structure should be:
-```text
-mosaic-demo
-site/
-```
-Set the following environment variables (updating for your project as needed):
-```sh
-export LEPTOS_OUTPUT_NAME="mosaic-demo"
-export LEPTOS_SITE_ROOT="site"
-export LEPTOS_SITE_PKG_DIR="pkg"
-export LEPTOS_SITE_ADDR="127.0.0.1:3000"
-export LEPTOS_RELOAD_PORT="3001"
-```
-Finally, run the server binary.
-
-## Licensing
-
-This template itself is released under the Unlicense. You should replace the LICENSE for your own application with an appropriate license if you plan to release it publicly.
+Use the `/add-component-to-demo` skill which provides step-by-step instructions for adding new component demos, including creating the directory structure, examples, TOML configuration, and registering routes.

@@ -6,7 +6,7 @@ Procedural macros for generating Mosaic component documentation pages.
 
 This crate scans the `demo/src/components` directory for component directories containing `component.toml` metadata files and generates Leptos page components at compile time.
 
-## Macros
+## Macro
 
 ### `generate_component_pages!()`
 
@@ -17,10 +17,6 @@ Generates a Leptos page component for each component directory found. Each gener
 - Examples with live demos and source code
 - Anatomy section (if `anatomy.rs` exists)
 - API reference tables
-
-### `generate_component_routes!()`
-
-Generates Leptos route definitions for all discovered components.
 
 ## Component Directory Structure
 

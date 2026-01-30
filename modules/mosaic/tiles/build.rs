@@ -100,7 +100,7 @@ fn main() {
     }
 
     // Build list of css files to include
-    let features = features!(
+    let features: Vec<&str> = features!(
         "accordion",
         "badge",
         "breadcrumb",

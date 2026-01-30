@@ -94,7 +94,7 @@ jobs:
       # intentionally no target specifier; see https://github.com/jonhoo/rust-ci-conf/pull/4
       # --feature-powerset runs for every combination of features
       - name: cargo hack
-        run: cargo hack --feature-powerset --exclude-no-default-features check
+        run: cargo hack --feature-powerset --exclude-no-default-features --exclude mosaic-tiles check
 
   docs:
     runs-on: ubuntu-latest

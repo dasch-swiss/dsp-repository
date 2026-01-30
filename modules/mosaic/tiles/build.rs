@@ -16,6 +16,7 @@ const TAILWIND_URL: &str = "https://github.com/tailwindlabs/tailwindcss/releases
 macro_rules! features {
     ( $( $x:expr ),* ) => {
         {
+            #[allow(unused_mut)]
             let mut features = vec![];
             $(
                 #[cfg(feature = $x)]

@@ -48,12 +48,16 @@ pub fn Button(
 ) -> impl IntoView {
     let btn_disabled = Memo::new(move |_| disabled.get().unwrap_or(false));
 
-    // Check if we're inside a PopoverTrigger context
+    // Check if we're inside a PopoverTrigger context (only when popover feature is enabled)
+    #[cfg(feature = "popover")]
     let popover_context = use_context::<crate::popover::PopoverContext>();
+    #[cfg(feature = "popover")]
     let trigger_context = use_context::<crate::popover::PopoverTriggerContext>();
 
     // Clone for the closure
+    #[cfg(feature = "popover")]
     let popover_ctx_clone = popover_context.clone();
+    #[cfg(feature = "popover")]
     let trigger_ctx_clone = trigger_context.clone();
 
     view! {
@@ -75,11 +79,14 @@ pub fn Button(
             popovertarget=move || {
                 // If inside PopoverTrigger, use the context menu_id
                 // Otherwise use the explicit popovertarget prop
-                if trigger_ctx_clone.is_some() {
-                    if let Some(ref ctx) = popover_ctx_clone {
-                        let menu_id = ctx.menu_id.get();
-                        if !menu_id.is_empty() {
-                            return Some(menu_id);
+                #[cfg(feature = "popover")]
+                {
+                    if trigger_ctx_clone.is_some() {
+                        if let Some(ref ctx) = popover_ctx_clone {
+                            let menu_id = ctx.menu_id.get();
+                            if !menu_id.is_empty() {
+                                return Some(menu_id);
+                            }
                         }
                     }
                 }
@@ -87,13 +94,13 @@ pub fn Button(
             }
             popovertargetaction=move || {
                 // Default to "toggle" if inside PopoverTrigger
+                #[cfg(feature = "popover")]
                 if trigger_context.is_some() {
-                    popovertargetaction
+                    return popovertargetaction
                         .get()
-                        .or(Some("toggle".to_string()))
-                } else {
-                    popovertargetaction.get()
+                        .or(Some("toggle".to_string()));
                 }
+                popovertargetaction.get()
             }
         >
             {if let Some(children) = children {

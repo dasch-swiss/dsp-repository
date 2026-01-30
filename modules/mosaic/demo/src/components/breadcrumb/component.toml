@@ -1,0 +1,45 @@
+name = "Breadcrumb"
+description = "Navigation component showing the current page's location within the site hierarchy."
+
+[[examples]]
+name = "basic"
+title = "Basic Usage"
+description = "Simple breadcrumb with links and current page"
+
+[[examples]]
+name = "nested"
+title = "Deeply Nested Navigation"
+description = "Breadcrumb showing multiple levels of navigation"
+
+[[examples]]
+name = "with_icons"
+title = "Breadcrumbs with Icons"
+description = "Breadcrumb items enhanced with icons"
+
+[[references]]
+name = "Breadcrumb"
+description = "Container component for breadcrumb navigation."
+extra = "Renders a nav element with proper ARIA attributes."
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "BreadcrumbItem components"
+
+[[references]]
+name = "BreadcrumbItem"
+description = "Individual item in the breadcrumb trail."
+extra = "Renders as a link when href is provided, otherwise as plain text (for current page)."
+
+[[references.attrs]]
+attr = "href"
+attr_type = "Option<String>"
+default = "None"
+description = "URL for the breadcrumb item. If omitted, renders as text for current page."
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Content of the breadcrumb item (text, icons, etc.)"

@@ -1,0 +1,56 @@
+name = "Accordion"
+description = "A collapsible content component for organizing information in expandable panels."
+
+[[examples]]
+name = "basic"
+title = "Basic Accordion"
+description = "Simple accordion with multiple items"
+
+[[examples]]
+name = "default_open"
+title = "Default Open Item"
+description = "Accordion with one item expanded by default"
+
+[[examples]]
+name = "rich_content"
+title = "Rich Content"
+description = "Accordion items containing lists, styled content, and badges"
+
+[[examples]]
+name = "faq"
+title = "FAQ Example"
+description = "Common FAQ use case with questions and answers"
+
+[[references]]
+name = "Accordion"
+description = "Container for accordion items."
+extra = "Groups related AccordionItem components."
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Accordion content (typically AccordionItem components)"
+
+[[references]]
+name = "AccordionItem"
+description = "Individual collapsible item within an accordion."
+extra = "Implements standard HTML attributes."
+
+[[references.attrs]]
+attr = "title"
+attr_type = "String"
+default = "(required)"
+description = "The title text displayed in the accordion header"
+
+[[references.attrs]]
+attr = "default_open"
+attr_type = "bool"
+default = "false"
+description = "Whether the item starts in an expanded state"
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Accordion item content (visible when expanded)"

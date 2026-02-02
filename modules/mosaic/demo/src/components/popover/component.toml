@@ -1,0 +1,50 @@
+name = "Popover"
+description = "Displays rich content in a portal, triggered by a button."
+
+[[examples]]
+name = "basic"
+title = "Basic Popover"
+description = "A simple popover with basic content"
+
+[[examples]]
+name = "rich_content"
+title = "Rich Content"
+description = "Popover with title, description, and action buttons"
+
+[[examples]]
+name = "multiple"
+title = "Multiple Popovers"
+description = "Multiple independent popovers on the same page"
+
+[[references]]
+name = "Popover"
+description = "Main container component that manages popover state."
+extra = "The Popover component provides context for PopoverTrigger and PopoverContent to communicate and manage the open/close state."
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "PopoverTrigger and PopoverContent components"
+
+[[references]]
+name = "PopoverTrigger"
+description = "Wraps the trigger element that opens the popover."
+extra = "The trigger element will toggle the popover visibility when clicked."
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "The trigger element (typically a Button)"
+
+[[references]]
+name = "PopoverContent"
+description = "Displays the content when the popover is open."
+extra = "The content is rendered conditionally based on the popover state and is positioned absolutely relative to the trigger."
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "The content to display in the popover"

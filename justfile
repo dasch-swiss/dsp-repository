@@ -11,9 +11,19 @@ default:
 
 # Install all requirements
 install-requirements:
+    #!/usr/bin/env sh
     cargo install cargo-watch
     cargo install mdbook
     cargo install mdbook-alerts
+    rustup target add wasm32-unknown-unknown
+    cargo install --locked leptosfmt
+    cargo install --locked cargo-leptos
+
+# Start the mosaic demo and watch mosaic tiles
+watch-mosaic-demo:
+    #!/usr/bin/env sh
+    cd modules/mosaic/demo
+    cargo leptos watch -- --watch ../tiles
 
 # Run all fmt and clippy checks
 check:
@@ -148,5 +158,3 @@ run-example-basic-website:
 # Watch and run basic-website example app with hot reload
 run-watch-example-basic-website:
     cargo watch -s 'cargo run --bin basic-website'
-
-mod playground 'modules/design_system/playground'

@@ -1,0 +1,19 @@
+@layer components {
+  /* Popover Container */
+  .popover {
+    @apply relative inline-block;
+  }
+
+  /* Popover Content - using native popover API */
+  .popover-content {
+    @apply bg-white rounded-lg shadow-lg border border-gray-200 min-w-[200px];
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  /* Native popover positioning fallback for browsers without anchor positioning support */
+  .popover-content:popover-open {
+    @apply relative;
+    inset: unset;
+  }
+}

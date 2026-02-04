@@ -19,12 +19,6 @@ install-requirements:
     cargo install --locked leptosfmt
     cargo install --locked cargo-leptos
 
-# Start the mosaic demo and watch mosaic tiles
-watch-mosaic-demo:
-    #!/usr/bin/env sh
-    cd modules/mosaic/demo
-    cargo leptos watch -- --watch ../tiles
-
 # Run all fmt and clippy checks
 check:
     just --check --fmt --unstable
@@ -158,3 +152,26 @@ run-example-basic-website:
 # Watch and run basic-website example app with hot reload
 run-watch-example-basic-website:
     cargo watch -s 'cargo run --bin basic-website'
+
+
+###################
+# Mosaic targets
+###################
+
+# Start the mosaic demo and watch mosaic tiles
+[group('mosaic')]
+watch-mosaic-demo:
+    #!/usr/bin/env sh
+    cd modules/mosaic/demo
+    cargo leptos watch -- --watch ../tiles
+
+# Build Docker image for mosaic demo
+[group('mosaic')]
+build-docker-mosaic-demo:
+    docker build -f modules/mosaic/demo/Dockerfile -t mosaic-demo .
+
+# Run mosaic demo Docker container on port 8080
+[group('mosaic')]
+run-docker-mosaic-demo:
+    docker run --rm -p 8080:8080 mosaic-demo
+

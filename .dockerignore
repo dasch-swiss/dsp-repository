@@ -1,0 +1,29 @@
+# Build artifacts
+target/
+**/target/
+
+# Node modules
+node_modules/
+**/node_modules/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Documentation build output
+docs/book/
+
+# Temporary files
+.claude/
+*.log
+*.tmp
+
+# Other Docker files
+Dockerfile*
+!modules/mosaic/demo/Dockerfile

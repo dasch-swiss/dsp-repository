@@ -16,7 +16,7 @@ install-requirements:
     brew install cargo-binstall
     cargo binstall -y cargo-watch@8.5.3
     cargo binstall -y mdbook@0.4.52
-    cargo binstall -y mdbook-alerts@0.4.52
+    cargo binstall -y mdbook-alerts@0.8.0
     cargo binstall -y leptosfmt@0.1.33
     cargo binstall -y cargo-leptos@0.3.4
 

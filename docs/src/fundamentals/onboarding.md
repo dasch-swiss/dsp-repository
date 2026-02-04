@@ -14,7 +14,7 @@ We use [Axum](https://docs.rs/axum/latest/axum/) as our HTTP server.
 
 We use [serde](https://serde.rs/) for serialization and deserialization of data.
 
-### UI Framework
+### Web UI
 
 We use [Leptos](https://leptos.dev/) as our UI framework for building reactive web applications in Rust.
 
@@ -22,10 +22,13 @@ Leptos is a full-stack web framework that allows writing both server and client 
 It provides reactive primitives and a component model similar to modern JavaScript frameworks.
 
 Key features:
-- Server-side rendering with hydration
-- Fine-grained reactivity
-- Component-based architecture
-- Full Rust syntax support
+
+* Leptos must only be used with the [`island` feature](https://book.leptos.dev/islands.html)
+* The architecture follows the MPA paradigm, a "multi-page app"
+* Server-side rendering
+* Fine-grained reactivity
+* Component-based architecture
+* Full Rust syntax support
 
 ### Architectural Design Patterns
 
@@ -45,6 +48,7 @@ the majority of tests are unit tests, with a smaller number of integration tests
 
 Unit and integration tests are written in Rust, following the Rust testing best practices.
 End-to-end tests can be written using Playwright.
+Leptos has some [built-in support for Playwright](https://book.leptos.dev/testing.html?highlight=playwrigh#playwright-with-counters).
 
 ### Domain Driven Design
 
@@ -69,6 +73,7 @@ The Mosaic component library provides reusable UI components built with Leptos a
 Components are defined in `modules/mosaic/tiles/` and can be previewed in the demo application at `modules/mosaic/demo/`.
 
 To run the demo:
+
 ```bash
 just watch-mosaic-demo
 ```

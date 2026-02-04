@@ -19,3 +19,7 @@
 We keep the design evolutionary, starting from the simplest possible solution and iterating on it.
 At first, providing data from static JSON files, or working with static content, is sufficient.
 Following clean architecture principles, swapping out the persistence layer is easy.
+
+# Implementation Notes
+
+TypeScript is used exclusively for testing and development tooling, not for production runtime code. The core application remains purely Rust-based.

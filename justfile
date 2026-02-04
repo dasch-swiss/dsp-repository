@@ -12,12 +12,13 @@ default:
 # Install all requirements
 install-requirements:
     #!/usr/bin/env sh
-    cargo install cargo-watch
-    cargo install mdbook
-    cargo install mdbook-alerts
-    rustup target add wasm32-unknown-unknown
-    cargo install --locked leptosfmt
-    cargo install --locked cargo-leptos
+    rustup show
+    brew install cargo-binstall
+    cargo binstall -y cargo-watch@8.5.3
+    cargo binstall -y mdbook@0.5.2
+    cargo binstall -y mdbook-alerts@0.8.0
+    cargo binstall -y leptosfmt@0.1.33
+    cargo binstall -y cargo-leptos@0.3.4
 
 # Start the mosaic demo and watch mosaic tiles
 watch-mosaic-demo:

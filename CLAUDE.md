@@ -3,13 +3,12 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-The DSP Repository is a Rust-based monorepo for the DaSCH Service Platform Repository - a long-term archive for humanities research data. It consists of the DSP Archive (storage) and Discovery and Presentation Environment (DPE) for data discovery, plus a custom design system.
+The DSP Repository is a Rust-based monorepo for the DaSCH Service Platform Repository - a long-term archive for humanities research data. It consists of the DSP Archive (storage), Discovery and Presentation Environment (DPE) for data discovery, and the Mosaic component library.
 
 ## Architecture
 - **Language**: Rust (Edition 2021, Toolchain 1.86.0)
-- **Web Framework**: Axum HTTP server
-- **Templating**: Maud (macro/JSX-like) - primary templating engine
-- **Frontend**: Hypermedia-driven using DataStar (similar to HTMX)
+- **Web Framework**: Axum HTTP server (DPE), Leptos (Mosaic)
+- **UI Framework**: Leptos 0.8 for reactive components
 - **Pattern**: Clean Architecture/Hexagonal Architecture
 - **Structure**: Cargo workspace with modular crates
 
@@ -23,16 +22,16 @@ modules/
 │   ├── services/          # Business logic implementations
 │   ├── storage/           # Data persistence layer
 │   └── types/             # Domain models and trait definitions
-└── design_system/         # Custom design system
-    ├── components/        # Reusable UI components
-    └── playground/        # Full development environment with Rust server and TypeScript testing
+└── mosaic/                # Mosaic component library
+    ├── tiles/             # Reusable Leptos UI components
+    ├── demo/              # Component showcase application
+    └── demo_macro/        # Proc macro for demo page generation
 ```
 
 ## Setup
 
 ### Prerequisites
 
-- **Node.js and npm**: Required for the design system playground and Tailwind CSS v4 packages
 - **Rust**: Toolchain 1.86.0
 - **Just**: Command runner for development tasks
 
@@ -41,16 +40,6 @@ modules/
 1. Install Rust tools:
    ```bash
    just install-requirements
-   ```
-
-2. Install Node.js dependencies for design system:
-   ```bash
-   cd modules/design_system && npm install
-   ```
-
-3. Install Node.js dependencies for playground (optional, for testing):
-   ```bash
-   just playground install
    ```
 
 ## Development Commands (via justfile)
@@ -63,17 +52,7 @@ just run                       # Run main server (release mode)
 
 # Development workflow
 just watch                     # Watch for changes and run tests
-just run-watch-playground      # Run design system playground with hot reload
-
-# Tailwind CSS
-just tailwind-dev              # Build CSS (development, unminified)
-just tailwind-build            # Build CSS (production, minified)
-just tailwind-watch            # Watch and rebuild CSS on changes
-
-# Design system playground
-just playground install         # Install frontend dependencies and browsers
-just playground test            # Run TypeScript/Playwright tests
-just playground test-headed     # Run tests with browser visible
+just watch-mosaic-demo         # Run Mosaic demo with hot reload
 
 # Code quality
 just fmt                       # Format Rust code
@@ -83,17 +62,16 @@ just docs-build               # Build mdBook documentation
 just docs-serve               # Serve docs at localhost:3000
 
 # Setup
-just install-requirements     # Install Rust tools: cargo-watch, mdbook, mdbook-alerts
+just install-requirements     # Install Rust tools: cargo-watch, mdbook, mdbook-alerts, leptosfmt, cargo-leptos
 ```
 
 ## Tech Stack
 - **HTTP**: Axum with macros, WebSocket support
-- **Templating**: Maud
-- **Hypermedia**: DataStar for interactive UI
+- **UI Framework**: Leptos 0.8 for reactive components
+- **Styling**: Tailwind CSS v4
 - **Async**: Tokio runtime
-- **Testing**: Cargo nextest for parallel execution
+- **Testing**: Cargo test, Playwright for E2E
 - **Documentation**: mdBook with alerts plugin
-- **Design System**: TypeScript + Playwright for E2E testing
 
 ## Data Layer
 - **Current**: Static JSON files in `/data/json/` directory
@@ -103,7 +81,7 @@ just install-requirements     # Install Rust tools: cargo-watch, mdbook, mdbook-
 ## Code Quality
 - **Formatting**: .rustfmt.toml with 120 char width, Unix newlines
 - **Linting**: Strict clippy warnings
-- **Testing**: Testing pyramid (unit → integration → E2E with Playwright)
+- **Testing**: Testing pyramid (unit → integration → E2E)
 - **Git**: Rebase workflow, clean commit history
 
 ## Important Notes
@@ -142,7 +120,7 @@ Before considering ANY change as "done", ensure the following:
 ## Architecture Principles
 - Clean separation between domain, business logic, and infrastructure
 - Single responsibility per crate
-- Server-rendered HTML with DataStar for interactivity
+- Server-side rendering with Leptos for interactivity
 - Domain-driven design aligned with research data concepts
 
 ## Operational Guidelines

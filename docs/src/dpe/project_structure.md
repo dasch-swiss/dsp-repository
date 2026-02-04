@@ -1,6 +1,6 @@
 # Project Structure
 
-> [!WARNING]  
+> [!WARNING]
 > This page is not up-to-date.
 
 ## Workspace Layout
@@ -86,12 +86,11 @@ impl MetadataRepository for InMemoryMetadataRepository {
 
 ---
 
-### `html_api/` – HTML Hypermedia + SSE
+### `html_api/` – HTML + SSE
 
 Handles the **user-facing UI** layer, serving HTML pages and fragments, and live-updating data via SSE.
 
-- [Maud](https://maud.lambda.xyz/) templates
-- [Datastar](https://docs.rs/datastar) for link generation
+- HTML templates
 - SSE endpoints for live features like notifications, progress updates
 - Routes for page rendering and form submissions
 

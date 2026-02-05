@@ -285,7 +285,7 @@ fn HomePage() -> impl IntoView {
             </div>
 
             <p class="text-lg text-gray-700 mb-8">
-                "A Leptos component library built with Tailwind CSS v4. Components use feature flags for selective inclusion and compile styles at build time."
+                "A Leptos component library built with Tailwind CSS v4, designed to work exclusively with Leptos islands architecture. Components use feature flags for selective inclusion and compile styles at build time."
             </p>
 
             <div class="space-y-8">

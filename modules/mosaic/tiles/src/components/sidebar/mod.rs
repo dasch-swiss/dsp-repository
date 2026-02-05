@@ -36,25 +36,9 @@ pub fn Sidebar(
     /// Child components
     children: Children,
 ) -> impl IntoView {
-    let is_open = RwSignal::new(false);
-
-    let toggle = move |_| {
-        is_open.update(|open| *open = !*open);
-    };
-
-    provide_context(SidebarContext { is_open });
-
     view! {
         <div class="sidebar-wrapper">
-            <button class="sidebar-trigger" on:click=toggle aria-label="Toggle sidebar">
-                <span class="sidebar-trigger-icon"></span>
-            </button>
-            <aside class=move || {
-                format!(
-                    "sidebar {}",
-                    if is_open.get() { "sidebar-open" } else { "sidebar-closed" },
-                )
-            }>
+            <aside class= "sidebar " >
                 {children()}
             </aside>
         </div>

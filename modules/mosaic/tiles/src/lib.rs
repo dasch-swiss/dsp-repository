@@ -1,7 +1,9 @@
 mod components;
+mod reactive;
 
 pub use components::theme_provider::ThemeProvider;
 pub use components::*;
+pub use reactive::Reactive;
 
 #[cfg(feature = "breadcrumb")]
 pub mod breadcrumb {

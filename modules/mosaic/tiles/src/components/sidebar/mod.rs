@@ -1,9 +1,6 @@
 use leptos::either::Either;
 use leptos::prelude::*;
 
-#[cfg(feature = "icon")]
-use crate::components::icon::{Hamburger, Icon};
-
 /// Context for managing sidebar state
 #[derive(Clone, Copy)]
 struct SidebarContext {
@@ -34,36 +31,33 @@ struct SidebarContext {
 ///     </Sidebar>
 /// };
 /// ```
-#[component]
+#[island]
 pub fn Sidebar(
-    /// Optional signal to control sidebar open state externally
-    #[prop(optional, into)]
-    open: Option<RwSignal<bool>>,
-    /// Optional CSS classes
-    #[prop(optional, into)]
-    class: MaybeProp<String>,
     /// Child components
-    #[prop(optional)]
-    children: Option<Children>,
+    children: Children,
 ) -> impl IntoView {
-    let is_open = open.unwrap_or_else(|| RwSignal::new(false));
+    let is_open = RwSignal::new(false);
+
+    let toggle = move |_| {
+        is_open.update(|open| *open = !*open);
+    };
 
     provide_context(SidebarContext { is_open });
 
     view! {
-        <aside class=move || {
-            format!(
-                "sidebar {} {}",
-                if is_open.get() { "sidebar-open" } else { "sidebar-closed" },
-                class.get().unwrap_or_default(),
-            )
-        }>
-            {if let Some(children) = children {
-                Either::Left(children())
-            } else {
-                Either::Right(())
-            }}
-        </aside>
+        <div class="sidebar-wrapper">
+            <button class="sidebar-trigger" on:click=toggle aria-label="Toggle sidebar">
+                <span class="sidebar-trigger-icon"></span>
+            </button>
+            <aside class=move || {
+                format!(
+                    "sidebar {}",
+                    if is_open.get() { "sidebar-open" } else { "sidebar-closed" },
+                )
+            }>
+                {children()}
+            </aside>
+        </div>
     }
 }
 
@@ -212,44 +206,19 @@ pub fn SidebarGroup(
 ///     </Sidebar>
 /// };
 /// ```
-#[component]
-pub fn SidebarTrigger(
-    /// Optional signal to control sidebar state (for use outside Sidebar context)
-    #[prop(optional)]
-    is_open: Option<RwSignal<bool>>,
-    /// Optional CSS classes
-    #[prop(optional, into)]
-    class: MaybeProp<String>,
-    /// Optional children (defaults to hamburger icon)
-    #[prop(optional)]
-    children: Option<Children>,
-) -> impl IntoView {
-    // Use provided signal or get from context
-    let signal = if let Some(signal) = is_open {
-        signal
-    } else {
-        let ctx = expect_context::<SidebarContext>();
-        ctx.is_open
-    };
+#[island]
+pub fn SidebarTrigger() -> impl IntoView {
+    // Get signal from context (must be inside Sidebar island)
+    let ctx = expect_context::<SidebarContext>();
+    let signal = ctx.is_open;
 
     let toggle = move |_| {
         signal.update(|open| *open = !*open);
     };
 
     view! {
-        <button
-            class=move || format!("sidebar-trigger {}", class.get().unwrap_or_default())
-            on:click=toggle
-            aria-label="Toggle sidebar"
-        >
-            {if let Some(children) = children {
-                Either::Left(children())
-            } else {
-                #[cfg(feature = "icon")]
-                { Either::Right(view! { <Icon icon=Hamburger class="w-6 h-6" /> }) }
-                #[cfg(not(feature = "icon"))]
-                { Either::Right(view! { <span class="sidebar-trigger-icon"></span> }) }
-            }}
+        <button class="sidebar-trigger" on:click=toggle aria-label="Toggle sidebar">
+            <span class="sidebar-trigger-icon"></span>
         </button>
     }
 }

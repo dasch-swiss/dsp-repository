@@ -1846,6 +1846,7 @@ dependencies = [
  "leptos",
  "leptos_meta",
  "reqwest",
+ "serde",
  "sha256",
  "uuid",
  "wasm-bindgen",

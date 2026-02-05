@@ -47,3 +47,11 @@ rusqlite = { version = "0.38.0", features = ["bundled"] }
 rusqlite_migration = { version = "2.4.0" }
 r2d2 = { version = "0.8.10" }
 r2d2_sqlite = { version = "0.32.0" }
+
+# Defines a size-optimized profile for the WASM bundle in release mode
+[profile.wasm-release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"

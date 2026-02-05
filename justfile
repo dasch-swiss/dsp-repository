@@ -82,18 +82,23 @@ docker-image-tag:
 watch:
     cargo watch -x test
 
+[group('docs')]
 docs-install-requirements:
     cargo install mdbook
 
+[group('docs')]
 docs-build:
     mdbook build docs
 
+[group('docs')]
 docs-serve:
     mdbook serve docs
 
+[group('docs')]
 docs-clean:
     mdbook clean docs
 
+[group('docs')]
 docs-test:
     mdbook test docs
 

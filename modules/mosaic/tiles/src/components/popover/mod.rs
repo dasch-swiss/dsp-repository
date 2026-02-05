@@ -90,6 +90,7 @@ pub fn PopoverTrigger(children: Children) -> impl IntoView {
 /// ```rust,no_run
 /// use leptos::prelude::*;
 /// use mosaic_tiles::popover::*;
+/// use mosaic_tiles::button::*;
 ///
 /// view! {
 ///     <Popover id="my-popover">

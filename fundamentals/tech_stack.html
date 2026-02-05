@@ -247,25 +247,22 @@
 <ul>
 <li><strong>Rust</strong> - Primary development language (Edition 2021, Toolchain 1.86.0)</li>
 <li><strong>Axum</strong> - HTTP web framework with WebSocket support</li>
-<li><strong>Maud</strong> - Macro-based templating engine (JSX-like syntax)</li>
-<li><strong>DataStar</strong> - Hypermedia-driven frontend interactivity</li>
-<li><strong>Tailwind</strong> - Design system foundation with utility-first CSS approach</li>
+<li><strong>Leptos</strong> - Reactive UI framework for Rust</li>
+<li><strong>Tailwind CSS v4</strong> - Utility-first CSS framework</li>
 <li><strong>Database TBD</strong> - Currently using static JSON files</li>
 </ul>
 <h2 id="development--testing"><a class="header" href="#development--testing">Development &amp; Testing</a></h2>
 <ul>
-<li><strong>TypeScript + Playwright</strong> - End-to-end testing for design system</li>
-<li><strong>Cargo nextest</strong> - Parallel test execution</li>
-<li><strong>ESLint + Prettier</strong> - JavaScript/TypeScript code quality (testing only)</li>
-<li><strong>Node.js ecosystem</strong> - Supporting testing infrastructure</li>
+<li><strong>Cargo test</strong> - Rust test runner</li>
+<li><strong>Playwright</strong> - End-to-end testing</li>
+<li><strong>Leptosfmt</strong> - Leptos code formatter</li>
 </ul>
 <h2 id="architecture-principles"><a class="header" href="#architecture-principles">Architecture Principles</a></h2>
 <p>We keep the design evolutionary, starting from the simplest possible solution and iterating on it.
 At first, providing data from static JSON files, or working with static content, is sufficient.
 Following clean architecture principles, swapping out the persistence layer is easy.</p>
 <h2 id="implementation-notes"><a class="header" href="#implementation-notes">Implementation Notes</a></h2>
-<p>The TypeScript ecosystem is used exclusively for testing and development tooling, not for production runtime code. The core application remains purely Rust-based with hypermedia-driven interactivity.</p>
-<!-- TODO: for CSS post processing, check out https://github.com/rs-tml/rcss or https://docs.rs/lightningcss/latest/lightningcss/ -->
+<p>TypeScript is used exclusively for testing and development tooling, not for production runtime code. The core application remains purely Rust-based.</p>
 
                     </main>
 

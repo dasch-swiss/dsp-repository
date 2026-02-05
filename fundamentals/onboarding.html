@@ -251,20 +251,20 @@ though particularly the frontend work does not require deep knowledge of Rust.</
 <p>We use <a href="https://docs.rs/axum/latest/axum/">Axum</a> as our HTTP server.</p>
 <h3 id="serialization-and-deserialization"><a class="header" href="#serialization-and-deserialization">Serialization and Deserialization</a></h3>
 <p>We use <a href="https://serde.rs/">serde</a> for serialization and deserialization of data.</p>
-<h3 id="rust-templating"><a class="header" href="#rust-templating">Rust Templating</a></h3>
-<p>We use <a href="https://maud.lambda.xyz/">Maud</a> as our templating engine for rendering HTML in Rust.</p>
-<p>Maud is a macro-based templating engine that allows writing HTML directly in Rust code.
-It is similar to JSX, where the HTML is written inline with the Rust code.
-This approach provides strong type safety and excellent integration with Rust's ownership system.</p>
-<p>Maud offers several advantages:</p>
+<h3 id="web-ui"><a class="header" href="#web-ui">Web UI</a></h3>
+<p>We use <a href="https://leptos.dev/">Leptos</a> as our UI framework for building reactive web applications in Rust.</p>
+<p>Leptos is a full-stack web framework that allows writing both server and client code in Rust.
+It provides reactive primitives and a component model similar to modern JavaScript frameworks.</p>
+<p>Key features:</p>
 <ul>
-<li>Compile-time template checking</li>
-<li>Full Rust syntax support within templates</li>
-<li>Automatic HTML escaping</li>
-<li>No external template files to manage</li>
-<li>Better IDE support with syntax highlighting and autocomplete</li>
+<li>Leptos must only be used with the <a href="https://book.leptos.dev/islands.html"><code>island</code> feature</a></li>
+<li>The architecture follows the MPA paradigm, a "multi-page app"</li>
+<li>Server-side rendering</li>
+<li>Fine-grained reactivity</li>
+<li>Component-based architecture</li>
+<li>Full Rust syntax support</li>
 </ul>
-<h3 id="archtectural-design-patterns"><a class="header" href="#archtectural-design-patterns">Archtectural Design Patterns</a></h3>
+<h3 id="architectural-design-patterns"><a class="header" href="#architectural-design-patterns">Architectural Design Patterns</a></h3>
 <p>We follow concepts such as <a href="https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html">Clean Architecture</a>
 (there is also a <a href="https://www.oreilly.com/library/view/clean-architecture-a/9780134494272/">book</a>),
 <a href="https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)">Hexagonal Architecture</a>
@@ -276,11 +276,8 @@ but the general principles are the same.</p>
 <p>We follow the Testing Pyramid approach to testing,
 the majority of tests are unit tests, with a smaller number of integration tests, and a few end-to-end tests.</p>
 <p>Unit and integration tests are written in Rust, following the Rust testing best practices.
-End-to-end tests are written either in Rust or in JavaScript using Playwright.</p>
-<p>We are looking into how to integrate Playwright into our setup.
-Playwright may be used for end-to-end tests simulating <em>entire user flows</em>.</p>
-<p>For single user interactions, we should not need Playwright.
-For these, we should use the Rust testing framework.</p>
+End-to-end tests can be written using Playwright.
+Leptos has some <a href="https://book.leptos.dev/testing.html?highlight=playwrigh#playwright-with-counters">built-in support for Playwright</a>.</p>
 <h3 id="domain-driven-design"><a class="header" href="#domain-driven-design">Domain Driven Design</a></h3>
 <p>We do not follow strict Domain Driven Design (DDD) principles,
 but we try to follow some of the concepts.
@@ -290,92 +287,12 @@ In particular, we try to keep the language used in code aligned with the domain 
 <h2 id="database"><a class="header" href="#database">Database</a></h2>
 <p>We are still evaluating the database to use.</p>
 <p>For the initial development, we work with static content or JSON files.</p>
-<h2 id="hypermedia"><a class="header" href="#hypermedia">Hypermedia</a></h2>
-<p>Instead of the traditional single-page application architecture,
-where the client is a JavaScript application that runs in the browser,
-and communicates with the server via JSON over HTTP,
-we are using a hypermedia approach.</p>
-<p>In this approach, the server sends HTML pages or fragments to the client.
-The client simply renders the HTML, without much JavaScript.
-The client also does not need to maintain state,
-this is done by the server.
-Server and client keep a connection open,
-through which the server can send updates to the client,
-so called "server-sent events" (SSE),
-which guarantees responsiveness and interactivity.</p>
-<p>This approach has several advantages:</p>
-<ul>
-<li>The client is much simpler, as it does not need to maintain state or manage complex interactions.</li>
-<li>The client does not have many security concerns, as the server is the source of truth
-and can control what is sent to the client.</li>
-<li>The server can update the client at any time, without the need for the client to poll for updates.</li>
-</ul>
-<p>Furthermore, with this approach, we can share much of the code between the server and the client.
-With the UI-code living on the server, we can use the same language (Rust) for both server and client,
-and there is no strict separation between backend and frontend.</p>
-<p>The hypermedia approach is not a new concept, it has been used in the past,
-but had been widely replaced by the single-page application approach.
-Lately, the hypermedia approach has been making a comeback.</p>
-<p>This approach is best known from <a href="https://htmx.org/">HTMX</a>.
-HTMX is fairly well established and there is a lot of learning material available.
-Its major downside is that it is not sufficient for most use-cases, when used by itself.
-Most of the time, you need to combine it with other libraries, such as Alpine.js.</p>
-<p>Rather than HTMX, we are using <a href="https://data-star.dev/">DataStar</a>,
-which provides similar functionality,
-but is more compliant with web standards,
-and provides a more complete solution,
-so that we do not need to combine it with other libraries.</p>
-<p>DataStar is a fairly new project,
-so there is not much learning material available yet.
-However, it is very similar to HTMX,
-so that most of the HTMX learning material can be applied to DataStar as well.</p>
-<h2 id="design-system"><a class="header" href="#design-system">Design System</a></h2>
-<p>Rather than using a generic design system,
-and designing solutions on top of it ad hoc,
-we are using a purpose-built design system.
-This will help us to keep the design consistent and coherent,
-reduce complexity, and give our products a clearer brand identity.</p>
-<p>This design system is built with Tailwind as its foundation,
-providing modern, utility-first styling and component patterns.</p>
-<h3 id="concept-aim-and-purpose"><a class="header" href="#concept-aim-and-purpose">Concept, Aim and Purpose</a></h3>
-<p>We build the DSP Design System using Tailwind
-because it provides a robust foundation for creating consistent, maintainable interfaces
-that communicate the reliability and trustworthiness that users expect from an archive.</p>
-<p>Our approach differs from using design systems as-is for several key reasons:</p>
-<ul>
-<li><strong>Purpose-built focus</strong>: Rather than using a generic, customizable system,
-we create a focused design system tailored specifically to the DSP platform's needs.
-This reduces complexity and ensures consistency by limiting options to what we actually need.</li>
-<li><strong>Brand integration</strong>: By building our own implementation, we can bake the DSP brand
-directly into the system, eliminating the need for extensive customization layers.</li>
-<li><strong>Tech stack alignment</strong>: Our Rust-based, Maud-native implementation aligns perfectly
-with our technology choices, allowing us to move component implementation
-to dedicated design system work rather than ad-hoc development during project work.<br />
-The design system work will be done in close collaboration between Dev and PM,
-and is an up-fron investment that will improve the speed and quality of project work in the long run.</li>
-</ul>
-<h3 id="implementation"><a class="header" href="#implementation">Implementation</a></h3>
-<p>It is part of the discovery process to define components needed for any project.</p>
-<p>These are then implemented in the design system as individual, reuseable components.
-It should then be possible to import these components as Rust modules,
-and use them in the project code.</p>
-<p>The details of the implementation depend on the rendering engine we decide to use.</p>
-<h3 id="playground"><a class="header" href="#playground">Playground</a></h3>
-<p>We create a playground for the design system,
-where we can test and experiment with the components.</p>
-<p>This playground is a Rust web server with TypeScript testing:</p>
-<ul>
-<li>Shell interface with component navigation</li>
-<li>Component isolation via iframe rendering</li>
-<li>Variant selection and theme switching</li>
-<li>Live reload via WebSocket</li>
-<li>TypeScript/Playwright tests for functional and accessibility testing</li>
-</ul>
-<p>For each component, we create a page that shows the component in action,
-in all its variants and states.
-We also pages for compounds and patterns,
-where we show how to use the components together.
-Finally, we create sample pages that show how to use the components in a real-world scenario.</p>
+<h2 id="mosaic-component-library"><a class="header" href="#mosaic-component-library">Mosaic Component Library</a></h2>
+<p>The Mosaic component library provides reusable UI components built with Leptos and Tailwind CSS.</p>
+<p>Components are defined in <code>modules/mosaic/tiles/</code> and can be previewed in the demo application at <code>modules/mosaic/demo/</code>.</p>
+<p>To run the demo:</p>
+<pre><code class="language-bash">just watch-mosaic-demo
+</code></pre>
 
                     </main>
 

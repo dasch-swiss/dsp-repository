@@ -65,12 +65,12 @@ pub fn Button(
                     },
                 )
             }
-            disabled= move || disabled.get_untracked()
+            disabled=move || disabled.get_untracked()
             prop:disabled=move || disabled.get()
             type=move || button_type.get().unwrap_or_default().to_string()
             popovertarget=move || {
                 if is_trigger {
-                    if let Some(ref ctx) = use_context::<PopoverContext>(){
+                    if let Some(ref ctx) = use_context::<PopoverContext>() {
                         return Some(ctx.id.get());
                     }
                 }

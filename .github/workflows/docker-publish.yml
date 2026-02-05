@@ -53,8 +53,7 @@ jobs:
   trigger-prod-deployment:
     name: Trigger deployment to PROD
     runs-on: ubuntu-latest
-    needs: publish_manifest
-    if: github.ref == 'refs/heads/main'
+    needs: publish
     steps:
       - name: Trigger deployment to PROD
         env:
@@ -64,5 +63,5 @@ jobs:
           JENKINS_UPDATE_RELEASE_WEBHOOK: ${{ secrets.JENKINS_UPDATE_RELEASE_WEBHOOK }}
         run: |
           curl -f -u "${JENKINS_BASIC_AUTH_USER}:${JENKINS_BASIC_AUTH_PASS}" \
-               -X POST "${JENKINS_UPDATE_MOSAIC_PROD_WEBHOOK}" \
+               -X POST "${JENKINS_UPDATE_RELEASE_WEBHOOK}" \
                -d "Service=mosaic&Version=${IMAGE_TAG}"

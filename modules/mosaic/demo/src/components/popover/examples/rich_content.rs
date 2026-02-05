@@ -7,7 +7,7 @@ use crate::components::counter::Counter;
 #[component]
 pub fn RichContentExample() -> impl IntoView {
     view! {
-        <Popover>
+        <Popover id="rich-popover">
             <PopoverTrigger>
                 <Button>"Show Info"</Button>
             </PopoverTrigger>

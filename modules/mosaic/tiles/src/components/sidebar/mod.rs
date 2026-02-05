@@ -38,9 +38,7 @@ pub fn Sidebar(
 ) -> impl IntoView {
     view! {
         <div class="sidebar-wrapper">
-            <aside class= "sidebar " >
-                {children()}
-            </aside>
+            <aside class="sidebar ">{children()}</aside>
         </div>
     }
 }

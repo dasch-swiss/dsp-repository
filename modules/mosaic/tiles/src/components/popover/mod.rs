@@ -47,7 +47,7 @@ pub fn Popover(
 
     view! {
         <Provider value=context>
-            <div class="popover">{ children() }</div>
+            <div class="popover">{children()}</div>
         </Provider>
     }
 }
@@ -77,7 +77,7 @@ pub fn Popover(
 /// ```
 #[component]
 pub fn PopoverTrigger(children: Children) -> impl IntoView {
-    view! { <Provider value=PopoverTriggerContext>{ children() }</Provider> }
+    view! { <Provider value=PopoverTriggerContext>{children()}</Provider> }
 }
 
 /// PopoverContent displays the content using the native browser Popover API.

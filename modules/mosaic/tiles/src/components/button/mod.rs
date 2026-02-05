@@ -72,7 +72,6 @@ pub fn Button(
             disabled=btn_disabled.get()
             type=move || button_type.get().unwrap_or_default().to_string()
             popovertarget=move || {
-                // If inside PopoverTrigger, use the ID from PopoverContext
                 if is_trigger {
                     if let Some(ref ctx) = popover_ctx {
                         return Some(ctx.id.clone());

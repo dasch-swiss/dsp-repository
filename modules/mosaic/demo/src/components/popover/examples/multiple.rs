@@ -6,7 +6,7 @@ use mosaic_tiles::popover::*;
 pub fn MultipleExample() -> impl IntoView {
     view! {
         <div class="flex gap-4">
-            <Popover id="popover-1">
+            <Popover>
                 <PopoverTrigger>
                     <Button>"Popover 1"</Button>
                 </PopoverTrigger>
@@ -16,7 +16,7 @@ pub fn MultipleExample() -> impl IntoView {
                     </div>
                 </PopoverContent>
             </Popover>
-            <Popover id="popover-2">
+            <Popover>
                 <PopoverTrigger>
                     <Button variant=ButtonVariant::Secondary>"Popover 2"</Button>
                 </PopoverTrigger>
@@ -26,7 +26,7 @@ pub fn MultipleExample() -> impl IntoView {
                     </div>
                 </PopoverContent>
             </Popover>
-            <Popover id="popover-3">
+            <Popover>
                 <PopoverTrigger>
                     <Button variant=ButtonVariant::Outline>"Popover 3"</Button>
                 </PopoverTrigger>

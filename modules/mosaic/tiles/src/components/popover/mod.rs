@@ -5,7 +5,7 @@ use leptos::prelude::*;
 /// Context providing the popover ID to children
 #[derive(Clone)]
 pub struct PopoverContext {
-    pub id: String,
+    pub id: RwSignal<String>,
 }
 
 /// Marker context indicating we're inside a PopoverTrigger
@@ -37,12 +37,8 @@ pub struct PopoverTriggerContext;
 /// };
 /// ```
 #[component]
-pub fn Popover(
-    /// Required ID for the popover - shared with trigger and content via context
-    #[prop(into)]
-    id: String,
-    children: Children,
-) -> impl IntoView {
+pub fn Popover(children: Children) -> impl IntoView {
+    let id = RwSignal::new(uuid::Uuid::new_v4().to_string());
     let context = PopoverContext { id };
 
     view! {

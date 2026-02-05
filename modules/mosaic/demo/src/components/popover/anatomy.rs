@@ -5,7 +5,7 @@ use mosaic_tiles::popover::*;
 #[component]
 pub fn PopoverAnatomy() -> impl IntoView {
     view! {
-        <Popover id="anatomy-popover">
+        <Popover>
             <PopoverTrigger>
                 <Button />
             </PopoverTrigger>

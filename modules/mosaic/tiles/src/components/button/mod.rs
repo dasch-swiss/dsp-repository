@@ -49,32 +49,29 @@ pub fn Button(
     #[prop(optional, into)]
     popovertargetaction: MaybeProp<String>,
 ) -> impl IntoView {
-    let btn_disabled = Memo::new(move |_| disabled.get().unwrap_or(false));
-
     // Check if we're inside a PopoverTrigger and get the popover ID from context
     let is_trigger = use_context::<PopoverTriggerContext>().is_some();
-    let popover_ctx = use_context::<PopoverContext>();
 
     view! {
         <button
             class=move || {
                 format!(
-                    "{} {} {}",
+                    "{} {}",
                     "btn",
                     match variant {
                         ButtonVariant::Primary => "btn-primary",
                         ButtonVariant::Secondary => "btn-secondary",
                         ButtonVariant::Outline => "btn-outline",
                     },
-                    if btn_disabled.get() { "btn-disabled" } else { "" },
                 )
             }
-            disabled=btn_disabled.get()
+            disabled= move || disabled.get_untracked()
+            prop:disabled=move || disabled.get()
             type=move || button_type.get().unwrap_or_default().to_string()
             popovertarget=move || {
                 if is_trigger {
-                    if let Some(ref ctx) = popover_ctx {
-                        return Some(ctx.id.clone());
+                    if let Some(ref ctx) = use_context::<PopoverContext>(){
+                        return Some(ctx.id.get());
                     }
                 }
                 popovertarget.get()

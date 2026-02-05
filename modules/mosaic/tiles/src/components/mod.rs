@@ -25,9 +25,6 @@ pub mod link;
 #[cfg(feature = "popover")]
 pub mod popover;
 
-#[cfg(feature = "sidebar")]
-pub mod sidebar;
-
 #[cfg(feature = "tabs")]
 pub mod tabs;
 

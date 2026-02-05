@@ -26,7 +26,7 @@ pub struct PopoverTriggerContext;
 /// use mosaic_tiles::button::*;
 ///
 /// view! {
-///     <Popover id="my-popover">
+///     <Popover>
 ///         <PopoverTrigger>
 ///             <Button>"Open Popover"</Button>
 ///         </PopoverTrigger>
@@ -61,7 +61,7 @@ pub fn Popover(children: Children) -> impl IntoView {
 /// use mosaic_tiles::button::*;
 ///
 /// view! {
-///     <Popover id="my-popover">
+///     <Popover>
 ///         <PopoverTrigger>
 ///             <Button>"Click me"</Button>
 ///         </PopoverTrigger>
@@ -89,7 +89,7 @@ pub fn PopoverTrigger(children: Children) -> impl IntoView {
 /// use mosaic_tiles::button::*;
 ///
 /// view! {
-///     <Popover id="my-popover">
+///     <Popover>
 ///         <PopoverTrigger>
 ///             <Button>"Open"</Button>
 ///         </PopoverTrigger>
@@ -116,7 +116,7 @@ pub fn PopoverContent(
     view! {
         <div
             class=format!("popover-content {}", class.get().unwrap_or_default())
-            id=context.id.clone()
+            id=context.id
             popover="auto"
         >
             {if let Some(children) = children {

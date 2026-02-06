@@ -122,3 +122,9 @@ build-docker-mosaic-demo:
 [group('mosaic')]
 run-docker-mosaic-demo:
     docker run --rm -p 8080:8080 mosaic-demo
+
+# Format the mosaic source code using leptosfmt
+[group('mosaic')]
+fmt-mosaic:
+    cd modules/mosaic && leptosfmt .
+

@@ -1823,7 +1823,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-demo"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "axum",
  "console_error_panic_hook",
@@ -1839,7 +1839,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-tiles"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "console_error_panic_hook",
  "icondata",

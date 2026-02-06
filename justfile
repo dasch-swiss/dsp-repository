@@ -12,18 +12,13 @@ default:
 # Install all requirements
 install-requirements:
     #!/usr/bin/env sh
-    cargo install cargo-watch
-    cargo install mdbook
-    cargo install mdbook-alerts
-    rustup target add wasm32-unknown-unknown
-    cargo install --locked leptosfmt
-    cargo install --locked cargo-leptos
-
-# Start the mosaic demo and watch mosaic tiles
-watch-mosaic-demo:
-    #!/usr/bin/env sh
-    cd modules/mosaic/demo
-    cargo leptos watch -- --watch ../tiles
+    rustup show
+    brew install cargo-binstall
+    cargo binstall -y cargo-watch@8.5.3
+    cargo binstall -y mdbook@0.4.52
+    cargo binstall -y mdbook-alerts@0.8.0
+    cargo binstall -y leptosfmt@0.1.33
+    cargo binstall -y cargo-leptos@0.3.4
 
 # Run all fmt and clippy checks
 check:
@@ -87,74 +82,49 @@ docker-image-tag:
 watch:
     cargo watch -x test
 
+[group('docs')]
 docs-install-requirements:
     cargo install mdbook
 
+[group('docs')]
 docs-build:
     mdbook build docs
 
+[group('docs')]
 docs-serve:
     mdbook serve docs
 
+[group('docs')]
 docs-clean:
     mdbook clean docs
 
+[group('docs')]
 docs-test:
     mdbook test docs
 
-run-watch-playground:
-    #!/usr/bin/env bash
-    cleanup() {
-        pkill -f "playground-server" || true
-        pkill -f "cargo-watch.*playground" || true
-    }
-    trap cleanup EXIT INT TERM
-    cargo watch -x 'run --bin playground-server'
+###################
+# Mosaic targets
+###################
 
-# Run playground with Tailwind watch in single terminal (clean shutdown on Ctrl+C)
-run-watch-playground-with-css:
-    #!/usr/bin/env bash
-    trap 'kill 0' EXIT
-    cd modules/design_system && npx @tailwindcss/cli -i input.css -o tailwind.css --watch &
-    cargo watch -s 'cargo run --bin playground-server'
+# Start the mosaic demo and watch mosaic tiles
+[group('mosaic')]
+watch-mosaic-demo:
+    #!/usr/bin/env sh
+    cd modules/mosaic/demo
+    cargo leptos watch -- --watch ../tiles
 
-# Run playground server in background (for MCP testing)
-run-playground-background:
-    cargo run --bin playground-server > /dev/null 2>&1 &
-    @echo "Playground server started in background at http://localhost:3400"
-    @echo "To stop: just stop-playground"
+# Build Docker image for mosaic demo
+[group('mosaic')]
+build-docker-mosaic-demo:
+    docker build -f modules/mosaic/demo/Dockerfile -t mosaic-demo .
 
-# Stop background playground server
-stop-playground:
-    @pkill -f playground-server || echo "No playground server running"
+# Run mosaic demo Docker container on port 8080
+[group('mosaic')]
+run-docker-mosaic-demo:
+    docker run --rm -p 8080:8080 mosaic-demo
 
-# Check if playground server is running
-check-playground:
-    @curl -s -o /dev/null -w "%{http_code}" http://localhost:3400 && echo " - Playground server is running at http://localhost:3400" || echo "Playground server is not running"
+# Format the mosaic source code using leptosfmt
+[group('mosaic')]
+fmt-mosaic:
+    cd modules/mosaic && leptosfmt .
 
-# Build Tailwind CSS (development - unminified)
-tailwind-dev:
-    #!/usr/bin/env bash
-    cd modules/design_system && npx @tailwindcss/cli -i input.css -o tailwind.css
-
-# Build Tailwind CSS (production - minified)
-tailwind-build:
-    #!/usr/bin/env bash
-    cd modules/design_system && npx @tailwindcss/cli -i input.css -o tailwind.css --minify
-
-# Watch Tailwind CSS for changes (development)
-tailwind-watch:
-    #!/usr/bin/env bash
-    cd modules/design_system && npx @tailwindcss/cli -i input.css -o tailwind.css --watch
-
-# Run an example pages app (e.g., just run-example basic-website)
-run-example APP:
-    cargo run --bin {{ APP }}
-
-# Run basic-website example app
-run-example-basic-website:
-    cargo run --bin basic-website
-
-# Watch and run basic-website example app with hot reload
-run-watch-example-basic-website:
-    cargo watch -s 'cargo run --bin basic-website'

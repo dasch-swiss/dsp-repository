@@ -4,17 +4,15 @@
 
 - **Rust** - Primary development language (Edition 2021, Toolchain 1.86.0)
 - **Axum** - HTTP web framework with WebSocket support
-- **Maud** - Macro-based templating engine (JSX-like syntax)
-- **DataStar** - Hypermedia-driven frontend interactivity
-- **Tailwind** - Design system foundation with utility-first CSS approach
+- **Leptos** - Reactive UI framework for Rust
+- **Tailwind CSS v4** - Utility-first CSS framework
 - **Database TBD** - Currently using static JSON files
 
 ## Development & Testing
 
-- **TypeScript + Playwright** - End-to-end testing for design system
-- **Cargo nextest** - Parallel test execution
-- **ESLint + Prettier** - JavaScript/TypeScript code quality (testing only)
-- **Node.js ecosystem** - Supporting testing infrastructure
+- **Cargo test** - Rust test runner
+- **Playwright** - End-to-end testing
+- **Leptosfmt** - Leptos code formatter
 
 ## Architecture Principles
 
@@ -24,6 +22,4 @@ Following clean architecture principles, swapping out the persistence layer is e
 
 ## Implementation Notes
 
-The TypeScript ecosystem is used exclusively for testing and development tooling, not for production runtime code. The core application remains purely Rust-based with hypermedia-driven interactivity.
-
-<!-- TODO: for CSS post processing, check out https://github.com/rs-tml/rcss or https://docs.rs/lightningcss/latest/lightningcss/ -->
+TypeScript is used exclusively for testing and development tooling, not for production runtime code. The core application remains purely Rust-based.

@@ -8,7 +8,12 @@
   }
 
   .accordion-header {
-    @apply w-full flex items-center justify-between px-4 py-3 text-left font-medium text-gray-900 bg-white hover:bg-gray-50 transition-colors;
+    @apply w-full flex items-center justify-between px-4 py-3 text-left font-medium text-gray-900 bg-white hover:bg-gray-50 transition-colors cursor-pointer;
+    list-style: none;
+  }
+
+  .accordion-header::-webkit-details-marker {
+    display: none;
   }
 
   .accordion-title {
@@ -19,7 +24,7 @@
     @apply w-5 h-5 text-gray-500 transition-transform duration-200;
   }
 
-  .accordion-icon-open {
+  details[open] > .accordion-header .accordion-icon {
     @apply rotate-90;
   }
 
@@ -28,7 +33,7 @@
     grid-template-rows: 0fr;
   }
 
-  .accordion-content-open {
+  details[open] > .accordion-content {
     grid-template-rows: 1fr;
   }
 
@@ -36,7 +41,7 @@
     @apply overflow-hidden px-4 py-0;
   }
 
-  .accordion-content-open .accordion-body {
+  details[open] > .accordion-content .accordion-body {
     @apply py-4;
   }
 }

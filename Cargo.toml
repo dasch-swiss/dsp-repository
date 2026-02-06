@@ -1,9 +1,6 @@
 [workspace]
 members = [
   "modules/dpe",
-  "modules/design_system/components",
-  "modules/design_system/playground",
-  "modules/design_system/example_pages",
   "modules/mosaic/demo",
   "modules/mosaic/demo_macro",
   "modules/mosaic/tiles",
@@ -27,12 +24,10 @@ async-stream = "0.3.6"
 axum = { version = "0.8.8", features = ["macros", "ws"] }
 axum-macros = "0.5.0-alpha.1"
 console_error_panic_hook = "0.1"
-datastar = { version = "0.3.1", features = ["axum"] }
 futures = "0.3.31"
-leptos = "0.8.0"
+leptos = { version = "0.8.0", features = ["islands"] }
 leptos_meta = "0.8.0"
 log = "0.4.29"
-maud = { version = "0.27.0", features = ["axum"] }
 regex = "1.12.2"
 serde = { version = "1", features = ["derive"] }
 serde_with = "3.11.0"
@@ -52,3 +47,11 @@ rusqlite = { version = "0.38.0", features = ["bundled"] }
 rusqlite_migration = { version = "2.4.0" }
 r2d2 = { version = "0.8.10" }
 r2d2_sqlite = { version = "0.32.0" }
+
+# Defines a size-optimized profile for the WASM bundle in release mode
+[profile.wasm-release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"

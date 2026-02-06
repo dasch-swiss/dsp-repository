@@ -111,7 +111,6 @@ fn main() {
         "icon",
         "link",
         "popover",
-        "sidebar",
         "tabs"
     );
 

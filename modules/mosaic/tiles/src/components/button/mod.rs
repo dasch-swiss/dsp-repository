@@ -1,6 +1,8 @@
 use leptos::either::Either;
 use leptos::prelude::*;
 
+use crate::popover::{PopoverContext, PopoverTriggerContext};
+
 #[derive(Debug, Clone, Default)]
 pub enum ButtonVariant {
     #[default]
@@ -39,69 +41,42 @@ pub fn Button(
     button_type: MaybeProp<ButtonType>,
     #[prop(optional)] children: Option<Children>,
     #[prop(optional)] variant: ButtonVariant,
-    /// ID of a popover element to control
+    /// ID of a popover element to control (native HTML popover API).
+    /// When inside a PopoverTrigger, this is automatically set from context.
     #[prop(optional, into)]
     popovertarget: MaybeProp<String>,
     /// Action to perform on the popover: "toggle" | "show" | "hide"
     #[prop(optional, into)]
     popovertargetaction: MaybeProp<String>,
 ) -> impl IntoView {
-    let btn_disabled = Memo::new(move |_| disabled.get().unwrap_or(false));
-
-    // Check if we're inside a PopoverTrigger context (only when popover feature is enabled)
-    #[cfg(feature = "popover")]
-    let popover_context = use_context::<crate::popover::PopoverContext>();
-    #[cfg(feature = "popover")]
-    let trigger_context = use_context::<crate::popover::PopoverTriggerContext>();
-
-    // Clone for the closure
-    #[cfg(feature = "popover")]
-    let popover_ctx_clone = popover_context.clone();
-    #[cfg(feature = "popover")]
-    let trigger_ctx_clone = trigger_context.clone();
+    // Check if we're inside a PopoverTrigger and get the popover ID from context
+    let is_trigger = use_context::<PopoverTriggerContext>().is_some();
 
     view! {
         <button
             class=move || {
                 format!(
-                    "{} {} {}",
+                    "{} {}",
                     "btn",
                     match variant {
                         ButtonVariant::Primary => "btn-primary",
                         ButtonVariant::Secondary => "btn-secondary",
                         ButtonVariant::Outline => "btn-outline",
                     },
-                    if btn_disabled.get() { "btn-disabled" } else { "" },
                 )
             }
-            disabled=btn_disabled.get()
+            disabled=move || disabled.get_untracked()
+            prop:disabled=move || disabled.get()
             type=move || button_type.get().unwrap_or_default().to_string()
             popovertarget=move || {
-                // If inside PopoverTrigger, use the context menu_id
-                // Otherwise use the explicit popovertarget prop
-                #[cfg(feature = "popover")]
-                {
-                    if trigger_ctx_clone.is_some() {
-                        if let Some(ref ctx) = popover_ctx_clone {
-                            let menu_id = ctx.menu_id.get();
-                            if !menu_id.is_empty() {
-                                return Some(menu_id);
-                            }
-                        }
+                if is_trigger {
+                    if let Some(ref ctx) = use_context::<PopoverContext>() {
+                        return Some(ctx.id.get());
                     }
                 }
                 popovertarget.get()
             }
-            popovertargetaction=move || {
-                // Default to "toggle" if inside PopoverTrigger
-                #[cfg(feature = "popover")]
-                if trigger_context.is_some() {
-                    return popovertargetaction
-                        .get()
-                        .or(Some("toggle".to_string()));
-                }
-                popovertargetaction.get()
-            }
+            popovertargetaction=move || popovertargetaction.get()
         >
             {if let Some(children) = children {
                 Either::Left(children())

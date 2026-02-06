@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use mosaic_tiles::button::{Button, ButtonVariant};
 use mosaic_tiles::button_group::*;
 
-#[component]
+#[island]
 pub fn InteractiveExample() -> impl IntoView {
     let (count, set_count) = signal(0);
 

@@ -60,7 +60,7 @@ jobs:
           IMAGE_TAG: ${{ needs.publish.outputs.tag }}
           JENKINS_BASIC_AUTH_USER: ${{ secrets.JENKINS_BASIC_AUTH_USER }}
           JENKINS_BASIC_AUTH_PASS: ${{ secrets.JENKINS_BASIC_AUTH_PASS }}
-          JENKINS_UPDATE_RELEASE_WEBHOOK: ${{ secrets.JENKINS_UPDATE_RELEASE_WEBHOOK }}
+          JENKINS_UPDATE_RELEASE_WEBHOOK: ${{ secrets.JENKINS_UPDATE_MOSAIC_PROD_WEBHOOK }}
         run: |
           curl -f -u "${JENKINS_BASIC_AUTH_USER}:${JENKINS_BASIC_AUTH_PASS}" \
                -X POST "${JENKINS_UPDATE_RELEASE_WEBHOOK}" \

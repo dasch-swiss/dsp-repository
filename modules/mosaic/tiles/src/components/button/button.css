@@ -2,7 +2,7 @@
   .btn {
     @apply inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm shadow-xs cursor-pointer;
   }
-  .btn-disabled{
+  .btn:disabled{
     @apply opacity-50 cursor-not-allowed
   }
   .btn-primary {

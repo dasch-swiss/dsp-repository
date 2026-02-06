@@ -40,7 +40,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                     window.addEventListener('load', function() {
                     setTimeout(function() {
                     if (window.Prism) {
-                        Prism.highlightAll();
+                       Prism.highlightAll();
                     }
                     }, 100);
                     });
@@ -51,12 +51,12 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                     lastPath = window.location.pathname;
                     // Close all open details elements
                     document.querySelectorAll('details[open]').forEach(function(details) {
-                        details.removeAttribute('open');
+                       details.removeAttribute('open');
                     });
                     setTimeout(function() {
-                        if (window.Prism) {
-                            Prism.highlightAll();
-                        }
+                       if (window.Prism) {
+                           Prism.highlightAll();
+                       }
                     }, 100);
                     }
                     }, 500);

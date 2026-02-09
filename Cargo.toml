@@ -4,9 +4,9 @@ members = [
   "modules/mosaic/demo",
   "modules/mosaic/demo_macro",
   "modules/mosaic/tiles",
-  "modules/leptos-hello/app",
-  "modules/leptos-hello/frontend",
-  "modules/leptos-hello/server",
+  "modules/leptos-dpe/app",
+  "modules/leptos-dpe/frontend",
+  "modules/leptos-dpe/server",
 ]
 resolver = "3"
 
@@ -77,13 +77,13 @@ opt-level = 'z'
 name = "leptos-meta2"
 bin-package = "leptos-server"
 lib-package = "frontend"
-site-root = "modules/leptos-hello/target/site"
+site-root = "modules/leptos-dpe/target/site"
 site-pkg-dir = "pkg"
-assets-dir = "modules/leptos-hello/public"
+assets-dir = "modules/leptos-dpe/public"
 site-addr = "127.0.0.1:3000"
 reload-port = 3001
 end2end-cmd = "npx playwright test"
-end2end-dir = "modules/leptos-hello/end2end"
+end2end-dir = "modules/leptos-dpe/end2end"
 browserquery = "defaults"
 watch = false
 env = "DEV"
@@ -91,5 +91,5 @@ bin-features = []
 bin-default-features = false
 lib-features = []
 lib-default-features = false
-tailwind-input-file = "modules/leptos-hello/style/main.css"
+tailwind-input-file = "modules/leptos-dpe/style/main.css"
 lib-profile-release = "wasm-release"

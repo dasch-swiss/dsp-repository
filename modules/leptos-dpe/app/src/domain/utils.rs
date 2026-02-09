@@ -7,5 +7,5 @@ pub fn get_data_dir() -> String {
 
     // For development with cargo-leptos, use relative path from workspace root
     // cargo-leptos runs from the workspace root
-    "modules/leptos-hello/server/data".to_string()
+    "modules/leptos-dpe/server/data".to_string()
 }

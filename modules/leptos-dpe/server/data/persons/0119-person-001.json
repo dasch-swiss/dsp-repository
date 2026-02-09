@@ -1,0 +1,24 @@
+{
+    "id": "0119-person-001",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-4072-0913",
+            "text": "ORCID URL: https://orcid.org/0000-0002-4072-0913"
+        }
+    ],
+    "givenNames": [
+        "Estelle"
+    ],
+    "familyNames": [
+        "Doudet"
+    ],
+    "jobTitles": [
+        "Full professor"
+    ],
+    "affiliations": [
+        "0119-organization-000"
+    ],
+    "email": "estelle.doudet@unil.ch"
+}

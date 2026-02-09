@@ -1,0 +1,17 @@
+{
+    "id": "0115-person-002",
+    "pid": "MISSING",
+    "givenNames": [
+        "Natacha"
+    ],
+    "familyNames": [
+        "Isoz"
+    ],
+    "jobTitles": [
+        "PhD Student"
+    ],
+    "affiliations": [
+        "0115-organization-000"
+    ],
+    "email": "natacha.isoz@unil.ch"
+}

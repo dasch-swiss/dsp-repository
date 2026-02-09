@@ -1,0 +1,17 @@
+{
+    "id": "0107-person-003",
+    "pid": "MISSING",
+    "givenNames": [
+        "Laure"
+    ],
+    "familyNames": [
+        "Cordonier"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "0107-organization-000"
+    ],
+    "email": "laure.cordonier@unil.ch"
+}

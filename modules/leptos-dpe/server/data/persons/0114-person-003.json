@@ -1,0 +1,17 @@
+{
+    "id": "0114-person-003",
+    "pid": "MISSING",
+    "givenNames": [
+        "Fabien"
+    ],
+    "familyNames": [
+        "Défayes"
+    ],
+    "jobTitles": [
+        "Scientif collaborator"
+    ],
+    "affiliations": [
+        "0114-organization-001"
+    ],
+    "email": "fabien.def@gmail.com"
+}

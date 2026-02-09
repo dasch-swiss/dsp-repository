@@ -1,0 +1,17 @@
+{
+    "id": "0115-person-000",
+    "pid": "MISSING",
+    "givenNames": [
+        "Laurent"
+    ],
+    "familyNames": [
+        "Le Forestier"
+    ],
+    "jobTitles": [
+        "Full Professor"
+    ],
+    "affiliations": [
+        "0115-organization-000"
+    ],
+    "email": "laurent.leforestier@unil.ch"
+}

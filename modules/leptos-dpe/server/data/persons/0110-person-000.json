@@ -1,0 +1,17 @@
+{
+    "id": "0110-person-000",
+    "pid": "MISSING",
+    "givenNames": [
+        "François"
+    ],
+    "familyNames": [
+        "Vallotton"
+    ],
+    "jobTitles": [
+        "Professeur ordinaire en histoire contemporaine"
+    ],
+    "affiliations": [
+        "0110-organization-000"
+    ],
+    "email": "Francois.Vallotton@unil.ch"
+}

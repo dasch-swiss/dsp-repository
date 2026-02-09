@@ -1,0 +1,512 @@
+{
+  "$defs": {
+    "AccessRights": {
+      "properties": {
+        "accessRights": {
+          "$ref": "#/$defs/AccessRightsType"
+        },
+        "embargoDate": {
+          "format": "date",
+          "title": "Embargodate",
+          "type": "string"
+        }
+      },
+      "required": [
+        "accessRights"
+      ],
+      "title": "AccessRights",
+      "type": "object"
+    },
+    "AccessRightsType": {
+      "description": "The access rights of the record. Literal 'Full Open Access', 'Open Access with Restrictions', 'Embargoed Access', 'Metadata only Access'.",
+      "enum": [
+        "Full Open Access",
+        "Open Access with Restrictions",
+        "Embargoed Access",
+        "Metadata only Access"
+      ],
+      "title": "AccessRightsType",
+      "type": "string"
+    },
+    "Attribution": {
+      "description": "Modelled according to the OpenAIRE guidelines.",
+      "properties": {
+        "contributor": {
+          "title": "Contributor",
+          "type": "string"
+        },
+        "contributorType": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Contributortype",
+          "type": "array"
+        }
+      },
+      "required": [
+        "contributor",
+        "contributorType"
+      ],
+      "title": "Attribution",
+      "type": "object"
+    },
+    "AuthorityFileReference": {
+      "description": "AuthorityFileReference. An object representing a reference to an external authority file.",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/AuthorityFileReferenceType"
+        },
+        "url": {
+          "format": "uri",
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "url"
+      ],
+      "title": "AuthorityFileReference",
+      "type": "object"
+    },
+    "AuthorityFileReferenceType": {
+      "description": "The type of the Authority File Reference.",
+      "enum": [
+        "Geonames",
+        "Pleiades",
+        "Skos",
+        "Periodo",
+        "Chronontology",
+        "GND",
+        "VIAF",
+        "Grid",
+        "ORCID",
+        "Creative Commons",
+        "COAR",
+        "ROR",
+        "DOI",
+        "ARK",
+        "URL"
+      ],
+      "title": "AuthorityFileReferenceType",
+      "type": "string"
+    },
+    "Grant": {
+      "properties": {
+        "funders": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Funders",
+          "type": "array"
+        },
+        "number": {
+          "title": "Number",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "funders"
+      ],
+      "title": "Grant",
+      "type": "object"
+    },
+    "LegalInfo": {
+      "properties": {
+        "license": {
+          "$ref": "#/$defs/License"
+        },
+        "copyrightHolder": {
+          "title": "Copyrightholder",
+          "type": "string"
+        },
+        "authorship": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Authorship",
+          "type": "array"
+        }
+      },
+      "required": [
+        "license",
+        "copyrightHolder",
+        "authorship"
+      ],
+      "title": "LegalInfo",
+      "type": "object"
+    },
+    "License": {
+      "properties": {
+        "licenseIdentifier": {
+          "title": "Licenseidentifier",
+          "type": "string"
+        },
+        "licenseDate": {
+          "format": "date",
+          "title": "Licensedate",
+          "type": "string"
+        },
+        "licenseURI": {
+          "format": "uri",
+          "minLength": 1,
+          "title": "Licenseuri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "licenseIdentifier",
+        "licenseDate",
+        "licenseURI"
+      ],
+      "title": "License",
+      "type": "object"
+    },
+    "Pid": {
+      "description": "A unique persistent identifier",
+      "properties": {
+        "url": {
+          "format": "uri",
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "Pid",
+      "type": "object"
+    },
+    "ProjectStatus": {
+      "description": "project status, either 'Ongoing' or 'Finished'",
+      "enum": [
+        "Ongoing",
+        "Finished"
+      ],
+      "title": "ProjectStatus",
+      "type": "string"
+    },
+    "Publication": {
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "pid": {
+          "$ref": "#/$defs/Pid"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "Publication",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "pid": {
+      "title": "Pid",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "shortcode": {
+      "pattern": "^[0-9A-F]{4}$",
+      "title": "Shortcode",
+      "type": "string"
+    },
+    "officialName": {
+      "title": "Officialname",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ProjectStatus"
+    },
+    "shortDescription": {
+      "title": "Shortdescription",
+      "type": "string"
+    },
+    "description": {
+      "patternProperties": {
+        "^[a-z]{2}$": {
+          "type": "string"
+        }
+      },
+      "title": "Description",
+      "type": "object"
+    },
+    "startDate": {
+      "format": "date",
+      "title": "Startdate",
+      "type": "string"
+    },
+    "endDate": {
+      "format": "date",
+      "title": "Enddate",
+      "type": "string"
+    },
+    "url": {
+      "items": {
+        "format": "uri",
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Url",
+      "type": "array"
+    },
+    "howToCite": {
+      "title": "Howtocite",
+      "type": "string"
+    },
+    "accessRights": {
+      "$ref": "#/$defs/AccessRights"
+    },
+    "legalInfo": {
+      "items": {
+        "$ref": "#/$defs/LegalInfo"
+      },
+      "title": "Legalinfo",
+      "type": "array"
+    },
+    "dataManagementPlan": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "format": "uri",
+          "minLength": 1,
+          "type": "string"
+        }
+      ],
+      "default": "not accessible",
+      "title": "Datamanagementplan"
+    },
+    "dataPublicationYear": {
+      "format": "date",
+      "title": "Datapublicationyear",
+      "type": "string"
+    },
+    "typeOfData": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Typeofdata",
+      "type": "array"
+    },
+    "dataLanguage": {
+      "items": {
+        "patternProperties": {
+          "^[a-z]{2}$": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "title": "Datalanguage",
+      "type": "array"
+    },
+    "collections": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Collections",
+      "type": "array"
+    },
+    "records": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Records",
+      "type": "array"
+    },
+    "keywords": {
+      "items": {
+        "patternProperties": {
+          "^[a-z]{2}$": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "minItems": 1,
+      "title": "Keywords",
+      "type": "array"
+    },
+    "disciplines": {
+      "items": {
+        "anyOf": [
+          {
+            "patternProperties": {
+              "^[a-z]{2}$": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          {
+            "$ref": "#/$defs/AuthorityFileReference"
+          }
+        ]
+      },
+      "title": "Disciplines",
+      "type": "array"
+    },
+    "temporalCoverage": {
+      "items": {
+        "anyOf": [
+          {
+            "patternProperties": {
+              "^[a-z]{2}$": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          {
+            "$ref": "#/$defs/AuthorityFileReference"
+          }
+        ]
+      },
+      "title": "Temporalcoverage",
+      "type": "array"
+    },
+    "spatialCoverage": {
+      "items": {
+        "$ref": "#/$defs/AuthorityFileReference"
+      },
+      "title": "Spatialcoverage",
+      "type": "array"
+    },
+    "attributions": {
+      "items": {
+        "$ref": "#/$defs/Attribution"
+      },
+      "title": "Attributions",
+      "type": "array"
+    },
+    "abstract": {
+      "patternProperties": {
+        "^[a-z]{2}$": {
+          "type": "string"
+        }
+      },
+      "title": "Abstract",
+      "type": "object"
+    },
+    "contactPoint": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Contactpoint",
+      "type": "array"
+    },
+    "publications": {
+      "items": {
+        "$ref": "#/$defs/Publication"
+      },
+      "title": "Publications",
+      "type": "array"
+    },
+    "funding": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/Grant"
+          },
+          "type": "array"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "default": "No funding",
+      "title": "Funding"
+    },
+    "alternativeNames": {
+      "items": {
+        "patternProperties": {
+          "^[a-z]{2}$": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "title": "Alternativenames",
+      "type": "array"
+    },
+    "documentationMaterial": {
+      "items": {
+        "format": "uri",
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Documentationmaterial",
+      "type": "array"
+    },
+    "provenance": {
+      "title": "Provenance",
+      "type": "string"
+    },
+    "additionalMaterial": {
+      "items": {
+        "format": "uri",
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Additionalmaterial",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "pid",
+    "name",
+    "shortcode",
+    "officialName",
+    "status",
+    "shortDescription",
+    "description",
+    "startDate",
+    "endDate",
+    "url",
+    "howToCite",
+    "accessRights",
+    "legalInfo",
+    "keywords",
+    "disciplines",
+    "temporalCoverage",
+    "spatialCoverage",
+    "attributions"
+  ],
+  "title": "Project",
+  "type": "object"
+}

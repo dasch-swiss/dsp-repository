@@ -1,0 +1,132 @@
+{
+    "id": "081C",
+    "pid": "MISSING",
+    "name": "Hôtel de Musique Bern",
+    "shortcode": "081C",
+    "officialName": "MISSING",
+    "status": "Finished",
+    "shortDescription": "The database documents the different kinds of spectacles such as theatre plays, operas, ballets, or concerts that took place in the Hôtel de Musique in Bern between 1766 and 1905.",
+    "description": {
+        "en": "The database documents the events that took place in the Hôtel de Musique in Bern between 1766 and 1905. The repertoire was constituted by different kinds of spectacles like theatre plays, operas, ballets, concerts, dance parties, acrobatic performances, conferences or magicians. The list reconstructs the lifely and colourful theatre culture of Bern in the 19th Century."
+    },
+    "startDate": "2009-04-01",
+    "endDate": "MISSING",
+    "url": [
+        "https://app.dasch.swiss/project/081C"
+    ],
+    "howToCite": "HdM-Bern",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "19 Century"
+        },
+        {
+            "de": "Bern"
+        },
+        {
+            "en": "Concert"
+        },
+        {
+            "en": "Music"
+        },
+        {
+            "en": "Musicology"
+        },
+        {
+            "en": "Opera"
+        },
+        {
+            "en": "Spectales"
+        },
+        {
+            "en": "Switzerland"
+        },
+        {
+            "en": "Theater history"
+        },
+        {
+            "en": "Theatre"
+        }
+    ],
+    "disciplines": [
+        {
+            "de": "10302 Schweizer Geschichte"
+        },
+        {
+            "de": "10405 Musikologie"
+        },
+        {
+            "de": "10406 Theater-und Filmwissenschaften"
+        },
+        {
+            "de": "10604 Musik und Theater"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "type": "Periodo",
+            "url": "http://n2t.net/ark:/99152/p06c6g3pvr5",
+            "text": "Under Mediation act, 1803-1814"
+        },
+        {
+            "type": "Periodo",
+            "url": "http://n2t.net/ark:/99152/p06c6g3p4cf",
+            "text": "Sonderbund, 1845-1847"
+        },
+        {
+            "type": "Periodo",
+            "url": "http://n2t.net/ark:/99152/p06c6g364np",
+            "text": "Helvetic Republic, 1798-1803"
+        },
+        {
+            "de": "1766-1905",
+            "en": "1766-1905",
+            "fr": "1766-1905"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2661552",
+            "text": "Bern"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "081C-organization-000",
+            "contributorType": [
+                "author"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The database documents the events that took place in the Hôtel de Musique in Bern between 1766 and 1905. The repertoire was constituted by different kinds of spectacles like theatre plays, operas, ballets, concerts, dance parties, acrobatic performances, conferences or magicians. The list reconstructs the lifely and colourful theatre culture of Bern in the 19th Century."
+    },
+    "funding": "No funding"
+}

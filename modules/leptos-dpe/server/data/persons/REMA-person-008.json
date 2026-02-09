@@ -1,0 +1,17 @@
+{
+    "id": "REMA-person-008",
+    "pid": "MISSING",
+    "givenNames": [
+        "Lejosne"
+    ],
+    "familyNames": [
+        "Cassandre"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "REMA-organization-000"
+    ],
+    "email": "Cassandre.Lejosne@unil.ch"
+}

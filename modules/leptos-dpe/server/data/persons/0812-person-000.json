@@ -1,0 +1,24 @@
+{
+    "id": "0812-person-000",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://kulturwissenschaft.philhist.unibas.ch/de/personen/walter-leimgruber/",
+            "text": "https://kulturwissenschaft.philhist.unibas.ch/de/personen/walter-leimgruber/"
+        }
+    ],
+    "givenNames": [
+        "Walter"
+    ],
+    "familyNames": [
+        "Leimgruber"
+    ],
+    "jobTitles": [
+        "Professor"
+    ],
+    "affiliations": [
+        "0812-organization-000",
+        "0812-organization-003"
+    ]
+}

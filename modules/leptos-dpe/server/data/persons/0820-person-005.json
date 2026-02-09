@@ -1,0 +1,23 @@
+{
+    "id": "0820-person-005",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.archaeologie.uzh.ch/de/prehist/%C3%9Cber-uns/Personen/Dr.-Ruven-Turck.html",
+            "text": "https://www.archaeologie.uzh.ch/de/prehist/%C3%9Cber-uns/Personen/Dr.-Ruven-Turck.html"
+        }
+    ],
+    "givenNames": [
+        "Rouven"
+    ],
+    "familyNames": [
+        "Turck"
+    ],
+    "jobTitles": [
+        "Archaeologist"
+    ],
+    "affiliations": [
+        "0820-organization-005"
+    ]
+}

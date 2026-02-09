@@ -1,0 +1,24 @@
+{
+    "id": "0854-person-000",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0005-0190-5244",
+            "text": "ORCID URL: https://orcid.org/0009-0005-0190-5244"
+        }
+    ],
+    "givenNames": [
+        "Noémi"
+    ],
+    "familyNames": [
+        "Villars-Amberg"
+    ],
+    "jobTitles": [
+        "Senior Research Data Specialist"
+    ],
+    "affiliations": [
+        "0854-organization-000"
+    ],
+    "email": "noemi.villars@dasch.swiss"
+}

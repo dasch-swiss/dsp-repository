@@ -1,0 +1,13 @@
+{
+    "id": "0848-organization-001",
+    "pid": "MISSING",
+    "name": "Swiss National Science Foundation (SNSF)",
+    "url": "https://www.snf.ch/en",
+    "address": {
+        "street": "Wildhainweg 3",
+        "postalCode": "3001",
+        "locality": "Berne",
+        "country": "Switzerland"
+    },
+    "email": "desk@snfs.ch"
+}

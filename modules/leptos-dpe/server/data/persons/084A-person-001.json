@@ -1,0 +1,24 @@
+{
+    "id": "084A-person-001",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-4079-7387",
+            "text": "ORCID URL: https://orcid.org/0000-0003-4079-7387"
+        }
+    ],
+    "givenNames": [
+        "Dominic"
+    ],
+    "familyNames": [
+        "Studer"
+    ],
+    "jobTitles": [
+        "Wissenschaftlicher Mitarbeiter"
+    ],
+    "affiliations": [
+        "084A-organization-000"
+    ],
+    "email": "dominic.studer@fhnw.ch"
+}

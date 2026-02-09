@@ -10,7 +10,6 @@ mod pages;
 
 use components::{Footer, NavBar, ProjectCard};
 use pages::{AboutPage, ProjectPage, ProjectsPage};
-use crate::pages::DataBrowserPage;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -70,8 +69,6 @@ pub fn App() -> impl IntoView {
                         <Route path=StaticSegment("projects") view=ProjectsPage />
                         <Route path=StaticSegment("about") view=AboutPage />
                         <Route path=path!("projects/:id") view=ProjectPage />
-                        <Route path=StaticSegment("data-browser") view=DataBrowserPage />
-                        <Route path=path!("data-browser/:id") view=DataBrowserPage />
                     </Routes>
                 </main>
             </Router>

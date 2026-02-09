@@ -11,7 +11,6 @@ pub fn ProjectCard(
     status: ProjectStatus,
     btn_text: String,
     btn_target: String,
-    shortcode: String,
 ) -> impl IntoView {
     view! {
         <div class="card bg-base-300 shadow w-96">

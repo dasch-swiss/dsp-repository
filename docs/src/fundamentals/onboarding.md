@@ -72,8 +72,11 @@ The Mosaic component library provides reusable UI components built with Leptos a
 
 Components are defined in `modules/mosaic/tiles/` and can be previewed in the demo application at `modules/mosaic/demo/`.
 
-To run the demo:
+To run the demo locally:
 
 ```bash
 just watch-mosaic-demo
 ```
+
+Pull requests that modify files in `modules/mosaic/` automatically receive a
+Cloud Run preview deployment. The preview URL is posted as a comment on the PR.

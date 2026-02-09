@@ -23,7 +23,7 @@ cargo leptos new --git https://github.com/leptos-rs/start-axum-workspace/
 to generate a new project template.
 
 ```bash
-cd leptos-meta2
+cd leptos-dpe
 ```
 
 to go to your newly created project.
@@ -75,13 +75,13 @@ This project includes optimized Docker configuration for production deployment w
 ### Building the Docker Image
 
 ```bash
-docker build -t leptos-meta2 .
+docker build -t leptos-dpe .
 ```
 
 ### Running with Docker
 
 ```bash
-docker run -p 8080:8080 leptos-meta2
+docker run -p 8080:8080 leptos-dpe
 ```
 
 The application will be available at `http://localhost:8080`
@@ -105,7 +105,7 @@ docker-compose down
 
 The following environment variables can be configured:
 - `RUST_LOG` - Logging level (default: "info")
-- `LEPTOS_OUTPUT_NAME` - Output file name (default: "leptos-meta2")
+- `LEPTOS_OUTPUT_NAME` - Output file name (default: "leptos-dpe")
 - `LEPTOS_SITE_ROOT` - Site root directory (default: "site")
 - `LEPTOS_SITE_PKG_DIR` - Package directory (default: "pkg")
 - `LEPTOS_SITE_ADDR` - Server bind address (default: "0.0.0.0:8080")
@@ -140,12 +140,12 @@ After running a `cargo leptos build --release` the minimum files needed are:
 
 Copy these files to your remote server. The directory structure should be:
 ```text
-leptos-meta2
+leptos-dpe
 site/
 ```
 Set the following environment variables (updating for your project as needed):
 ```text
-LEPTOS_OUTPUT_NAME="leptos-meta2"
+LEPTOS_OUTPUT_NAME="leptos-dpe"
 LEPTOS_SITE_ROOT="site"
 LEPTOS_SITE_PKG_DIR="pkg"
 LEPTOS_SITE_ADDR="127.0.0.1:3000"

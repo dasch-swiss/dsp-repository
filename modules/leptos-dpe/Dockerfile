@@ -47,7 +47,7 @@ RUN useradd -m -u 1001 leptos
 WORKDIR /app
 
 # Copy the server binary from the builder stage (renamed to avoid conflict with server/data directory)
-COPY --from=builder /work/target/release/server /app/leptos-meta2
+COPY --from=builder /work/target/release/server /app/leptos-dpe
 
 # Copy the site directory (contains WASM, JS, CSS, and static assets)
 COPY --from=builder /work/target/site /app/site
@@ -61,7 +61,7 @@ USER leptos
 
 # Set environment variables for production
 ENV RUST_LOG="info"
-ENV LEPTOS_OUTPUT_NAME="leptos-meta2"
+ENV LEPTOS_OUTPUT_NAME="leptos-dpe"
 ENV LEPTOS_SITE_ROOT="site"
 ENV LEPTOS_SITE_PKG_DIR="pkg"
 ENV LEPTOS_SITE_ADDR="0.0.0.0:8080"
@@ -72,4 +72,4 @@ ENV LEPTOS_ENV="PROD"
 EXPOSE 8080
 
 # Run the server
-CMD ["./leptos-meta2"]
+CMD ["./leptos-dpe"]

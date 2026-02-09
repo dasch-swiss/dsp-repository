@@ -17,7 +17,7 @@ This is a **Leptos 0.8.2** full-stack web application using the **Axum** backend
 ### Workspace Structure
 
 ```
-leptos-meta2/
+leptos-dpe/
 ├── app/              # Shared application code (components, pages, logic)
 ├── frontend/         # WASM frontend entry point
 ├── server/           # Axum server binary
@@ -182,7 +182,7 @@ use app;
 
 ### Styling Not Applying
 
-- Stylesheet link is in [app/src/lib.rs](app/src/lib.rs): `<Stylesheet id="leptos" href="/pkg/leptos-meta2.css" />`
+- Stylesheet link is in [app/src/lib.rs](app/src/lib.rs): `<Stylesheet id="leptos" href="/pkg/leptos-dpe.css" />`
 - Ensure Tailwind build is working (automatic with `cargo leptos watch`)
 - Check DaisyUI theme configuration in [style/main.css](style/main.css)
 

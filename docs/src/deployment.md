@@ -28,8 +28,10 @@ posted as a comment on the PR and updated on each push.
 - **Cleanup:** The Cloud Run service and container image are deleted when the PR
   is closed or merged
 
-Required secrets: `GCP_SERVICE_ACCOUNT_KEY`, `GCP_PROJECT_ID`, `GCP_REGION`,
-`GCP_ARTIFACT_REGISTRY`.
+Authentication uses Workload Identity Federation (keyless, OIDC-based).
+
+Required secrets: `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT`,
+`GCP_REGION`, `GCP_ARTIFACT_REGISTRY`.
 
 #### Production (Docker Hub + Jenkins)
 

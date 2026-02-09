@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
-use crate::components::{ProjectStatusBadge, ResourceExplorerButton};
 use crate::components::dashboard::statusbadge::BadgeSize;
+use crate::components::{ProjectStatusBadge};
 use crate::domain::ProjectStatus;
 
 #[component]
@@ -22,7 +22,6 @@ pub fn ProjectCard(
                 <h2 class="card-title">{title}</h2>
                 <p>{content}</p>
                 <div class="card-actions justify-end">
-                    <ResourceExplorerButton shortcode=shortcode />
                     <button class="btn btn-primary">
                         <a href=btn_target>{btn_text}</a>
                     </button>

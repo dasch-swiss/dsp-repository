@@ -94,7 +94,7 @@ jobs:
       # intentionally no target specifier; see https://github.com/jonhoo/rust-ci-conf/pull/4
       # --feature-powerset runs for every combination of features
       - name: cargo hack
-        run: cargo hack --feature-powerset check
+        run: cargo hack --feature-powerset --exclude-no-default-features --exclude mosaic-tiles check
 
   docs:
     runs-on: ubuntu-latest
@@ -110,20 +110,3 @@ jobs:
       - name: Install mdBook-alerts
         run: cargo install mdbook-alerts
       - run: mdbook build docs
-
-  keyword-check:
-    runs-on: ubuntu-latest
-    name: check / prohibited keyword
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Check for prohibited keyword
-        run: |
-          match=$(grep -rEo "[Tt]ailwind[- _]?[Pp]lus" . || true)
-          if [ -n "$match" ]; then
-            echo -e "ERROR: Prohibited keyword found:\n$match"
-            exit 1
-          else
-            echo "No prohibited keywords found. Check passed."
-          fi

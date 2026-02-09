@@ -1,17 +1,19 @@
 [package]
 name = "mosaic-tiles"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-leptos = { version = "0.8.0" }
-leptos_meta = "0.8.5"
-console_error_panic_hook = { version = "0.1", optional = true }
+leptos.workspace = true
+leptos_meta.workspace = true
+serde.workspace = true
+console_error_panic_hook = { workspace = true, optional = true }
 wasm-bindgen = { workspace = true, optional = true }
-icondata = { version = "0.7" }
+icondata = "0.7"
+uuid.workspace = true
 
 [features]
 hydrate = ["leptos/hydrate", "dep:console_error_panic_hook", "dep:wasm-bindgen"]
@@ -26,10 +28,7 @@ default = [
   "icon",
   "link",
   "popover",
-  "resource_explorer_button",
-  "sidebar",
   "tabs",
-  "theme_provider",
 ]
 accordion = ["icon"]
 badge = []
@@ -40,11 +39,8 @@ card = []
 icon = []
 link = ["button"]
 popover = ["button"]
-resource_explorer_button = ["button"]
-sidebar = ["icon"]
 tabs = []
-theme_provider = []
 
 [build-dependencies]
 reqwest = { version = "0.13.1", features = ["blocking"] }
-sha256 = { version = "1.6.0" }
+sha256 = "1.6.0"

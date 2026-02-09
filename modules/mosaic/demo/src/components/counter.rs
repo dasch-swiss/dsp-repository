@@ -1,10 +1,8 @@
 use leptos::prelude::*;
-use mosaic_tiles::{
-    button::{Button, ButtonVariant},
-    button_group::ButtonGroup,
-};
+use mosaic_tiles::button::{Button, ButtonVariant};
+use mosaic_tiles::button_group::ButtonGroup;
 
-#[component]
+#[island]
 pub fn Counter() -> impl IntoView {
     let (count, set_count) = signal(0);
     view! {

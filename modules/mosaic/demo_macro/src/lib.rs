@@ -96,33 +96,6 @@ fn read_file_as_string(path: &Path) -> String {
     fs::read_to_string(path).unwrap_or_else(|_| panic!("Failed to read {:?}", path))
 }
 
-/// Generate Leptos routes for all components
-#[proc_macro]
-pub fn generate_component_routes(_input: TokenStream) -> TokenStream {
-    let components = find_components();
-
-    let routes = components.iter().map(|(name, _)| {
-        let route_name = format!("/{}", name);
-        let component_ident = format_ident!("{}Route", to_pascal_case(name));
-
-        quote! {
-            <Route path=StaticSegment(#route_name) view=#component_ident />
-        }
-    });
-
-    let expanded = quote! {
-        {
-            use leptos::prelude::*;
-            use leptos_router::components::*;
-            use leptos_router::*;
-
-            #(#routes)*
-        }
-    };
-
-    TokenStream::from(expanded)
-}
-
 /// Generate page components for all components
 #[proc_macro]
 pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
@@ -183,7 +156,7 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
                             "View Code"
                         </summary>
                         <div class="mt-2 p-4 bg-gray-50 rounded overflow-x-auto">
-                            <pre attr:data-pre-key=#example_key><code class="language-rust" prop:textContent={move || #example_code}></code></pre>
+                            <pre attr:data-pre-key=#example_key><code class="language-rust">{#example_code}</code></pre>
                         </div>
                     </details>
                 </div>
@@ -199,7 +172,7 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
                 <div class="mb-8">
                     <h2 class="text-2xl font-bold mb-4">"Anatomy"</h2>
                     <div class="p-4 bg-gray-50 rounded overflow-x-auto">
-                        <pre attr:data-anatomy-key=#anatomy_key><code class="language-rust" prop:textContent={move || #code}></code></pre>
+                        <pre attr:data-anatomy-key=#anatomy_key><code class="language-rust">{#code}</code></pre>
                     </div>
                 </div>
             }

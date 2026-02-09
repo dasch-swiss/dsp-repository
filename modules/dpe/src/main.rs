@@ -1,5 +1,6 @@
 mod api;
 mod app_state;
+mod db;
 mod domain;
 mod error;
 mod services;
@@ -15,6 +16,14 @@ use tracing_subscriber::util::SubscriberInitExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    setup_tracing();
+    db::setup_db();
+    run_http().await;
+
+    Ok(())
+}
+
+fn setup_tracing() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -22,7 +31,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
+}
 
+async fn run_http() {
     let app_state = Arc::new(app_state::AppState { project_repository: ProjectRepository {} });
 
     let cors = CorsLayer::new()
@@ -38,6 +49,4 @@ async fn main() -> Result<(), Box<dyn Error>> {
     tracing::debug!("listening on http://{}", listener.local_addr().unwrap());
 
     axum::serve(listener, app).await.unwrap();
-
-    Ok(())
 }

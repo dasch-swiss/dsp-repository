@@ -128,3 +128,12 @@ run-docker-mosaic-demo:
 fmt-mosaic:
     cd modules/mosaic && leptosfmt .
 
+###################
+# Leptos DPE targets
+###################
+
+# Start the leptos-dpe with hot reload
+[group('leptos-dpe')]
+watch-leptos-dpe:
+    cargo leptos watch --project=leptos-dpe
+

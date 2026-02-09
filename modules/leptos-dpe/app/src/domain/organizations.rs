@@ -1,12 +1,13 @@
 use leptos::prelude::*;
 
 use super::organization::Organization;
-use super::utils::get_data_dir;
 
 #[server]
 pub async fn get_organization(id: String) -> Result<Option<Organization>, ServerFnError> {
     use std::fs;
     use std::path::PathBuf;
+
+    use super::utils::get_data_dir;
 
     let data_dir = get_data_dir();
     let organizations_dir = PathBuf::from(data_dir).join("organizations");

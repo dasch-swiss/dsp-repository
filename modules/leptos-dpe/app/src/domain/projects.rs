@@ -1,8 +1,7 @@
 use leptos::prelude::*;
 
 use super::models::Page;
-use super::project::{Project, ProjectQuery, ProjectStatus};
-use super::utils::get_data_dir;
+use super::project::Project;
 
 #[server]
 pub async fn list_projects(
@@ -12,14 +11,18 @@ pub async fn list_projects(
     page: Option<i32>,
     page_size: Option<i32>,
 ) -> Result<Page, ServerFnError> {
+    use std::fs;
+    use std::path::PathBuf;
+
+    use super::project::{ProjectQuery, ProjectStatus};
+    use super::utils::get_data_dir;
+
     let query = ProjectQuery {
         ongoing,
         finished,
         search,
         page,
     };
-    use std::fs;
-    use std::path::PathBuf;
 
     let items_per_page = page_size.unwrap_or(9).max(1) as usize;
 
@@ -120,6 +123,8 @@ pub async fn list_projects(
 pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnError> {
     use std::fs;
     use std::path::PathBuf;
+
+    use super::utils::get_data_dir;
 
     let data_dir = get_data_dir();
     let projects_dir = PathBuf::from(data_dir).join("projects");

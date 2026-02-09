@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Workflows and Conventions - DSP-Repository Developer Documentation</title>
+        <title>Release, Deployment and Versioning - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -242,45 +242,47 @@
 }
 
 </style>
-<h1 id="workflows-and-conventions"><a class="header" href="#workflows-and-conventions">Workflows and Conventions</a></h1>
-<h2 id="entry-points"><a class="header" href="#entry-points">Entry Points</a></h2>
-<p>The first entry point of this repository is the README file,
-which should give anyone an indication of where to find any information they need.</p>
-<p>For any interaction or coding-related workflow, the justfile is the primary source of truth.
-The justfile contains all the commands and workflows that are used in this repository, along with their descriptions.</p>
-<h2 id="key-development-commands"><a class="header" href="#key-development-commands">Key Development Commands</a></h2>
-<p>The justfile provides self-documenting commands. Key workflows include:</p>
+<h1 id="release-deployment-and-versioning"><a class="header" href="#release-deployment-and-versioning">Release, Deployment and Versioning</a></h1>
+<h2 id="cicd-pipelines"><a class="header" href="#cicd-pipelines">CI/CD Pipelines</a></h2>
+<p>All CI/CD workflows are defined as GitHub Actions in <code>.github/workflows/</code>.</p>
+<h3 id="checks-and-tests"><a class="header" href="#checks-and-tests">Checks and Tests</a></h3>
+<p>Every push and pull request runs:</p>
 <ul>
-<li><code>just check</code> - Run formatting and linting checks</li>
-<li><code>just build</code> - Build all targets</li>
-<li><code>just test</code> - Run all tests</li>
-<li><code>just run</code> - Run main server</li>
-<li><code>just watch</code> - Watch for changes and run tests</li>
-<li><code>just run-watch-playground</code> - Run design system playground with hot reload</li>
-<li><code>just playground install</code> - Install playground dependencies</li>
-<li><code>just playground test</code> - Run design system tests</li>
+<li><strong>check.yml</strong> — Formatting (<code>rustfmt</code>) and linting (<code>clippy</code>)</li>
+<li><strong>test.yml</strong> — Runs the full test suite</li>
 </ul>
-<p>Run <code>just</code> without arguments to see all available commands with descriptions.</p>
-<p>Any further information should be located in the documentation.</p>
-<h2 id="cicd"><a class="header" href="#cicd">CI/CD</a></h2>
-<p>GitHub Actions workflows run automatically on pushes and pull requests.
-See <a href="./deployment.html">Release, Deployment and Versioning</a> for details on the
-CI/CD pipelines, including PR preview deployments and production releases.</p>
-<h2 id="git-workflow"><a class="header" href="#git-workflow">Git Workflow</a></h2>
-<p>For this repository, we use a rebase workflow.
-This means that all changes should be made on a branch,
-and then rebased onto the main branch before being merged.</p>
-<p>This allows us to keep a clean commit history and avoid merge commits.</p>
+<h3 id="mosaic-demo"><a class="header" href="#mosaic-demo">Mosaic Demo</a></h3>
+<p>The Mosaic component library demo has two deployment paths:</p>
+<h4 id="pr-preview-cloud-run"><a class="header" href="#pr-preview-cloud-run">PR Preview (Cloud Run)</a></h4>
+<p>Defined in <code>cloud-run-pull-request.yml</code>.</p>
+<p>When a pull request modifies files under <code>modules/mosaic/</code>, a preview of the
+Mosaic demo is automatically deployed to Google Cloud Run. The preview URL is
+posted as a comment on the PR and updated on each push.</p>
+<ul>
+<li><strong>Trigger:</strong> PRs that touch <code>modules/mosaic/**</code> (same-repo only, not forks)</li>
+<li><strong>Service:</strong> Ephemeral Cloud Run service per PR</li>
+<li><strong>Cleanup:</strong> The Cloud Run service and container image are deleted when the PR
+is closed or merged</li>
+</ul>
+<p>Required secrets: <code>GCP_SERVICE_ACCOUNT_KEY</code>, <code>GCP_PROJECT_ID</code>, <code>GCP_REGION</code>,
+<code>GCP_ARTIFACT_REGISTRY</code>.</p>
+<h4 id="production-docker-hub--jenkins"><a class="header" href="#production-docker-hub--jenkins">Production (Docker Hub + Jenkins)</a></h4>
+<p>Defined in <code>docker-publish.yml</code>.</p>
+<p>When changes to <code>modules/mosaic/</code> are merged to <code>main</code>, the demo image is built,
+pushed to Docker Hub, and a Jenkins webhook triggers the production deployment.</p>
+<h3 id="documentation-github-pages"><a class="header" href="#documentation-github-pages">Documentation (GitHub Pages)</a></h3>
+<p>Defined in <code>gh-pages.yml</code>. The mdBook documentation is built and deployed to
+GitHub Pages on pushes to <code>main</code>.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="docs.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="repo_structure.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="repo_structure.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="dpe/project_structure.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -290,11 +292,11 @@ and then rebased onto the main branch before being merged.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="docs.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="repo_structure.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="repo_structure.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="dpe/project_structure.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

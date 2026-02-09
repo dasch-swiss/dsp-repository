@@ -1,5 +1,6 @@
-use leptos::prelude::*;
 use std::collections::HashMap;
+
+use leptos::prelude::*;
 
 /// Determines if a language code represents a right-to-left (RTL) language
 fn is_rtl_language(lang_code: &str) -> bool {

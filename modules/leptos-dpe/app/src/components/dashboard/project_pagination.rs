@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+
 use crate::domain::ProjectQuery;
 
 #[component]
@@ -10,9 +11,7 @@ pub fn ProjectPagination(nr_pages: i32, total_items: i32, query: ProjectQuery) -
     let is_last_page = current_page >= nr_pages;
 
     // Helper closure to build page URLs
-    let build_page_url = |page: i32| {
-        format!("/projects{}", query.clone().with_page(page).to_query_string())
-    };
+    let build_page_url = |page: i32| format!("/projects{}", query.clone().with_page(page).to_query_string());
 
     // Pre-compute navigation URLs
     let prev_url = if is_first_page {

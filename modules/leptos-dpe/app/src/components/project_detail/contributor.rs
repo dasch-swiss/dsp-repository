@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
-use crate::{components::Person, domain::Attribution};
+use crate::components::Person;
+use crate::domain::Attribution;
 
 #[component]
 pub fn Contributor(attr: Attribution) -> impl IntoView {

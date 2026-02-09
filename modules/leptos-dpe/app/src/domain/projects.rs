@@ -17,12 +17,7 @@ pub async fn list_projects(
     use super::project::{ProjectQuery, ProjectStatus};
     use super::utils::get_data_dir;
 
-    let query = ProjectQuery {
-        ongoing,
-        finished,
-        search,
-        page,
-    };
+    let query = ProjectQuery { ongoing, finished, search, page };
 
     let items_per_page = page_size.unwrap_or(9).max(1) as usize;
 
@@ -36,8 +31,7 @@ pub async fn list_projects(
 
     // Iterate through all JSON files
     for entry in entries {
-        let entry = entry
-            .map_err(|e| ServerFnError::new(format!("Failed to read directory entry: {}", e)))?;
+        let entry = entry.map_err(|e| ServerFnError::new(format!("Failed to read directory entry: {}", e)))?;
         let path = entry.path();
 
         if path.is_file() {
@@ -85,10 +79,7 @@ pub async fn list_projects(
                 true
             } else {
                 project.name.to_lowercase().contains(&search_lower)
-                    || project
-                        .short_description
-                        .to_lowercase()
-                        .contains(&search_lower)
+                    || project.short_description.to_lowercase().contains(&search_lower)
                     || project.shortcode.to_lowercase().contains(&search_lower)
                     || status_str.contains(&search_lower)
             };
@@ -112,11 +103,7 @@ pub async fn list_projects(
         .take(end_idx - start_idx)
         .collect();
 
-    Ok(Page {
-        items,
-        nr_pages,
-        total_items,
-    })
+    Ok(Page { items, nr_pages, total_items })
 }
 
 #[server]
@@ -135,8 +122,7 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
 
     // Find the file that starts with the shortcode
     for entry in entries {
-        let entry = entry
-            .map_err(|e| ServerFnError::new(format!("Failed to read directory entry: {}", e)))?;
+        let entry = entry.map_err(|e| ServerFnError::new(format!("Failed to read directory entry: {}", e)))?;
         let path = entry.path();
 
         if path.is_file() {
@@ -145,13 +131,11 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
                     // Check if the filename starts with the shortcode and ends with .json
                     if filename_str.starts_with(&shortcode) && filename_str.ends_with(".json") {
                         // Read and parse the JSON file
-                        let json_data = fs::read_to_string(&path).map_err(|e| {
-                            ServerFnError::new(format!("Failed to read file: {}", e))
-                        })?;
+                        let json_data = fs::read_to_string(&path)
+                            .map_err(|e| ServerFnError::new(format!("Failed to read file: {}", e)))?;
 
-                        let project: Project = serde_json::from_str(&json_data).map_err(|e| {
-                            ServerFnError::new(format!("Failed to parse JSON: {}", e))
-                        })?;
+                        let project: Project = serde_json::from_str(&json_data)
+                            .map_err(|e| ServerFnError::new(format!("Failed to parse JSON: {}", e)))?;
 
                         return Ok(Some(project));
                     }

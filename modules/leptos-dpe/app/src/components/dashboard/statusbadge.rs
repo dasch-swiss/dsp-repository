@@ -1,5 +1,6 @@
-use crate::domain::ProjectStatus;
 use leptos::prelude::*;
+
+use crate::domain::ProjectStatus;
 
 pub enum BadgeSize {
     Small,

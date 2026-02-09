@@ -6,6 +6,7 @@ use super::person::Person;
 pub async fn get_person(id: String) -> Result<Option<Person>, ServerFnError> {
     use std::fs;
     use std::path::PathBuf;
+
     use super::utils::get_data_dir;
 
     let data_dir = get_data_dir();
@@ -17,8 +18,7 @@ pub async fn get_person(id: String) -> Result<Option<Person>, ServerFnError> {
 
     // Find the file that matches the id
     for entry in entries {
-        let entry = entry
-            .map_err(|e| ServerFnError::new(format!("Failed to read directory entry: {}", e)))?;
+        let entry = entry.map_err(|e| ServerFnError::new(format!("Failed to read directory entry: {}", e)))?;
         let path = entry.path();
 
         if path.is_file() {
@@ -27,13 +27,11 @@ pub async fn get_person(id: String) -> Result<Option<Person>, ServerFnError> {
                     // Check if the filename starts with the id and ends with .json
                     if filename_str.starts_with(&id) && filename_str.ends_with(".json") {
                         // Read and parse the JSON file
-                        let json_data = fs::read_to_string(&path).map_err(|e| {
-                            ServerFnError::new(format!("Failed to read file: {}", e))
-                        })?;
+                        let json_data = fs::read_to_string(&path)
+                            .map_err(|e| ServerFnError::new(format!("Failed to read file: {}", e)))?;
 
-                        let person: Person = serde_json::from_str(&json_data).map_err(|e| {
-                            ServerFnError::new(format!("Failed to parse JSON: {}", e))
-                        })?;
+                        let person: Person = serde_json::from_str(&json_data)
+                            .map_err(|e| ServerFnError::new(format!("Failed to parse JSON: {}", e)))?;
 
                         return Ok(Some(person));
                     }

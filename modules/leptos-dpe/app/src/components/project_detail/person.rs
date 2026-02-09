@@ -5,10 +5,7 @@ use crate::domain::get_person;
 
 #[component]
 pub fn Person(person_id: String) -> impl IntoView {
-    let person_resource = Resource::new(
-        move || person_id.clone(),
-        |id| async move { get_person(id).await },
-    );
+    let person_resource = Resource::new(move || person_id.clone(), |id| async move { get_person(id).await });
 
     view! {
         <Suspense>

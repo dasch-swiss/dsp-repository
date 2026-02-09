@@ -4,10 +4,8 @@ use crate::domain::get_organization;
 
 #[component]
 pub fn OrganizationName(organization_id: String) -> impl IntoView {
-    let organization_resource = Resource::new(
-        move || organization_id.clone(),
-        |id| async move { get_organization(id).await },
-    );
+    let organization_resource =
+        Resource::new(move || organization_id.clone(), |id| async move { get_organization(id).await });
 
     view! {
         <Suspense fallback=move || {

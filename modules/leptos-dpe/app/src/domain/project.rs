@@ -30,10 +30,7 @@ impl ProjectQuery {
     }
 
     pub fn with_page(self, page: i32) -> Self {
-        Self {
-            page: Some(page),
-            ..self
-        }
+        Self { page: Some(page), ..self }
     }
 
     pub fn to_query_string(&self) -> String {

@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+
 use crate::components::ProjectDetails;
 use crate::domain::get_project;
 

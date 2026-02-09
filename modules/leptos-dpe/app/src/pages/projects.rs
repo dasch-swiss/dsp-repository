@@ -1,8 +1,9 @@
+use leptos::prelude::*;
+use leptos_router::hooks::use_query;
+
 use crate::components::{Loading, ProjectSearch};
 use crate::domain::{list_projects, ProjectQuery};
 use crate::ProjectCard;
-use leptos::prelude::*;
-use leptos_router::hooks::use_query;
 
 #[component]
 pub fn ProjectsPage() -> impl IntoView {

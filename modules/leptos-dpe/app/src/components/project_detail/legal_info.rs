@@ -99,10 +99,7 @@ fn generate_cc_alt_text(license_type: &str) -> String {
     if license_type == "cc0" {
         "CC0 1.0 Public Domain Dedication".to_string()
     } else {
-        format!(
-            "Creative Commons {} 4.0 International License",
-            license_name
-        )
+        format!("Creative Commons {} 4.0 International License", license_name)
     }
 }
 
@@ -119,8 +116,7 @@ fn extract_cc_license_type(license_uri: &str, license_identifier: &str) -> Optio
         Some("by-sa".to_string())
     } else if combined.contains("by-nc") || combined.contains("by_nc") {
         Some("by-nc".to_string())
-    } else if combined.contains("/by/") || combined.contains("cc by") || combined.contains("cc-by")
-    {
+    } else if combined.contains("/by/") || combined.contains("cc by") || combined.contains("cc-by") {
         Some("by".to_string())
     } else if combined.contains("cc0") || combined.contains("publicdomain/zero") {
         Some("cc0".to_string())

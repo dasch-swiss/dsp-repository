@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_query;
+
 use crate::domain::ProjectQuery;
 
 // Regular component for filters and search - uses simple links that reload the page
@@ -17,7 +18,11 @@ pub fn ProjectFilters() -> impl IntoView {
     let build_url = |toggle_param: &str| {
         let new_query = ProjectQuery {
             ongoing: Some(if toggle_param == "ongoing" { !ongoing } else { ongoing }),
-            finished: Some(if toggle_param == "finished" { !finished } else { finished }),
+            finished: Some(if toggle_param == "finished" {
+                !finished
+            } else {
+                finished
+            }),
             search: if search.is_empty() { None } else { Some(search.clone()) },
             page: Some(1),
         };
@@ -25,10 +30,7 @@ pub fn ProjectFilters() -> impl IntoView {
     };
 
     // Filter checkbox data
-    let filters = [
-        ("ongoing", "Ongoing", ongoing),
-        ("finished", "Finished", finished),
-    ];
+    let filters = [("ongoing", "Ongoing", ongoing), ("finished", "Finished", finished)];
 
     view! {
         <div class="flex flex-col gap-4">

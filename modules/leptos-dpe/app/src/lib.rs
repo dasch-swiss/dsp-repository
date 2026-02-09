@@ -1,8 +1,7 @@
 use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::components::*;
-use leptos_router::path;
-use leptos_router::StaticSegment;
+use leptos_router::{path, StaticSegment};
 
 mod components;
 mod domain;

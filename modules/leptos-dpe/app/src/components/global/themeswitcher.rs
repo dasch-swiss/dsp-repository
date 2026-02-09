@@ -59,10 +59,7 @@ pub fn ThemeSwitcher() -> impl IntoView {
             if let Some(document) = window.document() {
                 // Cast to HtmlDocument to access cookie setter
                 if let Ok(html_doc) = document.dyn_into::<web_sys::HtmlDocument>() {
-                    let _ = html_doc.set_cookie(&format!(
-                        "theme={}; path=/; max-age=31536000; SameSite=Lax",
-                        theme
-                    ));
+                    let _ = html_doc.set_cookie(&format!("theme={}; path=/; max-age=31536000; SameSite=Lax", theme));
                 }
             }
         }

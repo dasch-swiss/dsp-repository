@@ -6,7 +6,7 @@ pub fn AboutPage() -> impl IntoView {
     view! {
         <Title text="Meta DaSCH - About" />
         <div class="min-h-200 py-4">
-            <img src="/logo_with_copy.svg" class="w-165 pd-200 mb-6" />
+            <img src="/logo_with_copy.svg" class="w-165 mb-6" />
             <div class="text-2xl font-bold">"DaSCH"</div>
             <div class="text-2xl font-bold">
                 "Swiss National Data and Service Center for the Humanities"

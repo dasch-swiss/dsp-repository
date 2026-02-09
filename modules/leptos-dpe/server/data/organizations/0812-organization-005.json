@@ -1,0 +1,13 @@
+{
+    "id": "0812-organization-005",
+    "pid": "MISSING",
+    "name": "Dinamo Basel",
+    "url": "https://abcdinamo.com/",
+    "address": {
+        "street": "Klingelbergstrasse 11",
+        "postalCode": "4056",
+        "locality": "Basel",
+        "country": "Switzerland"
+    },
+    "email": "mail@abcdinamo.com"
+}

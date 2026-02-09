@@ -1,0 +1,13 @@
+{
+    "id": "0820-organization-011",
+    "pid": "MISSING",
+    "name": "Tanta University",
+    "url": "http://www.tanta.edu.eg",
+    "address": {
+        "street": "Al-Geish Street",
+        "postalCode": "",
+        "locality": "Tanta",
+        "country": "Egypt"
+    },
+    "email": "tanta_unv@unv.tanta.edu.eg"
+}

@@ -1,0 +1,27 @@
+{
+    "id": "0806-person-001",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "GND",
+            "url": "http://d-nb.info/gnd/102645249X",
+            "text": "GND URL: http://d-nb.info/gnd/102645249X"
+        }
+    ],
+    "givenNames": [
+        "Simon"
+    ],
+    "familyNames": [
+        "Obert"
+    ],
+    "jobTitles": [
+        "Curator",
+        "Member of the editorial management",
+        "Research associate (PSS)"
+    ],
+    "affiliations": [
+        "0806-organization-000",
+        "0806-organization-002"
+    ],
+    "email": "simon.obert@unibas.ch"
+}

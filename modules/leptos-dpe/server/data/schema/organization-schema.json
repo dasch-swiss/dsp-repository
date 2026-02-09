@@ -1,0 +1,137 @@
+{
+  "$defs": {
+    "Address": {
+      "properties": {
+        "street": {
+          "title": "Street",
+          "type": "string"
+        },
+        "postalCode": {
+          "title": "Postalcode",
+          "type": "string"
+        },
+        "locality": {
+          "title": "Locality",
+          "type": "string"
+        },
+        "country": {
+          "title": "Country",
+          "type": "string"
+        },
+        "canton": {
+          "title": "Canton",
+          "type": "string"
+        },
+        "additional": {
+          "title": "Additional",
+          "type": "string"
+        }
+      },
+      "required": [
+        "street",
+        "postalCode",
+        "locality",
+        "country"
+      ],
+      "title": "Address",
+      "type": "object"
+    },
+    "AuthorityFileReference": {
+      "description": "AuthorityFileReference. An object representing a reference to an external authority file.",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/AuthorityFileReferenceType"
+        },
+        "url": {
+          "format": "uri",
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "url"
+      ],
+      "title": "AuthorityFileReference",
+      "type": "object"
+    },
+    "AuthorityFileReferenceType": {
+      "description": "The type of the Authority File Reference.",
+      "enum": [
+        "Geonames",
+        "Pleiades",
+        "Skos",
+        "Periodo",
+        "Chronontology",
+        "GND",
+        "VIAF",
+        "Grid",
+        "ORCID",
+        "Creative Commons",
+        "COAR",
+        "ROR",
+        "DOI",
+        "ARK",
+        "URL"
+      ],
+      "title": "AuthorityFileReferenceType",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "pid": {
+      "title": "Pid",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "sameAs": {
+      "items": {
+        "$ref": "#/$defs/AuthorityFileReference"
+      },
+      "title": "Sameas",
+      "type": "array"
+    },
+    "url": {
+      "format": "uri",
+      "minLength": 1,
+      "title": "Url",
+      "type": "string"
+    },
+    "address": {
+      "$ref": "#/$defs/Address"
+    },
+    "email": {
+      "title": "Email",
+      "type": "string"
+    },
+    "alternativeName": {
+      "patternProperties": {
+        "^[a-z]{2}$": {
+          "type": "string"
+        }
+      },
+      "title": "Alternativename",
+      "type": "object"
+    }
+  },
+  "required": [
+    "id",
+    "pid",
+    "name",
+    "url"
+  ],
+  "title": "Organization",
+  "type": "object"
+}

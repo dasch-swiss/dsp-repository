@@ -1,0 +1,16 @@
+{
+    "id": "woposs-person-005",
+    "pid": "MISSING",
+    "givenNames": [
+        "Thomas"
+    ],
+    "familyNames": [
+        "von Kaenel"
+    ],
+    "jobTitles": [
+        "Student assistant"
+    ],
+    "affiliations": [
+        "woposs-organization-000"
+    ]
+}

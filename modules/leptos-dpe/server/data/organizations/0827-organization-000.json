@@ -1,0 +1,12 @@
+{
+    "id": "0827-organization-000",
+    "pid": "MISSING",
+    "name": "NOMIS Foundation",
+    "url": "https://nomisfoundation.ch/",
+    "address": {
+        "street": "Claridenstrasse 26",
+        "postalCode": "8002",
+        "locality": "Zurich",
+        "country": "Switzerland"
+    }
+}

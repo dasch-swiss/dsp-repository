@@ -1,0 +1,16 @@
+{
+    "id": "0101-person-003",
+    "pid": "MISSING",
+    "givenNames": [
+        "Yves"
+    ],
+    "familyNames": [
+        "Evequoz"
+    ],
+    "jobTitles": [
+        "Scientific collaborator"
+    ],
+    "affiliations": [
+        "0101-organization-000"
+    ]
+}

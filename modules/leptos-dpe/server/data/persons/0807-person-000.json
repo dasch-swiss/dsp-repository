@@ -1,0 +1,24 @@
+{
+    "id": "0807-person-000",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5276-9474",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5276-9474"
+        }
+    ],
+    "givenNames": [
+        "Cristina"
+    ],
+    "familyNames": [
+        "Urchueguía"
+    ],
+    "jobTitles": [
+        "Professor for Musicology University of Bern / President of SMG"
+    ],
+    "affiliations": [
+        "0807-organization-000"
+    ],
+    "email": "cristina.urchueguia@unibe.ch"
+}

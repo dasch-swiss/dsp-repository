@@ -1,0 +1,24 @@
+{
+    "id": "0840-person-000",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-1634-2462",
+            "text": "ORCID URL: https://orcid.org/0000-0003-1634-2462"
+        }
+    ],
+    "givenNames": [
+        "Sophie"
+    ],
+    "familyNames": [
+        "Wolf"
+    ],
+    "jobTitles": [
+        "Wissenschaftliche Mitarbeiterin"
+    ],
+    "affiliations": [
+        "0840-organization-000"
+    ],
+    "email": "sophie.wolf@vitrocentre.ch"
+}

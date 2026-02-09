@@ -1,0 +1,16 @@
+{
+    "id": "0803-person-000",
+    "pid": "MISSING",
+    "givenNames": [
+        "Barbara"
+    ],
+    "familyNames": [
+        "Schellewald"
+    ],
+    "jobTitles": [
+        "Project Leader"
+    ],
+    "affiliations": [
+        "0803-organization-001"
+    ]
+}

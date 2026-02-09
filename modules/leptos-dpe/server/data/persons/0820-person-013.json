@@ -1,0 +1,23 @@
+{
+    "id": "0820-person-013",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.orient-mediterranee.com/member/barahona-mendieta/",
+            "text": "https://www.orient-mediterranee.com/member/barahona-mendieta/"
+        }
+    ],
+    "givenNames": [
+        "Zulema"
+    ],
+    "familyNames": [
+        "Barahona-Mendieta"
+    ],
+    "jobTitles": [
+        "Ceramologist"
+    ],
+    "affiliations": [
+        "0820-organization-001"
+    ]
+}

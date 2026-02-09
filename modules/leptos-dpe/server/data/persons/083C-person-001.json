@@ -1,0 +1,17 @@
+{
+    "id": "083C-person-001",
+    "pid": "MISSING",
+    "givenNames": [
+        "Ursula"
+    ],
+    "familyNames": [
+        "Amrein"
+    ],
+    "jobTitles": [
+        "Prof. Dr. phil."
+    ],
+    "affiliations": [
+        "083C-organization-000",
+        "083C-organization-005"
+    ]
+}

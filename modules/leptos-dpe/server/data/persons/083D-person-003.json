@@ -1,0 +1,17 @@
+{
+    "id": "083D-person-003",
+    "pid": "MISSING",
+    "givenNames": [
+        "Melina"
+    ],
+    "familyNames": [
+        "Rutishauser"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "083D-organization-004"
+    ],
+    "email": "Melina.Rutishauser@unibas.ch"
+}

@@ -1,0 +1,153 @@
+{
+    "id": "083D",
+    "pid": "MISSING",
+    "name": "Participation in Social Health Protection: An Anthropological Case Study in Tanzania",
+    "shortcode": "083D",
+    "officialName": "MISSING",
+    "status": "Finished",
+    "shortDescription": "This project calls for a broad view of social health protection, comprising health care funding and people’s ubiquitous but less visible strife for participation in self-organized groups and networks.",
+    "description": {
+        "en": "Over the past decades, ‘participation’ has become a powerful concept of global development. It circulates around the globe and engages policy makers as well as human rights activists. After capturing the imagination of the biggest players in the field, it has attracted massive funding. And as a crucial principle of the Sustainable Development Goals 2015-2030, it can be expected to do so in the future. Anthropologists tend to share the emancipatory and humanitarian concerns implicit in ‘participation’. At the same time, they have become highly critical of the ways in which this popular buzzword is used in contemporary development speak and produce a growing body of empirical evidence about the ambivalences, dilemma and paradoxes created by participatory planning, policies and programs. This project examines ‘participation’ in the emergent field of ‘social health protection’. In order to reach their goal of Universal Health Coverage, the International Labor Office, the World Bank and the World Health organization push social health protection as a key strategy. They come up with diverse measures of public and publicly organized health financing measures for Low and Middle Income Countries, some of which are implemented through ‘induced participation’ and collective forms of ‘organic participation’. The massive attention given to efforts of inducing participation bears the danger of not only obscuring but perhaps even destroying people’s omnipresent but less visible strife for social participation in family and kin networks and self-organized groups to protect their health and improve their life condition. Contemporary Tanzania presents a particularly interesting case for studying participation in social health protection in this broader sense because of her long engagement with changing forms of participatory development and the government’s current aspiration to transform Tanzania into a middle-income country with Universal Health Coverage. The project thus aims at demonstrating that participation in diverse forms of social health protection can be conceived as a social practice which configures and is reconfigured by broader societal and material orders. Combining a multi-level analysis with in-depth ethnographic field research the project will explore understudied aspects in current research on induced and organic participation and thus contribute to transforming current development perspectives on social and societal change. The project thus aims at contributing to three major emerging fields: First, to the growing research interest in an ‘anthropology of the good’ through its emphasis on the ways in which people engage with each other to make a ‘better life’. Secondly, to the newly evolving ‘anthropology of insurance’ through its combined multi-level analysis and in-depth ethnographic research on social health protection as a social practice. Third, by engaging in a public dialogue, we hope that our insights will be discussed, contested, and appropriated by some of these ‘stakeholders’ and thus make a difference in the comprehension of the important contemporary issues of social health protection reform and more general societal change. The data of this project is only accessible upon explicit request to the contact person and a corresponding positive decision."
+    },
+    "startDate": "2017-01-01",
+    "endDate": "2021-08-31",
+    "url": [
+        "https://ark.dasch.swiss/ark:/72163/1/083D"
+    ],
+    "howToCite": "Obrist B, Dillip A, Mayumana I, Rutishauser M, Simon V (2022). Participation in Social Health Protection: An Anthropological Case Study in Tanzania [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D.",
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-08-18",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        },
+        {
+            "en": "Swahili"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Ethnology"
+        },
+        {
+            "en": "Participation"
+        },
+        {
+            "en": "Social health protection"
+        },
+        {
+            "en": "Tanzania"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/240206",
+            "text": "Ethnology"
+        },
+        {
+            "en": "10400 Ethnology, social and humangeography"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "type": "Chronontology",
+            "url": "https://chronontology.dainst.org/period/D6K5MO2tx66Y",
+            "text": "Modern"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/149590/tanzania.html",
+            "text": "Tanzania"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "083D-person-000",
+            "contributorType": [
+                "PI"
+            ]
+        },
+        {
+            "contributor": "083D-person-001",
+            "contributorType": [
+                "Project Leader"
+            ]
+        },
+        {
+            "contributor": "083D-person-002",
+            "contributorType": [
+                "Project Leader"
+            ]
+        },
+        {
+            "contributor": "083D-person-003",
+            "contributorType": [
+                "Project Member / Researcher"
+            ]
+        },
+        {
+            "contributor": "083D-person-004",
+            "contributorType": [
+                "Project Leader"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Over the past decades, ‘participation’ has become a powerful concept of global development. It circulates around the globe and engages policy makers as well as human rights activists. After capturing the imagination of the biggest players in the field, it has attracted massive funding. And as a crucial principle of the Sustainable Development Goals 2015-2030, it can be expected to do so in the future. Anthropologists tend to share the emancipatory and humanitarian concerns implicit in ‘participation’. At the same time, they have become highly critical of the ways in which this popular buzzword is used in contemporary development speak and produce a growing body of empirical evidence about the ambivalences, dilemma and paradoxes created by participatory planning, policies and programs. This project examines ‘participation’ in the emergent field of ‘social health protection’. In order to reach their goal of Universal Health Coverage, the International Labor Office, the World Bank and the World Health organization push social health protection as a key strategy. They come up with diverse measures of public and publicly organized health financing measures for Low and Middle Income Countries, some of which are implemented through ‘induced participation’ and collective forms of ‘organic participation’. The massive attention given to efforts of inducing participation bears the danger of not only obscuring but perhaps even destroying people’s omnipresent but less visible strife for social participation in family and kin networks and self-organized groups to protect their health and improve their life condition. Contemporary Tanzania presents a particularly interesting case for studying participation in social health protection in this broader sense because of her long engagement with changing forms of participatory development and the government’s current aspiration to transform Tanzania into a middle-income country with Universal Health Coverage. The project thus aims at demonstrating that participation in diverse forms of social health protection can be conceived as a social practice which configures and is reconfigured by broader societal and material orders. Combining a multi-level analysis with in-depth ethnographic field research the project will explore understudied aspects in current research on induced and organic participation and thus contribute to transforming current development perspectives on social and societal change. The project thus aims at contributing to three major emerging fields: First, to the growing research interest in an ‘anthropology of the good’ through its emphasis on the ways in which people engage with each other to make a ‘better life’. Secondly, to the newly evolving ‘anthropology of insurance’ through its combined multi-level analysis and in-depth ethnographic research on social health protection as a social practice. Third, by engaging in a public dialogue, we hope that our insights will be discussed, contested, and appropriated by some of these ‘stakeholders’ and thus make a difference in the comprehension of the important contemporary issues of social health protection reform and more general societal change. The data of this project is only accessible upon explicit request to the contact person and a corresponding positive decision."
+    },
+    "contactPoint": [
+        "083D-person-000"
+    ],
+    "publications": [
+        {
+            "text": "Obrist B, Dillip A, Kalolo A, Mayumana IM, Rutishauser M, Simon VT. Savings Groups for Social Health Protection: A Social Resilience Study in Rural Tanzania. Diseases. 2022; 10(3):63.",
+            "pid": {
+                "url": "https://doi.org/10.3390/diseases10030063"
+            }
+        },
+        {
+            "text": "Dillip A, Kalolo A, Mayumana I, Rutishauser M, Simon VT, Obrist B. Linking the Community Health Fund with Accredited Drug Dispensing Outlets in Tanzania: exploring potentials, pitfalls, and modalities. J Pharm Policy Pract. 2022 Dec 29;15(1):106. PMID: 36582002; PMCID: PMC9801564.",
+            "pid": {
+                "url": "https://doi.org/10.1186/s40545-022-00507-y"
+            }
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "083D-organization-000"
+            ],
+            "number": "169476",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/169476"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "Participation in Social Health Protection (Tanzania). pshp"
+        }
+    ]
+}

@@ -1,0 +1,17 @@
+{
+    "id": "0116-person-001",
+    "pid": "MISSING",
+    "givenNames": [
+        "Laura"
+    ],
+    "familyNames": [
+        "Acosta"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "0116-organization-000"
+    ],
+    "email": "laura.acosta@unine.ch"
+}

@@ -1,0 +1,24 @@
+{
+    "id": "083B-person-001",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-9865-3637",
+            "text": "ORCID URL: https://orcid.org/0000-0002-9865-3637"
+        }
+    ],
+    "givenNames": [
+        "Lucy"
+    ],
+    "familyNames": [
+        "Fleming"
+    ],
+    "jobTitles": [
+        "Postdoctoral Researcher"
+    ],
+    "affiliations": [
+        "083B-organization-000"
+    ],
+    "email": "lucy.fleming@unibe.ch"
+}

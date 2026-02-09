@@ -1,0 +1,17 @@
+{
+    "id": "0813-person-001",
+    "pid": "MISSING",
+    "givenNames": [
+        "Erwin"
+    ],
+    "familyNames": [
+        "Zbinden"
+    ],
+    "jobTitles": [
+        "Leiter Dokumentationsstelle"
+    ],
+    "affiliations": [
+        "0813-organization-001"
+    ],
+    "email": "erwin.zbinden@bmf.ch"
+}

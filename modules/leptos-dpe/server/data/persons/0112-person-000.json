@@ -1,0 +1,17 @@
+{
+    "id": "0112-person-000",
+    "pid": "MISSING",
+    "givenNames": [
+        "Daniel"
+    ],
+    "familyNames": [
+        "Maggetti"
+    ],
+    "jobTitles": [
+        "Full professor"
+    ],
+    "affiliations": [
+        "0112-organization-000"
+    ],
+    "email": "daniel.maggetti@unil.ch"
+}

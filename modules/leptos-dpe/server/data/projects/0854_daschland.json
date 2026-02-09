@@ -1,0 +1,203 @@
+{
+    "id": "0854",
+    "pid": "MISSING",
+    "name": "Alice in DaSCHland",
+    "shortcode": "0854",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "Alice in DaSCHland whisks you away on a whimsical digital journey where data and metadata spark fantastical adventures - showcase project from DaSCH!",
+    "description": {
+        "en": "Alice in DaSCHland is the showcase project from DaSCH that reimagines Alice’s adventures through a digital lens. The project blends literary elements with advanced data management systems, offering users a unique exploration of data curation, visualization, and retrieval in a surreal narrative landscape.",
+        "fr": "Alice in DaSCHland est le projet vitrine de DaSCH qui réimagine les aventures d'Alice à travers une perspective numérique. Le projet mélange des éléments littéraires avec des systèmes de gestion de données avancés, offrant aux utilisateurs une exploration unique de la préservation, de la visualisation et de la recherche de données dans un paysage narratif surréaliste."
+    },
+    "startDate": "2024-01-01",
+    "endDate": "MISSING",
+    "url": [
+        "https://app.demo.dasch.swiss/project/Xop21NOSTDiGL3uF3h3ONg/data"
+    ],
+    "howToCite": "DaSCH Team (2025). Alice in DaSCHland [Database]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854.",
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Audio",
+        "Image",
+        "Text",
+        "Video",
+        "XML"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        },
+        {
+            "de": "Französisch",
+            "en": "French",
+            "fr": "français"
+        },
+        {
+            "de": "Italienisch",
+            "en": "Italian",
+            "fr": "italien"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Alice in Wonderland"
+        },
+        {
+            "en": "DaSCH"
+        },
+        {
+            "en": "Data"
+        },
+        {
+            "en": "Data Visualization"
+        },
+        {
+            "en": "Digital Humanities"
+        },
+        {
+            "en": "Humanities"
+        },
+        {
+            "en": "Metadata"
+        },
+        {
+            "en": "Showcase Project"
+        },
+        {
+            "fr": "Alice au pays des merveilles"
+        },
+        {
+            "fr": "Données"
+        },
+        {
+            "fr": "Visualisation des données"
+        },
+        {
+            "fr": "Humanités numériques"
+        },
+        {
+            "fr": "Science humaines"
+        },
+        {
+            "fr": "Métadonnées"
+        },
+        {
+            "fr": "Projet de démonstration"
+        },
+        {
+            "de": "Alice im Wunderland"
+        },
+        {
+            "de": "Daten"
+        },
+        {
+            "de": "Datenvisualisierung"
+        },
+        {
+            "de": "Geisteswissenschaften"
+        },
+        {
+            "de": "Metadaten"
+        },
+        {
+            "de": "Vorzeigeprojekt"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unescothes/C03636",
+            "text": "Short stories"
+        },
+        {
+            "en": "10501 German and English languages and literature"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "de": "2024-2025",
+            "en": "2024-2025",
+            "fr": "2024-2025"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2661604/basel.html",
+            "text": "Basel"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0854-person-000",
+            "contributorType": [
+                "Contributor"
+            ]
+        },
+        {
+            "contributor": "0854-person-001",
+            "contributorType": [
+                "Contributor"
+            ]
+        },
+        {
+            "contributor": "0854-person-000",
+            "contributorType": [
+                "Contributor"
+            ]
+        },
+        {
+            "contributor": "0854-person-001",
+            "contributorType": [
+                "Contributor"
+            ]
+        }
+    ],
+    "contactPoint": [
+        "0854-organization-000"
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0854-organization-000"
+            ],
+            "name": "DaSCH",
+            "url": "https://www.dasch.swiss/"
+        }
+    ]
+}

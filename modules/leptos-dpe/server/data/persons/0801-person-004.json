@@ -1,0 +1,16 @@
+{
+    "id": "0801-person-004",
+    "pid": "MISSING",
+    "givenNames": [
+        "Christian"
+    ],
+    "familyNames": [
+        "Gilan"
+    ],
+    "jobTitles": [
+        "Professor"
+    ],
+    "affiliations": [
+        "0801-organization-003"
+    ]
+}

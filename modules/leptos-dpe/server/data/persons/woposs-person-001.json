@@ -1,0 +1,16 @@
+{
+    "id": "woposs-person-001",
+    "pid": "MISSING",
+    "givenNames": [
+        "Helena"
+    ],
+    "familyNames": [
+        "Bermúdez Sabel"
+    ],
+    "jobTitles": [
+        "Postdoctoral researcher"
+    ],
+    "affiliations": [
+        "woposs-organization-002"
+    ]
+}

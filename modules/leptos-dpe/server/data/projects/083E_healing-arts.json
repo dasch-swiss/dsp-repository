@@ -1,0 +1,148 @@
+{
+    "id": "083E",
+    "pid": "MISSING",
+    "name": "Healing Arts. Representations and Practices of Medical Knowledge in Art and Literature (9th-12th centuries)",
+    "shortcode": "083E",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "The project explores the entangled histories of botany, art and health. It considers plant images in early medieval herbals as modes of knowledge that articulate and negotiate medical practices.",
+    "description": {
+        "en": "The project focuses on the intertwined histories of Botany and Art in the Early Middle Ages. Herbaria with elaborated plant images, poems with pharmacological content, as well as medical boxes used as reliquaries manifest the post-antique interest in pharmacology, especially in the 9th/ 10th century. These visualizations reveal systems of knowledge in which concrete medical practices were being actively articulated and negotiated. It furthermore connects questions that lead us to see plants as a way to approach nature and how the natural world transforms into a visual system beyond the question of resemblance."
+    },
+    "startDate": "2021-11-01",
+    "endDate": "2025-10-30",
+    "url": [
+        "https://app.dasch.swiss/project/KQs82YDBRei6YGWrT5Y3ig"
+    ],
+    "howToCite": "Holler, T.; Baptista Wilhelm, L; Von Kerssenbrock-Krosigk, G.: Healing Arts. Representations and Practices of Medical Knowledge in Art and Literature (9th-12th centuries) [database]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083E",
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-07-19",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Art and Science"
+        },
+        {
+            "en": "Botany"
+        },
+        {
+            "en": "Herbal"
+        },
+        {
+            "en": "Iatromagical Practices"
+        },
+        {
+            "en": "Manuscript Studies"
+        },
+        {
+            "en": "Medicine"
+        },
+        {
+            "en": "Medieval Art History"
+        },
+        {
+            "en": "Plants"
+        },
+        {
+            "en": "Pre-modern Health Care"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10404 Visual arts and Art history"
+        },
+        {
+            "en": "10502 Romance languages and literature"
+        },
+        {
+            "en": "10603 Arts"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "Middle Ages"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/6255148/europe.html",
+            "text": "Europe"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "083E-person-000",
+            "contributorType": [
+                "PI",
+                "Project Leader"
+            ]
+        },
+        {
+            "contributor": "083E-person-002",
+            "contributorType": [
+                "Data Collector"
+            ]
+        },
+        {
+            "contributor": "083E-person-001",
+            "contributorType": [
+                "Data Collector"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The database is a comprehensive collection of early medieval herbals prior to 1200. The ontology of the database includes several main classes (e.g. remedy, manuscript, object, person, text) to describe, contextualise and visualise plant images. By linking these classes to each other, the database displays the transmission of individual plant images and the underlying network between manuscript productions. Special attention has been paid to the very diverse medieval botanical nomenclature, including synonyms, spelling variants and the vernacular. This allows a broad search for remedies and their possible identification across geographical borders."
+    },
+    "contactPoint": [
+        "083E-person-000"
+    ],
+    "publications": [
+        {
+            "text": "Theresa Holler, Andrew Griebeler and Hannah Baader, Visualizing Drugs & Dyes. Art and Pharmacology in the larger Medieval Mediterranean, Leiden, Brill 2025 (in preparation)"
+        },
+        {
+            "text": "Theresa Holler, “In search of Panacea. Luxury healing roots in western materia medica”, in: Visualizing Drugs & Dyes. Art and Pharmacology in the larger Medieval Mediterranean, Leiden, Brill 2025 (in preparation)"
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "083E-organization-001"
+            ],
+            "number": "201738",
+            "name": "Ambizione",
+            "url": "https://data.snf.ch/grants/grant/201738"
+        }
+    ]
+}

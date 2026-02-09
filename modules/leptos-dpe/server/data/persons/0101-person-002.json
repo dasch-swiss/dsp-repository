@@ -1,0 +1,17 @@
+{
+    "id": "0101-person-002",
+    "pid": "MISSING",
+    "givenNames": [
+        "Joan"
+    ],
+    "familyNames": [
+        "Stavo Debauge"
+    ],
+    "jobTitles": [
+        "Post-doctoral researcher"
+    ],
+    "affiliations": [
+        "0101-organization-000"
+    ],
+    "email": "joan.stavo-debauge@epfl.ch"
+}

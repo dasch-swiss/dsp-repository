@@ -1,0 +1,17 @@
+{
+    "id": "REMA-person-003",
+    "pid": "MISSING",
+    "givenNames": [
+        "Maria Elena"
+    ],
+    "familyNames": [
+        "Chiarella"
+    ],
+    "jobTitles": [
+        "PhD Student"
+    ],
+    "affiliations": [
+        "REMA-organization-000"
+    ],
+    "email": "mariaelena.chiarella@unil.ch"
+}

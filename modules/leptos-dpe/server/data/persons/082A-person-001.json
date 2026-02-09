@@ -1,0 +1,17 @@
+{
+    "id": "082A-person-001",
+    "pid": "MISSING",
+    "givenNames": [
+        "Senta"
+    ],
+    "familyNames": [
+        "Bindschädler"
+    ],
+    "jobTitles": [
+        "Co-Head, Swiss Folk Song Archive"
+    ],
+    "affiliations": [
+        "082A-organization-000"
+    ],
+    "email": "senta.bindschaedler@unibas.ch"
+}

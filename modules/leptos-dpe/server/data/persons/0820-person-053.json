@@ -1,0 +1,24 @@
+{
+    "id": "0820-person-053",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/villarsnoemi/",
+            "text": "https://www.linkedin.com/in/villarsnoemi/"
+        }
+    ],
+    "givenNames": [
+        "Noémi"
+    ],
+    "familyNames": [
+        "Villars"
+    ],
+    "jobTitles": [
+        "Egyptologist"
+    ],
+    "affiliations": [
+        "0820-organization-001"
+    ],
+    "email": "noemi.villars@unibas.ch"
+}

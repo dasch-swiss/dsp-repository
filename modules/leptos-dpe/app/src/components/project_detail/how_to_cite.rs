@@ -27,6 +27,7 @@ pub fn HowToCite(citation: String) -> impl IntoView {
     view! {
         <div id="how-to-cite" class="bg-base-100 p-6 rounded-lg scroll-mt-52">
             <h3 class="text-xl font-bold mb-3">"How to Cite"</h3>
+                <p class="mb-3">{citation.clone()}</p>
                 <button
                     class="btn btn-sm btn-primary tooltip tooltip-left"
                     class:tooltip-open=move || show_tooltip.get()

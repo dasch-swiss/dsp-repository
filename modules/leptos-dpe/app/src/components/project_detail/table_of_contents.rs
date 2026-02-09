@@ -1,33 +1,13 @@
 use leptos::prelude::*;
 
-#[island]
+#[component]
 pub fn TableOfContents() -> impl IntoView {
-    let node_ref = NodeRef::<leptos::html::Details>::new();
-    let (is_open, set_is_open) = signal(false);
-
-    Effect::new(move || {
-        use leptos::prelude::window;
-        let is_large_screen = window().inner_width().unwrap().as_f64().unwrap() >= 1024.0;
-        set_is_open.set(is_large_screen);
-    });
-
-    let close_on_click = move |_| {
-        use leptos::prelude::window;
-        if window().inner_width().unwrap().as_f64().unwrap() < 1024.0 {
-            set_is_open.set(false);
-        }
-    };
-
     view! {
         <div class="sticky top-0 z-10 bg-base-100 rounded-lg shadow-md">
-            <details
-                node_ref=node_ref
-                class="collapse collapse-arrow lg:collapse-open"
-                prop:open=is_open
-            >
+            <details class="collapse collapse-arrow lg:collapse-open">
                 <summary class="collapse-title text-xl font-bold">"Table of Contents"</summary>
                 <div class="collapse-content">
-                    <nav class="grid md:grid-cols-2 lg:grid-cols-4 gap-2" on:click=close_on_click>
+                    <nav class="grid md:grid-cols-2 lg:grid-cols-4 gap-2">
                         <a href="#description" class="link link-primary">
                             "Description"
                         </a>

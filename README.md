@@ -16,6 +16,11 @@ You may start and run the Mosaic demo application:
 
 - Run: `just watch-mosaic-demo`
 
+You may start and run the Leptos DPE application:
+
+- Install dependencies: `just install-requirements`
+- Run: `just watch-leptos-dpe`
+
 ## License
 
 Apache 2.0

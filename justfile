@@ -19,6 +19,7 @@ install-requirements:
     cargo binstall -y mdbook-alerts@0.8.0
     cargo binstall -y leptosfmt@0.1.33
     cargo binstall -y cargo-leptos@0.3.4
+    cd modules/leptos-dpe && pnpm install
 
 # Run all fmt and clippy checks
 check:

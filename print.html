@@ -610,8 +610,9 @@ posted as a comment on the PR and updated on each push.</p>
 <li><strong>Cleanup:</strong> The Cloud Run service and container image are deleted when the PR
 is closed or merged</li>
 </ul>
-<p>Required secrets: <code>GCP_SERVICE_ACCOUNT_KEY</code>, <code>GCP_PROJECT_ID</code>, <code>GCP_REGION</code>,
-<code>GCP_ARTIFACT_REGISTRY</code>.</p>
+<p>Authentication uses Workload Identity Federation (keyless, OIDC-based).</p>
+<p>Required secrets: <code>GCP_WORKLOAD_IDENTITY_PROVIDER</code>, <code>GCP_SERVICE_ACCOUNT</code>,
+<code>GCP_REGION</code>, <code>GCP_ARTIFACT_REGISTRY</code>.</p>
 <h4 id="production-docker-hub--jenkins"><a class="header" href="#production-docker-hub--jenkins">Production (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>docker-publish.yml</code>.</p>
 <p>When changes to <code>modules/mosaic/</code> are merged to <code>main</code>, the demo image is built,

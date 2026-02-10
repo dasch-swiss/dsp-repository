@@ -74,7 +74,7 @@ jobs:
             --cpu=1
             --memory=256Mi
             --max-instances=1
-            --no-cpu-throttling=false
+            --cpu-throttling
 
       - name: Find existing preview comment
         uses: peter-evans/find-comment@v3

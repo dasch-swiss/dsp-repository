@@ -4,11 +4,11 @@
   }
 
   .accordion-item {
-    @apply border border-gray-200 rounded-md overflow-hidden;
+    @apply border border-neutral-200 rounded-md overflow-hidden;
   }
 
   .accordion-header {
-    @apply w-full flex items-center justify-between px-4 py-3 text-left font-medium text-gray-900 bg-white hover:bg-gray-50 transition-colors cursor-pointer;
+    @apply w-full flex items-center justify-between px-4 py-3 text-left font-medium text-neutral-900 bg-white hover:bg-neutral-50 transition-colors cursor-pointer;
     list-style: none;
   }
 
@@ -21,7 +21,7 @@
   }
 
   .accordion-icon {
-    @apply w-5 h-5 text-gray-500 transition-transform duration-200;
+    @apply w-5 h-5 text-neutral-500 transition-transform duration-200;
   }
 
   details[open] > .accordion-header .accordion-icon {

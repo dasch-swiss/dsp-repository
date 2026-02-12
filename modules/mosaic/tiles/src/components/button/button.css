@@ -6,12 +6,12 @@
     @apply opacity-50 cursor-not-allowed
   }
   .btn-primary {
-    @apply bg-indigo-600 text-white hover:bg-indigo-300 focus-visible:outline-2 dark:bg-indigo-500 dark:text-white dark:shadow-none dark:hover:bg-indigo-400 dark:focus-visible:outline-indigo-500;
+    @apply bg-primary-600 text-white hover:bg-primary-300 focus-visible:outline-2 dark:bg-primary-500 dark:text-white dark:shadow-none dark:hover:bg-primary-400 dark:focus-visible:outline-primary-500;
   }
   .btn-secondary {
-    @apply bg-indigo-300 text-indigo-900 hover:bg-indigo-600 focus-visible:outline-2;
+    @apply bg-primary-300 text-primary-900 hover:bg-primary-600 focus-visible:outline-2;
   }
   .btn-outline {
-    @apply bg-transparent text-black ring-1 ring-inset ring-gray-800 hover:bg-gray-50 focus-visible:outline-2;
+    @apply bg-transparent text-black ring-1 ring-inset ring-neutral-800 hover:bg-neutral-50 focus-visible:outline-2;
   }
 }

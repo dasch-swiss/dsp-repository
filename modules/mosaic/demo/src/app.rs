@@ -39,7 +39,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 ></script>
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
             </head>
-            <body>
+            <body class="font-body">
                 <App />
                 // Trigger Prism.js after Leptos hydration
                 <script>
@@ -47,7 +47,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                     window.addEventListener('load', function() {
                     setTimeout(function() {
                     if (window.Prism) {
-                     Prism.highlightAll();
+                    Prism.highlightAll();
                     }
                     }, 100);
                     });
@@ -58,12 +58,12 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                     lastPath = window.location.pathname;
                     // Close all open details elements
                     document.querySelectorAll('details[open]').forEach(function(details) {
-                     details.removeAttribute('open');
+                    details.removeAttribute('open');
                     });
                     setTimeout(function() {
-                     if (window.Prism) {
-                         Prism.highlightAll();
-                     }
+                    if (window.Prism) {
+                        Prism.highlightAll();
+                    }
                     }, 100);
                     }
                     }, 500);

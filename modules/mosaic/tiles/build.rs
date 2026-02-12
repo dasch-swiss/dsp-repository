@@ -125,7 +125,11 @@ fn main() {
     // Copy tokens.css to OUT_DIR so @import "./tokens.css" in main.css resolves correctly
     let tokens_src = Path::new("src").join("components").join("theme_provider").join("tokens.css");
     let tokens_dest = Path::new(&out_dir).join("tokens.css");
-    fs::copy(&tokens_src, &tokens_dest).unwrap_or_else(|e| panic!("Error copying tokens.css to OUT_DIR: {}", e));
+    fs::copy(&tokens_src, &tokens_dest).unwrap_or_else(|e| panic!("Error copying tokens.css to OUT_DIR: {e:?}"));
+
+    // Rerun build script when token or main CSS sources change
+    println!("cargo:rerun-if-changed=src/components/theme_provider/tokens.css");
+    println!("cargo:rerun-if-changed=src/components/theme_provider/main.css");
 
     // Theme provider goes first
     let main_css_path = Path::new("src").join("components").join("theme_provider").join("main.css");

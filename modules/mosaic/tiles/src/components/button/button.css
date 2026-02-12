@@ -9,7 +9,7 @@
     @apply bg-primary-600 text-white hover:bg-primary-300 focus-visible:outline-2 dark:bg-primary-500 dark:text-white dark:shadow-none dark:hover:bg-primary-400 dark:focus-visible:outline-primary-500;
   }
   .btn-secondary {
-    @apply bg-primary-300 text-primary-900 hover:bg-primary-600 focus-visible:outline-2;
+    @apply bg-secondary-300 text-secondary-900 hover:bg-secondary-600 focus-visible:outline-2;
   }
   .btn-outline {
     @apply bg-transparent text-black ring-1 ring-inset ring-neutral-800 hover:bg-neutral-50 focus-visible:outline-2;

@@ -39,6 +39,14 @@ just fmt-mosaic           # Format check
 just check                # Clippy and formatting for the whole repo
 ```
 
+## Design Tokens
+
+- Brand colors and typography are defined via `@theme static` in `tiles/src/components/theme_provider/main.css`
+- Tokens use OKLCH color format with 11-stop scales (50–950) for each semantic color
+- `info` tokens reference `secondary` via `var()` — they are intentionally identical
+- The neutral scale is experimental and subject to design review
+- Consuming apps load fonts (Lora/Lato) themselves; the tiles library is font-loading-agnostic
+
 ## Key Conventions
 
 - Components use Leptos context for cross-component coordination (e.g., `Button` auto-binds to `Popover` via context)

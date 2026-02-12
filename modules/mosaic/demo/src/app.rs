@@ -47,7 +47,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                     window.addEventListener('load', function() {
                     setTimeout(function() {
                     if (window.Prism) {
-                      Prism.highlightAll();
+                     Prism.highlightAll();
                     }
                     }, 100);
                     });
@@ -58,12 +58,12 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                     lastPath = window.location.pathname;
                     // Close all open details elements
                     document.querySelectorAll('details[open]').forEach(function(details) {
-                      details.removeAttribute('open');
+                     details.removeAttribute('open');
                     });
                     setTimeout(function() {
-                      if (window.Prism) {
-                          Prism.highlightAll();
-                      }
+                     if (window.Prism) {
+                         Prism.highlightAll();
+                     }
                     }, 100);
                     }
                     }, 500);
@@ -97,11 +97,27 @@ pub fn App() -> impl IntoView {
 }
 
 #[component]
-fn AppContent() -> impl IntoView {
-    // Get current location for active link highlighting (must be inside Router)
+fn NavLink(href: &'static str, label: &'static str) -> impl IntoView {
     let location = use_location();
-    let is_active = move |path: &str| location.pathname.get() == path;
+    let is_active = move || location.pathname.get() == href;
+    view! {
+        <A
+            href=href
+            attr:class=move || {
+                if is_active() {
+                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
+                } else {
+                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
+                }
+            }
+        >
+            {label}
+        </A>
+    }
+}
 
+#[component]
+fn AppContent() -> impl IntoView {
     view! {
         <div class="min-h-screen bg-neutral-50 flex flex-col">
             // Top bar with logo
@@ -120,157 +136,25 @@ fn AppContent() -> impl IntoView {
                 <aside class="w-64 bg-white border-r border-neutral-200 overflow-y-auto">
                     <nav class="p-4">
                         <div class="mb-4">
-                            <A
-                                href="/"
-                                attr:class=move || {
-                                    if is_active("/") {
-                                        "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
-                                    } else {
-                                        "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                                    }
-                                }
-                            >
-                                "Home"
-                            </A>
+                            <NavLink href="/" label="Home" />
                         </div>
                         <div class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 px-3">
                             "Foundation"
                         </div>
-                        <A
-                            href="/theme"
-                            attr:class=move || {
-                                if is_active("/theme") {
-                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
-                                } else {
-                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                                }
-                            }
-                        >
-                            "Design Tokens"
-                        </A>
+                        <NavLink href="/theme" label="Design Tokens" />
                         <div class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 mt-4 px-3">
                             "Components"
                         </div>
-                        <A
-                            href="/accordion"
-                            attr:class=move || {
-                                if is_active("/accordion") {
-                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
-                                } else {
-                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                                }
-                            }
-                        >
-                            "Accordion"
-                        </A>
-                        <A
-                            href="/badge"
-                            attr:class=move || {
-                                if is_active("/badge") {
-                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
-                                } else {
-                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                                }
-                            }
-                        >
-                            "Badge"
-                        </A>
-                        <A
-                            href="/breadcrumb"
-                            attr:class=move || {
-                                if is_active("/breadcrumb") {
-                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
-                                } else {
-                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                                }
-                            }
-                        >
-                            "Breadcrumb"
-                        </A>
-                        <A
-                            href="/button"
-                            attr:class=move || {
-                                if is_active("/button") {
-                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
-                                } else {
-                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                                }
-                            }
-                        >
-                            "Button"
-                        </A>
-                        <A
-                            href="/button-group"
-                            attr:class=move || {
-                                if is_active("/button-group") {
-                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
-                                } else {
-                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                                }
-                            }
-                        >
-                            "Button Group"
-                        </A>
-                        <A
-                            href="/card"
-                            attr:class=move || {
-                                if is_active("/card") {
-                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
-                                } else {
-                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                                }
-                            }
-                        >
-                            "Card"
-                        </A>
-                        <A
-                            href="/icon"
-                            attr:class=move || {
-                                if is_active("/icon") {
-                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
-                                } else {
-                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                                }
-                            }
-                        >
-                            "Icon"
-                        </A>
-                        <A
-                            href="/link"
-                            attr:class=move || {
-                                if is_active("/link") {
-                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
-                                } else {
-                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                                }
-                            }
-                        >
-                            "Link"
-                        </A>
-                        <A
-                            href="/popover"
-                            attr:class=move || {
-                                if is_active("/popover") {
-                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
-                                } else {
-                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                                }
-                            }
-                        >
-                            "Popover"
-                        </A>
-                        <A
-                            href="/tabs"
-                            attr:class=move || {
-                                if is_active("/tabs") {
-                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
-                                } else {
-                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                                }
-                            }
-                        >
-                            "Tabs"
-                        </A>
+                        <NavLink href="/accordion" label="Accordion" />
+                        <NavLink href="/badge" label="Badge" />
+                        <NavLink href="/breadcrumb" label="Breadcrumb" />
+                        <NavLink href="/button" label="Button" />
+                        <NavLink href="/button-group" label="Button Group" />
+                        <NavLink href="/card" label="Card" />
+                        <NavLink href="/icon" label="Icon" />
+                        <NavLink href="/link" label="Link" />
+                        <NavLink href="/popover" label="Popover" />
+                        <NavLink href="/tabs" label="Tabs" />
                     </nav>
                 </aside>
 

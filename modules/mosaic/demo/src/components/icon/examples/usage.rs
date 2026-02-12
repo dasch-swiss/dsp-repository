@@ -45,10 +45,18 @@ pub fn UsageExample() -> impl IntoView {
             <div>
                 <h4 class="text-base font-semibold mb-3">"Social Media"</h4>
                 <div class="flex gap-4">
-                    <a href="#" class="p-2 text-neutral-600 hover:text-neutral-900" aria-label="GitHub">
+                    <a
+                        href="#"
+                        class="p-2 text-neutral-600 hover:text-neutral-900"
+                        aria-label="GitHub"
+                    >
                         <Icon icon=IconGitHub class="w-6 h-6" />
                     </a>
-                    <a href="#" class="p-2 text-neutral-600 hover:text-primary-600" aria-label="LinkedIn">
+                    <a
+                        href="#"
+                        class="p-2 text-neutral-600 hover:text-primary-600"
+                        aria-label="LinkedIn"
+                    >
                         <Icon icon=IconLinkedIn class="w-6 h-6" />
                     </a>
                     <a href="#" class="p-2 text-neutral-600 hover:text-neutral-900" aria-label="X">

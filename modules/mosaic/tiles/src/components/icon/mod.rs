@@ -27,7 +27,7 @@
 /// view! { <Icon icon=IconSearch /> };
 ///
 /// // Explicit size
-/// view! { <Icon icon=IconGitHub class="w-6 h-6 text-gray-600" /> };
+/// view! { <Icon icon=IconGitHub class="w-6 h-6 text-neutral-600" /> };
 ///
 /// // Size inherits from parent
 /// view! {
@@ -66,7 +66,7 @@ use leptos::prelude::*;
 /// view! { <Icon icon=IconSearch /> };
 ///
 /// // With size and color
-/// view! { <Icon icon=IconGitHub class="w-6 h-6 text-gray-600 hover:text-gray-900" /> };
+/// view! { <Icon icon=IconGitHub class="w-6 h-6 text-neutral-600 hover:text-neutral-900" /> };
 /// ```
 #[component]
 pub fn Icon(

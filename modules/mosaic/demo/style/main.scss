@@ -1,0 +1,4 @@
+/* Override Prism.js coy theme left border to use our brand primary color */
+pre[class*="language-"] > code {
+  border-left-color: var(--color-primary-600) !important;
+}

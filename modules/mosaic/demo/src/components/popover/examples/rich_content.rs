@@ -18,7 +18,7 @@ pub fn RichContentExample() -> impl IntoView {
                         "This popover contains rich content including a title, description, and actions."
                     </p>
 
-                    <div class="border-t border-gray-200 pt-3">
+                    <div class="border-t border-neutral-200 pt-3">
                         <p class="text-sm font-medium mb-2">"Interactive Counter Test"</p>
                         <Counter />
                     </div>

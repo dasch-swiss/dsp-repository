@@ -103,13 +103,13 @@ fn AppContent() -> impl IntoView {
     let is_active = move |path: &str| location.pathname.get() == path;
 
     view! {
-        <div class="min-h-screen bg-gray-50 flex flex-col">
+        <div class="min-h-screen bg-neutral-50 flex flex-col">
             // Top bar with logo
-            <div class="bg-white border-b border-gray-200 sticky top-0 z-40">
+            <div class="bg-white border-b border-neutral-200 sticky top-0 z-40">
                 <div class="flex items-center h-16 px-4 sm:px-6 lg:px-8">
                     <A href="/" attr:class="flex items-center hover:opacity-80 transition-opacity">
                         <img src="/mosaic_logo_sm.svg" alt="Mosaic Logo" class="h-6 w-6 mr-3" />
-                        <h1 class="text-xl font-semibold text-gray-900">"Mosaic Tiles Demo"</h1>
+                        <h1 class="text-xl font-semibold text-neutral-900">"Mosaic Tiles Demo"</h1>
                     </A>
                 </div>
             </div>
@@ -117,47 +117,47 @@ fn AppContent() -> impl IntoView {
             // Flex container for sidebar and content
             <div class="flex flex-1 overflow-hidden">
                 // Sidebar navigation
-                <aside class="w-64 bg-white border-r border-gray-200 overflow-y-auto">
+                <aside class="w-64 bg-white border-r border-neutral-200 overflow-y-auto">
                     <nav class="p-4">
                         <div class="mb-4">
                             <A
                                 href="/"
                                 attr:class=move || {
                                     if is_active("/") {
-                                        "block px-3 py-2 rounded-md bg-gray-100 text-gray-900"
+                                        "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
                                     } else {
-                                        "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                        "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                                     }
                                 }
                             >
                                 "Home"
                             </A>
                         </div>
-                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">
+                        <div class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 px-3">
                             "Foundation"
                         </div>
                         <A
                             href="/theme"
                             attr:class=move || {
                                 if is_active("/theme") {
-                                    "block px-3 py-2 rounded-md bg-gray-100 text-gray-900"
+                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
                                 } else {
-                                    "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                                 }
                             }
                         >
                             "Design Tokens"
                         </A>
-                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-4 px-3">
+                        <div class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 mt-4 px-3">
                             "Components"
                         </div>
                         <A
                             href="/accordion"
                             attr:class=move || {
                                 if is_active("/accordion") {
-                                    "block px-3 py-2 rounded-md bg-gray-100 text-gray-900"
+                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
                                 } else {
-                                    "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                                 }
                             }
                         >
@@ -167,9 +167,9 @@ fn AppContent() -> impl IntoView {
                             href="/badge"
                             attr:class=move || {
                                 if is_active("/badge") {
-                                    "block px-3 py-2 rounded-md bg-gray-100 text-gray-900"
+                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
                                 } else {
-                                    "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                                 }
                             }
                         >
@@ -179,9 +179,9 @@ fn AppContent() -> impl IntoView {
                             href="/breadcrumb"
                             attr:class=move || {
                                 if is_active("/breadcrumb") {
-                                    "block px-3 py-2 rounded-md bg-gray-100 text-gray-900"
+                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
                                 } else {
-                                    "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                                 }
                             }
                         >
@@ -191,9 +191,9 @@ fn AppContent() -> impl IntoView {
                             href="/button"
                             attr:class=move || {
                                 if is_active("/button") {
-                                    "block px-3 py-2 rounded-md bg-gray-100 text-gray-900"
+                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
                                 } else {
-                                    "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                                 }
                             }
                         >
@@ -203,9 +203,9 @@ fn AppContent() -> impl IntoView {
                             href="/button-group"
                             attr:class=move || {
                                 if is_active("/button-group") {
-                                    "block px-3 py-2 rounded-md bg-gray-100 text-gray-900"
+                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
                                 } else {
-                                    "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                                 }
                             }
                         >
@@ -215,9 +215,9 @@ fn AppContent() -> impl IntoView {
                             href="/card"
                             attr:class=move || {
                                 if is_active("/card") {
-                                    "block px-3 py-2 rounded-md bg-gray-100 text-gray-900"
+                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
                                 } else {
-                                    "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                                 }
                             }
                         >
@@ -227,9 +227,9 @@ fn AppContent() -> impl IntoView {
                             href="/icon"
                             attr:class=move || {
                                 if is_active("/icon") {
-                                    "block px-3 py-2 rounded-md bg-gray-100 text-gray-900"
+                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
                                 } else {
-                                    "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                                 }
                             }
                         >
@@ -239,9 +239,9 @@ fn AppContent() -> impl IntoView {
                             href="/link"
                             attr:class=move || {
                                 if is_active("/link") {
-                                    "block px-3 py-2 rounded-md bg-gray-100 text-gray-900"
+                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
                                 } else {
-                                    "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                                 }
                             }
                         >
@@ -251,9 +251,9 @@ fn AppContent() -> impl IntoView {
                             href="/popover"
                             attr:class=move || {
                                 if is_active("/popover") {
-                                    "block px-3 py-2 rounded-md bg-gray-100 text-gray-900"
+                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
                                 } else {
-                                    "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                                 }
                             }
                         >
@@ -263,9 +263,9 @@ fn AppContent() -> impl IntoView {
                             href="/tabs"
                             attr:class=move || {
                                 if is_active("/tabs") {
-                                    "block px-3 py-2 rounded-md bg-gray-100 text-gray-900"
+                                    "block px-3 py-2 rounded-md bg-neutral-100 text-neutral-900"
                                 } else {
-                                    "block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    "block px-3 py-2 rounded-md text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                                 }
                             }
                         >
@@ -307,14 +307,14 @@ fn HomePage() -> impl IntoView {
                 <img src="/mosaic_logo.svg" alt="Mosaic Logo" class="h-[576px] w-[576px]" />
             </div>
 
-            <p class="text-lg text-gray-700 mb-8">
+            <p class="text-lg text-neutral-700 mb-8">
                 "A Leptos component library built with Tailwind CSS v4, designed to work exclusively with Leptos islands architecture. Components use feature flags for selective inclusion and compile styles at build time."
             </p>
 
             <div class="space-y-8">
                 <section>
                     <h2 class="text-2xl font-semibold mb-4">"Architecture"</h2>
-                    <ul class="space-y-2 text-gray-700">
+                    <ul class="space-y-2 text-neutral-700">
                         <li>
                             "• Built on Leptos 0.8 for server-side rendering and reactive web applications"
                         </li>
@@ -329,10 +329,10 @@ fn HomePage() -> impl IntoView {
 
                 <section>
                     <h2 class="text-2xl font-semibold mb-4">"Component Structure"</h2>
-                    <p class="text-gray-700 mb-3">
+                    <p class="text-neutral-700 mb-3">
                         "Each component consists of a Rust module and dedicated CSS file:"
                     </p>
-                    <pre class="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
+                    <pre class="bg-neutral-100 p-4 rounded-lg text-sm overflow-x-auto">
                         <code>
                             {"src/components/[component_name]/\n"}
                             {"├── mod.rs              # Component implementation\n"}
@@ -343,7 +343,7 @@ fn HomePage() -> impl IntoView {
 
                 <section>
                     <h2 class="text-2xl font-semibold mb-4">"Usage"</h2>
-                    <p class="text-gray-700 mb-3">
+                    <p class="text-neutral-700 mb-3">
                         "Components are enabled via Cargo features. Wrap your Router with ThemeProvider to load styles:"
                     </p>
                     <pre>
@@ -365,7 +365,7 @@ fn HomePage() -> impl IntoView {
 
                 <section>
                     <h2 class="text-2xl font-semibold mb-4">"Available Components"</h2>
-                    <p class="text-gray-700 mb-3">
+                    <p class="text-neutral-700 mb-3">
                         "Use the navigation above to explore component examples and API documentation."
                     </p>
                 </section>

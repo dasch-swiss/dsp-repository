@@ -41,7 +41,7 @@ fn ColorScale(name: &'static str, base_hex: &'static str) -> impl IntoView {
         <div class="mb-6">
             <div class="flex items-baseline gap-2 mb-2">
                 <span class="text-sm font-semibold">{name}</span>
-                <span class="text-xs text-gray-500 font-mono">{base_hex}</span>
+                <span class="text-xs text-neutral-500 font-mono">{base_hex}</span>
             </div>
             <div class="flex gap-1">{swatches}</div>
         </div>
@@ -59,11 +59,11 @@ pub fn ColorsExample() -> impl IntoView {
 
     view! {
         <div>
-            <p class="text-sm text-gray-600 mb-4">
+            <p class="text-sm text-neutral-600 mb-4">
                 "Colors are defined as CSS custom properties (e.g. "
-                <code class="text-sm bg-gray-100 px-1 rounded">"var(--color-primary-500)"</code>
+                <code class="text-sm bg-neutral-100 px-1 rounded">"var(--color-primary-500)"</code>
                 ") and are also available as Tailwind utilities (e.g. "
-                <code class="text-sm bg-gray-100 px-1 rounded">"bg-primary-500"</code> ")."
+                <code class="text-sm bg-neutral-100 px-1 rounded">"bg-primary-500"</code> ")."
             </p>
             {scales}
         </div>

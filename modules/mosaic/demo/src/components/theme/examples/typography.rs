@@ -5,9 +5,9 @@ pub fn TypographyExample() -> impl IntoView {
     view! {
         <div class="space-y-8">
             <div>
-                <h4 class="text-sm font-semibold text-gray-500 mb-3">
+                <h4 class="text-sm font-semibold text-neutral-500 mb-3">
                     "font-display"
-                    <span class="font-normal text-gray-400">
+                    <span class="font-normal text-neutral-400">
                         " — Lora, Georgia, Times New Roman, serif"
                     </span>
                 </h4>
@@ -19,9 +19,9 @@ pub fn TypographyExample() -> impl IntoView {
             </div>
 
             <div>
-                <h4 class="text-sm font-semibold text-gray-500 mb-3">
+                <h4 class="text-sm font-semibold text-neutral-500 mb-3">
                     "font-body"
-                    <span class="font-normal text-gray-400">
+                    <span class="font-normal text-neutral-400">
                         " — Lato, Helvetica Neue, Arial, sans-serif"
                     </span>
                 </h4>
@@ -29,7 +29,7 @@ pub fn TypographyExample() -> impl IntoView {
                     <p class="text-base mb-2">
                         "Body text set in Lato. This is the default font for paragraph content, form labels, and UI elements. The fallback chain ensures readable sans-serif text even without web fonts loaded."
                     </p>
-                    <p class="text-sm text-gray-600">
+                    <p class="text-sm text-neutral-600">
                         "Smaller body text for captions, metadata, and secondary information."
                     </p>
                 </div>

@@ -11,12 +11,12 @@ pub fn WithIconsExample() -> impl IntoView {
             <Card variant=CardVariant::Bordered>
                 <CardBody>
                     <div class="flex items-start gap-3">
-                        <div class="p-2 bg-blue-100 rounded-lg">
-                            <Icon icon=Info class="w-5 h-5 text-blue-600" />
+                        <div class="p-2 bg-info-100 rounded-lg">
+                            <Icon icon=Info class="w-5 h-5 text-info-600" />
                         </div>
                         <div class="flex-1">
                             <h3 class="text-lg font-semibold mb-2">"Information"</h3>
-                            <p class="text-gray-600 text-sm">
+                            <p class="text-neutral-600 text-sm">
                                 "This card uses an icon to indicate informational content."
                             </p>
                         </div>
@@ -28,12 +28,12 @@ pub fn WithIconsExample() -> impl IntoView {
             <Card variant=CardVariant::Elevated>
                 <CardHeader>
                     <div class="flex items-center gap-2">
-                        <Icon icon=Mail class="w-5 h-5 text-gray-600" />
+                        <Icon icon=Mail class="w-5 h-5 text-neutral-600" />
                         <h3 class="text-lg font-semibold">"Messages"</h3>
                     </div>
                 </CardHeader>
                 <CardBody>
-                    <p class="text-gray-600">"You have 3 new messages waiting for your review."</p>
+                    <p class="text-neutral-600">"You have 3 new messages waiting for your review."</p>
                 </CardBody>
                 <CardFooter>
                     <Button variant=ButtonVariant::Primary>
@@ -46,12 +46,12 @@ pub fn WithIconsExample() -> impl IntoView {
             <Card variant=CardVariant::Bordered>
                 <CardBody>
                     <h3 class="text-lg font-semibold mb-2">"Documentation"</h3>
-                    <p class="text-gray-600 text-sm mb-4">
+                    <p class="text-neutral-600 text-sm mb-4">
                         "Learn more about our API and integration guides."
                     </p>
                     <a
                         href="#"
-                        class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+                        class="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 text-sm font-medium"
                     >
                         "Read the docs"
                         <Icon icon=LinkExternal class="w-4 h-4" />

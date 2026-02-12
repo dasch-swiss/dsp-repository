@@ -122,6 +122,11 @@ fn main() {
         .open(&bundle_path)
         .expect("\nError opening bundle file.\n");
 
+    // Copy tokens.css to OUT_DIR so @import "./tokens.css" in main.css resolves correctly
+    let tokens_src = Path::new("src").join("components").join("theme_provider").join("tokens.css");
+    let tokens_dest = Path::new(&out_dir).join("tokens.css");
+    fs::copy(&tokens_src, &tokens_dest).unwrap_or_else(|e| panic!("Error copying tokens.css to OUT_DIR: {}", e));
+
     // Theme provider goes first
     let main_css_path = Path::new("src").join("components").join("theme_provider").join("main.css");
     bundle_css(main_css_path, &bundle);

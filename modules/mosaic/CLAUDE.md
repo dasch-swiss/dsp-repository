@@ -39,6 +39,17 @@ just fmt-mosaic           # Format check
 just check                # Clippy and formatting for the whole repo
 ```
 
+## Design Tokens
+
+- Brand colors and typography are defined via `@theme static` in `tiles/src/components/theme_provider/tokens.css`
+- `tokens.css` is imported by both `tiles/src/components/theme_provider/main.css` (tiles pipeline) and `demo/style/tailwind.css` (demo pipeline), so both pipelines share the same token definitions
+- `build.rs` copies `tokens.css` to `OUT_DIR` so the `@import "./tokens.css"` in `main.css` resolves during the tiles build
+- Tokens use OKLCH color format with 11-stop scales (50–950) for each semantic color
+- Use semantic token classes (`primary-*`, `neutral-*`, `danger-*`, etc.) instead of hardcoded Tailwind colors (`blue-*`, `gray-*`, `red-*`, etc.)
+- `info` tokens reference `secondary` via `var()` — they are intentionally identical
+- The neutral scale is experimental and subject to design review
+- Consuming apps load fonts (Lora/Lato) themselves; the tiles library is font-loading-agnostic
+
 ## Key Conventions
 
 - Components use Leptos context for cross-component coordination (e.g., `Button` auto-binds to `Popover` via context)

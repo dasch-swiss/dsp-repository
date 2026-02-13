@@ -13,11 +13,11 @@
 
   .breadcrumb-item:not(:last-child)::after {
     content: '›';
-    @apply text-lg text-gray-400;
+    @apply text-lg text-neutral-400;
   }
 
   .breadcrumb-link {
-    @apply text-sm text-indigo-600 hover:text-indigo-800;
+    @apply text-sm text-primary-600 hover:text-primary-800;
   }
 
   .breadcrumb-current {

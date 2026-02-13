@@ -9,3 +9,4 @@ pub mod icon;
 pub mod link;
 pub mod popover;
 pub mod tabs;
+pub mod theme;

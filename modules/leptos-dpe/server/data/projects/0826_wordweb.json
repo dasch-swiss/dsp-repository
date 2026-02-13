@@ -1,0 +1,191 @@
+{
+    "id": "0826",
+    "pid": "MISSING",
+    "name": "WordWeb / IDEM: A new way of representing Intertextuality in Drama of the Early Modern Period",
+    "shortcode": "0826",
+    "officialName": "MISSING",
+    "status": "Finished",
+    "shortDescription": "WordWeb/IDEM offers an innovative digital database for representing intertextuality in the drama of Shakespeare’s time.",
+    "description": {
+        "en": "WordWeb/IDEM offers an innovative digital database for representing intertextuality in the drama of Shakespeare’s time. This digital representation based on Sematic Web technologies displays a comprehensive corpus of mutual quotations within the texts of this time. WordWeb renews our vision of intertextuality through a new paradigm for representing what is conventionally called “quotation”. Instead of complete texts, WordWeb/IDEM stores only intertextually active passages, i.e., phrases which have been identified in more than one text. These items are not seen as deriving from a famous masterpiece. Instead, they represent much- quoted phrases which just happen to occur also in Hamlet, for example. The name “WordWeb” indicates this new focus: short verbal items (“Word”) are connected to each other by rich links that carry bibliographical information and other annotations (“Web”). As a new methodology, WordWeb can be applied to advance research and understanding of complex relationships in many cultural domains."
+    },
+    "startDate": "2018-11-01",
+    "endDate": "2020-11-04",
+    "url": [
+        "https://app.dasch.swiss/project/qhOve-cKTmSkiIU81W0lDQ"
+    ],
+    "howToCite": "WordWeb/IDEM (2021), DaSCH. ark.dasch.swiss/ark:/72163/1/0826",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        },
+        {
+            "de": "Französisch",
+            "en": "French",
+            "fr": "français"
+        },
+        {
+            "de": "Italienisch",
+            "en": "Italian",
+            "fr": "italien"
+        },
+        {
+            "de": "Latein",
+            "en": "Latin",
+            "fr": "latin"
+        },
+        {
+            "en": "Classical Greek"
+        },
+        {
+            "en": "Portuguese"
+        },
+        {
+            "en": "Spanish"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Digital Humanities"
+        },
+        {
+            "en": "Early Modern Period"
+        },
+        {
+            "en": "Elizabethan"
+        },
+        {
+            "en": "English Drama"
+        },
+        {
+            "en": "Intertextuality"
+        },
+        {
+            "en": "Shakespeare"
+        }
+    ],
+    "disciplines": [
+        {
+            "de": "10501 Schwerpunkt Germanistik und Anglistik"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "type": "Chronontology",
+            "url": "https://chronontology.dainst.org/period/Fuxla9Z889Zq",
+            "text": "English (culture or style)"
+        },
+        {
+            "type": "Chronontology",
+            "url": "https://chronontology.dainst.org/period/9Cb5HX6bZ92K",
+            "text": "Jacobean"
+        },
+        {
+            "type": "Chronontology",
+            "url": "http://chronontology.dainst.org/period/yY1zReDz86zF",
+            "text": "Roman (ancient Italian culture or period)"
+        },
+        {
+            "type": "Chronontology",
+            "url": "https://chronontology.dainst.org/period/ESV68rKHRuZg",
+            "text": "Elizabethan"
+        },
+        {
+            "type": "Chronontology",
+            "url": "https://chronontology.dainst.org/period/YOyP9TLDuhrb",
+            "text": "Ancient Greek (culture or style)"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/GB/united-kingdom.html",
+            "text": "United Kingdom"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0826-person-005",
+            "contributorType": [
+                "Applicant"
+            ]
+        },
+        {
+            "contributor": "0826-person-001",
+            "contributorType": [
+                "Creator",
+                "Editor",
+                "Author"
+            ]
+        },
+        {
+            "contributor": "0826-person-002",
+            "contributorType": [
+                "Editor"
+            ]
+        },
+        {
+            "contributor": "0826-person-003",
+            "contributorType": [
+                "Editor"
+            ]
+        },
+        {
+            "contributor": "0826-person-004",
+            "contributorType": [
+                "Programmer"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "4500 extracts from plays and other texts written no later than 1688, mostly in English"
+    },
+    "contactPoint": [
+        "0826-person-001"
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0826-organization-000"
+            ],
+            "number": "183259",
+            "name": "Digital Lives",
+            "url": "https://data.snf.ch/grants/grant/183259"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "Intertextuality in drama of the early modern period"
+        },
+        {
+            "en": "WordWeb / IDEM"
+        }
+    ]
+}

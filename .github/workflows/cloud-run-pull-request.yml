@@ -1,0 +1,134 @@
+name: Cloud Run PR Preview for Mosaic Demo
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    paths:
+      - "modules/mosaic/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # Required for Workload Identity Federation (OIDC token request)
+  pull-requests: write
+
+concurrency:
+  group: cloud-run-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  SERVICE_NAME: mosaic-demo-pr-${{ github.event.pull_request.number }}
+  IMAGE_TAG: pr-${{ github.event.pull_request.number }}
+
+jobs:
+  # --------------------------------------------------------------------------
+  # Deploy a preview environment for the Mosaic demo on Cloud Run.
+  # Only runs for PRs from the same repository (not forks).
+  # --------------------------------------------------------------------------
+  deploy-preview:
+    name: Build and deploy preview
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: modules/mosaic/demo/Dockerfile
+          push: true
+          tags: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-demo:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-demo:${{ env.IMAGE_TAG }}
+          flags: >-
+            --port=8080
+            --allow-unauthenticated
+            --cpu=1
+            --memory=256Mi
+            --max-instances=1
+            --cpu-throttling
+
+      - name: Find existing preview comment
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: github-actions[bot]
+          body-includes: "<!-- mosaic-demo-preview -->"
+
+      - name: Post or update preview URL comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          edit-mode: replace
+          body: |
+            <!-- mosaic-demo-preview -->
+            ### Mosaic Demo Preview
+
+            | | |
+            |---|---|
+            | **Preview URL** | ${{ steps.deploy.outputs.url }} |
+            | **Cloud Run Service** | `${{ env.SERVICE_NAME }}` |
+            | **Commit** | ${{ github.event.pull_request.head.sha }} |
+
+            _This preview is updated on every push to this PR._
+
+  # --------------------------------------------------------------------------
+  # Clean up Cloud Run service when the PR is closed or merged.
+  # The `paths` filter does not apply to the `closed` event type, so we check
+  # for the existence of the Cloud Run service before attempting deletion.
+  # --------------------------------------------------------------------------
+  cleanup-preview:
+    name: Clean up preview
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Delete Cloud Run service (if it exists)
+        run: |
+          gcloud run services delete "$SERVICE_NAME" \
+            --region="${{ secrets.GCP_REGION }}" \
+            --quiet 2>/dev/null || echo "Service $SERVICE_NAME not found, nothing to clean up."
+
+      - name: Delete container image (if it exists)
+        run: |
+          gcloud artifacts docker images delete \
+            "${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-demo:${{ env.IMAGE_TAG }}" \
+            --delete-tags --quiet 2>/dev/null || echo "Image not found, nothing to clean up."

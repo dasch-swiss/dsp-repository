@@ -1,0 +1,24 @@
+{
+    "id": "0844-person-001",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-7105-5733",
+            "text": "ORCID URL: https://orcid.org/0000-0002-7105-5733"
+        }
+    ],
+    "givenNames": [
+        "Priscille"
+    ],
+    "familyNames": [
+        "Marschall"
+    ],
+    "jobTitles": [
+        "Post-doc"
+    ],
+    "affiliations": [
+        "0844-organization-000"
+    ],
+    "email": "priscille.marschall@sib.swiss"
+}

@@ -1,0 +1,12 @@
+{
+    "id": "084B-organization-000",
+    "pid": "MISSING",
+    "name": "Université de Fribourg",
+    "url": "https://www.unifr.ch",
+    "address": {
+        "street": "Av. de l'Europe 20",
+        "postalCode": "1700",
+        "locality": "Fribourg",
+        "country": "Switzerland"
+    }
+}

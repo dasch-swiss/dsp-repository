@@ -1,0 +1,16 @@
+{
+    "id": "0103-person-004",
+    "pid": "MISSING",
+    "givenNames": [
+        "Fiona"
+    ],
+    "familyNames": [
+        "Baumann"
+    ],
+    "jobTitles": [
+        "Research Assistant"
+    ],
+    "affiliations": [
+        "0103-organization-000"
+    ]
+}

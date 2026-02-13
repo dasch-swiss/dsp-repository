@@ -1,0 +1,24 @@
+{
+    "id": "082D-person-001",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://orcid.org/0000-0003-3383-3570",
+            "text": "https://orcid.org/0000-0003-3383-3570"
+        }
+    ],
+    "givenNames": [
+        "Francisco R."
+    ],
+    "familyNames": [
+        "Klauser"
+    ],
+    "jobTitles": [
+        "Full professor of political geography"
+    ],
+    "affiliations": [
+        "082D-organization-002"
+    ],
+    "email": "francisco.klauser@unine.ch"
+}

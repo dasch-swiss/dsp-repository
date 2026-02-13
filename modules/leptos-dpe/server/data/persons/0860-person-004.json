@@ -1,0 +1,17 @@
+{
+    "id": "0860-person-004",
+    "pid": "MISSING",
+    "givenNames": [
+        "Maurizio"
+    ],
+    "familyNames": [
+        "Aceto"
+    ],
+    "jobTitles": [
+        "Professor"
+    ],
+    "affiliations": [
+        "0860-organization-005"
+    ],
+    "email": "maurizio.aceto@uniupo.it"
+}

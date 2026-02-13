@@ -1,0 +1,17 @@
+{
+    "id": "0103-person-005",
+    "pid": "MISSING",
+    "givenNames": [
+        "Paul"
+    ],
+    "familyNames": [
+        "Fièvre"
+    ],
+    "jobTitles": [
+        "IT support"
+    ],
+    "affiliations": [
+        "0103-organization-000"
+    ],
+    "email": "paul.fievre@gmail.com"
+}

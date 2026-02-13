@@ -1,0 +1,24 @@
+{
+    "id": "0845-person-002",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0225-5221",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0225-5221"
+        }
+    ],
+    "givenNames": [
+        "Áurea"
+    ],
+    "familyNames": [
+        "Domínguez"
+    ],
+    "jobTitles": [
+        "PhD"
+    ],
+    "affiliations": [
+        "0845-organization-000"
+    ],
+    "email": "aurea.dominguez@fhnw.ch"
+}

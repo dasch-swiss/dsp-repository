@@ -25,6 +25,12 @@ Run `just` without arguments to see all available commands with descriptions.
 
 Any further information should be located in the documentation.
 
+## CI/CD
+
+GitHub Actions workflows run automatically on pushes and pull requests.
+See [Release, Deployment and Versioning](./deployment.md) for details on the
+CI/CD pipelines, including PR preview deployments and production releases.
+
 ## Git Workflow
 
 For this repository, we use a rebase workflow.

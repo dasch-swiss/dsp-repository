@@ -1,0 +1,13 @@
+{
+    "id": "083D-organization-005",
+    "pid": "MISSING",
+    "name": "The University of Dar es Salaam",
+    "url": "MISSING",
+    "address": {
+        "street": "University Rd",
+        "postalCode": "14113",
+        "locality": "Dar es Salaam",
+        "country": "Tanzania",
+        "additional": "PO Box 35091"
+    }
+}

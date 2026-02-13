@@ -1,0 +1,17 @@
+{
+    "id": "083C-person-000",
+    "pid": "MISSING",
+    "givenNames": [
+        "Walter"
+    ],
+    "familyNames": [
+        "Morgenthaler"
+    ],
+    "jobTitles": [
+        "Dr. phil."
+    ],
+    "affiliations": [
+        "083C-organization-000",
+        "083C-organization-005"
+    ]
+}

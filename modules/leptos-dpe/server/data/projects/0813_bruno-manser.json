@@ -1,0 +1,150 @@
+{
+    "id": "0813",
+    "pid": "MISSING",
+    "name": "Annotating Media of Bruno Manser",
+    "shortcode": "0813",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "Bruno Manser has left a variety of media in which he documented the nomadic life of the Penan. The project shows and annotates these documents.",
+    "description": {
+        "en": "Bruno Manser has left a variety of media in which he documented the nomadic life of the Penan. The project aims to show and annotate the everyday life moments of a nomadic lifestyle across media as diary entries, video footage and photographs of Bruno Manser."
+    },
+    "startDate": "2014-05-01",
+    "endDate": "MISSING",
+    "url": [
+        "https://app.dasch.swiss/project/KW_RhYXlT6WNRivh3JrDAQ",
+        "https://www.bmf.ch/"
+    ],
+    "howToCite": "Bruno Manser/Bruno Manser Fonds",
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text",
+        "Video"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        },
+        {
+            "en": "Penan"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Bruno Manser"
+        },
+        {
+            "de": "Bruno Manser Fonds"
+        },
+        {
+            "en": "Hunters and Gatherers"
+        },
+        {
+            "de": "Nomaden",
+            "en": "Nomads"
+        },
+        {
+            "en": "Penan"
+        },
+        {
+            "en": "Rainforest",
+            "de": "Regenwald"
+        },
+        {
+            "de": "Waldnomaden"
+        },
+        {
+            "en": "nomadic lifestyle"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/5103",
+            "text": "Social anthropology"
+        },
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/5101",
+            "text": "Cultural anthropology"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "de": "1984 - 2000",
+            "en": "1984 - 2000",
+            "fr": "1984 - 2000"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434/switzerland.html",
+            "text": "Switzerland"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/1733038/sarawak.html",
+            "text": "Sarawak"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0813-person-001",
+            "contributorType": [
+                "Projektleiter"
+            ]
+        },
+        {
+            "contributor": "0813-person-002",
+            "contributorType": [
+                "Author"
+            ]
+        },
+        {
+            "contributor": "0813-organization-001",
+            "contributorType": [
+                "Editor"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The dataset contains data of digitized diaries, video footage, photographs and other media of Bruno Manser"
+    },
+    "funding": [
+        {
+            "funders": [
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "Annotating Bruno Manser's Diaries"
+        }
+    ]
+}

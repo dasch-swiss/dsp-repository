@@ -1,0 +1,12 @@
+{
+    "id": "0862-organization-000",
+    "pid": "MISSING",
+    "name": "Forschungsstelle Jeremias Gotthelf",
+    "url": "http://www.gotthelf.unibe.ch",
+    "address": {
+        "street": "Universität Bern\r Forschungsstelle Jeremias Gotthelf\r Muesmattstrasse 45",
+        "postalCode": "CH-3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+    }
+}

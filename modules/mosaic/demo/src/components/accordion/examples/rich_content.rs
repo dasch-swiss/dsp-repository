@@ -6,7 +6,7 @@ pub fn RichContentExample() -> impl IntoView {
     view! {
         <Accordion>
             <AccordionItem title="Features".to_string()>
-                <div class="text-gray-700 space-y-2">
+                <div class="text-neutral-700 space-y-2">
                     <p class="font-semibold">"Key Features:"</p>
                     <ul class="list-disc list-inside ml-4 space-y-1">
                         <li>"Fine-grained reactivity"</li>
@@ -18,9 +18,9 @@ pub fn RichContentExample() -> impl IntoView {
                 </div>
             </AccordionItem>
             <AccordionItem title="Performance".to_string()>
-                <div class="text-gray-700 space-y-2">
+                <div class="text-neutral-700 space-y-2">
                     <p>"Leptos is designed for exceptional performance:"</p>
-                    <div class="bg-gray-50 p-4 rounded-md mt-2">
+                    <div class="bg-neutral-50 p-4 rounded-md mt-2">
                         <p class="font-mono text-sm">"Bundle size: ~50KB minified"</p>
                         <p class="font-mono text-sm">"Initial load: < 100ms"</p>
                         <p class="font-mono text-sm">"Reactivity overhead: ~1μs"</p>
@@ -28,19 +28,19 @@ pub fn RichContentExample() -> impl IntoView {
                 </div>
             </AccordionItem>
             <AccordionItem title="Community".to_string()>
-                <div class="text-gray-700">
+                <div class="text-neutral-700">
                     <p class="mb-3">"Join the growing Leptos community:"</p>
                     <div class="flex flex-wrap gap-2">
-                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-md text-sm">
+                        <span class="px-3 py-1 bg-primary-100 text-primary-800 rounded-md text-sm">
                             "Discord"
                         </span>
-                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-md text-sm">
+                        <span class="px-3 py-1 bg-primary-100 text-primary-800 rounded-md text-sm">
                             "GitHub"
                         </span>
-                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-md text-sm">
+                        <span class="px-3 py-1 bg-primary-100 text-primary-800 rounded-md text-sm">
                             "Reddit"
                         </span>
-                        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-md text-sm">
+                        <span class="px-3 py-1 bg-primary-100 text-primary-800 rounded-md text-sm">
                             "Twitter"
                         </span>
                     </div>

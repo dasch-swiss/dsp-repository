@@ -1,0 +1,17 @@
+{
+    "id": "0114-person-002",
+    "pid": "MISSING",
+    "givenNames": [
+        "Helena"
+    ],
+    "familyNames": [
+        "Klima"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "0114-organization-001"
+    ],
+    "email": "helena.klima@unil.ch"
+}

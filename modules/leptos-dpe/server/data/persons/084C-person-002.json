@@ -1,0 +1,17 @@
+{
+    "id": "084C-person-002",
+    "pid": "MISSING",
+    "givenNames": [
+        "Peter",
+        "Cornelius"
+    ],
+    "familyNames": [
+        "Claussen"
+    ],
+    "jobTitles": [
+        "Prof. Dr. emeritus for art history of the Middle Ages"
+    ],
+    "affiliations": [
+        "084C-organization-002"
+    ]
+}

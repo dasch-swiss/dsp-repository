@@ -1,0 +1,12 @@
+name = "Design Tokens"
+description = "DaSCH brand colors, typography, and neutral scale defined as CSS custom properties via Tailwind v4 @theme."
+
+[[examples]]
+name = "colors"
+title = "Color Scales"
+description = "Semantic color tokens (50–950) derived from DaSCH brand values in OKLCH. Each row shows the full scale for one semantic color."
+
+[[examples]]
+name = "typography"
+title = "Typography"
+description = "Font tokens: font-display (Lora) for headings and font-body (Lato) for body text, with fallback stacks."

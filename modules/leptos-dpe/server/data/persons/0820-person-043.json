@@ -1,0 +1,24 @@
+{
+    "id": "0820-person-043",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/dr-klaus-powroznik-28180747/",
+            "text": "https://www.linkedin.com/in/dr-klaus-powroznik-28180747/"
+        }
+    ],
+    "givenNames": [
+        "Klaus"
+    ],
+    "familyNames": [
+        "Powroznik"
+    ],
+    "jobTitles": [
+        "Archaeologist",
+        "Photographer"
+    ],
+    "affiliations": [
+        "0820-organization-001"
+    ]
+}

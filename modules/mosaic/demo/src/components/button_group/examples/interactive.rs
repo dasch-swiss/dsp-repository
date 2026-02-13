@@ -2,13 +2,13 @@ use leptos::prelude::*;
 use mosaic_tiles::button::{Button, ButtonVariant};
 use mosaic_tiles::button_group::*;
 
-#[component]
+#[island]
 pub fn InteractiveExample() -> impl IntoView {
     let (count, set_count) = signal(0);
 
     view! {
         <div class="space-y-4">
-            <p class="text-sm text-gray-600">"Count: " {move || count.get()}</p>
+            <p class="text-sm text-neutral-600">"Count: " {move || count.get()}</p>
 
             <ButtonGroup>
                 <Button

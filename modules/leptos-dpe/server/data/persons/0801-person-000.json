@@ -1,0 +1,17 @@
+{
+    "id": "0801-person-000",
+    "pid": "MISSING",
+    "givenNames": [
+        "Martin"
+    ],
+    "familyNames": [
+        "Mattmüller"
+    ],
+    "jobTitles": [
+        "Wissenschaftlicher Mitarbeiter"
+    ],
+    "affiliations": [
+        "0801-organization-003"
+    ],
+    "email": "martin.mattmueller@unibas.ch"
+}

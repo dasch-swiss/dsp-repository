@@ -1,0 +1,17 @@
+{
+    "id": "0861-person-004",
+    "pid": "MISSING",
+    "givenNames": [
+        "Marcus"
+    ],
+    "familyNames": [
+        "Zerbst"
+    ],
+    "jobTitles": [
+        "MISSING"
+    ],
+    "affiliations": [
+        "0861-organization-004"
+    ],
+    "email": "marcus.zerbst@zb.uzh.ch"
+}

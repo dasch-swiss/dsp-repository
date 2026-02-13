@@ -1,0 +1,17 @@
+{
+    "id": "0112-person-001",
+    "pid": "MISSING",
+    "givenNames": [
+        "Claire"
+    ],
+    "familyNames": [
+        "Jaquier Kaempfer"
+    ],
+    "jobTitles": [
+        "Full professor"
+    ],
+    "affiliations": [
+        "0112-organization-002"
+    ],
+    "email": "claire.jaquier@unine.ch"
+}

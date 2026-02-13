@@ -1,0 +1,17 @@
+{
+    "id": "0102-person-002",
+    "pid": "MISSING",
+    "givenNames": [
+        "Jeanne"
+    ],
+    "familyNames": [
+        "Modoux"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "0102-organization-000"
+    ],
+    "email": "jeanne.modoux@unil.ch"
+}

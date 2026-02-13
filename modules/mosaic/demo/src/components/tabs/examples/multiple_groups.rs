@@ -6,7 +6,7 @@ pub fn MultipleGroupsExample() -> impl IntoView {
     view! {
         <div class="space-y-8">
             <div>
-                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <h4 class="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
                     "Navigation Tabs"
                 </h4>
                 <Tabs>
@@ -23,7 +23,7 @@ pub fn MultipleGroupsExample() -> impl IntoView {
             </div>
 
             <div>
-                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <h4 class="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
                     "Content Tabs"
                 </h4>
                 <Tabs>

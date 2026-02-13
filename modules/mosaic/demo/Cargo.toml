@@ -1,6 +1,6 @@
 [package]
 name = "mosaic-demo"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [lib]
@@ -34,14 +34,6 @@ ssr = [
   "leptos_router/ssr",
   "mosaic-tiles/ssr",
 ]
-
-# Defines a size-optimized profile for the WASM bundle in release mode
-[profile.wasm-release]
-inherits = "release"
-opt-level = 'z'
-lto = true
-codegen-units = 1
-panic = "abort"
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name

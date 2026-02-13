@@ -137,4 +137,3 @@ fmt-mosaic:
 [group('leptos-dpe')]
 watch-leptos-dpe:
     cargo leptos watch --project=leptos-dpe
-

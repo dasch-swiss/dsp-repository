@@ -17,7 +17,7 @@ pub fn WithIconsExample() -> impl IntoView {
                         <input
                             type="text"
                             placeholder="Search..."
-                            class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md w-full"
+                            class="px-3 py-2 border border-neutral-300 rounded-md w-full"
                         />
                     </div>
                 </div>
@@ -31,7 +31,7 @@ pub fn WithIconsExample() -> impl IntoView {
                     <p>"View our repositories and contribute to open source projects."</p>
                     <a
                         href="https://github.com"
-                        class="inline-block mt-4 px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md hover:bg-gray-800 dark:hover:bg-gray-600"
+                        class="inline-block mt-4 px-4 py-2 bg-neutral-900 text-white rounded-md hover:bg-neutral-800"
                     >
                         "Visit GitHub"
                     </a>
@@ -46,7 +46,7 @@ pub fn WithIconsExample() -> impl IntoView {
                     <p>"Connect with us on LinkedIn for professional networking."</p>
                     <a
                         href="https://linkedin.com"
-                        class="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        class="inline-block mt-4 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
                     >
                         "Visit LinkedIn"
                     </a>

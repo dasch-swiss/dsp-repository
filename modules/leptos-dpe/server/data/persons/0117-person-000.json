@@ -1,0 +1,24 @@
+{
+    "id": "0117-person-000",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-7835-7008",
+            "text": "ORCID URL: https://orcid.org/0000-0001-7835-7008"
+        }
+    ],
+    "givenNames": [
+        "Dominique"
+    ],
+    "familyNames": [
+        "Vinck"
+    ],
+    "jobTitles": [
+        "Full professor"
+    ],
+    "affiliations": [
+        "0117-organization-000"
+    ],
+    "email": "dominique.vinck@unil.ch"
+}

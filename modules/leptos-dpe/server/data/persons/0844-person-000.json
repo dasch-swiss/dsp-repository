@@ -1,0 +1,24 @@
+{
+    "id": "0844-person-000",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-8954-0115",
+            "text": "ORCID URL: https://orcid.org/0000-0001-8954-0115"
+        }
+    ],
+    "givenNames": [
+        "Claire"
+    ],
+    "familyNames": [
+        "Clivaz"
+    ],
+    "jobTitles": [
+        "Head of Digital Humanities +"
+    ],
+    "affiliations": [
+        "0844-organization-000"
+    ],
+    "email": "claire.clivaz@sib.swiss"
+}

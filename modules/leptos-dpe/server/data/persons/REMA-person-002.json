@@ -1,0 +1,17 @@
+{
+    "id": "REMA-person-002",
+    "pid": "MISSING",
+    "givenNames": [
+        "Marion"
+    ],
+    "familyNames": [
+        "Rivoal"
+    ],
+    "jobTitles": [
+        "Research Manager"
+    ],
+    "affiliations": [
+        "REMA-organization-000"
+    ],
+    "email": "Marion.Rivoal@unil.ch"
+}

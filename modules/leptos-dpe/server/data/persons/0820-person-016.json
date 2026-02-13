@@ -1,0 +1,23 @@
+{
+    "id": "0820-person-016",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/rachael-colldeweih-0166a057/",
+            "text": "https://www.linkedin.com/in/rachael-colldeweih-0166a057/"
+        }
+    ],
+    "givenNames": [
+        "Rachael"
+    ],
+    "familyNames": [
+        "Colldeweih"
+    ],
+    "jobTitles": [
+        "Geologist (MA)"
+    ],
+    "affiliations": [
+        "0820-organization-003"
+    ]
+}

@@ -1,0 +1,82 @@
+{
+    "id": "0110",
+    "pid": "MISSING",
+    "name": "Hans Eugen Steiner (1907-1962) : un destin national",
+    "shortcode": "0110",
+    "officialName": "MISSING",
+    "status": "Finished",
+    "shortDescription": "Des milliers de tirages originaux, 7500 planches contacts, des centaines de diapositives et 106'000 négatifs du photographe Hans Eugen Steiner (1907-1962).",
+    "description": {
+        "fr": "Des milliers de tirages originaux (à l'inventaire), des milliers de planches contacts (7500 planches contacts), des centaines de diapositives (à l'inventaire), 106'000 négatifs, bref un ensemble de phototypes très important provenant de deux sources : l'achat à Hans Rudolf Graf de la plus grande partie du fonds en 1989 (positifs, négatifs et planches contacts) ; le don en 1996 de Beat Jost, successeur du photographe (positifs et négatifs). L'achat de 1989 fait suite à une proposition d'un particulier qui voulait se défaire d'un patrimoine hérité. Des films et des albums à caractère privé ont été retrouvés, les premiers feront l'objet d'une numérisation."
+    },
+    "startDate": "2021-11-01",
+    "endDate": "MISSING",
+    "url": [
+        "https://app.ls-prod-server.dasch.swiss/project/0110/"
+    ],
+    "howToCite": "H-STEINER: Hans Eugen Steiner (1907-1962) : un destin national [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0110",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "MISSING",
+                "licenseDate": "MISSING",
+                "licenseURI": "MISSING"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        }
+    ],
+    "keywords": [
+        {
+            "fr": "diapositives"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10404 Visual arts and Art history"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "type": "URL",
+            "url": "MISSING"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "URL",
+            "url": "MISSING"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0110-person-000",
+            "contributorType": [
+                "Project Leader"
+            ]
+        }
+    ],
+    "abstract": {
+        "fr": "Des milliers de tirages originaux (à l'inventaire), des milliers de planches contacts (7500 planches contacts), des centaines de diapositives (à l'inventaire), 106'000 négatifs, bref un ensemble de phototypes très important provenant de deux sources : l'achat à Hans Rudolf Graf de la plus grande partie du fonds en 1989 (positifs, négatifs et planches contacts) ; le don en 1996 de Beat Jost, successeur du photographe (positifs et négatifs)."
+    },
+    "contactPoint": [
+        "0110-person-000"
+    ],
+    "funding": "No funding"
+}

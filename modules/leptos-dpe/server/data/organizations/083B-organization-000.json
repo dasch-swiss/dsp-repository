@@ -1,0 +1,12 @@
+{
+    "id": "083B-organization-000",
+    "pid": "MISSING",
+    "name": "University of Bern, Department of English",
+    "url": "https://www.ens.unibe.ch/",
+    "address": {
+        "street": "Länggassstrasse 49",
+        "postalCode": "3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+    }
+}

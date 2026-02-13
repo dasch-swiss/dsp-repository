@@ -1,0 +1,13 @@
+{
+    "id": "0840-organization-003",
+    "pid": "MISSING",
+    "name": "Herrmann Germann GmbH",
+    "url": "https://herrmanngermann.ch",
+    "address": {
+        "street": "Hardturmstrasse 68",
+        "postalCode": "8005",
+        "locality": "Zürich",
+        "country": "Switzerland"
+    },
+    "email": "xy@herrmanngermann.ch"
+}

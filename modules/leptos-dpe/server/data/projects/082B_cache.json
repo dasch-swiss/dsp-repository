@@ -1,0 +1,198 @@
+{
+    "id": "082B",
+    "pid": "MISSING",
+    "name": "cache",
+    "shortcode": "082B",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "cache is a hybrid publication tool for research groups in the humanities.",
+    "description": {
+        "en": "cache is a hybrid publication tool for research groups in the humanities."
+    },
+    "startDate": "2018-12-01",
+    "endDate": "MISSING",
+    "url": [
+        "https://app.dasch.swiss/project/082B",
+        "http://www.cache.ch"
+    ],
+    "howToCite": "Gegen|Wissen, intercom: Zürich (2020)",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "academic publishing"
+        },
+        {
+            "en": "humanities"
+        }
+    ],
+    "disciplines": [
+        {
+            "de": "10301 Allgemeine Geschichte (ohne Ur- und Frühgeschichte)"
+        },
+        {
+            "de": "10302 Schweizer Geschichte"
+        },
+        {
+            "de": "10400 Ethnologie, Sozial- und Humangeographie"
+        },
+        {
+            "de": "10600 Soziologie, Soziale Arbeit, Politikwissenschaften, Medien- und Kommunikationswissenschaften, Gesundheit"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "16th Century"
+        },
+        {
+            "en": "17th Century"
+        },
+        {
+            "en": "18th Century"
+        },
+        {
+            "en": "19th Century"
+        },
+        {
+            "en": "20th Century"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/countries/",
+            "text": "Countries"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "082B-person-001",
+            "contributorType": [
+                "project lead"
+            ]
+        },
+        {
+            "contributor": "082B-person-002",
+            "contributorType": [
+                "editorial management"
+            ]
+        },
+        {
+            "contributor": "082B-person-003",
+            "contributorType": [
+                "scientific direction"
+            ]
+        },
+        {
+            "contributor": "082B-person-004",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "082B-person-005",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "082B-person-006",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "082B-person-007",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "082B-person-008",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "082B-person-009",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "082B-person-010",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "082B-person-011",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "082B-person-012",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "082B-organization-002",
+            "contributorType": [
+                "publisher"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Genetic engineering, acid rain, nuclear accidents, ozone depletion, computerization — in the years around 1980, science moved center-stage as a socio-political quandary. First and foremost, it were the new social movements that cultivated critiques of science and technology; but soon enough, the desire for an alternative science, or a “counter-knowledge”, diffused into the broader realms of politics, economics and, not least, establishment science. What was this “counter\"-science? Where did it succeed? Where did it fail? And why is this relevant again today?"
+    },
+    "contactPoint": [
+        "082B-organization-002"
+    ],
+    "publications": [
+        {
+            "text": "Gegen|Wissen (cache 01)"
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "082B-organization-003"
+            ],
+            "number": "183057",
+            "name": "Digital Lives",
+            "url": "https://data.snf.ch/grants/grant/183057"
+        }
+    ]
+}

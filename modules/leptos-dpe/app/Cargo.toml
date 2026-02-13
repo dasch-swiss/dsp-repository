@@ -1,0 +1,29 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+leptos.workspace = true
+leptos_meta.workspace = true
+leptos_router.workspace = true
+leptos_axum = { workspace = true, optional = true }
+
+http.workspace = true
+cfg-if.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, optional = true }
+serde.workspace = true
+serde_json.workspace = true
+urlencoding = "2.1"
+wasm-bindgen.workspace = true
+gloo-history = "0.2"
+gloo-storage = "0.3"
+web-sys = { version = "0.3", features = ["PopStateEvent", "Window", "Location", "UrlSearchParams", "Storage", "Document", "HtmlDocument", "HtmlElement", "HtmlDialogElement"] }
+
+[features]
+default = []
+hydrate = ["leptos/hydrate", "leptos/islands"]
+ssr = ["leptos/ssr", "leptos/islands", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_axum", "dep:tokio"]

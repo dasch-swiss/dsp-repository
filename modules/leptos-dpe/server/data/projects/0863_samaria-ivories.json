@@ -1,0 +1,201 @@
+{
+    "id": "0863",
+    "pid": "MISSING",
+    "name": "The Electronic Catalogue of the Samaria Ivory Artifacts and Related Material",
+    "shortcode": "0863",
+    "officialName": "MISSING",
+    "status": "Finished",
+    "shortDescription": "\"Samaria Ivories\" provides access to a catalogue with color photographs of the entire assemblage of ivory carvings and related material that once decorated luxurious furniture of the Israelite elite.",
+    "description": {
+        "en": "\"The Electronic Catalogue of the Samaria Ivory Artifacts and Related Material\" offers the first complete publication of the ivory carvings and related inlays and overlays that were excavated between 1908 and 1935 at Samaria, the capital of the kingdom of Israel in the 9th-8th centuries BCE. The catalogue accompanies a description, analysis, and reassessment of this material published in book form. The over 12,500 mostly very fragmentary items once decorated luxurious furniture, perhaps also other prestige goods. They constitute not only a substantial portion of the arts known from Iron Age Israel, but also the largest assemblage of elaborate Levantine ivory carvings of the Iron Age unearthed in the Levant itself rather than Assyrian cities, where the vast majority of this body of material came to light. Thus, the Samaria Ivories are significant for both the cultural history of ancient Israel and the study of Levantine ivory carvings of the Iron Age."
+    },
+    "startDate": "2002-04-01",
+    "endDate": "2025-06-30",
+    "url": [
+        "MISSING"
+    ],
+    "howToCite": "Suter (2026). The Electronic Catalogue of the Samaria Ivory Artifacts and Related Material (Samaria Ivories) [Database]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0863.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2026-01-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "en": "English"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Ancient Near East"
+        },
+        {
+            "en": "Levant"
+        },
+        {
+            "en": "Kingdom of Israel"
+        },
+        {
+            "en": "Iron Age"
+        },
+        {
+            "en": "Ivory Carving"
+        },
+        {
+            "en": "Glass Inlays"
+        },
+        {
+            "en": "Gold Overlays"
+        },
+        {
+            "en": "Luxury Goods"
+        },
+        {
+            "en": "Furniture"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10402 Archaeology"
+        },
+        {
+            "en": "10404 Visual Arts and Art History"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "Iron Age"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/294640/israel.html",
+            "text": "Israel"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/6254930/palestinian-territory.html",
+            "text": "Palestinian Territory"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0863-person-000",
+            "contributorType": [
+                "Project leader",
+                "Data Collector",
+                "Data Curator"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The assemblage of over 12,500 mostly very fragmentary ivory carvings and related material from ancient Samaria was found in the pioneer times of ancient Near Eastern archaeology. Only a small selection of the best-preserved pieces has previously been published and in a manner that does not conform to today's standards. The present electronic catalogue seeks to remedy this situation. The material was collected based on the unpublished field records and a personal inspection and study of the actual pieces in the seven institutions that house them today. Because the correlation of the inventory numbers of the institutions that house the artifacts and the field numbers assigned to them during the excavations remains in many cases uncertain due to insufficient recording, the data is separated into two cross-referenced relational databases: one containing the examination of the artifacts, the other the information of the field records concerning their discovery and archaeological contexts. The former contains color photographs both of the obverse and reverse of the artifacts, most of which are plaques, with a few fittings, isolated colored glass inlays and gold overlays. The artifacts' description and classification includes their present location, inventory number, measurements, condition, imagery, occasional inscription, possible membership of a set of fragments that belonged to the same artifact or set of artifacts, and their possible membership of particular groups of Levantine ivory carvings of the Iron Age."
+    },
+    "contactPoint": [
+        "0863-person-000"
+    ],
+    "publications": [
+        {
+            "text": "Suter, Claudia E. (2010), \"Luxury Goods in Ancient Israel: Questions of Consumption and Production,\" in Paolo Matthiae et al. (eds.), Proceedings of the 6th International Congress on the Archaeology of the Ancient Near East (5-10 May, 2008, Sapienza Università di Roma) (vol. 1; Wiesbaden: Harrassowitz), 994–1002."
+        },
+        {
+            "text": "Suter, Claudia E. (2011), \"Images, Tradition, and Meaning: The Samaria and other Levantine Ivories of the Iron Age,\" in Grant Frame et al. (eds.), A Common Cultural Heritage: Studies on Mesopotamia and the Biblical World in Honor of Barry L. Eichler (Bethesda, MD: CDL Press), 219–241."
+        },
+        {
+            "text": "Suter, Claudia E. (2013), \"Review of Wicke, Kleinfunde aus Elfenbein und Knochen aus Assur,\" Zeitschrift für Assyriologie und Vorderasiatische Archäologie 103.2, 261–265."
+        },
+        {
+            "text": "Suter, Claudia E. (2015a), \"Classifying Iron Age Levantine Ivories: Impracticalities and a New Approach,\" Altorientalische Forschungen 42.1, 31–45."
+        },
+        {
+            "text": "Suter, Claudia E. (2015b), \"Preface to the Proceedings of the Workshop 'Levantine Ivories of the Iron Age: Production, Consumption, and Style' (held during the 61e Rencontre Assyriologique Internationale in Bern, 2015),\" Altorientalische Forschungen 42.1, 27–30."
+        },
+        {
+            "text": "Suter, Claudia E. (2019), \"A Recycled Ivory Panel from Samaria,\" in Agnieszka Pieńkowska, Dariusz Szeląg, and Iwona Zych (eds.), Stories Told around the Fountain: Papers Offered to Piotr Bieliński on the Occasion of his 70th Birthday (Warsaw: University of Warsaw), 671–686."
+        },
+        {
+            "text": "Suter, Claudia E. (2022a), \"An Unusual Ivory Panel from Samaria and the Composition and Realia of Banquet Scenes in the Iron Age Levant,\" in John Curtis and Dirk Wicke (eds.), Ivories, Rock Reliefs and Merv: Studies on the Ancient Near East in Honour of Georgina Herrmann (marru 15; Münster: Zaphon), 233–249."
+        },
+        {
+            "text": "Suter, Claudia E. (2022b), \"Ivory Carvings,\" in Angelika Berlejung et al. (eds.), Encyclopedia of the Material Culture in the Biblical World: A New Biblisches Reallexikon (Tübingen: Mohr Siebeck), 539–556."
+        },
+        {
+            "text": "Suter, Claudia E. (2023), \"The Woman at the Window on Levantine Ivory Carvings: An Update of Extant Sets, Their Variation and Possible Production Modes,\" in Stefan Münger, Nancy Rahn, and Patrick Wyssmann (eds.), \"Trinkt von dem Wein, den ich mischte!\" Festschrift für Silvia Schroer zum 65. Geburtstag (Orbis Biblicus et Orientalis 303; Leuven: Peeters), 517–538."
+        },
+        {
+            "text": "Suter, Claudia E. (2025), \"The Repertoire of Motifs and their Composition on Ivory Furniture from Samaria: An Updated Inventory and Reflections on Egyptianizing Trends in Ancient Israel,\" in Benjamin Sass and Laura Battini (eds.), Mortals, Deities and Divine Symbols: Rethinking Ancient Imagery from the Levant to Mesopotamia: Studies offered to Tallay Ornan (Archaeopress Ancient Near Eastern Archaeology 12; Oxford: Archaeopress), 611–624."
+        },
+        {
+            "text": "Suter, Claudia E. (2026 in press), \"Artists' Signatures on Levantine Ivory Carvings?,\" in Jeanette C. Fincke and Michaela Weszeli (eds.), Festschrift*** (Archiv für Orientforschung Beiheft ***; Wien: Institut für Orientalistik der Universität Wien), ***."
+        },
+        {
+            "text": "Suter, Claudia E. (forthcoming 1), Ivory Artifacts of the Iron Age Near East with Special Reference to the Levant: Creating a New Basis for Future Research (Orbis Biblicus et Orientalis, Series Archaeologica ***; Leuven: Peeters)."
+        },
+        {
+            "text": "Suter, Claudia E. (forthcoming 2), The Ivory Carvings from Samaria, Ancient Israel: Complete Publication and Reassessment (Orbis Biblicus et Orientalis, Series Archaeologica ***; Leuven: Peeters)."
+        },
+        {
+            "text": "Suter, Claudia E. (in press), \"Stylistic Variation in Levantine Ivory Carving of the Iron Age: Possible Temporal Developments,\" in Virginia Herrmann and Elisabeth Wagner-Durand (eds.), Beyond Attribution?! Style and Communication in Visual Media of the Ancient Near East and Neighboring Regions (International Virtual Conference, 12-14 April 2021) (RessourcenKulturen ***; Tübingen: Tübingen University), ***."
+        },
+        {
+            "text": "Suter, Claudia E. (in press), \"Stylistic Variation in Iron Age Luxury Goods: Subregional or Pan-Levantine?,\" in Aren M. Maeir et al. (eds.), State Formation and Re-Urbanisation in the Iron Age Levant (Relations between Israel and Aram in Biblical Times ***; Tübingen: Mohr Siebeck), ***."
+        },
+        {
+            "text": "Suter, Claudia E. (in press), \"Levantine Ivory Carvings of the Iron Age: A New Subdivision,\" in Alexander Sollee et al. (eds.), «Untersuchungen zur späthethitischen Kunst» 50 Jahre später: Ein Gedenksymposium für Prof. Dr. Winfried Orthmann (26.–28.3.2025) (Schriften der Max Freiherr von Oppenheim Stiftung ***; Wiesbaden: Harrassowitz), ***."
+        },
+        {
+            "text": "Suter, Claudia E. and Uehlinger, Christoph (eds.) (2005), Crafts and Images in Contact: Studies in Eastern Mediterranean Art of the First Millennium BCE (Orbis Biblicus et Orientalis 210, Fribourg: Academic Press / Göttingen: Vandenhoeck & Ruprecht)."
+        },
+        {
+            "text": "Uehlinger, Christoph (2005), \"Die Elfenbeinschnitzereien von Samaria und die Religionsgeschichte Israels: Vorüberlegungen zu einem Forschungsprojekt,\" in Suter and Uehlinger (eds.) 2005, 149–186."
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0863-organization-004"
+            ],
+            "number": "67219",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/67219"
+        },
+        {
+            "funders": [
+                "0863-organization-004"
+            ],
+            "number": "103758",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/103758"
+        },
+        {
+            "funders": [
+                "0863-organization-005"
+            ],
+            "number": "2005 Claudia E. Suter",
+            "name": "Project funding",
+            "url": "https://whitelevy.fas.harvard.edu/people/claudia-e-suter"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "Samaria Ivories"
+        }
+    ]
+}

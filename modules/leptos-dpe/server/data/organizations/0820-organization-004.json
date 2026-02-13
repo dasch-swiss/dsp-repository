@@ -1,0 +1,13 @@
+{
+    "id": "0820-organization-004",
+    "pid": "MISSING",
+    "name": "Zurich University of the Arts (ZHdK)",
+    "url": "http://www.zhdk.ch",
+    "address": {
+        "street": "Pfingstweidstrasse 96",
+        "postalCode": "8031",
+        "locality": "Zürich",
+        "country": "Switzerland"
+    },
+    "email": "info.admin@zhdk.ch"
+}

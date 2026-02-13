@@ -1,0 +1,157 @@
+{
+    "id": "0861",
+    "pid": "MISSING",
+    "name": "Prototyping Workflows for Digital Editions",
+    "shortcode": "0861",
+    "officialName": "MISSING",
+    "status": "Finished",
+    "shortDescription": "Anschauungsbeispiel einer generischen Edition: Korrespondenz zwischen dem Philologen G. Paris (1839-1903) und einem seiner Schüler, dem Philosophen W. Lutosławski (1863-1954).",
+    "description": {
+        "de": "Die vorliegende Edition stellt einen Ausschnitt der Korrespondenz zwischen dem französischen Philologen Gaston Paris (1839-1903) und einem seiner Schüler, dem polnischen Philosophen Wincenty Lutosławski (1863-1954) zur Verfügung. Sie dient als Anschauungsbeispiel dafür, wie mit möglichst standardisierten Mitteln eine wissenschaftliche digitale Edition (digital scholarly edition, DSE) erstellt, publiziert und langfristig zugänglich gemacht werden kann. Das gleichzeitig entstandene Handbuch zur Erstellung einer digitalen Edition verweist zu diesem Zweck extensiv auf die vorliegende Edition.\n\nIm Vordergrund steht also keine vollständige Edition; die Arbeit an dieser ‘showcase edition’ hat jedoch notwendige technische und editionsphilologische Mittel getestet, um die Erstellung zukünftiger Editionen zu erleichtern. Eine größere Edition ausgesuchter Korrespondenzen von Gaston Paris entsteht von 2025-2029 im Rahmen des SNF-Forschungsprojektes “PARES: Gaston Paris, des archives aux réseaux”."
+    },
+    "startDate": "2023-07-01",
+    "endDate": "2025-06-30",
+    "url": [
+        "https://app.dasch.swiss/project/_2XaTj-pTkq2ixyJYJjohA",
+        "https://www.zde.uzh.ch/de/projects/proto4diged.html"
+    ],
+    "howToCite": "Bähler, Ursula; Baumgartner, Reto; Weber, Stéphanie; Zimmermann, Elias (2025). Prototyping Workflows for Digital Editions [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0861.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-07-07",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text",
+        "XML"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Französisch",
+            "en": "French",
+            "fr": "français"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Digital Scholarly Edition"
+        },
+        {
+            "en": "French Philology"
+        }
+    ],
+    "disciplines": [
+        {
+            "de": "10502 Schwerpunkt Romanistik"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "type": "Periodo",
+            "url": "http://n2t.net/ark:/99152/p086kj9tqzk",
+            "text": "19th Century"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3017382",
+            "text": "France"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0861-person-000",
+            "contributorType": [
+                "Project Leader",
+                "Editor"
+            ]
+        },
+        {
+            "contributor": "0861-person-001",
+            "contributorType": [
+                "Project Manager",
+                "Editor"
+            ]
+        },
+        {
+            "contributor": "0861-person-002",
+            "contributorType": [
+                "Data Curator",
+                "Data Collector"
+            ]
+        },
+        {
+            "contributor": "0861-person-003",
+            "contributorType": [
+                "Project Manager"
+            ]
+        },
+        {
+            "contributor": "0861-person-004",
+            "contributorType": [
+                "Metadata specialist",
+                "Related Person"
+            ]
+        },
+        {
+            "contributor": "0861-person-005",
+            "contributorType": [
+                "Archiving specialist",
+                "Related Person"
+            ]
+        },
+        {
+            "contributor": "0861-person-006",
+            "contributorType": [
+                "Project Manager"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Seven digitally scholarly edited letters with indices (places, names, organizations, bibliography, keywords)."
+    },
+    "contactPoint": [
+        "0861-person-000"
+    ],
+    "publications": [
+        {
+            "text": " Baumgartner, R., Zimmermann, E.: Handbuch zur Erstellung einer digitalen Edition.",
+            "pid": {
+                "url": "https://digital-editions.pages.uzh.ch/proto4diged/handbook/en"
+            }
+        },
+        {
+            "text": " Bähler, U., Zimmermann, E., Stricker, Y., Baumgartner, R., & Gautschy, R. (2024). Proto4DigEd: Prototypical Workflows for Digital Editions. Workflows: Digital Methods for Reproducible Research Practices in the Arts and Humanities, Lisbon, Portugal. Zenodo.",
+            "pid": {
+                "url": "https://doi.org/10.5281/zenodo.11632615"
+            }
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0861-organization-000"
+            ],
+            "name": "Swiss Open Research Data Grants Track A: Explore projects"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "Proto4DigEd"
+        }
+    ]
+}

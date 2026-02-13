@@ -1,0 +1,17 @@
+{
+    "id": "082A-person-000",
+    "pid": "MISSING",
+    "givenNames": [
+        "Johannes"
+    ],
+    "familyNames": [
+        "Müske"
+    ],
+    "jobTitles": [
+        "Co-head, Swiss Folk Song Archive"
+    ],
+    "affiliations": [
+        "082A-organization-000"
+    ],
+    "email": "johannes.mueske@zpkm.uni-freiburg.de"
+}

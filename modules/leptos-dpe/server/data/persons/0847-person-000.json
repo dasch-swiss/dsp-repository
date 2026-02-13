@@ -1,0 +1,24 @@
+{
+    "id": "0847-person-000",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-2101-3105",
+            "text": "ORCID URL: https://orcid.org/0000-0002-2101-3105"
+        }
+    ],
+    "givenNames": [
+        "Véronique"
+    ],
+    "familyNames": [
+        "Dasen"
+    ],
+    "jobTitles": [
+        "Professor"
+    ],
+    "affiliations": [
+        "0847-organization-000"
+    ],
+    "email": "veronique.dasen@unifr.ch"
+}

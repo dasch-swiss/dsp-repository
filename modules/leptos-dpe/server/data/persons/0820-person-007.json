@@ -1,0 +1,23 @@
+{
+    "id": "0820-person-007",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://erdw.ethz.ch/personen/profil.MTY5MzUy.TGlzdC83NzMsOTI0MjA1OTI2.html",
+            "text": "https://erdw.ethz.ch/personen/profil.MTY5MzUy.TGlzdC83NzMsOTI0MjA1OTI2.html"
+        }
+    ],
+    "givenNames": [
+        "Martin"
+    ],
+    "familyNames": [
+        "Ziegler"
+    ],
+    "jobTitles": [
+        "Engineering Geologist"
+    ],
+    "affiliations": [
+        "0820-organization-003"
+    ]
+}

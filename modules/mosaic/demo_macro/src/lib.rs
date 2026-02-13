@@ -115,9 +115,9 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
             let info_title = &info.title;
             let info_description = &info.description;
             quote! {
-                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded">
-                    <h3 class="font-semibold text-blue-900 mb-2">{#info_title}</h3>
-                    <p class="text-blue-800">{#info_description}</p>
+                <div class="mb-6 p-4 bg-info-50 border border-info-200 rounded">
+                    <h3 class="font-semibold text-info-900 mb-2">{#info_title}</h3>
+                    <p class="text-info-800">{#info_description}</p>
                 </div>
             }
         } else {
@@ -139,7 +139,7 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
             let example_key = format!("{}-{}", name, example_name);
 
             let description_view = if let Some(desc) = example_description {
-                quote! { <p class="text-gray-600 mb-3">{#desc}</p> }
+                quote! { <p class="text-neutral-600 mb-3">{#desc}</p> }
             } else {
                 quote! {}
             };
@@ -152,10 +152,10 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
                         {components::#module_name::#example_component().into_any()}
                     </div>
                     <details class="mt-2" attr:data-code-key=#example_key>
-                        <summary class="cursor-pointer text-sm text-blue-600 hover:text-blue-800">
+                        <summary class="cursor-pointer text-sm text-primary-600 hover:text-primary-800">
                             "View Code"
                         </summary>
-                        <div class="mt-2 p-4 bg-gray-50 rounded overflow-x-auto">
+                        <div class="mt-2 p-4 bg-neutral-50 rounded overflow-x-auto">
                             <pre attr:data-pre-key=#example_key><code class="language-rust">{#example_code}</code></pre>
                         </div>
                     </details>
@@ -171,7 +171,7 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
             quote! {
                 <div class="mb-8">
                     <h2 class="text-2xl font-bold mb-4">"Anatomy"</h2>
-                    <div class="p-4 bg-gray-50 rounded overflow-x-auto">
+                    <div class="p-4 bg-neutral-50 rounded overflow-x-auto">
                         <pre attr:data-anatomy-key=#anatomy_key><code class="language-rust">{#code}</code></pre>
                     </div>
                 </div>
@@ -187,7 +187,7 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
             let ref_extra = reference.extra.as_deref();
 
             let extra_view = if let Some(extra) = ref_extra {
-                quote! { <p class="text-sm text-gray-600 mt-1">{#extra}</p> }
+                quote! { <p class="text-sm text-neutral-600 mt-1">{#extra}</p> }
             } else {
                 quote! {}
             };
@@ -202,7 +202,7 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
                     quote! {
                         <tr class="border-t">
                             <td class="py-2 px-4 font-mono text-sm">{#attr_name}</td>
-                            <td class="py-2 px-4 font-mono text-sm text-blue-600">{#attr_type}</td>
+                            <td class="py-2 px-4 font-mono text-sm text-primary-600">{#attr_type}</td>
                             <td class="py-2 px-4 font-mono text-sm">{#attr_default}</td>
                             <td class="py-2 px-4 text-sm">{#attr_description}</td>
                         </tr>
@@ -211,7 +211,7 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
 
                 quote! {
                     <table class="w-full mt-3 border rounded">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-neutral-50">
                             <tr>
                                 <th class="py-2 px-4 text-left text-sm font-semibold">"Attribute"</th>
                                 <th class="py-2 px-4 text-left text-sm font-semibold">"Type"</th>
@@ -231,7 +231,7 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
             quote! {
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold">{#ref_name}</h3>
-                    <p class="text-gray-700 mt-1">{#ref_description}</p>
+                    <p class="text-neutral-700 mt-1">{#ref_description}</p>
                     #extra_view
                     #attrs_table
                 </div>
@@ -262,7 +262,7 @@ pub fn generate_component_pages(_input: TokenStream) -> TokenStream {
                 view! {
                     <div class="max-w-5xl mx-auto p-6" id=#page_id>
                         <h1 class="text-4xl font-bold mb-3">{#component_name}</h1>
-                        <p class="text-xl text-gray-600 mb-6">{#component_description}</p>
+                        <p class="text-xl text-neutral-600 mb-6">{#component_description}</p>
 
                         #info_block
 

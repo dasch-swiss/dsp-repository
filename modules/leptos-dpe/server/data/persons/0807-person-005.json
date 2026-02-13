@@ -1,0 +1,17 @@
+{
+    "id": "0807-person-005",
+    "pid": "MISSING",
+    "givenNames": [
+        "Marco"
+    ],
+    "familyNames": [
+        "Jorio"
+    ],
+    "jobTitles": [
+        "Dr."
+    ],
+    "affiliations": [
+        "0807-organization-000"
+    ],
+    "email": "marco.a.jorio@gmail.com"
+}

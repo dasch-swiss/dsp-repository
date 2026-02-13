@@ -1,0 +1,23 @@
+{
+    "id": "0820-person-025",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://scholar.cu.edu.eg/?q=nesrin/biocv",
+            "text": "https://scholar.cu.edu.eg/?q=nesrin/biocv"
+        }
+    ],
+    "givenNames": [
+        "Nesrin"
+    ],
+    "familyNames": [
+        "El-Hadidi"
+    ],
+    "jobTitles": [
+        "Scientific Conservator"
+    ],
+    "affiliations": [
+        "0820-organization-008"
+    ]
+}

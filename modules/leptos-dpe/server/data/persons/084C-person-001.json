@@ -1,0 +1,24 @@
+{
+    "id": "084C-person-001",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0000-7383-8590",
+            "text": "ORCID URL: https://orcid.org/0009-0000-7383-8590"
+        }
+    ],
+    "givenNames": [
+        "Carola"
+    ],
+    "familyNames": [
+        "Jäggi"
+    ],
+    "jobTitles": [
+        "Prof. Dr., chair/full professor for art history of the Middle Ages and post-classical archaeology"
+    ],
+    "affiliations": [
+        "084C-organization-002"
+    ],
+    "email": "carola.jaeggi@uzh.ch"
+}

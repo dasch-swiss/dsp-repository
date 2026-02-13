@@ -1,0 +1,17 @@
+{
+    "id": "085A-person-001",
+    "pid": "MISSING",
+    "givenNames": [
+        "Raphaël"
+    ],
+    "familyNames": [
+        "Sandoz"
+    ],
+    "jobTitles": [
+        "Post-doctoral researcher"
+    ],
+    "affiliations": [
+        "085A-organization-001"
+    ],
+    "email": "sandoz.raphael@gmail.com"
+}

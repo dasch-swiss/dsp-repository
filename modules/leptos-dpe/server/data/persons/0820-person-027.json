@@ -1,0 +1,24 @@
+{
+    "id": "0820-person-027",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://daw.philhist.unibas.ch/de/personen/charlotte-hunkeler/",
+            "text": "https://daw.philhist.unibas.ch/de/personen/charlotte-hunkeler/"
+        }
+    ],
+    "givenNames": [
+        "Charlotte"
+    ],
+    "familyNames": [
+        "Hunkeler"
+    ],
+    "jobTitles": [
+        "Assistant (Chair of Egyptology)",
+        "PhD Candidate (Egyptology)"
+    ],
+    "affiliations": [
+        "0820-organization-001"
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "id": "0806-organization-005",
+    "pid": "MISSING",
+    "name": "Ernst von Siemens Musikstiftung",
+    "url": "https://www.evs-musikstiftung.ch",
+    "address": {
+        "street": "Landis + Gyr-Strasse 1",
+        "postalCode": "CH-6300",
+        "locality": "Zug",
+        "country": "Switzerland"
+    },
+    "email": "rossnagl@evs-musikstiftung.ch"
+}

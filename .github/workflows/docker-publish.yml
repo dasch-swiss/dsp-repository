@@ -38,7 +38,8 @@ jobs:
         id: output_docker_image_tag
         run: |
           VERSION=$(grep '^version' modules/mosaic/demo/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
-          echo "tag=$VERSION" >> "$GITHUB_OUTPUT"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "tag=${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v6

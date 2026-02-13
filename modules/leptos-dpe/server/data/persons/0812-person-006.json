@@ -1,0 +1,17 @@
+{
+    "id": "0812-person-006",
+    "pid": "MISSING",
+    "givenNames": [
+        "Uta"
+    ],
+    "familyNames": [
+        "Karrer"
+    ],
+    "jobTitles": [
+        "Research associate"
+    ],
+    "affiliations": [
+        "0812-organization-000",
+        "0812-organization-003"
+    ]
+}

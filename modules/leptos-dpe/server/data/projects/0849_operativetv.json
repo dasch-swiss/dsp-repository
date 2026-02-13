@@ -1,0 +1,168 @@
+{
+    "id": "0849",
+    "pid": "MISSING",
+    "name": "Operative TV: Audiovisual Closed-Circuits from the Military to the Classroom, 1930s-1990s",
+    "shortcode": "0849",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "The SNSF PRIMA project “Operative TV: Audiovisual Closed-Circuits from the Military to the Classroom, 1930s-1990s” studies the uses of TV in industrial, medical, educational and military contexts.",
+    "description": {
+        "en": "From video surveillance to online teaching, from drone warfare, highway management to telemedicine: closed-circuit images take up multiple spaces today. Despite being quotidian, their history remains largely unknown. The project’s goal is to fill this gap by providing the first study of audiovisual closed-circuits (AVCC) in the longue durée. It scrutinizes the closed-circuits’ diversity between the 1930s and the 1990s and develops case studies from the USA, France, the UK, Germany, and Switzerland - countries crucial for the development of closed-circuits and providing access to resources for writing the history of a medium whose images were conceived as instruments rather than representations. \n\nDistributed under Industrial Television and CCTV (for closed-circuit television), the systems were developed in Europe and the USA mainly by enterprises active in televisual R&D. While CCTV today stands as a synonym of the surveillance camera, its historical applications were at least as heterogeneous as contemporary closed-circuits and used on factory floors and in nuclear plants, in hospitals and schools.\n\nOperative TV examines two main hypotheses. First, it posits that the analysis of television in industrial, educational, and military contexts cannot be based on habitual analytical categories such as texts or spectators. Instead, AVCC necessitates a methodological shift towards an understanding of audiovisual production as a chain of operations that allows analyzing the entanglement of human and non-human actors. AVCC’s usefulness indeed was contingent on the interplay of heterogeneous elements including operators, screens, infrastructures, and images: their interdependence, rather than the isolated components, should form the core of a historical enquiry. \n\nSecond, Operative TV argues that the history of AVCC, an analog-electronic technology, nourishes a media archaeology of the digital. AVCC emerged at the same moment as digital computers; it coexisted and sometimes converged with digital machines. Before the computer definitively took over factory and office floors, television was used as a tool for operations ranging from targeting to instructing: analyzing AVCC’s alleged “universality” (Journal d’Yverdon 1955) allows to better understand the emergence of our digital society."
+    },
+    "startDate": "2022-11-01",
+    "endDate": "MISSING",
+    "url": [
+        "https://app.dasch.swiss/project/8faW0HwsTgGzu98tCYClig"
+    ],
+    "howToCite": "Weber, Anne-Katrin; Cronjäger, Lisa; Sandoz, Marie; Scheiwiller, Sébastien (2024). Operative TV [Database]. DaSCH",
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Closed-Circuit Television"
+        },
+        {
+            "en": "Cultural Techniques"
+        },
+        {
+            "en": "Media History"
+        },
+        {
+            "en": "Operative Images"
+        },
+        {
+            "en": "Television History"
+        },
+        {
+            "en": "Transnational Media History"
+        },
+        {
+            "en": "Useful Media"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "103301 General History"
+        },
+        {
+            "en": "10406 Theatre and Cinema"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "de": "1930-1990",
+            "en": "1930-1990",
+            "fr": "1930-1990"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2921044/federal-republic-of-germany.html",
+            "text": "Germany"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/9408659/western-europe.html",
+            "text": "Western Europe"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434/switzerland.html",
+            "text": "Switzerland"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2635167/united-kingdom-of-great-britain-and-northern-ireland.html",
+            "text": "United Kingdom"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/6255149/north-america.html",
+            "text": "North America"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/6252001/united-states.html",
+            "text": "United States"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3017382/republic-of-france.html",
+            "text": "France"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0849-person-000",
+            "contributorType": [
+                "Project Leader, Data Collector, Data Curator, Data Manager "
+            ]
+        },
+        {
+            "contributor": "0849-person-001",
+            "contributorType": [
+                "Project Member, Data Collector, Data Curator, Data Manager "
+            ]
+        },
+        {
+            "contributor": "0849-person-002",
+            "contributorType": [
+                "Project Member, Data Collector, Data Curator, Data Manager"
+            ]
+        },
+        {
+            "contributor": "0849-person-003",
+            "contributorType": [
+                "Project Member, Data Collector, Data Curator, Data Manager"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The aim of the database is to inform researchers about relevant archives centers / collections / folders for writing a history of useful and closed-circuit television in Western Europe and the United States. \n \n The database offers a view of the archives collected by the Operative TV project and give access to some of them. But the database also contributes to locate and identify archival material for further research. For example, the visitors might find in the database our description of a collection or a folder that don’t exist elsewhere. They will then be able to investigate this collection further.\r \r Finally, the database give access to the outputs of the Operative TV project.\r \r The database is organised as follow:\n \n \n  A.\tResources\n \n  The database is designed around four main interrelated categories (resources): \r •\tArchive Documents in PDF format;\r •\tArchive Folders to which documents belong;\r •\tArchive Fonds to which folders belong; \r •\tArchive Centers or Libraries that hold collections. \r \r A fifth category (resource) named Journals / grey literature includes published archival sources.\r \r A sixth category (resource) includes the scientific Outputs of the Operative TV project.\r \r B.\tThesaurus\r \r While the categories/resources mentioned above bring essentially together \"places\" where archives and archival documents can be found, the Controlled Vocabularies allows a thematic approach to the Documents, Folders and archival Collections, with two exceptions.\r \r \r •\tControlled Vocabularies with thematic approach:\r Useful Television; Function of Television; Technical Dispositif; Users; Operators of Television\r à In each case, there are multiple choices\r \r •\tControlled Vocabularies relating to where the Archives Centers are situated:\r Countries; Cities\r à In each case, there are multiple choices"
+    },
+    "contactPoint": [
+        "0849-person-000"
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0849-organization-001"
+            ],
+            "number": "208503",
+            "name": "PRIMA",
+            "url": "https://data.snf.ch/grants/grant/208503"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "Operative TV"
+        }
+    ]
+}

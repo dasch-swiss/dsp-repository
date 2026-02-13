@@ -1,0 +1,24 @@
+{
+    "id": "0820-person-020",
+    "pid": "MISSING",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/stephane-fetler-25158383/",
+            "text": "https://www.linkedin.com/in/stephane-fetler-25158383/"
+        }
+    ],
+    "givenNames": [
+        "Stéphane"
+    ],
+    "familyNames": [
+        "Fetler"
+    ],
+    "jobTitles": [
+        "Conservator",
+        "Egyptologist"
+    ],
+    "affiliations": [
+        "0820-organization-007"
+    ]
+}

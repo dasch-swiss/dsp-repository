@@ -1,0 +1,17 @@
+{
+    "id": "0116-person-003",
+    "pid": "MISSING",
+    "givenNames": [
+        "Marion"
+    ],
+    "familyNames": [
+        "Rivoal"
+    ],
+    "jobTitles": [
+        "Research manager"
+    ],
+    "affiliations": [
+        "0116-organization-001"
+    ],
+    "email": "marion.rivoal@unil.ch"
+}

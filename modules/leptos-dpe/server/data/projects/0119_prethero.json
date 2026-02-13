@@ -1,0 +1,132 @@
+{
+    "id": "0119",
+    "pid": "MISSING",
+    "name": "Premiers théâtres romands",
+    "shortcode": "0119",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "The project documents theatrical practices in the French-Swiss regions between the 15ᵗʰ and 16ᵗʰ c. It is a part of the SNSF project focused on versified public communication in French (15ᵗʰ-16ᵗʰ c.)",
+    "description": {
+        "en": "The project “Early French-Swiss Theater” documents the development of theatrical practices in the French-speaking regions of present-day Switzerland between the fifteenth and sixteenth centuries. It contains records of performances, groups and individuals involved in theater activities, and provides access to surviving plays, historical testimonies, archives of performances, and a bibliography that allow researchers and the public to reconstruct the origins of Swiss theatrical culture in French. This work is a part of the SNSF project entitled “Medialiterature: Literary Poetics and Social Uses of Public Communication in French (15ᵗʰ-16ᵗʰ c.)”, that studies the development of public rhetoric in French at the time of major upheavals, such as the invention of the printing press and the rise of the Reformation. The SNSF project explores the ways in which the cultural model of the “orator”, promoted initially by intellectuals, was shared within wider communities that cultivated specific poetic genres such as verse historiography, occasional poetry, and political theater, and used these genres as media. At the intersection of literary, cultural and media history, the project engages in a comparative study of unpublished texts and archives from France and the French-speaking regions of modern-day Switzerland and Belgium between 1450 and 1550."
+    },
+    "startDate": "2020-08-01",
+    "endDate": "2024-09-30",
+    "url": [
+        "https://app.dasch.swiss/project/0119",
+        "https://medialitt.hypotheses.org/"
+    ],
+    "howToCite": "Wawrzyniak, N., Doudet, E., Rivoal, M., Premiers théâtres romands [base de données] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0119. Wawrzyniak, N., Doudet, E., Rivoal, M., Early French-Swiss Theater [database] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0119.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "MISSING",
+                "licenseDate": "MISSING",
+                "licenseURI": "MISSING"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Französisch",
+            "en": "French",
+            "fr": "français"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "15th-century Literature in French"
+        },
+        {
+            "en": "16th-century Literature in French"
+        },
+        {
+            "en": "Cultural History of Switzerland"
+        },
+        {
+            "en": "Cultural Studies"
+        },
+        {
+            "en": "History of books"
+        },
+        {
+            "en": "Reformation studies"
+        },
+        {
+            "en": "Theater Studies"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10301 General history (without pre-and early history)"
+        },
+        {
+            "en": "10302 Swiss history"
+        },
+        {
+            "en": "10406 Theatre and Cinema"
+        },
+        {
+            "en": "10502 Romance languages and literature"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "15th-16th c."
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434/",
+            "text": "Switzerland"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0119-person-001",
+            "contributorType": [
+                "Project Leader"
+            ]
+        },
+        {
+            "contributor": "0119-person-000",
+            "contributorType": [
+                "Project Member, Data Collector, Data Curator"
+            ]
+        },
+        {
+            "contributor": "0119-person-002",
+            "contributorType": [
+                "Data Curator"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "The database “Early French-Swiss Theater” documents the development of theatrical practices in the French-speaking regions of present-day Switzerland between the fifteenth and sixteenth centuries. It contains records of performances, groups and individuals involved in theater activities, and provides access to surviving plays, historical testimonies, archives of performances, and a bibliography that allow researchers and the public to reconstruct the origins of Swiss theatrical culture in French."
+    },
+    "contactPoint": [
+        "0119-person-001"
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0119-organization-001"
+            ],
+            "number": "192400",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/192400"
+        }
+    ]
+}

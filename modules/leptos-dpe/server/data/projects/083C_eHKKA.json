@@ -1,0 +1,127 @@
+{
+    "id": "083C",
+    "pid": "MISSING",
+    "name": "Historische-Kritische Gottfried Keller Ausgabe (HKKA)",
+    "shortcode": "083C",
+    "officialName": "MISSING",
+    "status": "Ongoing",
+    "shortDescription": "Gottfried Keller (1819-1890) gehört zu den grossen Autoren des Realismus. Die eHKKA ediert Kellers Gesamtwerk: Seine Romane, Novellen, Gedichte, Tagebücher und Briefe.",
+    "description": {
+        "de": "Die HKKA war ein Meilenstein der computergestützten Editonsphilologie. Sie dokumentiert nicht nur die Entstehungs- und Publikationsgeschichte der von Keller veröffentlichten Werke, sondern präsentiert erstmals ohne willkürliche Selektion den gesamten literarischen Nachlass. Nach Abschluss der Buchausgabe soll die Ausgabe nun auch in benutzerfreundlicher Art auf dem Netzt zugänglich gemacht werden."
+    },
+    "startDate": "1991-04-01",
+    "endDate": "2013-07-31",
+    "url": [
+        "https://www.ehkka.ch/ehkka/"
+    ],
+    "howToCite": "Morgenthaler et al., historisch-kritsche Kellerausgabe online, 1996-2013",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "MISSING",
+                "licenseDate": "MISSING",
+                "licenseURI": "MISSING"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text",
+        "XML"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Arts"
+        },
+        {
+            "en": "German Literature"
+        },
+        {
+            "en": "History"
+        },
+        {
+            "en": "Politics"
+        },
+        {
+            "en": "Swiss Literature"
+        }
+    ],
+    "disciplines": [
+        {
+            "de": "10302 Schweizer Geschichte"
+        },
+        {
+            "de": "10501 Sprach- und Literaturwissenschaft"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "type": "Chronontology",
+            "url": "http://chronontology.dainst.org/period/5C8DINGE1IXb",
+            "text": "19th Century"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2921044/federal-republic-of-germany.html",
+            "text": "Germany"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434/switzerland.html",
+            "text": "Switzerland"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "083C-person-000",
+            "contributorType": [
+                "1991-2012: Vollberuflicher Mitarbeiter der HKKA  Initiant des Projekts und Leiter des Herausgeberteams"
+            ]
+        },
+        {
+            "contributor": "083C-person-002",
+            "contributorType": [
+                "2000-2013 Vollberuflicher Mitarbeiter der HKKA 2000-2013 Mitglied des Herausgeberteams, zuständig für EDV  "
+            ]
+        }
+    ],
+    "abstract": {
+        "de": "Eine online-Edition der Historisch-Kritischen Kellerausgabe"
+    },
+    "contactPoint": [
+        "083C-person-003"
+    ],
+    "publications": [
+        {
+            "text": "Gottfried Keller: Sämtliche Werke. Historisch-Kritische Ausgabe. Herausgegeben unter der Leitung von Walter Morgenthaler im Auftrag der Stiftung Historisch-Kritische Gottfried Keller-Ausgabe. 32 Bände. Frankfurt a. M., Basel und Zürich 1996-2013."
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "083C-organization-001"
+            ],
+            "url": "https://www.snf.ch/de"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "de": "HKKA"
+        }
+    ]
+}

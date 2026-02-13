@@ -1,0 +1,17 @@
+{
+    "id": "082B-person-003",
+    "pid": "MISSING",
+    "givenNames": [
+        "Max"
+    ],
+    "familyNames": [
+        "Stadler"
+    ],
+    "jobTitles": [
+        "Historian"
+    ],
+    "affiliations": [
+        "082B-organization-001"
+    ],
+    "email": "mxmlnstdlr@gmail.com"
+}

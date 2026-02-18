@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use crate::domain::ProjectQuery;
 
 #[component]
-pub fn ProjectPagination(nr_pages: i32, total_items: i32, query: ProjectQuery) -> impl IntoView {
+pub fn ProjectPagination(nr_pages: i32, query: ProjectQuery) -> impl IntoView {
     let current_page = query.page();
 
     // Pre-compute disabled states
@@ -66,7 +66,6 @@ pub fn ProjectPagination(nr_pages: i32, total_items: i32, query: ProjectQuery) -
                         .collect_view()}
                     {nav_button(next_url, "Next page".to_string(), "»".to_string(), is_last_page)}
                 </div>
-                <span class="text-sm text-gray-600">{format!("Total: {} items", total_items)}</span>
                 </div>
         </nav>
     }

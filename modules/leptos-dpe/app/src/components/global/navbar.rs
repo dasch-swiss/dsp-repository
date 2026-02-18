@@ -5,7 +5,7 @@ use crate::components::global::header_links::HeaderLinks;
 #[component]
 pub fn NavBar() -> impl IntoView {
     view! {
-        <div class="navbar bg-base-100 shadow-sm">
+        <div class="navbar bg-base-100 shadow-xs">
             <div class="flex-none">
                 <img src="/logo.svg" class="inline h-10 w-10 mr-2" />
             </div>

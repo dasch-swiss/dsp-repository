@@ -44,31 +44,32 @@ pub fn ProjectsPage() -> impl IntoView {
                             .map(|result| match result {
                                 Ok(page) => {
                                     view! {
-                                        // ProjectSearch with pagination info
-                                        <ProjectSearch
-                                            query=current_query.clone()
-                                        />
+                                        <ProjectSearch query=current_query.clone() />
 
-                                        // Project cards grid
-                                        <div class="grid grid-cols-3 gap-4">
-                                            {page
-                                                .items
-                                                .into_iter()
-                                                .map(|project| {
-                                                    view! {
-                                                        <ProjectCard
-                                                            title=project.name.clone()
-                                                            content=project.short_description.clone()
-                                                            status=project.status.clone()
-                                                            btn_text="View Project".to_string()
-                                                            btn_target=format!("/projects/{}", project.shortcode)
-                                                        />
-                                                    }
-                                                })
-                                                .collect_view()}
+                                        <div>
+                                            <div class="mb-2">{format!("{} projects", total_items)}</div>
+                                            <div class="grid grid-cols-3 gap-4">
+                                                {page
+                                                    .items
+                                                    .into_iter()
+                                                    .map(|project| {
+                                                        view! {
+                                                            <ProjectCard
+                                                                title=project.name.clone()
+                                                                content=project.short_description.clone()
+                                                                status=project.status.clone()
+                                                                btn_text="View Project".to_string()
+                                                                btn_target=format!("/projects/{}", project.shortcode)
+                                                            />
+                                                        }
+                                                    })
+                                                    .collect_view()}
+                                            </div>
                                         </div>
 
-                                <ProjectPagination nr_pages=nr_pages total_items=total_items query=current_query />
+                                        <div class="flex justify-center">
+                                            <ProjectPagination nr_pages=nr_pages query=current_query />
+                                        </div>
 
                                     }
                                         .into_any()

@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use mosaic_tiles::icon::{Icon, IconGitHub, Star};
+use mosaic_tiles::icon::{Icon, Help, Export};
 
 #[component]
 pub fn HeaderLinks() -> impl IntoView {
@@ -7,15 +7,15 @@ pub fn HeaderLinks() -> impl IntoView {
         <ul class="flex items-center gap-4">
             <li>
                 <a href="/to-do" class="btn btn-ghost">
-                <Icon icon=IconGitHub class="w-5 h-5" />
+                <Icon icon=Help class="w-5 h-5" />
                     Help
             </a>
             </li>
 
             <li>
                 <a class="btn btn-primary" href="/to-do">
-                    Deposit Data at Dasch
-                    <Icon icon=IconGitHub class="w-5 h-5" />
+                    Deposit Data at DaSCH
+                    <Icon icon=Export class="w-5 h-5" />
                 </a>
             </li>
         </ul>

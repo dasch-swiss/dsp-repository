@@ -33,17 +33,18 @@ pub fn ProjectFilters() -> impl IntoView {
     let filters = [("ongoing", "Ongoing", ongoing), ("finished", "Finished", finished)];
 
     view! {
-        <div class="p-4 border border-gray-200 rounded-xl overflow-hidden" style="min-width: 250px">
-                <div class="font-bold mb-1">Filters</div>
+        <div class="p-4 border border-gray-200 rounded-xl overflow-hidden" style="min-width: 300px">
+                <h4 class="text-xl font-semibold mb-4">Filters</h4>
+                <h5 class="text-sm font-medium mb-2">Status</h5>
                 {filters.iter().map(|(param, label, checked)| {
                     view! {
-                        <a href=build_url(param) class="flex items-center gap-2 cursor-pointer hover:opacity-80">
+                        <a href=build_url(param) class="flex items-center gap-2 cursor-pointer hover:opacity-80 py-1">
                             <input
                                 type="checkbox"
                                 class="checkbox checkbox-sm pointer-events-none"
                                 checked=*checked
                             />
-                            <span>{*label}</span>
+                            <span class="text-sm">{*label}</span>
                         </a>
                     }
                 }).collect_view()}

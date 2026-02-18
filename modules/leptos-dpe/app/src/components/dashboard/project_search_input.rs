@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_query;
-use mosaic_tiles::icon::{Icon, IconGitHub};
+use mosaic_tiles::icon::{Icon, Search, AppStore, List};
 
 use crate::domain::ProjectQuery;
 
@@ -15,29 +15,30 @@ pub fn ProjectSearchInput() -> impl IntoView {
         <form
                 method="get"
                 action="/projects"
-                class="flex gap-4 items-center"
+                class="flex items-center"
             >
-                <input
-                    type="text"
-                    name="search"
-                    class="input input-bordered input-primary flex-1"
-                    placeholder="Search projects..."
-                    value=search
-                />
-                <button
+
+                <label class="input flex-1 mr-2">
+                    <Icon icon=Search class="h-6 text-neutral-400" />
+                    <input type="search" placeholder="Search projects..." class="grow" value=search />
+                </label>
+
+
+
+            <a class="btn btn-ghost" href="/to-do">
+                    <Icon icon=AppStore class="w-5 h-5" />
+                </a>
+
+            <a class="btn btn-ghost" href="/to-do">
+                    <Icon icon=List class="w-5 h-5" />
+                </a>
+
+        <button
                     type="submit"
                     class="btn btn-primary btn-sm"
                 >
                     "Search"
                 </button>
-
-            <a class="btn" href="/to-do">
-                    <Icon icon=IconGitHub class="w-5 h-5" />
-                </a>
-
-            <a class="btn" href="/to-do">
-                    <Icon icon=IconGitHub class="w-5 h-5" />
-                </a>
             </form>
         </div>
     }

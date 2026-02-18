@@ -4,6 +4,7 @@
 /// - Navigation: ChevronUp, ChevronDown
 /// - UI: Search, ArrowUpRight
 /// - Social: LinkedIn, X (Twitter), GitHub
+/// - Other: Star
 ///
 /// # Sizing
 ///
@@ -41,11 +42,13 @@ pub use icondata::{
     AiBarsOutlined as Bars, AiClockCircleOutlined as Clock, AiDownOutlined as IconChevronDown,
     AiInfoCircleOutlined as Info, AiLeftOutlined as IconChevronLeft, AiLinkedinOutlined as IconLinkedIn,
     AiMailOutlined as Mail, AiQuestionCircleOutlined as Question, AiRightOutlined as IconChevronRight,
-    AiUpOutlined as IconChevronUp, BiDataRegular as Data, BiGridRegular as Grid, BiSearchRegular as IconSearch,
-    BsPeople as People, CgFileDocument as Document, CgLock as LockClosed, CgLockUnlock as LockOpen, Icon as IconData,
-    IoCopyOutline as CopyPaste, IoFlagOutline as Flag, MdiFileDownloadOutline as DownloadFile, MdiTune as Tune,
-    OcLinkExternalLg as LinkExternal, OcSidebarCollapseLg as Sidebar, OcThreeBarsSm as Hamburger,
-    RiBookOpenDocumentLine as OpenDocument, SiGithub as IconGitHub, SiX as IconX,
+    AiStarOutlined as Star, AiUpOutlined as IconChevronUp, BiDataRegular as Data, BiGridRegular as Grid,
+    BiSearchRegular as IconSearch, BsPeople as People, CgFileDocument as Document, CgLock as LockClosed,
+    CgLockUnlock as LockOpen, Icon as IconData, IoCopyOutline as CopyPaste, IoFlagOutline as Flag,
+    MdiFileDownloadOutline as DownloadFile, MdiTune as Tune, OcLinkExternalLg as LinkExternal,
+    OcSidebarCollapseLg as Sidebar, OcThreeBarsSm as Hamburger, RiBookOpenDocumentLine as OpenDocument,
+    SiGithub as IconGitHub, SiX as IconX, AiExportOutlined as Export, AiQuestionCircleOutlined as Help,
+    AiSearchOutlined as Search, AiAppstoreOutlined as AppStore, AiUnorderedListOutlined as List,
 };
 use leptos::prelude::*;
 

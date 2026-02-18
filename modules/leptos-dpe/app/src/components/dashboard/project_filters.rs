@@ -34,16 +34,16 @@ pub fn ProjectFilters() -> impl IntoView {
 
     view! {
         <div class="p-4 border border-gray-200 rounded-xl overflow-hidden" style="min-width: 250px">
-                <div class="font-bold">Filters</div>
+                <div class="font-bold mb-1">Filters</div>
                 {filters.iter().map(|(param, label, checked)| {
                     view! {
                         <a href=build_url(param) class="flex items-center gap-2 cursor-pointer hover:opacity-80">
-                            <span class="flex-1">{*label}</span>
                             <input
                                 type="checkbox"
                                 class="checkbox checkbox-sm pointer-events-none"
                                 checked=*checked
                             />
+                            <span>{*label}</span>
                         </a>
                     }
                 }).collect_view()}

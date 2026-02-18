@@ -7,6 +7,7 @@ pub use dashboard::card::ProjectCard;
 pub use dashboard::project_filters::ProjectFilters;
 pub use dashboard::project_pagination::ProjectPagination;
 pub use dashboard::project_search::ProjectSearch;
+pub use dashboard::project_search_input::ProjectSearchInput;
 pub use dashboard::statusbadge::ProjectStatusBadge;
 pub use global::footer::Footer;
 pub use global::navbar::NavBar;

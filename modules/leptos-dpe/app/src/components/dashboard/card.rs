@@ -13,19 +13,20 @@ pub fn ProjectCard(
     btn_target: String,
 ) -> impl IntoView {
     view! {
-        <div class="card bg-base-300 shadow w-96">
+        <a href=btn_target class="card bg-base-100 shadow-sm">
+          <figure>
+            <img
+                src="https://dasch.swiss/projects/0854.webp"
+                alt="Shoes" />
+            </figure>
+
             <div class="card-body">
                 <div class="flex justify-end">
                     <ProjectStatusBadge status=status size=BadgeSize::Small />
                 </div>
                 <h2 class="card-title">{title}</h2>
                 <p>{content}</p>
-                <div class="card-actions justify-end">
-                    <button class="btn btn-primary">
-                        <a href=btn_target>{btn_text}</a>
-                    </button>
-                </div>
             </div>
-        </div>
+        </a>
     }
 }

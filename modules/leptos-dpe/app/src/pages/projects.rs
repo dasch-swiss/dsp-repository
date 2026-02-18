@@ -32,7 +32,7 @@ pub fn ProjectsPage() -> impl IntoView {
         <div class="flex gap-4">
             <ProjectFilters />
 
-            <div class="flex flex-col gap-12">
+            <div class="flex flex-col gap-4">
                 // Everything inside Suspense to avoid reading resource outside
                 <Suspense fallback=move || {
                     view! { <Loading /> }

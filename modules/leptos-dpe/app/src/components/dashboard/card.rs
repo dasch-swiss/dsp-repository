@@ -13,7 +13,7 @@ pub fn ProjectCard(
     btn_target: String,
 ) -> impl IntoView {
     view! {
-        <a href=btn_target class="card bg-base-100 shadow-sm">
+        <a href=btn_target class="card bg-base-100 border border-gray-200 hover:shadow-sm">
           <figure class="relative">
             <img
                 src="https://dasch.swiss/projects/0854.webp"
@@ -25,8 +25,8 @@ pub fn ProjectCard(
           </figure>
 
             <div class="card-body">
-                <h2 class="card-title">{title}</h2>
-                <p class="truncate">{content}</p>
+                <h2 class="card-title text-ellipsis">{title}</h2>
+                <p>{content}</p>
         <div>
             <span class="badge badge-sm badge-neutral badge-outline">Badge</span>
         </div>

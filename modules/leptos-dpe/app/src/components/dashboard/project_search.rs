@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::components::{ProjectSearchInput};
+use crate::components::ProjectSearchInput;
 use crate::domain::ProjectQuery;
 
 #[component]

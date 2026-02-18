@@ -33,15 +33,15 @@ pub fn ProjectFilters() -> impl IntoView {
     let filters = [("ongoing", "Ongoing", ongoing), ("finished", "Finished", finished)];
 
     view! {
-        <div class="w-100 p-4 border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                <div>Filters</div>
+        <div class="p-4 border border-gray-200 rounded-xl overflow-hidden" style="min-width: 250px">
+                <div class="font-bold">Filters</div>
                 {filters.iter().map(|(param, label, checked)| {
                     view! {
                         <a href=build_url(param) class="flex items-center gap-2 cursor-pointer hover:opacity-80">
-                            <span>{*label}</span>
+                            <span class="flex-1">{*label}</span>
                             <input
                                 type="checkbox"
-                                class="checkbox checkbox-primary pointer-events-none"
+                                class="checkbox checkbox-sm pointer-events-none"
                                 checked=*checked
                             />
                         </a>

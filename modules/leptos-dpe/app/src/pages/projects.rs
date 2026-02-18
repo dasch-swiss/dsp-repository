@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_query;
 
-use crate::components::{Loading, ProjectFilters, ProjectPagination, ProjectSearch};
+use crate::components::{Loading, ProjectFilters, ProjectPagination, ProjectSearchInput};
 use crate::domain::{list_projects, ProjectQuery};
 use crate::ProjectCard;
 
@@ -32,7 +32,7 @@ pub fn ProjectsPage() -> impl IntoView {
         <div class="flex gap-4">
             <ProjectFilters />
 
-            <div class="flex flex-col gap-4">
+            <div class="flex-1 flex flex-col gap-4">
                 // Everything inside Suspense to avoid reading resource outside
                 <Suspense fallback=move || {
                     view! { <Loading /> }
@@ -44,7 +44,7 @@ pub fn ProjectsPage() -> impl IntoView {
                             .map(|result| match result {
                                 Ok(page) => {
                                     view! {
-                                        <ProjectSearch query=current_query.clone() />
+                                        <ProjectSearchInput />
 
                                         <div>
                                             <div class="mb-2">{format!("{} projects", total_items)}</div>

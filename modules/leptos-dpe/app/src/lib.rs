@@ -59,7 +59,7 @@ pub fn App() -> impl IntoView {
             <NavBar />
 
             <Router>
-                <main class="flex-1 max-w-7xl mx-auto px-4 md:px-6 w-full">
+                <main class="flex-1 max-w-7xl mx-auto px-4 w-full">
                     <Routes fallback=|| "Page not found.".into_view()>
                         <Route
                             path=StaticSegment("")

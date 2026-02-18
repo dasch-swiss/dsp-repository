@@ -41,6 +41,7 @@ dependencies = [
  "leptos_axum",
  "leptos_meta",
  "leptos_router",
+ "mosaic-tiles",
  "serde",
  "serde_json",
  "thiserror 2.0.18",

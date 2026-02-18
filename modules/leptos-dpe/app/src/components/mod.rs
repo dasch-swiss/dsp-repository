@@ -10,7 +10,6 @@ pub use dashboard::project_search::ProjectSearch;
 pub use dashboard::statusbadge::ProjectStatusBadge;
 pub use global::footer::Footer;
 pub use global::navbar::NavBar;
-pub use global::themeswitcher::ThemeSwitcher;
 pub use loading::Loading;
 pub use project_detail::contributor::Contributor;
 pub use project_detail::how_to_cite::HowToCite;

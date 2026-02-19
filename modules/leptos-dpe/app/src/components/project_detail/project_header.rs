@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-
+use mosaic_tiles::icon::{Export, Icon};
 use crate::components::ProjectStatusBadge;
 use crate::domain::ProjectStatus;
 
@@ -11,17 +11,25 @@ pub fn ProjectHeader(
     short_description: String,
 ) -> impl IntoView {
     view! {
-        <div class="bg-base-200 p-6 rounded-lg">
-            <div class="flex justify-between items-start">
-                <div>
-                    <div class="text-sm text-base-content/70 mb-2">
-                        "Project " {shortcode}
-                    </div>
-                    <h1 class="text-3xl font-bold mb-3">{name}</h1>
-                </div>
-                <ProjectStatusBadge status />
-            </div>
+        <div class="card border border-gray-200">
+         <figure>
+            <img
+        class="w-full object-cover"
+        style="height: 200px"
+                src="https://dasch.swiss/projects/0854.webp"
+                alt="Shoes" />
+          </figure>
+            <div class="card-body">
+                <h2 class="card-title text-3xl text-ellipsis">{name}</h2>
             <p class="text-lg mt-4">{short_description}</p>
+        <div>
+        <a class="btn btn-primary" href=format!("https://app.dasch.swiss/{}", shortcode)>Discover Project Data
+                    <Icon icon=Export class="w-5 h-5" />
+
+        </a>
+        </div>
+            </div>
+
         </div>
     }
 }

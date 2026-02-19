@@ -22,3 +22,4 @@ pub use project_detail::project_details::ProjectDetails;
 pub use project_detail::table_of_contents::TableOfContents;
 pub use project_detail::url_badge::UrlBadge;
 pub use project_loader::ProjectLoader;
+pub use project_detail::project_details_tabs;

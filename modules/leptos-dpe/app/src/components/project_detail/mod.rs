@@ -18,3 +18,4 @@ pub mod project_metadata;
 pub mod publications_section;
 pub mod table_of_contents;
 pub mod url_badge;
+pub mod project_details_tabs;

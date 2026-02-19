@@ -13,6 +13,7 @@ use crate::components::project_detail::project_header::ProjectHeader;
 use crate::components::project_detail::project_metadata::ProjectMetadata;
 use crate::components::project_detail::publications_section::PublicationsSection;
 use crate::components::*;
+use crate::components::project_details_tabs::ProjectDetailsTabs;
 use crate::domain::Project;
 
 #[component]
@@ -40,9 +41,11 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
                 short_description=proj.short_description.clone()
             />
 
-            <TableOfContents />
+        <ProjectDetailsTabs />
+            <div class="border border-gray-200">
+        <p class="text-xl">Dataset overview</p>
 
-            <div id="description" class="scroll-mt-52">
+                    <div id="description" class="scroll-mt-52">
                 <LanguageTabs
                     title="Description".to_string()
                     content=descriptions
@@ -84,7 +87,6 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
                 />
             </div>
 
-            <FundingSection funding=proj.funding.clone() />
 
             {proj
                 .publications
@@ -94,25 +96,6 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
                         <PublicationsSection publications=publications.clone() />
                     }
                 })}
-
-            {(!proj.legal_info.is_empty())
-                .then(|| {
-                    view! {
-                        <div
-                            id="legal-information"
-                            class="bg-base-100 p-6 rounded-lg scroll-mt-52"
-                        >
-                            <h3 class="text-xl font-bold mb-3">
-                                "Legal Information"
-                            </h3>
-                            <LegalInfo legal_info=proj.legal_info.clone() />
-                        </div>
-                    }
-                })}
-
-            <HowToCite citation=proj.how_to_cite.clone() />
-
-            <AccessRightsSection access_rights=proj.access_rights.clone() />
 
             {(!data_languages_content.is_empty())
                 .then(|| {
@@ -205,8 +188,45 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
                         </div>
                     }
                 })}
-
+       </div>
+        <div class="border border-gray-200">
+        <p class="text-xl">Contributors tab</p>
             <AttributionsSection attributions=proj.attributions.clone() />
+       </div>
+
+
+        <div class="border border-gray-200">
+
+                 <HowToCite citation=proj.how_to_cite.clone() />
+
+            <AccessRightsSection access_rights=proj.access_rights.clone() />
+
+                    {(!proj.legal_info.is_empty())
+                .then(|| {
+                    view! {
+                        <div
+                            id="legal-information"
+                            class="bg-base-100 p-6 rounded-lg scroll-mt-52"
+                        >
+                            <h3 class="text-xl font-bold mb-3">
+                                "Legal Information"
+                            </h3>
+                            <LegalInfo legal_info=proj.legal_info.clone() />
+                        </div>
+                    }
+                })}
+
+
+
+
+
+            <FundingSection funding=proj.funding.clone() />
+
+        </div>
+
+
+
+
         </div>
     }
 }

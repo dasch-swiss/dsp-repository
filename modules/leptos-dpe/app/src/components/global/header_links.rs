@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use mosaic_tiles::icon::{Icon, Help, Export};
+use mosaic_tiles::icon::{Export, Help, Icon};
 
 #[component]
 pub fn HeaderLinks() -> impl IntoView {

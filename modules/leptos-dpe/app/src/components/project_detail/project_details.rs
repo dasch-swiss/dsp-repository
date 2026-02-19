@@ -1,7 +1,6 @@
 use leptos::prelude::*;
 
 use crate::components::project_detail::access_rights_section::AccessRightsSection;
-use crate::components::project_detail::attributions_section::AttributionsSection;
 use crate::components::project_detail::coverage_section::CoverageSection;
 use crate::components::project_detail::disciplines_section::DisciplinesSection;
 use crate::components::project_detail::funding_section::FundingSection;
@@ -12,8 +11,8 @@ use crate::components::project_detail::link_list_section::LinkListSection;
 use crate::components::project_detail::project_header::ProjectHeader;
 use crate::components::project_detail::project_metadata::ProjectMetadata;
 use crate::components::project_detail::publications_section::PublicationsSection;
-use crate::components::*;
 use crate::components::project_details_tabs::ProjectDetailsTabs;
+use crate::components::*;
 use crate::domain::Project;
 
 #[component]
@@ -41,7 +40,7 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
                 short_description=proj.short_description.clone()
             />
 
-        <ProjectDetailsTabs />
+        <ProjectDetailsTabs attributions=proj.attributions.clone() />
             <div class="border border-gray-200">
         <p class="text-xl">Dataset overview</p>
 
@@ -188,10 +187,6 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
                         </div>
                     }
                 })}
-       </div>
-        <div class="border border-gray-200">
-        <p class="text-xl">Contributors tab</p>
-            <AttributionsSection attributions=proj.attributions.clone() />
        </div>
 
 

@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_query;
-use mosaic_tiles::icon::{Icon, Search, AppStore, List};
+use mosaic_tiles::icon::{AppStore, Icon, List, Search};
 
 use crate::domain::ProjectQuery;
 

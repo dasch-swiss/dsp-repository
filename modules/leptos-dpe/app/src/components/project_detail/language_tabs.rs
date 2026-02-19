@@ -53,7 +53,6 @@ pub fn LanguageTabs(
     let tab_group_name = format!("tabs_{}", title.to_lowercase().replace(' ', "_"));
 
     view! {
-        <div class="bg-base-100 p-6 rounded-lg">
             <h3 class="text-xl font-bold mb-3">{title}</h3>
             <div role="tablist" class="tabs tabs-lift">
                 {items
@@ -78,7 +77,6 @@ pub fn LanguageTabs(
                         }
                     })
                     .collect_view()}
-            </div>
         </div>
     }
     .into_any()

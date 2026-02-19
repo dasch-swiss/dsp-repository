@@ -8,7 +8,6 @@ pub fn DisciplinesSection(disciplines: Vec<Discipline>) -> impl IntoView {
         view! {
             <div
                 id="disciplines"
-                class="bg-base-100 p-6 rounded-lg scroll-mt-52"
             >
                 <h3 class="text-xl font-bold mb-3">"Disciplines"</h3>
                 <ul class="list-disc list-inside space-y-1">

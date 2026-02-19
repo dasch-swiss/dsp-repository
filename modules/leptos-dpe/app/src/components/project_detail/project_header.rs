@@ -5,12 +5,7 @@ use crate::components::ProjectStatusBadge;
 use crate::domain::ProjectStatus;
 
 #[component]
-pub fn ProjectHeader(
-    shortcode: String,
-    name: String,
-    status: ProjectStatus,
-    short_description: String,
-) -> impl IntoView {
+pub fn ProjectHeader(shortcode: String, name: String, status: ProjectStatus, description: String) -> impl IntoView {
     view! {
         <div class="card border border-gray-200">
          <figure>
@@ -22,7 +17,7 @@ pub fn ProjectHeader(
           </figure>
             <div class="card-body">
                 <h2 class="card-title text-3xl text-ellipsis">{name}</h2>
-            <p class="text-lg mt-4">{short_description}</p>
+            <p class="text-lg mt-4">{description}</p>
         <div>
         <a class="btn btn-primary" href=format!("https://app.dasch.swiss/{}", shortcode)>Discover Project Data
                     <Icon icon=Export class="w-5 h-5" />

@@ -9,16 +9,16 @@ use crate::domain::{Attribution, Project};
 pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl IntoView {
     view! {
     <div class="tabs tabs-border">
-      <input type="radio" name="my_tabs_2" class="tab" aria-label="Dataset Overview" />
-      <div class="tab-content border-base-300 bg-base-100 p-10">
+      <input type="radio" name="my_tabs_2" class="tab" aria-label="Dataset Overview" checked="checked" />
+      <div class="tab-content border-base-300 bg-base-100 p-4">
         <DatasetOverviewSection proj=proj />
       </div>
 
-      <input type="radio" name="my_tabs_2" class="tab" aria-label="Data" checked="checked" />
-      <div class="tab-content border-base-300 bg-base-100 p-10">Tab content 2</div>
+      <input type="radio" name="my_tabs_2" class="tab" aria-label="Data" />
+      <div class="tab-content border-base-300 bg-base-100 p-4">Tab content 2</div>
 
       <input type="radio" name="my_tabs_2" class="tab" aria-label="Contributors" />
-      <div class="tab-content border-base-300 bg-base-100 p-10">
+      <div class="tab-content border-base-300 bg-base-100 p-4">
         <AttributionsSection attributions=attributions />
       </div>
     </div>    }

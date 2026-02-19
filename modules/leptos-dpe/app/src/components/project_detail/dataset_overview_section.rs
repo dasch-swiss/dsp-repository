@@ -2,12 +2,11 @@ use leptos::prelude::*;
 
 use crate::components::project_detail::coverage_section::CoverageSection;
 use crate::components::project_detail::disciplines_section::DisciplinesSection;
-use crate::components::project_detail::lang_utils::{
-    group_by_language_as_badges, group_by_language_as_paragraphs, lang_map_to_views,
-};
+use crate::components::project_detail::lang_utils::{group_by_language_as_paragraphs, lang_map_to_views};
 use crate::components::project_detail::link_list_section::LinkListSection;
 use crate::components::project_detail::project_metadata::ProjectMetadata;
 use crate::components::project_detail::publications_section::PublicationsSection;
+use crate::components::project_detail::type_of_data_section::TypeOfDataSection;
 use crate::components::*;
 use crate::domain::Project;
 
@@ -15,12 +14,14 @@ use crate::domain::Project;
 pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
     let descriptions = lang_map_to_views(&proj.description);
     let abstracts = lang_map_to_views(&proj.abstract_text.clone().unwrap_or_default());
-    let keywords_content = group_by_language_as_badges(&proj.keywords);
-    let data_languages_content = proj
+    let english_keywords: Vec<String> = proj.keywords.iter().filter_map(|map| map.get("en").cloned()).collect();
+    let data_languages: Vec<String> = proj
         .data_language
         .as_deref()
-        .map(group_by_language_as_badges)
-        .unwrap_or_default();
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|map| map.get("en").cloned())
+        .collect();
     let alt_names_content = proj
         .alternative_names
         .as_deref()
@@ -28,29 +29,50 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
         .unwrap_or_default();
 
     view! {
-        <div id="description" class="scroll-mt-52">
-            <LanguageTabs
-                title="Description".to_string()
-                content=descriptions
-            />
-        </div>
+        <TypeOfDataSection type_of_data=proj.type_of_data.clone() />
+
+        {(!data_languages.is_empty())
+            .then(|| {
+                view! {
+                    <div id="data-languages" class="scroll-mt-52">
+                        <h3 class="text-xl font-bold mb-3">"Data Languages"</h3>
+                        <div class="flex flex-wrap gap-2">
+                            {data_languages
+                                .iter()
+                                .map(|l| {
+                                    view! {
+                                        <span class="badge badge-primary">{l.clone()}</span>
+                                    }
+                                })
+                                .collect_view()}
+                        </div>
+                    </div>
+                }
+                    .into_any()
+            })}
 
         <ProjectMetadata
             start_date=proj.start_date.clone()
             end_date=proj.end_date.clone()
             data_publication_year=proj.data_publication_year.clone()
             url=proj.url.clone()
-            type_of_data=proj.type_of_data.clone()
         />
 
-        {(!keywords_content.is_empty())
+        {(!english_keywords.is_empty())
             .then(|| {
                 view! {
                     <div id="keywords" class="scroll-mt-52">
-                        <LanguageTabs
-                            title="Keywords".to_string()
-                            content=keywords_content
-                        />
+                        <h3 class="text-xl font-bold mb-3">"Keywords"</h3>
+                        <div class="flex flex-wrap gap-2">
+                            {english_keywords
+                                .iter()
+                                .map(|k| {
+                                    view! {
+                                        <span class="badge badge-primary">{k.clone()}</span>
+                                    }
+                                })
+                                .collect_view()}
+                        </div>
                     </div>
                 }
                     .into_any()
@@ -79,18 +101,7 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
                 }
             })}
 
-        {(!data_languages_content.is_empty())
-            .then(|| {
-                view! {
-                    <div id="data-languages" class="scroll-mt-52">
-                        <LanguageTabs
-                            title="Data Languages".to_string()
-                            content=data_languages_content
-                        />
-                    </div>
-                }
-                    .into_any()
-            })}
+
 
         {(!alt_names_content.is_empty())
             .then(|| {

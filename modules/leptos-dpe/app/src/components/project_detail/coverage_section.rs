@@ -9,13 +9,12 @@ pub fn CoverageSection(
     spatial_coverage: Vec<AuthorityFileReference>,
 ) -> impl IntoView {
     view! {
-        <div class="grid md:grid-cols-2 gap-6">
+        <div>
             {(!temporal_coverage.is_empty())
                 .then(|| {
                     view! {
                         <div
                             id="temporal-coverage"
-                            class="bg-base-100 p-6 rounded-lg scroll-mt-52"
                         >
                             <h3 class="text-xl font-bold mb-3">
                                 "Temporal Coverage"
@@ -69,7 +68,6 @@ pub fn CoverageSection(
                     view! {
                         <div
                             id="spatial-coverage"
-                            class="bg-base-100 p-6 rounded-lg scroll-mt-52"
                         >
                             <h3 class="text-xl font-bold mb-3">
                                 "Spatial Coverage"

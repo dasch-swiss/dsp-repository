@@ -387,9 +387,55 @@ impl OaiXmlBuilder {
         if !datacite.subjects.is_empty() {
             self.start_element("subjects");
             for subject in &datacite.subjects {
-                self.write_element("subject", subject);
+                let mut subject_elem = BytesStart::new("subject");
+                if let Some(ref scheme) = subject.subject_scheme {
+                    subject_elem.push_attribute(("subjectScheme", &scheme[..]));
+                }
+                if let Some(ref scheme_uri) = subject.scheme_uri {
+                    subject_elem.push_attribute(("schemeURI", &scheme_uri[..]));
+                }
+                if let Some(ref lang) = subject.lang {
+                    subject_elem.push_attribute(("xml:lang", &lang[..]));
+                }
+                self.writer
+                    .write_event(Event::Start(subject_elem))
+                    .expect("Failed to start subject");
+                self.writer
+                    .write_event(Event::Text(BytesText::new(&subject.subject)))
+                    .expect("Failed to write subject");
+                self.writer
+                    .write_event(Event::End(BytesEnd::new("subject")))
+                    .expect("Failed to end subject");
             }
             self.end_element("subjects");
+        }
+
+        // Contributors
+        if !datacite.contributors.is_empty() {
+            self.start_element("contributors");
+            for contributor in &datacite.contributors {
+                let mut contrib_elem = BytesStart::new("contributor");
+                contrib_elem
+                    .push_attribute(("contributorType", &contributor.contributor_type[..]));
+                self.writer
+                    .write_event(Event::Start(contrib_elem))
+                    .expect("Failed to start contributor");
+                let mut contrib_name = BytesStart::new("contributorName");
+                if let Some(ref name_type) = contributor.name_type {
+                    contrib_name.push_attribute(("nameType", &name_type[..]));
+                }
+                self.writer
+                    .write_event(Event::Start(contrib_name))
+                    .expect("Failed to start contributorName");
+                self.writer
+                    .write_event(Event::Text(BytesText::new(&contributor.name)))
+                    .expect("Failed to write contributor name");
+                self.writer
+                    .write_event(Event::End(BytesEnd::new("contributorName")))
+                    .expect("Failed to end contributorName");
+                self.end_element("contributor");
+            }
+            self.end_element("contributors");
         }
 
         // Descriptions (recommended)
@@ -431,6 +477,32 @@ impl OaiXmlBuilder {
             self.end_element("dates");
         }
 
+        // Language
+        if let Some(ref language) = datacite.language {
+            self.write_element("language", language);
+        }
+
+        // RelatedIdentifiers
+        if !datacite.related_identifiers.is_empty() {
+            self.start_element("relatedIdentifiers");
+            for ri in &datacite.related_identifiers {
+                let mut ri_elem = BytesStart::new("relatedIdentifier");
+                ri_elem
+                    .push_attribute(("relatedIdentifierType", &ri.related_identifier_type[..]));
+                ri_elem.push_attribute(("relationType", &ri.relation_type[..]));
+                self.writer
+                    .write_event(Event::Start(ri_elem))
+                    .expect("Failed to start relatedIdentifier");
+                self.writer
+                    .write_event(Event::Text(BytesText::new(&ri.identifier)))
+                    .expect("Failed to write relatedIdentifier");
+                self.writer
+                    .write_event(Event::End(BytesEnd::new("relatedIdentifier")))
+                    .expect("Failed to end relatedIdentifier");
+            }
+            self.end_element("relatedIdentifiers");
+        }
+
         // Rights
         if !datacite.rights_list.is_empty() {
             self.start_element("rightsList");
@@ -438,6 +510,12 @@ impl OaiXmlBuilder {
                 let mut rights_elem = BytesStart::new("rights");
                 if let Some(ref uri) = rights.rights_uri {
                     rights_elem.push_attribute(("rightsURI", &uri[..]));
+                }
+                if let Some(ref identifier) = rights.rights_identifier {
+                    rights_elem.push_attribute(("rightsIdentifier", &identifier[..]));
+                }
+                if let Some(ref scheme) = rights.rights_identifier_scheme {
+                    rights_elem.push_attribute(("rightsIdentifierScheme", &scheme[..]));
                 }
                 self.writer
                     .write_event(Event::Start(rights_elem))
@@ -450,6 +528,37 @@ impl OaiXmlBuilder {
                     .expect("Failed to end rights");
             }
             self.end_element("rightsList");
+        }
+
+        // GeoLocations
+        if !datacite.geo_locations.is_empty() {
+            self.start_element("geoLocations");
+            for geo in &datacite.geo_locations {
+                self.start_element("geoLocation");
+                self.write_element("geoLocationPlace", &geo.geo_location_place);
+                self.end_element("geoLocation");
+            }
+            self.end_element("geoLocations");
+        }
+
+        // FundingReferences
+        if !datacite.funding_references.is_empty() {
+            self.start_element("fundingReferences");
+            for fr in &datacite.funding_references {
+                self.start_element("fundingReference");
+                self.write_element("funderName", &fr.funder_name);
+                if let Some(ref number) = fr.award_number {
+                    self.write_element("awardNumber", number);
+                }
+                if let Some(ref title) = fr.award_title {
+                    self.write_element("awardTitle", title);
+                }
+                if let Some(ref uri) = fr.award_uri {
+                    self.write_element("awardURI", uri);
+                }
+                self.end_element("fundingReference");
+            }
+            self.end_element("fundingReferences");
         }
 
         self.writer

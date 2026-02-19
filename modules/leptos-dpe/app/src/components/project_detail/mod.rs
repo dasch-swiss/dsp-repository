@@ -2,6 +2,7 @@ pub mod access_rights_section;
 pub mod attributions_section;
 pub mod contributor;
 pub mod coverage_section;
+pub mod dataset_overview_section;
 pub mod disciplines_section;
 pub mod funding_section;
 pub mod how_to_cite;

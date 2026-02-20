@@ -6,55 +6,45 @@ use crate::domain::Discipline;
 pub fn DisciplinesSection(disciplines: Vec<Discipline>) -> impl IntoView {
     (!disciplines.is_empty()).then(|| {
         view! {
-            <div
-                id="disciplines"
-            >
+            <div id="disciplines">
                 <h3 class="text-xl font-bold mb-3">"Disciplines"</h3>
-                <ul class="list-disc list-inside space-y-1">
+                <div class="flex flex-wrap gap-2">
                     {disciplines
                         .iter()
-                        .map(|d| match d {
-                            Discipline::Text(map) => {
-                                view! {
-                                    <li>
-                                        <a
-                                            href="http://www.snf.ch/SiteCollectionDocuments/allg_disziplinenliste.pdf"
-                                            class="link link-primary"
-                                        >
-                                            {map
-                                                .iter()
-                                                .map(|(lang, text)| {
-                                                    format!("{} ({})", text, lang)
-                                                })
-                                                .collect::<Vec<_>>()
-                                                .join(" / ")}
-                                        </a>
-                                    </li>
+                        .map(|d| {
+                            let (label, url) = match d {
+                                Discipline::Text(map) => {
+                                    let text = map
+                                        .get("en")
+                                        .cloned()
+                                        .unwrap_or_else(|| {
+                                            map.values().next().cloned().unwrap_or_default()
+                                        });
+                                    (text, None)
                                 }
-                                    .into_any()
-                            }
-                            Discipline::Reference(ref_) => {
-                                view! {
-                                    <li>
-                                        <a
-                                            href=ref_.url.clone()
-                                            class="link link-primary"
-                                        >
-                                            {ref_
-                                                .text
-                                                .clone()
-                                                .unwrap_or_else(|| ref_.url.clone())}
-                                        </a>
-                                        <span class="text-sm text-base-content/70 ml-2">
-                                            "(" {ref_.type_.clone()} ")"
-                                        </span>
-                                    </li>
+                                Discipline::Reference(ref_) => {
+                                    let text = ref_
+                                        .text
+                                        .clone()
+                                        .unwrap_or_else(|| ref_.url.clone());
+                                    (text, Some(ref_.url.clone()))
                                 }
-                                    .into_any()
+                            };
+                            match url {
+                                Some(href) => view! {
+                                    <a href=href class="badge badge-primary cursor-pointer">
+                                        {label}
+                                    </a>
+                                }
+                                .into_any(),
+                                None => view! {
+                                    <span class="badge badge-primary">{label}</span>
+                                }
+                                .into_any(),
                             }
                         })
                         .collect_view()}
-                </ul>
+                </div>
             </div>
         }
         .into_any()

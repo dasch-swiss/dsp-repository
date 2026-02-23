@@ -1,5 +1,6 @@
 pub mod access_rights_section;
 pub mod attributions_section;
+pub mod breadcrumb;
 pub mod contributor;
 pub mod coverage_section;
 pub mod dataset_overview_section;

@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
 use crate::components::project_detail::access_rights_section::AccessRightsSection;
+use crate::components::project_detail::breadcrumb::Breadcrumb;
 use crate::components::project_detail::funding_section::FundingSection;
 use crate::components::project_detail::project_header::ProjectHeader;
 use crate::components::project_details_tabs::ProjectDetailsTabs;
@@ -11,6 +12,8 @@ use crate::domain::Project;
 pub fn ProjectDetails(proj: Project) -> impl IntoView {
     view! {
         <div class="space-y-6">
+            <Breadcrumb project_name=proj.name.clone() />
+
             <ProjectHeader
                 shortcode=proj.shortcode.clone()
                 name=proj.name.clone()

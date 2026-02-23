@@ -13,13 +13,13 @@ pub fn FundingSection(funding: Funding) -> impl IntoView {
                     let grants_clone = grants.clone();
                     view! {
                         <div class="space-y-2">
-                            <div class="text-sm font-semibold">"Grants"</div>
+                            <div class="font-semibold">"Grants"</div>
                             {grants_clone
                                 .into_iter()
                                 .map(|grant| {
                                     view! {
                                         <InfoCard>
-                                            <div class="text-sm">
+                                            <div>
                                                 {grant
                                                     .funders
                                                     .into_iter()
@@ -38,7 +38,7 @@ pub fn FundingSection(funding: Funding) -> impl IntoView {
                                                 .number
                                                 .map(|number| {
                                                     view! {
-                                                        <div class="text-sm">
+                                                        <div>
                                                             "Grant: " {number}
                                                         </div>
                                                     }
@@ -47,7 +47,7 @@ pub fn FundingSection(funding: Funding) -> impl IntoView {
                                                 .name
                                                 .map(|name| {
                                                     view! {
-                                                        <div class="text-sm">
+                                                        <div>
                                                             {name}
                                                         </div>
                                                     }
@@ -56,7 +56,7 @@ pub fn FundingSection(funding: Funding) -> impl IntoView {
                                                 .url
                                                 .map(|url| {
                                                     view! {
-                                                        <a href=url class="text-sm text-blue-600 hover:underline flex items-center gap-1" target="_blank">
+                                                        <a href=url class="text-blue-600 hover:underline flex items-center gap-1" target="_blank">
                                                             "More info"
                                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -74,7 +74,7 @@ pub fn FundingSection(funding: Funding) -> impl IntoView {
                 }
                 Funding::Text(text) => {
                     view! {
-                        <div class="text-sm text-base-content/70">{text}</div>
+                        <div class="text-base-content/70">{text}</div>
                     }
                         .into_any()
                 }

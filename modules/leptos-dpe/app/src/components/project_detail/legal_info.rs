@@ -45,7 +45,7 @@ pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
                             }
                         }}
                     </div>
-                    <div class="text-sm text-base-content/70">
+                    <div class="text-base-content/70">
                         "(" {info.license.license_date.clone()} ")"
                     </div>
                     <div>"Copyright"</div>
@@ -53,7 +53,7 @@ pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
                     {(!info.authorship.is_empty())
                         .then(|| {
                             view! {
-                                <div class="text-sm">
+                                <div>
                                     "Authorship"
                                 </div>
                             {info.authorship.join(", ")}

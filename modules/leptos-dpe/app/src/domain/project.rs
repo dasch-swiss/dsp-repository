@@ -31,7 +31,7 @@ impl ProjectQuery {
     }
 
     pub fn view(&self) -> bool {
-        self.view.unwrap_or(true)
+        self.view.unwrap_or(false)
     }
 
     pub fn with_page(self, page: i32) -> Self {

@@ -5,9 +5,7 @@ use crate::domain::{list_projects, ProjectQuery};
 use crate::ProjectCard;
 
 #[component]
-pub fn ProjectList(
-    query: Memo<Result<ProjectQuery, leptos_router::params::ParamsError>>,
-) -> impl IntoView {
+pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::ParamsError>>) -> impl IntoView {
     // Create resource that depends on query parameters
     let projects = Resource::new(
         move || query.get(),
@@ -24,10 +22,6 @@ pub fn ProjectList(
             .await
         },
     );
-
-    // TODO: These should come from the actual page data
-    let nr_pages = 5;
-    let total_items = 10;
 
     view! {
         // Everything inside Suspense to avoid reading resource outside
@@ -47,38 +41,55 @@ pub fn ProjectList(
                     .get()
                     .map(|result| match result {
                         Ok(page) => {
-                            view! {
+                            let nr_pages = page.nr_pages;
+                            let total_items = page.total_items;
 
-                                <div>
-                                    <div class="mb-2">{format!("{} projects", total_items)}</div>
-                                    <div class=grid_class>
-                                        {
-                                            let view_value = view;
-                                            page
-                                                .items
-                                                .into_iter()
-                                                .map(move |project| {
-                                                    view! {
-                                                        <ProjectCard
-                                                            title=project.name.clone()
-                                                            content=project.short_description.clone()
-                                                            status=project.status.clone()
-                                                            btn_target=format!("/projects/{}", project.shortcode)
-                                                            view=view_value
-                                                        />
-                                                    }
-                                                })
-                                                .collect_view()
-                                        }
+                            if total_items == 0 {
+                                view! {
+                                    <div class="card bg-base-100 border border-gray-200 p-8 text-center">
+                                        <h3 class="mb-4">"No projects found matching your criteria"</h3>
+                                <div class="text-center">
+                                        <a href="/projects" class="btn btn-ghost">
+                                            "Clear your filters"
+                                        </a>
+                                </div>
                                     </div>
-                                </div>
+                                }
+                                    .into_any()
+                            } else {
+                                view! {
 
-                                <div class="flex justify-center">
-                                    <ProjectPagination nr_pages=nr_pages query=current_query />
-                                </div>
+                                    <div>
+                                        <div class="mb-2">{format!("{} projects", total_items)}</div>
+                                        <div class=grid_class>
+                                            {
+                                                let view_value = view;
+                                                page
+                                                    .items
+                                                    .into_iter()
+                                                    .map(move |project| {
+                                                        view! {
+                                                            <ProjectCard
+                                                                title=project.name.clone()
+                                                                content=project.short_description.clone()
+                                                                status=project.status.clone()
+                                                                btn_target=format!("/projects/{}", project.shortcode)
+                                                                view=view_value
+                                                            />
+                                                        }
+                                                    })
+                                                    .collect_view()
+                                            }
+                                        </div>
+                                    </div>
 
+                                    <div class="flex justify-center">
+                                        <ProjectPagination nr_pages=nr_pages query=current_query />
+                                    </div>
+
+                                }
+                                    .into_any()
                             }
-                                .into_any()
                         }
                         Err(e) => {
                             view! {

@@ -1,7 +1,6 @@
 use leptos::prelude::*;
 
 use crate::components::{Loading, ProjectPagination};
-use crate::domain::models::Page;
 use crate::domain::{list_projects, ProjectQuery};
 use crate::ProjectCard;
 
@@ -37,6 +36,13 @@ pub fn ProjectList(
         }>
             {move || {
                 let current_query = query.get().unwrap_or_default();
+                let view = current_query.view();
+                let grid_class = if view {
+                    "grid grid-cols-1 gap-4"
+                } else {
+                    "grid grid-cols-3 gap-4"
+                };
+
                 projects
                     .get()
                     .map(|result| match result {
@@ -45,21 +51,25 @@ pub fn ProjectList(
 
                                 <div>
                                     <div class="mb-2">{format!("{} projects", total_items)}</div>
-                                    <div class="grid grid-cols-3 gap-4">
-                                        {page
-                                            .items
-                                            .into_iter()
-                                            .map(|project| {
-                                                view! {
-                                                    <ProjectCard
-                                                        title=project.name.clone()
-                                                        content=project.short_description.clone()
-                                                        status=project.status.clone()
-                                                        btn_target=format!("/projects/{}", project.shortcode)
-                                                    />
-                                                }
-                                            })
-                                            .collect_view()}
+                                    <div class=grid_class>
+                                        {
+                                            let view_value = view;
+                                            page
+                                                .items
+                                                .into_iter()
+                                                .map(move |project| {
+                                                    view! {
+                                                        <ProjectCard
+                                                            title=project.name.clone()
+                                                            content=project.short_description.clone()
+                                                            status=project.status.clone()
+                                                            btn_target=format!("/projects/{}", project.shortcode)
+                                                            view=view_value
+                                                        />
+                                                    }
+                                                })
+                                                .collect_view()
+                                        }
                                     </div>
                                 </div>
 

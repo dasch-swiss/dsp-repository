@@ -4,8 +4,8 @@ use leptos::prelude::*;
 pub fn LinkListSection(title: String, items: Vec<String>, #[prop(default = false)] as_links: bool) -> impl IntoView {
     view! {
         <div class="bg-base-100 p-6 rounded-lg">
-            <h3 class="text-xl font-bold mb-3">{title}</h3>
-            <ul class="list-disc list-inside">
+            <h3 class="text-base font-semibold mb-3">{title}</h3>
+            <ul class="list-disc list-inside text-sm">
                 {items
                     .iter()
                     .map(|item| {

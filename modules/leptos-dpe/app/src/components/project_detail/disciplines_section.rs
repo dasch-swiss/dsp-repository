@@ -7,7 +7,7 @@ pub fn DisciplinesSection(disciplines: Vec<Discipline>) -> impl IntoView {
     (!disciplines.is_empty()).then(|| {
         view! {
             <div id="disciplines">
-                <h3 class="text-xl font-bold mb-3">"Disciplines"</h3>
+                <h3 class="text-base font-semibold mb-3">"Disciplines"</h3>
                 <div class="flex flex-wrap gap-2">
                     {disciplines
                         .iter()

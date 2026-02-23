@@ -9,8 +9,8 @@ pub fn PublicationsSection(publications: Vec<Publication>) -> impl IntoView {
             id="publications"
             class="bg-base-100 p-6 rounded-lg scroll-mt-52"
         >
-            <h3 class="text-xl font-bold mb-3">"Publications"</h3>
-            <div class="space-y-2">
+            <h3 class="text-base font-semibold mb-3">"Publications"</h3>
+            <div class="space-y-2 text-sm">
                 {publications
                     .iter()
                     .map(|pub_| {

@@ -1,3 +1,4 @@
+use crate::components::project_detail::publication_year::PublicationYear;
 use leptos::prelude::*;
 
 #[component]
@@ -11,29 +12,13 @@ pub fn ProjectMetadata(
         <div
             id="project-details"
         >
-            <h3 class="text-xl font-bold mb-3">"Project Details"</h3>
+            <h3 class="text-base font-semibold mb-3">"Project Details"</h3>
             <div class="space-y-2">
-                <div>
-                    <span class="font-semibold">"Start Date: "</span>
-                    {start_date}
-                </div>
-                <div>
-                    <span class="font-semibold">"End Date: "</span>
-                    {end_date}
-                </div>
-                {data_publication_year
-                    .map(|year| {
-                        view! {
-                            <div>
-                                <span class="font-semibold">"Publication Year: "</span>
-                                {year}
-                            </div>
-                        }
-                    })}
+                <PublicationYear year=data_publication_year />
                 {(!url.is_empty())
                     .then(|| {
                         view! {
-                            <div>
+                            <div class="text-sm">
                                 <span class="font-semibold">"URLs:"</span>
                                 <ul class="list-disc list-inside ml-2">
                                     {url

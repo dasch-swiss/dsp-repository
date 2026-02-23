@@ -35,7 +35,7 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
             .then(|| {
                 view! {
                     <div id="data-languages" class="scroll-mt-52">
-                        <h3 class="text-xl font-bold mb-3">"Data Languages"</h3>
+                        <h3 class="text-base font-semibold mb-3">"Data Languages"</h3>
                         <div class="flex flex-wrap gap-2">
                             {data_languages
                                 .iter()
@@ -62,7 +62,7 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
             .then(|| {
                 view! {
                     <div id="keywords" class="scroll-mt-52">
-                        <h3 class="text-xl font-bold mb-3">"Keywords"</h3>
+                        <h3 class="text-base font-semibold mb-3">"Keywords"</h3>
                         <div class="flex flex-wrap gap-2">
                             {english_keywords
                                 .iter()
@@ -176,8 +176,8 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
             .map(|prov| {
                 view! {
                     <div class="bg-base-100 p-6 rounded-lg">
-                        <h3 class="text-xl font-bold mb-3">"Provenance"</h3>
-                        <p class="text-base">{prov.clone()}</p>
+                        <h3 class="text-base font-semibold mb-3">"Provenance"</h3>
+                        <p class="text-sm">{prov.clone()}</p>
                     </div>
                 }
             })}

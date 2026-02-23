@@ -16,10 +16,10 @@ pub fn CoverageSection(
                         <div
                             id="temporal-coverage"
                         >
-                            <h3 class="text-xl font-bold mb-3">
+                            <h3 class="text-base font-semibold mb-3">
                                 "Temporal Coverage"
                             </h3>
-                            <div class="space-y-2">
+                            <div class="space-y-2 text-sm">
                                 {temporal_coverage
                                     .iter()
                                     .map(|t| match t {
@@ -69,10 +69,10 @@ pub fn CoverageSection(
                         <div
                             id="spatial-coverage"
                         >
-                            <h3 class="text-xl font-bold mb-3">
+                            <h3 class="text-base font-semibold mb-3">
                                 "Spatial Coverage"
                             </h3>
-                            <div class="space-y-2">
+                            <div class="space-y-2 text-sm">
                                 {spatial_coverage
                                     .iter()
                                     .map(|s| {

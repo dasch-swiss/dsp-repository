@@ -7,6 +7,7 @@ pub mod dataset_overview_section;
 pub mod disciplines_section;
 pub mod funding_section;
 pub mod how_to_cite;
+pub mod info_card;
 pub mod lang_utils;
 pub mod language_tabs;
 pub mod legal_info;

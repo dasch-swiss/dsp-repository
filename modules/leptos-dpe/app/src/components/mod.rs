@@ -14,6 +14,7 @@ pub use global::navbar::NavBar;
 pub use loading::Loading;
 pub use project_detail::contributor::Contributor;
 pub use project_detail::how_to_cite::HowToCite;
+pub use project_detail::info_card::InfoCard;
 pub use project_detail::language_tabs::LanguageTabs;
 pub use project_detail::legal_info::LegalInfo;
 pub use project_detail::organization::Organization;

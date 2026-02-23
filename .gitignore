@@ -26,6 +26,7 @@ target/
 # Claude files
 .claude/tmp/
 .claude/settings.local.json
+.claude/worktrees/
 
 # Node.js dependencies
 node_modules/

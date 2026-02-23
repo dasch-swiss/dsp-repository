@@ -25,6 +25,7 @@ axum = { version = "0.8.8", features = ["macros", "ws"] }
 console_error_panic_hook = "0.1.7"
 leptos = { version = "0.8.2", features = ["islands"] }
 leptos_meta = "0.8.2"
+leptos-use = "0.15"
 log = "0.4.29"
 regex = "1.12.2"
 serde = { version = "1", features = ["derive"] }

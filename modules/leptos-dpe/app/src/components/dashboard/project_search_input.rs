@@ -66,7 +66,6 @@ pub fn ProjectSearchInput() -> impl IntoView {
                     />
                 </label>
 
-                <ProjectViewToggle />
 
         <button
                     type="submit"
@@ -74,6 +73,9 @@ pub fn ProjectSearchInput() -> impl IntoView {
                 >
                     "Search"
                 </button>
+
+                <ProjectViewToggle />
+
             </form>
         </div>
     }

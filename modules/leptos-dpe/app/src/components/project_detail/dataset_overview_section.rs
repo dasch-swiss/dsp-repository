@@ -12,7 +12,7 @@ use crate::domain::Project;
 
 #[component]
 pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
-    let descriptions = lang_map_to_views(&proj.description);
+    let _descriptions = lang_map_to_views(&proj.description);
     let abstracts = lang_map_to_views(&proj.abstract_text.clone().unwrap_or_default());
     let english_keywords: Vec<String> = proj.keywords.iter().filter_map(|map| map.get("en").cloned()).collect();
     let data_languages: Vec<String> = proj

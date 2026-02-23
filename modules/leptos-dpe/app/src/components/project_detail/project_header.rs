@@ -1,11 +1,8 @@
 use leptos::prelude::*;
 use mosaic_tiles::icon::{Export, Icon};
 
-use crate::components::ProjectStatusBadge;
-use crate::domain::ProjectStatus;
-
 #[component]
-pub fn ProjectHeader(shortcode: String, name: String, status: ProjectStatus, description: String) -> impl IntoView {
+pub fn ProjectHeader(shortcode: String, name: String, description: String) -> impl IntoView {
     view! {
         <div class="card border border-gray-200">
          <figure>

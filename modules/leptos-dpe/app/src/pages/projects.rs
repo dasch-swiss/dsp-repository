@@ -58,7 +58,6 @@ pub fn ProjectsPage() -> impl IntoView {
                                                                 title=project.name.clone()
                                                                 content=project.short_description.clone()
                                                                 status=project.status.clone()
-                                                                btn_text="View Project".to_string()
                                                                 btn_target=format!("/projects/{}", project.shortcode)
                                                             />
                                                         }

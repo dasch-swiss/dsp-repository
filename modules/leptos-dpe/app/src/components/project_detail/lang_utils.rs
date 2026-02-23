@@ -12,6 +12,7 @@ pub fn lang_map_to_views(map: &HashMap<String, String>) -> HashMap<String, AnyVi
 
 /// Group a `Vec<HashMap<String, String>>` by language key,
 /// collecting all values per language, then render each group as badges.
+#[allow(dead_code)]
 pub fn group_by_language_as_badges(items: &[HashMap<String, String>]) -> HashMap<String, AnyView> {
     let grouped: HashMap<String, Vec<String>> =
         items

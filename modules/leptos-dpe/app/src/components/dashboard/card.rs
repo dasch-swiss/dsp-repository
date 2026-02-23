@@ -5,13 +5,7 @@ use crate::components::ProjectStatusBadge;
 use crate::domain::ProjectStatus;
 
 #[component]
-pub fn ProjectCard(
-    title: String,
-    content: String,
-    status: ProjectStatus,
-    btn_text: String,
-    btn_target: String,
-) -> impl IntoView {
+pub fn ProjectCard(title: String, content: String, status: ProjectStatus, btn_target: String) -> impl IntoView {
     view! {
         <a href=btn_target class="card bg-base-100 border border-gray-200 hover:shadow-sm">
           <figure class="relative">

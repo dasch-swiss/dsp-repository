@@ -14,7 +14,6 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
             <ProjectHeader
                 shortcode=proj.shortcode.clone()
                 name=proj.name.clone()
-                status=proj.status.clone()
                 description=proj.description.get("en").cloned().unwrap_or_default()
             />
 

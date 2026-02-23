@@ -1,9 +1,10 @@
-use crate::components::project_detail::attributions_section::AttributionsSection;
-use crate::components::project_detail::dataset_overview_section::DatasetOverviewSection;
-use crate::domain::{Attribution, Project};
 use leptos::prelude::*;
 use leptos::{component, view, IntoView};
 use mosaic_tiles::icon::{Icon, Search};
+
+use crate::components::project_detail::attributions_section::AttributionsSection;
+use crate::components::project_detail::dataset_overview_section::DatasetOverviewSection;
+use crate::domain::{Attribution, Project};
 
 #[component]
 pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl IntoView {

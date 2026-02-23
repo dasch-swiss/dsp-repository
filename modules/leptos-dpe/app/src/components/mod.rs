@@ -5,6 +5,7 @@ mod project_detail;
 pub mod project_loader;
 pub use dashboard::card::ProjectCard;
 pub use dashboard::project_filters::ProjectFilters;
+pub use dashboard::project_list::ProjectList;
 pub use dashboard::project_pagination::ProjectPagination;
 pub use dashboard::project_search_input::ProjectSearchInput;
 pub use dashboard::statusbadge::ProjectStatusBadge;

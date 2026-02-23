@@ -10,6 +10,7 @@ pub struct ProjectQuery {
     pub finished: Option<bool>,
     pub search: Option<String>,
     pub page: Option<i32>,
+    pub view: Option<bool>,
 }
 
 impl ProjectQuery {
@@ -27,6 +28,10 @@ impl ProjectQuery {
 
     pub fn page(&self) -> i32 {
         self.page.unwrap_or(1)
+    }
+
+    pub fn view(&self) -> bool {
+        self.view.unwrap_or(true)
     }
 
     pub fn with_page(self, page: i32) -> Self {
@@ -51,6 +56,9 @@ impl ProjectQuery {
             if page > 1 {
                 parts.push(format!("page={}", page));
             }
+        }
+        if let Some(view) = self.view {
+            parts.push(format!("view={}", view));
         }
 
         if parts.is_empty() {

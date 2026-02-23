@@ -1,8 +1,9 @@
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_query};
 use leptos_use::use_debounce_fn;
-use mosaic_tiles::icon::{AppStore, Icon, List, Search};
+use mosaic_tiles::icon::{Icon, Search};
 
+use super::project_view_toggle::ProjectViewToggle;
 use crate::domain::ProjectQuery;
 
 #[component]
@@ -33,6 +34,7 @@ pub fn ProjectSearchInput() -> impl IntoView {
                 ongoing: current.ongoing,
                 finished: current.finished,
                 page: Some(1), // Reset to page 1 when search changes
+                view: current.view,
             };
 
             // Navigate with new query string
@@ -64,15 +66,7 @@ pub fn ProjectSearchInput() -> impl IntoView {
                     />
                 </label>
 
-
-
-            <a class="btn btn-ghost" href="/to-do">
-                    <Icon icon=AppStore class="w-5 h-5" />
-                </a>
-
-            <a class="btn btn-ghost" href="/to-do">
-                    <Icon icon=List class="w-5 h-5" />
-                </a>
+                <ProjectViewToggle />
 
         <button
                     type="submit"

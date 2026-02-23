@@ -22,6 +22,7 @@ pub fn ProjectsPage() -> impl IntoView {
                 query_data.finished,
                 query_data.search,
                 query_data.page,
+                query_data.view,
                 None,
             )
             .await

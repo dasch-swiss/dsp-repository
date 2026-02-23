@@ -9,6 +9,7 @@ pub async fn list_projects(
     finished: Option<bool>,
     search: Option<String>,
     page: Option<i32>,
+    view: Option<bool>,
     page_size: Option<i32>,
 ) -> Result<Page, ServerFnError> {
     use std::fs;
@@ -17,7 +18,7 @@ pub async fn list_projects(
     use super::project::{ProjectQuery, ProjectStatus};
     use super::utils::get_data_dir;
 
-    let query = ProjectQuery { ongoing, finished, search, page };
+    let query = ProjectQuery { ongoing, finished, search, page, view };
 
     let items_per_page = page_size.unwrap_or(9).max(1) as usize;
 

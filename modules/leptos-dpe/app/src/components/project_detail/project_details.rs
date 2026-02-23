@@ -23,7 +23,7 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
               <ProjectDetailsTabs proj=proj.clone() attributions=proj.attributions.clone() />
 
               <div class="border border-gray-200 rounded-lg p-6 space-y-6">
-                  <h2 class="text-2xl font-bold">"Cite this Project"</h2>
+                  <h2 class="text-lg font-semibold">"Cite this Project"</h2>
 
                   <HowToCite
                       permalink=proj.pid.clone()
@@ -31,7 +31,7 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
                   />
         <div class="border-t border-gray-200 mt-4 pt-4"></div>
 
-                  <h2 class="text-2xl font-bold">"Data Access"</h2>
+                  <h3 class="text-base font-semibold">"Data Access"</h3>
                   <AccessRightsSection access_rights=proj.access_rights.clone() />
 
 
@@ -50,11 +50,11 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
 
                 <div class="border-t border-gray-200 mt-4 pt-4"></div>
 
-            <div class="text-2xl">Project Timeline</div>
-    <div>Period</div>
-    <div>2006-10-01 - 2024-12-31</div>
-    <div>Status</div>
-    <div>Ongoing</div>
+            <h3 class="text-base font-semibold">"Project Timeline"</h3>
+    <div class="text-sm font-semibold">"Period"</div>
+    <div class="text-sm">"2006-10-01 - 2024-12-31"</div>
+    <div class="text-sm font-semibold mt-2">"Status"</div>
+    <div class="text-sm">"Ongoing"</div>
         <div class="border-t border-gray-200 mt-4 pt-4"></div>
 
                   <FundingSection funding=proj.funding.clone() />

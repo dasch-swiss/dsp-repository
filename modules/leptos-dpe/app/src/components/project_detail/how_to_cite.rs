@@ -37,7 +37,7 @@ pub fn HowToCite(permalink: String, citation: String) -> impl IntoView {
 
     view! {
         <div class="space-y-2">
-            <h3 class="font-semibold text-base">"Permalink"</h3>
+            <h3 class="text-sm font-semibold">"Permalink"</h3>
             <InfoCard>
                 <div class="flex items-center justify-between gap-3">
                     <a href={permalink.clone()} class="text-blue-600 hover:underline text-sm break-all flex-1">
@@ -58,7 +58,7 @@ pub fn HowToCite(permalink: String, citation: String) -> impl IntoView {
         </div>
 
         <div class="space-y-2">
-            <h3 class="font-semibold text-base">"Citation"</h3>
+            <h3 class="text-sm font-semibold">"Citation"</h3>
             <InfoCard>
                 <div class="space-y-3 flex items-center">
                     <p class="text-sm flex-1">{citation.clone()}</p>

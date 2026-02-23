@@ -6,16 +6,14 @@ use crate::domain::Funding;
 #[component]
 pub fn FundingSection(funding: Funding) -> impl IntoView {
     view! {
-        <div
-            id="funding"
-            class="bg-base-100 p-6 rounded-lg scroll-mt-52"
-        >
-            <h3 class="text-xl font-bold mb-3">"Funding"</h3>
+        <div id="funding" class="space-y-2">
+            <h3 class="text-base font-semibold">"Funding"</h3>
             {match funding {
                 Funding::Grants(grants) => {
                     let grants_clone = grants.clone();
                     view! {
-                        <div>
+                        <div class="space-y-2">
+                            <div class="text-sm font-semibold">"Grants"</div>
                             {grants_clone
                                 .into_iter()
                                 .map(|grant| {
@@ -76,7 +74,7 @@ pub fn FundingSection(funding: Funding) -> impl IntoView {
                 }
                 Funding::Text(text) => {
                     view! {
-                        <div class="text-base-content/70">{text}</div>
+                        <div class="text-sm text-base-content/70">{text}</div>
                     }
                         .into_any()
                 }

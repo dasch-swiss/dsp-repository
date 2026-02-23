@@ -11,50 +11,45 @@ use crate::domain::Project;
 #[component]
 pub fn ProjectDetails(proj: Project) -> impl IntoView {
     view! {
-        <div class="space-y-6">
-            <Breadcrumb project_name=proj.name.clone() />
+          <div class="space-y-6">
+              <Breadcrumb project_name=proj.name.clone() />
 
-            <ProjectHeader
-                shortcode=proj.shortcode.clone()
-                name=proj.name.clone()
-                description=proj.description.get("en").cloned().unwrap_or_default()
-            />
+              <ProjectHeader
+                  shortcode=proj.shortcode.clone()
+                  name=proj.name.clone()
+                  description=proj.description.get("en").cloned().unwrap_or_default()
+              />
 
-        <ProjectDetailsTabs proj=proj.clone() attributions=proj.attributions.clone() />
+          <ProjectDetailsTabs proj=proj.clone() attributions=proj.attributions.clone() />
 
+          <div class="border border-gray-200 rounded-lg p-6 space-y-6">
+              <h2 class="text-2xl font-bold">"Cite this Project"</h2>
 
-        <div class="border border-gray-200">
+              <HowToCite
+                  permalink=proj.pid.clone()
+                  citation=proj.how_to_cite.clone()
+              />
+    <div class="border-t border-gray-200 mt-4 pt-4"></div>
 
-                 <HowToCite citation=proj.how_to_cite.clone() />
+              <AccessRightsSection access_rights=proj.access_rights.clone() />
 
-            <AccessRightsSection access_rights=proj.access_rights.clone() />
+              {(!proj.legal_info.is_empty())
+                  .then(|| {
+                      view! {
+                          <div
+                              id="legal-information"
+                              class="bg-base-100 p-6 rounded-lg scroll-mt-52"
+                          >
+                              <LegalInfo legal_info=proj.legal_info.clone() />
+                          </div>
+                      <div>Contact</div>
+              <InfoCard>
+                      TODO</InfoCard>
+                      }
+                  })}
 
-                    {(!proj.legal_info.is_empty())
-                .then(|| {
-                    view! {
-                        <div
-                            id="legal-information"
-                            class="bg-base-100 p-6 rounded-lg scroll-mt-52"
-                        >
-                            <h3 class="text-xl font-bold mb-3">
-                                "Legal Information"
-                            </h3>
-                            <LegalInfo legal_info=proj.legal_info.clone() />
-                        </div>
-                    }
-                })}
-
-
-
-
-
-            <FundingSection funding=proj.funding.clone() />
-
-        </div>
-
-
-
-
-        </div>
-    }
+              <FundingSection funding=proj.funding.clone() />
+          </div>
+          </div>
+      }
 }

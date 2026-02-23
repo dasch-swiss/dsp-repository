@@ -9,8 +9,8 @@ pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
         .map(|info| {
             view! {
                 <div class="space-y-2">
-                    <div class="flex items-center gap-3 flex-wrap">
-                        <span class="font-semibold">"License: "</span>
+                    <div>
+                        <span class="font-semibold">"License"</span>
                         {match get_cc_license_info(
                             &info.license.license_uri,
                             &info.license.license_identifier,
@@ -46,15 +46,17 @@ pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
                         }}
                     </div>
                     <div class="text-sm text-base-content/70">
-                        "License Date: " {info.license.license_date.clone()}
+                        "(" {info.license.license_date.clone()} ")"
                     </div>
-                    <div class="text-sm">"Copyright Holder: " {info.copyright_holder.clone()}</div>
+                    <div>"Copyright"</div>
+                <div>{info.copyright_holder.clone()}</div>
                     {(!info.authorship.is_empty())
                         .then(|| {
                             view! {
                                 <div class="text-sm">
-                                    "Authorship: " {info.authorship.join(", ")}
+                                    "Authorship"
                                 </div>
+                            {info.authorship.join(", ")}
                             }
                         })}
                 </div>

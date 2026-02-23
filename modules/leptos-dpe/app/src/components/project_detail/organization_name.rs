@@ -17,7 +17,7 @@ pub fn OrganizationName(organization_id: String) -> impl IntoView {
                     .and_then(|result| result.ok())
                     .flatten();
                 match organization_opt {
-                    Some(org) => view! { <span>{org.name.clone()}</span> }.into_any(),
+                    Some(org) => view! { <span class="font-semibold">{org.name.clone()}</span> }.into_any(),
                     None => {
                         view! {
                             <span class="italic text-base-content/70">

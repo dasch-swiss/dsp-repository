@@ -11,7 +11,7 @@ pub fn AccessRightsSection(access_rights: AccessRights) -> impl IntoView {
         >
             <h3 class="text-xl font-bold mb-3">"Access Rights"</h3>
             <div class="space-y-2">
-                <div class="badge badge-primary badge-lg">
+                <div>
                     {match access_rights.access_rights {
                         AccessRightsType::FullOpenAccess => "Full Open Access",
                         AccessRightsType::OpenAccessWithRestrictions => {

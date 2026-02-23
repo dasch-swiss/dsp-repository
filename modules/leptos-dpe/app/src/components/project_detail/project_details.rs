@@ -29,7 +29,7 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
                       permalink=proj.pid.clone()
                       citation=proj.how_to_cite.clone()
                   />
-        <div class="border-t border-gray-200 mt-4 pt-4"></div>
+        <div class="border-t border-gray-200 mt-4"></div>
 
                   <h3 class="text-base font-semibold">"Data Access"</h3>
                   <AccessRightsSection access_rights=proj.access_rights.clone() />
@@ -41,7 +41,7 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
                           view! {
                               <div
                                   id="legal-information"
-                                  class="bg-base-100 p-6 rounded-lg scroll-mt-52"
+                                  class="bg-base-100 rounded-lg scroll-mt-52"
                               >
                                   <LegalInfo legal_info=proj.legal_info.clone() />
                               </div>
@@ -55,7 +55,7 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
     <div class="text-sm">"2006-10-01 - 2024-12-31"</div>
     <div class="text-sm font-semibold mt-2">"Status"</div>
     <div class="text-sm">"Ongoing"</div>
-        <div class="border-t border-gray-200 mt-4 pt-4"></div>
+        <div class="border-t border-gray-200"></div>
 
                   <FundingSection funding=proj.funding.clone() />
               </div>

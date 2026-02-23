@@ -61,7 +61,7 @@ pub fn HowToCite(permalink: String, citation: String) -> impl IntoView {
             <h3 class="text-sm font-semibold">"Citation"</h3>
             <InfoCard>
                 <div class="space-y-3 flex items-center">
-                    <p class="text-sm flex-1">{citation.clone()}</p>
+                    <div class="text-sm flex-1">{citation.clone()}</div>
                     <button
                         class="btn btn-xs btn-ghost tooltip tooltip-left"
                         class:tooltip-open=move || show_citation_tooltip.get()

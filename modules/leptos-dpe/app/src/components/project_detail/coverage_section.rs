@@ -19,40 +19,34 @@ pub fn CoverageSection(
                             <h3 class="text-base font-semibold mb-3">
                                 "Temporal Coverage"
                             </h3>
-                            <div class="space-y-2 text-sm">
+                            <div class="flex flex-wrap gap-2">
                                 {temporal_coverage
                                     .iter()
                                     .map(|t| match t {
                                         TemporalCoverage::Text(map) => {
+                                            let label = map
+                                                .iter()
+                                                .map(|(lang, text)| format!("{} ({})", text, lang))
+                                                .collect::<Vec<_>>()
+                                                .join(" / ");
                                             view! {
-                                                <div>
-                                                    {map
-                                                        .iter()
-                                                        .map(|(lang, text)| {
-                                                            format!("{} ({})", text, lang)
-                                                        })
-                                                        .collect::<Vec<_>>()
-                                                        .join(" / ")}
-                                                </div>
+                                                <span class="badge badge-primary">{label}</span>
                                             }
                                                 .into_any()
                                         }
                                         TemporalCoverage::Reference(ref_) => {
+                                            let label = ref_
+                                                .text
+                                                .clone()
+                                                .unwrap_or_else(|| ref_.url.clone());
                                             view! {
-                                                <div>
-                                                    <a
-                                                        href=ref_.url.clone()
-                                                        class="link link-primary"
-                                                    >
-                                                        {ref_
-                                                            .text
-                                                            .clone()
-                                                            .unwrap_or_else(|| ref_.url.clone())}
-                                                    </a>
-                                                    <span class="text-sm text-base-content/70 ml-2">
-                                                        "(" {ref_.type_.clone()} ")"
-                                                    </span>
-                                                </div>
+                                                <a
+                                                    href=ref_.url.clone()
+                                                    class="badge badge-primary tooltip"
+                                                    data-tip=ref_.url.clone()
+                                                >
+                                                    {label}
+                                                </a>
                                             }
                                                 .into_any()
                                         }
@@ -72,25 +66,22 @@ pub fn CoverageSection(
                             <h3 class="text-base font-semibold mb-3">
                                 "Spatial Coverage"
                             </h3>
-                            <div class="space-y-2 text-sm">
+                            <div class="flex flex-wrap gap-2">
                                 {spatial_coverage
                                     .iter()
                                     .map(|s| {
+                                        let label = s
+                                            .text
+                                            .clone()
+                                            .unwrap_or_else(|| s.url.clone());
                                         view! {
-                                            <div>
-                                                <a
-                                                    href=s.url.clone()
-                                                    class="link link-primary"
-                                                >
-                                                    {s
-                                                        .text
-                                                        .clone()
-                                                        .unwrap_or_else(|| s.url.clone())}
-                                                </a>
-                                                <span class="text-sm text-base-content/70 ml-2">
-                                                    "(" {s.type_.clone()} ")"
-                                                </span>
-                                            </div>
+                                            <a
+                                                href=s.url.clone()
+                                                class="badge badge-outline tooltip"
+                                                data-tip=s.url.clone()
+                                            >
+                                                {label}
+                                            </a>
                                         }
                                     })
                                     .collect_view()}

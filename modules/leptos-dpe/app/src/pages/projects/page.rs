@@ -1,7 +1,9 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_query;
 
-use crate::components::{ProjectFilters, ProjectList, ProjectSearchInput};
+use super::components::project_filters::ProjectFilters;
+use super::components::project_list::ProjectList;
+use super::components::project_search_input::ProjectSearchInput;
 use crate::domain::ProjectQuery;
 
 #[component]

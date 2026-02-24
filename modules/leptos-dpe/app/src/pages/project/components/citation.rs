@@ -1,41 +1,39 @@
 use leptos::prelude::*;
 use leptos::web_sys::wasm_bindgen::prelude::*;
 
-use crate::components::InfoCard;
+use super::info_card::InfoCard;
 
 #[wasm_bindgen(inline_js = "
-    export function copy_permalink_to_clipboard(text) {
+    export function copy_citation_to_clipboard(text) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text);
         }
     }
 ")]
 extern "C" {
-    fn copy_permalink_to_clipboard(text: &str);
+    fn copy_citation_to_clipboard(text: &str);
 }
 
 #[island]
-pub fn Permalink(permalink: String) -> impl IntoView {
+pub fn Citation(citation: String) -> impl IntoView {
     let (tooltip_state, set_tooltip_state) = signal("Copy");
     let (show_tooltip, set_show_tooltip) = signal(false);
 
-    let permalink_for_handler = permalink.clone();
+    let citation_for_handler = citation.clone();
     let handle_copy = move |_| {
-        copy_permalink_to_clipboard(&permalink_for_handler);
+        copy_citation_to_clipboard(&citation_for_handler);
         set_tooltip_state.set("Copied!");
         set_show_tooltip.set(true);
     };
 
     view! {
         <div class="space-y-2">
-            <h3 class="dpe-subtitle">"Permalink"</h3>
+            <h3 class="dpe-subtitle">"Citation"</h3>
             <InfoCard>
-                <div class="flex items-center justify-between gap-3">
-                    <a href={permalink.clone()} class="text-blue-600 hover:underline break-all flex-1">
-                        {permalink.clone()}
-                    </a>
+                <div class="flex items-center">
+                    <div class="flex-1">{citation.clone()}</div>
                     <button
-                        class="btn btn-xs btn-ghost tooltip tooltip-left flex-shrink-0"
+                        class="btn btn-xs btn-ghost tooltip tooltip-left"
                         class:tooltip-open=move || show_tooltip.get()
                         data-tip=move || tooltip_state.get()
                         on:click=handle_copy

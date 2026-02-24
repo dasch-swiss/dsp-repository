@@ -1,27 +1,5 @@
-mod dashboard;
 mod global;
 pub mod loading;
-mod project_detail;
-pub mod project_loader;
-pub use dashboard::card::ProjectCard;
-pub use dashboard::project_filters::ProjectFilters;
-pub use dashboard::project_list::ProjectList;
-pub use dashboard::project_pagination::ProjectPagination;
-pub use dashboard::project_search_input::ProjectSearchInput;
-pub use dashboard::statusbadge::ProjectStatusBadge;
+
 pub use global::footer::Footer;
 pub use global::navbar::NavBar;
-pub use loading::Loading;
-pub use project_detail::citation::Citation;
-pub use project_detail::contributor::Contributor;
-pub use project_detail::info_card::InfoCard;
-pub use project_detail::permalink::Permalink;
-pub use project_detail::language_tabs::LanguageTabs;
-pub use project_detail::legal_info::LegalInfo;
-pub use project_detail::organization::Organization;
-pub use project_detail::organization_name::OrganizationName;
-pub use project_detail::person::Person;
-pub use project_detail::project_details::ProjectDetails;
-pub use project_detail::project_details_tabs;
-pub use project_detail::url_badge::UrlBadge;
-pub use project_loader::ProjectLoader;

@@ -7,7 +7,7 @@ mod components;
 mod domain;
 mod pages;
 
-use components::{Footer, NavBar, ProjectCard};
+use components::{Footer, NavBar};
 use pages::{AboutPage, ProjectPage, ProjectsPage};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {

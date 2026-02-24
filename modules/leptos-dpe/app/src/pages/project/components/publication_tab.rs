@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::components::project_detail::publications_section::PublicationsSection;
+use crate::pages::project::components::publications_section::PublicationsSection;
 use crate::domain::Publication;
 
 #[component]

@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::components::ProjectDetails;
+use crate::pages::project::components::project_details::ProjectDetails;
 use crate::domain::get_project;
 
 /// ProjectLoader component that handles loading and error states for project data.

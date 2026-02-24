@@ -1,8 +1,9 @@
 use leptos::prelude::*;
 
-use crate::components::{Loading, ProjectPagination};
+use crate::components::loading::Loading;
 use crate::domain::{list_projects, ProjectQuery};
-use crate::ProjectCard;
+use super::card::ProjectCard;
+use super::project_pagination::ProjectPagination;
 
 #[component]
 pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::ParamsError>>) -> impl IntoView {

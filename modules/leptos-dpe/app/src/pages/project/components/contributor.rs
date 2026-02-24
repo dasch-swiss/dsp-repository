@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
-use crate::components::{InfoCard, Person};
+use super::info_card::InfoCard;
+use super::person::Person;
 use crate::domain::Attribution;
 
 #[component]

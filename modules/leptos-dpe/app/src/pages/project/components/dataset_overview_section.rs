@@ -1,11 +1,11 @@
 use leptos::prelude::*;
 
-use crate::components::project_detail::coverage_section::CoverageSection;
-use crate::components::project_detail::disciplines_section::DisciplinesSection;
-use crate::components::project_detail::lang_utils::lang_map_to_views;
-use crate::components::project_detail::link_list_section::LinkListSection;
-use crate::components::project_detail::publication_year::PublicationYear;
-use crate::components::project_detail::type_of_data_section::TypeOfDataSection;
+use crate::pages::project::components::coverage_section::CoverageSection;
+use crate::pages::project::components::disciplines_section::DisciplinesSection;
+use crate::pages::project::components::lang_utils::lang_map_to_views;
+use crate::pages::project::components::link_list_section::LinkListSection;
+use crate::pages::project::components::publication_year::PublicationYear;
+use crate::pages::project::components::type_of_data_section::TypeOfDataSection;
 use crate::domain::Project;
 
 #[component]

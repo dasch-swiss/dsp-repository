@@ -1,5 +1,5 @@
-use crate::components::project_detail::info_card::InfoCard;
 use crate::domain::Publication;
+use crate::pages::project::components::info_card::InfoCard;
 use leptos::prelude::*;
 use mosaic_tiles::icon::{Export, Icon};
 
@@ -37,7 +37,7 @@ pub fn PublicationsSection(publications: Vec<Publication>) -> impl IntoView {
                                                     .text
                                                     .clone()
                                                     .unwrap_or_else(|| pid.url.clone())}
-                    <Icon icon=Export class="w-3 h-3" style="align-self: center" />
+                    <Icon icon=Export class="w-3 h-3" />
 
                                             </a>
                                         }

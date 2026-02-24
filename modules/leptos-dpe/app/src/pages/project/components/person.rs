@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
-use crate::components::{Organization, UrlBadge};
+use super::organization::Organization;
+use super::url_badge::UrlBadge;
 use crate::domain::get_person;
 
 #[component]

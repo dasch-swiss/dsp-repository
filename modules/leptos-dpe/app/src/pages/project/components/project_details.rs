@@ -1,9 +1,9 @@
 use leptos::prelude::*;
 
-use crate::components::project_detail::breadcrumb::Breadcrumb;
-use crate::components::project_detail::cite_project_section::CiteProjectSection;
-use crate::components::project_detail::project_header::ProjectHeader;
-use crate::components::project_details_tabs::ProjectDetailsTabs;
+use crate::pages::project::components::breadcrumb::Breadcrumb;
+use crate::pages::project::components::cite_project_section::CiteProjectSection;
+use crate::pages::project::components::project_header::ProjectHeader;
+use crate::pages::project::components::project_details_tabs::ProjectDetailsTabs;
 use crate::domain::Project;
 
 #[component]

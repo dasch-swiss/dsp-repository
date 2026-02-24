@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
-use crate::components::{InfoCard, OrganizationName};
+use super::info_card::InfoCard;
+use super::organization_name::OrganizationName;
 use crate::domain::Funding;
 
 #[component]

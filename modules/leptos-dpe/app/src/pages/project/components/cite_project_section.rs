@@ -1,10 +1,10 @@
 use leptos::prelude::*;
 
-use crate::components::project_detail::access_rights_section::AccessRightsSection;
-use crate::components::project_detail::citation::Citation;
-use crate::components::project_detail::funding_section::FundingSection;
-use crate::components::project_detail::permalink::Permalink;
-use crate::components::*;
+use crate::pages::project::components::access_rights_section::AccessRightsSection;
+use crate::pages::project::components::citation::Citation;
+use crate::pages::project::components::funding_section::FundingSection;
+use crate::pages::project::components::permalink::Permalink;
+use super::legal_info::LegalInfo;
 use crate::domain::Project;
 
 #[component]

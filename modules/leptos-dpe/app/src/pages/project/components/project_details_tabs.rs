@@ -2,9 +2,9 @@ use leptos::prelude::*;
 use leptos::{component, view, IntoView};
 use mosaic_tiles::icon::{Data, Document, Icon, Info, People};
 
-use crate::components::project_detail::attributions_section::AttributionsSection;
-use crate::components::project_detail::dataset_overview_section::DatasetOverviewSection;
-use crate::components::project_detail::publication_tab::PublicationTab;
+use crate::pages::project::components::attributions_section::AttributionsSection;
+use crate::pages::project::components::dataset_overview_section::DatasetOverviewSection;
+use crate::pages::project::components::publication_tab::PublicationTab;
 use crate::domain::{Attribution, Project};
 
 #[component]

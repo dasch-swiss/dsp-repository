@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
-use crate::components::dashboard::statusbadge::BadgeSize;
-use crate::components::ProjectStatusBadge;
+use super::statusbadge::BadgeSize;
+use super::statusbadge::ProjectStatusBadge;
 use crate::domain::ProjectStatus;
 
 #[component]

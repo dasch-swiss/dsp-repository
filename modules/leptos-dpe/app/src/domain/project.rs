@@ -103,7 +103,9 @@ pub struct Project {
     pub start_date: String,
     #[serde(rename = "endDate")]
     pub end_date: String,
-    pub url: Vec<String>,
+    pub url: Option<AuthorityFileReference>,
+    #[serde(rename = "secondaryURL", default)]
+    pub secondary_url: Option<AuthorityFileReference>,
     #[serde(rename = "howToCite")]
     pub how_to_cite: String,
     #[serde(rename = "accessRights")]

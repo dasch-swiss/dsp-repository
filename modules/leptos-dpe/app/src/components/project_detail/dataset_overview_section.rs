@@ -52,10 +52,9 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
             })}
 
         <ProjectMetadata
-            start_date=proj.start_date.clone()
-            end_date=proj.end_date.clone()
             data_publication_year=proj.data_publication_year.clone()
             url=proj.url.clone()
+            secondary_url=proj.secondary_url.clone()
         />
 
         {(!english_keywords.is_empty())

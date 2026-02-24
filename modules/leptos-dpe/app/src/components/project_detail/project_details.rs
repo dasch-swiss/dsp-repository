@@ -15,9 +15,10 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
                   <Breadcrumb project_name=proj.name.clone() />
 
                   <ProjectHeader
-                      shortcode=proj.shortcode.clone()
                       name=proj.name.clone()
                       description=proj.description.get("en").cloned().unwrap_or_default()
+                      url=proj.url.clone()
+                      secondary_url=proj.secondary_url.clone()
                   />
 
               <ProjectDetailsTabs proj=proj.clone() attributions=proj.attributions.clone() />

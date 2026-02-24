@@ -1,7 +1,9 @@
 use leptos::prelude::*;
 
 use crate::components::project_detail::access_rights_section::AccessRightsSection;
+use crate::components::project_detail::citation::Citation;
 use crate::components::project_detail::funding_section::FundingSection;
+use crate::components::project_detail::permalink::Permalink;
 use crate::components::*;
 use crate::domain::Project;
 
@@ -11,10 +13,12 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
         <div class="border border-gray-200 rounded-lg p-6 space-y-6 text-sm">
             <h2 class="text-lg font-semibold">"Cite this Project"</h2>
 
-            <HowToCite
-                permalink=proj.pid.clone()
-                citation=proj.how_to_cite.clone()
-            />
+        <div>
+            <Permalink permalink=proj.pid.clone() />
+        </div>
+        <div>
+            <Citation citation=proj.how_to_cite.clone() />
+        </div>
             <div class="border-t border-gray-200 mt-4"></div>
 
             <h3 class="text-base font-semibold">"Data Access"</h3>

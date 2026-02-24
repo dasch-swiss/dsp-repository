@@ -20,6 +20,7 @@ pub mod project_details;
 pub mod project_details_tabs;
 pub mod project_header;
 pub mod project_metadata;
+pub mod publication_tab;
 pub mod publication_year;
 pub mod publications_section;
 pub mod table_of_contents;

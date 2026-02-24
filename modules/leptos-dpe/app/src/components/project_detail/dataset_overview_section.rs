@@ -5,7 +5,6 @@ use crate::components::project_detail::disciplines_section::DisciplinesSection;
 use crate::components::project_detail::lang_utils::{group_by_language_as_paragraphs, lang_map_to_views};
 use crate::components::project_detail::link_list_section::LinkListSection;
 use crate::components::project_detail::project_metadata::ProjectMetadata;
-use crate::components::project_detail::publications_section::PublicationsSection;
 use crate::components::project_detail::type_of_data_section::TypeOfDataSection;
 use crate::components::*;
 use crate::domain::Project;
@@ -13,7 +12,6 @@ use crate::domain::Project;
 #[component]
 pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
     let _descriptions = lang_map_to_views(&proj.description);
-    let abstracts = lang_map_to_views(&proj.abstract_text.clone().unwrap_or_default());
     let english_keywords: Vec<String> = proj.keywords.iter().filter_map(|map| map.get("en").cloned()).collect();
     let data_languages: Vec<String> = proj
         .data_language
@@ -79,24 +77,6 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
             temporal_coverage=proj.temporal_coverage.clone()
             spatial_coverage=proj.spatial_coverage.clone()
         />
-
-        <div id="abstract" class="scroll-mt-52">
-            <LanguageTabs
-                title="Abstract".to_string()
-                content=abstracts
-            />
-        </div>
-
-        {proj
-            .publications
-            .as_ref()
-            .map(|publications| {
-                view! {
-                    <PublicationsSection publications=publications.clone() />
-                }
-            })}
-
-
 
         {(!alt_names_content.is_empty())
             .then(|| {

@@ -76,7 +76,7 @@ pub fn CoverageSection(
                                         view! {
                                             <a
                                                 href=s.url.clone()
-                                                class="badge badge-outline tooltip"
+                                                class="badge badge-primary text-xs tooltip"
                                                 data-tip=s.url.clone()
                                             >
                                                 {label}

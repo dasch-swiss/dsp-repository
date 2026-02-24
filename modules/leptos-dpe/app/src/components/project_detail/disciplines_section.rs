@@ -7,7 +7,7 @@ pub fn DisciplinesSection(disciplines: Vec<Discipline>) -> impl IntoView {
     (!disciplines.is_empty()).then(|| {
         view! {
             <div id="disciplines">
-                <h3 class="text-base font-semibold mb-2">"Disciplines"</h3>
+                <h3 class="font-semibold mb-2">"Disciplines"</h3>
                 <div class="flex flex-wrap gap-2">
                     {disciplines
                         .iter()
@@ -32,7 +32,7 @@ pub fn DisciplinesSection(disciplines: Vec<Discipline>) -> impl IntoView {
                             };
                             match url {
                                 Some(href) => view! {
-                                    <a href=href class="badge badge-primary cursor-pointer">
+                                    <a href=href class="badge badge-primary text-xs">
                                         {label}
                                     </a>
                                 }

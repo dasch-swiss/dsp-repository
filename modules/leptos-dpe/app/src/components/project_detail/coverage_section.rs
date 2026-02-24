@@ -29,7 +29,7 @@ pub fn CoverageSection(
                                                 .collect::<Vec<_>>()
                                                 .join(" / ");
                                             view! {
-                                                <span class="badge badge-primary">{label}</span>
+                                                <span class="badge badge-primary text-xs">{label}</span>
                                             }
                                                 .into_any()
                                         }
@@ -41,7 +41,7 @@ pub fn CoverageSection(
                                             view! {
                                                 <a
                                                     href=ref_.url.clone()
-                                                    class="badge badge-primary tooltip"
+                                                    class="badge badge-primary text-xs tooltip"
                                                     data-tip=ref_.url.clone()
                                                 >
                                                     {label}

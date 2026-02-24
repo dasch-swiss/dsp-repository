@@ -10,9 +10,6 @@ pub fn ProjectHeader(
     url: Option<AuthorityFileReference>,
     secondary_url: Option<AuthorityFileReference>,
 ) -> impl IntoView {
-    leptos::logging::log!("ProjectHeader url: {:?}", url);
-    leptos::logging::log!("ProjectHeader secondary_url: {:?}", secondary_url);
-
     view! {
         <div class="card border border-gray-200">
             <figure>

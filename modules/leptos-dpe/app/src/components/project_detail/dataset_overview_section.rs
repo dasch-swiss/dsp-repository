@@ -40,7 +40,7 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
                                 .iter()
                                 .map(|l| {
                                     view! {
-                                        <span class="badge badge-primary">{l.clone()}</span>
+                                        <span class="badge badge-primary text-xs">{l.clone()}</span>
                                     }
                                 })
                                 .collect_view()}
@@ -61,7 +61,7 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
                                 .iter()
                                 .map(|k| {
                                     view! {
-                                        <span class="badge badge-primary">{k.clone()}</span>
+                                        <span class="badge badge-primary text-xs">{k.clone()}</span>
                                     }
                                 })
                                 .collect_view()}

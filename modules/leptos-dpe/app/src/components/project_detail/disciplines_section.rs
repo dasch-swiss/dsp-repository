@@ -38,7 +38,7 @@ pub fn DisciplinesSection(disciplines: Vec<Discipline>) -> impl IntoView {
                                 }
                                 .into_any(),
                                 None => view! {
-                                    <span class="badge badge-primary">{label}</span>
+                                    <span class="badge badge-primary text-xs">{label}</span>
                                 }
                                 .into_any(),
                             }

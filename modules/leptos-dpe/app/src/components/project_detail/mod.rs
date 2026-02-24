@@ -1,4 +1,5 @@
 pub mod access_rights_section;
+pub mod cite_project_section;
 pub mod attributions_section;
 pub mod breadcrumb;
 pub mod contributor;

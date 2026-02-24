@@ -52,6 +52,7 @@ pub use icondata::{
 };
 use leptos::prelude::*;
 
+
 /// Icon component for rendering SVG icons with consistent styling.
 ///
 /// # Props

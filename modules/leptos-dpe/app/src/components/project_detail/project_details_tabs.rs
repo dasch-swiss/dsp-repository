@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use leptos::{component, view, IntoView};
-use mosaic_tiles::icon::{Icon, Search};
+use mosaic_tiles::icon::{Data, Icon, People, Search};
 
 use crate::components::project_detail::attributions_section::AttributionsSection;
 use crate::components::project_detail::dataset_overview_section::DatasetOverviewSection;
@@ -21,7 +21,7 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
             </div>
 
             <label class="tab">
-                <Icon icon=Search class="h-6 text-neutral-400" />
+                <Icon icon=Data class="h-6 text-neutral-400" />
 
                 <input type="radio" name="my_tabs" />
                 Data
@@ -29,7 +29,7 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
             <div class="tab-content border-base-300 bg-base-100 p-4">Tab content 2</div>
 
             <label class="tab">
-                <Icon icon=Search class="h-6 text-neutral-400" />
+                <Icon icon=People class="h-6 text-neutral-400" />
 
                 <input type="radio" name="my_tabs" />
                 Contributors

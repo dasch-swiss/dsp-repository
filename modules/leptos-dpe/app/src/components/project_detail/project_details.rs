@@ -15,6 +15,7 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
                   <ProjectHeader
                       name=proj.name.clone()
                       description=proj.description.get("en").cloned().unwrap_or_default()
+                      alternative_names=proj.alternative_names.as_deref().unwrap_or_default().iter().filter_map(|m| m.get("en").cloned()).collect()
                       url=proj.url.clone()
                       secondary_url=proj.secondary_url.clone()
                   />

@@ -7,6 +7,7 @@ use crate::domain::models::AuthorityFileReference;
 pub fn ProjectHeader(
     name: String,
     description: String,
+    alternative_names: Vec<String>,
     url: Option<AuthorityFileReference>,
     secondary_url: Option<AuthorityFileReference>,
 ) -> impl IntoView {
@@ -23,6 +24,12 @@ pub fn ProjectHeader(
             <div class="card-body">
                 <h2 class="card-title text-3xl text-ellipsis">{name}</h2>
                 <p class="text-lg mt-4">{description}</p>
+                {(!alternative_names.is_empty()).then(|| view! {
+                    <p class="text-sm text-gray-600">
+                        <span>"Also known as: "</span>
+                        {alternative_names.into_iter().map(|name| view! { <span>{name}</span> }).collect_view()}
+                    </p>
+                })}
                 <div class="flex gap-4">
                     {url.map(|u| {
                         let label = u.text.clone().unwrap_or_else(|| u.url.clone());

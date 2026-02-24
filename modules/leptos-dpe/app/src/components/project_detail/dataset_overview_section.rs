@@ -2,11 +2,10 @@ use leptos::prelude::*;
 
 use crate::components::project_detail::coverage_section::CoverageSection;
 use crate::components::project_detail::disciplines_section::DisciplinesSection;
-use crate::components::project_detail::lang_utils::{group_by_language_as_paragraphs, lang_map_to_views};
+use crate::components::project_detail::lang_utils::lang_map_to_views;
 use crate::components::project_detail::link_list_section::LinkListSection;
 use crate::components::project_detail::publication_year::PublicationYear;
 use crate::components::project_detail::type_of_data_section::TypeOfDataSection;
-use crate::components::*;
 use crate::domain::Project;
 
 #[component]
@@ -20,12 +19,6 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
         .iter()
         .filter_map(|map| map.get("en").cloned())
         .collect();
-    let alt_names_content = proj
-        .alternative_names
-        .as_deref()
-        .map(group_by_language_as_paragraphs)
-        .unwrap_or_default();
-
     view! {
         <div class="space-y-4">
         <TypeOfDataSection type_of_data=proj.type_of_data.clone() />
@@ -77,19 +70,6 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
             temporal_coverage=proj.temporal_coverage.clone()
             spatial_coverage=proj.spatial_coverage.clone()
         />
-
-        {(!alt_names_content.is_empty())
-            .then(|| {
-                view! {
-                    <div id="alternative-names" class="scroll-mt-52">
-                        <LanguageTabs
-                            title="Alternative Names".to_string()
-                            content=alt_names_content
-                        />
-                    </div>
-                }
-                    .into_any()
-            })}
 
         {proj
             .collections

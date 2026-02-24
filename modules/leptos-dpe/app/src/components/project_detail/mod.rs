@@ -24,6 +24,5 @@ pub mod project_header;
 pub mod publication_tab;
 pub mod publication_year;
 pub mod publications_section;
-pub mod table_of_contents;
 pub mod type_of_data_section;
 pub mod url_badge;

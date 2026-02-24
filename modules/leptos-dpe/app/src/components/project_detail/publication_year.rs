@@ -2,12 +2,10 @@ use leptos::prelude::*;
 
 #[component]
 pub fn PublicationYear(year: Option<String>) -> impl IntoView {
-    year.map(|year| {
-        view! {
-            <div class="text-sm">
-                <span class="font-semibold">"Publication Year: "</span>
-                {year}
-            </div>
-        }
-    })
+    view! {
+        <div class="text-sm">
+            <h3 class="text-base font-semibold mb-3">"Data Publication Year"</h3>
+            {year.map(|year| view! { <span>{year}</span> })}
+        </div>
+    }
 }

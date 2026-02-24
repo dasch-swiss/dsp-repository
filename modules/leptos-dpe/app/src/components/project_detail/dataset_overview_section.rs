@@ -4,7 +4,7 @@ use crate::components::project_detail::coverage_section::CoverageSection;
 use crate::components::project_detail::disciplines_section::DisciplinesSection;
 use crate::components::project_detail::lang_utils::{group_by_language_as_paragraphs, lang_map_to_views};
 use crate::components::project_detail::link_list_section::LinkListSection;
-use crate::components::project_detail::project_metadata::ProjectMetadata;
+use crate::components::project_detail::publication_year::PublicationYear;
 use crate::components::project_detail::type_of_data_section::TypeOfDataSection;
 use crate::components::*;
 use crate::domain::Project;
@@ -48,8 +48,7 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
                 }
                     .into_any()
             })}
-
-        <ProjectMetadata data_publication_year=proj.data_publication_year.clone() />
+                <PublicationYear year=proj.data_publication_year.clone() />
 
         {(!english_keywords.is_empty())
             .then(|| {

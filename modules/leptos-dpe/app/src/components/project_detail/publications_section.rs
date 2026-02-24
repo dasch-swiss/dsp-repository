@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 
+use crate::components::project_detail::info_card::InfoCard;
 use crate::domain::Publication;
 
 #[component]
@@ -12,10 +13,10 @@ pub fn PublicationsSection(publications: Vec<Publication>) -> impl IntoView {
             <h3 class="text-base font-semibold mb-3">"Publications"</h3>
             <div class="space-y-2 text-sm">
                 {publications
-                    .iter()
+                    .into_iter()
                     .map(|pub_| {
                         view! {
-                            <div>
+                            <InfoCard>
                                 {(!pub_.text.is_empty())
                                     .then(|| {
                                         view! {
@@ -39,7 +40,7 @@ pub fn PublicationsSection(publications: Vec<Publication>) -> impl IntoView {
                                             </a>
                                         }
                                     })}
-                            </div>
+                            </InfoCard>
                         }
                     })
                     .collect_view()}

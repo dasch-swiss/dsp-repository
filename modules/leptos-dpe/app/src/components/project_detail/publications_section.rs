@@ -1,7 +1,7 @@
-use leptos::prelude::*;
-
 use crate::components::project_detail::info_card::InfoCard;
 use crate::domain::Publication;
+use leptos::prelude::*;
+use mosaic_tiles::icon::{Export, Icon};
 
 #[component]
 pub fn PublicationsSection(publications: Vec<Publication>) -> impl IntoView {
@@ -10,7 +10,7 @@ pub fn PublicationsSection(publications: Vec<Publication>) -> impl IntoView {
             id="publications"
             class="bg-base-100 rounded-lg scroll-mt-52"
         >
-            <h3 class="font-semibold mb-3">"Publications"</h3>
+            <h3 class="dpe-subtitle">"Publications"</h3>
             <div class="space-y-2 text-sm">
                 {publications
                     .into_iter()
@@ -31,12 +31,14 @@ pub fn PublicationsSection(publications: Vec<Publication>) -> impl IntoView {
                                         view! {
                                             <a
                                                 href=pid.url.clone()
-                                                class="link link-primary ml-2"
+                                                class="link link-primary ml-2 inline-flex gap-1"
                                             >
                                                 {pid
                                                     .text
                                                     .clone()
                                                     .unwrap_or_else(|| pid.url.clone())}
+                    <Icon icon=Export class="w-3 h-3" style="align-self: center" />
+
                                             </a>
                                         }
                                     })}

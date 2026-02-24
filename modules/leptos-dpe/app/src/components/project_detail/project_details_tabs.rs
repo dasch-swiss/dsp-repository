@@ -4,13 +4,12 @@ use mosaic_tiles::icon::{Data, Document, Icon, Info, People};
 
 use crate::components::project_detail::attributions_section::AttributionsSection;
 use crate::components::project_detail::dataset_overview_section::DatasetOverviewSection;
-use crate::components::project_detail::lang_utils::lang_map_to_views;
 use crate::components::project_detail::publication_tab::PublicationTab;
 use crate::domain::{Attribution, Project};
 
 #[component]
 pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl IntoView {
-    let abstracts = lang_map_to_views(&proj.abstract_text.clone().unwrap_or_default());
+    let abstract_en = proj.abstract_text.as_ref().and_then(|m| m.get("en").cloned());
     let publications = proj.publications.clone();
 
     view! {
@@ -40,7 +39,7 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
                 Publications
             </label>
             <div class="tab-content border-base-300 bg-base-100 p-4">
-                <PublicationTab abstracts=abstracts publications=publications />
+                <PublicationTab abstract_en=abstract_en publications=publications />
             </div>
 
 

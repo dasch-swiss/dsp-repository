@@ -1,19 +1,14 @@
-use std::collections::HashMap;
-
 use leptos::prelude::*;
 
 use crate::components::project_detail::publications_section::PublicationsSection;
-use crate::components::*;
 use crate::domain::Publication;
 
 #[component]
-pub fn PublicationTab(abstracts: HashMap<String, AnyView>, publications: Option<Vec<Publication>>) -> impl IntoView {
+pub fn PublicationTab(abstract_en: Option<String>, publications: Option<Vec<Publication>>) -> impl IntoView {
     view! {
         <div id="abstract" class="scroll-mt-52">
-            <LanguageTabs
-                title="Abstract".to_string()
-                content=abstracts
-            />
+            <h3 class="text-xl font-bold mb-3">"Abstract"</h3>
+            {abstract_en.map(|text| view! { <p class="leading-relaxed">{text}</p> })}
         </div>
 
         {publications

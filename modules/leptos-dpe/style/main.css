@@ -1,6 +1,11 @@
 @import 'tailwindcss';
+
 @plugin "@tailwindcss/typography";
 
 @plugin "daisyui" {
-  themes: light --default, dark --prefersdark;
+    themes: light --default, dark --prefersdark;
+}
+
+@utility dpe-subtitle {
+    @apply text-sm font-semibold mb-2;
 }

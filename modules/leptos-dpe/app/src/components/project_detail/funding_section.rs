@@ -12,7 +12,7 @@ pub fn FundingSection(funding: Funding) -> impl IntoView {
                     let grants_clone = grants.clone();
                     view! {
                         <div class="space-y-2">
-                            <div class="font-semibold">"Grants"</div>
+                            <div class="dpe-subtitle">"Grants"</div>
                             {grants_clone
                                 .into_iter()
                                 .map(|grant| {

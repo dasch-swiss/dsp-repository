@@ -28,7 +28,7 @@ pub fn Permalink(permalink: String) -> impl IntoView {
 
     view! {
         <div class="space-y-2">
-            <h3 class="font-semibold">"Permalink"</h3>
+            <h3 class="dpe-subtitle">"Permalink"</h3>
             <InfoCard>
                 <div class="flex items-center justify-between gap-3">
                     <a href={permalink.clone()} class="text-blue-600 hover:underline break-all flex-1">

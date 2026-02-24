@@ -11,7 +11,7 @@ use crate::domain::Project;
 pub fn CiteProjectSection(proj: Project) -> impl IntoView {
     view! {
         <div class="border border-gray-200 rounded-lg p-6 space-y-4 text-sm">
-            <h2 class="text-lg font-semibold">"Cite this Project"</h2>
+            <h2 class="dpe-title">"Cite this Project"</h2>
 
         <div>
             <Permalink permalink=proj.pid.clone() />
@@ -21,7 +21,7 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
         </div>
             <div class="border-t border-gray-200"></div>
 
-            <h3 class="text-base font-semibold">"Data Access"</h3>
+            <h3 class="dpe-title">"Data Access"</h3>
             <AccessRightsSection access_rights=proj.access_rights.clone() />
 
             {(!proj.legal_info.is_empty())
@@ -38,19 +38,19 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
 
             <div class="border-t border-gray-200"></div>
 
-            <h3 class="text-base font-semibold">"Project Timeline"</h3>
+            <h3 class="dpe-title">"Project Timeline"</h3>
         <div>
-            <div class="font-semibold">"Period"</div>
+            <div class="dpe-subtitle">"Period"</div>
             <div>"TODO"</div>
         </div>
         <div>
-            <div class="font-semibold mt-2">"Status"</div>
+            <div class="dpe-subtitle">"Status"</div>
             <div>"Ongoing"</div>
         </div>
 
             <div class="border-t border-gray-200"></div>
 
-            <h3 class="text-base font-semibold">"Funding"</h3>
+            <h3 class="dpe-title">"Funding"</h3>
 
             <FundingSection funding=proj.funding.clone() />
         </div>

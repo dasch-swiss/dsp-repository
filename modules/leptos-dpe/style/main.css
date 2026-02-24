@@ -6,6 +6,10 @@
     themes: light --default, dark --prefersdark;
 }
 
+@utility dpe-title {
+    @apply text-base font-semibold text-gray-700 mb-2;
+}
+
 @utility dpe-subtitle {
-    @apply text-sm font-semibold mb-2;
+    @apply text-sm font-semibold text-gray-600 mb-2;
 }

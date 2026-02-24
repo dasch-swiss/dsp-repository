@@ -6,7 +6,7 @@ use crate::domain::{AccessRights, AccessRightsType};
 pub fn AccessRightsSection(access_rights: AccessRights) -> impl IntoView {
     view! {
         <div id="access-rights">
-            <div class="font-semibold">"Access Rights"</div>
+            <div class="dpe-subtitle">"Access Rights"</div>
             <div>
                 {match access_rights.access_rights {
                     AccessRightsType::FullOpenAccess => "Full Open Access",

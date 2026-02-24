@@ -1,8 +1,90 @@
 use leptos::prelude::*;
 use leptos_router::params::Params;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use super::models::AuthorityFileReference;
+
+fn make_ref(url: String) -> AuthorityFileReference {
+    AuthorityFileReference { type_: "URL".to_string(), url, text: None }
+}
+
+/// Parses the `"url"` JSON value — either a structured object (new format)
+/// or a legacy string array — into primary and secondary references.
+fn parse_url_value(value: Option<Value>) -> (Option<AuthorityFileReference>, Option<AuthorityFileReference>) {
+    match value {
+        Some(Value::Object(_)) => (serde_json::from_value::<AuthorityFileReference>(value.unwrap()).ok(), None),
+        Some(Value::Array(arr)) => {
+            let mut strings = arr.into_iter().filter_map(|v| v.as_str().map(str::to_string));
+            (strings.next().map(make_ref), strings.next().map(make_ref))
+        }
+        _ => (None, None),
+    }
+}
+
+#[derive(Deserialize)]
+struct ProjectRaw {
+    pub id: String,
+    pub pid: String,
+    pub name: String,
+    pub shortcode: String,
+    #[serde(rename = "officialName")]
+    pub official_name: String,
+    pub status: ProjectStatus,
+    #[serde(rename = "shortDescription")]
+    pub short_description: String,
+    pub description: std::collections::HashMap<String, String>,
+    #[serde(rename = "startDate")]
+    pub start_date: String,
+    #[serde(rename = "endDate")]
+    pub end_date: String,
+    /// Raw value — either a structured object or a legacy string array.
+    #[serde(default)]
+    pub url: Option<Value>,
+    /// New-format secondary URL (absent in legacy files).
+    #[serde(rename = "secondaryURL", default)]
+    pub secondary_url: Option<AuthorityFileReference>,
+    #[serde(rename = "howToCite")]
+    pub how_to_cite: String,
+    #[serde(rename = "accessRights")]
+    pub access_rights: AccessRights,
+    #[serde(rename = "legalInfo")]
+    pub legal_info: Vec<LegalInfo>,
+    #[serde(rename = "dataManagementPlan", default)]
+    pub data_management_plan: Option<String>,
+    #[serde(rename = "dataPublicationYear", default)]
+    pub data_publication_year: Option<String>,
+    #[serde(rename = "typeOfData", default)]
+    pub type_of_data: Option<Vec<String>>,
+    #[serde(rename = "dataLanguage", default)]
+    pub data_language: Option<Vec<std::collections::HashMap<String, String>>>,
+    #[serde(default)]
+    pub collections: Option<Vec<String>>,
+    #[serde(default)]
+    pub records: Option<Vec<String>>,
+    pub keywords: Vec<std::collections::HashMap<String, String>>,
+    pub disciplines: Vec<Discipline>,
+    #[serde(rename = "temporalCoverage")]
+    pub temporal_coverage: Vec<TemporalCoverage>,
+    #[serde(rename = "spatialCoverage")]
+    pub spatial_coverage: Vec<AuthorityFileReference>,
+    pub attributions: Vec<Attribution>,
+    #[serde(rename = "abstract", default)]
+    pub abstract_text: Option<std::collections::HashMap<String, String>>,
+    #[serde(rename = "contactPoint", default)]
+    pub contact_point: Option<Vec<String>>,
+    #[serde(default)]
+    pub publications: Option<Vec<Publication>>,
+    pub funding: Funding,
+    #[serde(rename = "alternativeNames", default)]
+    pub alternative_names: Option<Vec<std::collections::HashMap<String, String>>>,
+    #[serde(rename = "documentationMaterial", default)]
+    pub documentation_material: Option<Vec<String>>,
+    #[serde(default)]
+    pub provenance: Option<String>,
+    #[serde(rename = "additionalMaterial", default)]
+    pub additional_material: Option<Vec<String>>,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize, Params, PartialEq, Default)]
 pub struct ProjectQuery {
@@ -87,65 +169,95 @@ pub enum AccessRightsType {
     MetadataOnlyAccess,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize)]
+#[serde(try_from = "ProjectRaw")]
 pub struct Project {
     pub id: String,
     pub pid: String,
     pub name: String,
     pub shortcode: String,
-    #[serde(rename = "officialName")]
     pub official_name: String,
     pub status: ProjectStatus,
-    #[serde(rename = "shortDescription")]
     pub short_description: String,
     pub description: std::collections::HashMap<String, String>,
-    #[serde(rename = "startDate")]
     pub start_date: String,
-    #[serde(rename = "endDate")]
     pub end_date: String,
     pub url: Option<AuthorityFileReference>,
-    #[serde(rename = "secondaryURL", default)]
     pub secondary_url: Option<AuthorityFileReference>,
-    #[serde(rename = "howToCite")]
     pub how_to_cite: String,
-    #[serde(rename = "accessRights")]
     pub access_rights: AccessRights,
-    #[serde(rename = "legalInfo")]
     pub legal_info: Vec<LegalInfo>,
-    #[serde(rename = "dataManagementPlan", default)]
     pub data_management_plan: Option<String>,
-    #[serde(rename = "dataPublicationYear", default)]
     pub data_publication_year: Option<String>,
-    #[serde(rename = "typeOfData", default)]
     pub type_of_data: Option<Vec<String>>,
-    #[serde(rename = "dataLanguage", default)]
     pub data_language: Option<Vec<std::collections::HashMap<String, String>>>,
-    #[serde(default)]
     pub collections: Option<Vec<String>>,
-    #[serde(default)]
     pub records: Option<Vec<String>>,
     pub keywords: Vec<std::collections::HashMap<String, String>>,
     pub disciplines: Vec<Discipline>,
-    #[serde(rename = "temporalCoverage")]
     pub temporal_coverage: Vec<TemporalCoverage>,
-    #[serde(rename = "spatialCoverage")]
     pub spatial_coverage: Vec<AuthorityFileReference>,
     pub attributions: Vec<Attribution>,
-    #[serde(rename = "abstract", default)]
     pub abstract_text: Option<std::collections::HashMap<String, String>>,
-    #[serde(rename = "contactPoint", default)]
     pub contact_point: Option<Vec<String>>,
-    #[serde(default)]
     pub publications: Option<Vec<Publication>>,
     pub funding: Funding,
-    #[serde(rename = "alternativeNames", default)]
     pub alternative_names: Option<Vec<std::collections::HashMap<String, String>>>,
-    #[serde(rename = "documentationMaterial", default)]
     pub documentation_material: Option<Vec<String>>,
-    #[serde(default)]
     pub provenance: Option<String>,
-    #[serde(rename = "additionalMaterial", default)]
     pub additional_material: Option<Vec<String>>,
+}
+
+impl<'de> Deserialize<'de> for Project {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = ProjectRaw::deserialize(deserializer)?;
+        Ok(Project::from(raw))
+    }
+}
+
+impl From<ProjectRaw> for Project {
+    fn from(raw: ProjectRaw) -> Self {
+        let (url, secondary_url_from_array) = parse_url_value(raw.url);
+        // New-format files have `secondaryURL` as a separate key; legacy files encode
+        // it as the second element of the `url` array.
+        let secondary_url = raw.secondary_url.or(secondary_url_from_array);
+        Project {
+            id: raw.id,
+            pid: raw.pid,
+            name: raw.name,
+            shortcode: raw.shortcode,
+            official_name: raw.official_name,
+            status: raw.status,
+            short_description: raw.short_description,
+            description: raw.description,
+            start_date: raw.start_date,
+            end_date: raw.end_date,
+            url,
+            secondary_url,
+            how_to_cite: raw.how_to_cite,
+            access_rights: raw.access_rights,
+            legal_info: raw.legal_info,
+            data_management_plan: raw.data_management_plan,
+            data_publication_year: raw.data_publication_year,
+            type_of_data: raw.type_of_data,
+            data_language: raw.data_language,
+            collections: raw.collections,
+            records: raw.records,
+            keywords: raw.keywords,
+            disciplines: raw.disciplines,
+            temporal_coverage: raw.temporal_coverage,
+            spatial_coverage: raw.spatial_coverage,
+            attributions: raw.attributions,
+            abstract_text: raw.abstract_text,
+            contact_point: raw.contact_point,
+            publications: raw.publications,
+            funding: raw.funding,
+            alternative_names: raw.alternative_names,
+            documentation_material: raw.documentation_material,
+            provenance: raw.provenance,
+            additional_material: raw.additional_material,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

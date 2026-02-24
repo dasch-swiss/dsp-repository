@@ -9,7 +9,6 @@ pub fn CoverageSection(
     spatial_coverage: Vec<AuthorityFileReference>,
 ) -> impl IntoView {
     view! {
-        <div>
             {(!temporal_coverage.is_empty())
                 .then(|| {
                     view! {
@@ -90,6 +89,5 @@ pub fn CoverageSection(
                     }
                         .into_any()
                 })}
-        </div>
     }
 }

@@ -30,7 +30,7 @@ pub fn Citation(citation: String) -> impl IntoView {
         <div class="space-y-2">
             <h3 class="font-semibold">"Citation"</h3>
             <InfoCard>
-                <div class="space-y-3 flex items-center">
+                <div class="flex items-center">
                     <div class="flex-1">{citation.clone()}</div>
                     <button
                         class="btn btn-xs btn-ghost tooltip tooltip-left"

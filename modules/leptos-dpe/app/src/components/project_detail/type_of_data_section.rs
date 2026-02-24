@@ -13,7 +13,7 @@ pub fn TypeOfDataSection(type_of_data: Option<Vec<String>>) -> impl IntoView {
                         .iter()
                         .map(|t| {
                             view! {
-                                <span class="badge badge-primary">
+                                <span class="badge badge-primary text-xs">
                                     {t.clone()}
                                 </span>
                             }

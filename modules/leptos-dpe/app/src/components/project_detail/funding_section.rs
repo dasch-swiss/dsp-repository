@@ -6,8 +6,7 @@ use crate::domain::Funding;
 #[component]
 pub fn FundingSection(funding: Funding) -> impl IntoView {
     view! {
-        <div id="funding" class="space-y-2">
-            <h3 class="text-base font-semibold">"Funding"</h3>
+        <div id="funding">
             {match funding {
                 Funding::Grants(grants) => {
                     let grants_clone = grants.clone();

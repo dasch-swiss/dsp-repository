@@ -27,13 +27,14 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
         .unwrap_or_default();
 
     view! {
+        <div class="space-y-4">
         <TypeOfDataSection type_of_data=proj.type_of_data.clone() />
 
         {(!data_languages.is_empty())
             .then(|| {
                 view! {
                     <div id="data-languages" class="scroll-mt-52">
-                        <h3 class="text-base font-semibold mb-3">"Data Languages"</h3>
+                        <h3 class="text-base font-semibold mb-2">"Data Languages"</h3>
                         <div class="flex flex-wrap gap-2">
                             {data_languages
                                 .iter()
@@ -54,7 +55,7 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
             .then(|| {
                 view! {
                     <div id="keywords" class="scroll-mt-52">
-                        <h3 class="text-base font-semibold mb-3">"Keywords"</h3>
+                        <h3 class="text-base font-semibold mb-2">"Keywords"</h3>
                         <div class="flex flex-wrap gap-2">
                             {english_keywords
                                 .iter()
@@ -155,5 +156,6 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
                     </div>
                 }
             })}
+        </div>
     }
 }

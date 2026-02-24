@@ -10,7 +10,7 @@ use crate::domain::Project;
 #[component]
 pub fn CiteProjectSection(proj: Project) -> impl IntoView {
     view! {
-        <div class="border border-gray-200 rounded-lg p-6 space-y-6 text-sm">
+        <div class="border border-gray-200 rounded-lg p-6 space-y-4 text-sm">
             <h2 class="text-lg font-semibold">"Cite this Project"</h2>
 
         <div>
@@ -19,7 +19,7 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
         <div>
             <Citation citation=proj.how_to_cite.clone() />
         </div>
-            <div class="border-t border-gray-200 mt-4"></div>
+            <div class="border-t border-gray-200"></div>
 
             <h3 class="text-base font-semibold">"Data Access"</h3>
             <AccessRightsSection access_rights=proj.access_rights.clone() />
@@ -36,14 +36,21 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
                     }
                 })}
 
-            <div class="border-t border-gray-200 mt-4 pt-4"></div>
+            <div class="border-t border-gray-200"></div>
 
             <h3 class="text-base font-semibold">"Project Timeline"</h3>
+        <div>
             <div class="font-semibold">"Period"</div>
-            <div>"2006-10-01 - 2024-12-31"</div>
+            <div>"TODO"</div>
+        </div>
+        <div>
             <div class="font-semibold mt-2">"Status"</div>
             <div>"Ongoing"</div>
+        </div>
+
             <div class="border-t border-gray-200"></div>
+
+            <h3 class="text-base font-semibold">"Funding"</h3>
 
             <FundingSection funding=proj.funding.clone() />
         </div>

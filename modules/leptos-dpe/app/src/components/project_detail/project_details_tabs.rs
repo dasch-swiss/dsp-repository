@@ -15,7 +15,7 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
     view! {
         <div class="tabs tabs-lift">
             <label class="tab">
-                <Icon icon=Info class="h-6 text-neutral-400" />
+                <Icon icon=Info class="h-6 text-neutral-400 mr-2" />
 
                 <input type="radio" name="my_tabs" checked="checked" />
                 Dataset Overview
@@ -25,7 +25,7 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
             </div>
 
             <label class="tab">
-                <Icon icon=Data class="h-6 text-neutral-400" />
+                <Icon icon=Data class="h-6 text-neutral-400 mr-2" />
 
                 <input type="radio" name="my_tabs" />
                 Data
@@ -33,7 +33,7 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
             <div class="tab-content border-base-300 bg-base-100 p-4">Tab content 2</div>
 
         <label class="tab">
-                <Icon icon=Document class="h-6 text-neutral-400" />
+                <Icon icon=Document class="h-6 text-neutral-400 mr-2" />
 
                 <input type="radio" name="my_tabs" />
                 Publications
@@ -44,7 +44,7 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
 
 
             <label class="tab">
-                <Icon icon=People class="h-6 text-neutral-400" />
+                <Icon icon=People class="h-6 text-neutral-400 mr-2" />
 
                 <input type="radio" name="my_tabs" />
                 Contributors

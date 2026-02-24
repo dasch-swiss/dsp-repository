@@ -16,7 +16,7 @@ pub fn CoverageSection(
                         <div
                             id="temporal-coverage"
                         >
-                            <h3 class="text-base font-semibold mb-3">
+                            <h3 class="text-base font-semibold mb-2">
                                 "Temporal Coverage"
                             </h3>
                             <div class="flex flex-wrap gap-2">
@@ -63,7 +63,7 @@ pub fn CoverageSection(
                         <div
                             id="spatial-coverage"
                         >
-                            <h3 class="text-base font-semibold mb-3">
+                            <h3 class="text-base font-semibold mb-2">
                                 "Spatial Coverage"
                             </h3>
                             <div class="flex flex-wrap gap-2">

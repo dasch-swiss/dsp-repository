@@ -5,7 +5,7 @@ use crate::domain::{AccessRights, AccessRightsType};
 #[component]
 pub fn AccessRightsSection(access_rights: AccessRights) -> impl IntoView {
     view! {
-        <div id="access-rights" class="space-y-2">
+        <div id="access-rights">
             <div class="font-semibold">"Access Rights"</div>
             <div>
                 {match access_rights.access_rights {

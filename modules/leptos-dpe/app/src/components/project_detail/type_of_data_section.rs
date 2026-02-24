@@ -7,7 +7,7 @@ pub fn TypeOfDataSection(type_of_data: Option<Vec<String>>) -> impl IntoView {
             <div
                 id="type-of-data"
             >
-                <h3 class="text-base font-semibold mb-3">"Type of Data"</h3>
+                <h3 class="text-base font-semibold mb-2">"Type of Data"</h3>
                 <div class="flex flex-wrap gap-2">
                     {types
                         .iter()

@@ -6,6 +6,8 @@
     themes: light --default, dark --prefersdark;
 }
 
+@import './daisy-ui-theme.css';
+
 @utility dpe-title {
     @apply text-base font-semibold text-gray-700 mb-2;
 }

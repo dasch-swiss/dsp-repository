@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-const TRUNCATE_THRESHOLD: usize = 300;
+const TRUNCATE_THRESHOLD: usize = 500;
 
 #[island]
 pub fn Description(text: String) -> impl IntoView {
@@ -8,7 +8,6 @@ pub fn Description(text: String) -> impl IntoView {
     let (expanded, set_expanded) = signal(false);
 
     view! {
-        <div>
             <p class="text-lg" class:line-clamp-4=move || is_long && !expanded.get()>
                 {text}
             </p>
@@ -20,6 +19,5 @@ pub fn Description(text: String) -> impl IntoView {
                     {move || if expanded.get() { "Show less" } else { "Show more" }}
                 </button>
             })}
-        </div>
     }
 }

@@ -2,8 +2,8 @@ use leptos::prelude::*;
 use leptos_meta::Title;
 use leptos_router::hooks::use_params_map;
 
-use crate::components::loading::Loading;
 use super::project_loader::ProjectLoader;
+use crate::components::loading::Loading;
 
 #[component]
 pub fn ProjectPage() -> impl IntoView {
@@ -12,7 +12,7 @@ pub fn ProjectPage() -> impl IntoView {
 
     view! {
         <Title text=move || format!("Project {}", shortcode()) />
-        <div class="min-h-100 py-6">
+        <div class="min-h-100">
             <Suspense fallback=move || {
                 view! { <Loading /> }
             }>

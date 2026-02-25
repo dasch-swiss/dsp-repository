@@ -32,7 +32,9 @@ pub fn ProjectHeader(
                         {alternative_names.into_iter().map(|name| view! { <span>{name}</span> }).collect_view()}
                     </p>
                 })}
+        <div>
         <Description text=description />
+        </div>
 
                 <div class="flex gap-4">
                     {url.map(|u| {

@@ -7,7 +7,7 @@ mod components;
 mod domain;
 mod pages;
 
-use components::{Footer, NavBar};
+use components::{Footer, Header};
 use pages::{AboutPage, ProjectPage, ProjectsPage};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
@@ -56,7 +56,7 @@ pub fn App() -> impl IntoView {
 
         <div class="bg-gray-50 min-h-screen flex flex-col gap-4">
             // content for this welcome page
-            <NavBar />
+            <Header />
 
             <Router>
                 <main class="flex-1 max-w-7xl mx-auto px-4 w-full">

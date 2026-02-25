@@ -27,13 +27,13 @@ pub fn ProjectViewToggle() -> impl IntoView {
     let list_view_url = build_url(true);
 
     let grid_class = if !current_view {
-        "btn btn-secondary btn-sm"
+        "btn btn-soft btn-sm"
     } else {
         "btn btn-ghost btn-sm"
     };
 
     let list_class = if current_view {
-        "btn btn-secondary btn-sm"
+        "btn btn-soft btn-sm"
     } else {
         "btn btn-ghost btn-sm"
     };

@@ -43,7 +43,7 @@ pub fn ProjectHeader(
                     {secondary_url.map(|u| {
                         let label = u.text.clone().unwrap_or_else(|| u.url.clone());
                         view! {
-                            <a class="btn btn-secondary" href=u.url>
+                            <a class="btn btn-outline btn-primary" href=u.url>
                                 {label}
                                 <Icon icon=Export class="w-5 h-5" />
                             </a>

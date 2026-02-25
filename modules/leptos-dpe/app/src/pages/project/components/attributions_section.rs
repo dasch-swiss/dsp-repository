@@ -10,7 +10,7 @@ pub fn AttributionsSection(attributions: Vec<Attribution>) -> impl IntoView {
             <div
                 class="bg-base-100 p-6 rounded-lg scroll-mt-52"
             >
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid md:grid-cols-1 lg:grid-cols-2 gap-2">
                     {attributions
                         .into_iter()
                         .map(|attr| view! { <Contributor attr /> })

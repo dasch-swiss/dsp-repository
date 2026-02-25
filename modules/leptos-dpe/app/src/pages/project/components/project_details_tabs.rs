@@ -2,10 +2,10 @@ use leptos::prelude::*;
 use leptos::{component, view, IntoView};
 use mosaic_tiles::icon::{Data, Document, Icon, Info, People};
 
+use crate::domain::{Attribution, Project};
 use crate::pages::project::components::attributions_section::AttributionsSection;
 use crate::pages::project::components::dataset_overview_section::DatasetOverviewSection;
 use crate::pages::project::components::publication_tab::PublicationTab;
-use crate::domain::{Attribution, Project};
 
 #[component]
 pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl IntoView {
@@ -30,7 +30,7 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
                 <input type="radio" name="my_tabs" />
                 Data
             </label>
-            <div class="tab-content border-base-300 bg-base-100 p-4">Tab content 2</div>
+            <div class="tab-content border-base-300 bg-base-100 p-4">TODO</div>
 
         <label class="tab">
                 <Icon icon=Document class="h-6 text-neutral-400 mr-2" />

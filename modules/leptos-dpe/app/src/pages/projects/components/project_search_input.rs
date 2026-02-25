@@ -69,7 +69,7 @@ pub fn ProjectSearchInput() -> impl IntoView {
 
         <button
                     type="submit"
-                    class="btn btn-primary btn-sm"
+                    class="btn btn-primary btn-sm mr-2"
                 >
                     "Search"
                 </button>

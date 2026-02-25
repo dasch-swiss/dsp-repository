@@ -1,16 +1,16 @@
 use leptos::prelude::*;
 
+use super::legal_info::LegalInfo;
+use crate::domain::Project;
 use crate::pages::project::components::access_rights_section::AccessRightsSection;
 use crate::pages::project::components::citation::Citation;
 use crate::pages::project::components::funding_section::FundingSection;
 use crate::pages::project::components::permalink::Permalink;
-use super::legal_info::LegalInfo;
-use crate::domain::Project;
 
 #[component]
 pub fn CiteProjectSection(proj: Project) -> impl IntoView {
     view! {
-        <div class="border border-gray-200 rounded-lg p-6 space-y-4 text-sm">
+        <div class="border border-gray-200 rounded-lg p-6 space-y-4 text-sm lg:w-96">
             <h2 class="dpe-title">"Cite this Project"</h2>
 
         <div>

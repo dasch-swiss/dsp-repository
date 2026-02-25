@@ -8,11 +8,13 @@ pub fn Breadcrumb(project_name: String) -> impl IntoView {
         project_name
     };
 
+    let link_class = "text-primary";
+
     view! {
         <div class="breadcrumbs text-sm">
             <ul>
-                <li><a href="/">"Home"</a></li>
-                <li><a href="/projects">"Projects"</a></li>
+                <li><a href="/" class=link_class>"Home"</a></li>
+                <li><a href="/projects" class=link_class>"Projects"</a></li>
                 <li>{project_name_truncated}</li>
             </ul>
         </div>

@@ -3,6 +3,8 @@ use leptos_router::hooks::use_query;
 
 use crate::domain::ProjectQuery;
 
+use super::filter_checkbox_group::FilterCheckboxGroup;
+
 // Regular component for filters and search - uses simple links that reload the page
 #[component]
 pub fn ProjectFilters() -> impl IntoView {
@@ -34,21 +36,19 @@ pub fn ProjectFilters() -> impl IntoView {
     let filters = [("ongoing", "Ongoing", ongoing), ("finished", "Finished", finished)];
 
     view! {
-        <div class="p-4 border border-gray-200 rounded-xl bg-base-100" style="min-width: 300px">
+        <div class="p-4 border border-gray-200 rounded-lg bg-base-100 w-72">
                 <h4 class="dpe-title mb-4">Filters</h4>
-                <h5 class="dpe-subtitle">Status</h5>
-                {filters.iter().map(|(param, label, checked)| {
-                    view! {
-                        <a href=build_url(param) class="flex items-center gap-2 cursor-pointer hover:opacity-80 py-1">
-                            <input
-                                type="checkbox"
-                                class="checkbox checkbox-sm pointer-events-none"
-                                checked=*checked
-                            />
-                            <span class="text-sm">{*label}</span>
-                        </a>
-                    }
-                }).collect_view()}
+        <div class="space-y-4">
+            <FilterCheckboxGroup
+                title="Status"
+                items=filters.iter().map(|(param, label, checked)| {
+                    (label.to_string(), *checked, build_url(param))
+                }).collect()
+            />
+        <div class="border-t border-gray-200"></div>
+
+        <div class="dpe-subtitle">Other filters TODO</div>
+        </div>
         </div>
     }
 }

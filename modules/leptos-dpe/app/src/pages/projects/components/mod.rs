@@ -1,4 +1,5 @@
 pub mod card;
+pub mod filter_checkbox_group;
 pub mod project_filters;
 pub mod project_list;
 pub mod project_pagination;

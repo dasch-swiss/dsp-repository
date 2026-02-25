@@ -38,7 +38,7 @@ pub fn ProjectHeader(
 
                 <div class="flex gap-4">
                     {url.map(|u| {
-                        let label = u.text.clone().unwrap_or_else(|| u.url.clone());
+                        let label = u.text.clone().unwrap_or_else(|| "Text not loaded".to_string());
                         view! {
                             <a class="btn btn-primary" href=u.url>
                                 {label}
@@ -47,7 +47,7 @@ pub fn ProjectHeader(
                         }
                     })}
                     {secondary_url.map(|u| {
-                        let label = u.text.clone().unwrap_or_else(|| u.url.clone());
+                        let label = u.text.clone().unwrap_or_else(|| "Text not loaded".to_string());
                         view! {
                             <a class="btn btn-outline btn-primary" href=u.url>
                                 {label}

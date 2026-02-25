@@ -20,7 +20,7 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
                   secondary_url=proj.secondary_url.clone()
               />
 
-    <div class="flex flex-col lg:flex-row gap-6">
+    <div class="flex flex-col lg:flex-row gap-6 lg:items-start">
           <ProjectDetailsTabs proj=proj.clone() attributions=proj.attributions.clone() />
         <CiteProjectSection proj=proj />
     </div>

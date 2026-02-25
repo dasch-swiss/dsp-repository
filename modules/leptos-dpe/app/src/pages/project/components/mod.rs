@@ -6,6 +6,7 @@ pub mod cite_project_section;
 pub mod contributor;
 pub mod coverage_section;
 pub mod dataset_overview_section;
+pub mod description;
 pub mod disciplines_section;
 pub mod funding_section;
 pub mod info_card;

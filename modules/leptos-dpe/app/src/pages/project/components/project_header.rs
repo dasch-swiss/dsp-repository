@@ -1,6 +1,8 @@
 use leptos::prelude::*;
 use mosaic_tiles::icon::{Export, Icon};
 
+use super::description::Description;
+
 use crate::domain::models::AuthorityFileReference;
 
 #[component]
@@ -30,10 +32,7 @@ pub fn ProjectHeader(
                         {alternative_names.into_iter().map(|name| view! { <span>{name}</span> }).collect_view()}
                     </p>
                 })}
-        <div>
-                <p class="text-lg line-clamp-4">{description}</p>
-        <button class="font-semibold mt-2">Show more</button>
-        </div>
+        <Description text=description />
 
                 <div class="flex gap-4">
                     {url.map(|u| {

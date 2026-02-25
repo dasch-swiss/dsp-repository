@@ -54,7 +54,7 @@ pub fn App() -> impl IntoView {
         // sets the document title
         <Title text="DaSCH Metadata Browser Projects Overview" />
 
-        <div class="min-h-screen flex flex-col gap-4">
+        <div class="bg-gray-50 min-h-screen flex flex-col gap-4">
             // content for this welcome page
             <NavBar />
 

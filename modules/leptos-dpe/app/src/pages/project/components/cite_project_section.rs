@@ -10,7 +10,7 @@ use crate::pages::project::components::permalink::Permalink;
 #[component]
 pub fn CiteProjectSection(proj: Project) -> impl IntoView {
     view! {
-        <div class="border border-gray-200 rounded-lg p-4 space-y-4 text-sm lg:w-96">
+        <div class="border border-gray-200 bg-base-100 rounded-lg p-4 space-y-4 text-sm lg:w-96">
             <h2 class="dpe-title">"Cite this Project"</h2>
 
         <div>
@@ -29,7 +29,7 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
                     view! {
                         <div
                             id="legal-information"
-                            class="bg-base-100 rounded-lg scroll-mt-52"
+                            class="rounded-lg scroll-mt-52"
                         >
                             <LegalInfo legal_info=proj.legal_info.clone() />
                         </div>

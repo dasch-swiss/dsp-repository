@@ -12,7 +12,7 @@ pub fn ProjectHeader(
     secondary_url: Option<AuthorityFileReference>,
 ) -> impl IntoView {
     view! {
-        <div class="card border border-gray-200">
+        <div class="card border border-gray-200 bg-base-100">
             <figure>
                 <img
                     class="w-full object-cover"
@@ -22,15 +22,19 @@ pub fn ProjectHeader(
                 />
             </figure>
             <div class="card-body p-8 flex flex-row justify-center">
-        <div class="max-w-3xl space-y-6">
+        <div class="max-w-3xl space-y-4">
                 <h2 class="card-title text-3xl text-ellipsis">{name}</h2>
-                <p class="text-lg">{description}</p>
                 {(!alternative_names.is_empty()).then(|| view! {
                     <p class="text-sm text-gray-600">
                         <span>"Also known as: "</span>
                         {alternative_names.into_iter().map(|name| view! { <span>{name}</span> }).collect_view()}
                     </p>
                 })}
+        <div>
+                <p class="text-lg line-clamp-4">{description}</p>
+        <button class="font-semibold mt-2">Show more</button>
+        </div>
+
                 <div class="flex gap-4">
                     {url.map(|u| {
                         let label = u.text.clone().unwrap_or_else(|| u.url.clone());

@@ -44,7 +44,7 @@ pub fn ProjectSearchInput() -> impl IntoView {
     );
 
     view! {
-        <div class="w-full p-4 border border-gray-200 rounded-xl overflow-hidden">
+        <div class="w-full p-4 bg-base-100 border border-gray-200 rounded-lg">
         <form
                 method="get"
                 action="/projects"

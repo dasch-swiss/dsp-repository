@@ -34,9 +34,9 @@ pub fn ProjectFilters() -> impl IntoView {
     let filters = [("ongoing", "Ongoing", ongoing), ("finished", "Finished", finished)];
 
     view! {
-        <div class="p-4 border border-gray-200 rounded-xl overflow-hidden" style="min-width: 300px">
-                <h4 class="text-xl font-semibold mb-4">Filters</h4>
-                <h5 class="text-sm font-medium mb-2">Status</h5>
+        <div class="p-4 border border-gray-200 rounded-xl bg-base-100" style="min-width: 300px">
+                <h4 class="dpe-title mb-4">Filters</h4>
+                <h5 class="dpe-subtitle">Status</h5>
                 {filters.iter().map(|(param, label, checked)| {
                     view! {
                         <a href=build_url(param) class="flex items-center gap-2 cursor-pointer hover:opacity-80 py-1">

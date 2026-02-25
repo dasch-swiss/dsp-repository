@@ -13,9 +13,9 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
     let publications = proj.publications.clone();
 
     view! {
-        <div class="tabs tabs-border border border-base-300 rounded-lg pt-1 flex-1">
-            <label class="tab">
-                <Icon icon=Info class="h-6 text-neutral-400 mr-2" />
+        <div class="tabs tabs-border border border-base-300 rounded-lg pt-4 flex-1">
+            <label class="tab gap-1 px-4 pb-2">
+                <Icon icon=Info class="h-6 text-neutral-400" />
 
                 <input type="radio" name="my_tabs" checked="checked" />
                 Dataset Overview

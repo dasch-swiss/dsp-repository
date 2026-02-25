@@ -21,9 +21,10 @@ pub fn ProjectHeader(
                     alt="Shoes"
                 />
             </figure>
-            <div class="card-body">
+            <div class="card-body p-8 flex flex-row justify-center">
+        <div class="max-w-3xl space-y-6">
                 <h2 class="card-title text-3xl text-ellipsis">{name}</h2>
-                <p class="text-lg mt-4">{description}</p>
+                <p class="text-lg">{description}</p>
                 {(!alternative_names.is_empty()).then(|| view! {
                     <p class="text-sm text-gray-600">
                         <span>"Also known as: "</span>
@@ -50,6 +51,7 @@ pub fn ProjectHeader(
                         }
                     })}
                 </div>
+        </div>
             </div>
         </div>
     }

@@ -30,7 +30,7 @@ pub fn ProjectPagination(nr_pages: i32, query: ProjectQuery) -> impl IntoView {
         view! {
             <a
                 href=url
-                class="btn"
+                class="join-item btn"
                 class:btn-disabled=is_disabled
                 class:pointer-events-none=is_disabled
                 aria-label=label
@@ -44,7 +44,7 @@ pub fn ProjectPagination(nr_pages: i32, query: ProjectQuery) -> impl IntoView {
     view! {
         <nav role="navigation" aria-label="Pagination">
             <div class="flex items-center gap-4">
-                    <div class="btn-group">
+                    <div class="join">
                     {nav_button(prev_url, "Previous page".to_string(), "«".to_string(), is_first_page)}
                     {(1..=nr_pages)
                         .map(|page| {
@@ -53,7 +53,9 @@ pub fn ProjectPagination(nr_pages: i32, query: ProjectQuery) -> impl IntoView {
                             view! {
                                 <a
                                     href=page_url
-                                    class="btn"
+                                    class="join-item btn"
+                                    class:btn-ghost=!is_current
+                                    class:btn=is_current
                                     class:btn-primary=is_current
                                     class:font-bold=is_current
                                     aria-label=format!("Page {}", page)

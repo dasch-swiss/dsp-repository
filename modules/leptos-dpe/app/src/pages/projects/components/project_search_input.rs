@@ -3,7 +3,6 @@ use leptos_router::hooks::{use_navigate, use_query};
 use leptos_use::use_debounce_fn;
 use mosaic_tiles::icon::{Icon, Search};
 
-use super::project_view_toggle::ProjectViewToggle;
 use crate::domain::ProjectQuery;
 
 #[component]
@@ -44,7 +43,6 @@ pub fn ProjectSearchInput() -> impl IntoView {
     );
 
     view! {
-        <div class="w-full p-4 bg-base-100 border border-gray-200 rounded-lg">
         <form
                 method="get"
                 action="/projects"
@@ -74,9 +72,6 @@ pub fn ProjectSearchInput() -> impl IntoView {
                     "Search"
                 </button>
 
-                <ProjectViewToggle />
-
             </form>
-        </div>
     }
 }

@@ -62,7 +62,7 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                     });
                     setTimeout(function() {
                     if (window.Prism) {
-                        Prism.highlightAll();
+                      Prism.highlightAll();
                     }
                     }, 100);
                     }

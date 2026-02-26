@@ -74,8 +74,8 @@ pub fn AllIconsExample() -> impl IntoView {
                 <span class="text-sm text-neutral-600">"Data"</span>
             </div>
             <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
-                <Icon icon=Question class="w-6 h-6" />
-                <span class="text-sm text-neutral-600">"Question"</span>
+                <Icon icon=Help class="w-6 h-6" />
+                <span class="text-sm text-neutral-600">"Help"</span>
             </div>
             <div class="flex flex-col items-center gap-2 p-4 border rounded-lg">
                 <Icon icon=LockClosed class="w-6 h-6" />

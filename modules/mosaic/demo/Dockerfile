@@ -20,6 +20,11 @@ RUN cargo binstall cargo-leptos -y
 # Add the WASM target
 RUN rustup target add wasm32-unknown-unknown
 
+# Download Tailwind CSS binary so build.rs doesn't need network access during compilation
+RUN curl -fsSL https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.17/tailwindcss-linux-x64 \
+    -o /usr/local/bin/tailwindcss \
+    && chmod +x /usr/local/bin/tailwindcss
+
 # Make an /app dir, which everything will eventually live in
 RUN mkdir -p /app
 WORKDIR /app
@@ -29,6 +34,7 @@ COPY . .
 
 # Build the app from the demo directory
 WORKDIR /app/modules/mosaic/demo
+ENV SINGLESTAGE_TAILWIND_PATH=/usr/local/bin/tailwindcss
 RUN cargo leptos build --release -vv
 
 FROM debian:bookworm-slim AS runtime

@@ -1,6 +1,17 @@
 @import 'tailwindcss';
+
 @plugin "@tailwindcss/typography";
 
 @plugin "daisyui" {
-  themes: light --default, dark --prefersdark;
+    themes: light --default;
+}
+
+@import './daisy-ui-theme.css';
+
+@utility dpe-title {
+    @apply text-base font-semibold text-gray-700 mb-2;
+}
+
+@utility dpe-subtitle {
+    @apply text-sm font-semibold text-gray-600 mb-2;
 }

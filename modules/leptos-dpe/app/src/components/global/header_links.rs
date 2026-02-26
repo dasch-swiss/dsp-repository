@@ -13,7 +13,7 @@ pub fn HeaderLinks() -> impl IntoView {
             </li>
 
             <li>
-                <a class="btn btn-primary" href="/to-do">
+                <a class="btn btn-primary" href="https://dasch.swiss" target="_blank">
                     Deposit Data at DaSCH
                     <Icon icon=Export class="w-5 h-5" />
                 </a>

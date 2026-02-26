@@ -1,5 +1,4 @@
 use leptos::prelude::*;
-use leptos::{component, view, IntoView};
 use mosaic_tiles::icon::{Data, Document, Icon, Info, People};
 
 use crate::domain::{Attribution, Project};

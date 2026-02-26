@@ -1,7 +1,8 @@
-use crate::domain::Publication;
-use crate::pages::project::components::info_card::InfoCard;
 use leptos::prelude::*;
 use mosaic_tiles::icon::{Export, Icon};
+
+use crate::domain::Publication;
+use crate::pages::project::components::info_card::InfoCard;
 
 #[component]
 pub fn PublicationsSection(publications: Vec<Publication>) -> impl IntoView {

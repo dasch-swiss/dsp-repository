@@ -1,9 +1,8 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_query;
 
-use crate::domain::ProjectQuery;
-
 use super::filter_checkbox_group::FilterCheckboxGroup;
+use crate::domain::ProjectQuery;
 
 // Regular component for filters and search - uses simple links that reload the page
 #[component]

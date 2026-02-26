@@ -2,7 +2,6 @@ use leptos::prelude::*;
 use mosaic_tiles::icon::{Export, Icon};
 
 use super::description::Description;
-
 use crate::domain::models::AuthorityFileReference;
 
 #[component]

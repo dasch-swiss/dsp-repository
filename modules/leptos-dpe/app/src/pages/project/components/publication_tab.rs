@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
-use crate::pages::project::components::publications_section::PublicationsSection;
 use crate::domain::Publication;
+use crate::pages::project::components::publications_section::PublicationsSection;
 
 #[component]
 pub fn PublicationTab(abstract_en: Option<String>, publications: Option<Vec<Publication>>) -> impl IntoView {

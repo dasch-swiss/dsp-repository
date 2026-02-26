@@ -1,10 +1,7 @@
 use leptos::prelude::*;
 
 #[component]
-pub fn FilterCheckboxGroup(
-    title: &'static str,
-    items: Vec<(String, bool, String)>,
-) -> impl IntoView {
+pub fn FilterCheckboxGroup(title: &'static str, items: Vec<(String, bool, String)>) -> impl IntoView {
     view! {
         <div>
             <h5 class="dpe-subtitle">{title}</h5>

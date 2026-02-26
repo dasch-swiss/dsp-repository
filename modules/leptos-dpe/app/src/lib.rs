@@ -12,35 +12,20 @@ use pages::{AboutPage, ProjectPage, ProjectsPage};
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
-        <!DOCTYPE html>
-        <html lang="en">
-            <head>
-                <meta charset="utf-8" />
-                <meta name="viewport" content="width=device-width, initial-scale=1" />
-                <script>
-                    {r#"
-                    // Apply theme from cookie immediately to prevent flicker
-                    // This runs synchronously before page renders
-                    (function() {
-                      const getCookie = (name) => {
-                          const value = `; ${document.cookie}`;
-                          const parts = value.split(`; ${name}=`);
-                          if (parts.length === 2) return parts.pop().split(';').shift();
-                      };
-                      const theme = getCookie('theme') || 'dark';
-                      document.documentElement.setAttribute('data-theme', theme);
-                    })();
-                    "#}
-                </script>
-                <AutoReload options=options.clone() />
-                <HydrationScripts options islands=true />
-                <MetaTags />
-            </head>
-            <body>
-                <App />
-            </body>
-        </html>
-    }
+            <!DOCTYPE html>
+            <html lang="en">
+                <head>
+                    <meta charset="utf-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <AutoReload options=options.clone() />
+                    <HydrationScripts options islands=true />
+                    <MetaTags />
+                </head>
+                <body>
+                    <App />
+                </body>
+            </html>
+        }
 }
 
 #[component]

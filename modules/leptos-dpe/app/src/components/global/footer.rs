@@ -4,7 +4,7 @@ use leptos::prelude::*;
 pub fn Footer() -> impl IntoView {
     view! {
         <footer class="bg-slate-800 text-gray-300 py-12">
-            <div class="container mx-auto px-4">
+            <div class="max-w-7xl mx-auto px-4">
                 // Top navigation links
                 <nav class="flex flex-wrap justify-center gap-6 mb-8 text-sm">
                     <a class="hover:text-white transition-colors" href="https://dasch.swiss/legal-notice" target="_blank">

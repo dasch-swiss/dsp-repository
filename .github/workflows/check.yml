@@ -37,7 +37,7 @@ jobs:
         with:
           components: rustfmt
       - name: cargo fmt --check
-        run: cargo fmt --check
+        run: cargo +nightly fmt --check
 
   clippy:
     runs-on: ubuntu-latest

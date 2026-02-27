@@ -72,6 +72,13 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                                                 page.items
                                                     .into_iter()
                                                     .map(move |project| {
+                                                        let keywords: Vec<String> = project
+                                                            .keywords
+                                                            .iter()
+                                                            .filter_map(|map| {
+                                                                map.get("en").or_else(|| map.values().next()).cloned()
+                                                            })
+                                                            .collect();
                                                         view! {
                                                             <ProjectCard
                                                                 title=project.name.clone()
@@ -79,6 +86,7 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                                                                 status=project.status.clone()
                                                                 btn_target=format!("/projects/{}", project.shortcode)
                                                                 view=view_value
+                                                                keywords=keywords
                                                             />
                                                         }
                                                     })

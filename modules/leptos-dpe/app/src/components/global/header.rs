@@ -12,10 +12,7 @@ pub fn Header() -> impl IntoView {
                 </a>
 
                 <div class="flex-1">
-                    <a
-                        class="inline-flex items-center font-bold text-xl"
-                        href="/"
-                    >
+                    <a class="inline-flex items-center font-bold text-xl" href="/">
                         "DaSCH Metadata Browser"
                     </a>
                 </div>

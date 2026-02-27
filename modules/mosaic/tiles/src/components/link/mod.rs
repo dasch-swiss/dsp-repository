@@ -30,7 +30,13 @@ pub fn Link(
     if let Some(variant) = button_variant {
         return view! {
             <a
-                href=move || if is_disabled.get() { "#".to_string() } else { href.clone() }
+                href=move || {
+                    if is_disabled.get() {
+                        None
+                    } else {
+                        Some(href.clone())
+                    }
+                }
                 class="link-as-button"
                 target=target
                 rel=rel
@@ -50,7 +56,13 @@ pub fn Link(
 
     view! {
         <a
-            href=move || if is_disabled.get() { "#".to_string() } else { href.clone() }
+            href=move || {
+                if is_disabled.get() {
+                    None
+                } else {
+                    Some(href.clone())
+                }
+            }
             class=move || {
                 format!("link {}", if is_disabled.get() { "link-disabled" } else { "" })
             }

@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use mosaic_tiles::card::{Card, CardBody, CardVariant};
 use mosaic_tiles::icon::{Data, Document, Icon, Info, People};
 
 use crate::domain::{Attribution, Project};
@@ -16,44 +17,48 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
     let icon_class = "h-6 text-neutral-400";
 
     view! {
-        <div class="tabs tabs-border bg-base-100 border border-base-300 rounded-lg pt-4 flex-1">
-            <label class=tab_label_class>
-                <Icon icon=Info class=icon_class />
+        <Card variant=CardVariant::Bordered class="flex-1">
+            <CardBody>
+                <div class="tabs tabs-border pt-4">
+                    <label class=tab_label_class>
+                        <Icon icon=Info class=icon_class />
 
-                <input type="radio" name="my_tabs" checked="checked" />
-                Dataset Overview
-            </label>
-            <div class=tab_content_class>
-                <DatasetOverviewSection proj=proj />
-            </div>
+                        <input type="radio" name="my_tabs" checked="checked" />
+                        Dataset Overview
+                    </label>
+                    <div class=tab_content_class>
+                        <DatasetOverviewSection proj=proj />
+                    </div>
 
-            <label class=tab_label_class>
-                <Icon icon=Data class=icon_class />
+                    <label class=tab_label_class>
+                        <Icon icon=Data class=icon_class />
 
-                <input type="radio" name="my_tabs" />
-                Data
-            </label>
-            <div class=tab_content_class>TODO</div>
+                        <input type="radio" name="my_tabs" />
+                        Data
+                    </label>
+                    <div class=tab_content_class>TODO</div>
 
-            <label class=tab_label_class>
-                <Icon icon=Document class=icon_class />
+                    <label class=tab_label_class>
+                        <Icon icon=Document class=icon_class />
 
-                <input type="radio" name="my_tabs" />
-                Publications
-            </label>
-            <div class=tab_content_class>
-                <PublicationTab abstract_en=abstract_en publications=publications />
-            </div>
+                        <input type="radio" name="my_tabs" />
+                        Publications
+                    </label>
+                    <div class=tab_content_class>
+                        <PublicationTab abstract_en=abstract_en publications=publications />
+                    </div>
 
-            <label class=tab_label_class>
-                <Icon icon=People class=icon_class />
+                    <label class=tab_label_class>
+                        <Icon icon=People class=icon_class />
 
-                <input type="radio" name="my_tabs" />
-                Contributors
-            </label>
-            <div class=tab_content_class>
-                <AttributionsSection attributions=attributions />
-            </div>
-        </div>
+                        <input type="radio" name="my_tabs" />
+                        Contributors
+                    </label>
+                    <div class=tab_content_class>
+                        <AttributionsSection attributions=attributions />
+                    </div>
+                </div>
+            </CardBody>
+        </Card>
     }
 }

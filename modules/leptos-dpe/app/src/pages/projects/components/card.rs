@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 use super::statusbadge::{BadgeSize, ProjectStatusBadge};
-use crate::domain::ProjectStatus;
+use crate::domain::{ProjectStatus, ProjectView};
 
 #[component]
 pub fn ProjectCard(
@@ -9,18 +9,16 @@ pub fn ProjectCard(
     content: String,
     status: ProjectStatus,
     btn_target: String,
-    view: bool,
+    view: ProjectView,
 ) -> impl IntoView {
-    let card_class = if view {
-        "card bg-base-100 border border-gray-200 hover:shadow-sm flex-row"
-    } else {
-        "card bg-base-100 border border-gray-200 hover:shadow-sm"
+    let card_class = match view {
+        ProjectView::List => "card bg-base-100 border border-gray-200 hover:shadow-sm flex-row",
+        ProjectView::Grid => "card bg-base-100 border border-gray-200 hover:shadow-sm",
     };
 
-    let figure_style = if view {
-        "min-width: 300px; width: 300px; border-top-right-radius: 0; border-bottom-left-radius: inherit; min-width: 300px"
-    } else {
-        ""
+    let figure_style = match view {
+        ProjectView::List => "min-width: 300px; width: 300px; border-top-right-radius: 0; border-bottom-left-radius: inherit; min-width: 300px",
+        ProjectView::Grid => "",
     };
 
     view! {

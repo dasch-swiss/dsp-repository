@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_query;
+use mosaic_tiles::button::{Button, ButtonType};
 use mosaic_tiles::icon::{Icon, Search};
 
 use crate::domain::ProjectQuery;
@@ -33,9 +34,7 @@ pub fn ProjectSearchInput() -> impl IntoView {
                 />
             </label>
 
-            <button type="submit" class="btn btn-primary btn-sm">
-                "Search"
-            </button>
+            <Button button_type=ButtonType::Submit>"Search"</Button>
         </form>
     }
 }

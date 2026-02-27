@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use super::card::ProjectCard;
 use super::project_pagination::ProjectPagination;
 use crate::components::loading::Loading;
-use crate::domain::{list_projects, ProjectQuery};
+use crate::domain::{list_projects, ProjectQuery, ProjectView};
 
 #[component]
 pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::ParamsError>>) -> impl IntoView {
@@ -32,10 +32,9 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
             {move || {
                 let current_query = query.get().unwrap_or_default();
                 let view = current_query.view();
-                let grid_class = if view {
-                    "grid grid-cols-1 gap-4"
-                } else {
-                    "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                let grid_class = match view {
+                    ProjectView::List => "grid grid-cols-1 gap-4",
+                    ProjectView::Grid => "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
                 };
                 projects
                     .get()

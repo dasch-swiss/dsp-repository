@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 use super::models::Page;
-use super::project::Project;
+use super::project::{Project, ProjectView};
 
 #[server]
 pub async fn list_projects(
@@ -9,7 +9,7 @@ pub async fn list_projects(
     finished: Option<bool>,
     search: Option<String>,
     page: Option<i32>,
-    view: Option<bool>,
+    view: Option<ProjectView>,
     page_size: Option<i32>,
 ) -> Result<Page, ServerFnError> {
     use std::fs;

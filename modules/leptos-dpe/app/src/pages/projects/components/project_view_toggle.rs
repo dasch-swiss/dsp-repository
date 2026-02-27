@@ -1,8 +1,10 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_query;
+use mosaic_tiles::button::ButtonVariant;
 use mosaic_tiles::icon::{AppStore, Icon, List};
+use mosaic_tiles::link::Link;
 
-use crate::domain::ProjectQuery;
+use crate::domain::{ProjectQuery, ProjectView};
 
 #[component]
 pub fn ProjectViewToggle() -> impl IntoView {
@@ -12,7 +14,7 @@ pub fn ProjectViewToggle() -> impl IntoView {
     let current_view = current_query.view();
 
     // Helper function to build URL with view parameter
-    let build_url = |view: bool| {
+    let build_url = |view: ProjectView| {
         let new_query = ProjectQuery {
             view: Some(view),
             search: current_query.search.clone(),
@@ -23,30 +25,30 @@ pub fn ProjectViewToggle() -> impl IntoView {
         format!("/projects{}", new_query.to_query_string())
     };
 
-    let grid_view_url = build_url(false);
-    let list_view_url = build_url(true);
+    let grid_view_url = build_url(ProjectView::Grid);
+    let list_view_url = build_url(ProjectView::List);
 
-    let grid_class = if !current_view {
-        "btn btn-soft btn-sm"
+    let grid_variant = if current_view == ProjectView::Grid {
+        ButtonVariant::Soft
     } else {
-        "btn btn-ghost btn-sm"
+        ButtonVariant::Ghost
     };
 
-    let list_class = if current_view {
-        "btn btn-soft btn-sm"
+    let list_variant = if current_view == ProjectView::List {
+        ButtonVariant::Soft
     } else {
-        "btn btn-ghost btn-sm"
+        ButtonVariant::Ghost
     };
 
     view! {
         <div class="flex gap-1">
-            <a href=grid_view_url class=grid_class>
+            <Link href=grid_view_url as_button=grid_variant>
                 <Icon icon=AppStore class="w-5 h-5" />
-            </a>
+            </Link>
 
-            <a href=list_view_url class=list_class>
+            <Link href=list_view_url as_button=list_variant>
                 <Icon icon=List class="w-5 h-5" />
-            </a>
+            </Link>
         </div>
     }
 }

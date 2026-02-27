@@ -31,16 +31,20 @@ pub fn DisciplinesSection(disciplines: Vec<Discipline>) -> impl IntoView {
                                 }
                             };
                             match url {
-                                Some(href) => view! {
-                                    <a href=href class="badge badge-primary text-xs">
-                                        {label}
-                                    </a>
+                                Some(href) => {
+                                    view! {
+                                        <a href=href class="badge badge-primary text-xs">
+                                            {label}
+                                        </a>
+                                    }
+                                        .into_any()
                                 }
-                                .into_any(),
-                                None => view! {
-                                    <span class="badge badge-primary text-xs">{label}</span>
+                                None => {
+                                    view! {
+                                        <span class="badge badge-primary text-xs">{label}</span>
+                                    }
+                                        .into_any()
                                 }
-                                .into_any(),
                             }
                         })
                         .collect_view()}

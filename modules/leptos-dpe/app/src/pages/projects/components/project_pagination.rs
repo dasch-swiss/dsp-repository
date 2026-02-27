@@ -44,8 +44,13 @@ pub fn ProjectPagination(nr_pages: i32, query: ProjectQuery) -> impl IntoView {
     view! {
         <nav role="navigation" aria-label="Pagination">
             <div class="flex items-center gap-4">
-                    <div class="join">
-                    {nav_button(prev_url, "Previous page".to_string(), "«".to_string(), is_first_page)}
+                <div class="join">
+                    {nav_button(
+                        prev_url,
+                        "Previous page".to_string(),
+                        "«".to_string(),
+                        is_first_page,
+                    )}
                     {(1..=nr_pages)
                         .map(|page| {
                             let page_url = build_page_url(page);
@@ -68,7 +73,7 @@ pub fn ProjectPagination(nr_pages: i32, query: ProjectQuery) -> impl IntoView {
                         .collect_view()}
                     {nav_button(next_url, "Next page".to_string(), "»".to_string(), is_last_page)}
                 </div>
-                </div>
+            </div>
         </nav>
     }
 }

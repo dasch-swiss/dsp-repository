@@ -33,8 +33,7 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
                 <input type="radio" name="my_tabs" />
                 Data
             </label>
-            <div class=tab_content_class>
-        TODO</div>
+            <div class=tab_content_class>TODO</div>
 
             <label class=tab_label_class>
                 <Icon icon=Document class=icon_class />
@@ -45,7 +44,6 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
             <div class=tab_content_class>
                 <PublicationTab abstract_en=abstract_en publications=publications />
             </div>
-
 
             <label class=tab_label_class>
                 <Icon icon=People class=icon_class />

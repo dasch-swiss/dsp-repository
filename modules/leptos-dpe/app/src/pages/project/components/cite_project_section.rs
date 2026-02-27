@@ -13,12 +13,12 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
         <div class="border border-gray-200 bg-base-100 rounded-lg p-4 space-y-4 text-sm lg:w-96">
             <h2 class="dpe-title">"Cite this Project"</h2>
 
-        <div>
-            <Permalink permalink=proj.pid.clone() />
-        </div>
-        <div>
-            <Citation citation=proj.how_to_cite.clone() />
-        </div>
+            <div>
+                <Permalink permalink=proj.pid.clone() />
+            </div>
+            <div>
+                <Citation citation=proj.how_to_cite.clone() />
+            </div>
             <div class="border-t border-gray-200"></div>
 
             <h3 class="dpe-title">"Data Access"</h3>
@@ -27,10 +27,7 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
             {(!proj.legal_info.is_empty())
                 .then(|| {
                     view! {
-                        <div
-                            id="legal-information"
-                            class="rounded-lg scroll-mt-52"
-                        >
+                        <div id="legal-information" class="rounded-lg scroll-mt-52">
                             <LegalInfo legal_info=proj.legal_info.clone() />
                         </div>
                     }
@@ -39,14 +36,14 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
             <div class="border-t border-gray-200"></div>
 
             <h3 class="dpe-title">"Project Timeline"</h3>
-        <div>
-            <div class="dpe-subtitle">"Period"</div>
-            <div>"TODO"</div>
-        </div>
-        <div>
-            <div class="dpe-subtitle">"Status"</div>
-            <div>"Ongoing"</div>
-        </div>
+            <div>
+                <div class="dpe-subtitle">"Period"</div>
+                <div>"TODO"</div>
+            </div>
+            <div>
+                <div class="dpe-subtitle">"Status"</div>
+                <div>"Ongoing"</div>
+            </div>
 
             <div class="border-t border-gray-200"></div>
 

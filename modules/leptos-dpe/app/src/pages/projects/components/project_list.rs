@@ -37,36 +37,37 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                 } else {
                     "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                 };
-
                 projects
                     .get()
                     .map(|result| match result {
                         Ok(page) => {
                             let nr_pages = page.nr_pages;
                             let total_items = page.total_items;
-
                             if total_items == 0 {
+
                                 view! {
                                     <div class="card bg-base-100 border border-gray-200 p-8 text-center">
-                                        <h3 class="mb-4">"No projects found matching your criteria"</h3>
-                                <div class="text-center">
-                                        <a href="/projects" class="btn btn-ghost">
-                                            "Clear your filters"
-                                        </a>
-                                </div>
+                                        <h3 class="mb-4">
+                                            "No projects found matching your criteria"
+                                        </h3>
+                                        <div class="text-center">
+                                            <a href="/projects" class="btn btn-ghost">
+                                                "Clear your filters"
+                                            </a>
+                                        </div>
                                     </div>
                                 }
                                     .into_any()
                             } else {
                                 view! {
-
                                     <div>
-                                        <div class="mb-2">{format!("{} projects", total_items)}</div>
+                                        <div class="mb-2">
+                                            {format!("{} projects", total_items)}
+                                        </div>
                                         <div class=grid_class>
                                             {
                                                 let view_value = view;
-                                                page
-                                                    .items
+                                                page.items
                                                     .into_iter()
                                                     .map(move |project| {
                                                         view! {
@@ -87,12 +88,12 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                                     <div class="flex justify-center">
                                         <ProjectPagination nr_pages=nr_pages query=current_query />
                                     </div>
-
                                 }
                                     .into_any()
                             }
                         }
                         Err(e) => {
+
                             view! {
                                 <div class="alert alert-error">
                                     <span>"Failed to load projects: "{e.to_string()}</span>

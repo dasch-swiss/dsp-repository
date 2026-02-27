@@ -12,9 +12,15 @@ pub fn ProjectSearchInput() -> impl IntoView {
     view! {
         <form method="get" action="/projects" class="flex items-center flex-1">
             // Preserve existing filter and view state across search submissions
-            {current_query.ongoing.map(|v| view! { <input type="hidden" name="ongoing" value=v.to_string() /> })}
-            {current_query.finished.map(|v| view! { <input type="hidden" name="finished" value=v.to_string() /> })}
-            {current_query.view.map(|v| view! { <input type="hidden" name="view" value=v.to_string() /> })}
+            {current_query
+                .ongoing
+                .map(|v| view! { <input type="hidden" name="ongoing" value=v.to_string() /> })}
+            {current_query
+                .finished
+                .map(|v| view! { <input type="hidden" name="finished" value=v.to_string() /> })}
+            {current_query
+                .view
+                .map(|v| view! { <input type="hidden" name="view" value=v.to_string() /> })}
 
             <label class="input flex-1 mr-2">
                 <Icon icon=Search class="h-6 text-neutral-400" />

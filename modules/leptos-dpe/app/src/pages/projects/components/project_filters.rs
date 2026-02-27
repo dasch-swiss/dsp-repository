@@ -36,18 +36,21 @@ pub fn ProjectFilters() -> impl IntoView {
 
     view! {
         <div class="p-4 border border-gray-200 rounded-lg bg-base-100 w-72">
-                <h4 class="dpe-title mb-4">Filters</h4>
-        <div class="space-y-4">
-            <FilterCheckboxGroup
-                title="Status"
-                items=filters.iter().map(|(param, label, checked)| {
-                    (label.to_string(), *checked, build_url(param))
-                }).collect()
-            />
-        <div class="border-t border-gray-200"></div>
+            <h4 class="dpe-title mb-4">Filters</h4>
+            <div class="space-y-4">
+                <FilterCheckboxGroup
+                    title="Status"
+                    items=filters
+                        .iter()
+                        .map(|(param, label, checked)| {
+                            (label.to_string(), *checked, build_url(param))
+                        })
+                        .collect()
+                />
+                <div class="border-t border-gray-200"></div>
 
-        <div class="dpe-subtitle">Other filters TODO</div>
-        </div>
+                <div class="dpe-subtitle">Other filters TODO</div>
+            </div>
         </div>
     }
 }

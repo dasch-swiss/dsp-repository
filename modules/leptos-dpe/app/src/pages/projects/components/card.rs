@@ -25,22 +25,20 @@ pub fn ProjectCard(
 
     view! {
         <a href=btn_target class=card_class>
-          <figure class="relative bg-neutral-900" style=figure_style>
-            <img
-                src="https://dasch.swiss/projects/0854.webp"
-                alt="Shoes" />
+            <figure class="relative bg-neutral-900" style=figure_style>
+                <img src="https://dasch.swiss/projects/0854.webp" alt="Shoes" />
 
-            <div class="absolute bottom-1 right-1">
-                        <ProjectStatusBadge status=status size=BadgeSize::Small />
-            </div>
-          </figure>
+                <div class="absolute bottom-1 right-1">
+                    <ProjectStatusBadge status=status size=BadgeSize::Small />
+                </div>
+            </figure>
 
             <div class="card-body">
                 <h2 class="card-title text-ellipsis">{title}</h2>
                 <p>{content}</p>
-        <div>
-            <span class="badge badge-sm badge-neutral badge-outline">Badge</span>
-        </div>
+                <div>
+                    <span class="badge badge-sm badge-neutral badge-outline">Badge</span>
+                </div>
 
             </div>
         </a>

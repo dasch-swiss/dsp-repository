@@ -7,12 +7,9 @@ use crate::domain::Attribution;
 pub fn AttributionsSection(attributions: Vec<Attribution>) -> impl IntoView {
     (!attributions.is_empty()).then(|| {
         view! {
-                <div class="grid md:grid-cols-1 lg:grid-cols-2 gap-2">
-                    {attributions
-                        .into_iter()
-                        .map(|attr| view! { <Contributor attr /> })
-                        .collect_view()}
-                </div>
+            <div class="grid md:grid-cols-1 lg:grid-cols-2 gap-2">
+                {attributions.into_iter().map(|attr| view! { <Contributor attr /> }).collect_view()}
+            </div>
         }
         .into_any()
     })

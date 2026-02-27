@@ -9,10 +9,10 @@ pub fn Contributor(attr: Attribution) -> impl IntoView {
     let person_id = attr.contributor.clone();
     view! {
         <InfoCard>
-        <div class="text-sm">
-            <Person person_id=person_id />
-            <div>{attr.contributor_type.join(", ")}</div>
-        </div>
+            <div class="text-sm">
+                <Person person_id=person_id />
+                <div>{attr.contributor_type.join(", ")}</div>
+            </div>
         </InfoCard>
     }
 }

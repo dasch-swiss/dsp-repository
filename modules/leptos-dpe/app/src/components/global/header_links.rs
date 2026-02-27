@@ -7,9 +7,9 @@ pub fn HeaderLinks() -> impl IntoView {
         <ul class="flex items-center gap-4">
             <li>
                 <a href="/about" class="btn btn-ghost">
-                <Icon icon=Help class="w-5 h-5" />
+                    <Icon icon=Help class="w-5 h-5" />
                     Help
-            </a>
+                </a>
             </li>
 
             <li>

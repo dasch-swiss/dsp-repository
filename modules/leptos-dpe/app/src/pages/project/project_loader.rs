@@ -25,9 +25,7 @@ pub fn ProjectLoader(
             resource
                 .get()
                 .map(|result| match result {
-                    Ok(Some(proj)) => {
-                        view! { <ProjectDetails proj=proj /> }.into_any()
-                    }
+                    Ok(Some(proj)) => view! { <ProjectDetails proj=proj /> }.into_any(),
                     Ok(None) => {
                         view! {
                             <div class="text-center py-12">

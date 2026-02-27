@@ -12,10 +12,7 @@ pub fn LinkListSection(title: String, items: Vec<String>, #[prop(default = false
                         if as_links {
                             view! {
                                 <li>
-                                    <a
-                                        href=item.clone()
-                                        class="link link-primary"
-                                    >
+                                    <a href=item.clone() class="link link-primary">
                                         {item.clone()}
                                     </a>
                                 </li>

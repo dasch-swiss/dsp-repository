@@ -9,9 +9,9 @@ pub fn Link(
     /// The URL to navigate to
     #[prop(into)]
     href: String,
-    /// Render the link as a button component
+    /// Render the link as a button component with the given variant
     #[prop(optional, into)]
-    as_button: MaybeProp<bool>,
+    as_button: MaybeProp<ButtonVariant>,
     /// Optional target attribute (e.g., "_blank", "_self")
     #[prop(optional, into)]
     target: Option<String>,
@@ -24,10 +24,10 @@ pub fn Link(
     #[prop(optional)] children: Option<Children>,
 ) -> impl IntoView {
     let is_disabled = Memo::new(move |_| disabled.get().unwrap_or(false));
-    let render_as_button = as_button.get().unwrap_or(false);
+    let button_variant = as_button.get();
 
     #[cfg(feature = "button")]
-    if render_as_button {
+    if let Some(variant) = button_variant {
         return view! {
             <a
                 href=move || if is_disabled.get() { "#".to_string() } else { href.clone() }
@@ -36,7 +36,7 @@ pub fn Link(
                 rel=rel
                 aria-disabled=move || if is_disabled.get() { Some("true") } else { None }
             >
-                <Button disabled=disabled variant=ButtonVariant::Primary>
+                <Button disabled=disabled variant=variant>
                     {if let Some(children) = children {
                         Either::Left(children())
                     } else {

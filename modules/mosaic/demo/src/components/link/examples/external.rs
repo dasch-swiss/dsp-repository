@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use mosaic_tiles::button::ButtonVariant;
 use mosaic_tiles::icon::{Icon, IconGitHub, LinkExternal};
 use mosaic_tiles::link::Link;
 
@@ -20,7 +21,12 @@ pub fn ExternalExample() -> impl IntoView {
                     <Icon icon=IconGitHub class="w-4 h-4" />
                     "GitHub Repository"
                 </Link>
-                <Link href="/link" target="_blank" rel="noopener noreferrer" as_button=true>
+                <Link
+                    href="/link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    as_button=ButtonVariant::Primary
+                >
                     "External Button Link"
                     <Icon icon=LinkExternal class="w-4 h-4" />
                 </Link>

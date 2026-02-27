@@ -24,12 +24,16 @@ install-requirements:
 # Run all fmt and clippy checks
 check:
     just --check --fmt --unstable
-    cargo +nightly fmt --check
+    cargo +nightly fmt -p mosaic-tiles -p demo_macro --check
+    leptosfmt --check modules/leptos-dpe
+    leptosfmt --check modules/mosaic/demo
     cargo clippy -- -D warnings
 
-# Format all rust code
+# Format all rust code (cargo fmt for non-leptos crates, leptosfmt for leptos crates)
 fmt:
-    cargo +nightly fmt
+    cargo +nightly fmt -p mosaic-tiles -p demo_macro
+    leptosfmt modules/leptos-dpe
+    leptosfmt modules/mosaic/demo
 
 # Fix justfile formatting. Warning: will change existing file. Please first use check.
 fix:
@@ -124,11 +128,6 @@ build-docker-mosaic-demo:
 run-docker-mosaic-demo:
     docker run --rm -p 8080:8080 mosaic-demo
 
-# Format the mosaic source code using leptosfmt
-[group('mosaic')]
-fmt-mosaic:
-    cd modules/mosaic && leptosfmt .
-
 ###################
 # Leptos DPE targets
 ###################
@@ -136,4 +135,4 @@ fmt-mosaic:
 # Start the leptos-dpe with hot reload
 [group('leptos-dpe')]
 watch-leptos-dpe:
-    cargo leptos watch --project=leptos-dpe
+    cargo leptos watch --project=leptos-dpe -- watch ../mosaic/tiles

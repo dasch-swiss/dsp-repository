@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use mosaic_tiles::breadcrumb::{Breadcrumb as TilesBreadcrumb, BreadcrumbItem};
 
 #[component]
 pub fn Breadcrumb(project_name: String) -> impl IntoView {
@@ -8,23 +9,10 @@ pub fn Breadcrumb(project_name: String) -> impl IntoView {
         project_name
     };
 
-    let link_class = "text-primary";
-
     view! {
-        <div class="breadcrumbs text-sm">
-            <ul>
-                <li>
-                    <a href="/" class=link_class>
-                        "Home"
-                    </a>
-                </li>
-                <li>
-                    <a href="/projects" class=link_class>
-                        "Projects"
-                    </a>
-                </li>
-                <li>{project_name_truncated}</li>
-            </ul>
-        </div>
+        <TilesBreadcrumb>
+            <BreadcrumbItem href="/projects">"Projects"</BreadcrumbItem>
+            <BreadcrumbItem>{project_name_truncated}</BreadcrumbItem>
+        </TilesBreadcrumb>
     }
 }

@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 leptos.workspace = true
 leptos-use.workspace = true
-mosaic-tiles = { path = "../../mosaic/tiles", default-features = false, features = ["icon", "button", "link", "card", "badge", "tabs"] }
+mosaic-tiles = { path = "../../mosaic/tiles", default-features = false, features = ["icon", "button", "link", "card", "badge", "tabs", "breadcrumb"] }
 leptos_meta.workspace = true
 leptos_router.workspace = true
 leptos_axum = { workspace = true, optional = true }

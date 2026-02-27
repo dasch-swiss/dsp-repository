@@ -8,7 +8,7 @@ pub fn Description(text: String) -> impl IntoView {
     let (expanded, set_expanded) = signal(false);
 
     view! {
-        <p class="text-lg" class:line-clamp-4=move || is_long && !expanded.get()>
+        <p class="text-lg text-gray-600" class:line-clamp-4=move || is_long && !expanded.get()>
             {text}
         </p>
         {is_long

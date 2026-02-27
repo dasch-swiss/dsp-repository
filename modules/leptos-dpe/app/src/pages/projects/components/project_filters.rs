@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_query;
+use mosaic_tiles::card::{Card, CardBody, CardHeader, CardVariant};
 
 use super::filter_checkbox_group::FilterCheckboxGroup;
 use crate::domain::ProjectQuery;
@@ -31,26 +32,26 @@ pub fn ProjectFilters() -> impl IntoView {
         format!("/projects{}", new_query.to_query_string())
     };
 
-    // Filter checkbox data
-    let filters = [("ongoing", "Ongoing", ongoing), ("finished", "Finished", finished)];
+    // Compute filter items eagerly so no borrows are captured in the view
+    let filter_items: Vec<(String, bool, String)> =
+        [("ongoing", "Ongoing", ongoing), ("finished", "Finished", finished)]
+            .iter()
+            .map(|(param, label, checked)| (label.to_string(), *checked, build_url(param)))
+            .collect();
 
     view! {
-        <div class="p-4 border border-gray-200 rounded-lg bg-base-100 w-72">
-            <h4 class="dpe-title mb-4">Filters</h4>
-            <div class="space-y-4">
-                <FilterCheckboxGroup
-                    title="Status"
-                    items=filters
-                        .iter()
-                        .map(|(param, label, checked)| {
-                            (label.to_string(), *checked, build_url(param))
-                        })
-                        .collect()
-                />
-                <div class="border-t border-gray-200"></div>
+        <Card variant=CardVariant::Bordered class="w-72">
+            <CardHeader>
+                <h4 class="dpe-title">"Filters"</h4>
+            </CardHeader>
+            <CardBody>
+                <div class="space-y-4">
+                    <FilterCheckboxGroup title="Status" items=filter_items />
+                    <div class="border-t border-neutral-200"></div>
 
-                <div class="dpe-subtitle">Other filters TODO</div>
-            </div>
-        </div>
+                    <div class="dpe-subtitle">"Other filters TODO"</div>
+                </div>
+            </CardBody>
+        </Card>
     }
 }

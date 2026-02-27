@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
 use super::card::ProjectCard;
 use super::project_pagination::ProjectPagination;
@@ -45,16 +46,18 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                             if total_items == 0 {
 
                                 view! {
-                                    <div class="card bg-base-100 border border-gray-200 p-8 text-center">
-                                        <h3 class="mb-4">
-                                            "No projects found matching your criteria"
-                                        </h3>
-                                        <div class="text-center">
-                                            <a href="/projects" class="btn btn-ghost">
-                                                "Clear your filters"
-                                            </a>
-                                        </div>
-                                    </div>
+                                    <Card variant=CardVariant::Bordered>
+                                        <CardBody>
+                                            <div class="text-center">
+                                                <h3 class="mb-4">
+                                                    "No projects found matching your criteria"
+                                                </h3>
+                                                <a href="/projects" class="btn btn-ghost">
+                                                    "Clear your filters"
+                                                </a>
+                                            </div>
+                                        </CardBody>
+                                    </Card>
                                 }
                                     .into_any()
                             } else {

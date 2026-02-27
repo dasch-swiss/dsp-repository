@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_query;
+use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
 use super::components::project_filters::ProjectFilters;
 use super::components::project_list::ProjectList;
@@ -17,12 +18,16 @@ pub fn ProjectsPage() -> impl IntoView {
             <ProjectFilters />
 
             <div class="flex-1 flex flex-col gap-4">
-                <div class="w-full p-4 bg-base-100 border border-gray-200 rounded-lg flex items-center gap-2">
-                    <div class="flex-1">
-                        <ProjectSearchInput />
-                    </div>
-                    <ProjectViewToggle />
-                </div>
+                <Card variant=CardVariant::Bordered>
+                    <CardBody>
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1">
+                                <ProjectSearchInput />
+                            </div>
+                            <ProjectViewToggle />
+                        </div>
+                    </CardBody>
+                </Card>
 
                 <ProjectList query=query />
             </div>

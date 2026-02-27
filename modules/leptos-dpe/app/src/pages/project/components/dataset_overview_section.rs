@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use mosaic_tiles::badge::{Badge, BadgeSize};
+use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
 use crate::domain::Project;
 use crate::pages::project::components::coverage_section::CoverageSection;
@@ -117,13 +118,15 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
 
             {proj
                 .provenance
-                .as_ref()
+                .clone()
                 .map(|prov| {
                     view! {
-                        <div class="bg-base-100 p-6 rounded-lg">
-                            <h3 class="text-base font-semibold mb-3">"Provenance"</h3>
-                            <p class="text-sm">{prov.clone()}</p>
-                        </div>
+                        <Card variant=CardVariant::Bordered>
+                            <CardBody>
+                                <h3 class="text-base font-semibold mb-3">"Provenance"</h3>
+                                <p class="text-sm">{prov}</p>
+                            </CardBody>
+                        </Card>
                     }
                 })}
         </div>

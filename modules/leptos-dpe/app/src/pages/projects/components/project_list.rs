@@ -1,5 +1,7 @@
 use leptos::prelude::*;
+use mosaic_tiles::button::ButtonVariant;
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
+use mosaic_tiles::link::Link;
 
 use super::card::ProjectCard;
 use super::project_pagination::ProjectPagination;
@@ -52,9 +54,9 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                                                 <h3 class="mb-4">
                                                     "No projects found matching your criteria"
                                                 </h3>
-                                                <a href="/projects" class="btn btn-ghost">
+                                                <Link href="/projects" as_button=ButtonVariant::Ghost>
                                                     "Clear your filters"
-                                                </a>
+                                                </Link>
                                             </div>
                                         </CardBody>
                                     </Card>

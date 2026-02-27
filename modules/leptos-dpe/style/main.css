@@ -5,7 +5,7 @@
 
 @plugin "daisyui" {
     themes: light --default;
-    exclude: button, badge;
+    exclude: button, badge, tab;
 }
 
 @import './daisy-ui-theme.css';

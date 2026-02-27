@@ -26,7 +26,7 @@ pub fn CopyButton(text: String) -> impl IntoView {
 
     view! {
         <button
-            class="btn btn-xs btn-ghost tooltip tooltip-left flex-shrink-0"
+            class="btn btn-ghost px-1 py-0.5 text-xs tooltip tooltip-left flex-shrink-0"
             class:tooltip-open=move || show_tooltip.get()
             data-tip=move || tooltip_state.get()
             on:click=handle_copy

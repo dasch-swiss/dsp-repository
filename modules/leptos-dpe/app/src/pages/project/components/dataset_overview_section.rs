@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use mosaic_tiles::badge::{Badge, BadgeSize};
 
 use crate::domain::Project;
 use crate::pages::project::components::coverage_section::CoverageSection;
@@ -28,11 +29,9 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
                             <h3 class="dpe-subtitle">"Data Languages"</h3>
                             <div class="flex flex-wrap gap-2">
                                 {data_languages
-                                    .iter()
+                                    .into_iter()
                                     .map(|l| {
-                                        view! {
-                                            <span class="badge badge-primary text-xs">{l.clone()}</span>
-                                        }
+                                        view! { <Badge size=BadgeSize::Small>{l}</Badge> }
                                     })
                                     .collect_view()}
                             </div>
@@ -49,11 +48,9 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
                             <h3 class="dpe-subtitle">"Keywords"</h3>
                             <div class="flex flex-wrap gap-2">
                                 {english_keywords
-                                    .iter()
+                                    .into_iter()
                                     .map(|k| {
-                                        view! {
-                                            <span class="badge badge-primary text-xs">{k.clone()}</span>
-                                        }
+                                        view! { <Badge size=BadgeSize::Small>{k}</Badge> }
                                     })
                                     .collect_view()}
                             </div>

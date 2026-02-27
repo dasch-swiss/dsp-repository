@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use mosaic_tiles::badge::{Badge, BadgeSize};
 
 use crate::domain::models::AuthorityFileReference;
 use crate::domain::TemporalCoverage;
@@ -24,9 +25,7 @@ pub fn CoverageSection(
                                             .map(|(lang, text)| format!("{} ({})", text, lang))
                                             .collect::<Vec<_>>()
                                             .join(" / ");
-                                        view! {
-                                            <span class="badge badge-primary text-xs">{label}</span>
-                                        }
+                                        view! { <Badge size=BadgeSize::Small>{label}</Badge> }
                                             .into_any()
                                     }
                                     TemporalCoverage::Reference(ref_) => {
@@ -37,7 +36,7 @@ pub fn CoverageSection(
                                         view! {
                                             <a
                                                 href=ref_.url.clone()
-                                                class="badge badge-primary text-xs tooltip"
+                                                class="badge badge-sm badge-primary tooltip"
                                                 data-tip=ref_.url.clone()
                                             >
                                                 {label}
@@ -65,7 +64,7 @@ pub fn CoverageSection(
                                     view! {
                                         <a
                                             href=s.url.clone()
-                                            class="badge badge-primary text-xs tooltip"
+                                            class="badge badge-sm badge-primary tooltip"
                                             data-tip=s.url.clone()
                                         >
                                             {label}

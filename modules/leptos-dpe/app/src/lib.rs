@@ -2,6 +2,7 @@ use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::components::*;
 use leptos_router::{path, StaticSegment};
+use mosaic_tiles::ThemeProvider;
 
 mod components;
 mod domain;
@@ -17,6 +18,13 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
             <head>
                 <meta charset="utf-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
+                // Google Fonts: Lora (display) and Lato (body) for design token typography
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+                <link
+                    rel="stylesheet"
+                    href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+                />
                 <AutoReload options=options.clone() />
                 <HydrationScripts options islands=true />
                 <MetaTags />
@@ -39,25 +47,27 @@ pub fn App() -> impl IntoView {
         // sets the document title
         <Title text="DaSCH Metadata Browser Projects Overview" />
 
-        <div class="bg-gray-50 min-h-screen flex flex-col gap-4">
-            // content for this welcome page
-            <Header />
+        <ThemeProvider>
+            <div class="bg-gray-50 min-h-screen flex flex-col gap-4">
+                // content for this welcome page
+                <Header />
 
-            <Router>
-                <main class="flex-1 max-w-7xl mx-auto px-4 w-full">
-                    <Routes fallback=|| "Page not found.".into_view()>
-                        <Route
-                            path=StaticSegment("")
-                            view=|| view! { <Redirect path="/projects" /> }
-                        />
-                        <Route path=StaticSegment("projects") view=ProjectsPage />
-                        <Route path=StaticSegment("about") view=AboutPage />
-                        <Route path=path!("projects/:id") view=ProjectPage />
-                    </Routes>
-                </main>
-            </Router>
+                <Router>
+                    <main class="flex-1 max-w-7xl mx-auto px-4 w-full">
+                        <Routes fallback=|| "Page not found.".into_view()>
+                            <Route
+                                path=StaticSegment("")
+                                view=|| view! { <Redirect path="/projects" /> }
+                            />
+                            <Route path=StaticSegment("projects") view=ProjectsPage />
+                            <Route path=StaticSegment("about") view=AboutPage />
+                            <Route path=path!("projects/:id") view=ProjectPage />
+                        </Routes>
+                    </main>
+                </Router>
 
-            <Footer />
-        </div>
+                <Footer />
+            </div>
+        </ThemeProvider>
     }
 }

@@ -18,6 +18,6 @@
     @apply bg-transparent text-neutral-600 shadow-none hover:bg-neutral-100 focus-visible:outline-2;
   }
   .btn-soft {
-    @apply bg-neutral-100 text-neutral-700 shadow-none hover:bg-neutral-200 focus-visible:outline-2;
+    @apply bg-neutral-100 text-neutral-600 shadow-none hover:bg-neutral-200 focus-visible:outline-2;
   }
 }

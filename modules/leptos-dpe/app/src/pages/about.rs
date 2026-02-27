@@ -10,10 +10,12 @@ pub fn AboutPage() -> impl IntoView {
         </a>
 
         <div class="bg-white border border-gray-200 rounded-lg p-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-6">"Help & Documentation"</h1>
+            <h1 class="font-display text-3xl font-bold text-gray-900 mb-6">
+                "Help & Documentation"
+            </h1>
             <div class="space-y-6">
                 <section>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-3">
+                    <h2 class="font-display text-xl font-semibold text-gray-900 mb-3">
                         "About the Metadata Browser"
                     </h2>
                     <p class="text-gray-700 leading-relaxed">
@@ -21,7 +23,7 @@ pub fn AboutPage() -> impl IntoView {
                     </p>
                 </section>
                 <section>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-3">
+                    <h2 class="font-display text-xl font-semibold text-gray-900 mb-3">
                         "Searching & Filtering"
                     </h2>
                     <p class="text-gray-700 leading-relaxed mb-3">
@@ -36,7 +38,7 @@ pub fn AboutPage() -> impl IntoView {
                     </ul>
                 </section>
                 <section>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-3">
+                    <h2 class="font-display text-xl font-semibold text-gray-900 mb-3">
                         "Understanding Access Rights"
                     </h2>
                     <p class="text-gray-700 leading-relaxed mb-3">
@@ -64,7 +66,9 @@ pub fn AboutPage() -> impl IntoView {
                     </ul>
                 </section>
                 <section>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-3">"Need More Help?"</h2>
+                    <h2 class="font-display text-xl font-semibold text-gray-900 mb-3">
+                        "Need More Help?"
+                    </h2>
                     <p class="text-gray-700 leading-relaxed">
                         "For questions about specific projects, data access, or depositing your own data at DaSCH, please visit "
                         <a

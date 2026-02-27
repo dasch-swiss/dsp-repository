@@ -24,7 +24,7 @@ pub fn ProjectHeader(
             </figure>
             <div class="card-body p-8 flex flex-row justify-center">
                 <div class="max-w-3xl space-y-4">
-                    <h2 class="card-title text-3xl text-ellipsis">{name}</h2>
+                    <h2 class="card-title font-display text-3xl text-ellipsis">{name}</h2>
                     {(!alternative_names.is_empty())
                         .then(|| {
                             view! {

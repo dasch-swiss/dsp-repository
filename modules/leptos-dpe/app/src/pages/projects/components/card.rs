@@ -34,8 +34,8 @@ pub fn ProjectCard(
                 </figure>
 
                 <CardBody>
-                    <h2 class="font-semibold text-lg text-ellipsis">{title}</h2>
-                    <p>{content}</p>
+                    <h2 class="font-display font-semibold text-lg text-ellipsis">{title}</h2>
+                    <p class="text-sm text-gray-600 line-clamp-4 mt-2">{content}</p>
                     <div>
                         <span class="badge badge-sm badge-neutral badge-outline">"Badge"</span>
                     </div>

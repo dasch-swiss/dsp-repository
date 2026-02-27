@@ -13,7 +13,7 @@ pub fn Header() -> impl IntoView {
 
                 <div class="flex-1">
                     <a
-                        class="inline-flex items-center text-xl px-1 rounded-md cursor-pointer hover:bg-neutral-100"
+                        class="inline-flex items-center font-bold text-xl"
                         href="/"
                     >
                         "DaSCH Metadata Browser"

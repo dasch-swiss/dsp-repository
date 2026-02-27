@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '../../mosaic/tiles/src/components/theme_provider/tokens.css';
 
 @plugin "@tailwindcss/typography";
 

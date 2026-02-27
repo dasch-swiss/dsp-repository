@@ -29,7 +29,9 @@ pub fn ProjectLoader(
                     Ok(None) => {
                         view! {
                             <div class="text-center py-12">
-                                <h1 class="text-3xl font-bold mb-4">"Project Not Found"</h1>
+                                <h1 class="font-display text-3xl font-bold mb-4">
+                                    "Project Not Found"
+                                </h1>
                                 <p class="text-lg">
                                     "The project with shortcode " {shortcode_for_error.clone()}
                                     " could not be found."
@@ -42,7 +44,7 @@ pub fn ProjectLoader(
                         view! {
                             <div class="alert alert-error">
                                 <div>
-                                    <h1 class="font-bold">"Error"</h1>
+                                    <h1 class="font-display font-bold">"Error"</h1>
                                     <p>"Failed to load project: " {e.to_string()}</p>
                                 </div>
                             </div>

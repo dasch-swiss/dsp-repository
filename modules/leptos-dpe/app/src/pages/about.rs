@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use mosaic_tiles::icon::{Icon, IconArrowLeft};
+use mosaic_tiles::link::Link;
 
 #[component]
 pub fn AboutPage() -> impl IntoView {
@@ -71,14 +72,9 @@ pub fn AboutPage() -> impl IntoView {
                     </h2>
                     <p class="text-gray-700 leading-relaxed">
                         "For questions about specific projects, data access, or depositing your own data at DaSCH, please visit "
-                        <a
-                            href="https://dasch.swiss"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="link link-primary"
-                        >
+                        <Link href="https://dasch.swiss" target="_blank" rel="noopener noreferrer">
                             "dasch.swiss"
-                        </a> " or contact the DaSCH team directly."
+                        </Link> " or contact the DaSCH team directly."
                     </p>
                 </section>
             </div>

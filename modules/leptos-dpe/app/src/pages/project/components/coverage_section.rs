@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use mosaic_tiles::badge::{Badge, BadgeSize};
+use mosaic_tiles::badge::{Badge, BadgeSize, BadgeVariant};
 
 use crate::domain::models::AuthorityFileReference;
 use crate::domain::TemporalCoverage;
@@ -36,10 +36,12 @@ pub fn CoverageSection(
                                         view! {
                                             <a
                                                 href=ref_.url.clone()
-                                                class="badge badge-sm badge-primary tooltip"
+                                                class="tooltip"
                                                 data-tip=ref_.url.clone()
                                             >
-                                                {label}
+                                                <Badge variant=BadgeVariant::Primary size=BadgeSize::Small>
+                                                    {label}
+                                                </Badge>
                                             </a>
                                         }
                                             .into_any()
@@ -64,10 +66,12 @@ pub fn CoverageSection(
                                     view! {
                                         <a
                                             href=s.url.clone()
-                                            class="badge badge-sm badge-primary tooltip"
+                                            class="tooltip"
                                             data-tip=s.url.clone()
                                         >
-                                            {label}
+                                            <Badge variant=BadgeVariant::Primary size=BadgeSize::Small>
+                                                {label}
+                                            </Badge>
                                         </a>
                                     }
                                 })

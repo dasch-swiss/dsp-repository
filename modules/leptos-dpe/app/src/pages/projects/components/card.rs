@@ -2,14 +2,15 @@ use leptos::prelude::*;
 use mosaic_tiles::badge::{Badge, BadgeSize, BadgeVariant};
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
-use super::statusbadge::{BadgeSize as StatusBadgeSize, ProjectStatusBadge};
-use crate::domain::{ProjectStatus, ProjectView};
+use super::statusbadge::ProjectCardIndicators;
+use crate::domain::{AccessRightsType, ProjectStatus, ProjectView};
 
 #[component]
 pub fn ProjectCard(
     title: String,
     content: String,
     status: ProjectStatus,
+    access_rights: AccessRightsType,
     btn_target: String,
     view: ProjectView,
     #[prop(optional)] keywords: Vec<String>,
@@ -27,13 +28,12 @@ pub fn ProjectCard(
     view! {
         <a href=btn_target class="block h-full">
             <Card variant=CardVariant::AutoHover class=layout_class>
-                <figure class="relative bg-neutral-900 overflow-hidden" style=figure_style>
-                    <img src="https://dasch.swiss/projects/0854.webp" alt="Shoes" />
-
-                    <div class="absolute bottom-1 right-1">
-                        <ProjectStatusBadge status=status size=StatusBadgeSize::Small />
-                    </div>
-                </figure>
+                <div class="relative">
+                    <figure class="bg-neutral-900 overflow-hidden" style=figure_style>
+                        <img src="https://dasch.swiss/projects/0854.webp" alt="Shoes" />
+                    </figure>
+                    <ProjectCardIndicators status=status access_rights=access_rights />
+                </div>
 
                 <CardBody>
                     <h2 class="font-display font-semibold text-lg text-ellipsis">{title}</h2>

@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
+use mosaic_tiles::link::Link;
 
 #[component]
 pub fn LinkListSection(title: String, items: Vec<String>, #[prop(default = false)] as_links: bool) -> impl IntoView {
@@ -12,11 +13,11 @@ pub fn LinkListSection(title: String, items: Vec<String>, #[prop(default = false
                         .iter()
                         .map(|item| {
                             if as_links {
+                                let href = item.clone();
+                                let text = item.clone();
                                 view! {
                                     <li>
-                                        <a href=item.clone() class="link link-primary">
-                                            {item.clone()}
-                                        </a>
+                                        <Link href=href>{text}</Link>
                                     </li>
                                 }
                                     .into_any()

@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use mosaic_tiles::icon::{Export, Icon};
+use mosaic_tiles::link::Link;
 
 use crate::domain::Publication;
 use crate::pages::project::components::info_card::InfoCard;
@@ -23,15 +24,17 @@ pub fn PublicationsSection(publications: Vec<Publication>) -> impl IntoView {
                                     .pid
                                     .as_ref()
                                     .map(|pid| {
+                                        let href = pid.url.clone();
+                                        let text = pid
+                                            .text
+                                            .clone()
+                                            .unwrap_or_else(|| pid.url.clone());
                                         view! {
-                                            <a
-                                                href=pid.url.clone()
-                                                class="link link-primary ml-2 inline-flex gap-1"
-                                            >
-                                                {pid.text.clone().unwrap_or_else(|| pid.url.clone())}
-                                                <Icon icon=Export class="w-3 h-3" />
-
-                                            </a>
+                                            <span class="ml-2">
+                                                <Link href=href>
+                                                    {text} <Icon icon=Export class="w-3 h-3" />
+                                                </Link>
+                                            </span>
                                         }
                                     })}
                             </InfoCard>

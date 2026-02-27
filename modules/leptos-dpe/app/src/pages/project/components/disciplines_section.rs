@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use mosaic_tiles::badge::{Badge, BadgeSize};
+use mosaic_tiles::badge::{Badge, BadgeSize, BadgeVariant};
 
 use crate::domain::Discipline;
 
@@ -34,8 +34,10 @@ pub fn DisciplinesSection(disciplines: Vec<Discipline>) -> impl IntoView {
                             match url {
                                 Some(href) => {
                                     view! {
-                                        <a href=href class="badge badge-sm badge-primary">
-                                            {label}
+                                        <a href=href>
+                                            <Badge variant=BadgeVariant::Primary size=BadgeSize::Small>
+                                                {label}
+                                            </Badge>
                                         </a>
                                     }
                                         .into_any()

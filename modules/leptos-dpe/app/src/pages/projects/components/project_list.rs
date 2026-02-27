@@ -84,6 +84,7 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                                                                 title=project.name.clone()
                                                                 content=project.short_description.clone()
                                                                 status=project.status.clone()
+                                                                access_rights=project.access_rights.access_rights.clone()
                                                                 btn_target=format!("/projects/{}", project.shortcode)
                                                                 view=view_value
                                                                 keywords=keywords

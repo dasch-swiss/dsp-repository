@@ -77,9 +77,7 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                                                         let keywords: Vec<String> = project
                                                             .keywords
                                                             .iter()
-                                                            .filter_map(|map| {
-                                                                map.get("en").or_else(|| map.values().next()).cloned()
-                                                            })
+                                                            .filter_map(|map| map.get("en").cloned())
                                                             .collect();
                                                         view! {
                                                             <ProjectCard

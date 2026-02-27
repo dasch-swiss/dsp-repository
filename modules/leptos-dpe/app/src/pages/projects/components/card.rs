@@ -38,7 +38,7 @@ pub fn ProjectCard(
                 <CardBody>
                     <h2 class="font-display font-semibold text-lg text-ellipsis">{title}</h2>
                     <p class="text-sm text-gray-600 line-clamp-4 mt-2">{content}</p>
-                    <div class="flex flex-wrap gap-1">
+                    <div class="flex flex-wrap gap-1 mt-3">
                         {keywords
                             .into_iter()
                             .map(|kw| {

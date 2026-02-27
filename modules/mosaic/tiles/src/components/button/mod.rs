@@ -9,6 +9,8 @@ pub enum ButtonVariant {
     Primary,
     Secondary,
     Outline,
+    Ghost,
+    Soft,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -62,6 +64,8 @@ pub fn Button(
                         ButtonVariant::Primary => "btn-primary",
                         ButtonVariant::Secondary => "btn-secondary",
                         ButtonVariant::Outline => "btn-outline",
+                        ButtonVariant::Ghost => "btn-ghost",
+                        ButtonVariant::Soft => "btn-soft",
                     },
                 )
             }

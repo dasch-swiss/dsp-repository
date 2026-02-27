@@ -43,7 +43,7 @@ leptos-dpe/
 cargo leptos watch
 ```
 
-This starts the development server with hot-reload on `http://127.0.0.1:3000`
+This starts the development server with hot-reload on `http://127.0.0.1:4000`
 
 ### Building for Production
 
@@ -201,7 +201,7 @@ use app;
 
 ### Hot Reload Not Working
 
-- Check reload port (3001) isn't blocked
+- Check reload port (4001) isn't blocked
 - Restart `cargo leptos watch`
 
 ### WASM Compilation Errors

@@ -8,6 +8,8 @@ pub fn VariantsExample() -> impl IntoView {
             <Button variant=ButtonVariant::Primary>"Primary Button"</Button>
             <Button variant=ButtonVariant::Secondary>"Secondary Button"</Button>
             <Button variant=ButtonVariant::Outline>"Outline Button"</Button>
+            <Button variant=ButtonVariant::Ghost>"Ghost Button"</Button>
+            <Button variant=ButtonVariant::Soft>"Soft Button"</Button>
         </div>
     }
 }

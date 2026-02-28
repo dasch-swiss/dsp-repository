@@ -1,9 +1,11 @@
 @import 'tailwindcss';
+@import '../../mosaic/tiles/src/components/theme_provider/tokens.css';
 
 @plugin "@tailwindcss/typography";
 
 @plugin "daisyui" {
     themes: light --default;
+    exclude: button, badge, tab, breadcrumb, card, link;
 }
 
 @import './daisy-ui-theme.css';

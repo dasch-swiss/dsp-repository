@@ -1,9 +1,12 @@
 use leptos::prelude::*;
+use mosaic_tiles::button::ButtonVariant;
+use mosaic_tiles::card::{Card, CardBody, CardVariant};
+use mosaic_tiles::link::Link;
 
 use super::card::ProjectCard;
 use super::project_pagination::ProjectPagination;
 use crate::components::loading::Loading;
-use crate::domain::{list_projects, ProjectQuery};
+use crate::domain::{list_projects, ProjectQuery, ProjectView};
 
 #[component]
 pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::ParamsError>>) -> impl IntoView {
@@ -32,50 +35,59 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
             {move || {
                 let current_query = query.get().unwrap_or_default();
                 let view = current_query.view();
-                let grid_class = if view {
-                    "grid grid-cols-1 gap-4"
-                } else {
-                    "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                let grid_class = match view {
+                    ProjectView::List => "grid grid-cols-1 gap-4",
+                    ProjectView::Grid => "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
                 };
-
                 projects
                     .get()
                     .map(|result| match result {
                         Ok(page) => {
                             let nr_pages = page.nr_pages;
                             let total_items = page.total_items;
-
                             if total_items == 0 {
+
                                 view! {
-                                    <div class="card bg-base-100 border border-gray-200 p-8 text-center">
-                                        <h3 class="mb-4">"No projects found matching your criteria"</h3>
-                                <div class="text-center">
-                                        <a href="/projects" class="btn btn-ghost">
-                                            "Clear your filters"
-                                        </a>
-                                </div>
-                                    </div>
+                                    <Card variant=CardVariant::Bordered>
+                                        <CardBody>
+                                            <div class="text-center">
+                                                <h3 class="mb-4">
+                                                    "No projects found matching your criteria"
+                                                </h3>
+                                                <Link href="/projects" as_button=ButtonVariant::Ghost>
+                                                    "Clear your filters"
+                                                </Link>
+                                            </div>
+                                        </CardBody>
+                                    </Card>
                                 }
                                     .into_any()
                             } else {
                                 view! {
-
                                     <div>
-                                        <div class="mb-2">{format!("{} projects", total_items)}</div>
+                                        <div class="mb-2">
+                                            {format!("{} projects", total_items)}
+                                        </div>
                                         <div class=grid_class>
                                             {
                                                 let view_value = view;
-                                                page
-                                                    .items
+                                                page.items
                                                     .into_iter()
                                                     .map(move |project| {
+                                                        let keywords: Vec<String> = project
+                                                            .keywords
+                                                            .iter()
+                                                            .filter_map(|map| map.get("en").cloned())
+                                                            .collect();
                                                         view! {
                                                             <ProjectCard
                                                                 title=project.name.clone()
                                                                 content=project.short_description.clone()
                                                                 status=project.status.clone()
+                                                                access_rights=project.access_rights.access_rights.clone()
                                                                 btn_target=format!("/projects/{}", project.shortcode)
                                                                 view=view_value
+                                                                keywords=keywords
                                                             />
                                                         }
                                                     })
@@ -87,12 +99,12 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                                     <div class="flex justify-center">
                                         <ProjectPagination nr_pages=nr_pages query=current_query />
                                     </div>
-
                                 }
                                     .into_any()
                             }
                         }
                         Err(e) => {
+
                             view! {
                                 <div class="alert alert-error">
                                     <span>"Failed to load projects: "{e.to_string()}</span>

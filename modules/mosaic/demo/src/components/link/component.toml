@@ -39,9 +39,9 @@ description = "The URL to navigate to"
 
 [[references.attrs]]
 attr = "as_button"
-attr_type = "bool"
-default = "false"
-description = "Render the link as a button component"
+attr_type = "ButtonVariant"
+default = "None"
+description = "Render the link as a button component with the given variant"
 
 [[references.attrs]]
 attr = "target"

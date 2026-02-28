@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use mosaic_tiles::button::ButtonVariant;
 use mosaic_tiles::link::Link;
 
 #[component]
@@ -9,7 +10,7 @@ pub fn DisabledExample() -> impl IntoView {
             <Link href="/link" disabled=true>
                 "Disabled Link"
             </Link>
-            <Link href="/link" as_button=true disabled=true>
+            <Link href="/link" as_button=ButtonVariant::Primary disabled=true>
                 "Disabled Button Link"
             </Link>
         </div>

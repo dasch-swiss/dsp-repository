@@ -1,6 +1,7 @@
 use leptos::either::Either;
 use leptos::prelude::*;
 
+#[cfg(feature = "popover")]
 use crate::popover::{PopoverContext, PopoverTriggerContext};
 
 #[derive(Debug, Clone, Default)]
@@ -9,6 +10,8 @@ pub enum ButtonVariant {
     Primary,
     Secondary,
     Outline,
+    Ghost,
+    Soft,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -50,6 +53,7 @@ pub fn Button(
     popovertargetaction: MaybeProp<String>,
 ) -> impl IntoView {
     // Check if we're inside a PopoverTrigger and get the popover ID from context
+    #[cfg(feature = "popover")]
     let is_trigger = use_context::<PopoverTriggerContext>().is_some();
 
     view! {
@@ -62,6 +66,8 @@ pub fn Button(
                         ButtonVariant::Primary => "btn-primary",
                         ButtonVariant::Secondary => "btn-secondary",
                         ButtonVariant::Outline => "btn-outline",
+                        ButtonVariant::Ghost => "btn-ghost",
+                        ButtonVariant::Soft => "btn-soft",
                     },
                 )
             }
@@ -69,9 +75,12 @@ pub fn Button(
             prop:disabled=move || disabled.get()
             type=move || button_type.get().unwrap_or_default().to_string()
             popovertarget=move || {
-                if is_trigger {
-                    if let Some(ref ctx) = use_context::<PopoverContext>() {
-                        return Some(ctx.id.get());
+                #[cfg(feature = "popover")]
+                {
+                    if is_trigger {
+                        if let Some(ref ctx) = use_context::<PopoverContext>() {
+                            return Some(ctx.id.get());
+                        }
                     }
                 }
                 popovertarget.get()

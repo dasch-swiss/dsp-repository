@@ -8,4 +8,10 @@
   .link-as-button {
     @apply inline-flex no-underline;
   }
+  a[aria-disabled="true"] {
+    @apply cursor-not-allowed;
+  }
+  a[aria-disabled="true"] > * {
+    @apply pointer-events-none;
+  }
 }

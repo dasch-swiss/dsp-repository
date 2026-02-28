@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use mosaic_tiles::link::Link;
 
 use crate::domain::project::LegalInfo as LegalInfoData;
 
@@ -33,15 +34,9 @@ pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
                                     .into_any()
                             }
                             None => {
-                                view! {
-                                    <a
-                                        href=info.license.license_uri.clone()
-                                        class="link link-primary"
-                                    >
-                                        {info.license.license_identifier.clone()}
-                                    </a>
-                                }
-                                    .into_any()
+                                let href = info.license.license_uri.clone();
+                                let text = info.license.license_identifier.clone();
+                                view! { <Link href=href>{text}</Link> }.into_any()
                             }
                         }}
                     </div>
@@ -49,14 +44,12 @@ pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
                         "(" {info.license.license_date.clone()} ")"
                     </div>
                     <div class="dpe-subtitle">"Copyright"</div>
-                <div>{info.copyright_holder.clone()}</div>
+                    <div>{info.copyright_holder.clone()}</div>
                     {(!info.authorship.is_empty())
                         .then(|| {
                             view! {
-                                <div class="dpe-subtitle">
-                                    "Authorship"
-                                </div>
-                            {info.authorship.join(", ")}
+                                <div class="dpe-subtitle">"Authorship"</div>
+                                {info.authorship.join(", ")}
                             }
                         })}
                 </div>

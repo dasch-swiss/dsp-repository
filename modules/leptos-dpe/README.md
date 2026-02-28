@@ -148,8 +148,8 @@ Set the following environment variables (updating for your project as needed):
 LEPTOS_OUTPUT_NAME="leptos-dpe"
 LEPTOS_SITE_ROOT="site"
 LEPTOS_SITE_PKG_DIR="pkg"
-LEPTOS_SITE_ADDR="127.0.0.1:3000"
-LEPTOS_RELOAD_PORT="3001"
+LEPTOS_SITE_ADDR="127.0.0.1:4000"
+LEPTOS_RELOAD_PORT="4001"
 ```
 Finally, run the server binary.
 

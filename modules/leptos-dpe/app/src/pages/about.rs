@@ -1,24 +1,32 @@
 use leptos::prelude::*;
 use mosaic_tiles::icon::{Icon, IconArrowLeft};
+use mosaic_tiles::link::Link;
 
 #[component]
 pub fn AboutPage() -> impl IntoView {
     view! {
         <a class="inline-flex items-center gap-2 text-sm text-primary mb-6" href="/">
-                <Icon icon=IconArrowLeft class="w-3 h-3" />
-        Back to Projects</a>
+            <Icon icon=IconArrowLeft class="w-3 h-3" />
+            Back to Projects
+        </a>
 
         <div class="bg-white border border-gray-200 rounded-lg p-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-6">"Help & Documentation"</h1>
+            <h1 class="font-display text-3xl font-bold text-gray-900 mb-6">
+                "Help & Documentation"
+            </h1>
             <div class="space-y-6">
                 <section>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-3">"About the Metadata Browser"</h2>
+                    <h2 class="font-display text-xl font-semibold text-gray-900 mb-3">
+                        "About the Metadata Browser"
+                    </h2>
                     <p class="text-gray-700 leading-relaxed">
                         "The DaSCH Metadata Browser provides access to comprehensive metadata about humanities research projects archived by DaSCH (Data and Service Center for the Humanities). Browse projects, collections, and clusters to discover research data across various disciplines, time periods, and institutions."
                     </p>
                 </section>
                 <section>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-3">"Searching & Filtering"</h2>
+                    <h2 class="font-display text-xl font-semibold text-gray-900 mb-3">
+                        "Searching & Filtering"
+                    </h2>
                     <p class="text-gray-700 leading-relaxed mb-3">
                         "Use the search bar to find projects by name, description, or keywords. Combine search with filters to narrow down results:"
                     </p>
@@ -31,7 +39,9 @@ pub fn AboutPage() -> impl IntoView {
                     </ul>
                 </section>
                 <section>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-3">"Understanding Access Rights"</h2>
+                    <h2 class="font-display text-xl font-semibold text-gray-900 mb-3">
+                        "Understanding Access Rights"
+                    </h2>
                     <p class="text-gray-700 leading-relaxed mb-3">
                         "Projects are marked with color-coded badges indicating their access level:"
                     </p>
@@ -41,7 +51,9 @@ pub fn AboutPage() -> impl IntoView {
                             " - Data is freely available to everyone"
                         </li>
                         <li>
-                            <span class="font-medium text-yellow-700">"Open Access with Restrictions"</span>
+                            <span class="font-medium text-yellow-700">
+                                "Open Access with Restrictions"
+                            </span>
                             " - Some access limitations apply"
                         </li>
                         <li>
@@ -55,18 +67,14 @@ pub fn AboutPage() -> impl IntoView {
                     </ul>
                 </section>
                 <section>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-3">"Need More Help?"</h2>
+                    <h2 class="font-display text-xl font-semibold text-gray-900 mb-3">
+                        "Need More Help?"
+                    </h2>
                     <p class="text-gray-700 leading-relaxed">
                         "For questions about specific projects, data access, or depositing your own data at DaSCH, please visit "
-                        <a
-                            href="https://dasch.swiss"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="link link-primary"
-                        >
+                        <Link href="https://dasch.swiss" target="_blank" rel="noopener noreferrer">
                             "dasch.swiss"
-                        </a>
-                        " or contact the DaSCH team directly."
+                        </Link> " or contact the DaSCH team directly."
                     </p>
                 </section>
             </div>

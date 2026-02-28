@@ -86,13 +86,44 @@ struct ProjectRaw {
     pub additional_material: Option<Vec<String>>,
 }
 
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Default)]
+pub enum ProjectView {
+    #[default]
+    Grid,
+    List,
+}
+
+impl std::fmt::Display for ProjectView {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ProjectView::Grid => write!(f, "grid"),
+            ProjectView::List => write!(f, "list"),
+        }
+    }
+}
+
+impl std::str::FromStr for ProjectView {
+    type Err = std::io::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "grid" => Ok(ProjectView::Grid),
+            "list" => Ok(ProjectView::List),
+            other => Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("invalid view: {}", other),
+            )),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Params, PartialEq, Default)]
 pub struct ProjectQuery {
     pub ongoing: Option<bool>,
     pub finished: Option<bool>,
     pub search: Option<String>,
     pub page: Option<i32>,
-    pub view: Option<bool>,
+    pub view: Option<ProjectView>,
 }
 
 impl ProjectQuery {
@@ -112,8 +143,8 @@ impl ProjectQuery {
         self.page.unwrap_or(1)
     }
 
-    pub fn view(&self) -> bool {
-        self.view.unwrap_or(false)
+    pub fn view(&self) -> ProjectView {
+        self.view.unwrap_or_default()
     }
 
     pub fn with_page(self, page: i32) -> Self {

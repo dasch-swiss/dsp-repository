@@ -22,7 +22,7 @@
   }
 
   .badge-secondary {
-    @apply bg-secondary-100 text-secondary-800;
+    @apply bg-gray-100 text-gray-700;
   }
 
   .badge-success {

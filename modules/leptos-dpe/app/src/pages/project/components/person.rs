@@ -18,9 +18,7 @@ pub fn Person(person_id: String) -> impl IntoView {
                             person.family_names.join(" "),
                         );
 
-                        view! {
-                                <div class="font-medium">{full_name}</div>
-                        }
+                        view! { <div class="font-medium">{full_name}</div> }
                             .into_any()
                     }
                     None => {

@@ -9,26 +9,13 @@ use app::domain::Project;
 
 /// Handles the GetRecord verb.
 pub fn handle_get_record(params: &OaiParams) -> String {
-    let identifier = match require_identifier(params) {
-        Ok(id) => id,
-        Err(e) => return build_error_response(e),
-    };
+    let result = require_identifier(params)
+        .and_then(|id| require_metadata_prefix(params).map(|prefix| (id, prefix)))
+        .and_then(|(id, prefix)| reject_unexpected_args(params).map(|_| (id, prefix)))
+        .and_then(|(id, prefix)| resolve_project(id).map(|project| (id, prefix, project)))
+        .map(|(id, prefix, project)| build_response(id, prefix, &project));
 
-    let prefix = match require_metadata_prefix(params) {
-        Ok(p) => p,
-        Err(e) => return build_error_response(e),
-    };
-
-    if let Err(e) = reject_unexpected_args(params) {
-        return build_error_response(e);
-    }
-
-    let project = match resolve_project(identifier) {
-        Ok(p) => p,
-        Err(e) => return build_error_response(e),
-    };
-
-    build_response(identifier, prefix, &project)
+    result.unwrap_or_else(build_error_response)
 }
 
 fn require_identifier(params: &OaiParams) -> Result<&str, OaiError> {

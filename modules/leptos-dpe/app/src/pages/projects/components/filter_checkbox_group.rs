@@ -11,13 +11,14 @@ pub fn FilterCheckboxGroup(title: &'static str, items: Vec<(String, bool, String
                     view! {
                         <a
                             href=href
-                            class="flex items-center gap-2 cursor-pointer hover:opacity-80 py-1"
+                            class="filter-option"
+                            aria-current=if checked { Some("true") } else { None }
                         >
-                            <input
-                                type="checkbox"
-                                class="checkbox checkbox-sm pointer-events-none"
-                                checked=checked
-                            />
+                            <span class=if checked {
+                                "filter-indicator filter-indicator-checked"
+                            } else {
+                                "filter-indicator"
+                            } />
                             <span class="text-sm">{label}</span>
                         </a>
                     }

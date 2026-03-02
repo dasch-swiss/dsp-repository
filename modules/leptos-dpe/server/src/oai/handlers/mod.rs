@@ -25,7 +25,9 @@ use serde::Deserialize;
 
 use super::error::OaiError;
 use super::xml::OaiXmlBuilder;
+use crate::oai::metadata::{OaiRecord, ProjectOaiExt};
 
+use data::{get_all_projects, parse_set_filter};
 use get_record::handle_get_record;
 use identify::handle_identify;
 use list_identifiers::handle_list_identifiers;
@@ -72,6 +74,78 @@ pub fn build_error_response(error: OaiError) -> String {
     builder.write_error_request();
     builder.write_error(&error);
     builder.finish()
+}
+
+/// Validates the common parameters for ListIdentifiers and ListRecords and returns
+/// the validated metadata prefix and the filtered list of OAI records.
+///
+/// Returns `Err(OaiError)` if any validation step fails.
+pub fn validate_list_params<'a>(
+    params: &'a OaiParams,
+) -> Result<(&'a str, Vec<OaiRecord>), OaiError> {
+    // metadataPrefix is required
+    let prefix = params
+        .metadata_prefix
+        .as_deref()
+        .ok_or_else(|| OaiError::BadArgument("metadataPrefix argument is required".to_string()))?;
+
+    // Validate metadataPrefix
+    if !SUPPORTED_PREFIXES.contains(&prefix) {
+        return Err(OaiError::CannotDisseminateFormat);
+    }
+
+    // identifier is not valid for list verbs
+    if params.identifier.is_some() {
+        return Err(OaiError::BadArgument(
+            "identifier argument is not allowed".to_string(),
+        ));
+    }
+
+    // We don't support resumption tokens in v1
+    if params.resumption_token.is_some() {
+        return Err(OaiError::BadArgument(
+            "Resumption tokens are not supported".to_string(),
+        ));
+    }
+
+    // Parse set filter
+    let (include_clusters, include_projects) = parse_set_filter(params.set.as_deref());
+    if !include_clusters && !include_projects {
+        return Err(OaiError::BadArgument("Unknown set".to_string()));
+    }
+
+    // Get projects and filter
+    let projects = get_all_projects();
+    let filtered: Vec<OaiRecord> = projects
+        .iter()
+        .filter(|p| {
+            include_projects
+                && p.matches_date_filter(params.from.as_deref(), params.until.as_deref())
+        })
+        .map(|p| p.to_oai_record(prefix))
+        .collect();
+
+    // Currently we only have projects, no clusters
+    if filtered.is_empty() {
+        return Err(OaiError::NoRecordsMatch);
+    }
+
+    Ok((prefix, filtered))
+}
+
+/// Builds the request parameter list shared by list verb XML responses.
+pub fn build_list_request_params<'a>(prefix: &'a str, params: &'a OaiParams) -> Vec<(&'a str, &'a str)> {
+    let mut request_params = vec![("metadataPrefix", prefix)];
+    if let Some(ref from) = params.from {
+        request_params.push(("from", from.as_str()));
+    }
+    if let Some(ref until) = params.until {
+        request_params.push(("until", until.as_str()));
+    }
+    if let Some(ref set) = params.set {
+        request_params.push(("set", set.as_str()));
+    }
+    request_params
 }
 
 #[cfg(test)]

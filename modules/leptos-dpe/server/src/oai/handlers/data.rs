@@ -7,16 +7,6 @@ use app::domain::Project;
 
 use crate::oai::xml::EARLIEST_DATESTAMP;
 
-/// Parses the set filter and returns (include_clusters, include_projects).
-pub fn parse_set_filter(set: Option<&str>) -> (bool, bool) {
-    match set {
-        Some("entityType:ProjectCluster") => (true, false),
-        Some("entityType:ResearchProject") => (false, true),
-        None => (true, true),
-        Some(_) => (false, false), // Unknown set
-    }
-}
-
 /// Gets the data directory path.
 pub fn get_data_dir() -> String {
     if let Ok(data_dir) = std::env::var("DATA_DIR") {

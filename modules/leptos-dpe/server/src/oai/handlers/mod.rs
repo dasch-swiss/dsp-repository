@@ -27,7 +27,7 @@ use super::error::OaiError;
 use super::xml::OaiXmlBuilder;
 use crate::oai::metadata::{OaiRecord, ProjectOaiExt};
 
-use data::{get_all_projects, parse_set_filter};
+use data::get_all_projects;
 use get_record::handle_get_record;
 use identify::handle_identify;
 use list_identifiers::handle_list_identifiers;
@@ -74,6 +74,16 @@ pub fn build_error_response(error: OaiError) -> String {
     builder.write_error_request();
     builder.write_error(&error);
     builder.finish()
+}
+
+/// Parses the set filter and returns (include_clusters, include_projects).
+pub fn parse_set_filter(set: Option<&str>) -> (bool, bool) {
+    match set {
+        Some("entityType:ProjectCluster") => (true, false),
+        Some("entityType:ResearchProject") => (false, true),
+        None => (true, true),
+        Some(_) => (false, false), // Unknown set
+    }
 }
 
 /// Validates the common parameters for ListIdentifiers and ListRecords and returns
@@ -150,7 +160,7 @@ pub fn build_list_request_params<'a>(prefix: &'a str, params: &'a OaiParams) -> 
 
 #[cfg(test)]
 mod tests {
-    use super::data::parse_set_filter;
+    use super::parse_set_filter;
 
     #[test]
     fn test_parse_set_filter() {

@@ -1,0 +1,36 @@
+name: Docker publish DPE release image
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  compute-tag:
+    name: Compute release tag
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.release.tag_name, 'leptos-server-v')
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Extract version from tag name
+        id: tag
+        run: |
+          # Extract version from tag name, e.g. leptos-server-v0.2.0 -> 0.2.0
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          VERSION="${TAG_NAME#leptos-server-v}"
+          echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
+
+  publish:
+    name: Build and publish DPE release
+    needs: compute-tag
+    uses: ./.github/workflows/docker-publish.yml
+    with:
+      dockerfile: modules/leptos-dpe/Dockerfile
+      image-name: daschswiss/dpe
+      image-tag: ${{ needs.compute-tag.outputs.tag }}
+    secrets:
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
+      DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}

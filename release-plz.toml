@@ -1,0 +1,32 @@
+[workspace]
+# Disable release for all crates by default.
+# Only leptos-dpe crates are explicitly enabled below.
+release = false
+# Don't publish to crates.io
+publish = false
+# Use git tags to track versions (not the cargo registry)
+git_only = true
+# Disable semver checks (not publishing to crates.io)
+semver_check = false
+
+# Labels added to the release PR
+pr_labels = ["release"]
+
+[[package]]
+name = "app"
+release = true
+version_group = "leptos-dpe"
+
+[[package]]
+name = "frontend"
+release = true
+version_group = "leptos-dpe"
+
+[[package]]
+name = "leptos-server"
+release = true
+version_group = "leptos-dpe"
+# Changelog lives next to the leptos-dpe module
+changelog_path = "modules/leptos-dpe/CHANGELOG.md"
+# Include commits from all crates in the version group
+changelog_include = ["app", "frontend"]

@@ -1,0 +1,129 @@
+@theme static {
+  /* === DaSCH Brand Colors ===
+     Semantic color scales in OKLCH format (50–950).
+     Each scale is derived from a brand hex value using perceptually uniform
+     lightness steps. The hue is held constant; chroma follows a bell curve
+     peaking in the 400–600 range.
+
+     Naming: --color-{semantic}-{stop}
+     Usage:  bg-primary-500, text-danger-200, border-success-300, etc. */
+
+  /* Primary: DaSCH Blue (#336790) */
+  --color-primary-50: oklch(0.97 0.0147 244.6);
+  --color-primary-100: oklch(0.93 0.0272 244.6);
+  --color-primary-200: oklch(0.87 0.0383 244.6);
+  --color-primary-300: oklch(0.79 0.0552 244.6);
+  --color-primary-400: oklch(0.69 0.0752 244.6);
+  --color-primary-500: oklch(0.58 0.0877 244.6);
+  --color-primary-600: oklch(0.49 0.0857 244.6);
+  --color-primary-700: oklch(0.4 0.0735 244.6);
+  --color-primary-800: oklch(0.33 0.0595 244.6);
+  --color-primary-900: oklch(0.27 0.0466 244.6);
+  --color-primary-950: oklch(0.2 0.0325 244.6);
+
+  /* Secondary: DaSCH Blue Light (#74A2CF) */
+  --color-secondary-50: oklch(0.97 0.0143 248.6);
+  --color-secondary-100: oklch(0.93 0.0304 248.6);
+  --color-secondary-200: oklch(0.87 0.0429 248.6);
+  --color-secondary-300: oklch(0.79 0.0618 248.6);
+  --color-secondary-400: oklch(0.69 0.0843 248.6);
+  --color-secondary-500: oklch(0.58 0.0982 248.6);
+  --color-secondary-600: oklch(0.49 0.0961 248.6);
+  --color-secondary-700: oklch(0.4 0.0824 248.6);
+  --color-secondary-800: oklch(0.33 0.0667 248.6);
+  --color-secondary-900: oklch(0.27 0.0522 248.6);
+  --color-secondary-950: oklch(0.2 0.0364 248.6);
+
+  /* Success: DaSCH Green (#31837B) */
+  --color-success-50: oklch(0.97 0.0189 186.2);
+  --color-success-100: oklch(0.93 0.0245 186.2);
+  --color-success-200: oklch(0.87 0.0345 186.2);
+  --color-success-300: oklch(0.79 0.0498 186.2);
+  --color-success-400: oklch(0.69 0.0679 186.2);
+  --color-success-500: oklch(0.58 0.0791 186.2);
+  --color-success-600: oklch(0.49 0.0774 186.2);
+  --color-success-700: oklch(0.4 0.0663 186.2);
+  --color-success-800: oklch(0.33 0.0537 186.2);
+  --color-success-900: oklch(0.27 0.042 186.2);
+  --color-success-950: oklch(0.2 0.0293 186.2);
+
+  /* Danger: DaSCH Red (#9E484D) */
+  --color-danger-50: oklch(0.97 0.0141 18.4);
+  --color-danger-100: oklch(0.93 0.0339 18.4);
+  --color-danger-200: oklch(0.87 0.0503 18.4);
+  --color-danger-300: oklch(0.79 0.0725 18.4);
+  --color-danger-400: oklch(0.69 0.0988 18.4);
+  --color-danger-500: oklch(0.58 0.1151 18.4);
+  --color-danger-600: oklch(0.49 0.1126 18.4);
+  --color-danger-700: oklch(0.4 0.0965 18.4);
+  --color-danger-800: oklch(0.33 0.0781 18.4);
+  --color-danger-900: oklch(0.27 0.0611 18.4);
+  --color-danger-950: oklch(0.2 0.0427 18.4);
+
+  /* Warning: DaSCH Yellow (#E39E22) */
+  --color-warning-50: oklch(0.97 0.0234 75.5);
+  --color-warning-100: oklch(0.93 0.0554 75.5);
+  --color-warning-200: oklch(0.87 0.0891 75.5);
+  --color-warning-300: oklch(0.79 0.1284 75.5);
+  --color-warning-400: oklch(0.69 0.1386 75.5);
+  --color-warning-500: oklch(0.58 0.1168 75.5);
+  --color-warning-600: oklch(0.49 0.0992 75.5);
+  --color-warning-700: oklch(0.4 0.0818 75.5);
+  --color-warning-800: oklch(0.33 0.0686 75.5);
+  --color-warning-900: oklch(0.27 0.058 75.5);
+  --color-warning-950: oklch(0.2 0.0477 75.5);
+
+  /* Info: DaSCH Blue Light (#74A2CF) — intentionally identical to secondary.
+     Linked via var() references so the two scales cannot drift independently.
+     If the design team later differentiates them, replace var() with standalone
+     OKLCH values. */
+  --color-info-50: var(--color-secondary-50);
+  --color-info-100: var(--color-secondary-100);
+  --color-info-200: var(--color-secondary-200);
+  --color-info-300: var(--color-secondary-300);
+  --color-info-400: var(--color-secondary-400);
+  --color-info-500: var(--color-secondary-500);
+  --color-info-600: var(--color-secondary-600);
+  --color-info-700: var(--color-secondary-700);
+  --color-info-800: var(--color-secondary-800);
+  --color-info-900: var(--color-secondary-900);
+  --color-info-950: var(--color-secondary-950);
+
+  /* Accent: DaSCH Purple (#706DA6) */
+  --color-accent-50: oklch(0.97 0.0142 285.6);
+  --color-accent-100: oklch(0.93 0.0269 285.6);
+  --color-accent-200: oklch(0.87 0.0379 285.6);
+  --color-accent-300: oklch(0.79 0.0547 285.6);
+  --color-accent-400: oklch(0.69 0.0745 285.6);
+  --color-accent-500: oklch(0.58 0.0868 285.6);
+  --color-accent-600: oklch(0.49 0.0849 285.6);
+  --color-accent-700: oklch(0.4 0.0728 285.6);
+  --color-accent-800: oklch(0.33 0.0589 285.6);
+  --color-accent-900: oklch(0.27 0.0461 285.6);
+  --color-accent-950: oklch(0.2 0.0322 285.6);
+
+  /* Slate brand color (standalone, not a scale).
+     Kept as hex since this is a reference value, not a generated scale stop. */
+  --color-slate-brand: #3B4856;
+
+  /* === Neutral Scale (EXPERIMENTAL) ===
+     Derived from DaSCH Slate (#3B4856).
+     Subject to change pending design sign-off. */
+  --color-neutral-50: oklch(0.99 0.0045 250.5);
+  --color-neutral-100: oklch(0.95 0.007 250.5);
+  --color-neutral-200: oklch(0.89 0.010 250.5);
+  --color-neutral-300: oklch(0.81 0.014 250.5);
+  --color-neutral-400: oklch(0.70 0.020 250.5);
+  --color-neutral-500: oklch(0.59 0.026 250.5);
+  --color-neutral-600: oklch(0.50 0.026 250.5);
+  --color-neutral-700: oklch(0.405 0.022 250.5);
+  --color-neutral-800: oklch(0.33 0.018 250.5);
+  --color-neutral-900: oklch(0.27 0.014 250.5);
+  --color-neutral-950: oklch(0.20 0.010 250.5);
+
+  /* === Typography ===
+     Font stacks with graceful fallbacks for when web fonts are not loaded.
+     Consuming apps are responsible for loading Lora and Lato (e.g. via Google Fonts). */
+  --font-display: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-body: 'Lato', 'Helvetica Neue', Arial, sans-serif;
+}

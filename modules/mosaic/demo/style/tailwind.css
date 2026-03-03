@@ -1,2 +1,2 @@
 @import 'tailwindcss';
-
+@import '../../tiles/src/components/theme_provider/tokens.css';

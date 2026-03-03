@@ -1,18 +1,25 @@
 use leptos::prelude::*;
-
-use crate::components::ThemeSwitcher;
+use mosaic_tiles::button::ButtonVariant;
+use mosaic_tiles::icon::{Export, Help, Icon};
+use mosaic_tiles::link::Link;
 
 #[component]
 pub fn HeaderLinks() -> impl IntoView {
     view! {
-        <ul class="menu menu-horizontal px-1">
+        <ul class="flex items-center gap-4">
             <li>
-                <a href="/projects">Projects</a>
+                <Link href="/about" as_button=ButtonVariant::Ghost>
+                    <Icon icon=Help class="w-5 h-5" />
+                    Help
+                </Link>
             </li>
+
             <li>
-                <a href="/about">About</a>
+                <Link href="https://dasch.swiss" as_button=ButtonVariant::Primary target="_blank">
+                    Deposit Data at DaSCH
+                    <Icon icon=Export class="w-5 h-5" />
+                </Link>
             </li>
-            <li><ThemeSwitcher /></li>
         </ul>
     }
 }

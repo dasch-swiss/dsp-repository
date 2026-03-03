@@ -8,10 +8,10 @@ pub fn WithHeaderFooterExample() -> impl IntoView {
         <Card variant=CardVariant::Bordered>
             <CardHeader>
                 <h3 class="text-lg font-semibold">"Card Title"</h3>
-                <p class="text-sm text-gray-500">"Subtitle information"</p>
+                <p class="text-sm text-neutral-500">"Subtitle information"</p>
             </CardHeader>
             <CardBody>
-                <p class="text-gray-700">
+                <p class="text-neutral-700">
                     "This card demonstrates header and footer sections. "
                     "Headers are great for titles and subtitles, while footers "
                     "work well for actions or metadata."

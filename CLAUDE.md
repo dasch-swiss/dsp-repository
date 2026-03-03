@@ -61,14 +61,6 @@ modules/
 just watch-mosaic-demo         # Run Mosaic demo with hot reload
 just fmt-mosaic                # Format source code in the mosaic module with leptosfmt
 
-# Core development workflow for other components
-just check                     # Run fmt and clippy checks
-just build                     # Build all targets
-just test                      # Run all tests
-just run                       # Run main server (release mode)
-
-just watch                     # Watch for changes and run tests
-
 # Code quality
 just fmt                       # Format Rust code
 

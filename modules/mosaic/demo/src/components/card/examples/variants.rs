@@ -9,7 +9,7 @@ pub fn VariantsExample() -> impl IntoView {
             <Card>
                 <CardBody>
                     <h3 class="text-lg font-semibold mb-2">"Simple"</h3>
-                    <p class="text-gray-600">"This is a basic card with default styling."</p>
+                    <p class="text-neutral-600">"This is a basic card with default styling."</p>
                 </CardBody>
             </Card>
 
@@ -17,7 +17,7 @@ pub fn VariantsExample() -> impl IntoView {
             <Card variant=CardVariant::Bordered>
                 <CardBody>
                     <h3 class="text-lg font-semibold mb-2">"Bordered"</h3>
-                    <p class="text-gray-600">"This card has a visible border."</p>
+                    <p class="text-neutral-600">"This card has a visible border."</p>
                 </CardBody>
             </Card>
 
@@ -25,7 +25,7 @@ pub fn VariantsExample() -> impl IntoView {
             <Card variant=CardVariant::Elevated>
                 <CardBody>
                     <h3 class="text-lg font-semibold mb-2">"Elevated"</h3>
-                    <p class="text-gray-600">"This card has a shadow to create elevation."</p>
+                    <p class="text-neutral-600">"This card has a shadow to create elevation."</p>
                 </CardBody>
             </Card>
 
@@ -33,7 +33,7 @@ pub fn VariantsExample() -> impl IntoView {
             <Card variant=CardVariant::AutoHover>
                 <CardBody>
                     <h3 class="text-lg font-semibold mb-2">"AutoHover"</h3>
-                    <p class="text-gray-600">
+                    <p class="text-neutral-600">
                         "This card starts with a bordered style and smoothly transitions to an elevated appearance when you hover over it."
                     </p>
                 </CardBody>

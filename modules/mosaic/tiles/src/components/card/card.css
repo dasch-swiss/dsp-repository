@@ -8,7 +8,7 @@
   }
 
   .card-bordered {
-    @apply border border-gray-200;
+    @apply border border-neutral-200;
   }
 
   .card-elevated {
@@ -16,7 +16,7 @@
   }
 
   .card-autohover {
-    @apply border border-gray-200 transition-shadow duration-300;
+    @apply border border-neutral-200 transition-shadow duration-300;
   }
 
   .card-autohover:hover {
@@ -24,7 +24,7 @@
   }
 
   .card-header {
-    @apply px-6 py-4 border-b border-gray-200;
+    @apply px-6 py-4 border-b border-neutral-200;
   }
 
   .card-body {
@@ -32,6 +32,6 @@
   }
 
   .card-footer {
-    @apply px-6 py-4 border-t border-gray-200 bg-gray-50;
+    @apply px-6 py-4 border-t border-neutral-200 bg-neutral-50;
   }
 }

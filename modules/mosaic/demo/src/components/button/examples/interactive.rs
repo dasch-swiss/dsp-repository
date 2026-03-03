@@ -26,8 +26,8 @@ pub fn InteractiveExample() -> impl IntoView {
             </div>
 
             <div class="flex gap-4 items-center">
-                <span class="text-gray-700">"Counter: " {count}</span>
-                <span class="text-gray-700">
+                <span class="text-neutral-700">"Counter: " {count}</span>
+                <span class="text-neutral-700">
                     "Button disabled: " {move || disabled.get().to_string()}
                 </span>
             </div>

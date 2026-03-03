@@ -36,15 +36,15 @@ pub fn UsageExample() -> impl IntoView {
             <div>
                 <h4 class="text-base font-semibold mb-2">"Counts and Metrics"</h4>
                 <div class="flex flex-wrap gap-3 items-center">
-                    <span class="text-gray-700">"Notifications"</span>
+                    <span class="text-neutral-700">"Notifications"</span>
                     <Badge size=BadgeSize::Small variant=BadgeVariant::Danger>
                         "12"
                     </Badge>
-                    <span class="text-gray-700 ml-6">"New Messages"</span>
+                    <span class="text-neutral-700 ml-6">"New Messages"</span>
                     <Badge size=BadgeSize::Small variant=BadgeVariant::Info>
                         "3"
                     </Badge>
-                    <span class="text-gray-700 ml-6">"Tasks"</span>
+                    <span class="text-neutral-700 ml-6">"Tasks"</span>
                     <Badge size=BadgeSize::Small variant=BadgeVariant::Warning>
                         "7"
                     </Badge>
@@ -56,17 +56,17 @@ pub fn UsageExample() -> impl IntoView {
                 <div class="space-y-3">
                     <div class="flex items-center gap-3">
                         <Badge variant=BadgeVariant::Danger>"High Priority"</Badge>
-                        <span class="text-sm text-gray-600">
+                        <span class="text-sm text-neutral-600">
                             "Critical task requires immediate attention"
                         </span>
                     </div>
                     <div class="flex items-center gap-3">
                         <Badge variant=BadgeVariant::Warning>"Medium Priority"</Badge>
-                        <span class="text-sm text-gray-600">"Important but not urgent"</span>
+                        <span class="text-sm text-neutral-600">"Important but not urgent"</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <Badge variant=BadgeVariant::Info>"Low Priority"</Badge>
-                        <span class="text-sm text-gray-600">"Can be addressed later"</span>
+                        <span class="text-sm text-neutral-600">"Can be addressed later"</span>
                     </div>
                 </div>
             </div>

@@ -25,9 +25,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  fmt:
+  check:
     runs-on: ubuntu-latest
-    name: check / fmt / nightly
+    name: check
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,31 +35,15 @@ jobs:
       - name: Install nightly
         uses: dtolnay/rust-toolchain@nightly
         with:
-          components: rustfmt
-      - name: cargo fmt --check
-        run: cargo fmt --check
-
-  clippy:
-    runs-on: ubuntu-latest
-    name: check / clippy / ${{ matrix.toolchain }}
-    permissions:
-      contents: read
-      checks: write
-    strategy:
-      fail-fast: false
-      matrix:
-        # Get early warning of new lints which are regularly introduced in beta channels.
-        toolchain: [stable, beta]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Install ${{ matrix.toolchain }}
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.toolchain }}
-          components: clippy
-      - run: cargo clippy -- -D warnings
+          components: rustfmt, clippy
+      - name: Install just
+        uses: extractions/setup-just@v2
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+      - name: Install leptosfmt
+        run: cargo binstall -y leptosfmt
+      - name: just check
+        run: just check
 
   rustdoc:
     # run docs generation on nightly rather than stable. This enables features like

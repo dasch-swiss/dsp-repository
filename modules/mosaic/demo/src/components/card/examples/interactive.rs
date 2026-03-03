@@ -13,20 +13,20 @@ pub fn InteractiveExample() -> impl IntoView {
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium mb-1">"Name"</label>
-                            <p class="text-gray-700">"Jane Doe"</p>
+                            <p class="text-neutral-700">"Jane Doe"</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1">"Email"</label>
-                            <p class="text-gray-700">"jane@example.com"</p>
+                            <p class="text-neutral-700">"jane@example.com"</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1">"Role"</label>
-                            <p class="text-gray-700">"Administrator"</p>
+                            <p class="text-neutral-700">"Administrator"</p>
                         </div>
                     </div>
                 </CardBody>
                 <CardFooter>
-                    <div class="text-sm text-gray-500">"Last updated: 2026-01-22"</div>
+                    <div class="text-sm text-neutral-500">"Last updated: 2026-01-22"</div>
                 </CardFooter>
             </Card>
         </div>

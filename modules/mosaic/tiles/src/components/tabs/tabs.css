@@ -1,6 +1,6 @@
 /* Tabs Container */
 .tabs {
-  @apply w-full border-b border-gray-200;
+  @apply w-full border-b border-neutral-200;
   display: flex;
   flex-wrap: wrap;
   position: relative;
@@ -13,12 +13,12 @@
 
 /* Tab Labels (the clickable tab buttons) */
 .tab-label {
-  @apply flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-gray-600 cursor-pointer transition-colors border-b-2 border-transparent hover:text-gray-950 hover:border-gray-400 whitespace-nowrap -mb-px mr-4 select-none;
+  @apply flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-neutral-600 cursor-pointer transition-colors border-b-2 border-transparent hover:text-neutral-950 hover:border-neutral-400 whitespace-nowrap -mb-px mr-4 select-none;
 }
 
 /* Active tab label (underlined style) */
 .tab-input:checked + .tab-label {
-  @apply text-indigo-600 border-indigo-600;
+  @apply text-primary-600 border-primary-600;
 }
 
 /* Tab icon */
@@ -28,7 +28,7 @@
 
 /* Tab Panels */
 .tab-panel {
-  @apply hidden p-4 border-t border-gray-200;
+  @apply hidden p-4 border-t border-neutral-200;
   width: 100%;
   order: 999;
 }
@@ -40,7 +40,7 @@
 
 /* Focus styles for accessibility */
 .tab-input:focus-visible + .tab-label {
-  @apply outline outline-2 outline-offset-2 outline-indigo-600;
+  @apply outline outline-2 outline-offset-2 outline-primary-600;
 }
 
 /* Disabled state (if needed in the future) */

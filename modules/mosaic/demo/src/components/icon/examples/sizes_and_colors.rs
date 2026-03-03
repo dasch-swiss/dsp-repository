@@ -7,7 +7,7 @@ pub fn SizesAndColorsExample() -> impl IntoView {
         <div class="space-y-8">
             <div>
                 <h4 class="text-base font-semibold mb-3">"Sizes"</h4>
-                <p class="text-sm text-gray-600 mb-4">
+                <p class="text-sm text-neutral-600 mb-4">
                     "Control icon size using Tailwind width and height classes."
                 </p>
                 <div class="space-y-3">
@@ -36,15 +36,15 @@ pub fn SizesAndColorsExample() -> impl IntoView {
 
             <div>
                 <h4 class="text-base font-semibold mb-3">"Colors"</h4>
-                <p class="text-sm text-gray-600 mb-4">
+                <p class="text-sm text-neutral-600 mb-4">
                     "Icons use currentColor and inherit text color from parent or Tailwind classes."
                 </p>
                 <div class="flex gap-6">
-                    <Icon icon=IconGitHub class="w-8 h-8 text-gray-500" />
-                    <Icon icon=IconGitHub class="w-8 h-8 text-indigo-600" />
-                    <Icon icon=IconGitHub class="w-8 h-8 text-red-500" />
-                    <Icon icon=IconGitHub class="w-8 h-8 text-green-600" />
-                    <Icon icon=IconGitHub class="w-8 h-8 text-purple-500" />
+                    <Icon icon=IconGitHub class="w-8 h-8 text-neutral-500" />
+                    <Icon icon=IconGitHub class="w-8 h-8 text-primary-600" />
+                    <Icon icon=IconGitHub class="w-8 h-8 text-danger-500" />
+                    <Icon icon=IconGitHub class="w-8 h-8 text-success-600" />
+                    <Icon icon=IconGitHub class="w-8 h-8 text-accent-500" />
                 </div>
             </div>
         </div>

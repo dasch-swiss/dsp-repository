@@ -9,7 +9,7 @@ The platform provides services for a long-term archive for humanities research d
 
 This includes:
 
-- The "Data Presentation Environment" (DPE) — built with Leptos
+- The "Discovery and Presentation Environment" (DPE) — built with Leptos
 - The "Mosaic" component library (tiles for components, demo for documentation)
 
 ## Architecture
@@ -29,7 +29,7 @@ This includes:
 
 ```txt
 modules/
-├── leptos-dpe/            # Data Presentation Environment (Leptos app)
+├── leptos-dpe/            # Discovery and Presentation Environment (Leptos app)
 │   ├── app/               # Shared app logic, components, pages, domain
 │   ├── server/            # Server binary
 │   ├── frontend/          # Client-side (WASM) entry point

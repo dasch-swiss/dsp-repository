@@ -15,41 +15,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  publish:
-    name: Build and publish mosaic-demo
+  compute-tag:
+    name: Compute image tag
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.output_docker_image_tag.outputs.tag }}
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Generate docker image tag
-        id: output_docker_image_tag
+        id: tag
         run: |
           VERSION=$(grep '^version' modules/mosaic/demo/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
           SHORT_SHA=$(git rev-parse --short HEAD)
           echo "tag=${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: modules/mosaic/demo/Dockerfile
-          push: true
-          tags: daschswiss/mosaic-demo:${{ steps.output_docker_image_tag.outputs.tag }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+  publish:
+    name: Build and publish mosaic-demo
+    needs: compute-tag
+    uses: ./.github/workflows/docker-publish.yml
+    with:
+      dockerfile: modules/mosaic/demo/Dockerfile
+      image-name: daschswiss/mosaic-demo
+      image-tag: ${{ needs.compute-tag.outputs.tag }}
+    secrets:
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
+      DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
 
   trigger-prod-deployment:
     name: Trigger deployment to PROD

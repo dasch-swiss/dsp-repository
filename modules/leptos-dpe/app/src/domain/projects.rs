@@ -12,7 +12,7 @@ pub async fn list_projects(
     view: Option<ProjectView>,
     page_size: Option<i32>,
 ) -> Result<Page, ServerFnError> {
-    use super::project::{ProjectQuery, ProjectStatus};
+    use super::project::ProjectQuery;
     use super::project_repository::{FsProjectRepository, ProjectRepository};
     use super::utils::get_data_root_dir;
 
@@ -26,21 +26,16 @@ pub async fn list_projects(
     let filtered: Vec<Project> = projects
         .into_iter()
         .filter(|project| {
-            let is_ongoing = project.status == ProjectStatus::Ongoing;
-            let is_finished = project.status == ProjectStatus::Finished;
-            let status_match = (query.ongoing() && is_ongoing) || (query.finished() && is_finished);
+            let status_match =
+                (query.ongoing() && project.status.is_ongoing()) || (query.finished() && project.status.is_finished());
 
-            let status_str = match project.status {
-                ProjectStatus::Ongoing => "ongoing",
-                ProjectStatus::Finished => "finished",
-            };
             let search_match = if search_lower.is_empty() {
                 true
             } else {
                 project.name.to_lowercase().contains(&search_lower)
                     || project.short_description.to_lowercase().contains(&search_lower)
                     || project.shortcode.to_lowercase().contains(&search_lower)
-                    || status_str.contains(&search_lower)
+                    || project.status.as_str().contains(&search_lower)
             };
 
             status_match && search_match

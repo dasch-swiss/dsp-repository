@@ -2,7 +2,7 @@ use leptos::either::Either;
 use leptos::prelude::*;
 
 #[cfg(feature = "button")]
-use crate::components::button::{Button, ButtonVariant};
+use crate::components::button::ButtonVariant;
 
 #[component]
 pub fn Link(
@@ -37,18 +37,17 @@ pub fn Link(
                         Some(href.clone())
                     }
                 }
-                class="link-as-button"
+                class=variant.css_class()
                 target=target
                 rel=rel
                 aria-disabled=move || if is_disabled.get() { Some("true") } else { None }
+                tabindex=move || if is_disabled.get() { Some("-1") } else { None }
             >
-                <Button disabled=disabled variant=variant>
-                    {if let Some(children) = children {
-                        Either::Left(children())
-                    } else {
-                        Either::Right(())
-                    }}
-                </Button>
+                {if let Some(children) = children {
+                    Either::Left(children())
+                } else {
+                    Either::Right(())
+                }}
             </a>
         }
         .into_any();

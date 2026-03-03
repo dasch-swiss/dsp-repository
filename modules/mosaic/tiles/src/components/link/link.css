@@ -5,9 +5,6 @@
   .link-disabled {
     @apply opacity-50 cursor-not-allowed pointer-events-none;
   }
-  .link-as-button {
-    @apply inline-flex no-underline;
-  }
   a[aria-disabled="true"] {
     @apply cursor-not-allowed;
   }

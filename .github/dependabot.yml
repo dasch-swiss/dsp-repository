@@ -4,7 +4,7 @@
 version: 2
 updates:
   - package-ecosystem: "cargo"
-    directory: "/"
+    directory: "/dsp-dpe"
     schedule:
       interval: "weekly"
     commit-message:

@@ -42,8 +42,8 @@ jobs:
         uses: cargo-bins/cargo-binstall@main
       - name: Install leptosfmt
         run: cargo binstall -y leptosfmt
-      - name: just check
-        run: just check
+      - name: just dsp-dpe check
+        run: just dsp-dpe check
 
   rustdoc:
     # run docs generation on nightly rather than stable. This enables features like
@@ -58,7 +58,7 @@ jobs:
       - name: Install nightly
         uses: dtolnay/rust-toolchain@nightly
       - name: cargo doc
-        run: cargo doc --no-deps --all-features
+        run: cd dsp-dpe && cargo doc --no-deps --all-features
         env:
           RUSTDOCFLAGS: --cfg docsrs
 
@@ -78,7 +78,7 @@ jobs:
       # intentionally no target specifier; see https://github.com/jonhoo/rust-ci-conf/pull/4
       # --feature-powerset runs for every combination of features
       - name: cargo hack
-        run: cargo hack --feature-powerset --exclude-no-default-features --exclude mosaic-tiles check
+        run: cd dsp-dpe && cargo hack --feature-powerset --exclude-no-default-features --exclude mosaic-tiles check
 
   docs:
     runs-on: ubuntu-latest

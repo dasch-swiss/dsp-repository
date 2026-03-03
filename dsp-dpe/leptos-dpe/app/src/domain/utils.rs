@@ -6,7 +6,7 @@ pub fn get_data_dir() -> String {
         return data_dir;
     }
 
-    // For development with cargo-leptos, use relative path from workspace root
+    // For development with cargo-leptos, use relative path from workspace root (dsp-dpe/)
     // cargo-leptos runs from the workspace root
-    "modules/leptos-dpe/server/data".to_string()
+    "leptos-dpe/server/data".to_string()
 }

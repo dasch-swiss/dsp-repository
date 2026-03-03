@@ -70,13 +70,13 @@ For the initial development, we work with static content or JSON files.
 
 The Mosaic component library provides reusable UI components built with Leptos and Tailwind CSS.
 
-Components are defined in `modules/mosaic/tiles/` and can be previewed in the demo application at `modules/mosaic/demo/`.
+Components are defined in `dsp-dpe/mosaic/tiles/` and can be previewed in the demo application at `dsp-dpe/mosaic/demo/`.
 
 To run the demo locally:
 
 ```bash
-just watch-mosaic-demo
+just dsp-dpe watch-mosaic-demo
 ```
 
-Pull requests that modify files in `modules/mosaic/` automatically receive a
+Pull requests that modify files in `dsp-dpe/mosaic/` automatically receive a
 Cloud Run preview deployment. The preview URL is posted as a comment on the PR.

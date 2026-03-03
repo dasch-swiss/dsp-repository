@@ -26,9 +26,9 @@ The `/create-new-component` and `/add-component-to-demo` skills automate these s
 ## Testing and Verification
 
 ```bash
-just watch-mosaic-demo    # Run demo with hot reload
-just fmt                  # Format all code
-just check                # Clippy and formatting for the whole repo
+just dsp-dpe watch-mosaic-demo    # Run demo with hot reload
+just dsp-dpe fmt                  # Format all code
+just dsp-dpe check                # Clippy and formatting for the whole repo
 ```
 
 ## Design Tokens
@@ -54,5 +54,5 @@ just check                # Clippy and formatting for the whole repo
 Use `leptosfmt` (not `rustfmt`) for all code in this module. The `rust-analyzer.toml` files in `tiles/` and `demo/` configure IDE formatting accordingly. Run formatting at the end of your work, not during:
 
 ```bash
-just fmt
+just dsp-dpe fmt
 ```

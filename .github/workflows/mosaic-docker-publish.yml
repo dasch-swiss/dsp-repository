@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "modules/mosaic/**"
+      - "dsp-dpe/mosaic/**"
 
 permissions:
   contents: read
@@ -26,7 +26,7 @@ jobs:
       - name: Generate docker image tag
         id: tag
         run: |
-          VERSION=$(grep '^version' modules/mosaic/demo/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
+          VERSION=$(grep '^version' dsp-dpe/mosaic/demo/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
           SHORT_SHA=$(git rev-parse --short HEAD)
           echo "tag=${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
@@ -35,7 +35,7 @@ jobs:
     needs: compute-tag
     uses: ./.github/workflows/docker-publish.yml
     with:
-      dockerfile: modules/mosaic/demo/Dockerfile
+      dockerfile: dsp-dpe/mosaic/demo/Dockerfile
       image-name: daschswiss/mosaic-demo
       image-tag: ${{ needs.compute-tag.outputs.tag }}
     secrets:

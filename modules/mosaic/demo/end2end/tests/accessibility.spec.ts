@@ -23,9 +23,9 @@ function formatViolations(violations: Result[]): string {
 }
 
 test.describe("Mosaic demo accessibility", () => {
-  test("home page has no WCAG violations", async ({ page }) => {
+  test("demo has no violations against WCAG 2.1 Level AA", async ({ page }) => {
     await page.goto("http://localhost:3000/");
-    // WCAG 2.1 Level AA — required by EU Directive 2019/882 (EAA) via EN 301 549
+    // WCAG 2.1 Level AA — required by EU Directive 2019/882 (EAA) via EN 301 549 is covered by tags "wcag2a", "wcag2aa", "wcag21a", "wcag21aa"
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]) // remove this lines with specific tags for testing against all of W3C's WCAG including best practice
       .analyze();

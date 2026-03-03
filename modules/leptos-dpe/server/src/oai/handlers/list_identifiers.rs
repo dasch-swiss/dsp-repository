@@ -1,11 +1,13 @@
 //! Handler for the OAI-PMH ListIdentifiers verb.
 
+use app::domain::ProjectRepository;
+
 use super::{build_error_response, build_list_request_params, validate_list_params, OaiParams};
 use crate::oai::xml::OaiXmlBuilder;
 
 /// Handles the ListIdentifiers verb.
-pub fn handle_list_identifiers(params: &OaiParams) -> String {
-    let (prefix, records) = match validate_list_params(params) {
+pub fn handle_list_identifiers(params: &OaiParams, repo: &dyn ProjectRepository) -> String {
+    let (prefix, records) = match validate_list_params(params, repo) {
         Ok(result) => result,
         Err(err) => return build_error_response(err),
     };

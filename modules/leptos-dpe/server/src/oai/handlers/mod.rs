@@ -23,11 +23,12 @@ use axum::{
 };
 use serde::Deserialize;
 
+use app::domain::{FsProjectRepository, ProjectRepository};
+
 use super::error::OaiError;
 use super::xml::OaiXmlBuilder;
 use crate::oai::metadata::{OaiRecord, ProjectOaiExt};
 
-use data::get_all_projects;
 use get_record::handle_get_record;
 use identify::handle_identify;
 use list_identifiers::handle_list_identifiers;
@@ -54,13 +55,15 @@ pub const SUPPORTED_PREFIXES: [&str; 2] = ["oai_dc", "oai_datacite"];
 
 /// Main OAI-PMH handler that dispatches to verb-specific handlers.
 pub async fn oai_handler(Query(params): Query<OaiParams>) -> impl IntoResponse {
+    let repo = FsProjectRepository::new(data::get_data_dir());
+
     let xml = match params.verb.as_deref() {
-        Some("Identify") => handle_identify(&params),
-        Some("ListMetadataFormats") => handle_list_metadata_formats(&params),
+        Some("Identify") => handle_identify(&params, &repo),
+        Some("ListMetadataFormats") => handle_list_metadata_formats(&params, &repo),
         Some("ListSets") => handle_list_sets(&params),
-        Some("ListIdentifiers") => handle_list_identifiers(&params),
-        Some("ListRecords") => handle_list_records(&params),
-        Some("GetRecord") => handle_get_record(&params),
+        Some("ListIdentifiers") => handle_list_identifiers(&params, &repo),
+        Some("ListRecords") => handle_list_records(&params, &repo),
+        Some("GetRecord") => handle_get_record(&params, &repo),
         Some(_) => build_error_response(OaiError::BadVerb),
         None => build_error_response(OaiError::BadVerb),
     };
@@ -92,6 +95,7 @@ pub fn parse_set_filter(set: Option<&str>) -> (bool, bool) {
 /// Returns `Err(OaiError)` if any validation step fails.
 pub fn validate_list_params<'a>(
     params: &'a OaiParams,
+    repo: &dyn ProjectRepository,
 ) -> Result<(&'a str, Vec<OaiRecord>), OaiError> {
     // metadataPrefix is required
     let prefix = params
@@ -123,7 +127,7 @@ pub fn validate_list_params<'a>(
     }
 
     // Get projects and filter
-    let projects = get_all_projects();
+    let projects = repo.get_all();
     let filtered: Vec<OaiRecord> = projects
         .iter()
         .filter(|p| {

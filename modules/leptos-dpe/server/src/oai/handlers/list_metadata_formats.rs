@@ -1,14 +1,14 @@
 //! Handler for the OAI-PMH ListMetadataFormats verb.
 
+use app::domain::ProjectRepository;
+
 use super::{build_error_response, OaiParams};
 use crate::oai::error::OaiError;
 use crate::oai::metadata::parse_oai_identifier;
 use crate::oai::xml::OaiXmlBuilder;
 
-use super::data::get_project_by_shortcode;
-
 /// Handles the ListMetadataFormats verb.
-pub fn handle_list_metadata_formats(params: &OaiParams) -> String {
+pub fn handle_list_metadata_formats(params: &OaiParams, repo: &dyn ProjectRepository) -> String {
     // ListMetadataFormats accepts only identifier as optional argument
     if params.from.is_some()
         || params.until.is_some()
@@ -23,7 +23,7 @@ pub fn handle_list_metadata_formats(params: &OaiParams) -> String {
     // If identifier is provided, verify it exists
     if let Some(ref id) = params.identifier {
         if let Some(shortcode) = parse_oai_identifier(id) {
-            if get_project_by_shortcode(&shortcode).is_none() {
+            if repo.get_by_shortcode(&shortcode).is_none() {
                 return build_error_response(OaiError::IdDoesNotExist);
             }
         } else {

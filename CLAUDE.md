@@ -9,29 +9,33 @@ The platform provides services for a long-term archive for humanities research d
 
 This includes:
 
-- The "Data Presentation Environment" (DPE)
-- The "Mosaic" component library (demo for documentation and tiles for components)
+- The "Data Presentation Environment" (DPE) — built with Leptos
+- The "Mosaic" component library (tiles for components, demo for documentation)
 
 ## Architecture
 
 - **Language**: Rust
-- **Web Server**: Axum HTTP server
-- **Web UI**: Leptos for MPA style end user web interfaces
-- **Web UI components**: mosaic-tiles component library
-- **Architecture**: Clean Architecture/Hexagonal Architecture
+- **Web Server**: Axum HTTP server with Tokio runtime
+- **Web UI**: [Leptos](https://book.leptos.dev) with [islands](https://book.leptos.dev/islands.html) for MPA style server-side rendering
+- **Styling**: Tailwind CSS
+- **Components**: mosaic-tiles component library
+- **Architecture**: Clean Architecture / Hexagonal Architecture
 - **Structure**: Cargo workspace with modular crates
+- **Data Layer**: Repository pattern; currently backed by static JSON files in `/data/json/`
+- **Testing**: Cargo test for unit/integration, Playwright for E2E
+- **Documentation**: mdBook with alerts plugin
 
 ## Key Directories
 
 ```txt
 modules/
-├── dpe/                   # Discovery and Presentation Environment
-│   ├── api/               # HTML routes and templates
-│   ├── dto/               # Data transfer objects
-│   ├── server/            # Web server binary
-│   ├── services/          # Business logic implementations
-│   ├── storage/           # Data persistence layer
-│   └── types/             # Domain models and trait definitions
+├── leptos-dpe/            # Data Presentation Environment (Leptos app)
+│   ├── app/               # Shared app logic, components, pages, domain
+│   ├── server/            # Server binary
+│   ├── frontend/          # Client-side (WASM) entry point
+│   ├── end2end/           # Playwright E2E tests
+│   ├── public/            # Static assets
+│   └── style/             # CSS / Tailwind
 └── mosaic/                # Mosaic component library
     ├── tiles/             # Reusable Leptos UI components
     ├── demo/              # Component showcase application
@@ -42,108 +46,93 @@ modules/
 
 ### Prerequisites
 
-- **Rust**:
-  Setup with the Rust toolchain and additional tooling installed using `just install-requirements`
+- **Rust**: Toolchain managed via `rustup`
 - **Just**: Command runner for development tasks
+- **pnpm**: Package manager for the leptos-dpe frontend
 
 ### First-Time Setup
 
-1. Install Rust tools:
-
-   ```bash
-   just install-requirements
-   ```
+```bash
+just install-requirements
+```
 
 ## Development Commands (via justfile)
 
 ```bash
-# Development workflow for mosaic (tiles and demo)
+# Development
+just watch-leptos-dpe          # Run DPE with hot reload
 just watch-mosaic-demo         # Run Mosaic demo with hot reload
-just fmt-mosaic                # Format source code in the mosaic module with leptosfmt
+just watch                     # Watch for changes and run tests
+just run                       # Run server (release mode)
 
 # Code quality
-just fmt                       # Format Rust code
+just check                     # Run fmt checks and clippy
+just fmt                       # Format all Rust code (cargo fmt + leptosfmt)
+just build                     # Build all targets
+just test                      # Run all tests
+just clean                     # Clean build artifacts
 
 # Documentation
-just docs-build               # Build mdBook documentation
-just docs-serve               # Serve docs at localhost:3000
+just docs-build                # Build mdBook documentation
+just docs-serve                # Serve docs at localhost:3000
 
 # Setup
-just install-requirements     # Install Rust tools: cargo-watch, mdbook, mdbook-alerts, leptosfmt, cargo-leptos
+just install-requirements      # Install required tools
 ```
-
-## Tech Stack
-
-- **HTTP**: Axum with macros, WebSocket support
-- **UI Framework**: [Leptos](https://book.leptos.dev) with [islands feature](https://book.leptos.dev/islands.html)
-- **Styling**: Tailwind CSS
-- **Async**: Tokio runtime
-- **Testing**: Cargo test, Playwright for E2E
-- **Documentation**: mdBook with alerts plugin
-
-## Data Layer
-
-- **Current**: Static JSON files in `/data/json/` directory
-- **Architecture**: Repository pattern with in-memory implementations
 
 ## Code Quality
 
 - **Formatting**:
   Defined in `.rustfmt.toml`, use Unix newlines.
-  Use `leptosfmt` for code in modules/mosaic.
+  Use `leptosfmt` for Leptos code (`modules/mosaic/`, `modules/leptos-dpe/`).
 - **Linting**: Strict clippy warnings
 - **Testing**: Testing pyramid (unit → integration → E2E)
 - **Git**: Rebase workflow, clean commit history
 
-## Important Notes
+## Development Workflow
 
-### Development Workflow Practices
+**Important:** Follow ALL the steps below during development.
 
-**Important:** Ensure to follow ALL the steps below during development.
-
-- **Always check with the developer before each step** -
-  Check in, instead of going down the wrong path
-- **Use `JUST` for all commands** -
-  Use `just` to run commands instead of `cargo` or `npm`.
+- **Always check with the developer before each step** —
+  Check in, instead of going down the wrong path.
+- **Use `just` for all commands** —
+  Use `just` instead of `cargo` or `npm`.
   If available, use claude-specific just commands.
-- **Use consistent style** - Follow the project's coding style. Run auto-formatting.
-- **Tests first** -
-  Ensure that every code change is accompanied by tests.
-  Start with a test suite to define the expected behavior of the system.
-  Check the tests with the developer to ensure the behavior is correct.
+- **Tests first** —
+  Every code change should be accompanied by tests.
+  Start with a test suite to define expected behavior.
+  Check the tests with the developer to ensure correctness.
 
-Before considering ANY change as "done", ensure the following:
+Before considering ANY change as "done":
 
-- **Always verify that changes compile and all checks and tests pass** -
-  Run `just check` and `just test`, or similar commands
-- **Always check if documentation needs to be updated** -
-  Before considering a change done, verify if any documentation needs to be updated.
-  Consider documentation in `/docs/src/`, the readme, or the claude-files.
-  Update the documentation in order to reflect the changes.
-- **Always ask before committing anything to git** -
+- **Verify that changes compile and all checks pass** —
+  Run `just check` and `just test`.
+  This includes formatting and linting — no need to run these earlier.
+- **Check if documentation needs updating** —
+  Consider `/docs/src/`, the readme, and claude-files.
+  Update documentation to reflect the changes.
+- **Ask before committing** —
   Never run git add or commit without explicit permission.
-- **GitHub PR Creation Workflow** -
-  When creating pull requests:
-  1. Create as draft PR with `gh pr create --draft`
-  2. Assign to the requesting developer with `gh pr edit [PR_NUMBER] --add-assignee [USERNAME]`
-  3. Include "Review Notes" section mentioning that separate commits should be checked for easier review
+- **PR creation workflow** —
+  1. Create as draft: `gh pr create --draft`
+  2. Assign to the requesting developer: `gh pr edit [PR_NUMBER] --add-assignee [USERNAME]`
+  3. Include a "Review Notes" section mentioning that separate commits should be checked for easier review
 
-### Testing Guidelines
+## Testing Guidelines
 
-- **Tests first**: Unless instructed otherwise, write the tests before implementing the feature.
+- **Tests first**: Unless instructed otherwise, write tests before implementing.
 - **Unit tests**: Write unit tests for all new functionality.
-- **Useful tests**: Ensure that tests are useful and meaningful.
-  Ask yourself: What is this test verifying?
-  NEVER write tests that verify the behavior of the Rust compiler or external libraries.
-- **Helper functions**: In tests, it is better to repeat yourself than to complicate the test setup.
-  Only use helper functions if they improve the clarity of the test.
+- **Useful tests**: Every test should verify meaningful behavior.
+  Never write tests that verify the behavior of the Rust compiler or external libraries.
+- **Helper functions**: In tests, prefer repetition over complicated setup.
+  Only use helpers if they improve clarity.
 
-### Temporary File Management
+## Temporary File Management
 
-- **Temporary files**: Use `.claude/tmp/` for temporary files that are
-- **Ask if unsure** whether a document should be temporary or permanent
-- **Temporary files are gitignored** and won't be tracked in version control
-- **Permanent documentation** should go in the appropriate location in `/docs/src/`
+- **Temporary files**: Use `.claude/tmp/` for scratch files during a session.
+- **Ask if unsure** whether a document should be temporary or permanent.
+- **Temporary files are gitignored** and won't be tracked in version control.
+- **Permanent documentation** goes in `/docs/src/`.
 
 ## Architecture Principles
 
@@ -152,12 +141,7 @@ Before considering ANY change as "done", ensure the following:
 - MPA style server-side rendering with Leptos islands for interactivity
 - Domain-driven design aligned with research data concepts
 
-## Operational Guidelines
+## Documentation Tone
 
-- Whenever you make a change, check if any documentation needs to be adapted
-
-## Memory
-
-- Every file must end on a new line character
-- In documentation, keep the tone factual and almost understated.
-  Documentation should be clear first of all, there is no need to praise the software.
+- Keep the tone factual and understated.
+  Documentation should be clear first of all; there is no need to praise the software.

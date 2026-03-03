@@ -15,4 +15,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Add publish = false to leptos-dpe crates (DEV-5960) ([#116](https://github.com/dasch-swiss/dsp-repository/pull/116))
+- Fix release-plz workflow and configuration (DEV-5960) ([#114](https://github.com/dasch-swiss/dsp-repository/pull/114), [#115](https://github.com/dasch-swiss/dsp-repository/pull/115), [#116](https://github.com/dasch-swiss/dsp-repository/pull/116), [#117](https://github.com/dasch-swiss/dsp-repository/pull/117))

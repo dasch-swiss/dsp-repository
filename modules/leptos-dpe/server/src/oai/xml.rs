@@ -1,8 +1,3 @@
-//! XML response builder for OAI-PMH protocol.
-//!
-//! This module provides utilities for generating OAI-PMH 2.0 compliant XML responses
-//! using the quick-xml crate.
-
 use chrono::Utc;
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
@@ -11,31 +6,28 @@ use std::io::Cursor;
 use super::error::OaiError;
 use super::metadata::{DataCiteRecord, DublinCoreRecord, OaiRecord};
 
-/// Base URL for the OAI-PMH endpoint.
 pub const BASE_URL: &str = "https://meta.dasch.swiss/oai";
 
-/// Earliest datestamp in the repository (fallback value).
+/// Earliest datestamp (fallback)
 pub const EARLIEST_DATESTAMP: &str = "2015-01-01";
 
-/// OAI-PMH XML namespace.
 const OAI_NS: &str = "http://www.openarchives.org/OAI/2.0/";
 
-/// Dublin Core namespace.
+/// Dublin Core namespace
 const DC_NS: &str = "http://purl.org/dc/elements/1.1/";
 
-/// oai_dc wrapper namespace.
+/// oai_dc wrapper namespace
 const OAI_DC_NS: &str = "http://www.openarchives.org/OAI/2.0/oai_dc/";
 
-/// DataCite namespace.
+/// DataCite namespace
 const DATACITE_NS: &str = "http://datacite.org/schema/kernel-4";
 
-/// oai_datacite wrapper namespace.
+/// oai_datacite wrapper namespace
 const OAI_DATACITE_NS: &str = "http://schema.datacite.org/oai/oai-1.1/";
 
-/// XML Schema Instance namespace.
+/// XML Schema Instance namespace
 const XSI_NS: &str = "http://www.w3.org/2001/XMLSchema-instance";
 
-/// Builder for OAI-PMH XML responses.
 pub struct OaiXmlBuilder {
     writer: Writer<Cursor<Vec<u8>>>,
 }

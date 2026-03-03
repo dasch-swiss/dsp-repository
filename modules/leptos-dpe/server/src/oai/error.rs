@@ -7,6 +7,8 @@ pub enum OaiError {
     BadVerb,
     /// Missing required argument, invalid argument, or repeated argument.
     BadArgument(String),
+    /// The value of the resumptionToken argument is invalid or expired.
+    BadResumptionToken,
     /// The metadata format identified by metadataPrefix is not supported.
     CannotDisseminateFormat,
     /// The identifier does not exist in this repository.
@@ -21,6 +23,7 @@ impl OaiError {
         match self {
             Self::BadVerb => "badVerb",
             Self::BadArgument(_) => "badArgument",
+            Self::BadResumptionToken => "badResumptionToken",
             Self::CannotDisseminateFormat => "cannotDisseminateFormat",
             Self::IdDoesNotExist => "idDoesNotExist",
             Self::NoRecordsMatch => "noRecordsMatch",
@@ -32,6 +35,7 @@ impl OaiError {
         match self {
             Self::BadVerb => "Illegal OAI verb".to_string(),
             Self::BadArgument(msg) => msg.clone(),
+            Self::BadResumptionToken => "The resumptionToken is not supported by this repository".to_string(),
             Self::CannotDisseminateFormat => {
                 "The metadata format identified by metadataPrefix is not supported".to_string()
             }

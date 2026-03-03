@@ -113,15 +113,13 @@ pub fn validate_list_params<'a>(
 
     // We don't support resumption tokens in v1
     if params.resumption_token.is_some() {
-        return Err(OaiError::BadArgument(
-            "Resumption tokens are not supported".to_string(),
-        ));
+        return Err(OaiError::BadResumptionToken);
     }
 
     // Parse set filter
     let (include_clusters, include_projects) = parse_set_filter(params.set.as_deref());
     if !include_clusters && !include_projects {
-        return Err(OaiError::BadArgument("Unknown set".to_string()));
+        return Err(OaiError::NoRecordsMatch);
     }
 
     // Get projects and filter

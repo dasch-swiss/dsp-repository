@@ -17,3 +17,23 @@
 @utility dpe-subtitle {
     @apply text-sm font-semibold text-gray-600 mb-2;
 }
+
+@layer components {
+    .filter-option {
+        @apply flex items-center gap-2 cursor-pointer hover:opacity-80 py-1 no-underline;
+    }
+    .filter-indicator {
+        @apply rounded border border-neutral-400 shrink-0 flex items-center justify-center;
+        width: 1em;
+        height: 1em;
+        font-size: 0.875rem;
+    }
+    .filter-indicator-checked {
+        @apply border-primary-600 text-primary-600;
+    }
+    .filter-indicator-checked::after {
+        content: '✓';
+        font-size: 0.75em;
+        line-height: 1;
+    }
+}

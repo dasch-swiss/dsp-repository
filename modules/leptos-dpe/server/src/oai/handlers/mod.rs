@@ -22,7 +22,7 @@ use axum::{
 };
 use serde::Deserialize;
 
-use app::domain::{get_data_dir, FsProjectRepository, ProjectRepository};
+use app::domain::{get_data_root_dir, FsProjectRepository, ProjectRepository};
 
 use super::error::OaiError;
 use super::xml::OaiXmlBuilder;
@@ -54,7 +54,7 @@ pub const SUPPORTED_PREFIXES: [&str; 2] = ["oai_dc", "oai_datacite"];
 
 /// Main OAI-PMH handler that dispatches to verb-specific handlers.
 pub async fn oai_handler(Query(params): Query<OaiParams>) -> impl IntoResponse {
-    let repo = FsProjectRepository::new(get_data_dir());
+    let repo = FsProjectRepository::new(get_data_root_dir());
 
     let xml = match params.verb.as_deref() {
         Some("Identify") => handle_identify(&params, &repo),
@@ -109,9 +109,7 @@ pub fn validate_list_params<'a>(
 
     // identifier is not valid for list verbs
     if params.identifier.is_some() {
-        return Err(OaiError::BadArgument(
-            "identifier argument is not allowed".to_string(),
-        ));
+        return Err(OaiError::BadArgument("identifier argument is not allowed".to_string()));
     }
 
     // We don't support resumption tokens in v1
@@ -129,10 +127,7 @@ pub fn validate_list_params<'a>(
     let projects = repo.get_all();
     let filtered: Vec<OaiRecord> = projects
         .iter()
-        .filter(|p| {
-            include_projects
-                && p.matches_date_filter(params.from.as_deref(), params.until.as_deref())
-        })
+        .filter(|p| include_projects && p.matches_date_filter(params.from.as_deref(), params.until.as_deref()))
         .map(|p| p.to_oai_record(prefix))
         .collect();
 

@@ -28,8 +28,7 @@ pub async fn list_projects(
         .filter(|project| {
             let is_ongoing = project.status == ProjectStatus::Ongoing;
             let is_finished = project.status == ProjectStatus::Finished;
-            let status_match =
-                (query.ongoing() && is_ongoing) || (query.finished() && is_finished);
+            let status_match = (query.ongoing() && is_ongoing) || (query.finished() && is_finished);
 
             let status_str = match project.status {
                 ProjectStatus::Ongoing => "ongoing",

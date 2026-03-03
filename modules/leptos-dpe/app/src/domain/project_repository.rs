@@ -69,7 +69,11 @@ impl ProjectRepository for FsProjectRepository {
             if path.extension().is_some_and(|ext| ext == "json") {
                 let content = fs::read_to_string(&path).ok()?;
                 let project = serde_json::from_str::<Project>(&content).ok()?;
-                if project.shortcode == shortcode { Some(project) } else { None }
+                if project.shortcode == shortcode {
+                    Some(project)
+                } else {
+                    None
+                }
             } else {
                 None
             }

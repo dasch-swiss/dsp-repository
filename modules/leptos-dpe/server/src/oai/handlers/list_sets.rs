@@ -28,3 +28,70 @@ pub fn handle_list_sets(params: &OaiParams) -> String {
 
     builder.finish()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_params() -> OaiParams {
+        OaiParams {
+            verb: Some("ListSets".to_string()),
+            identifier: None,
+            metadata_prefix: None,
+            from: None,
+            until: None,
+            set: None,
+            resumption_token: None,
+        }
+    }
+
+    fn normalize(xml: &str) -> String {
+        xml.lines()
+            .filter(|l| !l.trim_start().starts_with("<responseDate>"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    fn golden(name: &str, actual: &str) -> String {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("src/oai/handlers/testdata/golden");
+        std::fs::create_dir_all(&dir).expect("create golden dir");
+        let path = dir.join(name);
+        let normalized = normalize(actual);
+        if path.exists() {
+            std::fs::read_to_string(&path).expect("read golden file")
+        } else {
+            std::fs::write(&path, &normalized).expect("write golden file");
+            normalized
+        }
+    }
+
+    // ---- error cases ----
+
+    #[test]
+    fn unexpected_argument_returns_bad_argument() {
+        let mut params = make_params();
+        params.from = Some("2020-01-01".to_string());
+        let xml = handle_list_sets(&params);
+        assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
+        assert!(xml.contains("Unexpected argument for ListSets"), "got: {}", xml);
+    }
+
+    #[test]
+    fn resumption_token_returns_bad_resumption_token() {
+        let mut params = make_params();
+        params.resumption_token = Some("some-token".to_string());
+        let xml = handle_list_sets(&params);
+        assert!(xml.contains("<error code=\"badResumptionToken\">"), "got: {}", xml);
+    }
+
+    // ---- golden tests ----
+
+    #[test]
+    fn golden_list_sets_response() {
+        let params = make_params();
+        let xml = handle_list_sets(&params);
+        let expected = golden("list_sets.xml", &xml);
+        assert_eq!(normalize(&xml), expected);
+    }
+}

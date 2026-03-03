@@ -136,3 +136,13 @@ run-docker-mosaic-demo:
 [group('leptos-dpe')]
 watch-leptos-dpe:
     cargo leptos watch --project=leptos-dpe -- watch ../mosaic/tiles
+
+# Build Docker image for leptos-dpe
+[group('leptos-dpe')]
+build-docker-dpe:
+    docker build -f modules/leptos-dpe/Dockerfile -t leptos-dpe .
+
+# Run leptos-dpe Docker container on port 8080
+[group('leptos-dpe')]
+run-docker-dpe:
+    docker run --rm -p 8080:8080 leptos-dpe

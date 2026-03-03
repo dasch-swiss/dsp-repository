@@ -27,3 +27,4 @@ docs/book/
 # Other Docker files
 Dockerfile*
 !modules/mosaic/demo/Dockerfile
+!modules/leptos-dpe/Dockerfile

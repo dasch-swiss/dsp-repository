@@ -14,4 +14,6 @@ pub use project::*;
 pub use project_repository::ProjectRepository;
 #[cfg(feature = "ssr")]
 pub use project_repository::FsProjectRepository;
+#[cfg(feature = "ssr")]
+pub use utils::get_data_dir;
 pub use projects::{get_project, list_projects};

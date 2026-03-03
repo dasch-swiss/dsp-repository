@@ -1,5 +1,5 @@
 /// Get the data directory path, supporting both development and production environments
-pub fn get_data_dir() -> String {
+pub fn get_data_root_dir() -> String {
     // Try environment variable first (for production/custom deployments)
     if let Ok(data_dir) = std::env::var("DATA_DIR") {
         return data_dir;

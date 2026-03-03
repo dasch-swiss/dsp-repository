@@ -11,9 +11,9 @@ pub mod utils;
 pub use organizations::get_organization;
 pub use persons::get_person;
 pub use project::*;
-pub use project_repository::ProjectRepository;
 #[cfg(feature = "ssr")]
 pub use project_repository::FsProjectRepository;
-#[cfg(feature = "ssr")]
-pub use utils::get_data_dir;
+pub use project_repository::ProjectRepository;
 pub use projects::{get_project, list_projects};
+#[cfg(feature = "ssr")]
+pub use utils::get_data_root_dir;

@@ -14,12 +14,12 @@ pub async fn list_projects(
 ) -> Result<Page, ServerFnError> {
     use super::project::{ProjectQuery, ProjectStatus};
     use super::project_repository::{FsProjectRepository, ProjectRepository};
-    use super::utils::get_data_dir;
+    use super::utils::get_data_root_dir;
 
     let query = ProjectQuery { ongoing, finished, search, page, view };
     let items_per_page = page_size.unwrap_or(9).max(1) as usize;
 
-    let repo = FsProjectRepository::new(get_data_dir());
+    let repo = FsProjectRepository::new(get_data_root_dir());
     let projects = repo.get_all();
 
     let search_lower = query.search().to_lowercase();
@@ -59,8 +59,8 @@ pub async fn list_projects(
 #[server]
 pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnError> {
     use super::project_repository::{FsProjectRepository, ProjectRepository};
-    use super::utils::get_data_dir;
+    use super::utils::get_data_root_dir;
 
-    let repo = FsProjectRepository::new(get_data_dir());
+    let repo = FsProjectRepository::new(get_data_root_dir());
     Ok(repo.get_by_shortcode(&shortcode))
 }

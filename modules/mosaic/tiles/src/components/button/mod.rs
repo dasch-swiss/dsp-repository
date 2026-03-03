@@ -21,6 +21,18 @@ pub enum ButtonType {
     Reset,
     Submit,
 }
+impl ButtonVariant {
+    pub fn css_class(&self) -> &'static str {
+        match self {
+            ButtonVariant::Primary => "btn btn-primary",
+            ButtonVariant::Secondary => "btn btn-secondary",
+            ButtonVariant::Outline => "btn btn-outline",
+            ButtonVariant::Ghost => "btn btn-ghost",
+            ButtonVariant::Soft => "btn btn-soft",
+        }
+    }
+}
+
 impl std::fmt::Display for ButtonType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {

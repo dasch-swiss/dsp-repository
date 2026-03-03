@@ -27,8 +27,7 @@ jobs:
         id: tag
         run: |
           VERSION=$(grep '^version' modules/leptos-dpe/server/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          echo "tag=${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
 
   publish:
     name: Build and publish DPE

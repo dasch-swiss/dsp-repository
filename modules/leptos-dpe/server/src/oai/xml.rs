@@ -366,9 +366,7 @@ impl OaiXmlBuilder {
         }
 
         // Language
-        if let Some(ref language) = datacite.language {
-            self.write_element("language", language);
-        }
+        if let Some(ref language) = datacite.language { self.write_element("language", language); }
 
         // RelatedIdentifiers
         if !datacite.related_identifiers.is_empty() {
@@ -422,15 +420,9 @@ impl OaiXmlBuilder {
             for fr in &datacite.funding_references {
                 self.start_element("fundingReference");
                 self.write_element("funderName", &fr.funder_name);
-                if let Some(ref number) = fr.award_number {
-                    self.write_element("awardNumber", number);
-                }
-                if let Some(ref title) = fr.award_title {
-                    self.write_element("awardTitle", title);
-                }
-                if let Some(ref uri) = fr.award_uri {
-                    self.write_element("awardURI", uri);
-                }
+                if let Some(ref number) = fr.award_number { self.write_element("awardNumber", number); }
+                if let Some(ref title) = fr.award_title { self.write_element("awardTitle", title); }
+                if let Some(ref uri) = fr.award_uri { self.write_element("awardURI", uri); }
                 self.end_element("fundingReference");
             }
             self.end_element("fundingReferences");

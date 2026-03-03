@@ -74,8 +74,10 @@ This project includes optimized Docker configuration for production deployment w
 
 ### Building the Docker Image
 
+From the repository root:
+
 ```bash
-docker build -t leptos-dpe .
+docker build -f dsp-dpe/leptos-dpe/Dockerfile -t leptos-dpe .
 ```
 
 ### Running with Docker
@@ -85,21 +87,6 @@ docker run -p 8080:8080 leptos-dpe
 ```
 
 The application will be available at `http://localhost:8080`
-
-### Using Docker Compose
-
-For easier management, use Docker Compose:
-
-```bash
-# Build and start
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
-```
 
 ### Environment Variables
 

@@ -64,4 +64,4 @@ run-docker-mosaic-demo:
 # Start the leptos-dpe with hot reload
 [group('leptos-dpe')]
 watch-leptos-dpe:
-    cargo leptos watch --project=leptos-dpe -- watch ../mosaic/tiles
+    cargo leptos watch --project=leptos-dpe -- --watch ../mosaic/tiles

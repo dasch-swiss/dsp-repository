@@ -16,7 +16,6 @@ edition = "2021"
 homepage = "https://github.com/dasch-swiss/dsp-repository"
 repository = "https://github.com/dasch-swiss/dsp-repository"
 documentation = "https://github.com/dasch-swiss/dsp-repository"
-readme = "README.md"
 description = "The DSP-Repository provides tooling and services for transforming, validating, and serving research project metadata and data. It is part of the DaSCH Service Platform, supporting FAIR principles for research data in the humanities."
 authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
 

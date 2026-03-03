@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - "dsp-dpe/leptos-dpe/**"
+      - "dsp-dpe/Cargo.toml"
+      - "dsp-dpe/Cargo.lock"
+      - "dsp-dpe/mosaic/tiles/**"
 
 permissions:
   contents: read

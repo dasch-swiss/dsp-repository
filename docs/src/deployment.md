@@ -35,10 +35,20 @@ Required secrets: `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT`,
 
 #### Production (Docker Hub + Jenkins)
 
-Defined in `docker-publish.yml`.
+Defined in `mosaic-docker-publish.yml`.
 
 When changes to `dsp-dpe/mosaic/` are merged to `main`, the demo image is built,
 pushed to Docker Hub, and a Jenkins webhook triggers the production deployment.
+
+### DPE (Leptos)
+
+Defined in `dpe-docker-publish.yml`.
+
+When changes to `dsp-dpe/leptos-dpe/`, workspace-level files (`Cargo.toml`,
+`Cargo.lock`), or the shared `dsp-dpe/mosaic/tiles/` crate are merged to `main`,
+the DPE image is built and pushed to Docker Hub.
+
+Required secrets: `DOCKER_USER`, `DOCKER_HUB_TOKEN`.
 
 ### Documentation (GitHub Pages)
 

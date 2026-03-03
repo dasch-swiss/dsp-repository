@@ -2,7 +2,7 @@
 # FROM rustlang/rust:nightly-trixie as builder
 
 # If you're using stable, use this instead
-FROM rust:1.92.0-bookworm AS builder
+FROM rust:1.93.0-bookworm AS builder
 
 # Install cargo-binstall, which makes it easier to install other
 # cargo extensions like cargo-leptos

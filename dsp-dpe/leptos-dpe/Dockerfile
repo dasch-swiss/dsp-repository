@@ -1,5 +1,5 @@
 # Build Stage
-FROM rust:1.92.0-bookworm AS builder
+FROM rust:1.93.0-bookworm AS builder
 
 # Install cargo-binstall for faster tool installation
 RUN wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz

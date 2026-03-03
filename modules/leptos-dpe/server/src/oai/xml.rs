@@ -12,20 +12,10 @@ pub const BASE_URL: &str = "https://meta.dasch.swiss/oai";
 pub const EARLIEST_DATESTAMP: &str = "2015-01-01";
 
 const OAI_NS: &str = "http://www.openarchives.org/OAI/2.0/";
-
-/// Dublin Core namespace
 const DC_NS: &str = "http://purl.org/dc/elements/1.1/";
-
-/// oai_dc wrapper namespace
 const OAI_DC_NS: &str = "http://www.openarchives.org/OAI/2.0/oai_dc/";
-
-/// DataCite namespace
 const DATACITE_NS: &str = "http://datacite.org/schema/kernel-4";
-
-/// oai_datacite wrapper namespace
 const OAI_DATACITE_NS: &str = "http://schema.datacite.org/oai/oai-1.1/";
-
-/// XML Schema Instance namespace
 const XSI_NS: &str = "http://www.w3.org/2001/XMLSchema-instance";
 
 pub struct OaiXmlBuilder {
@@ -37,12 +27,10 @@ impl OaiXmlBuilder {
     pub fn new() -> Self {
         let mut writer = Writer::new_with_indent(Cursor::new(Vec::new()), b' ', 2);
 
-        // XML declaration
         writer
             .write_event(Event::Decl(BytesDecl::new("1.0", Some("UTF-8"), None)))
             .expect("Failed to write XML declaration");
 
-        // Root element with namespaces
         let mut root = BytesStart::new("OAI-PMH");
         root.push_attribute(("xmlns", OAI_NS));
         root.push_attribute(("xmlns:xsi", XSI_NS));
@@ -52,11 +40,37 @@ impl OaiXmlBuilder {
         ));
         writer.write_event(Event::Start(root)).expect("Failed to write root element");
 
-        // responseDate
         let response_date = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
-        Self::write_element_static(&mut writer, "responseDate", &response_date);
+        writer.write_event(Event::Start(BytesStart::new("responseDate"))).expect("write");
+        writer.write_event(Event::Text(BytesText::new(&response_date))).expect("write");
+        writer.write_event(Event::End(BytesEnd::new("responseDate"))).expect("write");
 
         Self { writer }
+    }
+
+    fn write(&mut self, event: Event) {
+        self.writer.write_event(event).expect("Failed to write XML event");
+    }
+
+    pub fn start_element(&mut self, name: &str) {
+        self.write(Event::Start(BytesStart::new(name)));
+    }
+
+    pub fn end_element(&mut self, name: &str) {
+        self.write(Event::End(BytesEnd::new(name)));
+    }
+
+    pub fn write_element(&mut self, name: &str, text: &str) {
+        self.start_element(name);
+        self.write(Event::Text(BytesText::new(text)));
+        self.end_element(name);
+    }
+
+    fn write_prefixed_element(&mut self, prefix: &str, name: &str, text: &str) {
+        let full_name = format!("{}:{}", prefix, name);
+        self.start_element(&full_name);
+        self.write(Event::Text(BytesText::new(text)));
+        self.end_element(&full_name);
     }
 
     /// Writes the request element with verb and parameters.
@@ -66,75 +80,25 @@ impl OaiXmlBuilder {
         for (key, value) in params {
             request.push_attribute((*key, *value));
         }
-        self.writer
-            .write_event(Event::Start(request))
-            .expect("Failed to start request element");
-        self.writer
-            .write_event(Event::Text(BytesText::new(BASE_URL)))
-            .expect("Failed to write request URL");
-        self.writer
-            .write_event(Event::End(BytesEnd::new("request")))
-            .expect("Failed to end request element");
+        self.write(Event::Start(request));
+        self.write(Event::Text(BytesText::new(BASE_URL)));
+        self.end_element("request");
     }
 
     /// Writes the request element for error responses (no attributes except verb if available).
     pub fn write_error_request(&mut self) {
-        self.writer
-            .write_event(Event::Start(BytesStart::new("request")))
-            .expect("Failed to start request element");
-        self.writer
-            .write_event(Event::Text(BytesText::new(BASE_URL)))
-            .expect("Failed to write request URL");
-        self.writer
-            .write_event(Event::End(BytesEnd::new("request")))
-            .expect("Failed to end request element");
+        self.start_element("request");
+        self.write(Event::Text(BytesText::new(BASE_URL)));
+        self.end_element("request");
     }
 
     /// Writes an error response.
     pub fn write_error(&mut self, error: &OaiError) {
         let mut err_elem = BytesStart::new("error");
         err_elem.push_attribute(("code", error.code()));
-        self.writer
-            .write_event(Event::Start(err_elem))
-            .expect("Failed to start error element");
-        self.writer
-            .write_event(Event::Text(BytesText::new(&error.message())))
-            .expect("Failed to write error message");
-        self.writer
-            .write_event(Event::End(BytesEnd::new("error")))
-            .expect("Failed to end error element");
-    }
-
-    /// Starts an element.
-    pub fn start_element(&mut self, name: &str) {
-        self.writer
-            .write_event(Event::Start(BytesStart::new(name)))
-            .expect("Failed to start element");
-    }
-
-    /// Ends an element.
-    pub fn end_element(&mut self, name: &str) {
-        self.writer
-            .write_event(Event::End(BytesEnd::new(name)))
-            .expect("Failed to end element");
-    }
-
-    /// Writes a simple element with text content.
-    pub fn write_element(&mut self, name: &str, text: &str) {
-        Self::write_element_static(&mut self.writer, name, text);
-    }
-
-    /// Static version of write_element for use during construction.
-    fn write_element_static(writer: &mut Writer<Cursor<Vec<u8>>>, name: &str, text: &str) {
-        writer
-            .write_event(Event::Start(BytesStart::new(name)))
-            .expect("Failed to start element");
-        writer
-            .write_event(Event::Text(BytesText::new(text)))
-            .expect("Failed to write text");
-        writer
-            .write_event(Event::End(BytesEnd::new(name)))
-            .expect("Failed to end element");
+        self.write(Event::Start(err_elem));
+        self.write(Event::Text(BytesText::new(&error.message())));
+        self.end_element("error");
     }
 
     /// Writes the Identify response content.
@@ -154,14 +118,12 @@ impl OaiXmlBuilder {
     pub fn write_list_metadata_formats(&mut self) {
         self.start_element("ListMetadataFormats");
 
-        // Dublin Core format
         self.start_element("metadataFormat");
         self.write_element("metadataPrefix", "oai_dc");
         self.write_element("schema", "http://www.openarchives.org/OAI/2.0/oai_dc.xsd");
         self.write_element("metadataNamespace", OAI_DC_NS);
         self.end_element("metadataFormat");
 
-        // DataCite format
         self.start_element("metadataFormat");
         self.write_element("metadataPrefix", "oai_datacite");
         self.write_element("schema", "http://schema.datacite.org/oai/oai-1.1/oai.xsd");
@@ -175,13 +137,11 @@ impl OaiXmlBuilder {
     pub fn write_list_sets(&mut self) {
         self.start_element("ListSets");
 
-        // Project Clusters set
         self.start_element("set");
         self.write_element("setSpec", "entityType:ProjectCluster");
         self.write_element("setName", "Project Clusters");
         self.end_element("set");
 
-        // Research Projects set
         self.start_element("set");
         self.write_element("setSpec", "entityType:ResearchProject");
         self.write_element("setName", "Research Projects");
@@ -205,7 +165,6 @@ impl OaiXmlBuilder {
     pub fn write_dublin_core_metadata(&mut self, dc: &DublinCoreRecord) {
         self.start_element("metadata");
 
-        // oai_dc:dc wrapper
         let mut dc_root = BytesStart::new("oai_dc:dc");
         dc_root.push_attribute(("xmlns:oai_dc", OAI_DC_NS));
         dc_root.push_attribute(("xmlns:dc", DC_NS));
@@ -214,11 +173,8 @@ impl OaiXmlBuilder {
             "xsi:schemaLocation",
             &format!("{} {}", OAI_DC_NS, "http://www.openarchives.org/OAI/2.0/oai_dc.xsd")[..],
         ));
-        self.writer
-            .write_event(Event::Start(dc_root))
-            .expect("Failed to start oai_dc:dc");
+        self.write(Event::Start(dc_root));
 
-        // Write DC elements
         for title in &dc.titles {
             self.write_prefixed_element("dc", "title", title);
         }
@@ -259,10 +215,7 @@ impl OaiXmlBuilder {
             self.write_prefixed_element("dc", "rights", rights);
         }
 
-        self.writer
-            .write_event(Event::End(BytesEnd::new("oai_dc:dc")))
-            .expect("Failed to end oai_dc:dc");
-
+        self.write(Event::End(BytesEnd::new("oai_dc:dc")));
         self.end_element("metadata");
     }
 
@@ -270,7 +223,6 @@ impl OaiXmlBuilder {
     pub fn write_datacite_metadata(&mut self, datacite: &DataCiteRecord) {
         self.start_element("metadata");
 
-        // oai_datacite wrapper
         let mut oai_datacite = BytesStart::new("oai_datacite");
         oai_datacite.push_attribute(("xmlns", OAI_DATACITE_NS));
         oai_datacite.push_attribute(("xmlns:xsi", XSI_NS));
@@ -278,17 +230,12 @@ impl OaiXmlBuilder {
             "xsi:schemaLocation",
             &format!("{} {}", OAI_DATACITE_NS, "http://schema.datacite.org/oai/oai-1.1/oai.xsd")[..],
         ));
-        self.writer
-            .write_event(Event::Start(oai_datacite))
-            .expect("Failed to start oai_datacite");
+        self.write(Event::Start(oai_datacite));
 
         self.write_element("schemaVersion", "4.6");
         self.write_element("datacentreSymbol", "DASCH.DSP");
-
-        // payload element containing the resource
         self.start_element("payload");
 
-        // resource element
         let mut resource = BytesStart::new("resource");
         resource.push_attribute(("xmlns", DATACITE_NS));
         resource.push_attribute(("xmlns:xsi", XSI_NS));
@@ -296,22 +243,14 @@ impl OaiXmlBuilder {
             "xsi:schemaLocation",
             &format!("{} {}", DATACITE_NS, "https://schema.datacite.org/meta/kernel-4/metadata.xsd")[..],
         ));
-        self.writer
-            .write_event(Event::Start(resource))
-            .expect("Failed to start resource");
+        self.write(Event::Start(resource));
 
         // Identifier (mandatory)
         let mut identifier = BytesStart::new("identifier");
         identifier.push_attribute(("identifierType", &datacite.identifier_type[..]));
-        self.writer
-            .write_event(Event::Start(identifier))
-            .expect("Failed to start identifier");
-        self.writer
-            .write_event(Event::Text(BytesText::new(&datacite.identifier)))
-            .expect("Failed to write identifier");
-        self.writer
-            .write_event(Event::End(BytesEnd::new("identifier")))
-            .expect("Failed to end identifier");
+        self.write(Event::Start(identifier));
+        self.write(Event::Text(BytesText::new(&datacite.identifier)));
+        self.end_element("identifier");
 
         // Creators (mandatory)
         self.start_element("creators");
@@ -321,15 +260,9 @@ impl OaiXmlBuilder {
             if let Some(ref name_type) = creator.name_type {
                 creator_name.push_attribute(("nameType", &name_type[..]));
             }
-            self.writer
-                .write_event(Event::Start(creator_name))
-                .expect("Failed to start creatorName");
-            self.writer
-                .write_event(Event::Text(BytesText::new(&creator.name)))
-                .expect("Failed to write creator name");
-            self.writer
-                .write_event(Event::End(BytesEnd::new("creatorName")))
-                .expect("Failed to end creatorName");
+            self.write(Event::Start(creator_name));
+            self.write(Event::Text(BytesText::new(&creator.name)));
+            self.end_element("creatorName");
             self.end_element("creator");
         }
         self.end_element("creators");
@@ -344,15 +277,9 @@ impl OaiXmlBuilder {
             if let Some(ref title_type) = title.title_type {
                 title_elem.push_attribute(("titleType", &title_type[..]));
             }
-            self.writer
-                .write_event(Event::Start(title_elem))
-                .expect("Failed to start title");
-            self.writer
-                .write_event(Event::Text(BytesText::new(&title.title)))
-                .expect("Failed to write title");
-            self.writer
-                .write_event(Event::End(BytesEnd::new("title")))
-                .expect("Failed to end title");
+            self.write(Event::Start(title_elem));
+            self.write(Event::Text(BytesText::new(&title.title)));
+            self.end_element("title");
         }
         self.end_element("titles");
 
@@ -365,15 +292,9 @@ impl OaiXmlBuilder {
         // ResourceType (mandatory)
         let mut resource_type = BytesStart::new("resourceType");
         resource_type.push_attribute(("resourceTypeGeneral", &datacite.resource_type_general[..]));
-        self.writer
-            .write_event(Event::Start(resource_type))
-            .expect("Failed to start resourceType");
-        self.writer
-            .write_event(Event::Text(BytesText::new(&datacite.resource_type)))
-            .expect("Failed to write resourceType");
-        self.writer
-            .write_event(Event::End(BytesEnd::new("resourceType")))
-            .expect("Failed to end resourceType");
+        self.write(Event::Start(resource_type));
+        self.write(Event::Text(BytesText::new(&datacite.resource_type)));
+        self.end_element("resourceType");
 
         // Subjects (recommended)
         if !datacite.subjects.is_empty() {
@@ -389,15 +310,9 @@ impl OaiXmlBuilder {
                 if let Some(ref lang) = subject.lang {
                     subject_elem.push_attribute(("xml:lang", &lang[..]));
                 }
-                self.writer
-                    .write_event(Event::Start(subject_elem))
-                    .expect("Failed to start subject");
-                self.writer
-                    .write_event(Event::Text(BytesText::new(&subject.subject)))
-                    .expect("Failed to write subject");
-                self.writer
-                    .write_event(Event::End(BytesEnd::new("subject")))
-                    .expect("Failed to end subject");
+                self.write(Event::Start(subject_elem));
+                self.write(Event::Text(BytesText::new(&subject.subject)));
+                self.end_element("subject");
             }
             self.end_element("subjects");
         }
@@ -407,24 +322,15 @@ impl OaiXmlBuilder {
             self.start_element("contributors");
             for contributor in &datacite.contributors {
                 let mut contrib_elem = BytesStart::new("contributor");
-                contrib_elem
-                    .push_attribute(("contributorType", &contributor.contributor_type[..]));
-                self.writer
-                    .write_event(Event::Start(contrib_elem))
-                    .expect("Failed to start contributor");
+                contrib_elem.push_attribute(("contributorType", &contributor.contributor_type[..]));
+                self.write(Event::Start(contrib_elem));
                 let mut contrib_name = BytesStart::new("contributorName");
                 if let Some(ref name_type) = contributor.name_type {
                     contrib_name.push_attribute(("nameType", &name_type[..]));
                 }
-                self.writer
-                    .write_event(Event::Start(contrib_name))
-                    .expect("Failed to start contributorName");
-                self.writer
-                    .write_event(Event::Text(BytesText::new(&contributor.name)))
-                    .expect("Failed to write contributor name");
-                self.writer
-                    .write_event(Event::End(BytesEnd::new("contributorName")))
-                    .expect("Failed to end contributorName");
+                self.write(Event::Start(contrib_name));
+                self.write(Event::Text(BytesText::new(&contributor.name)));
+                self.end_element("contributorName");
                 self.end_element("contributor");
             }
             self.end_element("contributors");
@@ -439,15 +345,9 @@ impl OaiXmlBuilder {
                 if let Some(ref lang) = desc.lang {
                     desc_elem.push_attribute(("xml:lang", &lang[..]));
                 }
-                self.writer
-                    .write_event(Event::Start(desc_elem))
-                    .expect("Failed to start description");
-                self.writer
-                    .write_event(Event::Text(BytesText::new(&desc.description)))
-                    .expect("Failed to write description");
-                self.writer
-                    .write_event(Event::End(BytesEnd::new("description")))
-                    .expect("Failed to end description");
+                self.write(Event::Start(desc_elem));
+                self.write(Event::Text(BytesText::new(&desc.description)));
+                self.end_element("description");
             }
             self.end_element("descriptions");
         }
@@ -458,13 +358,9 @@ impl OaiXmlBuilder {
             for date in &datacite.dates {
                 let mut date_elem = BytesStart::new("date");
                 date_elem.push_attribute(("dateType", &date.date_type[..]));
-                self.writer.write_event(Event::Start(date_elem)).expect("Failed to start date");
-                self.writer
-                    .write_event(Event::Text(BytesText::new(&date.date)))
-                    .expect("Failed to write date");
-                self.writer
-                    .write_event(Event::End(BytesEnd::new("date")))
-                    .expect("Failed to end date");
+                self.write(Event::Start(date_elem));
+                self.write(Event::Text(BytesText::new(&date.date)));
+                self.end_element("date");
             }
             self.end_element("dates");
         }
@@ -479,18 +375,11 @@ impl OaiXmlBuilder {
             self.start_element("relatedIdentifiers");
             for ri in &datacite.related_identifiers {
                 let mut ri_elem = BytesStart::new("relatedIdentifier");
-                ri_elem
-                    .push_attribute(("relatedIdentifierType", &ri.related_identifier_type[..]));
+                ri_elem.push_attribute(("relatedIdentifierType", &ri.related_identifier_type[..]));
                 ri_elem.push_attribute(("relationType", &ri.relation_type[..]));
-                self.writer
-                    .write_event(Event::Start(ri_elem))
-                    .expect("Failed to start relatedIdentifier");
-                self.writer
-                    .write_event(Event::Text(BytesText::new(&ri.identifier)))
-                    .expect("Failed to write relatedIdentifier");
-                self.writer
-                    .write_event(Event::End(BytesEnd::new("relatedIdentifier")))
-                    .expect("Failed to end relatedIdentifier");
+                self.write(Event::Start(ri_elem));
+                self.write(Event::Text(BytesText::new(&ri.identifier)));
+                self.end_element("relatedIdentifier");
             }
             self.end_element("relatedIdentifiers");
         }
@@ -509,15 +398,9 @@ impl OaiXmlBuilder {
                 if let Some(ref scheme) = rights.rights_identifier_scheme {
                     rights_elem.push_attribute(("rightsIdentifierScheme", &scheme[..]));
                 }
-                self.writer
-                    .write_event(Event::Start(rights_elem))
-                    .expect("Failed to start rights");
-                self.writer
-                    .write_event(Event::Text(BytesText::new(&rights.rights)))
-                    .expect("Failed to write rights");
-                self.writer
-                    .write_event(Event::End(BytesEnd::new("rights")))
-                    .expect("Failed to end rights");
+                self.write(Event::Start(rights_elem));
+                self.write(Event::Text(BytesText::new(&rights.rights)));
+                self.end_element("rights");
             }
             self.end_element("rightsList");
         }
@@ -553,55 +436,28 @@ impl OaiXmlBuilder {
             self.end_element("fundingReferences");
         }
 
-        self.writer
-            .write_event(Event::End(BytesEnd::new("resource")))
-            .expect("Failed to end resource");
-
+        self.write(Event::End(BytesEnd::new("resource")));
         self.end_element("payload");
-
-        self.writer
-            .write_event(Event::End(BytesEnd::new("oai_datacite")))
-            .expect("Failed to end oai_datacite");
-
+        self.write(Event::End(BytesEnd::new("oai_datacite")));
         self.end_element("metadata");
     }
 
     /// Writes a complete OAI record.
     pub fn write_record(&mut self, record: &OaiRecord) {
         self.start_element("record");
-
         self.write_record_header(&record.header.identifier, &record.header.datestamp, &record.header.set_specs);
-
         if let Some(ref dc) = record.dublin_core {
             self.write_dublin_core_metadata(dc);
         }
-
         if let Some(ref datacite) = record.datacite {
             self.write_datacite_metadata(datacite);
         }
-
         self.end_element("record");
-    }
-
-    /// Helper to write a prefixed element (e.g., dc:title).
-    fn write_prefixed_element(&mut self, prefix: &str, name: &str, text: &str) {
-        let full_name = format!("{}:{}", prefix, name);
-        self.writer
-            .write_event(Event::Start(BytesStart::new(&full_name)))
-            .expect("Failed to start prefixed element");
-        self.writer
-            .write_event(Event::Text(BytesText::new(text)))
-            .expect("Failed to write text");
-        self.writer
-            .write_event(Event::End(BytesEnd::new(&full_name)))
-            .expect("Failed to end prefixed element");
     }
 
     /// Finishes building the XML and returns the result as a string.
     pub fn finish(mut self) -> String {
-        self.writer
-            .write_event(Event::End(BytesEnd::new("OAI-PMH")))
-            .expect("Failed to end OAI-PMH");
+        self.write(Event::End(BytesEnd::new("OAI-PMH")));
         String::from_utf8(self.writer.into_inner().into_inner()).expect("Invalid UTF-8 in XML output")
     }
 }

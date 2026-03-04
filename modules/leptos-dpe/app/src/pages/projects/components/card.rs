@@ -41,6 +41,7 @@ pub fn ProjectCard(
                     <div class="flex flex-wrap gap-1 mt-3">
                         {keywords
                             .into_iter()
+                            .take(3)
                             .map(|kw| {
                                 view! {
                                     <Badge variant=BadgeVariant::Secondary size=BadgeSize::Small>

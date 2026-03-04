@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 use super::models::Page;
-use super::project::{Project, ProjectView};
+use super::project::Project;
 
 #[server]
 pub async fn list_projects(
@@ -9,7 +9,6 @@ pub async fn list_projects(
     finished: Option<bool>,
     search: Option<String>,
     page: Option<i32>,
-    view: Option<ProjectView>,
     page_size: Option<i32>,
 ) -> Result<Page, ServerFnError> {
     use std::fs;
@@ -18,7 +17,7 @@ pub async fn list_projects(
     use super::project::{ProjectQuery, ProjectStatus};
     use super::utils::get_data_dir;
 
-    let query = ProjectQuery { ongoing, finished, search, page, view };
+    let query = ProjectQuery { ongoing, finished, search, page };
 
     let items_per_page = page_size.unwrap_or(9).max(1) as usize;
 
@@ -43,7 +42,7 @@ pub async fn list_projects(
                         // Read and parse the JSON file
                         match fs::read_to_string(&path) {
                             Ok(json_data) => {
-                                match serde_json::from_str::<Project>(&json_data) {
+                                match serde_json::from_str::<super::project::ProjectRaw>(&json_data).map(Project::from) {
                                     Ok(project) => projects.push(project),
                                     Err(e) => {
                                         // Log error but continue with other files
@@ -135,7 +134,8 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
                         let json_data = fs::read_to_string(&path)
                             .map_err(|e| ServerFnError::new(format!("Failed to read file: {}", e)))?;
 
-                        let project: Project = serde_json::from_str(&json_data)
+                        let project: Project = serde_json::from_str::<super::project::ProjectRaw>(&json_data)
+                            .map(Project::from)
                             .map_err(|e| ServerFnError::new(format!("Failed to parse JSON: {}", e)))?;
 
                         return Ok(Some(project));

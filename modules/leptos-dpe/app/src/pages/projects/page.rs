@@ -17,9 +17,9 @@ pub fn ProjectsPage() -> impl IntoView {
             <ProjectFilters />
 
             <div class="flex-1 flex flex-col gap-4">
-                <Card variant=CardVariant::Bordered>
+                <Card variant=CardVariant::Bordered class="overflow-visible">
                     <CardBody>
-                                <ProjectSearchInput />
+                        <ProjectSearchInput />
                     </CardBody>
                 </Card>
 

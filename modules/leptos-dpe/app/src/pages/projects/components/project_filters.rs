@@ -27,7 +27,6 @@ pub fn ProjectFilters() -> impl IntoView {
             }),
             search: if search.is_empty() { None } else { Some(search.clone()) },
             page: Some(1),
-            view: current_query.view,
         };
         format!("/projects{}", new_query.to_query_string())
     };

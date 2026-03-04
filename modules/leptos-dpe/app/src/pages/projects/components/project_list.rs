@@ -6,7 +6,7 @@ use mosaic_tiles::link::Link;
 use super::card::ProjectCard;
 use super::project_pagination::ProjectPagination;
 use crate::components::loading::Loading;
-use crate::domain::{list_projects, ProjectQuery, ProjectView};
+use crate::domain::{list_projects, ProjectQuery};
 
 #[component]
 pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::ParamsError>>) -> impl IntoView {
@@ -20,7 +20,6 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                 query_data.finished,
                 query_data.search,
                 query_data.page,
-                query_data.view,
                 None,
             )
             .await
@@ -34,11 +33,6 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
         }>
             {move || {
                 let current_query = query.get().unwrap_or_default();
-                let view = current_query.view();
-                let grid_class = match view {
-                    ProjectView::List => "grid grid-cols-1 gap-4",
-                    ProjectView::Grid => "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
-                };
                 projects
                     .get()
                     .map(|result| match result {
@@ -68,31 +62,28 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                                         <div class="mb-2">
                                             {format!("{} projects", total_items)}
                                         </div>
-                                        <div class=grid_class>
-                                            {
-                                                let view_value = view;
-                                                page.items
-                                                    .into_iter()
-                                                    .map(move |project| {
-                                                        let keywords: Vec<String> = project
-                                                            .keywords
-                                                            .iter()
-                                                            .filter_map(|map| map.get("en").cloned())
-                                                            .collect();
-                                                        view! {
-                                                            <ProjectCard
-                                                                title=project.name.clone()
-                                                                content=project.short_description.clone()
-                                                                status=project.status.clone()
-                                                                access_rights=project.access_rights.access_rights.clone()
-                                                                btn_target=format!("/projects/{}", project.shortcode)
-                                                                view=view_value
-                                                                keywords=keywords
-                                                            />
-                                                        }
-                                                    })
-                                                    .collect_view()
-                                            }
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {page
+                                                .items
+                                                .into_iter()
+                                                .map(|project| {
+                                                    let keywords: Vec<String> = project
+                                                        .keywords
+                                                        .iter()
+                                                        .filter_map(|map| map.get("en").cloned())
+                                                        .collect();
+                                                    view! {
+                                                        <ProjectCard
+                                                            title=project.name.clone()
+                                                            content=project.short_description.clone()
+                                                            status=project.status.clone()
+                                                            access_rights=project.access_rights.access_rights.clone()
+                                                            btn_target=format!("/projects/{}", project.shortcode)
+                                                            keywords=keywords
+                                                        />
+                                                    }
+                                                })
+                                                .collect_view()}
                                         </div>
                                     </div>
 

@@ -3,7 +3,7 @@ use mosaic_tiles::badge::{Badge, BadgeSize, BadgeVariant};
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
 use super::statusbadge::ProjectCardIndicators;
-use crate::domain::{AccessRightsType, ProjectStatus, ProjectView};
+use crate::domain::{AccessRightsType, ProjectStatus};
 
 #[component]
 pub fn ProjectCard(
@@ -12,24 +12,13 @@ pub fn ProjectCard(
     status: ProjectStatus,
     access_rights: AccessRightsType,
     btn_target: String,
-    view: ProjectView,
     #[prop(optional)] keywords: Vec<String>,
 ) -> impl IntoView {
-    let layout_class = match view {
-        ProjectView::List => "flex flex-row h-full",
-        ProjectView::Grid => "flex flex-col h-full",
-    };
-
-    let figure_style = match view {
-        ProjectView::List => "min-width: 300px; width: 300px;",
-        ProjectView::Grid => "",
-    };
-
     view! {
         <a href=btn_target class="block h-full">
-            <Card variant=CardVariant::AutoHover class=layout_class>
+            <Card variant=CardVariant::AutoHover class="flex flex-col h-full">
                 <div class="relative">
-                    <figure class="bg-neutral-900 overflow-hidden" style=figure_style>
+                    <figure class="bg-neutral-900 overflow-hidden">
                         <img src="https://dasch.swiss/projects/0854.webp" alt="Shoes" />
                     </figure>
                     <ProjectCardIndicators status=status access_rights=access_rights />

@@ -23,7 +23,7 @@ fn parse_url_value(value: Option<Value>) -> (Option<AuthorityFileReference>, Opt
 }
 
 #[derive(Deserialize)]
-struct ProjectRaw {
+pub(super) struct ProjectRaw {
     pub id: String,
     pub pid: String,
     pub name: String,
@@ -86,44 +86,12 @@ struct ProjectRaw {
     pub additional_material: Option<Vec<String>>,
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Default)]
-pub enum ProjectView {
-    #[default]
-    Grid,
-    List,
-}
-
-impl std::fmt::Display for ProjectView {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ProjectView::Grid => write!(f, "grid"),
-            ProjectView::List => write!(f, "list"),
-        }
-    }
-}
-
-impl std::str::FromStr for ProjectView {
-    type Err = std::io::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "grid" => Ok(ProjectView::Grid),
-            "list" => Ok(ProjectView::List),
-            other => Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                format!("invalid view: {}", other),
-            )),
-        }
-    }
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, Params, PartialEq, Default)]
 pub struct ProjectQuery {
     pub ongoing: Option<bool>,
     pub finished: Option<bool>,
     pub search: Option<String>,
     pub page: Option<i32>,
-    pub view: Option<ProjectView>,
 }
 
 impl ProjectQuery {
@@ -141,10 +109,6 @@ impl ProjectQuery {
 
     pub fn page(&self) -> i32 {
         self.page.unwrap_or(1)
-    }
-
-    pub fn view(&self) -> ProjectView {
-        self.view.unwrap_or_default()
     }
 
     pub fn with_page(self, page: i32) -> Self {
@@ -169,9 +133,6 @@ impl ProjectQuery {
             if page > 1 {
                 parts.push(format!("page={}", page));
             }
-        }
-        if let Some(view) = self.view {
-            parts.push(format!("view={}", view));
         }
 
         if parts.is_empty() {
@@ -200,8 +161,7 @@ pub enum AccessRightsType {
     MetadataOnlyAccess,
 }
 
-#[derive(Clone, Debug, Serialize)]
-#[serde(try_from = "ProjectRaw")]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Project {
     pub id: String,
     pub pid: String,
@@ -237,13 +197,6 @@ pub struct Project {
     pub documentation_material: Option<Vec<String>>,
     pub provenance: Option<String>,
     pub additional_material: Option<Vec<String>>,
-}
-
-impl<'de> Deserialize<'de> for Project {
-    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let raw = ProjectRaw::deserialize(deserializer)?;
-        Ok(Project::from(raw))
-    }
 }
 
 impl From<ProjectRaw> for Project {

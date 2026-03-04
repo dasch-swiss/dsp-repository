@@ -42,7 +42,8 @@ pub async fn list_projects(
                         // Read and parse the JSON file
                         match fs::read_to_string(&path) {
                             Ok(json_data) => {
-                                match serde_json::from_str::<super::project::ProjectRaw>(&json_data).map(Project::from) {
+                                match serde_json::from_str::<super::project::ProjectRaw>(&json_data).map(Project::from)
+                                {
                                     Ok(project) => projects.push(project),
                                     Err(e) => {
                                         // Log error but continue with other files

@@ -15,15 +15,14 @@ pub fn ProjectCard(
     #[prop(optional)] keywords: Vec<String>,
 ) -> impl IntoView {
     view! {
-        <a href=btn_target class="block h-full">
-            <Card variant=CardVariant::AutoHover class="flex flex-col h-full">
-                <div class="relative">
-                    <figure class="bg-neutral-900 overflow-hidden">
+        <a href=btn_target class="block h-full relative hover:z-10">
+            <Card variant=CardVariant::AutoHover class="flex flex-col h-full ![overflow:visible]">
+                <figure class="bg-neutral-900 relative rounded-t-[inherit]">
+                    <div class="overflow-hidden rounded-t-[inherit]">
                         <img src="https://dasch.swiss/projects/0854.webp" alt="Shoes" />
-                    </figure>
+                    </div>
                     <ProjectCardIndicators status=status access_rights=access_rights />
-                </div>
-
+                </figure>
                 <CardBody>
                     <h2 class="font-display font-semibold text-lg text-ellipsis">{title}</h2>
                     <p class="text-sm text-gray-600 line-clamp-4 mt-2">{content}</p>

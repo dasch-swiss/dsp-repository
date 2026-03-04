@@ -15,7 +15,7 @@ pub fn Description(text: String) -> impl IntoView {
             .then(|| {
                 view! {
                     <button
-                        class="font-semibold text-primary cursor-pointer mt-2"
+                        class="text-primary cursor-pointer mt-2"
                         on:click=move |_| set_expanded.update(|v| *v = !*v)
                     >
                         {move || if expanded.get() { "Show less" } else { "Show more" }}

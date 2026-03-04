@@ -1,8 +1,8 @@
 use leptos::prelude::*;
 use leptos_router::hooks::use_query;
-use mosaic_tiles::card::{Card, CardBody, CardHeader, CardVariant};
+use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
-use super::filter_checkbox_group::FilterCheckboxGroup;
+use super::project_filters_content::ProjectFiltersContent;
 use crate::domain::ProjectQuery;
 
 // Regular component for filters and search - uses simple links that reload the page
@@ -39,17 +39,9 @@ pub fn ProjectFilters() -> impl IntoView {
             .collect();
 
     view! {
-        <Card variant=CardVariant::Bordered class="w-72">
-            <CardHeader>
-                <h4 class="dpe-title">"Filters"</h4>
-            </CardHeader>
+        <Card variant=CardVariant::Bordered class="w-full">
             <CardBody>
-                <div class="space-y-4">
-                    <FilterCheckboxGroup title="Status" items=filter_items />
-                    <div class="border-t border-neutral-200"></div>
-
-                    <div class="dpe-subtitle">"Other filters TODO"</div>
-                </div>
+                <ProjectFiltersContent items=filter_items />
             </CardBody>
         </Card>
     }

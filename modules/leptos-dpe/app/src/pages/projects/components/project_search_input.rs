@@ -19,7 +19,7 @@ pub fn ProjectSearchInput() -> impl IntoView {
 
     view! {
         <form method="get" action="/projects">
-            <div class="relative flex-1 mr-2">
+            <div class="relative flex-1">
                 <label class="input w-full">
                     <Icon icon=IconSearch class="w-4 h-4 opacity-50 shrink-0" />
                     <input

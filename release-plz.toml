@@ -19,7 +19,7 @@ version_group = "leptos-dpe"
 
 [[package]]
 name = "frontend"
-release = true
+release = false
 version_group = "leptos-dpe"
 
 [[package]]
@@ -29,4 +29,4 @@ version_group = "leptos-dpe"
 # Changelog lives next to the leptos-dpe module
 changelog_path = "modules/leptos-dpe/CHANGELOG.md"
 # Include commits from all crates in the version group
-changelog_include = ["app", "frontend"]
+changelog_include = ["app"]

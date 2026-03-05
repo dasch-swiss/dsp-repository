@@ -8,6 +8,8 @@ publish = false
 git_only = true
 # Disable semver checks (not publishing to crates.io)
 semver_check = false
+# Skip cargo package verification (workaround for release-plz #2595)
+publish_no_verify = true
 
 # Labels added to the release PR
 pr_labels = ["release"]

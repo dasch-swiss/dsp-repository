@@ -8,6 +8,8 @@ publish = false
 git_only = true
 # Disable semver checks (not publishing to crates.io)
 semver_check = false
+# Skip cargo package verification (workaround for release-plz #2595)
+publish_no_verify = true
 
 # Labels added to the release PR
 pr_labels = ["release"]
@@ -16,17 +18,22 @@ pr_labels = ["release"]
 name = "app"
 release = true
 version_group = "leptos-dpe"
+# Disable git tag/release for app — leptos-server creates the single tag
+git_tag_enable = false
+git_release_enable = false
 
 [[package]]
 name = "frontend"
-release = true
+release = false
 version_group = "leptos-dpe"
 
 [[package]]
 name = "leptos-server"
 release = true
 version_group = "leptos-dpe"
+# Single git tag for the whole leptos-dpe version group
+git_tag_name = "v{{ version }}"
 # Changelog lives next to the leptos-dpe module
 changelog_path = "modules/leptos-dpe/CHANGELOG.md"
 # Include commits from all crates in the version group
-changelog_include = ["app", "frontend"]
+changelog_include = ["app"]

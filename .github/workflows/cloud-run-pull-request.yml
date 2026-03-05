@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     paths:
-      - "modules/mosaic/**"
+      - "dsp-dpe/mosaic/**"
   workflow_dispatch:
 
 permissions:
@@ -55,7 +55,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: modules/mosaic/demo/Dockerfile
+          file: dsp-dpe/mosaic/demo/Dockerfile
           push: true
           tags: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-demo:${{ env.IMAGE_TAG }}
           cache-from: type=gha

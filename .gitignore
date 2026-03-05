@@ -31,15 +31,7 @@ target/
 # Node.js dependencies
 node_modules/
 
-# Playwright test artifacts (but NOT baseline screenshots)
-modules/design_system/playground/tests/output/
-modules/design_system/playground/tests/.cache/
-
 .DS_Store
-
-# Generated Tailwind CSS output (built from input.css)
-modules/design_system/tailwind.css
-
 
 # IDE related
 /.vscode

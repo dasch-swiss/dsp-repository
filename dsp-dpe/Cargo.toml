@@ -1,11 +1,11 @@
 [workspace]
 members = [
-  "modules/mosaic/demo",
-  "modules/mosaic/demo_macro",
-  "modules/mosaic/tiles",
-  "modules/leptos-dpe/app",
-  "modules/leptos-dpe/frontend",
-  "modules/leptos-dpe/server",
+  "mosaic/demo",
+  "mosaic/demo_macro",
+  "mosaic/tiles",
+  "leptos-dpe/app",
+  "leptos-dpe/frontend",
+  "leptos-dpe/server",
 ]
 resolver = "3"
 
@@ -16,7 +16,6 @@ edition = "2021"
 homepage = "https://github.com/dasch-swiss/dsp-repository"
 repository = "https://github.com/dasch-swiss/dsp-repository"
 documentation = "https://github.com/dasch-swiss/dsp-repository"
-readme = "README.md"
 description = "The DSP-Repository provides tooling and services for transforming, validating, and serving research project metadata and data. It is part of the DaSCH Service Platform, supporting FAIR principles for research data in the humanities."
 authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
 
@@ -68,13 +67,13 @@ opt-level = 'z'
 name = "leptos-dpe"
 bin-package = "leptos-server"
 lib-package = "frontend"
-site-root = "modules/leptos-dpe/target/site"
+site-root = "leptos-dpe/target/site"
 site-pkg-dir = "pkg"
-assets-dir = "modules/leptos-dpe/public"
+assets-dir = "leptos-dpe/public"
 site-addr = "127.0.0.1:4000"
 reload-port = 4001
 end2end-cmd = "npx playwright test"
-end2end-dir = "modules/leptos-dpe/end2end"
+end2end-dir = "leptos-dpe/end2end"
 browserquery = "defaults"
 watch = false
 env = "DEV"
@@ -82,5 +81,5 @@ bin-features = []
 bin-default-features = false
 lib-features = []
 lib-default-features = false
-tailwind-input-file = "modules/leptos-dpe/style/main.css"
+tailwind-input-file = "leptos-dpe/style/main.css"
 lib-profile-release = "wasm-release"

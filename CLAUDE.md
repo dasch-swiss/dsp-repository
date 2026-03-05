@@ -28,14 +28,11 @@ This includes:
 ## Key Directories
 
 ```txt
-modules/
-├── leptos-dpe/            # Discovery and Presentation Environment (Leptos app)
-│   ├── app/               # Shared app logic, components, pages, domain
-│   ├── server/            # Server binary
-│   ├── frontend/          # Client-side (WASM) entry point
-│   ├── end2end/           # Playwright E2E tests
-│   ├── public/            # Static assets
-│   └── style/             # CSS / Tailwind
+dsp-dpe/                   # Cargo workspace for the DPE
+├── leptos-dpe/            # Leptos-based DPE application
+│   ├── app/               # Shared app logic
+│   ├── frontend/          # Client-side WASM
+│   └── server/            # Axum server binary
 └── mosaic/                # Mosaic component library
     ├── tiles/             # Reusable Leptos UI components
     ├── demo/              # Component showcase application
@@ -59,18 +56,12 @@ just install-requirements
 ## Development Commands (via justfile)
 
 ```bash
-# Development
-just watch-leptos-dpe          # Run DPE with hot reload
-just watch-mosaic-demo         # Run Mosaic demo with hot reload
-just watch                     # Watch for changes and run tests
-just run                       # Run server (release mode)
-
-# Code quality
-just check                     # Run fmt checks and clippy
-just fmt                       # Format all Rust code (cargo fmt + leptosfmt)
-just build                     # Build all targets
-just test                      # Run all tests
-just clean                     # Clean build artifacts
+# DPE development (via `just dsp-dpe <command>`)
+just dsp-dpe watch-mosaic-demo     # Run Mosaic demo with hot reload
+just dsp-dpe fmt                   # Format Rust code
+just dsp-dpe check                 # Run fmt and clippy checks
+just dsp-dpe test                  # Run all tests
+just dsp-dpe build                 # Build all targets
 
 # Documentation
 just docs-build                # Build mdBook documentation
@@ -83,8 +74,8 @@ just install-requirements      # Install required tools
 ## Code Quality
 
 - **Formatting**:
-  Defined in `.rustfmt.toml`, use Unix newlines.
-  Use `leptosfmt` for Leptos code (`modules/mosaic/`, `modules/leptos-dpe/`).
+  Defined in `dsp-dpe/.rustfmt.toml`, use Unix newlines.
+  Use `leptosfmt` for code in `dsp-dpe/mosaic`.
 - **Linting**: Strict clippy warnings
 - **Testing**: Testing pyramid (unit → integration → E2E)
 - **Git**: Rebase workflow, clean commit history
@@ -106,7 +97,7 @@ just install-requirements      # Install required tools
 Before considering ANY change as "done":
 
 - **Verify that changes compile and all checks pass** —
-  Run `just check` and `just test`.
+  Run `just dsp-dpe check` and `just dsp-dpe test`.
   This includes formatting and linting — no need to run these earlier.
 - **Check if documentation needs updating** —
   Consider `/docs/src/`, the readme, and claude-files.

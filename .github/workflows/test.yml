@@ -30,8 +30,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.toolchain }}
+          workspaces: "dsp-dpe -> target"
       - uses: taiki-e/install-action@nextest
       - name: cargo test --all-targets
-        run: cargo nextest run --locked --all-features --all-targets
+        run: cd dsp-dpe && cargo nextest run --locked --all-features --all-targets
       - name: cargo test --doc
-        run: cargo test --locked --all-features --doc
+        run: cd dsp-dpe && cargo test --locked --all-features --doc

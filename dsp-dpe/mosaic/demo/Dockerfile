@@ -2,7 +2,7 @@
 # FROM rustlang/rust:nightly-trixie as builder
 
 # If you're using stable, use this instead
-FROM rust:1.92.0-bookworm AS builder
+FROM rust:1.93.0-bookworm AS builder
 
 # Install cargo-binstall, which makes it easier to install other
 # cargo extensions like cargo-leptos
@@ -33,7 +33,7 @@ WORKDIR /app
 COPY . .
 
 # Build the app from the demo directory
-WORKDIR /app/modules/mosaic/demo
+WORKDIR /app/dsp-dpe/mosaic/demo
 ENV SINGLESTAGE_TAILWIND_PATH=/usr/local/bin/tailwindcss
 RUN cargo leptos build --release -vv
 
@@ -46,13 +46,13 @@ RUN apt-get update -y \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy the server binary to the /app directory
-COPY --from=builder /app/target/release/mosaic-demo /app/
+COPY --from=builder /app/dsp-dpe/target/release/mosaic-demo /app/
 
 # /target/site contains our JS/WASM/CSS, etc.
-COPY --from=builder /app/target/site /app/site
+COPY --from=builder /app/dsp-dpe/target/site /app/site
 
 # Copy Cargo.toml if it's needed at runtime
-COPY --from=builder /app/modules/mosaic/demo/Cargo.toml /app/
+COPY --from=builder /app/dsp-dpe/mosaic/demo/Cargo.toml /app/
 
 # Set any required env variables
 ENV RUST_LOG="info"

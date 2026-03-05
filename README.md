@@ -14,12 +14,12 @@ You may also view the rendered documentation by following these steps:
 
 You may start and run the Mosaic demo application:
 
-- Run: `just watch-mosaic-demo`
+- Run: `just dsp-dpe watch-mosaic-demo`
 
 You may start and run the Leptos DPE application:
 
 - Install dependencies: `just install-requirements`
-- Run: `just watch-leptos-dpe`
+- Run: `just dsp-dpe watch-leptos-dpe`
 
 ## License
 

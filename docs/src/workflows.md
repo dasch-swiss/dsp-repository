@@ -12,14 +12,11 @@ The justfile contains all the commands and workflows that are used in this repos
 
 The justfile provides self-documenting commands. Key workflows include:
 
-- `just check` - Run formatting and linting checks
-- `just build` - Build all targets
-- `just test` - Run all tests
-- `just run` - Run main server
-- `just watch` - Watch for changes and run tests
-- `just run-watch-playground` - Run design system playground with hot reload
-- `just playground install` - Install playground dependencies
-- `just playground test` - Run design system tests
+- `just dsp-dpe check` - Run formatting and linting checks
+- `just dsp-dpe build` - Build all targets
+- `just dsp-dpe test` - Run all tests
+- `just dsp-dpe watch-mosaic-demo` - Run Mosaic demo with hot reload
+- `just dsp-dpe watch-leptos-dpe` - Run Leptos DPE with hot reload
 
 Run `just` without arguments to see all available commands with descriptions.
 

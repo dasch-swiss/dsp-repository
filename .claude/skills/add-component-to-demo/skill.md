@@ -5,7 +5,7 @@ description: Adds a newly created component to the demo crate
 # Mosaic Demo - Component Examples Guide
 
 This guide explains how to add a component demo page to the demo application.
-The crate is found in modules/mosaic/demo.
+The crate is found in dsp-dpe/mosaic/demo.
 
 ## Overview
 
@@ -37,7 +37,7 @@ src/components/[component_name]/
     └── ...
 ```
 
-You can find the code of the component in the /modules/mosaic/tiles/component/[component_name] folder.
+You can find the code of the component in the /dsp-dpe/mosaic/tiles/component/[component_name] folder.
 
 ## Step-by-Step: Adding a New Component Demo
 

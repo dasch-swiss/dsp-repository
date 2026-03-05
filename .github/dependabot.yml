@@ -4,7 +4,7 @@
 version: 2
 updates:
   - package-ecosystem: "cargo"
-    directory: "/"
+    directory: "/dsp-dpe"
     schedule:
       interval: "weekly"
     commit-message:
@@ -23,8 +23,10 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
   - package-ecosystem: "docker"
-    # Look for a `Dockerfile` in the `root` directory
-    directory: "/"
-    # Check for updates once a week
+    directory: "/dsp-dpe/leptos-dpe"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker"
+    directory: "/dsp-dpe/mosaic/demo"
     schedule:
       interval: "weekly"

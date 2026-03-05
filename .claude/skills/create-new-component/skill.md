@@ -1,11 +1,11 @@
 ---
 name: create-mosaic-component
-description: Create a new reusable leptos component in the modules/mosaic/tiles create
+description: Create a new reusable leptos component in the dsp-dpe/mosaic/tiles crate
 ---
 
 # Mosaic Tiles - Component Creation Guide
 
-This guide explains how to create new Leptos components in the modules/mosaic/tiles crate.
+This guide explains how to create new Leptos components in the dsp-dpe/mosaic/tiles crate.
 
 ## Overview
 
@@ -245,7 +245,7 @@ view! {
 
 ### In the Demo Application
 
-The demo app (`modules/mosaic/demo`) provides a full showcase environment for testing and documenting components.
+The demo app (`dsp-dpe/mosaic/demo`) provides a full showcase environment for testing and documenting components.
 
 #### Quick Testing
 

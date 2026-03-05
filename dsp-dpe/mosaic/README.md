@@ -32,8 +32,8 @@ Accordion, Badge, Breadcrumb, Button, ButtonGroup, Card, Icon, Link, Popover, Ta
 ## Development
 
 ```bash
-just watch-mosaic-demo    # Run demo with hot reload (watches tiles changes)
-just fmt-mosaic           # Format with leptosfmt
+just dsp-dpe watch-mosaic-demo    # Run demo with hot reload (watches tiles changes)
+just dsp-dpe fmt                  # Format with leptosfmt
 ```
 
 See each crate's README for further details.

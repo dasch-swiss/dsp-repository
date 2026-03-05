@@ -1,5 +1,5 @@
 # Build Stage
-FROM rust:1.92.0-bookworm AS builder
+FROM rust:1.93.0-bookworm AS builder
 
 # Install cargo-binstall for faster tool installation
 RUN wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
@@ -29,11 +29,11 @@ WORKDIR /app
 COPY . .
 
 # Install npm dependencies
-WORKDIR /app/modules/leptos-dpe
+WORKDIR /app/dsp-dpe/leptos-dpe
 RUN CI=true pnpm install --frozen-lockfile
 
 # Build the project from the workspace root
-WORKDIR /app
+WORKDIR /app/dsp-dpe
 RUN cargo leptos build --project leptos-dpe --release -vv
 
 # Runtime Stage
@@ -55,13 +55,13 @@ RUN useradd -m -u 1001 leptos
 WORKDIR /app
 
 # Copy the server binary from the builder stage
-COPY --from=builder /app/target/release/leptos-server /app/leptos-dpe
+COPY --from=builder /app/dsp-dpe/target/release/leptos-server /app/leptos-dpe
 
 # Copy the site directory (contains WASM, JS, CSS, and static assets)
-COPY --from=builder /app/modules/leptos-dpe/target/site /app/site
+COPY --from=builder /app/dsp-dpe/leptos-dpe/target/site /app/site
 
 # Copy the data files from the builder stage
-COPY --from=builder /app/modules/leptos-dpe/server/data /app/server/data
+COPY --from=builder /app/dsp-dpe/leptos-dpe/server/data /app/server/data
 
 # Change ownership to the non-root user
 RUN chown -R leptos:leptos /app

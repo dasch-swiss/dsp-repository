@@ -18,6 +18,9 @@ pr_labels = ["release"]
 name = "app"
 release = true
 version_group = "leptos-dpe"
+# Disable git tag/release for app — leptos-server creates the single tag
+git_tag_enable = false
+git_release_enable = false
 
 [[package]]
 name = "frontend"
@@ -28,6 +31,8 @@ version_group = "leptos-dpe"
 name = "leptos-server"
 release = true
 version_group = "leptos-dpe"
+# Single git tag for the whole leptos-dpe version group
+git_tag_name = "v{{ version }}"
 # Changelog lives next to the leptos-dpe module
 changelog_path = "modules/leptos-dpe/CHANGELOG.md"
 # Include commits from all crates in the version group

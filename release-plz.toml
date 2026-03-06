@@ -16,11 +16,11 @@ pr_labels = ["release"]
 
 [[package]]
 name = "app"
-release = true
+# release disabled: app depends on mosaic-tiles (not on crates.io),
+# which causes cargo package to fail during version detection.
+# app's commits are included in leptos-server's changelog via changelog_include.
+release = false
 version_group = "leptos-dpe"
-# Disable git tag/release for app — leptos-server creates the single tag
-git_tag_enable = false
-git_release_enable = false
 
 [[package]]
 name = "frontend"

@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
 use super::legal_info::LegalInfo;
-use crate::domain::Project;
+use crate::domain::{Project, ProjectStatus};
 use crate::pages::project::components::access_rights_section::AccessRightsSection;
 use crate::pages::project::components::citation::Citation;
 use crate::pages::project::components::funding_section::FundingSection;
@@ -41,11 +41,22 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
                     <h3 class="dpe-title">"Project Timeline"</h3>
                     <div>
                         <div class="dpe-subtitle">"Period"</div>
-                        <div>"TODO"</div>
+                        <div>
+                            {if proj.end_date == "MISSING" {
+                                proj.start_date.clone()
+                            } else {
+                                format!("{} – {}", proj.start_date, proj.end_date)
+                            }}
+                        </div>
                     </div>
                     <div>
                         <div class="dpe-subtitle">"Status"</div>
-                        <div>"Ongoing"</div>
+                        <div>
+                            {match proj.status {
+                                ProjectStatus::Ongoing => "Ongoing",
+                                ProjectStatus::Finished => "Finished",
+                            }}
+                        </div>
                     </div>
 
                     <div class="border-t border-gray-200"></div>

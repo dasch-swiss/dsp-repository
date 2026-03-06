@@ -56,9 +56,8 @@
               <fundingReferences>
                 <fundingReference>
                   <funderName>0803-organization-000</funderName>
-                  <awardNumber>120378</awardNumber>
+                  <awardNumber awardURI="https://data.snf.ch/grants/grant/120378">120378</awardNumber>
                   <awardTitle>Project funding</awardTitle>
-                  <awardURI>https://data.snf.ch/grants/grant/120378</awardURI>
                 </fundingReference>
               </fundingReferences>
             </resource>

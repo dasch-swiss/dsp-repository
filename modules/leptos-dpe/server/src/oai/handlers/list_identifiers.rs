@@ -235,6 +235,27 @@ mod tests {
         assert!(xml.contains("<error code=\"noRecordsMatch\">"), "got: {}", xml);
     }
 
+    fn validate_against_schema(xml: &str) {
+        let xsd_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("src/oai/handlers/testdata/schemas/validate.xsd");
+
+        let mut tmp = tempfile::NamedTempFile::new().expect("create temp file");
+        std::io::Write::write_all(&mut tmp, xml.as_bytes()).expect("write temp file");
+
+        let output = std::process::Command::new("xmllint")
+            .arg("--noout")
+            .arg("--schema")
+            .arg(xsd_path)
+            .arg(tmp.path())
+            .output()
+            .expect("xmllint must be available");
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            panic!("Schema validation failed:\n{}", stderr);
+        }
+    }
+
     // ---- golden tests ----
 
     #[test]
@@ -253,5 +274,23 @@ mod tests {
         let xml = handle_list_identifiers(&params, &repo);
         let expected = golden("list_identifiers_oai_datacite.xml", &xml);
         assert_eq!(normalize(&xml), expected);
+    }
+
+    // ---- schema validation tests ----
+
+    #[test]
+    fn list_identifiers_oai_dc_response_is_valid_oai_pmh() {
+        let params = make_params(Some("oai_dc"));
+        let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
+        let xml = handle_list_identifiers(&params, &repo);
+        validate_against_schema(&xml);
+    }
+
+    #[test]
+    fn list_identifiers_oai_datacite_response_is_valid_oai_pmh() {
+        let params = make_params(Some("oai_datacite"));
+        let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
+        let xml = handle_list_identifiers(&params, &repo);
+        validate_against_schema(&xml);
     }
 }

@@ -420,9 +420,16 @@ impl OaiXmlBuilder {
             for fr in &datacite.funding_references {
                 self.start_element("fundingReference");
                 self.write_element("funderName", &fr.funder_name);
-                if let Some(ref number) = fr.award_number { self.write_element("awardNumber", number); }
+                if let Some(ref number) = fr.award_number {
+                    let mut award_number = BytesStart::new("awardNumber");
+                    if let Some(ref uri) = fr.award_uri {
+                        award_number.push_attribute(("awardURI", &uri[..]));
+                    }
+                    self.write(Event::Start(award_number));
+                    self.write(Event::Text(BytesText::new(number)));
+                    self.end_element("awardNumber");
+                }
                 if let Some(ref title) = fr.award_title { self.write_element("awardTitle", title); }
-                if let Some(ref uri) = fr.award_uri { self.write_element("awardURI", uri); }
                 self.end_element("fundingReference");
             }
             self.end_element("fundingReferences");

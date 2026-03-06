@@ -16,16 +16,11 @@ pr_labels = ["release"]
 
 [[package]]
 name = "app"
-# release disabled: app depends on mosaic-tiles (not on crates.io),
-# which causes cargo package to fail during version detection.
-# app's commits are included in leptos-server's changelog via changelog_include.
 release = false
-version_group = "leptos-dpe"
 
 [[package]]
 name = "frontend"
 release = false
-version_group = "leptos-dpe"
 
 [[package]]
 name = "leptos-server"
@@ -36,4 +31,4 @@ git_tag_name = "v{{ version }}"
 # Changelog lives next to the leptos-dpe module
 changelog_path = "modules/leptos-dpe/CHANGELOG.md"
 # Include commits from all crates in the version group
-changelog_include = ["app"]
+changelog_include = ["app", "frontend"]

@@ -10,6 +10,9 @@ git_only = true
 semver_check = false
 # Skip cargo package verification (workaround for release-plz #2595)
 publish_no_verify = true
+# Use package-prefixed tags by default so non-released packages don't
+# accidentally match the leptos-server "v*" tag (workaround for release-plz #2595).
+git_tag_name = "{{ package }}-v{{ version }}"
 
 # Labels added to the release PR
 pr_labels = ["release"]

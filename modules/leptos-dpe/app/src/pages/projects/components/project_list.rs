@@ -21,6 +21,9 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                 query_data.search,
                 query_data.page,
                 None,
+                query_data.type_of_data,
+                query_data.data_language,
+                query_data.access_rights,
             )
             .await
         },

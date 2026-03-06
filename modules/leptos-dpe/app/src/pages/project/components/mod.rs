@@ -1,4 +1,5 @@
 pub mod access_rights_section;
+pub mod data_language_section;
 pub mod attributions_section;
 pub mod breadcrumb;
 pub mod citation;

@@ -92,6 +92,9 @@ pub struct ProjectQuery {
     pub finished: Option<bool>,
     pub search: Option<String>,
     pub page: Option<i32>,
+    pub type_of_data: Option<String>,
+    pub data_language: Option<String>,
+    pub access_rights: Option<String>,
 }
 
 impl ProjectQuery {
@@ -109,6 +112,27 @@ impl ProjectQuery {
 
     pub fn page(&self) -> i32 {
         self.page.unwrap_or(1)
+    }
+
+    pub fn type_of_data(&self) -> Vec<String> {
+        self.type_of_data
+            .as_deref()
+            .map(|s| s.split(',').map(str::to_string).collect())
+            .unwrap_or_default()
+    }
+
+    pub fn data_language(&self) -> Vec<String> {
+        self.data_language
+            .as_deref()
+            .map(|s| s.split(',').map(str::to_string).collect())
+            .unwrap_or_default()
+    }
+
+    pub fn access_rights(&self) -> Vec<String> {
+        self.access_rights
+            .as_deref()
+            .map(|s| s.split(',').map(str::to_string).collect())
+            .unwrap_or_default()
     }
 
     pub fn with_page(self, page: i32) -> Self {
@@ -132,6 +156,21 @@ impl ProjectQuery {
         if let Some(page) = self.page {
             if page > 1 {
                 parts.push(format!("page={}", page));
+            }
+        }
+        if let Some(ref type_of_data) = self.type_of_data {
+            if !type_of_data.is_empty() {
+                parts.push(format!("type_of_data={}", type_of_data));
+            }
+        }
+        if let Some(ref data_language) = self.data_language {
+            if !data_language.is_empty() {
+                parts.push(format!("data_language={}", data_language));
+            }
+        }
+        if let Some(ref access_rights) = self.access_rights {
+            if !access_rights.is_empty() {
+                parts.push(format!("access_rights={}", access_rights));
             }
         }
 

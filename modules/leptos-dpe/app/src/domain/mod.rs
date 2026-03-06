@@ -10,4 +10,4 @@ pub mod utils;
 pub use organizations::get_organization;
 pub use persons::get_person;
 pub use project::*;
-pub use projects::{get_project, list_projects};
+pub use projects::{get_project, list_data_languages, list_projects, list_type_of_data};

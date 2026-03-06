@@ -3,13 +3,22 @@ use leptos::prelude::*;
 use super::filter_checkbox_group::FilterCheckboxGroup;
 
 #[component]
-pub fn ProjectFiltersContent(items: Vec<(String, bool, String)>) -> impl IntoView {
+pub fn ProjectFiltersContent(
+    status_items: Vec<(String, bool, String)>,
+    type_of_data_items: Vec<(String, bool, String)>,
+    data_language_items: Vec<(String, bool, String)>,
+    access_rights_items: Vec<(String, bool, String)>,
+) -> impl IntoView {
     view! {
         <h4 class="dpe-title">"Filters"</h4>
         <div class="space-y-4">
-            <FilterCheckboxGroup title="Project Status".to_string() items=items />
+            <FilterCheckboxGroup title="Access Rights".to_string() items=access_rights_items />
             <div class="border-t border-neutral-200"></div>
-            <div class="dpe-subtitle">"Other filters TODO"</div>
+            <FilterCheckboxGroup title="Project Status".to_string() items=status_items />
+            <div class="border-t border-neutral-200"></div>
+            <FilterCheckboxGroup title="Type of Data".to_string() items=type_of_data_items />
+            <div class="border-t border-neutral-200"></div>
+            <FilterCheckboxGroup title="Data Language".to_string() items=data_language_items />
         </div>
     }
 }

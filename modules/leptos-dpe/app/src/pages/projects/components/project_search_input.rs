@@ -13,7 +13,7 @@ pub fn ProjectSearchInput() -> impl IntoView {
         move || value.get(),
         |search| async move {
             let search_opt = if search.is_empty() { None } else { Some(search) };
-            list_projects(None, None, search_opt, None, Some(5)).await
+            list_projects(None, None, search_opt, None, Some(5), None, None, None).await
         },
     );
 

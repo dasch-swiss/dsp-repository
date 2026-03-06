@@ -4,12 +4,101 @@ use super::models::Page;
 use super::project::Project;
 
 #[server]
+pub async fn list_type_of_data() -> Result<Vec<String>, ServerFnError> {
+    use std::fs;
+    use std::path::PathBuf;
+
+    use super::project::ProjectRaw;
+    use super::utils::get_data_dir;
+
+    let data_dir = get_data_dir();
+    let projects_dir = PathBuf::from(data_dir).join("projects");
+
+    let entries = fs::read_dir(projects_dir)
+        .map_err(|e| ServerFnError::new(format!("Failed to read projects directory: {}", e)))?;
+
+    let mut all_types = std::collections::HashSet::new();
+
+    for entry in entries {
+        let entry = entry.map_err(|e| ServerFnError::new(format!("Failed to read directory entry: {}", e)))?;
+        let path = entry.path();
+
+        if path.is_file() {
+            if let Some(filename_str) = path.file_name().and_then(|n| n.to_str()) {
+                if filename_str.ends_with(".json") {
+                    if let Ok(json_data) = fs::read_to_string(&path) {
+                        if let Ok(raw) = serde_json::from_str::<ProjectRaw>(&json_data) {
+                            if let Some(types) = raw.type_of_data {
+                                for t in types {
+                                    all_types.insert(t);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut result: Vec<String> = all_types.into_iter().collect();
+    result.sort();
+    Ok(result)
+}
+
+#[server]
+pub async fn list_data_languages() -> Result<Vec<String>, ServerFnError> {
+    use std::fs;
+    use std::path::PathBuf;
+
+    use super::project::ProjectRaw;
+    use super::utils::get_data_dir;
+
+    let data_dir = get_data_dir();
+    let projects_dir = PathBuf::from(data_dir).join("projects");
+
+    let entries = fs::read_dir(projects_dir)
+        .map_err(|e| ServerFnError::new(format!("Failed to read projects directory: {}", e)))?;
+
+    let mut all_languages = std::collections::HashSet::new();
+
+    for entry in entries {
+        let entry = entry.map_err(|e| ServerFnError::new(format!("Failed to read directory entry: {}", e)))?;
+        let path = entry.path();
+
+        if path.is_file() {
+            if let Some(filename_str) = path.file_name().and_then(|n| n.to_str()) {
+                if filename_str.ends_with(".json") {
+                    if let Ok(json_data) = fs::read_to_string(&path) {
+                        if let Ok(raw) = serde_json::from_str::<ProjectRaw>(&json_data) {
+                            if let Some(languages) = raw.data_language {
+                                for lang_map in languages {
+                                    if let Some(en) = lang_map.get("en") {
+                                        all_languages.insert(en.clone());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut result: Vec<String> = all_languages.into_iter().collect();
+    result.sort();
+    Ok(result)
+}
+
+#[server]
 pub async fn list_projects(
     ongoing: Option<bool>,
     finished: Option<bool>,
     search: Option<String>,
     page: Option<i32>,
     page_size: Option<i32>,
+    type_of_data: Option<String>,
+    data_language: Option<String>,
+    access_rights: Option<String>,
 ) -> Result<Page, ServerFnError> {
     use std::fs;
     use std::path::PathBuf;
@@ -17,7 +106,7 @@ pub async fn list_projects(
     use super::project::{ProjectQuery, ProjectStatus};
     use super::utils::get_data_dir;
 
-    let query = ProjectQuery { ongoing, finished, search, page };
+    let query = ProjectQuery { ongoing, finished, search, page, type_of_data, data_language, access_rights };
 
     let items_per_page = page_size.unwrap_or(9).max(1) as usize;
 
@@ -85,7 +174,50 @@ pub async fn list_projects(
                     || status_str.contains(&search_lower)
             };
 
-            status_match && search_match
+            // Type of data filter
+            let type_of_data_filter = query.type_of_data();
+            let type_match = if type_of_data_filter.is_empty() {
+                true
+            } else {
+                project
+                    .type_of_data
+                    .as_ref()
+                    .map(|types| types.iter().any(|t| type_of_data_filter.contains(t)))
+                    .unwrap_or(false)
+            };
+
+            // Data language filter
+            let data_language_filter = query.data_language();
+            let language_match = if data_language_filter.is_empty() {
+                true
+            } else {
+                project
+                    .data_language
+                    .as_ref()
+                    .map(|langs| {
+                        langs.iter().any(|lang_map| {
+                            lang_map.get("en").map(|en| data_language_filter.contains(en)).unwrap_or(false)
+                        })
+                    })
+                    .unwrap_or(false)
+            };
+
+            // Access rights filter
+            let access_rights_filter = query.access_rights();
+            let access_rights_match = if access_rights_filter.is_empty() {
+                true
+            } else {
+                use super::project::AccessRightsType;
+                let label = match project.access_rights.access_rights {
+                    AccessRightsType::FullOpenAccess => "Full Open Access",
+                    AccessRightsType::OpenAccessWithRestrictions => "Open Access with Restrictions",
+                    AccessRightsType::EmbargoedAccess => "Embargoed Access",
+                    AccessRightsType::MetadataOnlyAccess => "Metadata only Access",
+                };
+                access_rights_filter.iter().any(|f| f == label)
+            };
+
+            status_match && search_match && type_match && language_match && access_rights_match
         })
         .collect();
 

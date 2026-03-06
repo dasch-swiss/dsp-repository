@@ -26,7 +26,7 @@ fn parse_query_from_window() -> ProjectQuery {
                     _ => {}
                 }
             }
-            return ProjectQuery { ongoing, finished, search: query_search, page };
+            return ProjectQuery { ongoing, finished, search: query_search, page, type_of_data: None, data_language: None, access_rights: None };
         }
     }
     ProjectQuery::default()
@@ -49,6 +49,9 @@ pub fn MobileFiltersButton() -> impl IntoView {
             }),
             search: if search.is_empty() { None } else { Some(search.clone()) },
             page: Some(1),
+            type_of_data: None,
+            data_language: None,
+            access_rights: None,
         };
         format!("/projects{}", new_query.to_query_string())
     };
@@ -85,7 +88,7 @@ pub fn MobileFiltersButton() -> impl IntoView {
                     >
                         "✕"
                     </button>
-                    <ProjectFiltersContent items=filter_items.clone() />
+                    <ProjectFiltersContent status_items=filter_items.clone() type_of_data_items=vec![] data_language_items=vec![] access_rights_items=vec![] />
                 </div>
             </div>
         </Show>

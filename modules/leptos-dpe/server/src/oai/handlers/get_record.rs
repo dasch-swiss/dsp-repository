@@ -211,31 +211,7 @@ mod tests {
         InMemoryProjectRepository::new(vec![incunabula_project()])
     }
 
-    // ---- golden file helpers ----
-
-    /// Strips the `<responseDate>` line from XML so golden comparisons are stable.
-    fn normalize(xml: &str) -> String {
-        xml.lines()
-            .filter(|l| !l.trim_start().starts_with("<responseDate>"))
-            .collect::<Vec<_>>()
-            .join("\n")
-    }
-
-    /// Loads a golden file, creating it if absent (first-run mode).
-    /// Compares and stores the normalized form (without responseDate).
-    fn golden(name: &str, actual: &str) -> String {
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("src/oai/handlers/testdata/golden");
-        std::fs::create_dir_all(&dir).expect("create golden dir");
-        let path = dir.join(name);
-        let normalized = normalize(actual);
-        if path.exists() {
-            std::fs::read_to_string(&path).expect("read golden file")
-        } else {
-            std::fs::write(&path, &normalized).expect("write golden file");
-            normalized
-        }
-    }
+    use super::super::test_utils::{golden, normalize};
 
     // ---- error cases ----
 

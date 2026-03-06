@@ -180,26 +180,7 @@ mod tests {
         }
     }
 
-    fn normalize(xml: &str) -> String {
-        xml.lines()
-            .filter(|l| !l.trim_start().starts_with("<responseDate>"))
-            .collect::<Vec<_>>()
-            .join("\n")
-    }
-
-    fn golden(name: &str, actual: &str) -> String {
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("src/oai/handlers/testdata/golden");
-        std::fs::create_dir_all(&dir).expect("create golden dir");
-        let path = dir.join(name);
-        let normalized = normalize(actual);
-        if path.exists() {
-            std::fs::read_to_string(&path).expect("read golden file")
-        } else {
-            std::fs::write(&path, &normalized).expect("write golden file");
-            normalized
-        }
-    }
+    use super::super::test_utils::{golden, normalize};
 
     // ---- error cases ----
 

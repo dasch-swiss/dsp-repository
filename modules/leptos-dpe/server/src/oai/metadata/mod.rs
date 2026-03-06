@@ -9,13 +9,10 @@ mod dublin_core;
 mod helpers;
 mod types;
 
-pub use datacite::project_to_datacite;
-pub use dublin_core::project_to_dublin_core;
-pub use types::{
-    DataCiteContributor, DataCiteCreator, DataCiteDate, DataCiteDescription,
-    DataCiteFundingReference, DataCiteGeoLocation, DataCiteRecord, DataCiteRelatedIdentifier,
-    DataCiteRights, DataCiteSubject, DataCiteTitle, DublinCoreRecord, OaiRecord, OaiRecordHeader,
-};
+pub use types::{DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
+
+use datacite::project_to_datacite;
+use dublin_core::project_to_dublin_core;
 
 use app::domain::Project;
 

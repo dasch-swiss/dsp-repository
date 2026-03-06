@@ -155,6 +155,9 @@ pub fn build_list_request_params<'a>(prefix: &'a str, params: &'a OaiParams) -> 
 }
 
 #[cfg(test)]
+pub mod test_utils;
+
+#[cfg(test)]
 mod tests {
     use super::parse_set_filter;
 

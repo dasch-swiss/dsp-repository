@@ -4,7 +4,7 @@ use app::domain::{Project, ProjectRepository};
 
 use super::{build_error_response, OaiParams, SUPPORTED_PREFIXES};
 use crate::oai::error::OaiError;
-use crate::oai::metadata::{parse_oai_identifier, ProjectOaiExt};
+use crate::oai::metadata::{parse_oai_identifier, to_oai_record};
 use crate::oai::xml::OaiXmlBuilder;
 
 /// Handles the GetRecord verb.
@@ -57,7 +57,7 @@ fn resolve_project(identifier: &str, repo: &dyn ProjectRepository) -> Result<Pro
 }
 
 fn build_response(identifier: &str, prefix: &str, project: &Project) -> String {
-    let record = project.to_oai_record(prefix);
+    let record = to_oai_record(project, prefix);
 
     let mut builder = OaiXmlBuilder::new();
     builder.write_request(

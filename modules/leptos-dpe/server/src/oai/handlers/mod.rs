@@ -26,7 +26,7 @@ use app::domain::{get_data_root_dir, FsProjectRepository, ProjectRepository};
 
 use super::error::OaiError;
 use super::xml::OaiXmlBuilder;
-use crate::oai::metadata::{OaiRecord, ProjectOaiExt};
+use crate::oai::metadata::{matches_date_filter, to_oai_record, OaiRecord};
 
 use get_record::handle_get_record;
 use identify::handle_identify;
@@ -127,8 +127,8 @@ pub fn validate_list_params<'a>(
     let projects = repo.get_all();
     let filtered: Vec<OaiRecord> = projects
         .iter()
-        .filter(|p| include_projects && p.matches_date_filter(params.from.as_deref(), params.until.as_deref()))
-        .map(|p| p.to_oai_record(prefix))
+        .filter(|p| include_projects && matches_date_filter(p, params.from.as_deref(), params.until.as_deref()))
+        .map(|p| to_oai_record(p, prefix))
         .collect();
 
     // Currently we only have projects, no clusters

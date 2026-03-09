@@ -194,7 +194,7 @@ use app;
 4. **Test with `cargo leptos watch`** to verify changes compile for both server and WASM
 5. **Follow Rust conventions**: snake_case for functions/variables, PascalCase for types/components
 6. **Keep SSR/CSR compatibility in mind** - code runs in both environments
-7. **Use DaisyUI components** where appropriate for consistent UI
+7. **Use mosaic tiles components** where appropriate for consistent UI
 8. **Check Tailwind v4 syntax** - some classes changed from v3
 
 ## Debugging Tips

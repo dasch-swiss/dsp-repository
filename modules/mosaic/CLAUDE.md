@@ -1,13 +1,5 @@
 # Mosaic - Claude Code Guidelines
 
-## Formatting
-
-Use `leptosfmt` (not `rustfmt`) for all code in this module. The `rust-analyzer.toml` files in `tiles/` and `demo/` configure IDE formatting accordingly.
-
-```bash
-just fmt-mosaic
-```
-
 ## Architecture
 
 - Leptos 0.8 with the **islands** feature for selective client-side hydration
@@ -35,7 +27,7 @@ The `/create-new-component` and `/add-component-to-demo` skills automate these s
 
 ```bash
 just watch-mosaic-demo    # Run demo with hot reload
-just fmt-mosaic           # Format check
+just fmt                  # Format all code
 just check                # Clippy and formatting for the whole repo
 ```
 
@@ -56,3 +48,11 @@ just check                # Clippy and formatting for the whole repo
 - Prefer CSS-only interactions where possible (e.g., `Tabs` uses hidden radio inputs)
 - Icons use the `icondata` crate for tree-shaking at compile time
 - Each component's CSS lives next to its Rust source in `tiles/src/components/[name]/`
+
+## Formatting
+
+Use `leptosfmt` (not `rustfmt`) for all code in this module. The `rust-analyzer.toml` files in `tiles/` and `demo/` configure IDE formatting accordingly. Run formatting at the end of your work, not during:
+
+```bash
+just fmt
+```

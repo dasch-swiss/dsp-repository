@@ -62,7 +62,7 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                             } else {
                                 view! {
                                     <div>
-                                        <div class="mb-2">
+                                        <div class="mb-4 text-sm text-gray-600">
                                             {format!("{} projects", total_items)}
                                         </div>
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

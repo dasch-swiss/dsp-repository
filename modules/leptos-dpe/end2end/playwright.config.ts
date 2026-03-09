@@ -9,7 +9,6 @@ import * as path from "path";
 // require('dotenv').config();
 
 const serverBinary = path.resolve(__dirname, "../../..", "target/release/leptos-server");
-const siteRoot = path.resolve(__dirname, "..", "target/site");
 
 if (!fs.existsSync(serverBinary)) {
   throw new Error(
@@ -114,7 +113,8 @@ export default defineConfig({
     port: 4000,
     reuseExistingServer: !process.env.CI,
     env: {
-      LEPTOS_SITE_ROOT: siteRoot,
+      LEPTOS_SITE_ROOT: path.resolve(__dirname, "..", "target/site"),
+      LEPTOS_SITE_ADDR: "127.0.0.1:4000",
     },
   },
 });

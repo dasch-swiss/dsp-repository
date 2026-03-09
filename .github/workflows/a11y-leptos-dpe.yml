@@ -75,6 +75,7 @@ jobs:
       - name: Smoke test server
         run: |
           LEPTOS_SITE_ROOT=$(pwd)/modules/leptos-dpe/target/site \
+          LEPTOS_SITE_ADDR=127.0.0.1:4000 \
             ./target/release/leptos-server &
           SERVER_PID=$!
           sleep 5

@@ -48,6 +48,9 @@ jobs:
       - name: Install JS dependencies
         run: cd modules/leptos-dpe && pnpm install
 
+      - name: Install end2end dependencies
+        run: cd modules/leptos-dpe/end2end && npm install
+
       - name: Install Playwright browsers
         run: cd modules/leptos-dpe/end2end && npx playwright install --with-deps chromium
 

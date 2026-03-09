@@ -22,7 +22,7 @@ pub fn ProjectHeader(
                     class="w-full object-cover"
                     style="height: 200px"
                     src="https://dasch.swiss/projects/0854.webp"
-                    alt="Shoes"
+                    alt="Alice from Alice in Wonderland walks through a futuristic arched hall covered in glowing binary code toward a doorway labeled \"DasCHland,\" with plants and computer monitors along the sides."
                 />
             </figure>
             <CardBody>

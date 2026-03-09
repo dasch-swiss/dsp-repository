@@ -10,7 +10,7 @@ default:
     just --list --unsorted
 
 # Install all requirements
-install-requirements:
+install-requirements: install-e2e-requirements
     #!/usr/bin/env sh
     rustup show
     brew install cargo-binstall
@@ -20,6 +20,11 @@ install-requirements:
     cargo binstall -y leptosfmt@0.1.33
     cargo binstall -y cargo-leptos@0.3.4
     cd modules/leptos-dpe && pnpm install
+
+# Install Playwright browsers for E2E tests
+install-e2e-requirements:
+    cd modules/mosaic/demo/end2end && npx playwright install
+    cd modules/leptos-dpe/end2end && npx playwright install
 
 # Run all fmt and clippy checks
 check:
@@ -146,3 +151,8 @@ build-docker-dpe:
 [group('leptos-dpe')]
 run-docker-dpe:
     docker run --rm -p 8080:8080 leptos-dpe
+
+# Run accessibility E2E tests for the DPE (requires running server on port 4000)
+[group('leptos-dpe')]
+test-a11y-leptos-dpe:
+    cd modules/leptos-dpe/end2end && npx playwright test tests/accessibility.spec.ts --project=chromium

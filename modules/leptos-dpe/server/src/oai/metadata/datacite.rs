@@ -22,7 +22,7 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
         record.identifier = project.pid.clone();
         record.identifier_type = "ARK".to_string();
     } else {
-        record.identifier = format!("ark:/72163/1/{}", project.shortcode);
+        record.identifier = format!("https://ark.dasch.swiss/ark:/72163/1/{}", project.shortcode);
         record.identifier_type = "ARK".to_string();
     }
 

@@ -10,11 +10,13 @@ on:
       - "modules/leptos-dpe/app/**"
       - "modules/leptos-dpe/style/**"
       - "modules/leptos-dpe/public/**"
+      - "modules/leptos-dpe/end2end/**"
   pull_request:
     paths:
       - "modules/leptos-dpe/app/**"
       - "modules/leptos-dpe/style/**"
       - "modules/leptos-dpe/public/**"
+      - "modules/leptos-dpe/end2end/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

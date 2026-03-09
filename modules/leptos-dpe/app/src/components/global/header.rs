@@ -7,8 +7,8 @@ pub fn Header() -> impl IntoView {
     view! {
         <div class="bg-white shadow-xs">
             <div class="flex items-center py-2 max-w-7xl mx-auto px-4">
-                <a href="/">
-                    <img src="/logo.svg" class="inline h-10 w-10 mr-2" />
+                <a href="/" aria-label="DaSCH Metadata Browser home">
+                    <img src="/logo.svg" class="inline h-10 w-10 mr-2" alt="DaSCH logo" />
                 </a>
 
                 <div class="flex-1">

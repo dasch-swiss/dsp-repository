@@ -61,8 +61,10 @@ pub(super) struct ProjectRaw {
     #[serde(rename = "dataLanguage", default)]
     pub data_language: Option<Vec<std::collections::HashMap<String, String>>>,
     #[serde(default)]
+    #[allow(dead_code)]
     pub clusters: Option<Vec<String>>,
     #[serde(default)]
+    #[allow(dead_code)]
     pub collections: Option<Vec<String>>,
     #[serde(default)]
     pub records: Option<Vec<String>>,

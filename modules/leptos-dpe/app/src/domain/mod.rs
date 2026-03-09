@@ -9,8 +9,6 @@ pub mod project;
 pub mod projects;
 pub mod utils;
 
-pub use cluster::ClusterRef;
-pub use collection::CollectionRef;
 pub use organizations::get_organization;
 pub use persons::get_person;
 pub use project::*;

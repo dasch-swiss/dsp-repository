@@ -42,11 +42,11 @@ pub fn ProjectViewToggle() -> impl IntoView {
 
     view! {
         <div class="flex gap-1">
-            <Link href=grid_view_url as_button=grid_variant>
+            <Link href=grid_view_url as_button=grid_variant aria_label="Grid view">
                 <Icon icon=AppStore class="w-5 h-5" />
             </Link>
 
-            <Link href=list_view_url as_button=list_variant>
+            <Link href=list_view_url as_button=list_variant aria_label="List view">
                 <Icon icon=List class="w-5 h-5" />
             </Link>
         </div>

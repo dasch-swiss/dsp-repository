@@ -1,0 +1,94 @@
+{
+    "id": "0801-record-026",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-record-026",
+    "label": {
+        "en": "rebuke_bah_whether.xml"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access",
+        "embargoDate": "2026-06-26"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        }
+    ],
+    "howToCite": "rebuke_bah_whether.xml (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801-record-026",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2020-07-31",
+    "datePublished": "2020-09-20",
+    "size": "23.5 MB",
+    "dateModified": "2020-09-18",
+    "description": {
+        "en": "Deripio curia hic clamo vicissitudo coruscus summa votum cura. Ulterius catena textilis admoneo verto apostolus sub crustulum recusandae condico. Dolores adeptio tener coepi voco annus pax acquiro animus turbo."
+    },
+    "keywords": [
+        {
+            "en": "claudeo"
+        },
+        {
+            "en": "vester"
+        },
+        {
+            "en": "causa"
+        }
+    ]
+}

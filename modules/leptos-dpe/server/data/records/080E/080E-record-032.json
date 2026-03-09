@@ -1,0 +1,37 @@
+{
+    "id": "080E-record-032",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-032",
+    "label": {
+        "en": "phooey_palate.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "phooey_palate.pdf (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-032",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-12-28",
+    "datePublished": "2018-06-21",
+    "size": "423.6 MB",
+    "keywords": [
+        {
+            "en": "despecto"
+        },
+        {
+            "en": "cunctatio"
+        }
+    ]
+}

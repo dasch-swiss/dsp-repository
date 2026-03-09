@@ -1,0 +1,44 @@
+{
+    "id": "085A-record-033",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085A-record-033",
+    "label": {
+        "en": "dwell_petticoat_culture.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2019-03-14",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "085A-organization-002",
+            "authorship": [
+                "085A-person-001"
+            ]
+        }
+    ],
+    "howToCite": "dwell_petticoat_culture.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085A-record-033",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2021-05-11",
+    "datePublished": "2021-05-25",
+    "size": "459.3 MB",
+    "dateModified": "2021-06-20",
+    "description": {
+        "en": "Adimpleo conscendo desolo sodalitas tergeo voluptate desparatus deprimo tui curia. Considero arcus aut laboriosam ancilla saepe. Stultus porro canis curso alveus iure alo ciminatio."
+    },
+    "keywords": [
+        {
+            "en": "omnis"
+        },
+        {
+            "en": "arbor"
+        },
+        {
+            "en": "ara"
+        }
+    ]
+}

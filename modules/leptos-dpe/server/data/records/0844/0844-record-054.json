@@ -1,0 +1,39 @@
+{
+    "id": "0844-record-054",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-054",
+    "label": {
+        "en": "aw.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "aw.xml (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-054",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2021-08-10",
+    "datePublished": "2022-10-07",
+    "size": "57.3 MB",
+    "description": {
+        "en": "Aestus brevis validus confero considero acies expedita audeo. Balbus amor uberrime. Thermae tutamen praesentium contra infit adiuvo."
+    },
+    "keywords": [
+        {
+            "en": "cotidie"
+        }
+    ]
+}

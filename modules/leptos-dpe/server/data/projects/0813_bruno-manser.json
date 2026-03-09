@@ -1,16 +1,16 @@
 {
     "id": "0813",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813",
     "name": "Annotating Media of Bruno Manser",
     "shortcode": "0813",
-    "officialName": "MISSING",
+    "officialName": "Research Project: Annotating Media of Bruno Manser",
     "status": "Ongoing",
     "shortDescription": "Bruno Manser has left a variety of media in which he documented the nomadic life of the Penan. The project shows and annotates these documents.",
     "description": {
         "en": "Bruno Manser has left a variety of media in which he documented the nomadic life of the Penan. The project aims to show and annotate the everyday life moments of a nomadic lifestyle across media as diary entries, video footage and photographs of Bruno Manser."
     },
     "startDate": "2014-05-01",
-    "endDate": "MISSING",
+    "endDate": "2018-12-31",
     "url": [
         "https://app.dasch.swiss/project/KW_RhYXlT6WNRivh3JrDAQ",
         "https://www.bmf.ch/"
@@ -26,9 +26,11 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "0813-organization-001",
             "authorship": [
-                "MISSING"
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
             ]
         }
     ],
@@ -146,5 +148,61 @@
         {
             "en": "Annotating Bruno Manser's Diaries"
         }
+    ],
+    "records": [
+        "0813-record-001",
+        "0813-record-002",
+        "0813-record-003",
+        "0813-record-004",
+        "0813-record-005",
+        "0813-record-006",
+        "0813-record-007",
+        "0813-record-008",
+        "0813-record-009",
+        "0813-record-010",
+        "0813-record-011",
+        "0813-record-012",
+        "0813-record-013",
+        "0813-record-014",
+        "0813-record-015",
+        "0813-record-016",
+        "0813-record-017",
+        "0813-record-018",
+        "0813-record-019",
+        "0813-record-020",
+        "0813-record-021",
+        "0813-record-022",
+        "0813-record-023",
+        "0813-record-024",
+        "0813-record-025",
+        "0813-record-026",
+        "0813-record-027",
+        "0813-record-028",
+        "0813-record-029",
+        "0813-record-030",
+        "0813-record-031",
+        "0813-record-032",
+        "0813-record-033",
+        "0813-record-034",
+        "0813-record-035",
+        "0813-record-036",
+        "0813-record-037",
+        "0813-record-038",
+        "0813-record-039",
+        "0813-record-040",
+        "0813-record-041",
+        "0813-record-042",
+        "0813-record-043",
+        "0813-record-044",
+        "0813-record-045",
+        "0813-record-046",
+        "0813-record-047",
+        "0813-record-048",
+        "0813-record-049",
+        "0813-record-050",
+        "0813-record-051",
+        "0813-record-052",
+        "0813-record-053",
+        "0813-record-054"
     ]
 }

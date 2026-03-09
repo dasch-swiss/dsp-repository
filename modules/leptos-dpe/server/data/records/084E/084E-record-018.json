@@ -1,0 +1,40 @@
+{
+    "id": "084E-record-018",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-018",
+    "label": {
+        "en": "own_resolve.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "own_resolve.doc (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-018",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-04-15",
+    "datePublished": "2023-04-29",
+    "size": "209.3 MB",
+    "dateModified": "2024-07-26",
+    "keywords": [
+        {
+            "en": "artificiose"
+        }
+    ],
+    "source": "Cui corrupti utrimque consequuntur anser solium causa."
+}

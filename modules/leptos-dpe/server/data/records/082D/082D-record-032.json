@@ -1,0 +1,41 @@
+{
+    "id": "082D-record-032",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082D-record-032",
+    "label": {
+        "en": "angle.txt"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "082D-organization-001",
+            "authorship": [
+                "082D-person-001",
+                "082D-person-002"
+            ]
+        }
+    ],
+    "howToCite": "angle.txt (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082D-record-032",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-06-16",
+    "datePublished": "2020-06-23",
+    "size": "429.6 MB",
+    "description": {
+        "en": "Sursum congregatio blanditiis dens ratione viscus charisma accedo. Usus totus conspergo contego altus alveus maiores volutabrum ocer carbo. Delinquo adduco advoco ullus doloremque acquiro appono crux clamo."
+    },
+    "keywords": [
+        {
+            "en": "colo"
+        },
+        {
+            "en": "tripudio"
+        }
+    ]
+}

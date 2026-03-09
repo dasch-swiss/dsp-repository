@@ -1,0 +1,43 @@
+{
+    "id": "0849-record-064",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-064",
+    "label": {
+        "en": "that.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "that.doc (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-064",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2026-05-09",
+    "datePublished": "2026-11-25",
+    "size": "424.8 MB",
+    "description": {
+        "en": "Dedecor amoveo tricesimus defluo creta. Crapula vinco atrocitas. Aggero aufero tardus totidem torqueo cervus arto defluo."
+    },
+    "keywords": [
+        {
+            "en": "dolorem"
+        },
+        {
+            "en": "deprimo"
+        }
+    ]
+}

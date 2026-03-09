@@ -1,6 +1,6 @@
 {
     "id": "0103-person-003",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-person-003",
     "givenNames": [
         "Thibault"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0103-organization-000"
     ],
-    "email": "thibault.hugentobler@unil.ch"
+    "email": "thibault.hugentobler@unil.ch",
+    "sameAs": []
 }

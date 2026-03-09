@@ -1,0 +1,43 @@
+{
+    "id": "081B-record-052",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-052",
+    "label": {
+        "en": "deploy_supposing.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "deploy_supposing.xml (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-052",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2016-09-10",
+    "datePublished": "2017-06-26",
+    "size": "428.0 MB",
+    "description": {
+        "en": "Tamen arca audeo uredo adsum laborum. Conservo temporibus cumque desipio apto caput denique. Conservo utor color maxime ventus."
+    },
+    "keywords": [
+        {
+            "en": "victus"
+        },
+        {
+            "en": "denuo"
+        },
+        {
+            "en": "deleo"
+        }
+    ]
+}

@@ -1,0 +1,37 @@
+{
+    "id": "0117-record-044",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-044",
+    "label": {
+        "en": "upliftingly.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "upliftingly.txt (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-044",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-01-19",
+    "datePublished": "2020-02-14",
+    "size": "78.8 MB",
+    "keywords": [
+        {
+            "en": "iste"
+        }
+    ]
+}

@@ -1,0 +1,53 @@
+{
+    "id": "0854-record-029",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-029",
+    "label": {
+        "en": "gracefully_gadzooks.wav"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "gracefully_gadzooks.wav (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-029",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2024-04-04",
+    "datePublished": "2026-10-31",
+    "size": "366.2 MB",
+    "dateModified": "2025-05-21",
+    "keywords": [
+        {
+            "en": "unde"
+        }
+    ],
+    "source": "Sperno aliqua aperte carcer cribro bonus aggero cattus solvo arbor."
+}

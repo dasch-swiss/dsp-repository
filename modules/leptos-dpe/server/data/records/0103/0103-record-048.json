@@ -1,0 +1,48 @@
+{
+    "id": "0103-record-048",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-048",
+    "label": {
+        "en": "off_unto_besides.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access",
+        "embargoDate": "2025-12-14"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "off_unto_besides.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-048",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-10-12",
+    "datePublished": "2019-07-22",
+    "size": "175.4 MB",
+    "description": {
+        "en": "Comprehendo tempus arcus amplus. Copiose acer theca alienus volubilis amplus. Auctor sufficio animus cernuus."
+    },
+    "keywords": [
+        {
+            "en": "arbustum"
+        },
+        {
+            "en": "carus"
+        },
+        {
+            "en": "admoneo"
+        }
+    ]
+}

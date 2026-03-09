@@ -1,0 +1,39 @@
+{
+    "id": "0844-record-030",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-030",
+    "label": {
+        "en": "whenever.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "whenever.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-030",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2019-02-21",
+    "datePublished": "2021-10-29",
+    "size": "142.2 MB",
+    "description": {
+        "en": "Comes deporto cui. Defendo triumphus curatio fugiat cimentarius apparatus venustas ver bestia stillicidium. Comptus voluptatum tempus."
+    },
+    "keywords": [
+        {
+            "en": "depereo"
+        }
+    ]
+}

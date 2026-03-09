@@ -1,0 +1,56 @@
+{
+    "id": "083B-record-050",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083B-record-050",
+    "label": {
+        "en": "dime.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2025-01-28",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083B-organization-001",
+            "authorship": [
+                "083B-person-000",
+                "083B-person-001",
+                "083B-person-002",
+                "083B-person-003",
+                "083B-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2025-01-28",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083B-organization-001",
+            "authorship": [
+                "083B-person-000",
+                "083B-person-001",
+                "083B-person-002",
+                "083B-person-003",
+                "083B-person-000"
+            ]
+        }
+    ],
+    "howToCite": "dime.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083B-record-050",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-03-21",
+    "datePublished": "2023-04-06",
+    "size": "169.3 MB",
+    "keywords": [
+        {
+            "en": "aro"
+        },
+        {
+            "en": "cohibeo"
+        }
+    ]
+}

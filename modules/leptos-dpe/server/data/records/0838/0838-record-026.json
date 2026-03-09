@@ -1,0 +1,38 @@
+{
+    "id": "0838-record-026",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0838-record-026",
+    "label": {
+        "en": "supposing.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-01-22",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0838-organization-002",
+            "authorship": [
+                "0838-person-000",
+                "0838-person-001",
+                "0838-person-002",
+                "0838-person-003",
+                "0838-person-004"
+            ]
+        }
+    ],
+    "howToCite": "supposing.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0838-record-026",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-03-06",
+    "datePublished": "2023-10-03",
+    "size": "499.9 MB",
+    "dateModified": "2024-09-06",
+    "description": {
+        "en": "Architecto curo substantia apparatus urbs vulgus despecto convoco truculenter audio. Curia crapula voco aspernatur theatrum terminatio. Claustrum cultura decimus tui clarus aequus deserunt commemoro."
+    },
+    "source": "Astrum talis vae."
+}

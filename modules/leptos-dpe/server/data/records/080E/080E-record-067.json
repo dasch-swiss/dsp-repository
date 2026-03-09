@@ -1,0 +1,29 @@
+{
+    "id": "080E-record-067",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-067",
+    "label": {
+        "en": "quizzically_miserly.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "quizzically_miserly.doc (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-067",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2016-07-29",
+    "datePublished": "2017-12-18",
+    "size": "58.7 MB"
+}

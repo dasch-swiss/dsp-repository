@@ -1,0 +1,41 @@
+{
+    "id": "0116-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0116-record-006",
+    "label": {
+        "en": "yum_yum.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0116-organization-002",
+            "authorship": [
+                "0116-person-000",
+                "0116-person-001",
+                "0116-person-002",
+                "0116-person-003"
+            ]
+        }
+    ],
+    "howToCite": "yum_yum.doc (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0116-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-01-24",
+    "datePublished": "2023-05-06",
+    "size": "31.8 MB",
+    "dateModified": "2022-01-30",
+    "keywords": [
+        {
+            "en": "bos"
+        },
+        {
+            "en": "adsidue"
+        }
+    ]
+}

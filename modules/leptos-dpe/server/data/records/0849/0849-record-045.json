@@ -1,0 +1,37 @@
+{
+    "id": "0849-record-045",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-045",
+    "label": {
+        "en": "male_collaborate_oof.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "male_collaborate_oof.tif (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-045",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-08-16",
+    "datePublished": "2026-09-27",
+    "size": "9.7 MB",
+    "keywords": [
+        {
+            "en": "deinde"
+        }
+    ]
+}

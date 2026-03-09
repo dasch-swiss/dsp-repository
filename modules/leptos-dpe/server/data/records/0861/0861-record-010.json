@@ -1,0 +1,38 @@
+{
+    "id": "0861-record-010",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0861-record-010",
+    "label": {
+        "en": "off_bowed_drat.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-07-07",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0861-organization-000",
+            "authorship": [
+                "0861-person-000",
+                "0861-person-001",
+                "0861-person-002",
+                "0861-person-003",
+                "0861-person-004"
+            ]
+        }
+    ],
+    "howToCite": "off_bowed_drat.xml (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0861-record-010",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2023-10-07",
+    "datePublished": "2024-07-28",
+    "size": "12.5 MB",
+    "keywords": [
+        {
+            "en": "pel"
+        }
+    ]
+}

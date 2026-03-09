@@ -1,0 +1,40 @@
+{
+    "id": "0111-record-031",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0111-record-031",
+    "label": {
+        "en": "far_flung_ugly.mp3"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0111-organization-000",
+            "authorship": [
+                "0111-person-000",
+                "0111-person-001",
+                "0111-person-002",
+                "0111-person-003"
+            ]
+        }
+    ],
+    "howToCite": "far_flung_ugly.mp3 (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0111-record-031",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2017-06-11",
+    "datePublished": "2018-03-24",
+    "size": "311.0 MB",
+    "keywords": [
+        {
+            "en": "denique"
+        },
+        {
+            "en": "in"
+        }
+    ]
+}

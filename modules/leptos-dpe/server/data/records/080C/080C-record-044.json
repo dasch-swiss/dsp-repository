@@ -1,0 +1,46 @@
+{
+    "id": "080C-record-044",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C-record-044",
+    "label": {
+        "en": "patiently_drat.xml"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access",
+        "embargoDate": "2025-11-25"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/deed.en"
+            },
+            "copyrightHolder": "080C-organization-001",
+            "authorship": [
+                "080C-person-001",
+                "080C-person-002",
+                "080C-person-003",
+                "080C-person-000"
+            ]
+        }
+    ],
+    "howToCite": "patiently_drat.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080C-record-044",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2020-10-04",
+    "datePublished": "2021-08-08",
+    "size": "352.7 MB",
+    "dateModified": "2021-03-08",
+    "keywords": [
+        {
+            "en": "laboriosam"
+        },
+        {
+            "en": "virtus"
+        },
+        {
+            "en": "eaque"
+        }
+    ],
+    "source": "Ullam cena balbus aeneus cornu defaeco tactus vallum demulceo vestigium."
+}

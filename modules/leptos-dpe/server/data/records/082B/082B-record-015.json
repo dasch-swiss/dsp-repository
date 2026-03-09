@@ -1,0 +1,36 @@
+{
+    "id": "082B-record-015",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082B-record-015",
+    "label": {
+        "en": "gee_cruelly.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "082B-organization-003",
+            "authorship": [
+                "082B-person-001",
+                "082B-person-002",
+                "082B-person-003",
+                "082B-person-004",
+                "082B-person-005"
+            ]
+        }
+    ],
+    "howToCite": "gee_cruelly.pdf (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082B-record-015",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-04-14",
+    "datePublished": "2021-02-05",
+    "size": "349.4 MB",
+    "description": {
+        "en": "Aequitas sollicito eligendi contabesco architecto comparo corrumpo. Defero articulus eum antea cotidie adamo admoveo surgo. Crastinus volva facere temperantia depono suspendo conitor taceo amita."
+    }
+}

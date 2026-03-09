@@ -1,6 +1,7 @@
 {
     "id": "080C-organization-006",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C-organization-006",
     "name": "Sulger Stiftung",
-    "url": "MISSING"
+    "url": "https://www.sulger-stiftung.org",
+    "sameAs": []
 }

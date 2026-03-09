@@ -1,0 +1,36 @@
+{
+    "id": "084E-record-031",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-031",
+    "label": {
+        "en": "wicked_modulo.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "wicked_modulo.doc (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-031",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-02-20",
+    "datePublished": "2023-12-09",
+    "size": "489.1 MB",
+    "description": {
+        "en": "Bellum commodi assumenda baiulus. Molestias quisquam bene apud deleniti arcesso strues uterque urbs annus. Aggredior stella aggero cohors summisse alo conspergo nam decens tergo."
+    }
+}

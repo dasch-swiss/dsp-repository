@@ -1,6 +1,6 @@
 {
     "id": "0803-person-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0803-person-002",
     "givenNames": [
         "Lukas"
     ],
@@ -12,5 +12,6 @@
     ],
     "affiliations": [
         "0803-organization-003"
-    ]
+    ],
+    "sameAs": []
 }

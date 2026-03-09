@@ -1,0 +1,39 @@
+{
+    "id": "0853-record-065",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-065",
+    "label": {
+        "en": "knife_as_kindheartedly.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "knife_as_kindheartedly.doc (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-065",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-04-28",
+    "datePublished": "2027-07-05",
+    "size": "495.9 MB",
+    "dateModified": "2024-03-23",
+    "keywords": [
+        {
+            "en": "thermae"
+        },
+        {
+            "en": "correptius"
+        }
+    ]
+}

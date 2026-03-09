@@ -1,0 +1,34 @@
+{
+    "id": "0106-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0106-record-007",
+    "label": {
+        "en": "throughout_minion.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-07-13",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0106-organization-001",
+            "authorship": [
+                "0106-person-000",
+                "0106-person-001",
+                "0106-person-002",
+                "0106-person-003",
+                "0106-person-004"
+            ]
+        }
+    ],
+    "howToCite": "throughout_minion.tif (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0106-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-09-24",
+    "datePublished": "2022-12-25",
+    "size": "309.3 MB",
+    "source": "Torrens curia ancilla."
+}

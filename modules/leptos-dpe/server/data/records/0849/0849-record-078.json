@@ -1,0 +1,40 @@
+{
+    "id": "0849-record-078",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-078",
+    "label": {
+        "en": "mostly_spice.tif"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "mostly_spice.tif (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-078",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-07-14",
+    "datePublished": "2026-08-07",
+    "size": "354.9 MB",
+    "description": {
+        "en": "Terga vehemens cavus. Audentia averto textilis saepe aranea combibo vulariter derelinquo vilicus consequuntur. Aut similique patrocinor vitae celer cupiditate reprehenderit pectus cedo."
+    },
+    "keywords": [
+        {
+            "en": "blanditiis"
+        }
+    ]
+}

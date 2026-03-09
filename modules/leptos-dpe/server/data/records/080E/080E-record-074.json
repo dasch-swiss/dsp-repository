@@ -1,0 +1,41 @@
+{
+    "id": "080E-record-074",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-074",
+    "label": {
+        "en": "versus_handsome.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "versus_handsome.png (2014). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-074",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2014-07-27",
+    "datePublished": "2014-12-07",
+    "size": "242.6 MB",
+    "dateModified": "2018-10-19",
+    "keywords": [
+        {
+            "en": "curo"
+        },
+        {
+            "en": "talus"
+        },
+        {
+            "en": "urbanus"
+        }
+    ]
+}

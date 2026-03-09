@@ -1,0 +1,59 @@
+{
+    "id": "0836-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0836-record-008",
+    "label": {
+        "en": "sardonic_which_given.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        }
+    ],
+    "howToCite": "sardonic_which_given.png (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0836-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-06-01",
+    "datePublished": "2021-10-28",
+    "size": "286.3 MB",
+    "keywords": [
+        {
+            "en": "umquam"
+        },
+        {
+            "en": "soluta"
+        },
+        {
+            "en": "quo"
+        }
+    ]
+}

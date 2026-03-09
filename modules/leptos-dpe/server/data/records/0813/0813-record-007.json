@@ -1,0 +1,42 @@
+{
+    "id": "0813-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-record-007",
+    "label": {
+        "en": "cruel_e_mail_afore.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0813-organization-001",
+            "authorship": [
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "cruel_e_mail_afore.png (2015). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0813-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2015-02-05",
+    "datePublished": "2015-08-29",
+    "size": "130.2 MB",
+    "description": {
+        "en": "Pecus centum callide textus suus stabilis tres vere. Somnus textus venia depono altus concedo theatrum. Cena aequus totus."
+    },
+    "keywords": [
+        {
+            "en": "creber"
+        },
+        {
+            "en": "argentum"
+        }
+    ]
+}

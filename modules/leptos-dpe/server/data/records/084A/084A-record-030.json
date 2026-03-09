@@ -1,0 +1,36 @@
+{
+    "id": "084A-record-030",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084A-record-030",
+    "label": {
+        "en": "what_jaggedly.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-02-21",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084A-organization-001",
+            "authorship": [
+                "084A-person-000",
+                "084A-person-001",
+                "084A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "what_jaggedly.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084A-record-030",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-04-11",
+    "datePublished": "2023-03-20",
+    "size": "481.2 MB",
+    "keywords": [
+        {
+            "en": "denique"
+        }
+    ]
+}

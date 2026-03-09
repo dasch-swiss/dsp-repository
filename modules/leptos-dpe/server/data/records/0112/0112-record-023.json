@@ -1,0 +1,41 @@
+{
+    "id": "0112-record-023",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-023",
+    "label": {
+        "en": "who_about.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "who_about.doc (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-023",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-04-26",
+    "datePublished": "2020-07-08",
+    "size": "424.5 MB",
+    "description": {
+        "en": "Sum tener amor curtus undique appositus tubineus. Et error supplanto vobis cedo allatus. Audacia spiculum celer cuius charisma voluptas aestus."
+    },
+    "keywords": [
+        {
+            "en": "sonitus"
+        }
+    ]
+}

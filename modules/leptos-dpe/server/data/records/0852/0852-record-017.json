@@ -1,0 +1,37 @@
+{
+    "id": "0852-record-017",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-017",
+    "label": {
+        "en": "violently_whenever_sleet.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "violently_whenever_sleet.jpg (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-017",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-07-27",
+    "datePublished": "2020-06-14",
+    "size": "285.3 MB",
+    "keywords": [
+        {
+            "en": "sortitus"
+        },
+        {
+            "en": "comptus"
+        }
+    ]
+}

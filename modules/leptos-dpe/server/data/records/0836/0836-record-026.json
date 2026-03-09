@@ -1,0 +1,61 @@
+{
+    "id": "0836-record-026",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0836-record-026",
+    "label": {
+        "en": "zowie_sushi.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2026-08-28"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        }
+    ],
+    "howToCite": "zowie_sushi.png (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0836-record-026",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-09-22",
+    "datePublished": "2018-09-01",
+    "size": "387.9 MB",
+    "dateModified": "2018-07-07",
+    "description": {
+        "en": "Altus molestiae blanditiis vindico. Ex vestigium credo rem suppono auctor tondeo doloremque. Turbo demonstro dignissimos vestrum cauda."
+    },
+    "keywords": [
+        {
+            "en": "cultellus"
+        },
+        {
+            "en": "vinitor"
+        }
+    ]
+}

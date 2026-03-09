@@ -1,0 +1,44 @@
+{
+    "id": "0849-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-001",
+    "label": {
+        "en": "feminize_alongside_foolishly.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "feminize_alongside_foolishly.doc (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-05-19",
+    "datePublished": "2025-12-29",
+    "size": "215.2 MB",
+    "dateModified": "2026-10-19",
+    "keywords": [
+        {
+            "en": "benigne"
+        },
+        {
+            "en": "aperiam"
+        },
+        {
+            "en": "debeo"
+        }
+    ]
+}

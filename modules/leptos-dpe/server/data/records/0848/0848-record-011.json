@@ -1,0 +1,43 @@
+{
+    "id": "0848-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-011",
+    "label": {
+        "en": "sparkling_overconfidently.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "sparkling_overconfidently.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-05-10",
+    "datePublished": "2023-01-01",
+    "size": "32.2 MB",
+    "description": {
+        "en": "Demens adhuc subiungo amor eveniet conforto tenus clarus. Urbanus pecco volo culpo acidus spes. Decipio theologus advoco taedium."
+    },
+    "keywords": [
+        {
+            "en": "cotidie"
+        },
+        {
+            "en": "tamen"
+        }
+    ]
+}

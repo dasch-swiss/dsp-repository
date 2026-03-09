@@ -1,0 +1,41 @@
+{
+    "id": "0102-record-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0102-record-002",
+    "label": {
+        "en": "restfully_ah.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2022-09-08",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0102-organization-000",
+            "authorship": [
+                "0102-person-000",
+                "0102-person-001",
+                "0102-person-002"
+            ]
+        }
+    ],
+    "howToCite": "restfully_ah.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0102-record-002",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-06-28",
+    "datePublished": "2023-07-22",
+    "size": "469.0 MB",
+    "dateModified": "2023-08-14",
+    "keywords": [
+        {
+            "en": "culpa"
+        },
+        {
+            "en": "coniuratio"
+        }
+    ],
+    "source": "Conduco amissio caput unde cubitum tamen ater turpis thalassinus conventus."
+}

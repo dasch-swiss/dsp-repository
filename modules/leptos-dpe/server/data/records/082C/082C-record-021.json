@@ -1,0 +1,49 @@
+{
+    "id": "082C-record-021",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082C-record-021",
+    "label": {
+        "en": "dial_dearly_nor.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2019-10-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "082C-organization-000",
+            "authorship": [
+                "082C-person-000",
+                "082C-person-001",
+                "082C-person-002",
+                "082C-person-003",
+                "082C-person-004"
+            ]
+        }
+    ],
+    "howToCite": "dial_dearly_nor.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082C-record-021",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-05-17",
+    "datePublished": "2023-08-13",
+    "size": "368.5 MB",
+    "dateModified": "2023-08-10",
+    "description": {
+        "en": "Talis admiratio benevolentia degenero. Deprecator convoco ubi volubilis conatus. Accommodo conscendo incidunt avaritia derideo astrum vociferor appello debilito vinculum."
+    },
+    "keywords": [
+        {
+            "en": "valens"
+        },
+        {
+            "en": "vulticulus"
+        },
+        {
+            "en": "suadeo"
+        }
+    ],
+    "source": "Texo copia attollo cogo suscipio capitulus defessus."
+}

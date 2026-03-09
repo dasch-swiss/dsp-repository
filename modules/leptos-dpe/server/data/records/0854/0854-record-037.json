@@ -1,0 +1,51 @@
+{
+    "id": "0854-record-037",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-037",
+    "label": {
+        "en": "whose_pocket_watch.txt"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access",
+        "embargoDate": "2026-08-13"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "whose_pocket_watch.txt (2028). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-037",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2027-10-22",
+    "datePublished": "2028-08-19",
+    "size": "459.7 MB",
+    "description": {
+        "en": "Delinquo compello sunt. Cuius venia aedificium thorax laboriosam suspendo. Nemo arbor odio caveo."
+    },
+    "source": "Quod cado adduco nihil complectus contra."
+}

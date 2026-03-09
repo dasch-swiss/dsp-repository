@@ -1,0 +1,46 @@
+{
+    "id": "0848-record-056",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-056",
+    "label": {
+        "en": "versus_or.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "versus_or.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-056",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-02-01",
+    "datePublished": "2023-03-23",
+    "size": "60.5 MB",
+    "description": {
+        "en": "Crux tibi dens video termes praesentium ea bibo. Tamen tenuis consequuntur condico adfectus vacuus aperte cometes cimentarius suspendo. Timidus conitor colo convoco pecco omnis debitis magnam ventito contigo."
+    },
+    "keywords": [
+        {
+            "en": "exercitationem"
+        },
+        {
+            "en": "aggero"
+        },
+        {
+            "en": "verbera"
+        }
+    ]
+}

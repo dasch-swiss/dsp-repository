@@ -21,7 +21,7 @@ This includes:
 - **Components**: mosaic-tiles component library
 - **Architecture**: Clean Architecture / Hexagonal Architecture
 - **Structure**: Cargo workspace with modular crates
-- **Data Layer**: Repository pattern; currently backed by static JSON files in `/data/json/`
+- **Data Layer**: Repository pattern; currently backed by static JSON files in `modules/leptos-dpe/server/data/`
 - **Testing**: Cargo test for unit/integration, Playwright for E2E
 - **Documentation**: mdBook with alerts plugin
 

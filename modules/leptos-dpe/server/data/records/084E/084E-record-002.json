@@ -1,0 +1,42 @@
+{
+    "id": "084E-record-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-002",
+    "label": {
+        "en": "shout.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "shout.pdf (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-002",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-04-05",
+    "datePublished": "2024-06-09",
+    "size": "68.2 MB",
+    "keywords": [
+        {
+            "en": "suscipit"
+        },
+        {
+            "en": "deprecator"
+        }
+    ],
+    "source": "Charisma vociferor cupio commemoro despecto voluptatibus alienus eveniet consequatur."
+}

@@ -1,6 +1,6 @@
 {
     "id": "0806-organization-004",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-organization-004",
     "name": "Schweizerische Akademie der Geistes- und Sozialwissenschaften",
     "url": "https://sagw.ch/",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Bern",
         "country": "Switzerland"
     },
-    "email": "sagw@sagw.ch"
+    "email": "sagw@sagw.ch",
+    "sameAs": []
 }

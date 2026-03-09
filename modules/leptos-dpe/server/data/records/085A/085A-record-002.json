@@ -1,0 +1,35 @@
+{
+    "id": "085A-record-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085A-record-002",
+    "label": {
+        "en": "aw_up_bah.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2019-03-14",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "085A-organization-002",
+            "authorship": [
+                "085A-person-001"
+            ]
+        }
+    ],
+    "howToCite": "aw_up_bah.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085A-record-002",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2021-05-26",
+    "datePublished": "2021-07-05",
+    "size": "435.8 MB",
+    "keywords": [
+        {
+            "en": "suggero"
+        }
+    ],
+    "source": "Creator quo alius quaerat adversus vulgo beatae."
+}

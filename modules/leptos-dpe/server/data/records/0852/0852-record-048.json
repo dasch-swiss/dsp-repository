@@ -1,0 +1,35 @@
+{
+    "id": "0852-record-048",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-048",
+    "label": {
+        "en": "bah_reflecting_for.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "bah_reflecting_for.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-048",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-01-03",
+    "datePublished": "2023-11-15",
+    "size": "356.2 MB",
+    "keywords": [
+        {
+            "en": "commodo"
+        }
+    ],
+    "source": "Commodi stipes summopere venio decimus tabesco adinventitias pecus."
+}

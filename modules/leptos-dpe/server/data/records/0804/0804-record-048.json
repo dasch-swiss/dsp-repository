@@ -1,0 +1,38 @@
+{
+    "id": "0804-record-048",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-048",
+    "label": {
+        "en": "portly.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "portly.jpg (1984). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-048",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "1984-12-16",
+    "datePublished": "1984-12-30",
+    "size": "169.9 MB",
+    "keywords": [
+        {
+            "en": "talio"
+        },
+        {
+            "en": "vulpes"
+        }
+    ],
+    "source": "Omnis cras quia absque ullus absconditus ager textor aiunt undique."
+}

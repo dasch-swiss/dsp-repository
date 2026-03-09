@@ -1,0 +1,45 @@
+{
+    "id": "0806-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-record-007",
+    "label": {
+        "en": "dimly_inasmuch.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+            },
+            "copyrightHolder": "0806-organization-004",
+            "authorship": [
+                "0806-person-000",
+                "0806-person-001",
+                "0806-person-002",
+                "0806-person-003",
+                "0806-person-004"
+            ]
+        }
+    ],
+    "howToCite": "dimly_inasmuch.xml (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0806-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2020-01-18",
+    "datePublished": "2020-04-25",
+    "size": "488.5 MB",
+    "dateModified": "2020-03-23",
+    "description": {
+        "en": "Spes paulatim derideo ascisco crudelis supplanto. Strenuus assentator conduco deprecator timidus corpus sono conicio tabella. Termes convoco usque civis vindico turbo campana sophismata vitium suscipit."
+    },
+    "keywords": [
+        {
+            "en": "apto"
+        },
+        {
+            "en": "tres"
+        }
+    ]
+}

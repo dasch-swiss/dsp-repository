@@ -1,6 +1,6 @@
 {
     "id": "0105-organization-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0105-organization-002",
     "name": "Université de Genève",
     "url": "https://www.unige.ch/",
     "address": {
@@ -8,5 +8,6 @@
         "postalCode": "1211",
         "locality": "Genève 4",
         "country": "Switzerland"
-    }
+    },
+    "sameAs": []
 }

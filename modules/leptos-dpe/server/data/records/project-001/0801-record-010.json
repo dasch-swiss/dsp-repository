@@ -1,0 +1,54 @@
+{
+    "id": "0801-record-010",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-record-010",
+    "label": {
+        "en": "Officia volva solum tantillus validus terebro quia consequatur sed"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2022-01-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "organization-001",
+            "authorship": [
+                "person-001",
+                "person-002",
+                "person-003"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-06-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "organization-002",
+            "authorship": [
+                "person-004"
+            ]
+        }
+    ],
+    "howToCite": "Officia volva solum tantillus validus terebro quia consequatur sed (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801-record-010",
+    "publisher": "DaSCH",
+    "typeOfData": "Annotation",
+    "dateCreated": "2022-07-22",
+    "datePublished": "2022-09-30",
+    "size": "3.0 MB",
+    "description": {
+        "en": "Utroque creator abbas temptatio abutor repellat. Canto depono subseco censura decor paens. Virgo credo argentum truculenter triduana cuppedia deduco valens."
+    },
+    "keywords": [
+        {
+            "en": "laborum"
+        },
+        {
+            "en": "aeneus"
+        }
+    ],
+    "source": "Agnitio delibero clamo certus bonus acies defungo conitor eligendi."
+}

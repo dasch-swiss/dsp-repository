@@ -1,0 +1,30 @@
+{
+    "id": "0847-record-077",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-077",
+    "label": {
+        "en": "decisive_shameless.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "decisive_shameless.png (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-077",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-12-03",
+    "datePublished": "2023-05-08",
+    "size": "41.4 MB"
+}

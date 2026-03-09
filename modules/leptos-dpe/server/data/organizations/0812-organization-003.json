@@ -1,6 +1,6 @@
 {
     "id": "0812-organization-003",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-organization-003",
     "name": "Seminar für Kulturwissenschaft und Europäische Ethnologie, Universität Basel",
     "url": "https://kulturwissenschaft.philhist.unibas.ch/",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "kulturwissenschaft@unibas.ch"
+    "email": "kulturwissenschaft@unibas.ch",
+    "sameAs": []
 }

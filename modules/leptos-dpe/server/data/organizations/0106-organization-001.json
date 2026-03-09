@@ -1,6 +1,6 @@
 {
     "id": "0106-organization-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0106-organization-001",
     "name": "Swiss National Science Foundation (SNSF)",
     "url": "http://www.snf.ch/",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Berne",
         "country": "Switzerland"
     },
-    "email": "desk@snf.ch"
+    "email": "desk@snf.ch",
+    "sameAs": []
 }

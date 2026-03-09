@@ -1,0 +1,43 @@
+{
+    "id": "0112-record-009",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-009",
+    "label": {
+        "en": "tightly_sting.xml"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access",
+        "embargoDate": "2026-07-16"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "tightly_sting.xml (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-009",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2019-06-02",
+    "datePublished": "2020-12-28",
+    "size": "34.1 MB",
+    "keywords": [
+        {
+            "en": "vel"
+        },
+        {
+            "en": "illo"
+        }
+    ],
+    "source": "Pecto curia termes."
+}

@@ -1,0 +1,41 @@
+{
+    "id": "0812-record-014",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-record-014",
+    "label": {
+        "en": "how_structure.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-01-25",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0812-organization-019",
+            "authorship": [
+                "0812-person-000",
+                "0812-person-001",
+                "0812-person-002",
+                "0812-person-003",
+                "0812-person-004"
+            ]
+        }
+    ],
+    "howToCite": "how_structure.tif (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0812-record-014",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-05-25",
+    "datePublished": "2018-10-01",
+    "size": "224.4 MB",
+    "keywords": [
+        {
+            "en": "anser"
+        },
+        {
+            "en": "amicitia"
+        }
+    ]
+}

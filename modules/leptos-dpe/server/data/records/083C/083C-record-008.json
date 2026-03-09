@@ -1,0 +1,33 @@
+{
+    "id": "083C-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-008",
+    "label": {
+        "en": "dutiful.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "dutiful.doc (2010). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2002-03-20",
+    "datePublished": "2010-06-05",
+    "size": "231.8 MB",
+    "description": {
+        "en": "Odio fuga acerbitas perferendis. Caute aro benigne coadunatio canonicus confero aequitas caput qui caelum. Certe ventus ea cervus pariatur coniecto ante suppono speciosus."
+    }
+}

@@ -1,0 +1,45 @@
+{
+    "id": "0806-record-025",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-record-025",
+    "label": {
+        "en": "shipper_expatiate_acclaimed.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+            },
+            "copyrightHolder": "0806-organization-004",
+            "authorship": [
+                "0806-person-000",
+                "0806-person-001",
+                "0806-person-002",
+                "0806-person-003",
+                "0806-person-004"
+            ]
+        }
+    ],
+    "howToCite": "shipper_expatiate_acclaimed.xml (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0806-record-025",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2024-09-29",
+    "datePublished": "2024-10-20",
+    "size": "319.0 MB",
+    "keywords": [
+        {
+            "en": "tabula"
+        },
+        {
+            "en": "depromo"
+        },
+        {
+            "en": "denuo"
+        }
+    ],
+    "source": "Abbas reprehenderit supra aestivus."
+}

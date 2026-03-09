@@ -1,0 +1,42 @@
+{
+    "id": "084E-record-068",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-068",
+    "label": {
+        "en": "indeed.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "indeed.pdf (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-068",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-10-10",
+    "datePublished": "2024-03-12",
+    "size": "491.6 MB",
+    "keywords": [
+        {
+            "en": "earum"
+        },
+        {
+            "en": "vobis"
+        }
+    ],
+    "source": "Bardus mollitia varietas minima defluo ullus subito demum dolore."
+}

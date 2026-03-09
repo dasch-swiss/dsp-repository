@@ -1,6 +1,6 @@
 {
     "id": "0820-organization-011",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-organization-011",
     "name": "Tanta University",
     "url": "http://www.tanta.edu.eg",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Tanta",
         "country": "Egypt"
     },
-    "email": "tanta_unv@unv.tanta.edu.eg"
+    "email": "tanta_unv@unv.tanta.edu.eg",
+    "sameAs": []
 }

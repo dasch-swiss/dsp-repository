@@ -1,0 +1,37 @@
+{
+    "id": "0852-record-077",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-077",
+    "label": {
+        "en": "overvalue.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "overvalue.tiff (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-077",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2021-01-30",
+    "datePublished": "2024-10-02",
+    "size": "397.3 MB",
+    "keywords": [
+        {
+            "en": "aestivus"
+        },
+        {
+            "en": "modi"
+        }
+    ]
+}

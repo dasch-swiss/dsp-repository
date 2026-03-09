@@ -1,0 +1,37 @@
+{
+    "id": "080E-record-035",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-035",
+    "label": {
+        "en": "versus.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "versus.tif (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-035",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-01-17",
+    "datePublished": "2018-07-05",
+    "size": "375.1 MB",
+    "description": {
+        "en": "Corrupti aegre amita avaritia vox arcus acidus. Curatio patrocinor unde suadeo supplanto venustas capitulus. Umbra vito teres triduana urbanus verbum brevis certus creptio."
+    },
+    "keywords": [
+        {
+            "en": "abstergo"
+        }
+    ]
+}

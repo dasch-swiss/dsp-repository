@@ -1,0 +1,44 @@
+{
+    "id": "084E-record-028",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-028",
+    "label": {
+        "en": "finally.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "finally.pdf (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-028",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-03-15",
+    "datePublished": "2024-05-27",
+    "size": "169.0 MB",
+    "description": {
+        "en": "Vorax tondeo coniuratio sol. Depereo benevolentia alo sumo ventosus. Abduco curto suspendo acsi."
+    },
+    "keywords": [
+        {
+            "en": "spiritus"
+        },
+        {
+            "en": "vereor"
+        }
+    ]
+}

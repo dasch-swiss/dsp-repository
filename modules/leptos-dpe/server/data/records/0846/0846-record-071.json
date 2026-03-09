@@ -1,0 +1,33 @@
+{
+    "id": "0846-record-071",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-071",
+    "label": {
+        "en": "before_colorful_cheap.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "before_colorful_cheap.png (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-071",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-06-06",
+    "datePublished": "2019-09-19",
+    "size": "195.4 MB",
+    "description": {
+        "en": "Temptatio aliqua sol terebro deserunt tabula. Quaerat bonus tardus cunctatio taedium aut consequatur somnus amet accommodo. Dapifer absconditus ustilo."
+    }
+}

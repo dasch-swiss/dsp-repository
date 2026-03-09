@@ -1,0 +1,33 @@
+{
+    "id": "0846-record-045",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-045",
+    "label": {
+        "en": "anti.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "anti.doc (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-045",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-02-04",
+    "datePublished": "2021-05-21",
+    "size": "307.3 MB",
+    "description": {
+        "en": "Subito suscipio tersus aegrotatio voluntarius voveo. Tribuo delego volaticus acies laborum talio volup arto uxor vilis. Acquiro articulus caute."
+    }
+}

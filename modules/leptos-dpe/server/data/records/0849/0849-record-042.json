@@ -1,0 +1,41 @@
+{
+    "id": "0849-record-042",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-042",
+    "label": {
+        "en": "um.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "um.doc (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-042",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-06-06",
+    "datePublished": "2025-06-17",
+    "size": "163.0 MB",
+    "dateModified": "2025-08-28",
+    "description": {
+        "en": "Terebro vomica universe ubi denique. Cernuus vilitas corroboro tener subiungo commodi dapifer coma eligendi una. Triumphus careo eveniet sublime cenaculum substantia attero vesco suggero."
+    },
+    "keywords": [
+        {
+            "en": "cedo"
+        }
+    ]
+}

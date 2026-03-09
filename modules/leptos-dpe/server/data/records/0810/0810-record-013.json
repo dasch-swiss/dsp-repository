@@ -1,0 +1,29 @@
+{
+    "id": "0810-record-013",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0810-record-013",
+    "label": {
+        "en": "institute_superior_failing.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-03",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0810-organization-000",
+            "authorship": [
+                "0810-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "institute_superior_failing.jpg (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0810-record-013",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-01-27",
+    "datePublished": "2025-06-13",
+    "size": "189.8 MB"
+}

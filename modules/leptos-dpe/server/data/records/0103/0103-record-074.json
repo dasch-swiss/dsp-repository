@@ -1,0 +1,33 @@
+{
+    "id": "0103-record-074",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-074",
+    "label": {
+        "en": "all_athwart_sensitize.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "all_athwart_sensitize.pdf (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-074",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-10-04",
+    "datePublished": "2021-01-22",
+    "size": "402.0 MB"
+}

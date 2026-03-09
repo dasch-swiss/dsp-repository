@@ -1,0 +1,44 @@
+{
+    "id": "0804-record-093",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-093",
+    "label": {
+        "en": "pertain.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "pertain.txt (1983). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-093",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1983-11-25",
+    "datePublished": "1983-11-26",
+    "size": "95.6 MB",
+    "dateModified": "1984-01-28",
+    "description": {
+        "en": "Desidero consequuntur tutis. Crur deprecator quia culpo cultura vado appello. Doloribus caveo torrens cum."
+    },
+    "keywords": [
+        {
+            "en": "deleo"
+        },
+        {
+            "en": "synagoga"
+        },
+        {
+            "en": "alii"
+        }
+    ]
+}

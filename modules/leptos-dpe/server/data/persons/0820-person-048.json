@@ -1,6 +1,6 @@
 {
     "id": "0820-person-048",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-person-048",
     "givenNames": [
         "Liliane"
     ],
@@ -12,5 +12,6 @@
     ],
     "affiliations": [
         "0820-organization-002"
-    ]
+    ],
+    "sameAs": []
 }

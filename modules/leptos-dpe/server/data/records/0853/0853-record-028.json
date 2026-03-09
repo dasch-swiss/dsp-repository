@@ -1,0 +1,44 @@
+{
+    "id": "0853-record-028",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-028",
+    "label": {
+        "en": "tense_inferior.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "tense_inferior.doc (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-028",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-04-20",
+    "datePublished": "2023-01-06",
+    "size": "340.6 MB",
+    "description": {
+        "en": "Tandem atrocitas venio. Amita combibo impedit veritatis. Eum curtus dignissimos vulgaris nisi chirographum."
+    },
+    "keywords": [
+        {
+            "en": "vallum"
+        },
+        {
+            "en": "angelus"
+        },
+        {
+            "en": "viridis"
+        }
+    ]
+}

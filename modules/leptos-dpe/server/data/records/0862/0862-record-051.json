@@ -1,0 +1,38 @@
+{
+    "id": "0862-record-051",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-051",
+    "label": {
+        "en": "deeply_below_before.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "deeply_below_before.xml (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-051",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2010-03-17",
+    "datePublished": "2019-04-23",
+    "size": "438.0 MB",
+    "keywords": [
+        {
+            "en": "vir"
+        }
+    ]
+}

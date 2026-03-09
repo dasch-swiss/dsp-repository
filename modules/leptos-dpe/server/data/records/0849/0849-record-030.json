@@ -1,0 +1,38 @@
+{
+    "id": "0849-record-030",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-030",
+    "label": {
+        "en": "justly.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "justly.jpg (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-030",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-02-01",
+    "datePublished": "2026-01-07",
+    "size": "470.3 MB",
+    "dateModified": "2026-10-16",
+    "keywords": [
+        {
+            "en": "pauper"
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "id": "080C-record-035",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C-record-035",
+    "label": {
+        "en": "squirm.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/deed.en"
+            },
+            "copyrightHolder": "080C-organization-001",
+            "authorship": [
+                "080C-person-001",
+                "080C-person-002",
+                "080C-person-003",
+                "080C-person-000"
+            ]
+        }
+    ],
+    "howToCite": "squirm.tiff (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080C-record-035",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2020-02-03",
+    "datePublished": "2021-05-21",
+    "size": "458.2 MB",
+    "keywords": [
+        {
+            "en": "arto"
+        },
+        {
+            "en": "adhaero"
+        },
+        {
+            "en": "commodo"
+        }
+    ],
+    "source": "Vae succurro triduana."
+}

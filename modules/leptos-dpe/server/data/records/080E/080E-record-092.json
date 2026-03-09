@@ -1,0 +1,41 @@
+{
+    "id": "080E-record-092",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-092",
+    "label": {
+        "en": "without_wiggly.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "without_wiggly.pdf (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-092",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2015-08-04",
+    "datePublished": "2017-09-07",
+    "size": "437.5 MB",
+    "description": {
+        "en": "Vivo barba aestas desparatus quod delectus tristis. Spoliatio vinculum conitor magni odio uxor. Arca thermae absque compello tergo copiose."
+    },
+    "keywords": [
+        {
+            "en": "summisse"
+        },
+        {
+            "en": "amiculum"
+        }
+    ],
+    "source": "Stipes verumtamen saepe campana turpis cohibeo adipiscor."
+}

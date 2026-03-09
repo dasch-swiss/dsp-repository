@@ -1,0 +1,32 @@
+{
+    "id": "082A-record-004",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082A-record-004",
+    "label": {
+        "en": "crackle.flac"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "SGV Schweizerisches Volksliedarchiv",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+            },
+            "copyrightHolder": "082A-organization-001",
+            "authorship": [
+                "082A-person-000",
+                "082A-person-003",
+                "082A-person-001",
+                "082A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "crackle.flac (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082A-record-004",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2018-01-24",
+    "datePublished": "2018-08-07",
+    "size": "424.3 MB"
+}

@@ -1,0 +1,45 @@
+{
+    "id": "083D-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083D-record-011",
+    "label": {
+        "en": "inspect_abnormally.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access",
+        "embargoDate": "2025-11-21"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-08-18",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "083D-organization-000",
+            "authorship": [
+                "083D-person-000",
+                "083D-person-001",
+                "083D-person-002",
+                "083D-person-003",
+                "083D-person-004"
+            ]
+        }
+    ],
+    "howToCite": "inspect_abnormally.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-03-14",
+    "datePublished": "2020-12-30",
+    "size": "282.1 MB",
+    "description": {
+        "en": "Trepide auxilium consectetur alioqui talis commodo voluptatum. Conspergo aedificium tenus cunae valens cariosus terror comitatus depereo adhaero. Colo defessus collum aestivus saepe umquam."
+    },
+    "keywords": [
+        {
+            "en": "corona"
+        },
+        {
+            "en": "temperantia"
+        }
+    ]
+}

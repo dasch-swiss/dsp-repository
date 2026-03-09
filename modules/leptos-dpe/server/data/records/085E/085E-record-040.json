@@ -1,0 +1,41 @@
+{
+    "id": "085E-record-040",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085E-record-040",
+    "label": {
+        "en": "unexpectedly.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-07-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.en"
+            },
+            "copyrightHolder": "085E-organization-001",
+            "authorship": [
+                "085E-person-001",
+                "085E-person-002",
+                "085E-person-003"
+            ]
+        }
+    ],
+    "howToCite": "unexpectedly.jpg (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085E-record-040",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2025-11-27",
+    "datePublished": "2027-11-12",
+    "size": "1.6 MB",
+    "dateModified": "2027-07-27",
+    "keywords": [
+        {
+            "en": "tenus"
+        },
+        {
+            "en": "vinitor"
+        }
+    ],
+    "source": "Vulariter conatus altus ademptio suasoria accusator crudelis."
+}

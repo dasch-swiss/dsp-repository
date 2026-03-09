@@ -1,0 +1,33 @@
+{
+    "id": "0838-record-049",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0838-record-049",
+    "label": {
+        "en": "er_serialize_atop.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-01-22",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0838-organization-002",
+            "authorship": [
+                "0838-person-000",
+                "0838-person-001",
+                "0838-person-002",
+                "0838-person-003",
+                "0838-person-004"
+            ]
+        }
+    ],
+    "howToCite": "er_serialize_atop.tiff (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0838-record-049",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-11-05",
+    "datePublished": "2023-12-06",
+    "size": "433.2 MB"
+}

@@ -1,0 +1,43 @@
+{
+    "id": "0101-record-023",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-023",
+    "label": {
+        "en": "voluminous_huzzah.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "voluminous_huzzah.doc (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-023",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-05-30",
+    "datePublished": "2018-11-26",
+    "size": "278.6 MB",
+    "dateModified": "2017-07-26",
+    "description": {
+        "en": "Vorago truculenter animadverto thermae turbo et trans est. Molestias agnosco voco suscipio provident centum tempus. Ceno umquam calamitas charisma aperio voluptatum vigilo auxilium clibanus."
+    },
+    "keywords": [
+        {
+            "en": "tergeo"
+        },
+        {
+            "en": "aggero"
+        }
+    ]
+}

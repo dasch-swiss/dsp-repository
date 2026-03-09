@@ -1,0 +1,41 @@
+{
+    "id": "0828-record-017",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0828-record-017",
+    "label": {
+        "en": "since.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2024-03-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0828-organization-001",
+            "authorship": [
+                "0828-person-000",
+                "0828-person-001",
+                "0828-person-002",
+                "0828-person-003",
+                "0828-person-004"
+            ]
+        }
+    ],
+    "howToCite": "since.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0828-record-017",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-10-15",
+    "datePublished": "2023-11-09",
+    "size": "468.3 MB",
+    "description": {
+        "en": "Videlicet venustas at vapulus damno demitto temporibus. Adulatio adipisci id arguo. Decimus condico amissio degusto."
+    },
+    "keywords": [
+        {
+            "en": "illum"
+        }
+    ]
+}

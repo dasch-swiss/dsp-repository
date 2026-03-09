@@ -1,0 +1,29 @@
+{
+  "$schema": "../../schema/projectcluster-schema.json",
+  "id": "cluster-002",
+  "pid": "https://ark.dasch.swiss/ark:/72163/1/cluster-002",
+  "name": "Archaeological Heritage in the Mediterranean",
+  "description": {
+    "en": "An interdisciplinary archaeological research cluster investigating ancient Mediterranean civilizations with particular focus on Egypt. Projects within this cluster employ cutting-edge digital methodologies including 3D modeling, photogrammetry, and comprehensive database documentation to study tomb architecture, funerary practices, and the long-term use histories of archaeological sites.",
+    "de": "Ein interdisziplinärer archäologischer Forschungscluster zur Untersuchung antiker Mittelmeerkulturen mit besonderem Schwerpunkt auf Ägypten. Projekte in diesem Cluster verwenden modernste digitale Methoden einschließlich 3D-Modellierung, Photogrammetrie und umfassender Datenbankdokumentation."
+  },
+  "url": "https://lhtt.philhist.unibas.ch/",
+  "howToCite": "Archaeological Heritage in the Mediterranean (2025). [Project Cluster]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/cluster-002",
+  "alternativeNames": [
+    {
+      "en": "Mediterranean Archaeology Cluster"
+    }
+  ],
+  "projects": [
+    "0820"
+  ],
+  "collections": [
+    "collection-002"
+  ],
+  "contactPoint": [
+    "0820-person-000"
+  ],
+  "documentationMaterial": [
+    "https://lhtt.philhist.unibas.ch/publications"
+  ]
+}

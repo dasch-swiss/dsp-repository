@@ -1,0 +1,41 @@
+{
+    "id": "0118-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0118-record-006",
+    "label": {
+        "en": "purple_woot_instead.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2022-07-13",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "REMA-organization-001",
+            "authorship": [
+                "REMA-person-000",
+                "REMA-person-001",
+                "REMA-person-006",
+                "REMA-person-005",
+                "REMA-person-004"
+            ]
+        }
+    ],
+    "howToCite": "purple_woot_instead.png (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0118-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2020-09-17",
+    "datePublished": "2022-02-27",
+    "size": "185.1 MB",
+    "keywords": [
+        {
+            "en": "amor"
+        },
+        {
+            "en": "corporis"
+        }
+    ]
+}

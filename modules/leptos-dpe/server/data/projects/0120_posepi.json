@@ -1,9 +1,9 @@
 {
     "id": "0120",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0120",
     "name": "Prendre une position épistémique dans l’interaction. Les marqueurs du savoir, du non-savoir et du doute en français",
     "shortcode": "0120",
-    "officialName": "MISSING",
+    "officialName": "Research Project: Prendre une position épistémique dans l’interaction. Les marqueurs du savoir, du...",
     "status": "Finished",
     "shortDescription": "A systematic and multimodal study of French epistemic and evidential markers as emerging in various professional/institutional settings documented by “natural“ video-recorded data.",
     "description": {
@@ -25,13 +25,18 @@
                 "licenseDate": "2024-04-30",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "0120-organization-001",
             "authorship": [
-                "MISSING"
+                "0120-person-000",
+                "0120-person-002",
+                "0120-person-001",
+                "0120-person-003",
+                "0120-person-004"
             ]
         }
     ],
     "dataManagementPlan": "https://doi.org/10.5281/zenodo.7038186",
+    "dataPublicationYear": "2024-01-01",
     "typeOfData": [
         "Text"
     ],
@@ -148,5 +153,12 @@
         {
             "en": "posepi"
         }
+    ],
+    "records": [
+        "0120-record-001",
+        "0120-record-002",
+        "0120-record-003",
+        "0120-record-004",
+        "0120-record-005"
     ]
 }

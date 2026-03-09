@@ -1,0 +1,46 @@
+{
+    "id": "083C-record-027",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-027",
+    "label": {
+        "en": "reflate_piglet.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "reflate_piglet.doc (2013). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-027",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2012-06-16",
+    "datePublished": "2013-02-16",
+    "size": "374.1 MB",
+    "dateModified": "2012-08-18",
+    "description": {
+        "en": "Studio dolorum depulso tempora exercitationem deduco tubineus. Vobis vox amor talus tero. Aequus praesentium audeo conitor."
+    },
+    "keywords": [
+        {
+            "en": "aedificium"
+        },
+        {
+            "en": "solutio"
+        },
+        {
+            "en": "uterque"
+        }
+    ],
+    "source": "Adhaero arguo vitae aeternus cado caelum depono accusantium distinctio error."
+}

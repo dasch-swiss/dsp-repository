@@ -1,0 +1,40 @@
+{
+    "id": "0804-record-060",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-060",
+    "label": {
+        "en": "plus.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "plus.pdf (1984). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-060",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1983-11-21",
+    "datePublished": "1984-02-20",
+    "size": "469.5 MB",
+    "keywords": [
+        {
+            "en": "temptatio"
+        },
+        {
+            "en": "uberrime"
+        },
+        {
+            "en": "compello"
+        }
+    ]
+}

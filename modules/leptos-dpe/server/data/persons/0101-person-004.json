@@ -1,6 +1,6 @@
 {
     "id": "0101-person-004",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-person-004",
     "givenNames": [
         "Selim"
     ],
@@ -12,5 +12,6 @@
     ],
     "affiliations": [
         "0101-organization-000"
-    ]
+    ],
+    "sameAs": []
 }

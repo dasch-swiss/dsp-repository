@@ -1,0 +1,37 @@
+{
+  "$schema": "../../schema/projectcluster-schema.json",
+  "id": "cluster-001",
+  "pid": "https://ark.dasch.swiss/ark:/72163/1/cluster-001",
+  "name": "Early Modern Mathematical Sciences",
+  "description": {
+    "en": "A long-term research initiative dedicated to the study and digital preservation of early modern mathematics, focusing on the influential work of the Bernoulli dynasty, Leonhard Euler, and their contemporaries. This cluster encompasses correspondence networks, scientific publications, and early printed mathematical treatises from the 17th and 18th centuries, providing comprehensive access to foundational materials in the history of mathematics and science.",
+    "de": "Eine langfristige Forschungsinitiative zur Erforschung und digitalen Erhaltung der frühneuzeitlichen Mathematik, mit Schwerpunkt auf den einflussreichen Arbeiten der Bernoulli-Dynastie, Leonhard Euler und ihren Zeitgenossen. Dieses Cluster umfasst Korrespondenznetzwerke, wissenschaftliche Publikationen und mathematische Frühdrucke des 17. und 18. Jahrhunderts und bietet umfassenden Zugang zu grundlegenden Materialien der Mathematik- und Wissenschaftsgeschichte.",
+    "fr": "Une initiative de recherche à long terme consacrée à l'étude et à la préservation numérique des mathématiques modernes, centrée sur les travaux influents de la dynastie Bernoulli, de Leonhard Euler et de leurs contemporains. Ce cluster englobe des réseaux de correspondance, des publications scientifiques et des premiers traités mathématiques imprimés des XVIIe et XVIIIe siècles."
+  },
+  "url": "https://bernoulli-euler.dhlab.unibas.ch/",
+  "howToCite": "Early Modern Mathematical Sciences (2025). [Project Cluster]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/cluster-001",
+  "alternativeNames": [
+    {
+      "en": "EMMS",
+      "de": "Frühneuzeitliche Mathematische Wissenschaften"
+    },
+    {
+      "en": "Bernoulli-Euler Research Cluster"
+    }
+  ],
+  "projects": [
+    "0801",
+    "0803"
+  ],
+  "collections": [
+    "collection-001"
+  ],
+  "contactPoint": [
+    "0801-person-000",
+    "0803-person-000"
+  ],
+  "documentationMaterial": [
+    "https://bernoulli-euler.dhlab.unibas.ch/about",
+    "https://ub.unibas.ch/cmsdata/spezialkataloge/gg/incunabula.html"
+  ]
+}

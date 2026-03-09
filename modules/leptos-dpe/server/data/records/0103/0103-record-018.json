@@ -1,0 +1,34 @@
+{
+    "id": "0103-record-018",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-018",
+    "label": {
+        "en": "until.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "until.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-018",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-09-10",
+    "datePublished": "2020-01-03",
+    "size": "195.3 MB",
+    "dateModified": "2021-07-16"
+}

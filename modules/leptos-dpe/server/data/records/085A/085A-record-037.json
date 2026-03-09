@@ -1,0 +1,37 @@
+{
+    "id": "085A-record-037",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085A-record-037",
+    "label": {
+        "en": "wilderness_wherever_yahoo.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2019-03-14",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "085A-organization-002",
+            "authorship": [
+                "085A-person-001"
+            ]
+        }
+    ],
+    "howToCite": "wilderness_wherever_yahoo.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085A-record-037",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2020-11-27",
+    "datePublished": "2021-01-14",
+    "size": "261.1 MB",
+    "keywords": [
+        {
+            "en": "conspergo"
+        },
+        {
+            "en": "advoco"
+        }
+    ]
+}

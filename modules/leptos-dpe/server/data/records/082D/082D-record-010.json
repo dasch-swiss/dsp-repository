@@ -1,0 +1,30 @@
+{
+    "id": "082D-record-010",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082D-record-010",
+    "label": {
+        "en": "eek_why.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "082D-organization-001",
+            "authorship": [
+                "082D-person-001",
+                "082D-person-002"
+            ]
+        }
+    ],
+    "howToCite": "eek_why.txt (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082D-record-010",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-06-26",
+    "datePublished": "2020-06-29",
+    "size": "50.6 MB"
+}

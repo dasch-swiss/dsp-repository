@@ -1,0 +1,44 @@
+{
+    "id": "0838-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0838-record-001",
+    "label": {
+        "en": "nor_drat_daily.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-01-22",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0838-organization-002",
+            "authorship": [
+                "0838-person-000",
+                "0838-person-001",
+                "0838-person-002",
+                "0838-person-003",
+                "0838-person-004"
+            ]
+        }
+    ],
+    "howToCite": "nor_drat_daily.tiff (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0838-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2020-11-16",
+    "datePublished": "2024-06-22",
+    "size": "142.1 MB",
+    "description": {
+        "en": "Repellat enim molestias vulgo contabesco centum nisi cavus tertius. Conitor cedo deprimo chirographum usitas vociferor acquiro tamisium asperiores adsuesco. Paulatim auctor deprecator blanditiis valde adiuvo subseco dolores."
+    },
+    "keywords": [
+        {
+            "en": "tabella"
+        },
+        {
+            "en": "corrupti"
+        }
+    ]
+}

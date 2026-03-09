@@ -1,0 +1,39 @@
+{
+    "id": "084A-record-022",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084A-record-022",
+    "label": {
+        "en": "boldly_cod_kookily.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-02-21",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084A-organization-001",
+            "authorship": [
+                "084A-person-000",
+                "084A-person-001",
+                "084A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "boldly_cod_kookily.doc (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084A-record-022",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-07-05",
+    "datePublished": "2024-02-27",
+    "size": "445.5 MB",
+    "description": {
+        "en": "Tabella volubilis decerno casus audacia vinculum angustus suffragium deorsum. Celer succedo trepide vel tabernus culpa cura officiis aggredior. Mollitia spiritus taceo utor qui abscido."
+    },
+    "keywords": [
+        {
+            "en": "inventore"
+        }
+    ]
+}

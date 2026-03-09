@@ -1,0 +1,42 @@
+{
+    "id": "0804-record-026",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-026",
+    "label": {
+        "en": "mindless_anti.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "mindless_anti.doc (1984). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-026",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1984-12-05",
+    "datePublished": "1984-12-19",
+    "size": "433.9 MB",
+    "dateModified": "1984-12-21",
+    "description": {
+        "en": "Expedita coma aedificium accusator. Vulariter canonicus theatrum alveus curvo eligendi verecundia. Totus benevolentia suus tenuis veritas sumo subnecto."
+    },
+    "keywords": [
+        {
+            "en": "amitto"
+        },
+        {
+            "en": "stillicidium"
+        }
+    ],
+    "source": "Cornu virgo urbanus alius vetus."
+}

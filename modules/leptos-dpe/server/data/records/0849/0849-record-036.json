@@ -1,0 +1,39 @@
+{
+    "id": "0849-record-036",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-036",
+    "label": {
+        "en": "turbulent_acclaimed.tif"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "turbulent_acclaimed.tif (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-036",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2026-06-22",
+    "datePublished": "2026-08-05",
+    "size": "142.1 MB",
+    "dateModified": "2026-09-01",
+    "keywords": [
+        {
+            "en": "cinis"
+        }
+    ],
+    "source": "Tunc aqua aranea arceo terra torqueo."
+}

@@ -1,0 +1,41 @@
+{
+    "id": "0105-record-039",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0105-record-039",
+    "label": {
+        "en": "bathhouse_incidentally.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0105-organization-000",
+            "authorship": [
+                "0105-person-000",
+                "0105-person-001",
+                "0105-person-002",
+                "0105-person-003",
+                "0105-person-004"
+            ]
+        }
+    ],
+    "howToCite": "bathhouse_incidentally.png (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0105-record-039",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2015-07-21",
+    "datePublished": "2019-03-13",
+    "size": "39.3 MB",
+    "keywords": [
+        {
+            "en": "aqua"
+        },
+        {
+            "en": "clementia"
+        }
+    ]
+}

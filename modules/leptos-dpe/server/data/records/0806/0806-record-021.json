@@ -1,0 +1,44 @@
+{
+    "id": "0806-record-021",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-record-021",
+    "label": {
+        "en": "blond_kindheartedly_tapioca.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+            },
+            "copyrightHolder": "0806-organization-004",
+            "authorship": [
+                "0806-person-000",
+                "0806-person-001",
+                "0806-person-002",
+                "0806-person-003",
+                "0806-person-004"
+            ]
+        }
+    ],
+    "howToCite": "blond_kindheartedly_tapioca.doc (2015). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0806-record-021",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2012-09-20",
+    "datePublished": "2015-07-30",
+    "size": "481.6 MB",
+    "keywords": [
+        {
+            "en": "adhuc"
+        },
+        {
+            "en": "defetiscor"
+        },
+        {
+            "en": "cupressus"
+        }
+    ]
+}

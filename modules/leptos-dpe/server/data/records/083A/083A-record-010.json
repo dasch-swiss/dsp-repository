@@ -1,0 +1,44 @@
+{
+    "id": "083A-record-010",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083A-record-010",
+    "label": {
+        "en": "electrify.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-01-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083A-organization-000",
+            "authorship": [
+                "083A-person-000",
+                "083A-person-001",
+                "083A-person-002",
+                "083A-person-003",
+                "083A-person-004"
+            ]
+        }
+    ],
+    "howToCite": "electrify.doc (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083A-record-010",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2025-04-09",
+    "datePublished": "2025-05-24",
+    "size": "207.2 MB",
+    "keywords": [
+        {
+            "en": "solum"
+        },
+        {
+            "en": "adulescens"
+        },
+        {
+            "en": "debitis"
+        }
+    ]
+}

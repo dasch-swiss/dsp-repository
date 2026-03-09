@@ -1,0 +1,36 @@
+{
+    "id": "085E-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085E-record-006",
+    "label": {
+        "en": "idealistic.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-07-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.en"
+            },
+            "copyrightHolder": "085E-organization-001",
+            "authorship": [
+                "085E-person-001",
+                "085E-person-002",
+                "085E-person-003"
+            ]
+        }
+    ],
+    "howToCite": "idealistic.png (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085E-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2026-11-27",
+    "datePublished": "2027-05-04",
+    "size": "117.9 MB",
+    "keywords": [
+        {
+            "en": "verbum"
+        }
+    ]
+}

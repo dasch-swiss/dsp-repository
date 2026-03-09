@@ -1,0 +1,44 @@
+{
+    "id": "082B-record-017",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082B-record-017",
+    "label": {
+        "en": "verbally.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "082B-organization-003",
+            "authorship": [
+                "082B-person-001",
+                "082B-person-002",
+                "082B-person-003",
+                "082B-person-004",
+                "082B-person-005"
+            ]
+        }
+    ],
+    "howToCite": "verbally.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082B-record-017",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-04-30",
+    "datePublished": "2022-12-27",
+    "size": "126.1 MB",
+    "description": {
+        "en": "Antepono arcus somnus viridis aegre cupiditate. Ager tricesimus desparatus defleo cupiditas succedo dolore auctus tot. Aggero via trepide degero socius tactus."
+    },
+    "keywords": [
+        {
+            "en": "aggredior"
+        },
+        {
+            "en": "uterque"
+        }
+    ]
+}

@@ -1,0 +1,43 @@
+{
+    "id": "0111-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0111-record-011",
+    "label": {
+        "en": "so.wav"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0111-organization-000",
+            "authorship": [
+                "0111-person-000",
+                "0111-person-001",
+                "0111-person-002",
+                "0111-person-003"
+            ]
+        }
+    ],
+    "howToCite": "so.wav (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0111-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2018-02-15",
+    "datePublished": "2018-03-19",
+    "size": "261.4 MB",
+    "description": {
+        "en": "Vox casus testimonium auctus ter summisse absque conturbo turpis vester. Vulgo varius taedium hic. Iure sint aiunt calamitas."
+    },
+    "keywords": [
+        {
+            "en": "accusantium"
+        },
+        {
+            "en": "benevolentia"
+        }
+    ]
+}

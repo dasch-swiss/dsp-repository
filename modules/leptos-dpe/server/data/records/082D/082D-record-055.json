@@ -1,0 +1,39 @@
+{
+    "id": "082D-record-055",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082D-record-055",
+    "label": {
+        "en": "excitedly_which_boo.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "082D-organization-001",
+            "authorship": [
+                "082D-person-001",
+                "082D-person-002"
+            ]
+        }
+    ],
+    "howToCite": "excitedly_which_boo.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082D-record-055",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-02-25",
+    "datePublished": "2019-05-11",
+    "size": "189.3 MB",
+    "dateModified": "2020-01-10",
+    "description": {
+        "en": "Acerbitas surculus claro cursim appello. Desipio atque tui substantia celer suscipit turba comprehendo. Quod vilicus vobis terror capto cado cumque."
+    },
+    "keywords": [
+        {
+            "en": "vesper"
+        }
+    ]
+}

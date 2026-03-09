@@ -1,0 +1,40 @@
+{
+    "id": "0117-record-032",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-032",
+    "label": {
+        "en": "backbone.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "backbone.txt (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-032",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-02-09",
+    "datePublished": "2019-11-14",
+    "size": "448.7 MB",
+    "description": {
+        "en": "Nisi coniecto bonus. Suggero admiratio victus. Angulus ascit volup benigne tabesco speculum."
+    },
+    "keywords": [
+        {
+            "en": "amissio"
+        }
+    ]
+}

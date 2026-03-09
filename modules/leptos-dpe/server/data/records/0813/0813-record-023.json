@@ -1,0 +1,39 @@
+{
+    "id": "0813-record-023",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-record-023",
+    "label": {
+        "en": "gosh_yippee_but.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0813-organization-001",
+            "authorship": [
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "gosh_yippee_but.tiff (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0813-record-023",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2016-12-03",
+    "datePublished": "2018-05-18",
+    "size": "20.4 MB",
+    "description": {
+        "en": "Ago ipsum deporto vel commemoro. Subnecto debilito blandior crudelis delinquo soluta laudantium aspicio vomer. Traho ut comprehendo crudelis succedo."
+    },
+    "keywords": [
+        {
+            "en": "molestias"
+        }
+    ]
+}

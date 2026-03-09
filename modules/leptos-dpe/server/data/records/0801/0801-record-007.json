@@ -1,0 +1,87 @@
+{
+    "id": "0801-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-record-007",
+    "label": {
+        "en": "extricate_robust.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        }
+    ],
+    "howToCite": "extricate_robust.doc (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-09-06",
+    "datePublished": "2020-11-15",
+    "size": "78.3 MB",
+    "description": {
+        "en": "Virtus solio cognomen coepi. Damnatio beneficium varius tot confero sit appositus decumbo complectus. Umbra adhaero conspergo cresco adicio viriliter."
+    },
+    "keywords": [
+        {
+            "en": "labore"
+        }
+    ],
+    "source": "Suppono decimus surculus cruentus tergo vis nulla nobis."
+}

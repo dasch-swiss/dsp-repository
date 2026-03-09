@@ -1,0 +1,36 @@
+{
+    "id": "0114-record-010",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114-record-010",
+    "label": {
+        "en": "yesterday_moist_until.txt"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0114-organization-000",
+            "authorship": [
+                "0114-person-000",
+                "0114-person-001",
+                "0114-person-002",
+                "0114-person-003",
+                "0114-person-004"
+            ]
+        }
+    ],
+    "howToCite": "yesterday_moist_until.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0114-record-010",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-04-18",
+    "datePublished": "2022-01-10",
+    "size": "397.4 MB",
+    "description": {
+        "en": "Stella inventore auctus quisquam apto. Auctor subito desolo aperte culpo. Saepe deludo venustas alienus coaegresco turba suasoria uter."
+    }
+}

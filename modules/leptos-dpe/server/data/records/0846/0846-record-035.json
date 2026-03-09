@@ -1,0 +1,39 @@
+{
+    "id": "0846-record-035",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-035",
+    "label": {
+        "en": "informal_sadly_boo.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "informal_sadly_boo.tif (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-035",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-10-03",
+    "datePublished": "2021-06-30",
+    "size": "431.6 MB",
+    "keywords": [
+        {
+            "en": "cado"
+        },
+        {
+            "en": "amet"
+        }
+    ],
+    "source": "Pariatur desipio desparatus delicate tamdiu solum volubilis."
+}

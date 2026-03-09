@@ -1,0 +1,41 @@
+{
+    "id": "0845-record-041",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-041",
+    "label": {
+        "en": "inasmuch.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "inasmuch.tif (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-041",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-12-10",
+    "datePublished": "2019-02-05",
+    "size": "272.4 MB",
+    "description": {
+        "en": "Coadunatio adiuvo ademptio ait aduro summa. Cerno trans ipsa tenus pecto triduana est calamitas acies voluptatum. Tabesco aggero asper utique expedita advoco."
+    },
+    "keywords": [
+        {
+            "en": "vinco"
+        }
+    ]
+}

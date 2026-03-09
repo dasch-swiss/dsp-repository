@@ -1,0 +1,44 @@
+{
+    "id": "081B-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-001",
+    "label": {
+        "en": "self_confidence.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "self_confidence.xml (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2016-12-31",
+    "datePublished": "2017-03-24",
+    "size": "141.5 MB",
+    "dateModified": "2018-07-23",
+    "description": {
+        "en": "Vox quae quae demum supra decens cunabula cilicium adsuesco. Dapifer delibero terror vulticulus voro. Victoria communis tandem aiunt aedificium tabernus thermae conculco."
+    },
+    "keywords": [
+        {
+            "en": "maiores"
+        },
+        {
+            "en": "tutis"
+        },
+        {
+            "en": "sponte"
+        }
+    ]
+}

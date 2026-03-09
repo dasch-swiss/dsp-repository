@@ -1,0 +1,43 @@
+{
+    "id": "083C-record-039",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-039",
+    "label": {
+        "en": "patiently_qua.doc"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "patiently_qua.doc (2013). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-039",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2005-06-11",
+    "datePublished": "2013-02-15",
+    "size": "69.1 MB",
+    "dateModified": "2010-09-19",
+    "keywords": [
+        {
+            "en": "capio"
+        },
+        {
+            "en": "ullam"
+        },
+        {
+            "en": "collum"
+        }
+    ],
+    "source": "Crastinus speculum accedo."
+}

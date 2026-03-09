@@ -1,0 +1,37 @@
+{
+    "id": "0852-record-020",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-020",
+    "label": {
+        "en": "know_swim_jot.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "know_swim_jot.tif (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-020",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-01-16",
+    "datePublished": "2024-03-08",
+    "size": "186.2 MB",
+    "description": {
+        "en": "Claro et bestia auditor atque crastinus ventus solum quisquam temeritas. Vilicus ambulo comprehendo incidunt appono dens adeo utpote. Valeo debitis cur bonus vulpes canis urbs aranea."
+    },
+    "keywords": [
+        {
+            "en": "solus"
+        }
+    ]
+}

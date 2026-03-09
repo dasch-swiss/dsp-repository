@@ -1,0 +1,45 @@
+{
+    "id": "084E-record-057",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-057",
+    "label": {
+        "en": "promptly_ectoderm.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "promptly_ectoderm.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-057",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-07-02",
+    "datePublished": "2024-02-16",
+    "size": "149.1 MB",
+    "dateModified": "2023-12-13",
+    "keywords": [
+        {
+            "en": "antiquus"
+        },
+        {
+            "en": "tantum"
+        },
+        {
+            "en": "spiritus"
+        }
+    ]
+}

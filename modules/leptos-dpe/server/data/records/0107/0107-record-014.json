@@ -1,0 +1,34 @@
+{
+    "id": "0107-record-014",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0107-record-014",
+    "label": {
+        "en": "which.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2026-03-29"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0107-organization-001",
+            "authorship": [
+                "0107-person-000",
+                "0107-person-001",
+                "0107-person-002",
+                "0107-person-003",
+                "0107-person-004"
+            ]
+        }
+    ],
+    "howToCite": "which.jpg (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0107-record-014",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-03-23",
+    "datePublished": "2019-11-22",
+    "size": "124.2 MB"
+}

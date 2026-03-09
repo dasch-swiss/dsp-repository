@@ -1,0 +1,58 @@
+{
+    "id": "0854-record-041",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-041",
+    "label": {
+        "en": "whereas_per_parade.mp3"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access",
+        "embargoDate": "2026-06-24"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "whereas_per_parade.mp3 (2028). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-041",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2024-02-28",
+    "datePublished": "2028-08-12",
+    "size": "284.3 MB",
+    "keywords": [
+        {
+            "en": "desparatus"
+        },
+        {
+            "en": "cribro"
+        },
+        {
+            "en": "comminor"
+        }
+    ]
+}

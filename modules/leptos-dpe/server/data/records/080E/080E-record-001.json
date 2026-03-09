@@ -1,0 +1,41 @@
+{
+    "id": "080E-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-001",
+    "label": {
+        "en": "vice_chime.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "vice_chime.tif (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-04-05",
+    "datePublished": "2018-09-25",
+    "size": "132.3 MB",
+    "dateModified": "2018-09-25",
+    "keywords": [
+        {
+            "en": "quas"
+        },
+        {
+            "en": "adsuesco"
+        },
+        {
+            "en": "ventus"
+        }
+    ]
+}

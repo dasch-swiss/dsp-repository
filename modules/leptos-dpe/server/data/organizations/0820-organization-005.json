@@ -1,6 +1,6 @@
 {
     "id": "0820-organization-005",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-organization-005",
     "name": "University of Zurich",
     "url": "http://www.uzh.ch",
     "address": {
@@ -8,5 +8,6 @@
         "postalCode": "8006",
         "locality": "Zürich",
         "country": "Switzerland"
-    }
+    },
+    "sameAs": []
 }

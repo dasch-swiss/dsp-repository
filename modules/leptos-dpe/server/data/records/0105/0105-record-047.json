@@ -1,0 +1,35 @@
+{
+    "id": "0105-record-047",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0105-record-047",
+    "label": {
+        "en": "intently.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0105-organization-000",
+            "authorship": [
+                "0105-person-000",
+                "0105-person-001",
+                "0105-person-002",
+                "0105-person-003",
+                "0105-person-004"
+            ]
+        }
+    ],
+    "howToCite": "intently.pdf (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0105-record-047",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-09-01",
+    "datePublished": "2019-12-23",
+    "size": "117.2 MB",
+    "dateModified": "2019-09-15",
+    "source": "Tempora ara delibero admoveo comminor adipisci succurro tristis sit."
+}

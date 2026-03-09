@@ -1,0 +1,42 @@
+{
+    "id": "0845-record-030",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-030",
+    "label": {
+        "en": "pivot_typewriter_excepting.avi"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "pivot_typewriter_excepting.avi (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-030",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2021-04-04",
+    "datePublished": "2022-07-31",
+    "size": "135.5 MB",
+    "dateModified": "2021-06-04",
+    "description": {
+        "en": "Delego pecco utor magnam. Sumptus tum carcer aggero dolor casso coniuratio itaque ventosus arca. Harum demoror ultra quibusdam canto acsi."
+    },
+    "keywords": [
+        {
+            "en": "cornu"
+        }
+    ]
+}

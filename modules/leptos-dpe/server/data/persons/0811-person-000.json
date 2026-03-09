@@ -1,6 +1,6 @@
 {
     "id": "0811-person-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0811-person-000",
     "givenNames": [
         "Frithjof",
         "Benjamin"
@@ -14,5 +14,6 @@
     "affiliations": [
         "0811-organization-000"
     ],
-    "email": "benjamin.schenk@unibas.ch"
+    "email": "benjamin.schenk@unibas.ch",
+    "sameAs": []
 }

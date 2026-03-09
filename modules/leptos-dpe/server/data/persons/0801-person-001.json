@@ -1,6 +1,6 @@
 {
     "id": "0801-person-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-person-001",
     "givenNames": [
         "Franz"
     ],
@@ -12,5 +12,6 @@
     ],
     "affiliations": [
         "0801-organization-003"
-    ]
+    ],
+    "sameAs": []
 }

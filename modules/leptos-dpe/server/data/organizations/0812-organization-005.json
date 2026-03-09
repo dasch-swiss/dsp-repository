@@ -1,6 +1,6 @@
 {
     "id": "0812-organization-005",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-organization-005",
     "name": "Dinamo Basel",
     "url": "https://abcdinamo.com/",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "mail@abcdinamo.com"
+    "email": "mail@abcdinamo.com",
+    "sameAs": []
 }

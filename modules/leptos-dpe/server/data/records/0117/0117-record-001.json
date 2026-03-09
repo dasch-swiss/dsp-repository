@@ -1,0 +1,47 @@
+{
+    "id": "0117-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-001",
+    "label": {
+        "en": "hypothesise.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "hypothesise.doc (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-09-28",
+    "datePublished": "2020-04-29",
+    "size": "61.9 MB",
+    "description": {
+        "en": "Depromo exercitationem facere odio barba coepi. Aetas vapulus delectus urbs avarus. Angustus voluptate attollo explicabo demum vorago volva consequatur."
+    },
+    "keywords": [
+        {
+            "en": "arbor"
+        },
+        {
+            "en": "usitas"
+        },
+        {
+            "en": "quos"
+        }
+    ],
+    "source": "Sperno aegre doloremque cariosus surculus taedium congregatio thermae."
+}

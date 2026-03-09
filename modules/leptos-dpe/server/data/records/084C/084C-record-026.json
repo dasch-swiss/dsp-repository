@@ -1,0 +1,40 @@
+{
+    "id": "084C-record-026",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084C-record-026",
+    "label": {
+        "en": "broadly_until_made_up.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2026-05-17"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-10-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084C-organization-000",
+            "authorship": [
+                "084C-person-000",
+                "084C-person-001",
+                "084C-person-002",
+                "084C-person-003",
+                "084C-person-004"
+            ]
+        }
+    ],
+    "howToCite": "broadly_until_made_up.png (2006). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084C-record-026",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2006-05-17",
+    "datePublished": "2006-10-19",
+    "size": "101.7 MB",
+    "dateModified": "2006-08-23",
+    "keywords": [
+        {
+            "en": "odit"
+        }
+    ]
+}

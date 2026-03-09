@@ -1,0 +1,40 @@
+{
+    "id": "0852-record-043",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-043",
+    "label": {
+        "en": "upright.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "upright.tif (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-043",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2020-01-03",
+    "datePublished": "2024-09-14",
+    "size": "149.7 MB",
+    "keywords": [
+        {
+            "en": "tandem"
+        },
+        {
+            "en": "agnitio"
+        },
+        {
+            "en": "quos"
+        }
+    ]
+}

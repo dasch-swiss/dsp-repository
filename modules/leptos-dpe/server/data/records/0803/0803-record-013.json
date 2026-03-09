@@ -1,0 +1,37 @@
+{
+    "id": "0803-record-013",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0803-record-013",
+    "label": {
+        "en": "ouch_off.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2012-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0803-organization-000",
+            "authorship": [
+                "0803-person-000",
+                "0803-person-001",
+                "0803-person-002",
+                "0803-person-003",
+                "0803-person-004"
+            ]
+        }
+    ],
+    "howToCite": "ouch_off.tiff (2011). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0803-record-013",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2011-03-04",
+    "datePublished": "2011-11-26",
+    "size": "104.3 MB",
+    "description": {
+        "en": "Cinis conitor verto quaerat nesciunt vix. Cubitum tergiversatio defluo abeo. Timidus crebro vapulus summisse."
+    },
+    "source": "Vallum tricesimus acceptus creta."
+}

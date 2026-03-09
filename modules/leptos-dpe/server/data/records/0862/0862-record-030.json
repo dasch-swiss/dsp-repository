@@ -1,0 +1,41 @@
+{
+    "id": "0862-record-030",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-030",
+    "label": {
+        "en": "executor_lightly_gazebo.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "executor_lightly_gazebo.txt (2035). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-030",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2011-11-12",
+    "datePublished": "2035-07-31",
+    "size": "199.4 MB",
+    "description": {
+        "en": "Eius titulus succurro undique creptio alter clementia sol. Vulgo tripudio villa nam inflammatio vivo coadunatio vestigium deorsum. Celer comprehendo cum adeptio clibanus."
+    },
+    "keywords": [
+        {
+            "en": "coruscus"
+        }
+    ]
+}

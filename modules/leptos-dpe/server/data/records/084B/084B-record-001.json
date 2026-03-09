@@ -1,0 +1,38 @@
+{
+    "id": "084B-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084B-record-001",
+    "label": {
+        "en": "consign_ignite_while.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-07-08",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "084B-organization-001",
+            "authorship": [
+                "084B-person-001",
+                "084B-person-000"
+            ]
+        }
+    ],
+    "howToCite": "consign_ignite_while.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084B-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-05-08",
+    "datePublished": "2022-07-19",
+    "size": "21.7 MB",
+    "description": {
+        "en": "Soleo versus rerum ara. Advenio adhaero desolo triduana. Textor ab somniculosus."
+    },
+    "keywords": [
+        {
+            "en": "candidus"
+        }
+    ]
+}

@@ -1,6 +1,6 @@
 {
     "id": "0826-person-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0826-person-001",
     "givenNames": [
         "Regula"
     ],
@@ -12,5 +12,6 @@
     ],
     "affiliations": [
         "0826-organization-001"
-    ]
+    ],
+    "sameAs": []
 }

@@ -1,0 +1,36 @@
+{
+    "id": "080E-record-081",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-081",
+    "label": {
+        "en": "own.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "own.tif (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-081",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2016-10-09",
+    "datePublished": "2017-08-10",
+    "size": "45.0 MB",
+    "dateModified": "2018-04-16",
+    "keywords": [
+        {
+            "en": "cornu"
+        }
+    ],
+    "source": "Titulus sol ambitus collum verto dolores amoveo."
+}

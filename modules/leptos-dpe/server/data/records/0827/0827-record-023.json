@@ -1,0 +1,34 @@
+{
+    "id": "0827-record-023",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0827-record-023",
+    "label": {
+        "en": "anaesthetise.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-05-06",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0827-organization-000",
+            "authorship": [
+                "0827-person-000"
+            ]
+        }
+    ],
+    "howToCite": "anaesthetise.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0827-record-023",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-09-08",
+    "datePublished": "2024-05-28",
+    "size": "353.7 MB",
+    "keywords": [
+        {
+            "en": "rem"
+        }
+    ]
+}

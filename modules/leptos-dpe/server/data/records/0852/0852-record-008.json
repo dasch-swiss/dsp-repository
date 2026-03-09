@@ -1,0 +1,38 @@
+{
+    "id": "0852-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-008",
+    "label": {
+        "en": "microblog.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "microblog.pdf (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-06-07",
+    "datePublished": "2024-04-04",
+    "size": "20.2 MB",
+    "dateModified": "2024-01-11",
+    "description": {
+        "en": "Decipio absque certe testimonium coma quisquam tantillus auctus adipiscor. Volaticus sit adulescens comptus tredecim perferendis caute speciosus. Ipsum vorax ab coaegresco vilicus thymum voveo tergo crudelis amet."
+    },
+    "keywords": [
+        {
+            "en": "cruentus"
+        }
+    ]
+}

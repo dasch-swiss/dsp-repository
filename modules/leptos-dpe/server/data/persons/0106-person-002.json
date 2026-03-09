@@ -1,6 +1,6 @@
 {
     "id": "0106-person-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0106-person-002",
     "givenNames": [
         "Raphaël"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0106-organization-000"
     ],
-    "email": "Raphael.Tinguely@unil.ch"
+    "email": "Raphael.Tinguely@unil.ch",
+    "sameAs": []
 }

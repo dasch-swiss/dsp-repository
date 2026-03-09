@@ -1,0 +1,45 @@
+{
+    "id": "083D-record-016",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083D-record-016",
+    "label": {
+        "en": "physical.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-08-18",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "083D-organization-000",
+            "authorship": [
+                "083D-person-000",
+                "083D-person-001",
+                "083D-person-002",
+                "083D-person-003",
+                "083D-person-004"
+            ]
+        }
+    ],
+    "howToCite": "physical.txt (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D-record-016",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-09-08",
+    "datePublished": "2019-09-26",
+    "size": "292.8 MB",
+    "dateModified": "2018-09-20",
+    "keywords": [
+        {
+            "en": "delinquo"
+        },
+        {
+            "en": "terminatio"
+        },
+        {
+            "en": "terebro"
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+{
+    "id": "083C-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-011",
+    "label": {
+        "en": "papa.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "papa.jpg (2000). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "1999-04-14",
+    "datePublished": "2000-02-07",
+    "size": "488.7 MB",
+    "description": {
+        "en": "Usitas voluptatibus casso vulticulus armarium corporis textor congregatio cubitum. Universe pariatur adficio. Voluptatum atrox assentator utroque suus bellum vulpes carcer defero."
+    },
+    "keywords": [
+        {
+            "en": "cresco"
+        }
+    ]
+}

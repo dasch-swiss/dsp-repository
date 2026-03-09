@@ -1,0 +1,32 @@
+{
+    "id": "0848-record-037",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-037",
+    "label": {
+        "en": "scar_deceivingly.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "scar_deceivingly.doc (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-037",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-09-04",
+    "datePublished": "2022-12-09",
+    "size": "201.1 MB"
+}

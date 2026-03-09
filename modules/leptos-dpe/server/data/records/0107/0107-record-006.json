@@ -1,0 +1,39 @@
+{
+    "id": "0107-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0107-record-006",
+    "label": {
+        "en": "finally_as_excitable.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0107-organization-001",
+            "authorship": [
+                "0107-person-000",
+                "0107-person-001",
+                "0107-person-002",
+                "0107-person-003",
+                "0107-person-004"
+            ]
+        }
+    ],
+    "howToCite": "finally_as_excitable.png (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0107-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-07-04",
+    "datePublished": "2020-04-26",
+    "size": "456.8 MB",
+    "dateModified": "2020-04-23",
+    "keywords": [
+        {
+            "en": "amaritudo"
+        }
+    ]
+}

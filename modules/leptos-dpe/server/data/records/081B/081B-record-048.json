@@ -1,0 +1,37 @@
+{
+    "id": "081B-record-048",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-048",
+    "label": {
+        "en": "quirkily.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "quirkily.xml (2016). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-048",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2016-03-30",
+    "datePublished": "2016-09-12",
+    "size": "303.3 MB",
+    "description": {
+        "en": "Contra antiquus magni velit. Verumtamen conicio harum ambitus volva. Calco addo cervus aro tepidus corporis demitto cupiditate reiciendis conatus."
+    },
+    "keywords": [
+        {
+            "en": "beneficium"
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "id": "0103-record-067",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-067",
+    "label": {
+        "en": "yuck_whereas_although.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "yuck_whereas_although.doc (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-067",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-12-14",
+    "datePublished": "2020-10-10",
+    "size": "183.5 MB",
+    "keywords": [
+        {
+            "en": "approbo"
+        },
+        {
+            "en": "decet"
+        },
+        {
+            "en": "conqueror"
+        }
+    ]
+}

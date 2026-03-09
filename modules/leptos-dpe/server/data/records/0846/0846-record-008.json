@@ -1,0 +1,30 @@
+{
+    "id": "0846-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-008",
+    "label": {
+        "en": "ice_cream_even_sniff.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "ice_cream_even_sniff.png (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-08-06",
+    "datePublished": "2019-08-22",
+    "size": "317.4 MB"
+}

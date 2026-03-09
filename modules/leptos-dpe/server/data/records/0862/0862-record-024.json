@@ -1,0 +1,38 @@
+{
+    "id": "0862-record-024",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-024",
+    "label": {
+        "en": "regularly_toward.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "regularly_toward.txt (2038). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-024",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-12-29",
+    "datePublished": "2038-06-12",
+    "size": "171.9 MB",
+    "keywords": [
+        {
+            "en": "coruscus"
+        }
+    ]
+}

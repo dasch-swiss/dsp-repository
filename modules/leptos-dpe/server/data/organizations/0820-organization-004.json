@@ -1,6 +1,6 @@
 {
     "id": "0820-organization-004",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-organization-004",
     "name": "Zurich University of the Arts (ZHdK)",
     "url": "http://www.zhdk.ch",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Zürich",
         "country": "Switzerland"
     },
-    "email": "info.admin@zhdk.ch"
+    "email": "info.admin@zhdk.ch",
+    "sameAs": []
 }

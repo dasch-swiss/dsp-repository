@@ -1,0 +1,37 @@
+{
+    "id": "0101-record-043",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-043",
+    "label": {
+        "en": "commemorate_supposing.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "commemorate_supposing.txt (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-043",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-12-13",
+    "datePublished": "2018-05-16",
+    "size": "11.9 MB",
+    "dateModified": "2018-05-13",
+    "keywords": [
+        {
+            "en": "ut"
+        }
+    ]
+}

@@ -1,0 +1,41 @@
+{
+    "id": "083D-record-029",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083D-record-029",
+    "label": {
+        "en": "nor_agile.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-08-18",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "083D-organization-000",
+            "authorship": [
+                "083D-person-000",
+                "083D-person-001",
+                "083D-person-002",
+                "083D-person-003",
+                "083D-person-004"
+            ]
+        }
+    ],
+    "howToCite": "nor_agile.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D-record-029",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-09-26",
+    "datePublished": "2020-12-11",
+    "size": "257.3 MB",
+    "description": {
+        "en": "Tristis circumvenio teneo adfero depromo tibi sodalitas. Volo vobis verus tui capitulus terga solum quisquam. Iusto bis vicissitudo."
+    },
+    "keywords": [
+        {
+            "en": "astrum"
+        }
+    ]
+}

@@ -1,0 +1,43 @@
+{
+    "id": "0101-record-017",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-017",
+    "label": {
+        "en": "mid_arid.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "mid_arid.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-017",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-07-07",
+    "datePublished": "2019-01-12",
+    "size": "425.3 MB",
+    "dateModified": "2019-05-28",
+    "description": {
+        "en": "Tendo absum apto. Atrocitas dicta crepusculum terra volva molestiae ara clamo demergo. Cultura aequitas nisi bibo demum timidus theologus."
+    },
+    "keywords": [
+        {
+            "en": "amet"
+        },
+        {
+            "en": "surgo"
+        }
+    ]
+}

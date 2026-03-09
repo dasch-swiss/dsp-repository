@@ -1,0 +1,57 @@
+{
+    "id": "0854-record-026",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-026",
+    "label": {
+        "en": "plus.tif"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "plus.tif (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-026",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2025-06-20",
+    "datePublished": "2026-10-29",
+    "size": "180.9 MB",
+    "description": {
+        "en": "Pauci adversus color crebro sordeo cubo certe sit. Sponte calamitas adsidue. Calco xiphias virgo aqua adversus tui aspernatur tendo vado."
+    },
+    "keywords": [
+        {
+            "en": "conculco"
+        },
+        {
+            "en": "aduro"
+        }
+    ]
+}

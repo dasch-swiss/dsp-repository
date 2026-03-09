@@ -1,0 +1,47 @@
+{
+    "id": "0820-record-019",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-record-019",
+    "label": {
+        "en": "poetry_reborn.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-06",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0820-organization-000",
+            "authorship": [
+                "0820-person-000",
+                "0820-person-001",
+                "0820-person-002",
+                "0820-person-003",
+                "0820-person-004"
+            ]
+        }
+    ],
+    "howToCite": "poetry_reborn.jpg (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0820-record-019",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-11-27",
+    "datePublished": "2019-12-18",
+    "size": "430.5 MB",
+    "description": {
+        "en": "Nobis vulticulus degenero adficio quidem somniculosus denuo tergeo. Deficio adopto cogito verto vesper crux solio suus aperiam fugiat. Subseco desipio ait magnam conservo depraedor autus."
+    },
+    "keywords": [
+        {
+            "en": "conduco"
+        },
+        {
+            "en": "tamquam"
+        },
+        {
+            "en": "tergiversatio"
+        }
+    ]
+}

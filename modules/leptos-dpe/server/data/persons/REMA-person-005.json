@@ -1,6 +1,6 @@
 {
     "id": "REMA-person-005",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-005",
     "givenNames": [
         "Serena"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "REMA-organization-000"
     ],
-    "email": "Serena.Romano@unil.ch"
+    "email": "Serena.Romano@unil.ch",
+    "sameAs": []
 }

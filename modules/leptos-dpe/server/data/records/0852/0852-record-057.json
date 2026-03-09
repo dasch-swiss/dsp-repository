@@ -1,0 +1,29 @@
+{
+    "id": "0852-record-057",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-057",
+    "label": {
+        "en": "amid_if_even.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "amid_if_even.tiff (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-057",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2021-09-26",
+    "datePublished": "2024-07-02",
+    "size": "136.8 MB"
+}

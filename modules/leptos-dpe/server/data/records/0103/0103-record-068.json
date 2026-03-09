@@ -1,0 +1,37 @@
+{
+    "id": "0103-record-068",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-068",
+    "label": {
+        "en": "narrowcast_troubled_huzzah.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "narrowcast_troubled_huzzah.doc (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-068",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-05-23",
+    "datePublished": "2020-10-25",
+    "size": "302.1 MB",
+    "dateModified": "2021-04-28",
+    "description": {
+        "en": "Angustus vix adsidue. Summa cruentus vulariter vulticulus ducimus tergo. Quibusdam templum decor advenio aedificium ustulo cunabula adflicto sequi."
+    }
+}

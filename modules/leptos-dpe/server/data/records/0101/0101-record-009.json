@@ -1,0 +1,35 @@
+{
+    "id": "0101-record-009",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-009",
+    "label": {
+        "en": "although_yet_physically.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "although_yet_physically.pdf (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-009",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-02-14",
+    "datePublished": "2019-04-19",
+    "size": "89.5 MB",
+    "dateModified": "2019-05-09",
+    "description": {
+        "en": "Officia autem summa pectus appono capitulus statua facere conservo. Vulticulus corona desipio reiciendis cursim. Ultra sint depulso ex vomito demitto soluta adsidue."
+    }
+}

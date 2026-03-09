@@ -1,0 +1,43 @@
+{
+    "id": "0849-record-039",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-039",
+    "label": {
+        "en": "um_recovery_yuck.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "um_recovery_yuck.doc (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-039",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2026-07-15",
+    "datePublished": "2026-10-08",
+    "size": "81.7 MB",
+    "keywords": [
+        {
+            "en": "coma"
+        },
+        {
+            "en": "comedo"
+        },
+        {
+            "en": "perferendis"
+        }
+    ]
+}

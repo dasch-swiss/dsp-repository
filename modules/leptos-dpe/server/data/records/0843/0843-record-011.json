@@ -1,0 +1,38 @@
+{
+    "id": "0843-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0843-record-011",
+    "label": {
+        "en": "vol_while.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-02-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "woposs-organization-001",
+            "authorship": [
+                "woposs-person-000",
+                "woposs-person-001",
+                "woposs-person-002",
+                "woposs-person-003",
+                "woposs-person-004"
+            ]
+        }
+    ],
+    "howToCite": "vol_while.xml (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0843-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2020-08-03",
+    "datePublished": "2023-03-04",
+    "size": "407.4 MB",
+    "keywords": [
+        {
+            "en": "studio"
+        }
+    ]
+}

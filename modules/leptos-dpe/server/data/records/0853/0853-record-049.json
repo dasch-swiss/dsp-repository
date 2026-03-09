@@ -1,0 +1,36 @@
+{
+    "id": "0853-record-049",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-049",
+    "label": {
+        "en": "affectionate_carefree.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "affectionate_carefree.tiff (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-049",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-02-24",
+    "datePublished": "2026-12-22",
+    "size": "164.3 MB",
+    "dateModified": "2026-06-26",
+    "keywords": [
+        {
+            "en": "terebro"
+        }
+    ]
+}

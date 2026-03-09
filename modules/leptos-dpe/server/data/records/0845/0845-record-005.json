@@ -1,0 +1,36 @@
+{
+    "id": "0845-record-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-005",
+    "label": {
+        "en": "yearly_disgorge_sans.doc"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "yearly_disgorge_sans.doc (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-005",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-11-27",
+    "datePublished": "2022-09-03",
+    "size": "201.2 MB",
+    "description": {
+        "en": "Crapula ager aureus constans color synagoga. Umerus campana tepidus optio delectus synagoga repellat denique. Auctus terminatio decor urbs consectetur nam adiuvo adhuc."
+    }
+}

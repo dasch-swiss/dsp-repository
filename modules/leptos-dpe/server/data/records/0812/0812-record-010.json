@@ -1,0 +1,39 @@
+{
+    "id": "0812-record-010",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-record-010",
+    "label": {
+        "en": "once_direct.mp4"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-01-25",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0812-organization-019",
+            "authorship": [
+                "0812-person-000",
+                "0812-person-001",
+                "0812-person-002",
+                "0812-person-003",
+                "0812-person-004"
+            ]
+        }
+    ],
+    "howToCite": "once_direct.mp4 (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0812-record-010",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2017-08-30",
+    "datePublished": "2018-08-19",
+    "size": "395.1 MB",
+    "keywords": [
+        {
+            "en": "accedo"
+        }
+    ],
+    "source": "Cometes virtus delicate voluptas unde."
+}

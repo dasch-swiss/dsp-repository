@@ -1,0 +1,37 @@
+{
+    "id": "0106-record-029",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0106-record-029",
+    "label": {
+        "en": "mmm.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-07-13",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0106-organization-001",
+            "authorship": [
+                "0106-person-000",
+                "0106-person-001",
+                "0106-person-002",
+                "0106-person-003",
+                "0106-person-004"
+            ]
+        }
+    ],
+    "howToCite": "mmm.pdf (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0106-record-029",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-08-07",
+    "datePublished": "2022-12-11",
+    "size": "133.4 MB",
+    "dateModified": "2021-10-05",
+    "description": {
+        "en": "Canto claudeo corrupti voluptate apostolus cogito tollo. Sub aut congregatio aveho. Trado altus itaque eius."
+    }
+}

@@ -1,0 +1,33 @@
+{
+    "id": "0845-record-053",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-053",
+    "label": {
+        "en": "anguished.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "anguished.jpg (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-053",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2021-12-28",
+    "datePublished": "2023-03-29",
+    "size": "307 KB"
+}

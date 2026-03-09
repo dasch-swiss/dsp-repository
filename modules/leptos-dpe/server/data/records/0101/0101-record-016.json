@@ -1,0 +1,36 @@
+{
+    "id": "0101-record-016",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-016",
+    "label": {
+        "en": "while_if.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "while_if.doc (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-016",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-02-10",
+    "datePublished": "2018-03-01",
+    "size": "116.3 MB",
+    "keywords": [
+        {
+            "en": "quod"
+        }
+    ]
+}

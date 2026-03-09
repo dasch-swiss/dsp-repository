@@ -1,0 +1,38 @@
+{
+    "id": "084A-record-012",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084A-record-012",
+    "label": {
+        "en": "redesign_absent_boyfriend.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2026-04-28"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-02-21",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084A-organization-001",
+            "authorship": [
+                "084A-person-000",
+                "084A-person-001",
+                "084A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "redesign_absent_boyfriend.pdf (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084A-record-012",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-12-13",
+    "datePublished": "2022-01-16",
+    "size": "208.0 MB",
+    "dateModified": "2022-10-02",
+    "keywords": [
+        {
+            "en": "amita"
+        }
+    ]
+}

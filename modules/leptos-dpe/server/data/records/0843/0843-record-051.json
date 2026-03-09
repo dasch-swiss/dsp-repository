@@ -1,0 +1,36 @@
+{
+    "id": "0843-record-051",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0843-record-051",
+    "label": {
+        "en": "sometimes_jaywalk.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-02-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "woposs-organization-001",
+            "authorship": [
+                "woposs-person-000",
+                "woposs-person-001",
+                "woposs-person-002",
+                "woposs-person-003",
+                "woposs-person-004"
+            ]
+        }
+    ],
+    "howToCite": "sometimes_jaywalk.xml (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0843-record-051",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2023-09-28",
+    "datePublished": "2024-04-28",
+    "size": "396.3 MB",
+    "description": {
+        "en": "Contabesco veritas traho cicuta thema antepono. Tamen agnitio veritatis totam abundans contigo allatus arguo certe. Debeo stella argentum venio paulatim vapulus suscipio creptio."
+    }
+}

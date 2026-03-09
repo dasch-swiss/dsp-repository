@@ -1,0 +1,47 @@
+{
+    "id": "084E-record-024",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-024",
+    "label": {
+        "en": "fortunate_imaginary_if.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "fortunate_imaginary_if.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-024",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-07-13",
+    "datePublished": "2023-08-17",
+    "size": "492.3 MB",
+    "description": {
+        "en": "Temperantia vetus tego abutor. Ait appositus certe validus maiores vinitor ultio. Audax creptio suus quibusdam capto constans dapifer tabula ceno circumvenio."
+    },
+    "keywords": [
+        {
+            "en": "sint"
+        },
+        {
+            "en": "conculco"
+        },
+        {
+            "en": "depereo"
+        }
+    ]
+}

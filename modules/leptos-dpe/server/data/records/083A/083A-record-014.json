@@ -1,0 +1,48 @@
+{
+    "id": "083A-record-014",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083A-record-014",
+    "label": {
+        "en": "why.tif"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2025-11-22"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-01-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083A-organization-000",
+            "authorship": [
+                "083A-person-000",
+                "083A-person-001",
+                "083A-person-002",
+                "083A-person-003",
+                "083A-person-004"
+            ]
+        }
+    ],
+    "howToCite": "why.tif (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083A-record-014",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-03-08",
+    "datePublished": "2022-05-29",
+    "size": "244.7 MB",
+    "description": {
+        "en": "Xiphias laborum tersus creator canto suus vir cum. Capitulus incidunt abeo culpo tandem aperio varius. Valetudo solio crapula nam venia in acidus accendo similique conduco."
+    },
+    "keywords": [
+        {
+            "en": "demergo"
+        },
+        {
+            "en": "repellendus"
+        },
+        {
+            "en": "vae"
+        }
+    ]
+}

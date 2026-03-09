@@ -1,0 +1,41 @@
+{
+    "id": "085A-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085A-record-001",
+    "label": {
+        "en": "but_evenly.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2019-03-14",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "085A-organization-002",
+            "authorship": [
+                "085A-person-001"
+            ]
+        }
+    ],
+    "howToCite": "but_evenly.txt (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085A-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-05-18",
+    "datePublished": "2019-08-12",
+    "size": "139.3 MB",
+    "keywords": [
+        {
+            "en": "solus"
+        },
+        {
+            "en": "cito"
+        },
+        {
+            "en": "timor"
+        }
+    ],
+    "source": "Crustulum solitudo territo accusantium vitiosus summopere abeo sursum deserunt quasi."
+}

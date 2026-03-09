@@ -1,6 +1,6 @@
 {
     "id": "0114-person-003",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114-person-003",
     "givenNames": [
         "Fabien"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0114-organization-001"
     ],
-    "email": "fabien.def@gmail.com"
+    "email": "fabien.def@gmail.com",
+    "sameAs": []
 }

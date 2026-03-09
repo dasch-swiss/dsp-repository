@@ -1,0 +1,43 @@
+{
+    "id": "0844-record-041",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-041",
+    "label": {
+        "en": "drat.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "drat.xml (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-041",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2020-07-07",
+    "datePublished": "2020-11-27",
+    "size": "34.1 MB",
+    "keywords": [
+        {
+            "en": "quae"
+        },
+        {
+            "en": "tremo"
+        },
+        {
+            "en": "delego"
+        }
+    ],
+    "source": "Apostolus viridis arca."
+}

@@ -1,6 +1,7 @@
 {
     "id": "0812-organization-019",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-organization-019",
     "name": "Swiss National Science Foundation (SNSF)",
-    "url": "MISSING"
+    "url": "https://www.swiss-national-science-foundat.org",
+    "sameAs": []
 }

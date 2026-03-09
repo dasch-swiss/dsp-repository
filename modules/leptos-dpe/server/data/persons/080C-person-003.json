@@ -1,6 +1,6 @@
 {
     "id": "080C-person-003",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C-person-003",
     "givenNames": [
         "Micha"
     ],
@@ -8,6 +8,7 @@
         "Zollinger"
     ],
     "jobTitles": [
-        "MISSING"
-    ]
+        "Research Associate"
+    ],
+    "sameAs": []
 }

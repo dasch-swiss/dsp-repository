@@ -1,6 +1,6 @@
 {
     "id": "0117-person-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-person-001",
     "givenNames": [
         "René"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0117-organization-000"
     ],
-    "email": "sigrist.rene@bluewin.ch"
+    "email": "sigrist.rene@bluewin.ch",
+    "sameAs": []
 }

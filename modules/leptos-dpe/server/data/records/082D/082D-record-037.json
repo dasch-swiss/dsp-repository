@@ -1,0 +1,38 @@
+{
+    "id": "082D-record-037",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082D-record-037",
+    "label": {
+        "en": "how_sternly.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "082D-organization-001",
+            "authorship": [
+                "082D-person-001",
+                "082D-person-002"
+            ]
+        }
+    ],
+    "howToCite": "how_sternly.txt (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082D-record-037",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-02-06",
+    "datePublished": "2019-02-28",
+    "size": "359.7 MB",
+    "keywords": [
+        {
+            "en": "amissio"
+        },
+        {
+            "en": "coepi"
+        }
+    ]
+}

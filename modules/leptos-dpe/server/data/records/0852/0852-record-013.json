@@ -1,0 +1,43 @@
+{
+    "id": "0852-record-013",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-013",
+    "label": {
+        "en": "sign_respray_apropos.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "sign_respray_apropos.doc (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-013",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2016-01-12",
+    "datePublished": "2023-05-01",
+    "size": "355.8 MB",
+    "description": {
+        "en": "Deludo tonsor bonus vulpes advenio sophismata. Celebrer abeo vilis ipsum sono placeat celer condico. Adamo absorbeo cenaculum cubicularis deleo comparo adsidue."
+    },
+    "keywords": [
+        {
+            "en": "avaritia"
+        },
+        {
+            "en": "aggredior"
+        },
+        {
+            "en": "ancilla"
+        }
+    ]
+}

@@ -1,0 +1,36 @@
+{
+    "id": "084A-record-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084A-record-002",
+    "label": {
+        "en": "upward.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-02-21",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084A-organization-001",
+            "authorship": [
+                "084A-person-000",
+                "084A-person-001",
+                "084A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "upward.pdf (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084A-record-002",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-03-29",
+    "datePublished": "2021-12-25",
+    "size": "61.3 MB",
+    "keywords": [
+        {
+            "en": "pauci"
+        }
+    ]
+}

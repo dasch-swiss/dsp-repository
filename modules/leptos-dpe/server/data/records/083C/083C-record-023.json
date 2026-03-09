@@ -1,0 +1,35 @@
+{
+    "id": "083C-record-023",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-023",
+    "label": {
+        "en": "while.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "while.txt (2012). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-023",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2012-06-27",
+    "datePublished": "2012-10-13",
+    "size": "224.2 MB",
+    "keywords": [
+        {
+            "en": "solitudo"
+        }
+    ]
+}

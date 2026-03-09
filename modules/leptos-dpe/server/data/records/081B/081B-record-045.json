@@ -1,0 +1,41 @@
+{
+    "id": "081B-record-045",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-045",
+    "label": {
+        "en": "squiggly_puzzled.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "squiggly_puzzled.xml (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-045",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2016-02-04",
+    "datePublished": "2017-10-25",
+    "size": "181.3 MB",
+    "keywords": [
+        {
+            "en": "crux"
+        },
+        {
+            "en": "audeo"
+        },
+        {
+            "en": "timor"
+        }
+    ],
+    "source": "Armarium ullam sum spiculum suppellex videlicet."
+}

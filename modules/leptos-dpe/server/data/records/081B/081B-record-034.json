@@ -1,0 +1,40 @@
+{
+    "id": "081B-record-034",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-034",
+    "label": {
+        "en": "optimal.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "optimal.xml (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-034",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2016-06-21",
+    "datePublished": "2018-05-01",
+    "size": "76.7 MB",
+    "description": {
+        "en": "Cruciamentum volup nulla comparo acervus cornu casus crinis. Alveus cumque corrupti allatus virga accommodo architecto celer. Cito crudelis timidus."
+    },
+    "keywords": [
+        {
+            "en": "quibusdam"
+        },
+        {
+            "en": "vado"
+        }
+    ]
+}

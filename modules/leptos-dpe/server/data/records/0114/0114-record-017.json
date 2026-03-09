@@ -1,0 +1,45 @@
+{
+    "id": "0114-record-017",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114-record-017",
+    "label": {
+        "en": "bin_bashfully_along.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0114-organization-000",
+            "authorship": [
+                "0114-person-000",
+                "0114-person-001",
+                "0114-person-002",
+                "0114-person-003",
+                "0114-person-004"
+            ]
+        }
+    ],
+    "howToCite": "bin_bashfully_along.doc (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0114-record-017",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-10-27",
+    "datePublished": "2022-03-13",
+    "size": "462.3 MB",
+    "description": {
+        "en": "Verbum synagoga bardus cena admitto decens. Tamisium tondeo currus quaerat. Thorax peccatus alii vitae."
+    },
+    "keywords": [
+        {
+            "en": "labore"
+        },
+        {
+            "en": "necessitatibus"
+        }
+    ],
+    "source": "Amoveo creator assumenda coepi distinctio cinis amor adiuvo acsi."
+}

@@ -1,0 +1,36 @@
+{
+    "id": "081B-record-012",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-012",
+    "label": {
+        "en": "marvelous.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "marvelous.xml (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-012",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2019-01-10",
+    "datePublished": "2019-01-15",
+    "size": "249.2 MB",
+    "dateModified": "2019-01-24",
+    "keywords": [
+        {
+            "en": "ocer"
+        }
+    ],
+    "source": "Assentator sumptus arcus ait cupressus corrupti nobis."
+}

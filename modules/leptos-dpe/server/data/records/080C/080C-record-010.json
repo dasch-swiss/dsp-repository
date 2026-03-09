@@ -1,0 +1,47 @@
+{
+    "id": "080C-record-010",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C-record-010",
+    "label": {
+        "en": "psst_travel_circumference.xml"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access",
+        "embargoDate": "2026-10-30"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/deed.en"
+            },
+            "copyrightHolder": "080C-organization-001",
+            "authorship": [
+                "080C-person-001",
+                "080C-person-002",
+                "080C-person-003",
+                "080C-person-000"
+            ]
+        }
+    ],
+    "howToCite": "psst_travel_circumference.xml (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080C-record-010",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2019-07-14",
+    "datePublished": "2020-05-22",
+    "size": "255.3 MB",
+    "description": {
+        "en": "Aspernatur curso recusandae acer curiositas adfero at damnatio clibanus dapifer. Officia tunc commodo usitas ab demo vado apostolus eum. Quia deduco ars."
+    },
+    "keywords": [
+        {
+            "en": "studio"
+        },
+        {
+            "en": "universe"
+        },
+        {
+            "en": "fuga"
+        }
+    ]
+}

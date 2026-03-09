@@ -1,0 +1,42 @@
+{
+    "id": "0847-record-031",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-031",
+    "label": {
+        "en": "availability_amid_whoever.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "availability_amid_whoever.txt (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-031",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-11-10",
+    "datePublished": "2018-02-28",
+    "size": "117.2 MB",
+    "description": {
+        "en": "Calculus degenero strenuus umerus. Amaritudo repellendus solutio antepono adicio contabesco damno ex sperno. Tonsor censura appositus comedo ceno."
+    },
+    "keywords": [
+        {
+            "en": "totam"
+        },
+        {
+            "en": "aduro"
+        }
+    ],
+    "source": "Debeo magnam laudantium caritas curvo adsuesco vel calculus."
+}

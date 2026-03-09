@@ -1,9 +1,9 @@
 {
     "id": "0107",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0107",
     "name": "A Gender Perspective on Film Character and Stardom: Studying the Production of Film Representations in the Forties (Claude Autant-Lara Collection, Swiss Film Archive)",
     "shortcode": "0107",
-    "officialName": "MISSING",
+    "officialName": "Research Project: A Gender Perspective on Film Character and Stardom: Studying the Production of F...",
     "status": "Ongoing",
     "shortDescription": "This project studies the mechanisms of the construction of genre representations in the French cinematographic production of the 1940s.",
     "description": {
@@ -25,13 +25,18 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "0107-organization-001",
             "authorship": [
-                "MISSING"
+                "0107-person-000",
+                "0107-person-001",
+                "0107-person-002",
+                "0107-person-003",
+                "0107-person-004"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
+    "dataPublicationYear": "2020-01-01",
     "typeOfData": [
         "Image",
         "Text"
@@ -194,5 +199,31 @@
         {
             "en": "stardom"
         }
+    ],
+    "records": [
+        "0107-record-001",
+        "0107-record-002",
+        "0107-record-003",
+        "0107-record-004",
+        "0107-record-005",
+        "0107-record-006",
+        "0107-record-007",
+        "0107-record-008",
+        "0107-record-009",
+        "0107-record-010",
+        "0107-record-011",
+        "0107-record-012",
+        "0107-record-013",
+        "0107-record-014",
+        "0107-record-015",
+        "0107-record-016",
+        "0107-record-017",
+        "0107-record-018",
+        "0107-record-019",
+        "0107-record-020",
+        "0107-record-021",
+        "0107-record-022",
+        "0107-record-023",
+        "0107-record-024"
     ]
 }

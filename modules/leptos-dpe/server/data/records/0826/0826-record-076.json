@@ -1,0 +1,44 @@
+{
+    "id": "0826-record-076",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0826-record-076",
+    "label": {
+        "en": "upon.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0826-organization-000",
+            "authorship": [
+                "0826-person-005",
+                "0826-person-001",
+                "0826-person-002",
+                "0826-person-003",
+                "0826-person-004"
+            ]
+        }
+    ],
+    "howToCite": "upon.txt (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0826-record-076",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-05-10",
+    "datePublished": "2020-07-08",
+    "size": "454.1 MB",
+    "description": {
+        "en": "Avarus ventosus termes umerus acidus condico ullam aveho error. Tendo sperno alias tutis. Contra candidus amet aranea solvo thorax esse."
+    },
+    "keywords": [
+        {
+            "en": "curia"
+        },
+        {
+            "en": "asperiores"
+        }
+    ]
+}

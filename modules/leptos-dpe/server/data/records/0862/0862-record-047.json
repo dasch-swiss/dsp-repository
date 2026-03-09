@@ -1,0 +1,42 @@
+{
+    "id": "0862-record-047",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-047",
+    "label": {
+        "en": "gleefully_menacing_alert.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "gleefully_menacing_alert.xml (2035). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-047",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2025-09-12",
+    "datePublished": "2035-08-20",
+    "size": "389.3 MB",
+    "dateModified": "2034-08-27",
+    "keywords": [
+        {
+            "en": "taceo"
+        },
+        {
+            "en": "aperio"
+        }
+    ]
+}

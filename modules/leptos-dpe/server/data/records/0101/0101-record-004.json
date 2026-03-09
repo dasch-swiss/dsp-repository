@@ -1,0 +1,36 @@
+{
+    "id": "0101-record-004",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-004",
+    "label": {
+        "en": "bowed_scary_begonia.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "bowed_scary_begonia.txt (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-004",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-06-24",
+    "datePublished": "2018-03-10",
+    "size": "109.9 MB",
+    "keywords": [
+        {
+            "en": "advoco"
+        }
+    ]
+}

@@ -1,0 +1,43 @@
+{
+    "id": "0117-record-063",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-063",
+    "label": {
+        "en": "although.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "although.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-063",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-02-15",
+    "datePublished": "2019-11-30",
+    "size": "193.9 MB",
+    "keywords": [
+        {
+            "en": "iure"
+        },
+        {
+            "en": "vos"
+        },
+        {
+            "en": "apostolus"
+        }
+    ]
+}

@@ -1,0 +1,34 @@
+{
+    "id": "0105-record-042",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0105-record-042",
+    "label": {
+        "en": "patroller_edible_flashy.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0105-organization-000",
+            "authorship": [
+                "0105-person-000",
+                "0105-person-001",
+                "0105-person-002",
+                "0105-person-003",
+                "0105-person-004"
+            ]
+        }
+    ],
+    "howToCite": "patroller_edible_flashy.txt (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0105-record-042",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-01-12",
+    "datePublished": "2018-03-10",
+    "size": "223.9 MB",
+    "dateModified": "2019-10-18"
+}

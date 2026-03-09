@@ -1,0 +1,45 @@
+{
+    "id": "0862-record-034",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-034",
+    "label": {
+        "en": "except_super_sarcastic.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "except_super_sarcastic.pdf (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-034",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2015-02-18",
+    "datePublished": "2022-05-26",
+    "size": "397.8 MB",
+    "description": {
+        "en": "Cruciamentum recusandae cometes audio circumvenio. Cohaero tabesco somnus vinco. Vivo toties vos."
+    },
+    "keywords": [
+        {
+            "en": "cibo"
+        },
+        {
+            "en": "acidus"
+        }
+    ],
+    "source": "Magni crustulum deripio ullam sopor asper minus tribuo peccatus."
+}

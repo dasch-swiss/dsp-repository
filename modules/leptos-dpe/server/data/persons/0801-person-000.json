@@ -1,6 +1,6 @@
 {
     "id": "0801-person-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-person-000",
     "givenNames": [
         "Martin"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0801-organization-003"
     ],
-    "email": "martin.mattmueller@unibas.ch"
+    "email": "martin.mattmueller@unibas.ch",
+    "sameAs": []
 }

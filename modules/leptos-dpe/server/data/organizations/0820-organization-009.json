@@ -1,6 +1,6 @@
 {
     "id": "0820-organization-009",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-organization-009",
     "name": "Basler Münsterbauhütte",
     "url": "http://www.baslermuenster.ch/bauwerk/muensterbauhuette",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "info@muensterbauhuette.ch"
+    "email": "info@muensterbauhuette.ch",
+    "sameAs": []
 }

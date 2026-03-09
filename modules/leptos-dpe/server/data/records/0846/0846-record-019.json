@@ -1,0 +1,43 @@
+{
+    "id": "0846-record-019",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-019",
+    "label": {
+        "en": "boo_after.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "boo_after.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-019",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-03-24",
+    "datePublished": "2020-05-24",
+    "size": "361.6 MB",
+    "dateModified": "2021-03-06",
+    "description": {
+        "en": "Velociter arcesso a copiose atque. Vilitas defendo considero centum venustas antepono. Theca decipio voluptates speculum titulus defessus abeo aut curo."
+    },
+    "keywords": [
+        {
+            "en": "carbo"
+        },
+        {
+            "en": "aperio"
+        }
+    ],
+    "source": "Et voluntarius teres culpo arbitro architecto."
+}

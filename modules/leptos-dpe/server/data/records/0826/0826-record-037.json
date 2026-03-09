@@ -1,0 +1,41 @@
+{
+    "id": "0826-record-037",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0826-record-037",
+    "label": {
+        "en": "including.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0826-organization-000",
+            "authorship": [
+                "0826-person-005",
+                "0826-person-001",
+                "0826-person-002",
+                "0826-person-003",
+                "0826-person-004"
+            ]
+        }
+    ],
+    "howToCite": "including.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0826-record-037",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-11-03",
+    "datePublished": "2020-09-13",
+    "size": "269.0 MB",
+    "description": {
+        "en": "Aequitas arbor tricesimus vigor necessitatibus numquam compello canis. Solvo socius cursus comitatus eveniet vox decimus. Voluptas natus suscipio tunc sapiente."
+    },
+    "keywords": [
+        {
+            "en": "altus"
+        }
+    ]
+}

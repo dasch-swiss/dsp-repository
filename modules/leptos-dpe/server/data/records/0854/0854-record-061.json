@@ -1,0 +1,49 @@
+{
+    "id": "0854-record-061",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-061",
+    "label": {
+        "en": "fooey_potentially_cross.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "fooey_potentially_cross.txt (2028). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-061",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2026-08-04",
+    "datePublished": "2028-07-23",
+    "size": "156.0 MB",
+    "description": {
+        "en": "Eos cognatus cohaero deleniti substantia depono. Demo repellendus audacia strues suffoco velut. Nulla aggero veniam natus caritas corrupti aveho."
+    }
+}

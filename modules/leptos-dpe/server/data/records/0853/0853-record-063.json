@@ -1,0 +1,38 @@
+{
+    "id": "0853-record-063",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-063",
+    "label": {
+        "en": "above_aw.tif"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "above_aw.tif (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-063",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2021-08-07",
+    "datePublished": "2025-06-03",
+    "size": "358.0 MB",
+    "keywords": [
+        {
+            "en": "ullus"
+        },
+        {
+            "en": "architecto"
+        }
+    ]
+}

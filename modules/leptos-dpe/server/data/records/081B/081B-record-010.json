@@ -1,0 +1,30 @@
+{
+    "id": "081B-record-010",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-010",
+    "label": {
+        "en": "worth_viability_drat.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "worth_viability_drat.xml (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-010",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2016-10-11",
+    "datePublished": "2018-12-03",
+    "size": "11.0 MB",
+    "dateModified": "2017-04-14"
+}

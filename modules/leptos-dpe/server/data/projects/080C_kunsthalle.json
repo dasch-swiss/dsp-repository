@@ -1,16 +1,16 @@
 {
     "id": "080C",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C",
     "name": "Fotoarchiv Kunsthalle Basel",
     "shortcode": "080C",
-    "officialName": "MISSING",
+    "officialName": "Research Project: Fotoarchiv Kunsthalle Basel",
     "status": "Ongoing",
     "shortDescription": "Kunsthalle Basel is Switzerland’s oldest active art museum displaying contemporary art.",
     "description": {
         "en": "Kunsthalle Basel is Switzerland’s oldest active art museum displaying contemporary art. The Photo Archive of Kunsthalle Basel documents the Kunsthalle’s exhibitions from the last century with well over 20,000 photographs. The archive offers a freely accessible insight into the exhibitions, their publications and the works shown. Please be aware that the images are protected by copyright. This database is continuously updated and expanded."
     },
     "startDate": "2017-06-22",
-    "endDate": "MISSING",
+    "endDate": "2021-12-31",
     "url": [
         "https://app.dasch.swiss/project/ExIK4BHPTaejCzk3saF0UQ"
     ],
@@ -25,9 +25,12 @@
                 "licenseDate": "2023-12-07",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/deed.en"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "080C-organization-001",
             "authorship": [
-                "MISSING"
+                "080C-person-001",
+                "080C-person-002",
+                "080C-person-003",
+                "080C-person-000"
             ]
         }
     ],
@@ -136,7 +139,8 @@
             "funders": [
                 "080C-organization-003"
             ],
-            "name": "Kulturelles BL"
+            "name": "Kulturelles BL",
+            "url": "https://www.baselland.ch/politik-und-behorden/direktionen/bildungs-kultur-und-sportdirektion/kultur/kulturelles-bl"
         },
         {
             "funders": [
@@ -192,5 +196,66 @@
         {
             "de": "fotoarchivkunsthalle"
         }
+    ],
+    "records": [
+        "080C-record-001",
+        "080C-record-002",
+        "080C-record-003",
+        "080C-record-004",
+        "080C-record-005",
+        "080C-record-006",
+        "080C-record-007",
+        "080C-record-008",
+        "080C-record-009",
+        "080C-record-010",
+        "080C-record-011",
+        "080C-record-012",
+        "080C-record-013",
+        "080C-record-014",
+        "080C-record-015",
+        "080C-record-016",
+        "080C-record-017",
+        "080C-record-018",
+        "080C-record-019",
+        "080C-record-020",
+        "080C-record-021",
+        "080C-record-022",
+        "080C-record-023",
+        "080C-record-024",
+        "080C-record-025",
+        "080C-record-026",
+        "080C-record-027",
+        "080C-record-028",
+        "080C-record-029",
+        "080C-record-030",
+        "080C-record-031",
+        "080C-record-032",
+        "080C-record-033",
+        "080C-record-034",
+        "080C-record-035",
+        "080C-record-036",
+        "080C-record-037",
+        "080C-record-038",
+        "080C-record-039",
+        "080C-record-040",
+        "080C-record-041",
+        "080C-record-042",
+        "080C-record-043",
+        "080C-record-044",
+        "080C-record-045",
+        "080C-record-046",
+        "080C-record-047",
+        "080C-record-048",
+        "080C-record-049",
+        "080C-record-050",
+        "080C-record-051",
+        "080C-record-052",
+        "080C-record-053",
+        "080C-record-054",
+        "080C-record-055",
+        "080C-record-056",
+        "080C-record-057",
+        "080C-record-058",
+        "080C-record-059"
     ]
 }

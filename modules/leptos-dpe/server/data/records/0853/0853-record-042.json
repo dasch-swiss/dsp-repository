@@ -1,0 +1,38 @@
+{
+    "id": "0853-record-042",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-042",
+    "label": {
+        "en": "yak_powerfully.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "yak_powerfully.jpg (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-042",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-07-25",
+    "datePublished": "2023-12-04",
+    "size": "123.9 MB",
+    "keywords": [
+        {
+            "en": "terga"
+        },
+        {
+            "en": "usque"
+        }
+    ]
+}

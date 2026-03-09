@@ -1,6 +1,6 @@
 {
     "id": "0806-organization-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-organization-001",
     "name": "Musikwissenschaftliches Seminar der Universität Basel",
     "url": "https://mws.unibas.ch/",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "sekretariat-mws@unibas.ch"
+    "email": "sekretariat-mws@unibas.ch",
+    "sameAs": []
 }

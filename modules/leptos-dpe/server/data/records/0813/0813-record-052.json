@@ -1,0 +1,40 @@
+{
+    "id": "0813-record-052",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-record-052",
+    "label": {
+        "en": "secret.avi"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0813-organization-001",
+            "authorship": [
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "secret.avi (2016). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0813-record-052",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2016-01-24",
+    "datePublished": "2016-03-21",
+    "size": "18.0 MB",
+    "dateModified": "2017-10-01",
+    "keywords": [
+        {
+            "en": "admoneo"
+        },
+        {
+            "en": "corrigo"
+        }
+    ]
+}

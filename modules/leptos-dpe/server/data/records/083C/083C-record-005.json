@@ -1,0 +1,30 @@
+{
+    "id": "083C-record-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-005",
+    "label": {
+        "en": "badly.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "badly.jpg (1996). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-005",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "1993-03-29",
+    "datePublished": "1996-11-13",
+    "size": "408.1 MB"
+}

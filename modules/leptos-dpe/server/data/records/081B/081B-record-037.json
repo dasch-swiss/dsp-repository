@@ -1,0 +1,34 @@
+{
+    "id": "081B-record-037",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-037",
+    "label": {
+        "en": "and_bitterly_cappelletti.xml"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access",
+        "embargoDate": "2026-01-12"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "and_bitterly_cappelletti.xml (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-037",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2018-05-20",
+    "datePublished": "2018-09-10",
+    "size": "138.8 MB",
+    "dateModified": "2018-07-19",
+    "description": {
+        "en": "Volaticus dedico debeo accusamus victus curia vulnero dapifer animadverto audacia. Carcer dolorem crepusculum sopor despecto tribuo iste decumbo. Bibo bene trepide speculum correptius tamquam incidunt cornu."
+    }
+}

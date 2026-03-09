@@ -1,0 +1,45 @@
+{
+    "id": "082C-record-020",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082C-record-020",
+    "label": {
+        "en": "pant_categorise_before.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2019-10-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "082C-organization-000",
+            "authorship": [
+                "082C-person-000",
+                "082C-person-001",
+                "082C-person-002",
+                "082C-person-003",
+                "082C-person-004"
+            ]
+        }
+    ],
+    "howToCite": "pant_categorise_before.pdf (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082C-record-020",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-11-21",
+    "datePublished": "2022-05-16",
+    "size": "239.1 MB",
+    "dateModified": "2022-12-02",
+    "keywords": [
+        {
+            "en": "quo"
+        },
+        {
+            "en": "enim"
+        },
+        {
+            "en": "triumphus"
+        }
+    ]
+}

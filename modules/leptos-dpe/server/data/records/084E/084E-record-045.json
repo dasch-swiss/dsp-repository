@@ -1,0 +1,44 @@
+{
+    "id": "084E-record-045",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-045",
+    "label": {
+        "en": "annual_fort.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "annual_fort.pdf (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-045",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-08-01",
+    "datePublished": "2024-02-17",
+    "size": "146.9 MB",
+    "keywords": [
+        {
+            "en": "unde"
+        },
+        {
+            "en": "terebro"
+        },
+        {
+            "en": "valens"
+        }
+    ]
+}

@@ -1,0 +1,39 @@
+{
+    "id": "0847-record-074",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-074",
+    "label": {
+        "en": "bowed_overconfidently_ice_cream.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "bowed_overconfidently_ice_cream.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-074",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-10-12",
+    "datePublished": "2022-11-26",
+    "size": "114.5 MB",
+    "dateModified": "2021-03-31",
+    "description": {
+        "en": "Eius adversus termes suadeo tenuis acerbitas aliquid ab capto cum. Adduco vomica turpis aedificium demitto cilicium fugiat clementia repellat. Valetudo tonsor conculco cultura bibo solium atque."
+    },
+    "keywords": [
+        {
+            "en": "suppellex"
+        }
+    ]
+}

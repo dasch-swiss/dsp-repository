@@ -1,6 +1,6 @@
 {
     "id": "0106-person-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0106-person-001",
     "givenNames": [
         "Elodie"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0106-organization-000"
     ],
-    "email": "Elodie.Murtas@unil.ch"
+    "email": "Elodie.Murtas@unil.ch",
+    "sameAs": []
 }

@@ -1,0 +1,39 @@
+{
+    "id": "0806-record-043",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-record-043",
+    "label": {
+        "en": "mmm_suv.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access",
+        "embargoDate": "2026-03-22"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+            },
+            "copyrightHolder": "0806-organization-004",
+            "authorship": [
+                "0806-person-000",
+                "0806-person-001",
+                "0806-person-002",
+                "0806-person-003",
+                "0806-person-004"
+            ]
+        }
+    ],
+    "howToCite": "mmm_suv.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0806-record-043",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-06-25",
+    "datePublished": "2023-08-01",
+    "size": "322.5 MB",
+    "keywords": [
+        {
+            "en": "cras"
+        }
+    ]
+}

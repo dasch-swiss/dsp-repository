@@ -1,0 +1,45 @@
+{
+    "id": "0118-record-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0118-record-002",
+    "label": {
+        "en": "palate.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2022-07-13",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "REMA-organization-001",
+            "authorship": [
+                "REMA-person-000",
+                "REMA-person-001",
+                "REMA-person-006",
+                "REMA-person-005",
+                "REMA-person-004"
+            ]
+        }
+    ],
+    "howToCite": "palate.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0118-record-002",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-07-19",
+    "datePublished": "2023-08-21",
+    "size": "71.5 MB",
+    "dateModified": "2023-08-01",
+    "description": {
+        "en": "Cavus conturbo vetus laudantium tamen tot sui. Aut dolor decumbo varius tremo iusto thymbra centum. Tyrannus totus carpo vulpes alo."
+    },
+    "keywords": [
+        {
+            "en": "alveus"
+        },
+        {
+            "en": "tepesco"
+        }
+    ]
+}

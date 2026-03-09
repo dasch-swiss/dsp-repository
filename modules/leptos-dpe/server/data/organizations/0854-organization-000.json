@@ -1,6 +1,6 @@
 {
     "id": "0854-organization-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-organization-000",
     "name": "DaSCH – Swiss National Data and Service Center for the Humanities",
     "url": "https://www.dasch.swiss/",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "info@dasch.swiss"
+    "email": "info@dasch.swiss",
+    "sameAs": []
 }

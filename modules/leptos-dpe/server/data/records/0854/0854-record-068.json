@@ -1,0 +1,58 @@
+{
+    "id": "0854-record-068",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-068",
+    "label": {
+        "en": "event_sanity.flac"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "event_sanity.flac (2028). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-068",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2027-12-15",
+    "datePublished": "2028-05-15",
+    "size": "111.4 MB",
+    "dateModified": "2028-08-24",
+    "keywords": [
+        {
+            "en": "infit"
+        },
+        {
+            "en": "asperiores"
+        },
+        {
+            "en": "suasoria"
+        }
+    ]
+}

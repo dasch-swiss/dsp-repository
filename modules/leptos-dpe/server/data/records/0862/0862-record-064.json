@@ -1,0 +1,45 @@
+{
+    "id": "0862-record-064",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-064",
+    "label": {
+        "en": "eek_overload_airman.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "eek_overload_airman.xml (2028). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-064",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2027-04-02",
+    "datePublished": "2028-05-01",
+    "size": "381.2 MB",
+    "keywords": [
+        {
+            "en": "templum"
+        },
+        {
+            "en": "similique"
+        },
+        {
+            "en": "esse"
+        }
+    ],
+    "source": "Solitudo inventore incidunt usus una similique."
+}

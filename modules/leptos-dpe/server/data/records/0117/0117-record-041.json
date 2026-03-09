@@ -1,0 +1,41 @@
+{
+    "id": "0117-record-041",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-041",
+    "label": {
+        "en": "uproot_for_and.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "uproot_for_and.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-041",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-03-23",
+    "datePublished": "2020-06-23",
+    "size": "208.0 MB",
+    "dateModified": "2020-07-07",
+    "keywords": [
+        {
+            "en": "careo"
+        },
+        {
+            "en": "curto"
+        }
+    ]
+}

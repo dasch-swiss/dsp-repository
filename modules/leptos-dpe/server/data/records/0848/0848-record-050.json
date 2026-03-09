@@ -1,0 +1,32 @@
+{
+    "id": "0848-record-050",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-050",
+    "label": {
+        "en": "anenst_mockingly.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "anenst_mockingly.doc (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-050",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-11-06",
+    "datePublished": "2022-12-01",
+    "size": "24.9 MB"
+}

@@ -1,0 +1,46 @@
+{
+    "id": "0807-record-027",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0807-record-027",
+    "label": {
+        "en": "pace_next_bruised.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-05-09",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0807-organization-000",
+            "authorship": [
+                "0807-person-004",
+                "0807-person-003",
+                "0807-person-005",
+                "0807-person-006",
+                "0807-person-007"
+            ]
+        }
+    ],
+    "howToCite": "pace_next_bruised.xml (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0807-record-027",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2017-07-29",
+    "datePublished": "2017-08-22",
+    "size": "275.5 MB",
+    "dateModified": "2017-12-12",
+    "description": {
+        "en": "A unde texo. Porro sum canis speculum. Suadeo antepono tabula quas."
+    },
+    "keywords": [
+        {
+            "en": "comparo"
+        },
+        {
+            "en": "creator"
+        }
+    ],
+    "source": "Aliquam colligo utrimque ascisco abstergo calcar."
+}

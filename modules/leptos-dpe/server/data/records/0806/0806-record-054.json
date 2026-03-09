@@ -1,0 +1,42 @@
+{
+    "id": "0806-record-054",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-record-054",
+    "label": {
+        "en": "joyous.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+            },
+            "copyrightHolder": "0806-organization-004",
+            "authorship": [
+                "0806-person-000",
+                "0806-person-001",
+                "0806-person-002",
+                "0806-person-003",
+                "0806-person-004"
+            ]
+        }
+    ],
+    "howToCite": "joyous.png (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0806-record-054",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2020-11-01",
+    "datePublished": "2022-12-18",
+    "size": "271.3 MB",
+    "dateModified": "2024-04-04",
+    "description": {
+        "en": "Tabgo umquam tantum aufero. Benevolentia carcer aegre ullus bestia centum paulatim. Votum deficio textus truculenter."
+    },
+    "keywords": [
+        {
+            "en": "civitas"
+        }
+    ]
+}

@@ -1,0 +1,31 @@
+{
+    "id": "0813-record-013",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-record-013",
+    "label": {
+        "en": "phooey.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0813-organization-001",
+            "authorship": [
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "phooey.doc (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0813-record-013",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-07-07",
+    "datePublished": "2018-07-30",
+    "size": "263.7 MB"
+}

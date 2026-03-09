@@ -1,0 +1,41 @@
+{
+    "id": "0862-record-009",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-009",
+    "label": {
+        "en": "hungrily_above.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "hungrily_above.doc (2039). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-009",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2039-04-07",
+    "datePublished": "2039-09-05",
+    "size": "91.7 MB",
+    "description": {
+        "en": "Possimus culpa arca odio admoneo animadverto theca. Aduro compono pauci curto verecundia amet mollitia vos adnuo desparatus. Deputo adamo nulla terror campana."
+    },
+    "keywords": [
+        {
+            "en": "tumultus"
+        }
+    ]
+}

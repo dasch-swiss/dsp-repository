@@ -1,0 +1,34 @@
+{
+    "id": "0852-record-072",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-072",
+    "label": {
+        "en": "modulo_bore.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "modulo_bore.tiff (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-072",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-01-07",
+    "datePublished": "2024-04-24",
+    "size": "77.5 MB",
+    "keywords": [
+        {
+            "en": "ratione"
+        }
+    ]
+}

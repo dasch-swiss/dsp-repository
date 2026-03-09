@@ -1,6 +1,6 @@
 {
     "id": "REMA-organization-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-organization-000",
     "name": "University of Lausanne",
     "url": "http://www.unil.ch",
     "address": {
@@ -8,5 +8,6 @@
         "postalCode": "1015",
         "locality": "Lausanne",
         "country": "Switzerland"
-    }
+    },
+    "sameAs": []
 }

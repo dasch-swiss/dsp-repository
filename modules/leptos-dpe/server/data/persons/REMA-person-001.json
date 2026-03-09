@@ -1,6 +1,6 @@
 {
     "id": "REMA-person-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-001",
     "givenNames": [
         "Irene"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "REMA-organization-000"
     ],
-    "email": "Irene.Quadri@unil.ch"
+    "email": "Irene.Quadri@unil.ch",
+    "sameAs": []
 }

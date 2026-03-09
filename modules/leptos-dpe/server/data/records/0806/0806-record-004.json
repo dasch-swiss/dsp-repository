@@ -1,0 +1,38 @@
+{
+    "id": "0806-record-004",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-record-004",
+    "label": {
+        "en": "calmly_almighty.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+            },
+            "copyrightHolder": "0806-organization-004",
+            "authorship": [
+                "0806-person-000",
+                "0806-person-001",
+                "0806-person-002",
+                "0806-person-003",
+                "0806-person-004"
+            ]
+        }
+    ],
+    "howToCite": "calmly_almighty.xml (2007). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0806-record-004",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2006-11-22",
+    "datePublished": "2007-05-16",
+    "size": "177.5 MB",
+    "keywords": [
+        {
+            "en": "sufficio"
+        }
+    ]
+}

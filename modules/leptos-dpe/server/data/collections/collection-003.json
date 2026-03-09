@@ -1,0 +1,41 @@
+{
+  "$schema": "../../schema/collection-schema.json",
+  "id": "collection-003",
+  "pid": "https://ark.dasch.swiss/ark:/00000/coll003",
+  "name": "Carolingian Manuscripts Subcollection",
+  "description": {
+    "en": "Manuscripts specifically from the Carolingian period (9th-10th centuries) within the St. Gallen collection, featuring distinctive Caroline minuscule script"
+  },
+  "accessRights": {
+    "accessRights": "Full Open Access"
+  },
+  "legalInfo": [
+    {
+      "license": {
+        "licenseIdentifier": "CC0 1.0",
+        "licenseDate": "2022-06-01",
+        "licenseURI": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      "copyrightHolder": "organization-006",
+      "authorship": [
+        "person-005"
+      ]
+    }
+  ],
+  "howToCite": "Medieval Manuscript Analysis Project (2025). Carolingian Manuscripts Subcollection. DaSCH. https://ark.dasch.swiss/ark:/00000/coll003",
+  "typeOfData": [
+    "Image",
+    "Text",
+    "Metadata"
+  ],
+  "dateCreated": "2022-06-15",
+  "dateModified": "2024-11-20",
+  "languages": [
+    {
+      "en": "Latin"
+    }
+  ],
+  "records": [
+    "record-008"
+  ]
+}

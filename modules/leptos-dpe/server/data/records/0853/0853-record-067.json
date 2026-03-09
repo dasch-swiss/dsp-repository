@@ -1,0 +1,39 @@
+{
+    "id": "0853-record-067",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-067",
+    "label": {
+        "en": "pave_derby.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "pave_derby.png (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-067",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2026-11-21",
+    "datePublished": "2027-06-08",
+    "size": "46.3 MB",
+    "dateModified": "2027-09-09",
+    "keywords": [
+        {
+            "en": "vitium"
+        },
+        {
+            "en": "casus"
+        }
+    ]
+}

@@ -1,0 +1,32 @@
+{
+    "id": "0852-record-068",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-068",
+    "label": {
+        "en": "gadzooks_custody_regularly.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "gadzooks_custody_regularly.tif (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-068",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2015-08-17",
+    "datePublished": "2022-11-09",
+    "size": "365.8 MB",
+    "description": {
+        "en": "Venio curiositas denuncio approbo. Crudelis victoria recusandae. Torrens comis condico cupiditate acer acervus teneo usus."
+    }
+}

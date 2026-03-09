@@ -1,6 +1,6 @@
 {
     "id": "0804-organization-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-organization-000",
     "name": "Dokumentationsbibliothek St. Moritz",
     "url": "http://www.biblio-stmoritz.ch",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "St. Moritz",
         "country": "Switzerland"
     },
-    "email": "doku@biblio-stmoritz.ch"
+    "email": "doku@biblio-stmoritz.ch",
+    "sameAs": []
 }

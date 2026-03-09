@@ -1,0 +1,30 @@
+{
+    "id": "0810-record-004",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0810-record-004",
+    "label": {
+        "en": "shyly_fooey.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2025-11-30"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-03",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0810-organization-000",
+            "authorship": [
+                "0810-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "shyly_fooey.png (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0810-record-004",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-04-24",
+    "datePublished": "2025-12-06",
+    "size": "314.2 MB"
+}

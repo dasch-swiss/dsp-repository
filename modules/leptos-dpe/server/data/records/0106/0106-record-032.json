@@ -1,0 +1,38 @@
+{
+    "id": "0106-record-032",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0106-record-032",
+    "label": {
+        "en": "manner.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-07-13",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0106-organization-001",
+            "authorship": [
+                "0106-person-000",
+                "0106-person-001",
+                "0106-person-002",
+                "0106-person-003",
+                "0106-person-004"
+            ]
+        }
+    ],
+    "howToCite": "manner.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0106-record-032",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-03-13",
+    "datePublished": "2023-05-20",
+    "size": "429.8 MB",
+    "keywords": [
+        {
+            "en": "dolorem"
+        }
+    ]
+}

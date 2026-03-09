@@ -1,0 +1,30 @@
+{
+    "id": "0846-record-016",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-016",
+    "label": {
+        "en": "than.mov"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "than.mov (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-016",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2022-09-29",
+    "datePublished": "2023-03-09",
+    "size": "489.6 MB"
+}

@@ -1,0 +1,38 @@
+{
+    "id": "0827-record-025",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0827-record-025",
+    "label": {
+        "en": "pish.png"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-05-06",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0827-organization-000",
+            "authorship": [
+                "0827-person-000"
+            ]
+        }
+    ],
+    "howToCite": "pish.png (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0827-record-025",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-09-28",
+    "datePublished": "2024-10-20",
+    "size": "47.4 MB",
+    "dateModified": "2024-11-26",
+    "keywords": [
+        {
+            "en": "demens"
+        },
+        {
+            "en": "cedo"
+        }
+    ]
+}

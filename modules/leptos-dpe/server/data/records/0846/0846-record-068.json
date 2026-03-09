@@ -1,0 +1,35 @@
+{
+    "id": "0846-record-068",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-068",
+    "label": {
+        "en": "programme.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "programme.doc (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-068",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-03-17",
+    "datePublished": "2022-04-17",
+    "size": "11.8 MB",
+    "keywords": [
+        {
+            "en": "tandem"
+        }
+    ]
+}

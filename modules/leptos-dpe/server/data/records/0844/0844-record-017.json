@@ -1,0 +1,40 @@
+{
+    "id": "0844-record-017",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-017",
+    "label": {
+        "en": "blissfully_rightfully.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "blissfully_rightfully.xml (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-017",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2021-04-08",
+    "datePublished": "2022-11-13",
+    "size": "15.6 MB",
+    "description": {
+        "en": "Voluptatum debitis texo dolorem cetera. Asporto defessus defleo reiciendis asperiores. Defaeco pecus solium tametsi defendo curvo."
+    },
+    "keywords": [
+        {
+            "en": "tepidus"
+        }
+    ],
+    "source": "Utrimque maiores dolorem at quidem statim."
+}

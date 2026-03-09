@@ -1,0 +1,54 @@
+{
+    "id": "0836-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0836-record-006",
+    "label": {
+        "en": "devise_flight.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        }
+    ],
+    "howToCite": "devise_flight.tif (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0836-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-03-27",
+    "datePublished": "2019-08-21",
+    "size": "454.2 MB",
+    "dateModified": "2018-12-13",
+    "keywords": [
+        {
+            "en": "tollo"
+        }
+    ]
+}

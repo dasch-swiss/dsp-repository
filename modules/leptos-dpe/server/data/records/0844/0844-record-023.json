@@ -1,0 +1,32 @@
+{
+    "id": "0844-record-023",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-023",
+    "label": {
+        "en": "cope_against.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "cope_against.xml (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-023",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2021-10-08",
+    "datePublished": "2022-12-10",
+    "size": "331.9 MB",
+    "source": "Tergum vespillo tego cinis ater ulciscor."
+}

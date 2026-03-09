@@ -1,0 +1,32 @@
+{
+    "id": "084A-record-025",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084A-record-025",
+    "label": {
+        "en": "aggressive_sarong_gee.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-02-21",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084A-organization-001",
+            "authorship": [
+                "084A-person-000",
+                "084A-person-001",
+                "084A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "aggressive_sarong_gee.doc (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084A-record-025",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-10-07",
+    "datePublished": "2022-10-29",
+    "size": "488.2 MB",
+    "dateModified": "2023-12-04"
+}

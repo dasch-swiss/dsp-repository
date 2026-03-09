@@ -1,0 +1,44 @@
+{
+    "id": "0114-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114-record-001",
+    "label": {
+        "en": "vice_newsprint.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0114-organization-000",
+            "authorship": [
+                "0114-person-000",
+                "0114-person-001",
+                "0114-person-002",
+                "0114-person-003",
+                "0114-person-004"
+            ]
+        }
+    ],
+    "howToCite": "vice_newsprint.doc (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0114-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-02-21",
+    "datePublished": "2020-11-07",
+    "size": "300.8 MB",
+    "description": {
+        "en": "Averto abbas vulnero venio sordeo sortitus trucido. Absque atavus vis angustus sursum acerbitas curso vero. Aduro id aggredior dapifer viriliter acies ultra itaque caveo."
+    },
+    "keywords": [
+        {
+            "en": "credo"
+        },
+        {
+            "en": "auxilium"
+        }
+    ]
+}

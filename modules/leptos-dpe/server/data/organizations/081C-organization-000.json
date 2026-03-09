@@ -1,6 +1,6 @@
 {
     "id": "081C-organization-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081C-organization-000",
     "name": "Institut für Musikwissenschaft der Universität Bern",
     "url": "https://www.musik.unibe.ch/index_ger.html",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Bern",
         "country": "Switzerland"
     },
-    "email": "urchueguia@musik.unibe.ch"
+    "email": "urchueguia@musik.unibe.ch",
+    "sameAs": []
 }

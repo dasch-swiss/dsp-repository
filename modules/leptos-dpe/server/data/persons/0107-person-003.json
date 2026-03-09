@@ -1,6 +1,6 @@
 {
     "id": "0107-person-003",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0107-person-003",
     "givenNames": [
         "Laure"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0107-organization-000"
     ],
-    "email": "laure.cordonier@unil.ch"
+    "email": "laure.cordonier@unil.ch",
+    "sameAs": []
 }

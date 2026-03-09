@@ -1,9 +1,9 @@
 {
     "id": "0806",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806",
     "name": "Anton Webern Gesamtausgabe",
     "shortcode": "0806",
-    "officialName": "MISSING",
+    "officialName": "Research Project: Anton Webern Gesamtausgabe",
     "status": "Ongoing",
     "shortDescription": "The Anton Webern Gesamtausgabe (AWG) is a critical-historical edition which aims to make Webern’s entire oeuvre accessible to musical scholarship and practice in a scholarly form.",
     "description": {
@@ -15,7 +15,7 @@
         "https://app.dasch.swiss/project/ot7I2nU-SdeXIf17LX_h3g",
         "https://www.anton-webern.ch"
     ],
-    "howToCite": "See https://anton-webern.ch/en/info/citation.html",
+    "howToCite": "See https://www.anton-webern.ch/index.php?id=85",
     "accessRights": {
         "accessRights": "Open Access with Restrictions"
     },
@@ -26,13 +26,18 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "0806-organization-004",
             "authorship": [
-                "MISSING"
+                "0806-person-000",
+                "0806-person-001",
+                "0806-person-002",
+                "0806-person-003",
+                "0806-person-004"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
+    "dataPublicationYear": "2024-01-01",
     "typeOfData": [
         "Image",
         "Text",
@@ -225,7 +230,7 @@
         {
             "text": "See",
             "pid": {
-                "url": "https://anton-webern.ch/en/research/publications.html"
+                "url": "https://www.anton-webern.ch/index.php?id=87"
             }
         }
     ],
@@ -292,5 +297,61 @@
             "name": "[2010–2012]",
             "url": "https://www.old.evs-musikstiftung.ch/de/preise/preise/archiv/foerderprojekte/2011/publikationentagungen/historisch-kritische-gesamtausgabe"
         }
+    ],
+    "records": [
+        "0806-record-001",
+        "0806-record-002",
+        "0806-record-003",
+        "0806-record-004",
+        "0806-record-005",
+        "0806-record-006",
+        "0806-record-007",
+        "0806-record-008",
+        "0806-record-009",
+        "0806-record-010",
+        "0806-record-011",
+        "0806-record-012",
+        "0806-record-013",
+        "0806-record-014",
+        "0806-record-015",
+        "0806-record-016",
+        "0806-record-017",
+        "0806-record-018",
+        "0806-record-019",
+        "0806-record-020",
+        "0806-record-021",
+        "0806-record-022",
+        "0806-record-023",
+        "0806-record-024",
+        "0806-record-025",
+        "0806-record-026",
+        "0806-record-027",
+        "0806-record-028",
+        "0806-record-029",
+        "0806-record-030",
+        "0806-record-031",
+        "0806-record-032",
+        "0806-record-033",
+        "0806-record-034",
+        "0806-record-035",
+        "0806-record-036",
+        "0806-record-037",
+        "0806-record-038",
+        "0806-record-039",
+        "0806-record-040",
+        "0806-record-041",
+        "0806-record-042",
+        "0806-record-043",
+        "0806-record-044",
+        "0806-record-045",
+        "0806-record-046",
+        "0806-record-047",
+        "0806-record-048",
+        "0806-record-049",
+        "0806-record-050",
+        "0806-record-051",
+        "0806-record-052",
+        "0806-record-053",
+        "0806-record-054"
     ]
 }

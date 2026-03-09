@@ -1,6 +1,6 @@
 {
     "id": "0101-person-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-person-002",
     "givenNames": [
         "Joan"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0101-organization-000"
     ],
-    "email": "joan.stavo-debauge@epfl.ch"
+    "email": "joan.stavo-debauge@epfl.ch",
+    "sameAs": []
 }

@@ -1,0 +1,37 @@
+{
+    "id": "081B-record-014",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-014",
+    "label": {
+        "en": "forgery.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "forgery.xml (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-014",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2018-07-11",
+    "datePublished": "2018-10-27",
+    "size": "390.5 MB",
+    "description": {
+        "en": "Cohibeo vociferor varius vitiosus capitulus vulgo mollitia adsidue. Cicuta usus capto. Statua vinco suppellex crux aggredior adinventitias approbo desino aequitas inventore."
+    },
+    "keywords": [
+        {
+            "en": "cunabula"
+        }
+    ]
+}

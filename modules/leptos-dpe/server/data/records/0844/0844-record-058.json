@@ -1,0 +1,37 @@
+{
+    "id": "0844-record-058",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-058",
+    "label": {
+        "en": "ah.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "ah.tif (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-058",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2020-12-11",
+    "datePublished": "2023-07-28",
+    "size": "452.7 MB",
+    "dateModified": "2022-08-08",
+    "keywords": [
+        {
+            "en": "voveo"
+        }
+    ]
+}

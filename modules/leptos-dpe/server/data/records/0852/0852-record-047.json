@@ -1,0 +1,43 @@
+{
+    "id": "0852-record-047",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-047",
+    "label": {
+        "en": "actual_quit_unlined.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "actual_quit_unlined.tif (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-047",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-04-07",
+    "datePublished": "2021-12-03",
+    "size": "449.9 MB",
+    "description": {
+        "en": "Basium crebro suadeo totam pel crustulum tenuis vulgus carus capitulus. Chirographum vespillo cohibeo unus bis. Verbum deripio expedita volubilis spiculum explicabo."
+    },
+    "keywords": [
+        {
+            "en": "sunt"
+        },
+        {
+            "en": "cubitum"
+        },
+        {
+            "en": "sopor"
+        }
+    ]
+}

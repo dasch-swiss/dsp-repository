@@ -1,0 +1,42 @@
+{
+    "id": "083D-record-050",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083D-record-050",
+    "label": {
+        "en": "gah.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2026-03-27"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-08-18",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "083D-organization-000",
+            "authorship": [
+                "083D-person-000",
+                "083D-person-001",
+                "083D-person-002",
+                "083D-person-003",
+                "083D-person-004"
+            ]
+        }
+    ],
+    "howToCite": "gah.txt (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D-record-050",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-12-28",
+    "datePublished": "2021-03-15",
+    "size": "29.9 MB",
+    "description": {
+        "en": "Demo spiculum curto demonstro curiositas. Vos agnitio nostrum vita ex volva. Advenio combibo deorsum sumo despecto umerus cohors thymbra mollitia."
+    },
+    "keywords": [
+        {
+            "en": "termes"
+        }
+    ]
+}

@@ -1,0 +1,36 @@
+{
+    "id": "0112-record-033",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-033",
+    "label": {
+        "en": "gosh.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "gosh.txt (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-033",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-05-23",
+    "datePublished": "2018-09-20",
+    "size": "364.1 MB",
+    "description": {
+        "en": "Adaugeo perferendis defaeco considero argentum totam urbanus adiuvo. Undique conatus tremo stipes unde. Explicabo sophismata tutamen benigne succurro."
+    }
+}

@@ -1,0 +1,43 @@
+{
+    "id": "0804-record-088",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-088",
+    "label": {
+        "en": "commonly.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "commonly.pdf (1982). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-088",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1980-07-08",
+    "datePublished": "1982-05-18",
+    "size": "2.5 MB",
+    "description": {
+        "en": "Delego cribro terra vigor tabella reiciendis terebro solio. Callide supra alioqui cetera cultellus careo viduo vivo vulgus aequitas. Solutio dens tonsor allatus sponte vulgus."
+    },
+    "keywords": [
+        {
+            "en": "condico"
+        },
+        {
+            "en": "decretum"
+        },
+        {
+            "en": "vinum"
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+{
+    "id": "0852-record-023",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-023",
+    "label": {
+        "en": "favorable.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "favorable.pdf (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-023",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-11-18",
+    "datePublished": "2022-10-22",
+    "size": "167.7 MB"
+}

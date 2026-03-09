@@ -1,6 +1,6 @@
 {
     "id": "0812-person-007",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-person-007",
     "givenNames": [
         "Aila"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0812-organization-000",
         "0812-organization-003"
-    ]
+    ],
+    "sameAs": []
 }

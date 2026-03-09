@@ -1,0 +1,47 @@
+{
+    "id": "083D-record-047",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083D-record-047",
+    "label": {
+        "en": "other_since_safely.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-08-18",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "083D-organization-000",
+            "authorship": [
+                "083D-person-000",
+                "083D-person-001",
+                "083D-person-002",
+                "083D-person-003",
+                "083D-person-004"
+            ]
+        }
+    ],
+    "howToCite": "other_since_safely.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D-record-047",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-03-18",
+    "datePublished": "2020-06-20",
+    "size": "406.0 MB",
+    "description": {
+        "en": "Aegrotatio sodalitas currus crustulum caelestis. Desipio concido deserunt tutis. Infit tredecim valetudo molestiae solium communis vae calcar textilis contabesco."
+    },
+    "keywords": [
+        {
+            "en": "laborum"
+        },
+        {
+            "en": "somniculosus"
+        },
+        {
+            "en": "armarium"
+        }
+    ]
+}

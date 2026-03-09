@@ -1,0 +1,48 @@
+{
+    "id": "083B-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083B-record-008",
+    "label": {
+        "en": "incidentally_down.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2025-01-28",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083B-organization-001",
+            "authorship": [
+                "083B-person-000",
+                "083B-person-001",
+                "083B-person-002",
+                "083B-person-003",
+                "083B-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2025-01-28",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083B-organization-001",
+            "authorship": [
+                "083B-person-000",
+                "083B-person-001",
+                "083B-person-002",
+                "083B-person-003",
+                "083B-person-000"
+            ]
+        }
+    ],
+    "howToCite": "incidentally_down.txt (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083B-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2025-07-14",
+    "datePublished": "2025-12-15",
+    "size": "185.8 MB"
+}

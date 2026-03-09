@@ -1,0 +1,41 @@
+{
+    "id": "0853-record-070",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-070",
+    "label": {
+        "en": "that.txt"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "that.txt (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-070",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2026-12-03",
+    "datePublished": "2027-11-23",
+    "size": "204.4 MB",
+    "description": {
+        "en": "Adficio ambulo volutabrum. Tempora curto abscido vitiosus amiculum compono velut coniecto damno tripudio. Spectaculum volva virtus aegrus hic arca corporis summopere."
+    },
+    "keywords": [
+        {
+            "en": "trans"
+        },
+        {
+            "en": "tertius"
+        }
+    ]
+}

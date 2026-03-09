@@ -1,0 +1,39 @@
+{
+    "id": "0112-record-081",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-081",
+    "label": {
+        "en": "past_whoa_backbone.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "past_whoa_backbone.jpg (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-081",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-08-16",
+    "datePublished": "2020-07-29",
+    "size": "452.9 MB",
+    "dateModified": "2020-09-30",
+    "keywords": [
+        {
+            "en": "hic"
+        }
+    ]
+}

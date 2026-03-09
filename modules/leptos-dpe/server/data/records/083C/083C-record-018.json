@@ -1,0 +1,39 @@
+{
+    "id": "083C-record-018",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-018",
+    "label": {
+        "en": "during_unsung.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "during_unsung.xml (2010). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-018",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2010-02-19",
+    "datePublished": "2010-07-21",
+    "size": "170.5 MB",
+    "description": {
+        "en": "Adipisci communis cavus ver testimonium neque. Cui deripio vinitor quis confero talio blandior. Cupiditas depraedor arbor odit."
+    },
+    "keywords": [
+        {
+            "en": "acidus"
+        }
+    ],
+    "source": "Comptus absque vapulus aqua cernuus trucido."
+}

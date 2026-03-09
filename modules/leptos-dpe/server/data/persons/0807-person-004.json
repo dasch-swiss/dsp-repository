@@ -1,6 +1,6 @@
 {
     "id": "0807-person-004",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0807-person-004",
     "givenNames": [
         "Pio"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0807-organization-000"
     ],
-    "email": "pio.pellizzari@outlook.com"
+    "email": "pio.pellizzari@outlook.com",
+    "sameAs": []
 }

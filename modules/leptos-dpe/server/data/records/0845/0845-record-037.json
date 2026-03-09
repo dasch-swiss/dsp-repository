@@ -1,0 +1,40 @@
+{
+    "id": "0845-record-037",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-037",
+    "label": {
+        "en": "ugh_dim_bleach.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "ugh_dim_bleach.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-037",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-01-10",
+    "datePublished": "2022-01-24",
+    "size": "499.2 MB",
+    "dateModified": "2022-07-20",
+    "keywords": [
+        {
+            "en": "templum"
+        }
+    ],
+    "source": "Denuncio sumptus trans teres cura accommodo vapulus allatus calcar adinventitias."
+}

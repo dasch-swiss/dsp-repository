@@ -1,0 +1,40 @@
+{
+    "id": "0852-record-075",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-075",
+    "label": {
+        "en": "short_term.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "short_term.pdf (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-075",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-06-21",
+    "datePublished": "2024-10-13",
+    "size": "293.9 MB",
+    "description": {
+        "en": "Credo venia amo cruentus adstringo adeptio terreo. Bos odit vilis. Pauci auctor ater curto volubilis arma vulnus amissio."
+    },
+    "keywords": [
+        {
+            "en": "reprehenderit"
+        },
+        {
+            "en": "curtus"
+        }
+    ]
+}

@@ -1,0 +1,47 @@
+{
+    "id": "0862-record-022",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-022",
+    "label": {
+        "en": "frugal_mmm.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "frugal_mmm.doc (2033). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-022",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2010-10-06",
+    "datePublished": "2033-02-09",
+    "size": "431.0 MB",
+    "description": {
+        "en": "Caste circumvenio civis temeritas velociter subseco adopto canis pecus dicta. Vilicus terror vel argentum pel triumphus. Suadeo ad canonicus comparo volaticus."
+    },
+    "keywords": [
+        {
+            "en": "concido"
+        },
+        {
+            "en": "tergo"
+        },
+        {
+            "en": "sodalitas"
+        }
+    ]
+}

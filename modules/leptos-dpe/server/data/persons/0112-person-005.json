@@ -1,6 +1,6 @@
 {
     "id": "0112-person-005",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-person-005",
     "givenNames": [
         "Julien"
     ],
@@ -14,5 +14,6 @@
     "affiliations": [
         "0112-organization-000"
     ],
-    "email": "julien.burri@unil.ch"
+    "email": "julien.burri@unil.ch",
+    "sameAs": []
 }

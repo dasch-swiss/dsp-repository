@@ -1,6 +1,6 @@
 {
     "id": "REMA-person-007",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-007",
     "givenNames": [
         "Domenico"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "REMA-organization-000"
     ],
-    "email": "mimmoventura74@gmail.com"
+    "email": "mimmoventura74@gmail.com",
+    "sameAs": []
 }

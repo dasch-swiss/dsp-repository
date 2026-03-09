@@ -1,0 +1,30 @@
+{
+    "id": "083C-record-014",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-014",
+    "label": {
+        "en": "omelet_what.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "omelet_what.xml (2011). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-014",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2001-05-09",
+    "datePublished": "2011-02-17",
+    "size": "56.8 MB"
+}

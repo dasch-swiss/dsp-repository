@@ -1,0 +1,33 @@
+{
+    "id": "0857-record-004",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0857-record-004",
+    "label": {
+        "en": "athwart_gosh.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY NC 4.0",
+                "licenseDate": "2025-07-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0857-organization-000",
+            "authorship": [
+                "0857-person-000"
+            ]
+        }
+    ],
+    "howToCite": "athwart_gosh.txt (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0857-record-004",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2025-07-15",
+    "datePublished": "2025-07-24",
+    "size": "117.8 MB",
+    "dateModified": "2025-08-27",
+    "description": {
+        "en": "Vestigium vitiosus repellendus alius acquiro appello asper. Curis summisse repellat volutabrum iusto minima bibo adnuo creta benigne. Amitto doloribus deleo teneo conforto."
+    }
+}

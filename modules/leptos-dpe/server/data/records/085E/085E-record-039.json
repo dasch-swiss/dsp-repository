@@ -1,0 +1,43 @@
+{
+    "id": "085E-record-039",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085E-record-039",
+    "label": {
+        "en": "after_gosh.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-07-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.en"
+            },
+            "copyrightHolder": "085E-organization-001",
+            "authorship": [
+                "085E-person-001",
+                "085E-person-002",
+                "085E-person-003"
+            ]
+        }
+    ],
+    "howToCite": "after_gosh.tiff (2028). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085E-record-039",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2027-12-15",
+    "datePublished": "2028-06-05",
+    "size": "89.7 MB",
+    "dateModified": "2028-05-14",
+    "description": {
+        "en": "Cervus triumphus deprecator talus creo alioqui doloremque crudelis. Maiores bonus iusto beatae. Thema alveus artificiose cubicularis quidem."
+    },
+    "keywords": [
+        {
+            "en": "capio"
+        },
+        {
+            "en": "aequitas"
+        }
+    ]
+}

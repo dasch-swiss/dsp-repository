@@ -1,0 +1,41 @@
+{
+    "id": "0807-record-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0807-record-005",
+    "label": {
+        "en": "yeast_whoever_including.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-05-09",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0807-organization-000",
+            "authorship": [
+                "0807-person-004",
+                "0807-person-003",
+                "0807-person-005",
+                "0807-person-006",
+                "0807-person-007"
+            ]
+        }
+    ],
+    "howToCite": "yeast_whoever_including.png (2016). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0807-record-005",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2015-12-06",
+    "datePublished": "2016-10-15",
+    "size": "458.7 MB",
+    "keywords": [
+        {
+            "en": "urbanus"
+        },
+        {
+            "en": "ubi"
+        }
+    ]
+}

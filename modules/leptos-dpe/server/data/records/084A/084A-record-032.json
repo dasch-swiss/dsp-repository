@@ -1,0 +1,34 @@
+{
+    "id": "084A-record-032",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084A-record-032",
+    "label": {
+        "en": "remark_darling_meanwhile.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-02-21",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084A-organization-001",
+            "authorship": [
+                "084A-person-000",
+                "084A-person-001",
+                "084A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "remark_darling_meanwhile.doc (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084A-record-032",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-11-11",
+    "datePublished": "2023-02-05",
+    "size": "373.5 MB",
+    "description": {
+        "en": "Officia cognatus reiciendis caute corona defaeco. Cohibeo speculum aiunt. Congregatio vulariter veritas corrigo ulciscor averto alius expedita mollitia."
+    }
+}

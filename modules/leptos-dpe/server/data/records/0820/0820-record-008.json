@@ -1,0 +1,33 @@
+{
+    "id": "0820-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-record-008",
+    "label": {
+        "en": "aha.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-06",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0820-organization-000",
+            "authorship": [
+                "0820-person-000",
+                "0820-person-001",
+                "0820-person-002",
+                "0820-person-003",
+                "0820-person-004"
+            ]
+        }
+    ],
+    "howToCite": "aha.pdf (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0820-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2015-12-02",
+    "datePublished": "2019-01-30",
+    "size": "417.1 MB"
+}

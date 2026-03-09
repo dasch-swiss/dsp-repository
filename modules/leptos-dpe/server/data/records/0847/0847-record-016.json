@@ -1,0 +1,39 @@
+{
+    "id": "0847-record-016",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-016",
+    "label": {
+        "en": "unimpressively.png"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "unimpressively.png (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-016",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2021-05-03",
+    "datePublished": "2021-09-12",
+    "size": "383.2 MB",
+    "dateModified": "2022-02-25",
+    "description": {
+        "en": "Tardus cilicium trado quod. Vestrum eaque peccatus votum consuasor. Vomica hic doloremque neque deputo."
+    },
+    "keywords": [
+        {
+            "en": "voluptatibus"
+        }
+    ]
+}

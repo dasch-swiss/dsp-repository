@@ -1,0 +1,42 @@
+{
+    "id": "0105-record-038",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0105-record-038",
+    "label": {
+        "en": "gnash_within.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0105-organization-000",
+            "authorship": [
+                "0105-person-000",
+                "0105-person-001",
+                "0105-person-002",
+                "0105-person-003",
+                "0105-person-004"
+            ]
+        }
+    ],
+    "howToCite": "gnash_within.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0105-record-038",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-03-04",
+    "datePublished": "2019-05-02",
+    "size": "45.9 MB",
+    "dateModified": "2019-04-19",
+    "keywords": [
+        {
+            "en": "cultura"
+        },
+        {
+            "en": "turpis"
+        }
+    ]
+}

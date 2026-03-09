@@ -1,0 +1,33 @@
+{
+    "id": "0848-record-022",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-022",
+    "label": {
+        "en": "worth_colligate.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "worth_colligate.pdf (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-022",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-05-26",
+    "datePublished": "2022-11-30",
+    "size": "222.5 MB",
+    "source": "Quibusdam tenetur suadeo quo cogo video alias sol stillicidium congregatio."
+}

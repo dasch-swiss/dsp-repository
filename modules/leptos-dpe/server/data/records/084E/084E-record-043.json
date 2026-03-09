@@ -1,0 +1,39 @@
+{
+    "id": "084E-record-043",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-043",
+    "label": {
+        "en": "lest_patiently_an.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "lest_patiently_an.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-043",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-01-17",
+    "datePublished": "2024-04-21",
+    "size": "127.6 MB",
+    "dateModified": "2024-04-29",
+    "keywords": [
+        {
+            "en": "mollitia"
+        }
+    ]
+}

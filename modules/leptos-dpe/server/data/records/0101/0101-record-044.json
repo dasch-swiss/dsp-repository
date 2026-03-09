@@ -1,0 +1,43 @@
+{
+    "id": "0101-record-044",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-044",
+    "label": {
+        "en": "next_confirm.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "next_confirm.pdf (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-044",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2016-10-16",
+    "datePublished": "2017-01-30",
+    "size": "425.1 MB",
+    "dateModified": "2018-01-20",
+    "keywords": [
+        {
+            "en": "ut"
+        },
+        {
+            "en": "acervus"
+        },
+        {
+            "en": "color"
+        }
+    ]
+}

@@ -1,0 +1,39 @@
+{
+    "id": "082D-record-044",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082D-record-044",
+    "label": {
+        "en": "bravely.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "082D-organization-001",
+            "authorship": [
+                "082D-person-001",
+                "082D-person-002"
+            ]
+        }
+    ],
+    "howToCite": "bravely.doc (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082D-record-044",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-01-22",
+    "datePublished": "2020-06-28",
+    "size": "262.5 MB",
+    "keywords": [
+        {
+            "en": "rem"
+        },
+        {
+            "en": "truculenter"
+        }
+    ],
+    "source": "Ipsum artificiose abeo catena ustilo vomito ventus tantum."
+}

@@ -1,6 +1,6 @@
 {
     "id": "0813-person-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-person-001",
     "givenNames": [
         "Erwin"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0813-organization-001"
     ],
-    "email": "erwin.zbinden@bmf.ch"
+    "email": "erwin.zbinden@bmf.ch",
+    "sameAs": []
 }

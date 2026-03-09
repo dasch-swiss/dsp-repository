@@ -1,0 +1,44 @@
+{
+    "id": "0112-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-008",
+    "label": {
+        "en": "sonata_psst_whoa.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "sonata_psst_whoa.tiff (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2021-08-06",
+    "datePublished": "2021-10-13",
+    "size": "190.4 MB",
+    "keywords": [
+        {
+            "en": "consuasor"
+        },
+        {
+            "en": "dicta"
+        },
+        {
+            "en": "vulticulus"
+        }
+    ]
+}

@@ -1,0 +1,41 @@
+{
+    "id": "083C-record-029",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-029",
+    "label": {
+        "en": "creature_bah_elderly.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "creature_bah_elderly.xml (2012). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-029",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2010-03-29",
+    "datePublished": "2012-08-24",
+    "size": "276.7 MB",
+    "description": {
+        "en": "Beatae bos decimus vulgaris. Ter valeo velut vicinus caritas clam audeo alveus. Alius illo vero temptatio odio undique statim cernuus uredo uredo."
+    },
+    "keywords": [
+        {
+            "en": "esse"
+        },
+        {
+            "en": "delicate"
+        }
+    ]
+}

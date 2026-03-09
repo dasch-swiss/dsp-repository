@@ -1,0 +1,40 @@
+{
+    "id": "0102-record-029",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0102-record-029",
+    "label": {
+        "en": "alongside_huzzah.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2022-09-08",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0102-organization-000",
+            "authorship": [
+                "0102-person-000",
+                "0102-person-001",
+                "0102-person-002"
+            ]
+        }
+    ],
+    "howToCite": "alongside_huzzah.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0102-record-029",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-01-01",
+    "datePublished": "2024-05-05",
+    "size": "259.7 MB",
+    "dateModified": "2024-09-18",
+    "keywords": [
+        {
+            "en": "vestigium"
+        },
+        {
+            "en": "vilitas"
+        }
+    ]
+}

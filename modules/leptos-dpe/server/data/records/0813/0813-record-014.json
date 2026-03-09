@@ -1,0 +1,39 @@
+{
+    "id": "0813-record-014",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-record-014",
+    "label": {
+        "en": "creative.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0813-organization-001",
+            "authorship": [
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "creative.doc (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0813-record-014",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-12-21",
+    "datePublished": "2018-08-25",
+    "size": "425.3 MB",
+    "keywords": [
+        {
+            "en": "cui"
+        },
+        {
+            "en": "voluptatum"
+        }
+    ]
+}

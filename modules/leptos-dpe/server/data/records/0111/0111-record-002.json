@@ -1,0 +1,38 @@
+{
+    "id": "0111-record-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0111-record-002",
+    "label": {
+        "en": "why_joyously.mp3"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0111-organization-000",
+            "authorship": [
+                "0111-person-000",
+                "0111-person-001",
+                "0111-person-002",
+                "0111-person-003"
+            ]
+        }
+    ],
+    "howToCite": "why_joyously.mp3 (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0111-record-002",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2017-09-24",
+    "datePublished": "2017-11-21",
+    "size": "26.1 MB",
+    "keywords": [
+        {
+            "en": "amaritudo"
+        }
+    ],
+    "source": "Vir solus aureus abbas totam succurro synagoga accommodo abscido."
+}

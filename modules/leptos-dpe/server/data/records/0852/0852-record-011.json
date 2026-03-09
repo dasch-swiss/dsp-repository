@@ -1,0 +1,40 @@
+{
+    "id": "0852-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-011",
+    "label": {
+        "en": "scramble.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "scramble.png (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-03-06",
+    "datePublished": "2022-11-09",
+    "size": "447.9 MB",
+    "keywords": [
+        {
+            "en": "crur"
+        },
+        {
+            "en": "avarus"
+        },
+        {
+            "en": "aegrotatio"
+        }
+    ]
+}

@@ -137,7 +137,7 @@ pub fn Footer() -> impl IntoView {
 
                 <hr class="border-slate-700 mb-8" />
 
-                <div class="text-center text-sm text-gray-500">
+                <div class="text-center text-sm text-gray-400">
                     <p>
                         {format!(
                             "DaSCH - Swiss National Data and Service Center for the Humanities © {year}",

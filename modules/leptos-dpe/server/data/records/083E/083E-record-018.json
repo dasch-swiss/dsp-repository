@@ -1,0 +1,46 @@
+{
+    "id": "083E-record-018",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083E-record-018",
+    "label": {
+        "en": "upon.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-07-19",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083E-organization-001",
+            "authorship": [
+                "083E-person-000",
+                "083E-person-002",
+                "083E-person-001"
+            ]
+        }
+    ],
+    "howToCite": "upon.pdf (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083E-record-018",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-05-31",
+    "datePublished": "2024-11-01",
+    "size": "199.6 MB",
+    "dateModified": "2025-05-24",
+    "description": {
+        "en": "Spoliatio virtus amplitudo quam vinum cuppedia. Cum voluptas cimentarius neque cibus ulciscor comminor depulso quidem. Hic qui corrigo quas termes cena pax delibero."
+    },
+    "keywords": [
+        {
+            "en": "creptio"
+        },
+        {
+            "en": "vobis"
+        },
+        {
+            "en": "quibusdam"
+        }
+    ]
+}

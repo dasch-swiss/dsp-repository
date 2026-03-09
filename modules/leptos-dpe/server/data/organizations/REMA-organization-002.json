@@ -1,12 +1,13 @@
 {
     "id": "REMA-organization-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-organization-002",
     "name": "University of Rome",
-    "url": "MISSING",
+    "url": "https://www.university-of-rome.org",
     "address": {
         "street": "",
         "postalCode": "",
         "locality": "Sapienza",
         "country": "Italy"
-    }
+    },
+    "sameAs": []
 }

@@ -1,0 +1,42 @@
+{
+    "id": "0112-record-067",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-067",
+    "label": {
+        "en": "aw_someplace.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "aw_someplace.doc (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-067",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-02-15",
+    "datePublished": "2021-07-14",
+    "size": "435.0 MB",
+    "dateModified": "2021-09-29",
+    "description": {
+        "en": "Sollicito solvo praesentium ventus blanditiis tersus dolore alioqui. Ciminatio adeo caries adicio supra cornu tego circumvenio cohibeo iusto. Expedita appono appositus ipsum conspergo articulus volup vae crustulum."
+    },
+    "keywords": [
+        {
+            "en": "adipiscor"
+        }
+    ]
+}

@@ -1,0 +1,39 @@
+{
+    "id": "0112-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-006",
+    "label": {
+        "en": "gosh_collaboration.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "gosh_collaboration.pdf (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-11-10",
+    "datePublished": "2021-02-16",
+    "size": "188.5 MB",
+    "dateModified": "2021-10-04",
+    "keywords": [
+        {
+            "en": "acervus"
+        }
+    ]
+}

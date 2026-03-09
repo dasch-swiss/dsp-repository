@@ -1,0 +1,33 @@
+{
+    "id": "082D-record-016",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082D-record-016",
+    "label": {
+        "en": "majestic_woot.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "082D-organization-001",
+            "authorship": [
+                "082D-person-001",
+                "082D-person-002"
+            ]
+        }
+    ],
+    "howToCite": "majestic_woot.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082D-record-016",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-11-15",
+    "datePublished": "2020-04-18",
+    "size": "125.7 MB",
+    "description": {
+        "en": "Alias vesper utroque careo conturbo umbra currus nihil taedium tenuis. Asporto denique nihil xiphias suffragium cursim crinis cohors delicate colo. Aperiam patior vir alter architecto tenetur alo."
+    }
+}

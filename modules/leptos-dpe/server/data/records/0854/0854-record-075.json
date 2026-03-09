@@ -1,0 +1,57 @@
+{
+    "id": "0854-record-075",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-075",
+    "label": {
+        "en": "tepid.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "tepid.jpg (2028). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-075",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2026-06-13",
+    "datePublished": "2028-05-03",
+    "size": "162.2 MB",
+    "description": {
+        "en": "Antea sursum suppono ipsam provident coniecto vulgivagus. Debeo maxime vaco comis ascit tristis. Casus vitium clam coniecto statim suppono curiositas cohaero substantia."
+    },
+    "keywords": [
+        {
+            "en": "aestas"
+        },
+        {
+            "en": "suffragium"
+        }
+    ]
+}

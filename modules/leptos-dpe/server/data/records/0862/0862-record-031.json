@@ -1,0 +1,33 @@
+{
+    "id": "0862-record-031",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-031",
+    "label": {
+        "en": "violent_gosh.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "violent_gosh.xml (2037). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-031",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2012-01-16",
+    "datePublished": "2037-01-25",
+    "size": "349.1 MB"
+}

@@ -1,0 +1,42 @@
+{
+    "id": "083E-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083E-record-007",
+    "label": {
+        "en": "at_across.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-07-19",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083E-organization-001",
+            "authorship": [
+                "083E-person-000",
+                "083E-person-002",
+                "083E-person-001"
+            ]
+        }
+    ],
+    "howToCite": "at_across.png (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083E-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-05-17",
+    "datePublished": "2023-01-07",
+    "size": "6.9 MB",
+    "keywords": [
+        {
+            "en": "inflammatio"
+        },
+        {
+            "en": "quas"
+        },
+        {
+            "en": "demitto"
+        }
+    ]
+}

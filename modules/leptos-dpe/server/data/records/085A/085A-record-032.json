@@ -1,0 +1,29 @@
+{
+    "id": "085A-record-032",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085A-record-032",
+    "label": {
+        "en": "materialise_off_ghost.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2019-03-14",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "085A-organization-002",
+            "authorship": [
+                "085A-person-001"
+            ]
+        }
+    ],
+    "howToCite": "materialise_off_ghost.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085A-record-032",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2017-10-17",
+    "datePublished": "2021-07-18",
+    "size": "405.6 MB"
+}

@@ -1,0 +1,48 @@
+{
+    "id": "0845-record-020",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-020",
+    "label": {
+        "en": "yowza_between.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "yowza_between.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-020",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-09-03",
+    "datePublished": "2023-04-09",
+    "size": "423.6 MB",
+    "dateModified": "2020-10-10",
+    "description": {
+        "en": "Beatae carbo thesaurus vilicus defero. Officia ventus venio vulpes arbitro vulgaris. Paens comitatus studio bellicus centum degenero."
+    },
+    "keywords": [
+        {
+            "en": "concido"
+        },
+        {
+            "en": "terga"
+        },
+        {
+            "en": "decipio"
+        }
+    ]
+}

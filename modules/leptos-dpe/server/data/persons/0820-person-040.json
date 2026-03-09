@@ -1,6 +1,6 @@
 {
     "id": "0820-person-040",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-person-040",
     "givenNames": [
         "‘Abd el-Hamid"
     ],
@@ -12,5 +12,6 @@
     ],
     "affiliations": [
         "0820-organization-014"
-    ]
+    ],
+    "sameAs": []
 }

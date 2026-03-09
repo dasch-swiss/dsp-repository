@@ -1,0 +1,44 @@
+{
+    "id": "0845-record-039",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-039",
+    "label": {
+        "en": "excepting.mp4"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "excepting.mp4 (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-039",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2020-10-03",
+    "datePublished": "2022-06-22",
+    "size": "325.0 MB",
+    "description": {
+        "en": "Clamo caecus vere. Uxor denuncio cupio carcer vigilo ustulo taceo terga cornu venio. Supplanto totam asporto urbanus adhuc ascit comminor."
+    },
+    "keywords": [
+        {
+            "en": "unus"
+        },
+        {
+            "en": "defero"
+        }
+    ]
+}

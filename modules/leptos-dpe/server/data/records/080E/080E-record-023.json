@@ -1,0 +1,43 @@
+{
+    "id": "080E-record-023",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-023",
+    "label": {
+        "en": "gah.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "gah.doc (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-023",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2014-09-06",
+    "datePublished": "2018-07-05",
+    "size": "292.2 MB",
+    "description": {
+        "en": "Crastinus acsi pecco cubo crustulum adeptio cometes conventus. Vitae titulus altus spes tactus cunabula curtus. Cerno pel error depraedor."
+    },
+    "keywords": [
+        {
+            "en": "cursus"
+        },
+        {
+            "en": "thesis"
+        },
+        {
+            "en": "corroboro"
+        }
+    ]
+}

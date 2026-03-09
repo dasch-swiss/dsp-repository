@@ -1,0 +1,35 @@
+{
+    "id": "080E-record-073",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-073",
+    "label": {
+        "en": "an_sniff_premier.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "an_sniff_premier.tiff (2016). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-073",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2016-07-14",
+    "datePublished": "2016-08-20",
+    "size": "449.7 MB",
+    "keywords": [
+        {
+            "en": "ubi"
+        }
+    ],
+    "source": "Tam odio avarus cursus defetiscor vivo appositus assumenda delego."
+}

@@ -1,0 +1,45 @@
+{
+    "id": "0112-record-079",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-079",
+    "label": {
+        "en": "especially_except.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "especially_except.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-079",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2021-02-25",
+    "datePublished": "2021-05-22",
+    "size": "204.2 MB",
+    "dateModified": "2021-11-11",
+    "description": {
+        "en": "Supra territo aegrotatio spargo sol vitae reiciendis. Venustas saepe capto viduo debilito deleniti harum dolores sub apparatus. Confero approbo admiratio laboriosam."
+    },
+    "keywords": [
+        {
+            "en": "desparatus"
+        },
+        {
+            "en": "optio"
+        }
+    ]
+}

@@ -1,6 +1,6 @@
 {
     "id": "0103-person-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-person-002",
     "givenNames": [
         "Aline"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0103-organization-000"
     ],
-    "email": "aline.hodroge@unil.ch"
+    "email": "aline.hodroge@unil.ch",
+    "sameAs": []
 }

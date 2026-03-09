@@ -1,0 +1,37 @@
+{
+    "id": "081B-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-011",
+    "label": {
+        "en": "sans.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "sans.xml (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2016-01-18",
+    "datePublished": "2017-05-06",
+    "size": "99.7 MB",
+    "keywords": [
+        {
+            "en": "pauper"
+        },
+        {
+            "en": "ullam"
+        }
+    ]
+}

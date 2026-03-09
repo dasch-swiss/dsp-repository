@@ -1,6 +1,6 @@
 {
     "id": "0806-organization-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-organization-000",
     "name": "Anton Webern Gesamtausgabe",
     "url": "https://www.anton-webern.ch",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "info-awg@unibas.ch"
+    "email": "info-awg@unibas.ch",
+    "sameAs": []
 }

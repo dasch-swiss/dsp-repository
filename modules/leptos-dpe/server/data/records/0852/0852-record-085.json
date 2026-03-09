@@ -1,0 +1,29 @@
+{
+    "id": "0852-record-085",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-085",
+    "label": {
+        "en": "via.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "via.tif (2016). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-085",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2015-11-15",
+    "datePublished": "2016-03-18",
+    "size": "87.1 MB"
+}

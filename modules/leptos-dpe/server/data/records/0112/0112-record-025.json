@@ -1,0 +1,40 @@
+{
+    "id": "0112-record-025",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-025",
+    "label": {
+        "en": "forenenst_neatly.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "forenenst_neatly.png (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-025",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-02-03",
+    "datePublished": "2021-10-04",
+    "size": "203.6 MB",
+    "dateModified": "2020-10-14",
+    "keywords": [
+        {
+            "en": "autem"
+        }
+    ],
+    "source": "Sollers fugit ademptio decretum ducimus ulciscor."
+}

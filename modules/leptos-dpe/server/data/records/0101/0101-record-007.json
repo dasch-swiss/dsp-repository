@@ -1,0 +1,42 @@
+{
+    "id": "0101-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-007",
+    "label": {
+        "en": "from.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "from.pdf (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-05-15",
+    "datePublished": "2019-07-28",
+    "size": "308.0 MB",
+    "keywords": [
+        {
+            "en": "speculum"
+        },
+        {
+            "en": "deorsum"
+        },
+        {
+            "en": "cito"
+        }
+    ]
+}

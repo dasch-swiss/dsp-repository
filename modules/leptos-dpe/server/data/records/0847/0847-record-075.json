@@ -1,0 +1,39 @@
+{
+    "id": "0847-record-075",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-075",
+    "label": {
+        "en": "sans_since_arrogantly.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "sans_since_arrogantly.pdf (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-075",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-02-04",
+    "datePublished": "2022-09-18",
+    "size": "52.8 MB",
+    "keywords": [
+        {
+            "en": "explicabo"
+        },
+        {
+            "en": "eos"
+        }
+    ],
+    "source": "Soluta caste annus."
+}

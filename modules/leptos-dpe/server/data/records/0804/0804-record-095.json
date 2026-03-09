@@ -1,0 +1,29 @@
+{
+    "id": "0804-record-095",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-095",
+    "label": {
+        "en": "excitable_meanwhile.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "excitable_meanwhile.txt (1982). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-095",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1982-11-10",
+    "datePublished": "1982-12-11",
+    "size": "19.5 MB"
+}

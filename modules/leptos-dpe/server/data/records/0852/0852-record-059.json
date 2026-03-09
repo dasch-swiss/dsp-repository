@@ -1,0 +1,41 @@
+{
+    "id": "0852-record-059",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-059",
+    "label": {
+        "en": "through.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "through.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-059",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-01-10",
+    "datePublished": "2020-12-17",
+    "size": "80.1 MB",
+    "dateModified": "2020-02-06",
+    "description": {
+        "en": "Vilicus victus sufficio assumenda vetus stultus communis deleniti. Ademptio thalassinus vulticulus. Earum deorsum caelum tertius somniculosus sodalitas."
+    },
+    "keywords": [
+        {
+            "en": "templum"
+        },
+        {
+            "en": "arbitro"
+        }
+    ]
+}

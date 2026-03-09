@@ -1,0 +1,48 @@
+{
+    "id": "0114-record-033",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114-record-033",
+    "label": {
+        "en": "phooey_er_worth.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0114-organization-000",
+            "authorship": [
+                "0114-person-000",
+                "0114-person-001",
+                "0114-person-002",
+                "0114-person-003",
+                "0114-person-004"
+            ]
+        }
+    ],
+    "howToCite": "phooey_er_worth.txt (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0114-record-033",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-10-17",
+    "datePublished": "2021-07-26",
+    "size": "442.2 MB",
+    "description": {
+        "en": "Audentia tot approbo bestia accommodo cruciamentum. Sit clarus tempore vorax vinitor. Speculum rerum viriliter inventore thermae atavus vulnero atqui laborum."
+    },
+    "keywords": [
+        {
+            "en": "certe"
+        },
+        {
+            "en": "cenaculum"
+        },
+        {
+            "en": "capto"
+        }
+    ],
+    "source": "Adinventitias tabesco bene tempore ventito bellicus crinis."
+}

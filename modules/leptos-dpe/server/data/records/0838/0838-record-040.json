@@ -1,0 +1,45 @@
+{
+    "id": "0838-record-040",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0838-record-040",
+    "label": {
+        "en": "acidly_tricky_the.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-01-22",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0838-organization-002",
+            "authorship": [
+                "0838-person-000",
+                "0838-person-001",
+                "0838-person-002",
+                "0838-person-003",
+                "0838-person-004"
+            ]
+        }
+    ],
+    "howToCite": "acidly_tricky_the.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0838-record-040",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-04-10",
+    "datePublished": "2022-02-14",
+    "size": "67.0 MB",
+    "keywords": [
+        {
+            "en": "ver"
+        },
+        {
+            "en": "trepide"
+        },
+        {
+            "en": "cito"
+        }
+    ],
+    "source": "Cimentarius vulgo certus admoveo."
+}

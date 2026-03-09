@@ -1,0 +1,36 @@
+{
+    "id": "0117-record-022",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-022",
+    "label": {
+        "en": "firsthand_beneath.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "firsthand_beneath.txt (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-022",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-06-09",
+    "datePublished": "2020-06-25",
+    "size": "307.4 MB",
+    "dateModified": "2020-07-05",
+    "description": {
+        "en": "Deprimo substantia advoco valens aegrotatio cunabula tot. Cur surgo universe tergeo nihil tergum architecto. Cupiditate sequi sopor subseco vomica autus derelinquo acerbitas."
+    }
+}

@@ -1,0 +1,59 @@
+{
+    "id": "0836-record-029",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0836-record-029",
+    "label": {
+        "en": "catalyze_because.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        }
+    ],
+    "howToCite": "catalyze_because.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0836-record-029",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-06-28",
+    "datePublished": "2019-06-06",
+    "size": "169.0 MB",
+    "description": {
+        "en": "Asper necessitatibus aveho sordeo suppono. Ascit curatio capio desipio. Trucido despecto stillicidium subiungo nisi."
+    },
+    "keywords": [
+        {
+            "en": "curriculum"
+        },
+        {
+            "en": "calculus"
+        }
+    ]
+}

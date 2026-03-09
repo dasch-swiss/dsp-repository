@@ -1,0 +1,32 @@
+{
+    "id": "0111-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0111-record-006",
+    "label": {
+        "en": "dense.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0111-organization-000",
+            "authorship": [
+                "0111-person-000",
+                "0111-person-001",
+                "0111-person-002",
+                "0111-person-003"
+            ]
+        }
+    ],
+    "howToCite": "dense.pdf (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0111-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-11-24",
+    "datePublished": "2018-01-12",
+    "size": "343.7 MB"
+}

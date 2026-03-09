@@ -1,0 +1,40 @@
+{
+    "id": "0111-record-024",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0111-record-024",
+    "label": {
+        "en": "within_reluctantly.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0111-organization-000",
+            "authorship": [
+                "0111-person-000",
+                "0111-person-001",
+                "0111-person-002",
+                "0111-person-003"
+            ]
+        }
+    ],
+    "howToCite": "within_reluctantly.tif (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0111-record-024",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-12-31",
+    "datePublished": "2018-01-29",
+    "size": "487.6 MB",
+    "keywords": [
+        {
+            "en": "territo"
+        },
+        {
+            "en": "tergeo"
+        }
+    ]
+}

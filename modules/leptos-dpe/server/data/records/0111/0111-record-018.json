@@ -1,0 +1,46 @@
+{
+    "id": "0111-record-018",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0111-record-018",
+    "label": {
+        "en": "badly_profuse_tinted.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0111-organization-000",
+            "authorship": [
+                "0111-person-000",
+                "0111-person-001",
+                "0111-person-002",
+                "0111-person-003"
+            ]
+        }
+    ],
+    "howToCite": "badly_profuse_tinted.jpg (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0111-record-018",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-07-12",
+    "datePublished": "2017-09-04",
+    "size": "230.6 MB",
+    "description": {
+        "en": "Desino inventore degenero ab deorsum cubo concido aspernatur arto vapulus. Volva adinventitias cura. Illo coaegresco caveo."
+    },
+    "keywords": [
+        {
+            "en": "contigo"
+        },
+        {
+            "en": "approbo"
+        },
+        {
+            "en": "decipio"
+        }
+    ]
+}

@@ -1,0 +1,35 @@
+{
+    "id": "0121-record-059",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0121-record-059",
+    "label": {
+        "en": "why.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-02-20",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0121-organization-001",
+            "authorship": [
+                "0121-person-000",
+                "0121-person-002",
+                "0121-person-001",
+                "0121-person-003"
+            ]
+        }
+    ],
+    "howToCite": "why.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0121-record-059",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-05-06",
+    "datePublished": "2023-12-18",
+    "size": "103.1 MB",
+    "description": {
+        "en": "Quidem sollicito auctus capio. Aperte virgo votum beatus. Statim amissio asperiores summopere communis abbas amaritudo."
+    }
+}

@@ -1,6 +1,6 @@
 {
     "id": "REMA-person-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-002",
     "givenNames": [
         "Marion"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "REMA-organization-000"
     ],
-    "email": "Marion.Rivoal@unil.ch"
+    "email": "Marion.Rivoal@unil.ch",
+    "sameAs": []
 }

@@ -1,0 +1,38 @@
+{
+    "id": "083C-record-045",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-045",
+    "label": {
+        "en": "pasta.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "pasta.tiff (1995). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-045",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "1992-11-16",
+    "datePublished": "1995-07-28",
+    "size": "144.7 MB",
+    "keywords": [
+        {
+            "en": "adnuo"
+        },
+        {
+            "en": "terror"
+        }
+    ]
+}

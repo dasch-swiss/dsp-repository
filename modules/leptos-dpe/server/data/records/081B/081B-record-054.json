@@ -1,0 +1,30 @@
+{
+    "id": "081B-record-054",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-054",
+    "label": {
+        "en": "easily_huzzah_beyond.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access",
+        "embargoDate": "2026-08-23"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "easily_huzzah_beyond.xml (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-054",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2016-05-09",
+    "datePublished": "2018-06-28",
+    "size": "238.9 MB"
+}

@@ -1,0 +1,54 @@
+{
+    "id": "0836-record-018",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0836-record-018",
+    "label": {
+        "en": "angrily_relative.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        }
+    ],
+    "howToCite": "angrily_relative.jpg (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0836-record-018",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-01-08",
+    "datePublished": "2018-12-29",
+    "size": "192.7 MB",
+    "dateModified": "2018-02-14",
+    "keywords": [
+        {
+            "en": "complectus"
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+{
+    "id": "081B-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-007",
+    "label": {
+        "en": "gee_per.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "gee_per.xml (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2017-01-14",
+    "datePublished": "2018-03-25",
+    "size": "394.7 MB",
+    "dateModified": "2019-01-21",
+    "keywords": [
+        {
+            "en": "cetera"
+        },
+        {
+            "en": "pecus"
+        }
+    ]
+}

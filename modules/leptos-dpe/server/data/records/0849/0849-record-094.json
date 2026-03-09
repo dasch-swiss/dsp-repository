@@ -1,0 +1,37 @@
+{
+    "id": "0849-record-094",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-094",
+    "label": {
+        "en": "since_out_gifted.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "since_out_gifted.txt (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-094",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-10-14",
+    "datePublished": "2025-06-16",
+    "size": "401.7 MB",
+    "keywords": [
+        {
+            "en": "veritas"
+        }
+    ]
+}

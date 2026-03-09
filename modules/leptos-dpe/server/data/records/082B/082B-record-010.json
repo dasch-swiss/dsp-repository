@@ -1,0 +1,33 @@
+{
+    "id": "082B-record-010",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082B-record-010",
+    "label": {
+        "en": "than_considering.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "082B-organization-003",
+            "authorship": [
+                "082B-person-001",
+                "082B-person-002",
+                "082B-person-003",
+                "082B-person-004",
+                "082B-person-005"
+            ]
+        }
+    ],
+    "howToCite": "than_considering.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082B-record-010",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-04-23",
+    "datePublished": "2022-01-23",
+    "size": "121.9 MB"
+}

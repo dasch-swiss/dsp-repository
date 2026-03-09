@@ -1,0 +1,37 @@
+{
+    "id": "0843-record-020",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0843-record-020",
+    "label": {
+        "en": "barring.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-02-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "woposs-organization-001",
+            "authorship": [
+                "woposs-person-000",
+                "woposs-person-001",
+                "woposs-person-002",
+                "woposs-person-003",
+                "woposs-person-004"
+            ]
+        }
+    ],
+    "howToCite": "barring.xml (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0843-record-020",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2024-09-02",
+    "datePublished": "2024-12-06",
+    "size": "258.1 MB",
+    "dateModified": "2024-09-17",
+    "description": {
+        "en": "Sumptus audacia demulceo vehemens eaque caste arbor turpis. Stabilis adfero derelinquo asper speculum damnatio modi concedo utroque. Summa ambitus vapulus eveniet tabula degusto via perspiciatis accusantium cupiditas."
+    }
+}

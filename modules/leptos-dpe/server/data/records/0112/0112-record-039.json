@@ -1,0 +1,42 @@
+{
+    "id": "0112-record-039",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-039",
+    "label": {
+        "en": "including.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "including.doc (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-039",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-06-21",
+    "datePublished": "2021-08-04",
+    "size": "346.0 MB",
+    "dateModified": "2021-12-05",
+    "description": {
+        "en": "At voco aequus vita. Contego vado adaugeo. Tego caecus tunc."
+    },
+    "keywords": [
+        {
+            "en": "conduco"
+        }
+    ]
+}

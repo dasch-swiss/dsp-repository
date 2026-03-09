@@ -1,0 +1,41 @@
+{
+    "id": "085A-record-017",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085A-record-017",
+    "label": {
+        "en": "phew.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2019-03-14",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "085A-organization-002",
+            "authorship": [
+                "085A-person-001"
+            ]
+        }
+    ],
+    "howToCite": "phew.txt (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085A-record-017",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-01-25",
+    "datePublished": "2019-03-11",
+    "size": "374.1 MB",
+    "dateModified": "2019-03-23",
+    "keywords": [
+        {
+            "en": "tabernus"
+        },
+        {
+            "en": "vitiosus"
+        },
+        {
+            "en": "cupressus"
+        }
+    ]
+}

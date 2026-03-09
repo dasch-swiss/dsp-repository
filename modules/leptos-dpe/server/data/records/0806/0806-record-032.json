@@ -1,0 +1,38 @@
+{
+    "id": "0806-record-032",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-record-032",
+    "label": {
+        "en": "scratchy.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access",
+        "embargoDate": "2026-10-23"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+            },
+            "copyrightHolder": "0806-organization-004",
+            "authorship": [
+                "0806-person-000",
+                "0806-person-001",
+                "0806-person-002",
+                "0806-person-003",
+                "0806-person-004"
+            ]
+        }
+    ],
+    "howToCite": "scratchy.txt (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0806-record-032",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2008-09-23",
+    "datePublished": "2021-08-28",
+    "size": "156.1 MB",
+    "dateModified": "2008-12-05",
+    "description": {
+        "en": "Vallum apud degusto terga supplanto usus acsi culpa. Convoco quisquam excepturi caecus ducimus vulnus amplitudo amoveo. Dolore depulso animi."
+    }
+}

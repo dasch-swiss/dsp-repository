@@ -1,0 +1,40 @@
+{
+    "id": "0813-record-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-record-005",
+    "label": {
+        "en": "misappropriate_aftermath_ad.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0813-organization-001",
+            "authorship": [
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "misappropriate_aftermath_ad.txt (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0813-record-005",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-05-10",
+    "datePublished": "2018-05-23",
+    "size": "56.7 MB",
+    "dateModified": "2018-06-20",
+    "description": {
+        "en": "Ter taedium ager thesaurus alienus reiciendis suus adversus ut. Clarus defleo cibus turba denego victus circumvenio valens vinco. Casus carus verecundia utroque officia aspicio assumenda abeo subvenio."
+    },
+    "keywords": [
+        {
+            "en": "theca"
+        }
+    ]
+}

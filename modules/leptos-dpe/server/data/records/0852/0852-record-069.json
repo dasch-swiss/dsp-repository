@@ -1,0 +1,40 @@
+{
+    "id": "0852-record-069",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-069",
+    "label": {
+        "en": "oh_blissfully.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "oh_blissfully.doc (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-069",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2014-07-04",
+    "datePublished": "2021-09-07",
+    "size": "320.8 MB",
+    "keywords": [
+        {
+            "en": "sum"
+        },
+        {
+            "en": "amitto"
+        },
+        {
+            "en": "ventus"
+        }
+    ]
+}

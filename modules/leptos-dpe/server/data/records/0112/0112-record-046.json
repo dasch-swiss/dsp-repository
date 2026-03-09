@@ -1,0 +1,42 @@
+{
+    "id": "0112-record-046",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-046",
+    "label": {
+        "en": "pull.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access",
+        "embargoDate": "2025-11-28"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "pull.txt (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-046",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-08-20",
+    "datePublished": "2021-12-13",
+    "size": "58.1 MB",
+    "description": {
+        "en": "Quidem antea cattus usque calculus ocer vulticulus. Tondeo statim adfectus urbs sto apparatus crapula capillus caveo ager. Cervus basium admoveo sulum audeo."
+    },
+    "keywords": [
+        {
+            "en": "laborum"
+        }
+    ]
+}

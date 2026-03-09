@@ -1,6 +1,6 @@
 {
     "id": "0116-person-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0116-person-002",
     "givenNames": [
         "Sabrina"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0116-organization-000"
     ],
-    "email": "sabrina.ciardo@gmail.com"
+    "email": "sabrina.ciardo@gmail.com",
+    "sameAs": []
 }

@@ -1,0 +1,42 @@
+{
+    "id": "0847-record-064",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-064",
+    "label": {
+        "en": "manage_zowie.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "manage_zowie.doc (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-064",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-10-15",
+    "datePublished": "2023-09-26",
+    "size": "56.4 MB",
+    "dateModified": "2023-07-17",
+    "keywords": [
+        {
+            "en": "claudeo"
+        },
+        {
+            "en": "deleniti"
+        },
+        {
+            "en": "vinculum"
+        }
+    ]
+}

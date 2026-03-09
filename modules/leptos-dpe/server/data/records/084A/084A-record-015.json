@@ -1,0 +1,37 @@
+{
+    "id": "084A-record-015",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084A-record-015",
+    "label": {
+        "en": "whose_whoever_psst.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-02-21",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084A-organization-001",
+            "authorship": [
+                "084A-person-000",
+                "084A-person-001",
+                "084A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "whose_whoever_psst.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084A-record-015",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-03-03",
+    "datePublished": "2024-02-10",
+    "size": "274.7 MB",
+    "dateModified": "2022-06-07",
+    "keywords": [
+        {
+            "en": "ipsa"
+        }
+    ]
+}

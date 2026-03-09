@@ -1,0 +1,45 @@
+{
+    "id": "0101-record-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-005",
+    "label": {
+        "en": "what.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "what.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-005",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-12-12",
+    "datePublished": "2019-03-26",
+    "size": "264.8 MB",
+    "description": {
+        "en": "Aeger ipsa abeo. Labore perspiciatis tergo adimpleo dolores antepono custodia ascit terror. Suadeo vesco earum antepono totidem vicinus vos ascit abstergo similique."
+    },
+    "keywords": [
+        {
+            "en": "tero"
+        },
+        {
+            "en": "cimentarius"
+        },
+        {
+            "en": "delectatio"
+        }
+    ]
+}

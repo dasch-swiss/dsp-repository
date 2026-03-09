@@ -1,12 +1,13 @@
 {
     "id": "0811-organization-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0811-organization-000",
     "name": "Universität Basel, Departement Geschichte",
-    "url": "MISSING",
+    "url": "https://www.universität-basel-departement-.org",
     "address": {
         "street": "",
         "postalCode": "",
         "locality": "Basel",
         "country": "Switzerland"
-    }
+    },
+    "sameAs": []
 }

@@ -1,0 +1,39 @@
+{
+    "id": "0114-record-004",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114-record-004",
+    "label": {
+        "en": "afterwards_orchestrate_once.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2026-07-23"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0114-organization-000",
+            "authorship": [
+                "0114-person-000",
+                "0114-person-001",
+                "0114-person-002",
+                "0114-person-003",
+                "0114-person-004"
+            ]
+        }
+    ],
+    "howToCite": "afterwards_orchestrate_once.txt (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0114-record-004",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-11-18",
+    "datePublished": "2020-10-05",
+    "size": "227.9 MB",
+    "keywords": [
+        {
+            "en": "bis"
+        }
+    ]
+}

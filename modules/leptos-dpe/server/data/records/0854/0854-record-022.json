@@ -1,0 +1,49 @@
+{
+    "id": "0854-record-022",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-022",
+    "label": {
+        "en": "ordinary_monthly.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "ordinary_monthly.png (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-022",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2026-10-20",
+    "datePublished": "2027-01-29",
+    "size": "300.1 MB",
+    "description": {
+        "en": "Administratio spero adhaero. Tondeo texo sulum virgo cognomen auditor saepe aliqua. Volo anser sui quae administratio cuius cerno vulticulus debeo."
+    }
+}

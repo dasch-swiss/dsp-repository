@@ -1,0 +1,36 @@
+{
+    "id": "083D-record-019",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083D-record-019",
+    "label": {
+        "en": "passport_fortunately.txt"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-08-18",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "083D-organization-000",
+            "authorship": [
+                "083D-person-000",
+                "083D-person-001",
+                "083D-person-002",
+                "083D-person-003",
+                "083D-person-004"
+            ]
+        }
+    ],
+    "howToCite": "passport_fortunately.txt (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D-record-019",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-10-28",
+    "datePublished": "2021-08-04",
+    "size": "54.2 MB",
+    "description": {
+        "en": "Voluntarius vester degusto mollitia vulariter constans vapulus aggero. Voco ipsum tabgo curatio. Aedificium dens tempora acidus teres solio abeo tricesimus quae."
+    }
+}

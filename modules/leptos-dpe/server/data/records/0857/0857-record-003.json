@@ -1,0 +1,40 @@
+{
+    "id": "0857-record-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0857-record-003",
+    "label": {
+        "en": "book_jut_creamy.png"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY NC 4.0",
+                "licenseDate": "2025-07-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0857-organization-000",
+            "authorship": [
+                "0857-person-000"
+            ]
+        }
+    ],
+    "howToCite": "book_jut_creamy.png (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0857-record-003",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-06-19",
+    "datePublished": "2024-11-07",
+    "size": "105.7 MB",
+    "description": {
+        "en": "Auxilium incidunt cupiditas vinco rerum vinco. Usque appello conturbo. Cogito sumo beatus sulum venio optio."
+    },
+    "keywords": [
+        {
+            "en": "aureus"
+        },
+        {
+            "en": "eos"
+        }
+    ]
+}

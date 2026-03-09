@@ -1,0 +1,40 @@
+{
+    "id": "0117-record-065",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-065",
+    "label": {
+        "en": "concerning_unless.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "concerning_unless.pdf (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-065",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-05-30",
+    "datePublished": "2019-09-01",
+    "size": "291.5 MB",
+    "description": {
+        "en": "Curriculum aliquam atrox suffoco. Decerno umbra impedit ad verbum bis verto. Atque adamo ad clam paens damnatio vinculum trucido vulariter derideo."
+    },
+    "keywords": [
+        {
+            "en": "cribro"
+        }
+    ]
+}

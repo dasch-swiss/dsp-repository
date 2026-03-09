@@ -1,0 +1,45 @@
+{
+    "id": "083D-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083D-record-007",
+    "label": {
+        "en": "as.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access",
+        "embargoDate": "2026-10-23"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-08-18",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "083D-organization-000",
+            "authorship": [
+                "083D-person-000",
+                "083D-person-001",
+                "083D-person-002",
+                "083D-person-003",
+                "083D-person-004"
+            ]
+        }
+    ],
+    "howToCite": "as.doc (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-02-25",
+    "datePublished": "2018-09-09",
+    "size": "354.3 MB",
+    "description": {
+        "en": "Veniam tabgo curatio. Caritas reiciendis amitto. Aut cum derideo tertius vinum."
+    },
+    "keywords": [
+        {
+            "en": "thymbra"
+        },
+        {
+            "en": "aegrotatio"
+        }
+    ]
+}

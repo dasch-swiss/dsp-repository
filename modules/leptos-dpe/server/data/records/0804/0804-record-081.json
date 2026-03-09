@@ -1,0 +1,40 @@
+{
+    "id": "0804-record-081",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-081",
+    "label": {
+        "en": "wherever.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "wherever.txt (1984). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-081",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1982-08-27",
+    "datePublished": "1984-04-13",
+    "size": "15.1 MB",
+    "keywords": [
+        {
+            "en": "amplus"
+        },
+        {
+            "en": "vitium"
+        },
+        {
+            "en": "ullam"
+        }
+    ]
+}

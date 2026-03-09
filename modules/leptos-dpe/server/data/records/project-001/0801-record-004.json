@@ -1,0 +1,51 @@
+{
+    "id": "0801-record-004",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-record-004",
+    "label": {
+        "en": "questionably.tif"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2025-12-31"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2022-01-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "organization-001",
+            "authorship": [
+                "person-001",
+                "person-002",
+                "person-003"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-06-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "organization-002",
+            "authorship": [
+                "person-004"
+            ]
+        }
+    ],
+    "howToCite": "questionably.tif (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801-record-004",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-01-29",
+    "datePublished": "2024-04-26",
+    "size": "52.9 MB",
+    "keywords": [
+        {
+            "en": "cibo"
+        },
+        {
+            "en": "uberrime"
+        }
+    ]
+}

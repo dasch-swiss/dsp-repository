@@ -1,0 +1,41 @@
+{
+    "id": "082B-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082B-record-001",
+    "label": {
+        "en": "concerning_consequently.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "082B-organization-003",
+            "authorship": [
+                "082B-person-001",
+                "082B-person-002",
+                "082B-person-003",
+                "082B-person-004",
+                "082B-person-005"
+            ]
+        }
+    ],
+    "howToCite": "concerning_consequently.pdf (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082B-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-07-24",
+    "datePublished": "2019-11-09",
+    "size": "19.5 MB",
+    "description": {
+        "en": "Ademptio tergum ut. Aptus defendo volubilis nobis arguo strenuus praesentium cinis subseco. Bestia vilitas ventosus degusto beneficium desparatus spiculum pax veritatis."
+    },
+    "keywords": [
+        {
+            "en": "vesco"
+        }
+    ]
+}

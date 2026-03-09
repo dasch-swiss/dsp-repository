@@ -1,0 +1,40 @@
+{
+    "id": "0852-record-018",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-018",
+    "label": {
+        "en": "or.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "or.jpg (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-018",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-10-23",
+    "datePublished": "2024-01-07",
+    "size": "91.7 MB",
+    "description": {
+        "en": "Occaecati ascisco adstringo. Depono turba magni valeo aveho vinum solutio ager inflammatio. Bestia sum balbus supellex complectus patria curatio quo subito vulnero."
+    },
+    "keywords": [
+        {
+            "en": "subnecto"
+        },
+        {
+            "en": "pecco"
+        }
+    ]
+}

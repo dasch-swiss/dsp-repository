@@ -1,0 +1,40 @@
+{
+    "id": "084C-record-016",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084C-record-016",
+    "label": {
+        "en": "furthermore_and.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-10-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084C-organization-000",
+            "authorship": [
+                "084C-person-000",
+                "084C-person-001",
+                "084C-person-002",
+                "084C-person-003",
+                "084C-person-004"
+            ]
+        }
+    ],
+    "howToCite": "furthermore_and.jpg (2006). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084C-record-016",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2003-11-02",
+    "datePublished": "2006-03-13",
+    "size": "352.0 MB",
+    "dateModified": "2006-02-22",
+    "keywords": [
+        {
+            "en": "sed"
+        }
+    ],
+    "source": "Soluta subseco eaque decerno libero vulnus creta ait creber."
+}

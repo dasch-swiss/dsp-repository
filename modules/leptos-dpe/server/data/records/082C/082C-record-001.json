@@ -1,0 +1,43 @@
+{
+    "id": "082C-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082C-record-001",
+    "label": {
+        "en": "that.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2026-03-13"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2019-10-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "082C-organization-000",
+            "authorship": [
+                "082C-person-000",
+                "082C-person-001",
+                "082C-person-002",
+                "082C-person-003",
+                "082C-person-004"
+            ]
+        }
+    ],
+    "howToCite": "that.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082C-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-08-26",
+    "datePublished": "2023-05-15",
+    "size": "85.5 MB",
+    "dateModified": "2023-09-18",
+    "keywords": [
+        {
+            "en": "convoco"
+        },
+        {
+            "en": "tergo"
+        }
+    ]
+}

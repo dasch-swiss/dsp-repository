@@ -1,6 +1,6 @@
 {
     "id": "0121-person-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0121-person-001",
     "givenNames": [
         "Lauréane"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0121-organization-000"
     ],
-    "email": "Laureane.Badoux@unil.ch"
+    "email": "Laureane.Badoux@unil.ch",
+    "sameAs": []
 }

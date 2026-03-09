@@ -1,0 +1,41 @@
+{
+    "id": "081B-record-040",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-040",
+    "label": {
+        "en": "happy_go_lucky_pendant.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "happy_go_lucky_pendant.xml (2016). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-040",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2016-01-24",
+    "datePublished": "2016-10-04",
+    "size": "18.8 MB",
+    "description": {
+        "en": "Quisquam unus uberrime thymum cupressus. Clamo bellicus carmen vita aro tantillus theologus. Circumvenio templum apostolus minima sursum clementia aliquid ocer."
+    },
+    "keywords": [
+        {
+            "en": "tepesco"
+        },
+        {
+            "en": "terror"
+        }
+    ],
+    "source": "Valeo tamquam adipiscor."
+}

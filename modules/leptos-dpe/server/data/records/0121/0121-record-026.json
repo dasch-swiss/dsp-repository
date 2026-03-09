@@ -1,0 +1,32 @@
+{
+    "id": "0121-record-026",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0121-record-026",
+    "label": {
+        "en": "fabricate.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-02-20",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0121-organization-001",
+            "authorship": [
+                "0121-person-000",
+                "0121-person-002",
+                "0121-person-001",
+                "0121-person-003"
+            ]
+        }
+    ],
+    "howToCite": "fabricate.doc (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0121-record-026",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-06-05",
+    "datePublished": "2024-06-13",
+    "size": "397.1 MB"
+}

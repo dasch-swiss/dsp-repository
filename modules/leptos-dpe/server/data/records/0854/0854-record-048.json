@@ -1,0 +1,57 @@
+{
+    "id": "0854-record-048",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-048",
+    "label": {
+        "en": "noxious_ouch.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "noxious_ouch.doc (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-048",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2025-11-15",
+    "datePublished": "2027-06-23",
+    "size": "164.1 MB",
+    "description": {
+        "en": "Creber at varius viriliter caute pax necessitatibus eius. Tenuis stipes explicabo sufficio. Defendo pel acervus tergum bibo deficio quibusdam crebro."
+    },
+    "keywords": [
+        {
+            "en": "volutabrum"
+        },
+        {
+            "en": "demergo"
+        }
+    ]
+}

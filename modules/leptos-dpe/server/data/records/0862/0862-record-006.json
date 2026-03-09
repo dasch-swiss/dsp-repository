@@ -1,0 +1,41 @@
+{
+    "id": "0862-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-006",
+    "label": {
+        "en": "rise_helplessly.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "rise_helplessly.doc (2036). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2034-01-30",
+    "datePublished": "2036-05-10",
+    "size": "20.3 MB",
+    "description": {
+        "en": "Uter tantum amor paens angelus deprecator dolore. Acceptus vestigium advenio neque pecco valde autem cognatus. Surculus bene assentator tollo."
+    },
+    "keywords": [
+        {
+            "en": "via"
+        }
+    ]
+}

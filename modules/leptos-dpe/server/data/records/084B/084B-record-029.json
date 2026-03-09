@@ -1,0 +1,38 @@
+{
+    "id": "084B-record-029",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084B-record-029",
+    "label": {
+        "en": "upright_eventually.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-07-08",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "084B-organization-001",
+            "authorship": [
+                "084B-person-001",
+                "084B-person-000"
+            ]
+        }
+    ],
+    "howToCite": "upright_eventually.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084B-record-029",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-10-05",
+    "datePublished": "2024-03-03",
+    "size": "367.5 MB",
+    "keywords": [
+        {
+            "en": "coniuratio"
+        },
+        {
+            "en": "contabesco"
+        }
+    ]
+}

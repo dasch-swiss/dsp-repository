@@ -1,0 +1,33 @@
+{
+    "id": "082C-record-014",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082C-record-014",
+    "label": {
+        "en": "next.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2019-10-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "082C-organization-000",
+            "authorship": [
+                "082C-person-000",
+                "082C-person-001",
+                "082C-person-002",
+                "082C-person-003",
+                "082C-person-004"
+            ]
+        }
+    ],
+    "howToCite": "next.doc (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082C-record-014",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-11-30",
+    "datePublished": "2022-12-25",
+    "size": "157.0 MB"
+}

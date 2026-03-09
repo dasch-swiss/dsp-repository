@@ -1,0 +1,45 @@
+{
+    "id": "0112-record-012",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-012",
+    "label": {
+        "en": "shrill_ha.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2026-08-01"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "shrill_ha.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-012",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2018-06-22",
+    "datePublished": "2021-10-13",
+    "size": "315.7 MB",
+    "description": {
+        "en": "Vero curo a distinctio acer subito. Cupio vomer sufficio bene subito. Sol aptus unus umerus utilis ut stillicidium curia."
+    },
+    "keywords": [
+        {
+            "en": "thymbra"
+        },
+        {
+            "en": "perspiciatis"
+        }
+    ]
+}

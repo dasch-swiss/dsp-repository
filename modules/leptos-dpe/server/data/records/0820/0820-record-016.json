@@ -1,0 +1,41 @@
+{
+    "id": "0820-record-016",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-record-016",
+    "label": {
+        "en": "inwardly.avi"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-06",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0820-organization-000",
+            "authorship": [
+                "0820-person-000",
+                "0820-person-001",
+                "0820-person-002",
+                "0820-person-003",
+                "0820-person-004"
+            ]
+        }
+    ],
+    "howToCite": "inwardly.avi (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0820-record-016",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2016-05-30",
+    "datePublished": "2019-01-14",
+    "size": "64.1 MB",
+    "keywords": [
+        {
+            "en": "depromo"
+        },
+        {
+            "en": "basium"
+        }
+    ]
+}

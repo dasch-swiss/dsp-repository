@@ -1,0 +1,44 @@
+{
+    "id": "082C-record-026",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082C-record-026",
+    "label": {
+        "en": "wrongly.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2019-10-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "082C-organization-000",
+            "authorship": [
+                "082C-person-000",
+                "082C-person-001",
+                "082C-person-002",
+                "082C-person-003",
+                "082C-person-004"
+            ]
+        }
+    ],
+    "howToCite": "wrongly.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082C-record-026",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-09-04",
+    "datePublished": "2023-08-20",
+    "size": "244.4 MB",
+    "keywords": [
+        {
+            "en": "solitudo"
+        },
+        {
+            "en": "totidem"
+        },
+        {
+            "en": "possimus"
+        }
+    ]
+}

@@ -1,0 +1,39 @@
+{
+    "id": "0846-record-044",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-044",
+    "label": {
+        "en": "deprave_graffiti.mp4"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "deprave_graffiti.mp4 (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-044",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2018-10-12",
+    "datePublished": "2022-04-29",
+    "size": "42.4 MB",
+    "keywords": [
+        {
+            "en": "magnam"
+        },
+        {
+            "en": "conitor"
+        }
+    ],
+    "source": "Deorsum tolero arma triduana perspiciatis soleo venio."
+}

@@ -1,0 +1,40 @@
+{
+    "id": "085A-record-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085A-record-003",
+    "label": {
+        "en": "boo_phooey_unimportant.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2019-03-14",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "085A-organization-002",
+            "authorship": [
+                "085A-person-001"
+            ]
+        }
+    ],
+    "howToCite": "boo_phooey_unimportant.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085A-record-003",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2021-07-27",
+    "datePublished": "2021-08-02",
+    "size": "389.3 MB",
+    "keywords": [
+        {
+            "en": "volo"
+        },
+        {
+            "en": "capitulus"
+        },
+        {
+            "en": "tricesimus"
+        }
+    ]
+}

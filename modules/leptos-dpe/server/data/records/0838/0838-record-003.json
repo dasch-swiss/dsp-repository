@@ -1,0 +1,35 @@
+{
+    "id": "0838-record-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0838-record-003",
+    "label": {
+        "en": "oddball_as_ugh.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-01-22",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0838-organization-002",
+            "authorship": [
+                "0838-person-000",
+                "0838-person-001",
+                "0838-person-002",
+                "0838-person-003",
+                "0838-person-004"
+            ]
+        }
+    ],
+    "howToCite": "oddball_as_ugh.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0838-record-003",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-06-14",
+    "datePublished": "2022-01-20",
+    "size": "443.7 MB",
+    "dateModified": "2023-11-21",
+    "source": "Coepi suffoco tenax patrocinor solium cuppedia aperio cras voluptate temporibus."
+}

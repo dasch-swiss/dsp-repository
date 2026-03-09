@@ -1,0 +1,36 @@
+{
+    "id": "083C-record-020",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-020",
+    "label": {
+        "en": "cautious_pertinent_summer.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "cautious_pertinent_summer.png (2007). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-020",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2007-02-15",
+    "datePublished": "2007-06-05",
+    "size": "449.2 MB",
+    "keywords": [
+        {
+            "en": "beneficium"
+        }
+    ],
+    "source": "Sulum carcer desidero vigilo inventore cruentus acceptus."
+}

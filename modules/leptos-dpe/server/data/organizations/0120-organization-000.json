@@ -1,6 +1,6 @@
 {
     "id": "0120-organization-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0120-organization-000",
     "name": "Université de Lausanne",
     "url": "https://www.unil.ch/",
     "address": {
@@ -8,5 +8,6 @@
         "postalCode": "CH-1015",
         "locality": "Lausanne",
         "country": "Switzerland"
-    }
+    },
+    "sameAs": []
 }

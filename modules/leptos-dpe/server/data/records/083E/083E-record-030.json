@@ -1,0 +1,32 @@
+{
+    "id": "083E-record-030",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083E-record-030",
+    "label": {
+        "en": "hoof_er_owlishly.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-07-19",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083E-organization-001",
+            "authorship": [
+                "083E-person-000",
+                "083E-person-002",
+                "083E-person-001"
+            ]
+        }
+    ],
+    "howToCite": "hoof_er_owlishly.tiff (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083E-record-030",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-09-05",
+    "datePublished": "2024-07-07",
+    "size": "473.5 MB",
+    "dateModified": "2024-03-01"
+}

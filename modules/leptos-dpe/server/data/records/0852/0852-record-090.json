@@ -1,0 +1,34 @@
+{
+    "id": "0852-record-090",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-090",
+    "label": {
+        "en": "drat_as_briskly.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "drat_as_briskly.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-090",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-07-20",
+    "datePublished": "2023-11-18",
+    "size": "449.8 MB",
+    "keywords": [
+        {
+            "en": "dens"
+        }
+    ]
+}

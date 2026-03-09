@@ -1,0 +1,37 @@
+{
+    "id": "0117-record-019",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-019",
+    "label": {
+        "en": "meh_wedge.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "meh_wedge.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-019",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-12-25",
+    "datePublished": "2019-01-03",
+    "size": "353.7 MB",
+    "dateModified": "2020-06-18",
+    "description": {
+        "en": "Alii votum desolo stabilis comburo communis sui certe alii. Stipes arx totidem sum vergo. Confugo ustulo utique ullam trans."
+    },
+    "source": "Uter rem vaco cito sponte cotidie adeo."
+}

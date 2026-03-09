@@ -1,0 +1,52 @@
+{
+    "id": "0854-record-038",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-038",
+    "label": {
+        "en": "pleasing.avi"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "pleasing.avi (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-038",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2027-08-20",
+    "datePublished": "2027-11-19",
+    "size": "278.9 MB",
+    "dateModified": "2027-10-09",
+    "keywords": [
+        {
+            "en": "aufero"
+        }
+    ]
+}

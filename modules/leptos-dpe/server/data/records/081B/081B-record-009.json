@@ -1,0 +1,43 @@
+{
+    "id": "081B-record-009",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-009",
+    "label": {
+        "en": "aside_humidity_substantiate.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "aside_humidity_substantiate.xml (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-009",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2018-08-24",
+    "datePublished": "2018-11-17",
+    "size": "28.4 MB",
+    "description": {
+        "en": "Cicuta cruentus sublime officia comburo speculum. Cupiditas uredo turpis sunt autus volva adipiscor decor adversus dedecor. Inventore admoveo chirographum cohaero."
+    },
+    "keywords": [
+        {
+            "en": "vulgo"
+        },
+        {
+            "en": "alveus"
+        },
+        {
+            "en": "angelus"
+        }
+    ]
+}

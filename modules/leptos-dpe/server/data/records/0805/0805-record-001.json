@@ -1,0 +1,37 @@
+{
+    "id": "0805-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0805-record-001",
+    "label": {
+        "en": "incidentally.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-30",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0805-organization-001",
+            "authorship": [
+                "0805-person-000"
+            ]
+        }
+    ],
+    "howToCite": "incidentally.tiff (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0805-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2016-01-02",
+    "datePublished": "2018-04-02",
+    "size": "487.4 MB",
+    "keywords": [
+        {
+            "en": "cornu"
+        },
+        {
+            "en": "tricesimus"
+        }
+    ]
+}

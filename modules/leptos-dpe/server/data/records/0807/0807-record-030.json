@@ -1,0 +1,33 @@
+{
+    "id": "0807-record-030",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0807-record-030",
+    "label": {
+        "en": "worriedly.mp3"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-05-09",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0807-organization-000",
+            "authorship": [
+                "0807-person-004",
+                "0807-person-003",
+                "0807-person-005",
+                "0807-person-006",
+                "0807-person-007"
+            ]
+        }
+    ],
+    "howToCite": "worriedly.mp3 (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0807-record-030",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2017-03-06",
+    "datePublished": "2017-10-04",
+    "size": "261.1 MB"
+}

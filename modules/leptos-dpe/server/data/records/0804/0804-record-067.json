@@ -1,0 +1,30 @@
+{
+    "id": "0804-record-067",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-067",
+    "label": {
+        "en": "hungrily_times_onset.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "hungrily_times_onset.jpg (1984). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-067",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "1980-05-11",
+    "datePublished": "1984-06-12",
+    "size": "164.7 MB",
+    "source": "Caterva decens totam suscipio vobis colligo."
+}

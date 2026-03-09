@@ -1,0 +1,47 @@
+{
+    "id": "0854-record-045",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-045",
+    "label": {
+        "en": "retrospectivity_briskly.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "retrospectivity_briskly.png (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-045",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-06-27",
+    "datePublished": "2025-01-07",
+    "size": "473.7 MB",
+    "source": "Volup torrens damnatio auctus textilis suffoco."
+}

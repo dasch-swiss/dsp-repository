@@ -1,0 +1,36 @@
+{
+    "id": "083C-record-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-003",
+    "label": {
+        "en": "geez_commonly_ouch.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "geez_commonly_ouch.doc (2008). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-003",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2002-06-02",
+    "datePublished": "2008-04-15",
+    "size": "379.5 MB",
+    "keywords": [
+        {
+            "en": "ater"
+        }
+    ],
+    "source": "Delinquo callide itaque dolores credo."
+}

@@ -1,0 +1,30 @@
+{
+    "id": "0847-record-078",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-078",
+    "label": {
+        "en": "whine_navigate_behind.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "whine_navigate_behind.txt (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-078",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-07-23",
+    "datePublished": "2020-01-29",
+    "size": "225.4 MB"
+}

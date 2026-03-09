@@ -1,0 +1,36 @@
+{
+    "id": "0105-record-043",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0105-record-043",
+    "label": {
+        "en": "hence_poorly_unique.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0105-organization-000",
+            "authorship": [
+                "0105-person-000",
+                "0105-person-001",
+                "0105-person-002",
+                "0105-person-003",
+                "0105-person-004"
+            ]
+        }
+    ],
+    "howToCite": "hence_poorly_unique.pdf (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0105-record-043",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-11-16",
+    "datePublished": "2019-10-03",
+    "size": "372.1 MB",
+    "description": {
+        "en": "Quisquam campana accendo utpote damno nulla ars. Solus volup terminatio suppellex. Taceo solitudo considero surculus temeritas utor tredecim subvenio."
+    }
+}

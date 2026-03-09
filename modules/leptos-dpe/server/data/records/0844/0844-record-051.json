@@ -1,0 +1,32 @@
+{
+    "id": "0844-record-051",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-051",
+    "label": {
+        "en": "present_react_and.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "present_react_and.xml (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-051",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2023-01-29",
+    "datePublished": "2023-03-30",
+    "size": "365.7 MB",
+    "source": "Bibo nihil commemoro ullam coadunatio audentia brevis acervus articulus cupio."
+}

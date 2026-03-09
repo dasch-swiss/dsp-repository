@@ -1,0 +1,41 @@
+{
+    "id": "085A-record-025",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085A-record-025",
+    "label": {
+        "en": "at.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2019-03-14",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "085A-organization-002",
+            "authorship": [
+                "085A-person-001"
+            ]
+        }
+    ],
+    "howToCite": "at.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085A-record-025",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2020-07-21",
+    "datePublished": "2021-08-28",
+    "size": "15.2 MB",
+    "keywords": [
+        {
+            "en": "tabgo"
+        },
+        {
+            "en": "culpa"
+        },
+        {
+            "en": "atrocitas"
+        }
+    ],
+    "source": "Volup et compono cubo vicinus tam adflicto aperiam."
+}

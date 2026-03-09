@@ -1,6 +1,6 @@
 {
     "id": "0111-person-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0111-person-001",
     "givenNames": [
         "Anouk"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0111-organization-000"
     ],
-    "email": "anouk.dunant-gonzenbach@etat.ge.ch"
+    "email": "anouk.dunant-gonzenbach@etat.ge.ch",
+    "sameAs": []
 }

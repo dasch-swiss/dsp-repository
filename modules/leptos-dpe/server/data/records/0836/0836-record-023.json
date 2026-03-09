@@ -1,0 +1,59 @@
+{
+    "id": "0836-record-023",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0836-record-023",
+    "label": {
+        "en": "uh_huh.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        }
+    ],
+    "howToCite": "uh_huh.png (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0836-record-023",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-02-25",
+    "datePublished": "2020-10-31",
+    "size": "99.9 MB",
+    "description": {
+        "en": "Asper deorsum cruentus tersus utrimque solus tantum. Accommodo amplitudo beatus aut amo fugiat vulnero statua tabula. Ex veniam corporis ipsam sint speculum demergo utique vobis convoco."
+    },
+    "keywords": [
+        {
+            "en": "deprecator"
+        },
+        {
+            "en": "credo"
+        }
+    ]
+}

@@ -1,0 +1,30 @@
+{
+    "id": "0857-record-010",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0857-record-010",
+    "label": {
+        "en": "yuck_ugh.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access",
+        "embargoDate": "2026-03-25"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY NC 4.0",
+                "licenseDate": "2025-07-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0857-organization-000",
+            "authorship": [
+                "0857-person-000"
+            ]
+        }
+    ],
+    "howToCite": "yuck_ugh.txt (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0857-record-010",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-01-05",
+    "datePublished": "2025-06-09",
+    "size": "196.7 MB"
+}

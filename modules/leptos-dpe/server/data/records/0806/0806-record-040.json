@@ -1,0 +1,41 @@
+{
+    "id": "0806-record-040",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-record-040",
+    "label": {
+        "en": "given_drat_pillory.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+            },
+            "copyrightHolder": "0806-organization-004",
+            "authorship": [
+                "0806-person-000",
+                "0806-person-001",
+                "0806-person-002",
+                "0806-person-003",
+                "0806-person-004"
+            ]
+        }
+    ],
+    "howToCite": "given_drat_pillory.jpg (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0806-record-040",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-04-03",
+    "datePublished": "2022-01-17",
+    "size": "353.9 MB",
+    "keywords": [
+        {
+            "en": "verus"
+        },
+        {
+            "en": "denique"
+        }
+    ]
+}

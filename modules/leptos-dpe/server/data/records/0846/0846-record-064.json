@@ -1,0 +1,35 @@
+{
+    "id": "0846-record-064",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-064",
+    "label": {
+        "en": "gadzooks.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "gadzooks.png (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-064",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-04-01",
+    "datePublished": "2019-05-16",
+    "size": "444.4 MB",
+    "keywords": [
+        {
+            "en": "suffragium"
+        }
+    ]
+}

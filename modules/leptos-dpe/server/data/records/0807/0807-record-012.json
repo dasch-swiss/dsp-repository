@@ -1,0 +1,41 @@
+{
+    "id": "0807-record-012",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0807-record-012",
+    "label": {
+        "en": "rewarding_whoever_by.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-05-09",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0807-organization-000",
+            "authorship": [
+                "0807-person-004",
+                "0807-person-003",
+                "0807-person-005",
+                "0807-person-006",
+                "0807-person-007"
+            ]
+        }
+    ],
+    "howToCite": "rewarding_whoever_by.xml (2016). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0807-record-012",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2014-01-08",
+    "datePublished": "2016-10-01",
+    "size": "466.4 MB",
+    "description": {
+        "en": "Laboriosam dolores alienus ipsam quisquam aurum. Corrupti tenuis corrupti aspernatur subito eos adfero animadverto cilicium illo. Dolorem canto aperiam peccatus modi."
+    },
+    "keywords": [
+        {
+            "en": "infit"
+        }
+    ]
+}

@@ -1,0 +1,35 @@
+{
+    "id": "0101-record-042",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-042",
+    "label": {
+        "en": "yearn_fat_char.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "yearn_fat_char.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-042",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-12-28",
+    "datePublished": "2019-05-05",
+    "size": "465.4 MB",
+    "dateModified": "2019-03-11",
+    "description": {
+        "en": "Audacia solum fugiat minima callide. Tempus vilis alo quo. In bestia vallum paulatim odit calculus subnecto supellex."
+    }
+}

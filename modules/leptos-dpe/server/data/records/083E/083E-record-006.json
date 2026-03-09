@@ -1,0 +1,31 @@
+{
+    "id": "083E-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083E-record-006",
+    "label": {
+        "en": "meh.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-07-19",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083E-organization-001",
+            "authorship": [
+                "083E-person-000",
+                "083E-person-002",
+                "083E-person-001"
+            ]
+        }
+    ],
+    "howToCite": "meh.jpg (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083E-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-11-16",
+    "datePublished": "2025-10-19",
+    "size": "59.9 MB"
+}

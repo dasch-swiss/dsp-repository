@@ -1,0 +1,43 @@
+{
+    "id": "083E-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083E-record-001",
+    "label": {
+        "en": "ouch_shirk.tif"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-07-19",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083E-organization-001",
+            "authorship": [
+                "083E-person-000",
+                "083E-person-002",
+                "083E-person-001"
+            ]
+        }
+    ],
+    "howToCite": "ouch_shirk.tif (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083E-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-03-13",
+    "datePublished": "2025-08-02",
+    "size": "394.7 MB",
+    "dateModified": "2024-08-05",
+    "keywords": [
+        {
+            "en": "dolores"
+        },
+        {
+            "en": "inventore"
+        },
+        {
+            "en": "comptus"
+        }
+    ]
+}

@@ -1,0 +1,47 @@
+{
+    "id": "0105-record-050",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0105-record-050",
+    "label": {
+        "en": "why.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0105-organization-000",
+            "authorship": [
+                "0105-person-000",
+                "0105-person-001",
+                "0105-person-002",
+                "0105-person-003",
+                "0105-person-004"
+            ]
+        }
+    ],
+    "howToCite": "why.tiff (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0105-record-050",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-02-18",
+    "datePublished": "2019-07-19",
+    "size": "60.2 MB",
+    "description": {
+        "en": "Basium decipio canonicus aggero vespillo. Tubineus demergo cornu cursim arbitro tabernus suscipio. Sit adhaero valetudo accusantium caput deduco cibus."
+    },
+    "keywords": [
+        {
+            "en": "omnis"
+        },
+        {
+            "en": "umerus"
+        },
+        {
+            "en": "certe"
+        }
+    ]
+}

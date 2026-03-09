@@ -1,0 +1,41 @@
+{
+    "id": "0103-record-073",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-073",
+    "label": {
+        "en": "joyously.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "joyously.doc (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-073",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-08-31",
+    "datePublished": "2018-10-07",
+    "size": "258.1 MB",
+    "description": {
+        "en": "Cicuta tum depereo caveo adfectus. Coma suus super. Conspergo vociferor debitis deprecator quaerat enim texo custodia."
+    },
+    "keywords": [
+        {
+            "en": "arx"
+        }
+    ]
+}

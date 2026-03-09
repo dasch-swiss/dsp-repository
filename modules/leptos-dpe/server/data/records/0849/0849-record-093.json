@@ -1,0 +1,43 @@
+{
+    "id": "0849-record-093",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-093",
+    "label": {
+        "en": "aboard_save.tif"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "aboard_save.tif (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-093",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-02-12",
+    "datePublished": "2024-11-09",
+    "size": "344.4 MB",
+    "keywords": [
+        {
+            "en": "ciminatio"
+        },
+        {
+            "en": "turba"
+        },
+        {
+            "en": "approbo"
+        }
+    ]
+}

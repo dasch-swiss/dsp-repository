@@ -1,0 +1,41 @@
+{
+    "id": "084B-record-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084B-record-003",
+    "label": {
+        "en": "gracefully_modulo.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-07-08",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "084B-organization-001",
+            "authorship": [
+                "084B-person-001",
+                "084B-person-000"
+            ]
+        }
+    ],
+    "howToCite": "gracefully_modulo.png (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084B-record-003",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-02-20",
+    "datePublished": "2024-05-18",
+    "size": "303.6 MB",
+    "keywords": [
+        {
+            "en": "aggero"
+        },
+        {
+            "en": "animi"
+        },
+        {
+            "en": "sunt"
+        }
+    ]
+}

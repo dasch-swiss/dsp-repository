@@ -1,0 +1,44 @@
+{
+    "id": "081C-record-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081C-record-005",
+    "label": {
+        "en": "self_confidence_whenever_inasmuch.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0"
+            },
+            "copyrightHolder": "081C-organization-000",
+            "authorship": [
+                "081C-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "self_confidence_whenever_inasmuch.txt (2011). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081C-record-005",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2009-06-25",
+    "datePublished": "2011-12-16",
+    "size": "257.8 MB",
+    "description": {
+        "en": "Textus tantum vomito appositus turbo. Fuga undique depromo vociferor tero cui vado coadunatio auctor alii. Tyrannus cernuus audax civitas antiquus."
+    },
+    "keywords": [
+        {
+            "en": "despecto"
+        },
+        {
+            "en": "deprecator"
+        },
+        {
+            "en": "corroboro"
+        }
+    ],
+    "source": "Tolero collum triduana curo mollitia alii maxime numquam virga terra."
+}

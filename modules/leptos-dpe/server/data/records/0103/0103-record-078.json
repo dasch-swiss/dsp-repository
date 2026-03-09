@@ -1,0 +1,42 @@
+{
+    "id": "0103-record-078",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-078",
+    "label": {
+        "en": "against.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "against.doc (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-078",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-08-07",
+    "datePublished": "2021-08-09",
+    "size": "393.6 MB",
+    "dateModified": "2021-08-24",
+    "description": {
+        "en": "Vero uter maiores curatio aliquam victus teneo sono. Cupiditas creta cribro aspernatur. Bestia deleniti thymum conqueror."
+    },
+    "keywords": [
+        {
+            "en": "rerum"
+        }
+    ]
+}

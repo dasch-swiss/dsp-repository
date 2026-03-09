@@ -1,0 +1,46 @@
+{
+    "id": "082A-record-082",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082A-record-082",
+    "label": {
+        "en": "upon_kosher_swat.flac"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "SGV Schweizerisches Volksliedarchiv",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+            },
+            "copyrightHolder": "082A-organization-001",
+            "authorship": [
+                "082A-person-000",
+                "082A-person-003",
+                "082A-person-001",
+                "082A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "upon_kosher_swat.flac (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082A-record-082",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2018-10-08",
+    "datePublished": "2021-08-23",
+    "size": "119.8 MB",
+    "description": {
+        "en": "Corona audeo sustineo arto cotidie comminor toties baiulus infit. Doloremque a laboriosam doloribus avaritia. Cariosus aequitas degero capitulus casso aestus traho vinculum barba adopto."
+    },
+    "keywords": [
+        {
+            "en": "denique"
+        },
+        {
+            "en": "umerus"
+        },
+        {
+            "en": "arbitro"
+        }
+    ]
+}

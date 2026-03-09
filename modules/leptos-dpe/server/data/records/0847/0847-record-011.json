@@ -1,0 +1,41 @@
+{
+    "id": "0847-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-011",
+    "label": {
+        "en": "outlaw_badly_unless.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "outlaw_badly_unless.doc (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-07-19",
+    "datePublished": "2022-08-19",
+    "size": "430.4 MB",
+    "description": {
+        "en": "Earum denuo venia. Atrox caritas vomica defendo soleo apparatus. Nulla tredecim spectaculum vereor derideo deleniti alius vilis convoco laudantium."
+    },
+    "keywords": [
+        {
+            "en": "commodi"
+        },
+        {
+            "en": "cena"
+        }
+    ]
+}

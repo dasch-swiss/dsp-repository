@@ -1,0 +1,34 @@
+{
+    "id": "0804-record-040",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-040",
+    "label": {
+        "en": "newsprint_numb_yuck.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "newsprint_numb_yuck.pdf (1981). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-040",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1980-12-12",
+    "datePublished": "1981-10-10",
+    "size": "403.1 MB",
+    "keywords": [
+        {
+            "en": "ustulo"
+        }
+    ]
+}

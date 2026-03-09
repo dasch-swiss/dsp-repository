@@ -1,0 +1,34 @@
+{
+    "id": "0846-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-007",
+    "label": {
+        "en": "consequently.png"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "consequently.png (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-12-01",
+    "datePublished": "2020-01-11",
+    "size": "196.4 MB",
+    "dateModified": "2020-03-01",
+    "description": {
+        "en": "Vinculum commodi tabula. Statim suppellex pel adipiscor absconditus tremo sodalitas acervus ventus nobis. Libero testimonium eligendi centum villa creta."
+    }
+}

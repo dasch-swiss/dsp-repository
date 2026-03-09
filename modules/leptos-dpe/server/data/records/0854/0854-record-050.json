@@ -1,0 +1,58 @@
+{
+    "id": "0854-record-050",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-050",
+    "label": {
+        "en": "why_possible_behind.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "why_possible_behind.doc (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-050",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2027-02-06",
+    "datePublished": "2027-02-19",
+    "size": "332.6 MB",
+    "dateModified": "2027-10-25",
+    "keywords": [
+        {
+            "en": "quisquam"
+        },
+        {
+            "en": "umbra"
+        },
+        {
+            "en": "deporto"
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "id": "0852-record-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-002",
+    "label": {
+        "en": "randomize.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "randomize.jpg (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-002",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2014-08-29",
+    "datePublished": "2022-03-11",
+    "size": "427.7 MB",
+    "dateModified": "2016-03-01",
+    "description": {
+        "en": "Tersus accommodo via vinitor varius. Eligendi conor demulceo carus acidus unde clamo sufficio. Tergiversatio occaecati similique vulnus acervus."
+    },
+    "keywords": [
+        {
+            "en": "talio"
+        },
+        {
+            "en": "defero"
+        },
+        {
+            "en": "praesentium"
+        }
+    ]
+}

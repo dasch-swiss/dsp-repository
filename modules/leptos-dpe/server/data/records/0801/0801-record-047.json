@@ -1,0 +1,87 @@
+{
+    "id": "0801-record-047",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-record-047",
+    "label": {
+        "en": "political_where_swathe.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        }
+    ],
+    "howToCite": "political_where_swathe.xml (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801-record-047",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2017-07-30",
+    "datePublished": "2019-06-10",
+    "size": "175.1 MB",
+    "dateModified": "2019-01-02",
+    "keywords": [
+        {
+            "en": "comes"
+        },
+        {
+            "en": "certus"
+        }
+    ]
+}

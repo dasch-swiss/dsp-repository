@@ -1,0 +1,33 @@
+{
+    "id": "0862-record-053",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-053",
+    "label": {
+        "en": "vice_sediment.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "vice_sediment.txt (2035). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-053",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2032-08-14",
+    "datePublished": "2035-05-06",
+    "size": "206.1 MB"
+}

@@ -1,13 +1,14 @@
 {
     "id": "0103-organization-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-organization-001",
     "name": "Swiss National Science Foundation (SNSF)",
-    "url": "MISSING",
+    "url": "https://www.swiss-national-science-foundat.org",
     "address": {
         "street": "Wildhainweg 3 Postfach",
         "postalCode": "3001",
         "locality": "Bern",
         "country": "Switzerland"
     },
-    "email": "desk@snf.ch"
+    "email": "desk@snf.ch",
+    "sameAs": []
 }

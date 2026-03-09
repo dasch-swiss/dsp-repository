@@ -1,0 +1,44 @@
+{
+    "id": "0807-record-018",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0807-record-018",
+    "label": {
+        "en": "unlucky_step_mother.mov"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-05-09",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0807-organization-000",
+            "authorship": [
+                "0807-person-004",
+                "0807-person-003",
+                "0807-person-005",
+                "0807-person-006",
+                "0807-person-007"
+            ]
+        }
+    ],
+    "howToCite": "unlucky_step_mother.mov (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0807-record-018",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2017-07-14",
+    "datePublished": "2017-12-28",
+    "size": "62.6 MB",
+    "keywords": [
+        {
+            "en": "summa"
+        },
+        {
+            "en": "sapiente"
+        },
+        {
+            "en": "tempore"
+        }
+    ]
+}

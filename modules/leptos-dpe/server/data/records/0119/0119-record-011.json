@@ -1,0 +1,42 @@
+{
+    "id": "0119-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0119-record-011",
+    "label": {
+        "en": "mysteriously_wisely.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2020-08-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0119-organization-001",
+            "authorship": [
+                "0119-person-001",
+                "0119-person-000",
+                "0119-person-002"
+            ]
+        }
+    ],
+    "howToCite": "mysteriously_wisely.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0119-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-03-24",
+    "datePublished": "2024-07-05",
+    "size": "21.4 MB",
+    "keywords": [
+        {
+            "en": "volva"
+        },
+        {
+            "en": "artificiose"
+        },
+        {
+            "en": "apto"
+        }
+    ]
+}

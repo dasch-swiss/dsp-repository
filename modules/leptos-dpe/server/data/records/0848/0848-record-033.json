@@ -1,0 +1,36 @@
+{
+    "id": "0848-record-033",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-033",
+    "label": {
+        "en": "yum_sorrowful_freely.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "yum_sorrowful_freely.pdf (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-033",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-03-09",
+    "datePublished": "2022-04-13",
+    "size": "375.9 MB",
+    "dateModified": "2020-10-26",
+    "description": {
+        "en": "Thermae pel solitudo speciosus beatus conservo comparo repellat cur atque. Attonbitus fugit temeritas peior deserunt appono. Conor totidem damno bos adduco aperiam agnitio."
+    }
+}

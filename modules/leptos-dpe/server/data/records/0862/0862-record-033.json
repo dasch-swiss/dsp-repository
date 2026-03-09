@@ -1,0 +1,39 @@
+{
+    "id": "0862-record-033",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-033",
+    "label": {
+        "en": "deeply_before.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "deeply_before.xml (2033). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-033",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2033-05-18",
+    "datePublished": "2033-10-24",
+    "size": "174.8 MB",
+    "dateModified": "2037-11-21",
+    "keywords": [
+        {
+            "en": "solus"
+        }
+    ]
+}

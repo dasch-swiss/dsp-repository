@@ -1,0 +1,32 @@
+{
+    "id": "085A-record-030",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085A-record-030",
+    "label": {
+        "en": "zowie_lively_comestible.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2019-03-14",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "085A-organization-002",
+            "authorship": [
+                "085A-person-001"
+            ]
+        }
+    ],
+    "howToCite": "zowie_lively_comestible.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085A-record-030",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2021-05-01",
+    "datePublished": "2021-05-31",
+    "size": "475.4 MB",
+    "description": {
+        "en": "Temptatio alienus corrumpo aranea. Ait sui adeo nulla. Vesper convoco caritas demum careo volup vae agnosco clementia natus."
+    }
+}

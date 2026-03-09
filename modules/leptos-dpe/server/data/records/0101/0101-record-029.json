@@ -1,0 +1,42 @@
+{
+    "id": "0101-record-029",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-029",
+    "label": {
+        "en": "attribute_greedily.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "attribute_greedily.doc (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-029",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2016-12-14",
+    "datePublished": "2018-12-04",
+    "size": "157.2 MB",
+    "description": {
+        "en": "Iure blandior claustrum sulum tego curriculum vulpes attonbitus damno communis. Aeger odio cui supra animus nulla. Totidem cuppedia valeo color sapiente aspicio adflicto templum spes."
+    },
+    "keywords": [
+        {
+            "en": "arca"
+        },
+        {
+            "en": "hic"
+        }
+    ]
+}

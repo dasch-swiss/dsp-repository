@@ -1,0 +1,46 @@
+{
+    "id": "0862-record-035",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-035",
+    "label": {
+        "en": "gadzooks.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "gadzooks.xml (2039). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-035",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2032-10-18",
+    "datePublished": "2039-07-04",
+    "size": "118.1 MB",
+    "dateModified": "2034-05-23",
+    "keywords": [
+        {
+            "en": "adiuvo"
+        },
+        {
+            "en": "cubicularis"
+        },
+        {
+            "en": "delectatio"
+        }
+    ],
+    "source": "Volubilis peccatus abscido."
+}

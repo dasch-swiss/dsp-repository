@@ -1,0 +1,43 @@
+{
+    "id": "0844-record-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-002",
+    "label": {
+        "en": "ack.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "ack.xml (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-002",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2023-06-23",
+    "datePublished": "2023-09-28",
+    "size": "321.6 MB",
+    "dateModified": "2023-08-11",
+    "description": {
+        "en": "Caritas adamo vorago corrigo conservo minima aureus corrupti. Ubi voco vir sit ullam curia. Crinis caute appositus bos."
+    },
+    "keywords": [
+        {
+            "en": "speculum"
+        },
+        {
+            "en": "vestigium"
+        }
+    ]
+}

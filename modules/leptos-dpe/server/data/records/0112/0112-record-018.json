@@ -1,0 +1,42 @@
+{
+    "id": "0112-record-018",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-018",
+    "label": {
+        "en": "our_untried.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "our_untried.png (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-018",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-02-19",
+    "datePublished": "2019-09-06",
+    "size": "1.1 MB",
+    "dateModified": "2020-03-11",
+    "keywords": [
+        {
+            "en": "adsidue"
+        },
+        {
+            "en": "summa"
+        }
+    ]
+}

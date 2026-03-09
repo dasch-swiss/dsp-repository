@@ -1,6 +1,6 @@
 {
     "id": "0820-organization-007",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-organization-007",
     "name": "Free University of Brussels",
     "url": "http://www.ulb.be",
     "address": {
@@ -8,5 +8,6 @@
         "postalCode": "1050",
         "locality": "Brussels",
         "country": "Belgium"
-    }
+    },
+    "sameAs": []
 }

@@ -1,0 +1,36 @@
+{
+    "id": "0844-record-061",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-061",
+    "label": {
+        "en": "casement.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "casement.xml (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-061",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2021-01-01",
+    "datePublished": "2023-03-29",
+    "size": "85.2 MB",
+    "keywords": [
+        {
+            "en": "somniculosus"
+        }
+    ]
+}

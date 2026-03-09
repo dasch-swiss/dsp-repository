@@ -1,0 +1,38 @@
+{
+    "id": "0852-record-037",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-037",
+    "label": {
+        "en": "now_between.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "now_between.tif (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-037",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-09-27",
+    "datePublished": "2024-08-24",
+    "size": "377.7 MB",
+    "dateModified": "2024-04-24",
+    "description": {
+        "en": "Patria cupressus theologus tam speciosus totidem canto. Clementia trepide virgo laudantium. Caveo despecto fugit caveo architecto volubilis delectus."
+    },
+    "keywords": [
+        {
+            "en": "comedo"
+        }
+    ]
+}

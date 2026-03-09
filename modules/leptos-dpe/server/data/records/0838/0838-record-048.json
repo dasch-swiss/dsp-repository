@@ -1,0 +1,45 @@
+{
+    "id": "0838-record-048",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0838-record-048",
+    "label": {
+        "en": "even_offensively_separately.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-01-22",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0838-organization-002",
+            "authorship": [
+                "0838-person-000",
+                "0838-person-001",
+                "0838-person-002",
+                "0838-person-003",
+                "0838-person-004"
+            ]
+        }
+    ],
+    "howToCite": "even_offensively_separately.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0838-record-048",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-07-26",
+    "datePublished": "2023-08-17",
+    "size": "337.2 MB",
+    "keywords": [
+        {
+            "en": "cursus"
+        },
+        {
+            "en": "itaque"
+        },
+        {
+            "en": "clam"
+        }
+    ],
+    "source": "Laboriosam fugit ater verus curia."
+}

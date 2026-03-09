@@ -1,0 +1,43 @@
+{
+    "id": "0848-record-057",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-057",
+    "label": {
+        "en": "celebrated_jazz_aha.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "celebrated_jazz_aha.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-057",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-04-27",
+    "datePublished": "2020-08-11",
+    "size": "420.2 MB",
+    "description": {
+        "en": "Cibo demergo autem soluta cuppedia tergum. Statim dedico ipsa cado vallum facere. Complectus socius crur circumvenio voro compono aeternus votum acquiro."
+    },
+    "keywords": [
+        {
+            "en": "sonitus"
+        },
+        {
+            "en": "tabgo"
+        }
+    ]
+}

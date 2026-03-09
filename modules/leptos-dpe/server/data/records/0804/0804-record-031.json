@@ -1,0 +1,34 @@
+{
+    "id": "0804-record-031",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-031",
+    "label": {
+        "en": "broken_ah.txt"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "broken_ah.txt (1984). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-031",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1983-11-22",
+    "datePublished": "1984-04-22",
+    "size": "352.8 MB",
+    "keywords": [
+        {
+            "en": "balbus"
+        }
+    ]
+}

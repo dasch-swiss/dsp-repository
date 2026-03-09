@@ -1,6 +1,6 @@
 {
     "id": "0102-person-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0102-person-001",
     "givenNames": [
         "Vincent"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0102-organization-000"
     ],
-    "email": "vincent.annen@unil.ch"
+    "email": "vincent.annen@unil.ch",
+    "sameAs": []
 }

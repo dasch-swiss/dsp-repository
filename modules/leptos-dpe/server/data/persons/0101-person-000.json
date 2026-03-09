@@ -1,6 +1,6 @@
 {
     "id": "0101-person-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-person-000",
     "givenNames": [
         "Philippe"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0101-organization-000"
     ],
-    "email": "philippe.gonzalez@unil.ch"
+    "email": "philippe.gonzalez@unil.ch",
+    "sameAs": []
 }

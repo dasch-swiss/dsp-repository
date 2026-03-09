@@ -1,0 +1,43 @@
+{
+    "id": "0119-record-014",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0119-record-014",
+    "label": {
+        "en": "anti.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2020-08-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0119-organization-001",
+            "authorship": [
+                "0119-person-001",
+                "0119-person-000",
+                "0119-person-002"
+            ]
+        }
+    ],
+    "howToCite": "anti.tiff (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0119-record-014",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-02-16",
+    "datePublished": "2024-02-01",
+    "size": "461.8 MB",
+    "dateModified": "2024-09-24",
+    "keywords": [
+        {
+            "en": "tubineus"
+        },
+        {
+            "en": "aut"
+        },
+        {
+            "en": "ratione"
+        }
+    ]
+}

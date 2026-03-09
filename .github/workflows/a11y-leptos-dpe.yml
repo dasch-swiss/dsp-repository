@@ -39,11 +39,10 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v2
 
-      - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@main
-
       - name: Install cargo-leptos
-        run: cargo binstall -y cargo-leptos@0.3.4
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-leptos@0.3.4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4

@@ -67,6 +67,20 @@ jobs:
       - name: Build leptos-dpe
         run: cargo leptos build --project=leptos-dpe --release
 
+      - name: Verify build artifacts
+        run: |
+          echo "=== Binary ===" && ls -la target/release/leptos-server
+          echo "=== Site root ===" && ls modules/leptos-dpe/target/site/
+
+      - name: Smoke test server
+        run: |
+          LEPTOS_SITE_ROOT=$(pwd)/modules/leptos-dpe/target/site \
+            ./target/release/leptos-server &
+          SERVER_PID=$!
+          sleep 5
+          curl -sf http://localhost:4000 || (kill $SERVER_PID; echo "Server failed to respond"; exit 1)
+          kill $SERVER_PID
+
       - name: Run accessibility tests
         run: just test-a11y-leptos-dpe
 

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+  <request verb="GetRecord" identifier="oai:meta.dasch.swiss:ark:/72163/1/0803" metadataPrefix="oai_datacite">https://meta.dasch.swiss/oai</request>
+  <GetRecord>
+    <record>
+      <header>
+        <identifier>oai:meta.dasch.swiss:ark:/72163/1/0803</identifier>
+        <datestamp>2008-06-01</datestamp>
+        <setSpec>entityType:ResearchProject</setSpec>
+      </header>
+      <metadata>
+        <oai_datacite xmlns="http://schema.datacite.org/oai/oai-1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schema.datacite.org/oai/oai-1.1/ http://schema.datacite.org/oai/oai-1.1/oai.xsd">
+          <schemaVersion>4.6</schemaVersion>
+          <datacentreSymbol>DASCH.DSP</datacentreSymbol>
+          <payload>
+            <resource xmlns="http://datacite.org/schema/kernel-4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-4 https://schema.datacite.org/meta/kernel-4/metadata.xsd">
+              <identifier identifierType="ARK">ark:/72163/1/0803</identifier>
+              <creators>
+                <creator>
+                  <creatorName nameType="Organizational">DaSCH</creatorName>
+                </creator>
+              </creators>
+              <titles>
+                <title>Die Bilderfolgen der Basler Frühdrucke: Spätmittelalterliche Didaxe als Bild-Text-Lektüre</title>
+                <title titleType="AlternativeTitle">Incunabula</title>
+              </titles>
+              <publisher>DaSCH</publisher>
+              <publicationYear>2008</publicationYear>
+              <resourceType resourceTypeGeneral="Project">Research Project</resourceType>
+              <subjects>
+                <subject>Letterpress Printing</subject>
+                <subject>10404 Visual arts and Art history</subject>
+              </subjects>
+              <contributors>
+                <contributor contributorType="Other">
+                  <contributorName nameType="Personal">0803-person-000</contributorName>
+                </contributor>
+              </contributors>
+              <descriptions>
+                <description descriptionType="Abstract">An interdisciplinary research project on image sequences of Basel&apos;s early prints.</description>
+                <description descriptionType="Other">A description of early prints in Basel.</description>
+              </descriptions>
+              <dates>
+                <date dateType="Collected">2008-06-01/2012-08-31</date>
+                <date dateType="Coverage">Late Middle Ages</date>
+              </dates>
+              <language>German</language>
+              <rightsList>
+                <rights rightsURI="https://creativecommons.org/licenses/by/4.0/" rightsIdentifier="CC-BY-4.0" rightsIdentifierScheme="SPDX">Creative Commons Attribution 4.0 International</rights>
+              </rightsList>
+              <geoLocations>
+                <geoLocation>
+                  <geoLocationPlace>Basel</geoLocationPlace>
+                </geoLocation>
+              </geoLocations>
+              <fundingReferences>
+                <fundingReference>
+                  <funderName>0803-organization-000</funderName>
+                  <awardNumber awardURI="https://data.snf.ch/grants/grant/120378">120378</awardNumber>
+                  <awardTitle>Project funding</awardTitle>
+                </fundingReference>
+              </fundingReferences>
+            </resource>
+          </payload>
+        </oai_datacite>
+      </metadata>
+    </record>
+  </GetRecord>
+</OAI-PMH>

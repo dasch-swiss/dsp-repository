@@ -1,10 +1,22 @@
 import { devices, defineConfig } from "@playwright/test";
+import * as fs from "fs";
+import * as path from "path";
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
 // require('dotenv').config();
+
+const serverBinary = path.resolve(__dirname, "../../../..", "target/release/leptos-server");
+const siteRoot = path.resolve(__dirname, "..", "target/site");
+
+if (!fs.existsSync(serverBinary)) {
+  throw new Error(
+    `Server binary not found at ${serverBinary}\n` +
+    `Run 'just watch-leptos-dpe' (or 'cargo leptos build --release') before running E2E tests.`
+  );
+}
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -96,9 +108,13 @@ export default defineConfig({
   /* Folder for test artifacts such as screenshots, videos, traces, etc. */
   // outputDir: 'test-results/',
 
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   port: 4000,
-  // },
+  /* Start the leptos-dpe server before running tests */
+  webServer: {
+    command: serverBinary,
+    port: 4000,
+    reuseExistingServer: !process.env.CI,
+    env: {
+      LEPTOS_SITE_ROOT: siteRoot,
+    },
+  },
 });

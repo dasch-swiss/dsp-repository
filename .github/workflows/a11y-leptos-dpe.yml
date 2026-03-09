@@ -67,16 +67,6 @@ jobs:
       - name: Build leptos-dpe
         run: cargo leptos build --project=leptos-dpe --release
 
-      - name: Start leptos-dpe server
-        run: ./target/release/leptos-server &
-
-      - name: Wait for server to be ready
-        run: |
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:4000 && break
-            sleep 1
-          done
-
       - name: Run accessibility tests
         run: just test-a11y-leptos-dpe
 

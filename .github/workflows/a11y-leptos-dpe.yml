@@ -6,7 +6,15 @@ permissions:
 on:
   push:
     branches: [main]
+    paths:
+      - "modules/leptos-dpe/app/**"
+      - "modules/leptos-dpe/style/**"
+      - "modules/leptos-dpe/public/**"
   pull_request:
+    paths:
+      - "modules/leptos-dpe/app/**"
+      - "modules/leptos-dpe/style/**"
+      - "modules/leptos-dpe/public/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -52,7 +60,7 @@ jobs:
         run: cd modules/leptos-dpe/end2end && npm install
 
       - name: Install Playwright browsers
-        run: cd modules/leptos-dpe/end2end && npx playwright install --with-deps chromium
+        run: cd modules/leptos-dpe/end2end && npx playwright install chromium --with-deps
 
       - name: Build leptos-dpe
         run: cargo leptos build --project=leptos-dpe --release

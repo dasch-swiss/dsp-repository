@@ -1,0 +1,76 @@
+name: a11y / leptos-dpe
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    name: a11y / leptos-dpe / WCAG 2.1 AA
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
+      - name: Install cargo-leptos
+        run: cargo binstall -y cargo-leptos@0.3.4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install JS dependencies
+        run: cd modules/leptos-dpe && pnpm install
+
+      - name: Install Playwright browsers
+        run: cd modules/leptos-dpe/end2end && npx playwright install --with-deps chromium
+
+      - name: Build leptos-dpe
+        run: cargo leptos build --project=leptos-dpe --release
+
+      - name: Start leptos-dpe server
+        run: ./target/release/leptos-server &
+
+      - name: Wait for server to be ready
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4000 && break
+            sleep 1
+          done
+
+      - name: Run accessibility tests
+        run: just test-a11y-leptos-dpe
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-a11y-leptos-dpe
+          path: modules/leptos-dpe/end2end/playwright-report/
+          retention-days: 7

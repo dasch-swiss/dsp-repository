@@ -142,12 +142,12 @@ run-docker-mosaic-demo:
 watch-leptos-dpe:
     cargo leptos watch --project=leptos-dpe -- watch ../mosaic/tiles
 
-# Run accessibility E2E tests for the Mosaic demo (requires running server on port 3000)
-[group('mosaic')]
-test-a11y-mosaic-demo:
-    cd modules/mosaic/demo/end2end && npx playwright test tests/accessibility.spec.ts
-
-# Run accessibility E2E tests for the DPE (requires running server on port 4000)
+# Build Docker image for leptos-dpe
 [group('leptos-dpe')]
-test-a11y-leptos-dpe:
-    cd modules/leptos-dpe/end2end && npx playwright test tests/accessibility.spec.ts
+build-docker-dpe:
+    docker build -f modules/leptos-dpe/Dockerfile -t leptos-dpe .
+
+# Run leptos-dpe Docker container on port 8080
+[group('leptos-dpe')]
+run-docker-dpe:
+    docker run --rm -p 8080:8080 leptos-dpe

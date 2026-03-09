@@ -1,32 +1,40 @@
 # Build Stage
-FROM rust:bookworm AS builder
+FROM rust:1.92.0-bookworm AS builder
+
+# Install cargo-binstall for faster tool installation
+RUN wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
+RUN tar -xvf cargo-binstall-x86_64-unknown-linux-musl.tgz
+RUN cp cargo-binstall /usr/local/cargo/bin
 
 # Install build dependencies
-RUN apt-get update && \
-    apt-get install -y wget pkg-config libssl-dev && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends clang
 
 # Install cargo-leptos
-RUN cargo install cargo-leptos --locked
+RUN cargo binstall cargo-leptos -y
 
-# Install Node.js and npm for Tailwind CSS
+# Add the WASM target
+RUN rustup target add wasm32-unknown-unknown
+
+# Install Node.js and pnpm for Tailwind CSS / DaisyUI
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs
+    apt-get install -y nodejs && \
+    npm install -g pnpm
 
 # Set the working directory
-WORKDIR /work
+RUN mkdir -p /app
+WORKDIR /app
 
-# Copy package files first for better caching
-COPY package.json package-lock.json* ./
-
-# Install npm dependencies (including DaisyUI)
-RUN npm install
-
-# Copy the entire project
+# Copy the entire workspace (needed for workspace dependencies)
 COPY . .
 
-# Build the project in release mode with verbose output
-RUN cargo leptos build --release -vv
+# Install npm dependencies
+WORKDIR /app/modules/leptos-dpe
+RUN CI=true pnpm install --frozen-lockfile
+
+# Build the project from the workspace root
+WORKDIR /app
+RUN cargo leptos build --project leptos-dpe --release -vv
 
 # Runtime Stage
 FROM debian:bookworm-slim AS runtime
@@ -46,14 +54,14 @@ RUN useradd -m -u 1001 leptos
 # Set the working directory
 WORKDIR /app
 
-# Copy the server binary from the builder stage (renamed to avoid conflict with server/data directory)
-COPY --from=builder /work/target/release/server /app/leptos-dpe
+# Copy the server binary from the builder stage
+COPY --from=builder /app/target/release/leptos-server /app/leptos-dpe
 
 # Copy the site directory (contains WASM, JS, CSS, and static assets)
-COPY --from=builder /work/target/site /app/site
+COPY --from=builder /app/modules/leptos-dpe/target/site /app/site
 
-# Create the server directory structure for volume mounts
-RUN mkdir -p /app/server/data
+# Copy the data files from the builder stage
+COPY --from=builder /app/modules/leptos-dpe/server/data /app/server/data
 
 # Change ownership to the non-root user
 RUN chown -R leptos:leptos /app
@@ -67,6 +75,7 @@ ENV LEPTOS_SITE_PKG_DIR="pkg"
 ENV LEPTOS_SITE_ADDR="0.0.0.0:8080"
 ENV LEPTOS_RELOAD_PORT="8081"
 ENV LEPTOS_ENV="PROD"
+ENV DATA_DIR="/app/server/data"
 
 # Expose the port
 EXPOSE 8080

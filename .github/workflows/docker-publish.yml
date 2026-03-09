@@ -1,25 +1,36 @@
-name: Docker publish mosaic-demo image
+name: Docker build and push
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "modules/mosaic/**"
-
-permissions:
-  contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+  workflow_call:
+    inputs:
+      dockerfile:
+        description: Path to the Dockerfile
+        required: true
+        type: string
+      image-name:
+        description: "Docker image name (e.g. daschswiss/dpe)"
+        required: true
+        type: string
+      image-tag:
+        description: Pre-computed image tag
+        required: true
+        type: string
+    secrets:
+      DOCKER_USER:
+        required: true
+      DOCKER_HUB_TOKEN:
+        required: true
+    outputs:
+      tag:
+        description: The image tag that was published
+        value: ${{ jobs.build-and-push.outputs.tag }}
 
 jobs:
-  publish:
-    name: Build and publish mosaic-demo
+  build-and-push:
+    name: Build and push
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.output_docker_image_tag.outputs.tag }}
+      tag: ${{ inputs.image-tag }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,35 +45,12 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Generate docker image tag
-        id: output_docker_image_tag
-        run: |
-          VERSION=$(grep '^version' modules/mosaic/demo/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          echo "tag=${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: modules/mosaic/demo/Dockerfile
+          file: ${{ inputs.dockerfile }}
           push: true
-          tags: daschswiss/mosaic-demo:${{ steps.output_docker_image_tag.outputs.tag }}
+          tags: ${{ inputs.image-name }}:${{ inputs.image-tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  trigger-prod-deployment:
-    name: Trigger deployment to PROD
-    runs-on: ubuntu-latest
-    needs: publish
-    steps:
-      - name: Trigger deployment to PROD
-        env:
-          IMAGE_TAG: ${{ needs.publish.outputs.tag }}
-          JENKINS_BASIC_AUTH_USER: ${{ secrets.JENKINS_BASIC_AUTH_USER }}
-          JENKINS_BASIC_AUTH_PASS: ${{ secrets.JENKINS_BASIC_AUTH_PASS }}
-          JENKINS_UPDATE_RELEASE_WEBHOOK: ${{ secrets.JENKINS_UPDATE_MOSAIC_PROD_WEBHOOK }}
-        run: |
-          curl -f -u "${JENKINS_BASIC_AUTH_USER}:${JENKINS_BASIC_AUTH_PASS}" \
-               -X POST "${JENKINS_UPDATE_RELEASE_WEBHOOK}" \
-               -d "Service=mosaic&Version=${IMAGE_TAG}"

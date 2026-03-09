@@ -30,7 +30,7 @@ pub fn ProjectCard(
             <Card variant=CardVariant::AutoHover class=layout_class>
                 <div class="relative">
                     <figure class="bg-neutral-900 overflow-hidden" style=figure_style>
-                        <img src="https://dasch.swiss/projects/0854.webp" alt="Shoes" />
+                        <img src="https://dasch.swiss/projects/0854.webp" alt="Alice from Alice in Wonderland walks through a futuristic arched hall covered in glowing binary code toward a doorway labeled \"DasCHland,\" with plants and computer monitors along the sides." />
                     </figure>
                     <ProjectCardIndicators status=status access_rights=access_rights />
                 </div>

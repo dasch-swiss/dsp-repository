@@ -1,0 +1,38 @@
+{
+    "id": "083C-record-074",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-074",
+    "label": {
+        "en": "however_trivial_inject.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "however_trivial_inject.txt (2009). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-074",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1999-01-09",
+    "datePublished": "2009-02-26",
+    "size": "489.6 MB",
+    "description": {
+        "en": "Balbus crinis umquam curtus debeo. Depereo thymbra cornu quibusdam. Architecto textilis commodi defero toties volva calamitas."
+    },
+    "keywords": [
+        {
+            "en": "tergiversatio"
+        }
+    ]
+}

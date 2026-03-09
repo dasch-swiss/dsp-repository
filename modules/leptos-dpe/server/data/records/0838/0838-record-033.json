@@ -1,0 +1,41 @@
+{
+    "id": "0838-record-033",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0838-record-033",
+    "label": {
+        "en": "put.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-01-22",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0838-organization-002",
+            "authorship": [
+                "0838-person-000",
+                "0838-person-001",
+                "0838-person-002",
+                "0838-person-003",
+                "0838-person-004"
+            ]
+        }
+    ],
+    "howToCite": "put.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0838-record-033",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-07-05",
+    "datePublished": "2024-04-10",
+    "size": "485.1 MB",
+    "keywords": [
+        {
+            "en": "titulus"
+        },
+        {
+            "en": "terebro"
+        }
+    ]
+}

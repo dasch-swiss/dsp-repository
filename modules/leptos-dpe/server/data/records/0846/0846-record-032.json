@@ -1,0 +1,38 @@
+{
+    "id": "0846-record-032",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-032",
+    "label": {
+        "en": "bah_sunder_inasmuch.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "bah_sunder_inasmuch.tif (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-032",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-11-24",
+    "datePublished": "2023-02-17",
+    "size": "136.5 MB",
+    "keywords": [
+        {
+            "en": "triduana"
+        },
+        {
+            "en": "architecto"
+        }
+    ]
+}

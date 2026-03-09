@@ -6,7 +6,7 @@ use mosaic_tiles::link::Link;
 use super::card::ProjectCard;
 use super::project_pagination::ProjectPagination;
 use crate::components::loading::Loading;
-use crate::domain::{list_projects, ProjectQuery};
+use crate::domain::{lang_value, list_projects, ProjectQuery};
 
 #[component]
 pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::ParamsError>>) -> impl IntoView {
@@ -73,7 +73,7 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                                                     let keywords: Vec<String> = project
                                                         .keywords
                                                         .iter()
-                                                        .filter_map(|map| map.get("en").cloned())
+                                                        .filter_map(|map| lang_value(map).cloned())
                                                         .collect();
                                                     view! {
                                                         <ProjectCard
@@ -82,6 +82,7 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                                                             status=project.status.clone()
                                                             access_rights=project.access_rights.access_rights.clone()
                                                             btn_target=format!("/projects/{}", project.shortcode)
+                                                            shortcode=project.shortcode.clone()
                                                             keywords=keywords
                                                         />
                                                     }

@@ -1,0 +1,43 @@
+{
+    "id": "0849-record-096",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-096",
+    "label": {
+        "en": "gad.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "gad.txt (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-096",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2025-02-24",
+    "datePublished": "2025-03-15",
+    "size": "224.1 MB",
+    "keywords": [
+        {
+            "en": "cognatus"
+        },
+        {
+            "en": "alioqui"
+        },
+        {
+            "en": "beatus"
+        }
+    ]
+}

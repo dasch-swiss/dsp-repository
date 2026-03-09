@@ -1,0 +1,39 @@
+{
+    "id": "083C-record-081",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-081",
+    "label": {
+        "en": "as.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "as.xml (2006). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-081",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "1995-06-04",
+    "datePublished": "2006-09-29",
+    "size": "439.2 MB",
+    "dateModified": "2002-08-06",
+    "keywords": [
+        {
+            "en": "sperno"
+        },
+        {
+            "en": "tergum"
+        }
+    ]
+}

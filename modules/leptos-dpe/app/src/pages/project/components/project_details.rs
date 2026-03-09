@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::domain::Project;
+use crate::domain::{lang_value, Project};
 use crate::pages::project::components::breadcrumb::Breadcrumb;
 use crate::pages::project::components::cite_project_section::CiteProjectSection;
 use crate::pages::project::components::project_details_tabs::ProjectDetailsTabs;
@@ -14,13 +14,14 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
 
             <ProjectHeader
                 name=proj.name.clone()
-                description=proj.description.get("en").cloned().unwrap_or_default()
+                shortcode=proj.shortcode.clone()
+                description=lang_value(&proj.description).cloned().unwrap_or_default()
                 alternative_names=proj
                     .alternative_names
                     .as_deref()
                     .unwrap_or_default()
                     .iter()
-                    .filter_map(|m| m.get("en").cloned())
+                    .filter_map(|m| lang_value(m).cloned())
                     .collect()
                 url=proj.url.clone()
                 secondary_url=proj.secondary_url.clone()

@@ -1,0 +1,33 @@
+{
+    "id": "0117-record-017",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-017",
+    "label": {
+        "en": "misreport.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "misreport.doc (2016). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-017",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2016-06-26",
+    "datePublished": "2016-09-28",
+    "size": "163.3 MB",
+    "source": "Volva condico aveho adflicto conatus verus ea depulso."
+}

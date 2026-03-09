@@ -1,0 +1,41 @@
+{
+    "id": "0112-record-037",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-037",
+    "label": {
+        "en": "or_how_and.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "or_how_and.doc (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-037",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-03-02",
+    "datePublished": "2021-11-12",
+    "size": "457.3 MB",
+    "keywords": [
+        {
+            "en": "ustilo"
+        },
+        {
+            "en": "contigo"
+        }
+    ]
+}

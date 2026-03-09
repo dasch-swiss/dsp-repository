@@ -137,8 +137,22 @@ pub fn ProjectFilters() -> impl IntoView {
         })
         .collect();
 
+    let clear_href = {
+        let new_query = ProjectQuery {
+            ongoing: None,
+            finished: None,
+            search: if search.is_empty() { None } else { Some(search.clone()) },
+            page: Some(1),
+            type_of_data: None,
+            data_language: None,
+            access_rights: None,
+        };
+        format!("/projects{}", new_query.to_query_string())
+    };
+
     let status_items_clone = status_items.clone();
     let access_rights_items_clone = access_rights_items.clone();
+    let clear_href_clone = clear_href.clone();
 
     view! {
         <Card variant=CardVariant::Bordered class="w-full">
@@ -150,6 +164,7 @@ pub fn ProjectFilters() -> impl IntoView {
                             type_of_data_items=vec![]
                             data_language_items=vec![]
                             access_rights_items=access_rights_items_clone.clone()
+                            clear_href=clear_href_clone.clone()
                         />
                     }
                 }>
@@ -182,6 +197,7 @@ pub fn ProjectFilters() -> impl IntoView {
                                 type_of_data_items=type_items
                                 data_language_items=language_items
                                 access_rights_items=access_rights_items.clone()
+                                clear_href=clear_href.clone()
                             />
                         }
                     }}

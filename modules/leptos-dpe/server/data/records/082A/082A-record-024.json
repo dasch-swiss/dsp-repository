@@ -1,0 +1,40 @@
+{
+    "id": "082A-record-024",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082A-record-024",
+    "label": {
+        "en": "colligate_meanwhile_gah.flac"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "SGV Schweizerisches Volksliedarchiv",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+            },
+            "copyrightHolder": "082A-organization-001",
+            "authorship": [
+                "082A-person-000",
+                "082A-person-003",
+                "082A-person-001",
+                "082A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "colligate_meanwhile_gah.flac (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082A-record-024",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2020-12-04",
+    "datePublished": "2021-09-02",
+    "size": "150.6 MB",
+    "keywords": [
+        {
+            "en": "demens"
+        },
+        {
+            "en": "ubi"
+        }
+    ]
+}

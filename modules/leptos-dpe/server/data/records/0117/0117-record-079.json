@@ -1,0 +1,34 @@
+{
+    "id": "0117-record-079",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-079",
+    "label": {
+        "en": "ew.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "ew.doc (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-079",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-01-17",
+    "datePublished": "2020-04-21",
+    "size": "330.9 MB",
+    "dateModified": "2020-01-26",
+    "source": "Appositus culpo claustrum alveus tyrannus amicitia comminor thermae enim aut."
+}

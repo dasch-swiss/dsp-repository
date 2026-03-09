@@ -1,0 +1,39 @@
+{
+    "id": "084E-record-055",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-055",
+    "label": {
+        "en": "abacus.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "abacus.txt (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-055",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-09-22",
+    "datePublished": "2020-12-17",
+    "size": "426.4 MB",
+    "keywords": [
+        {
+            "en": "laboriosam"
+        }
+    ],
+    "source": "Excepturi veniam tonsor advoco denego caelestis tamisium."
+}

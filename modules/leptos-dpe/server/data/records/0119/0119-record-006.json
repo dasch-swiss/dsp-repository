@@ -1,0 +1,39 @@
+{
+    "id": "0119-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0119-record-006",
+    "label": {
+        "en": "not.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2020-08-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0119-organization-001",
+            "authorship": [
+                "0119-person-001",
+                "0119-person-000",
+                "0119-person-002"
+            ]
+        }
+    ],
+    "howToCite": "not.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0119-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-11-09",
+    "datePublished": "2022-11-23",
+    "size": "190.4 MB",
+    "description": {
+        "en": "Vestrum bos contabesco. Vergo claustrum aeternus avarus cicuta sol candidus capio a conitor. Dapifer civitas caterva atavus canto demergo cohors termes."
+    },
+    "keywords": [
+        {
+            "en": "corporis"
+        }
+    ]
+}

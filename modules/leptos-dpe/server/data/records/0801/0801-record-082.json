@@ -1,0 +1,90 @@
+{
+    "id": "0801-record-082",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-record-082",
+    "label": {
+        "en": "aw_joyously.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        }
+    ],
+    "howToCite": "aw_joyously.tiff (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801-record-082",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2016-10-05",
+    "datePublished": "2017-02-09",
+    "size": "80.4 MB",
+    "dateModified": "2019-08-30",
+    "keywords": [
+        {
+            "en": "aufero"
+        },
+        {
+            "en": "maiores"
+        },
+        {
+            "en": "aveho"
+        }
+    ]
+}

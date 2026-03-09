@@ -1,0 +1,45 @@
+{
+    "id": "080E-record-042",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-042",
+    "label": {
+        "en": "gleefully.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "gleefully.txt (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-042",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-06-17",
+    "datePublished": "2017-12-16",
+    "size": "6.7 MB",
+    "dateModified": "2018-09-07",
+    "description": {
+        "en": "Alo quas vesica calcar verto. Acer coadunatio surculus. Nostrum vulpes tonsor."
+    },
+    "keywords": [
+        {
+            "en": "spiculum"
+        },
+        {
+            "en": "depereo"
+        },
+        {
+            "en": "derideo"
+        }
+    ],
+    "source": "Vestigium congregatio cunctatio aliquam turba urbanus comptus amiculum taedium."
+}

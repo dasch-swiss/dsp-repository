@@ -1,0 +1,41 @@
+{
+    "id": "083C-record-022",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-022",
+    "label": {
+        "en": "grandson.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "grandson.xml (2010). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-022",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2006-01-25",
+    "datePublished": "2010-02-10",
+    "size": "130.8 MB",
+    "keywords": [
+        {
+            "en": "aro"
+        },
+        {
+            "en": "demo"
+        },
+        {
+            "en": "aeger"
+        }
+    ]
+}

@@ -1,0 +1,41 @@
+{
+    "id": "0843-record-021",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0843-record-021",
+    "label": {
+        "en": "whether_athwart_oddball.xml"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-02-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "woposs-organization-001",
+            "authorship": [
+                "woposs-person-000",
+                "woposs-person-001",
+                "woposs-person-002",
+                "woposs-person-003",
+                "woposs-person-004"
+            ]
+        }
+    ],
+    "howToCite": "whether_athwart_oddball.xml (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0843-record-021",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2021-10-14",
+    "datePublished": "2024-12-16",
+    "size": "129.1 MB",
+    "keywords": [
+        {
+            "en": "usque"
+        },
+        {
+            "en": "acidus"
+        }
+    ]
+}

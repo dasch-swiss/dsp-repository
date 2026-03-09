@@ -1,0 +1,85 @@
+{
+    "id": "0801-record-036",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-record-036",
+    "label": {
+        "en": "tinderbox.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access",
+        "embargoDate": "2026-09-29"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        }
+    ],
+    "howToCite": "tinderbox.pdf (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801-record-036",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-02-22",
+    "datePublished": "2017-10-06",
+    "size": "478.4 MB",
+    "dateModified": "2017-04-03",
+    "keywords": [
+        {
+            "en": "cur"
+        }
+    ]
+}

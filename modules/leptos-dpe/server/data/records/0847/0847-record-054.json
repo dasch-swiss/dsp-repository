@@ -1,0 +1,46 @@
+{
+    "id": "0847-record-054",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-054",
+    "label": {
+        "en": "anxiously.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "anxiously.png (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-054",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2021-08-22",
+    "datePublished": "2023-09-13",
+    "size": "124.4 MB",
+    "dateModified": "2022-10-12",
+    "description": {
+        "en": "Vaco cognomen carmen quis. Adfero volo arx utique ipsam. Clibanus ulterius textor."
+    },
+    "keywords": [
+        {
+            "en": "alienus"
+        },
+        {
+            "en": "assumenda"
+        },
+        {
+            "en": "error"
+        }
+    ],
+    "source": "Fugiat appono sol constans."
+}

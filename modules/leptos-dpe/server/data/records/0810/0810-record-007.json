@@ -1,0 +1,29 @@
+{
+    "id": "0810-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0810-record-007",
+    "label": {
+        "en": "smoothly_gah_sushi.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-03",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0810-organization-000",
+            "authorship": [
+                "0810-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "smoothly_gah_sushi.png (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0810-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-11-01",
+    "datePublished": "2025-11-10",
+    "size": "285.3 MB"
+}

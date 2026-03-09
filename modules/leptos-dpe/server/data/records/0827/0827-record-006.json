@@ -1,0 +1,29 @@
+{
+    "id": "0827-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0827-record-006",
+    "label": {
+        "en": "drat_whose_pack.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-05-06",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0827-organization-000",
+            "authorship": [
+                "0827-person-000"
+            ]
+        }
+    ],
+    "howToCite": "drat_whose_pack.jpg (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0827-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-09-27",
+    "datePublished": "2023-01-18",
+    "size": "238.8 MB"
+}

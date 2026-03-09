@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
-use crate::domain::Project;
+use crate::domain::{lang_value, Project};
 use crate::pages::project::components::coverage_section::CoverageSection;
 use crate::pages::project::components::data_language_section::DataLanguageSection;
 use crate::pages::project::components::disciplines_section::DisciplinesSection;
@@ -13,14 +13,13 @@ use crate::pages::project::components::type_of_data_section::TypeOfDataSection;
 #[component]
 pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
     // Collect all keyword values across all language maps
-    let all_keywords: Vec<String> =
-        proj.keywords.iter().flat_map(|map| map.values().cloned()).collect();
+    let all_keywords: Vec<String> = proj.keywords.iter().flat_map(|map| map.values().cloned()).collect();
     let data_languages: Vec<String> = proj
         .data_language
         .as_deref()
         .unwrap_or_default()
         .iter()
-        .filter_map(|map| map.get("en").cloned())
+        .filter_map(|map| lang_value(map).cloned())
         .collect();
 
     let cluster_items: Vec<(String, String, String)> = proj
@@ -45,7 +44,7 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
             {(!all_keywords.is_empty())
                 .then(|| {
                     view! {
-                        <div id="keywords" class="scroll-mt-52">
+                        <div class="scroll-mt-52">
                             <h3 class="text-sm font-semibold text-gray-700 mb-2">"Keywords"</h3>
                             <div class="flex flex-wrap gap-1.5">
                                 {all_keywords
@@ -74,14 +73,6 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
             <LinkCardSection title="Part of Cluster".to_string() items=cluster_items />
 
             <LinkCardSection title="Collections".to_string() items=collection_items />
-
-            {proj
-                .records
-                .as_ref()
-                .and_then(|r| if r.is_empty() { None } else { Some(r) })
-                .map(|records| {
-                    view! { <LinkListSection title="Records".to_string() items=records.clone() /> }
-                })}
 
             {proj
                 .documentation_material

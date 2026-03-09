@@ -1,0 +1,39 @@
+{
+    "id": "084E-record-042",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-042",
+    "label": {
+        "en": "replacement_blah.doc"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "replacement_blah.doc (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-042",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-04-26",
+    "datePublished": "2022-07-06",
+    "size": "79.6 MB",
+    "keywords": [
+        {
+            "en": "vester"
+        }
+    ],
+    "source": "Statim volo acervus valde subiungo."
+}

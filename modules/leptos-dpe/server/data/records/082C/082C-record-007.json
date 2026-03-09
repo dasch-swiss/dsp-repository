@@ -1,0 +1,40 @@
+{
+    "id": "082C-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082C-record-007",
+    "label": {
+        "en": "unlike_crazy.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2019-10-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "082C-organization-000",
+            "authorship": [
+                "082C-person-000",
+                "082C-person-001",
+                "082C-person-002",
+                "082C-person-003",
+                "082C-person-004"
+            ]
+        }
+    ],
+    "howToCite": "unlike_crazy.doc (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082C-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-11-24",
+    "datePublished": "2023-06-03",
+    "size": "113.2 MB",
+    "dateModified": "2022-07-15",
+    "keywords": [
+        {
+            "en": "vicissitudo"
+        }
+    ],
+    "source": "Sopor convoco solutio sponte terreo voluntarius."
+}

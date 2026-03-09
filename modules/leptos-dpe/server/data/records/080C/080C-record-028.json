@@ -1,0 +1,47 @@
+{
+    "id": "080C-record-028",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C-record-028",
+    "label": {
+        "en": "scheme.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/deed.en"
+            },
+            "copyrightHolder": "080C-organization-001",
+            "authorship": [
+                "080C-person-001",
+                "080C-person-002",
+                "080C-person-003",
+                "080C-person-000"
+            ]
+        }
+    ],
+    "howToCite": "scheme.jpg (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080C-record-028",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-04-17",
+    "datePublished": "2021-08-14",
+    "size": "185.5 MB",
+    "description": {
+        "en": "Vomer celo delectatio. Creber vigor degenero. Abeo curvo decet comminor conturbo depereo provident summopere tam."
+    },
+    "keywords": [
+        {
+            "en": "uberrime"
+        },
+        {
+            "en": "acerbitas"
+        },
+        {
+            "en": "decor"
+        }
+    ],
+    "source": "Derideo vomer eveniet sodalitas temporibus."
+}

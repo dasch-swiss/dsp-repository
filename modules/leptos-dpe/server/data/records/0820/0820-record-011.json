@@ -1,0 +1,34 @@
+{
+    "id": "0820-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-record-011",
+    "label": {
+        "en": "understanding_uselessly_circa.tif"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-06",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0820-organization-000",
+            "authorship": [
+                "0820-person-000",
+                "0820-person-001",
+                "0820-person-002",
+                "0820-person-003",
+                "0820-person-004"
+            ]
+        }
+    ],
+    "howToCite": "understanding_uselessly_circa.tif (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0820-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-11-07",
+    "datePublished": "2018-01-08",
+    "size": "230.0 MB",
+    "dateModified": "2019-02-14"
+}

@@ -9,7 +9,7 @@ pub fn PublicationTab(abstract_en: Option<String>, publications: Option<Vec<Publ
         <div class="space-y-4">
             <div>
                 <h3 class="dpe-subtitle">"Abstract"</h3>
-                {abstract_en.map(|text| view! { <p class="leading-relaxed">{text}</p> })}
+                {abstract_en.map(|text| view! { <p class="text-sm text-gray-700">{text}</p> })}
             </div>
 
             <div>

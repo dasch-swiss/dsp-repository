@@ -1,6 +1,6 @@
 {
     "id": "0810-organization-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0810-organization-000",
     "name": "Swiss National Science Foundation (SNSF)",
     "url": "https://www.snf.ch",
     "address": {
@@ -8,5 +8,6 @@
         "postalCode": "3001",
         "locality": "Berne",
         "country": "Switzerland"
-    }
+    },
+    "sameAs": []
 }

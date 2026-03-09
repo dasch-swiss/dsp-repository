@@ -1,0 +1,32 @@
+{
+    "id": "0813-record-020",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-record-020",
+    "label": {
+        "en": "ick_responsibility_phooey.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0813-organization-001",
+            "authorship": [
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "ick_responsibility_phooey.jpg (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0813-record-020",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-05-26",
+    "datePublished": "2018-06-06",
+    "size": "410.7 MB",
+    "source": "Officia deorsum urbs ultio accusator aequitas."
+}

@@ -1,0 +1,37 @@
+{
+    "id": "0804-record-019",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-019",
+    "label": {
+        "en": "unabashedly_where.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "unabashedly_where.txt (1982). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-019",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1981-05-25",
+    "datePublished": "1982-04-03",
+    "size": "64.4 MB",
+    "keywords": [
+        {
+            "en": "adduco"
+        },
+        {
+            "en": "absens"
+        }
+    ]
+}

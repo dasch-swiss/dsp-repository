@@ -1,6 +1,6 @@
 {
     "id": "0812-person-004",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-person-004",
     "givenNames": [
         "Birgit"
     ],
@@ -14,5 +14,6 @@
         "0812-organization-000",
         "0812-organization-003"
     ],
-    "email": "birgit.huber@unibas.ch"
+    "email": "birgit.huber@unibas.ch",
+    "sameAs": []
 }

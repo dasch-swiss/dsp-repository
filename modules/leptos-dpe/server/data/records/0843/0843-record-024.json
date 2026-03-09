@@ -1,0 +1,44 @@
+{
+    "id": "0843-record-024",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0843-record-024",
+    "label": {
+        "en": "gladly.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-02-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "woposs-organization-001",
+            "authorship": [
+                "woposs-person-000",
+                "woposs-person-001",
+                "woposs-person-002",
+                "woposs-person-003",
+                "woposs-person-004"
+            ]
+        }
+    ],
+    "howToCite": "gladly.xml (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0843-record-024",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2023-08-13",
+    "datePublished": "2024-10-17",
+    "size": "473.2 MB",
+    "description": {
+        "en": "Patrocinor aer subseco. Ter arma ratione aer volutabrum adeptio contego crastinus sumo. Denique caste ambulo volaticus adversus sit."
+    },
+    "keywords": [
+        {
+            "en": "quasi"
+        },
+        {
+            "en": "una"
+        }
+    ]
+}

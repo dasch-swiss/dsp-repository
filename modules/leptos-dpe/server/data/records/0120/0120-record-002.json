@@ -1,0 +1,33 @@
+{
+    "id": "0120-record-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0120-record-002",
+    "label": {
+        "en": "disposer_pish.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-04-30",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0120-organization-001",
+            "authorship": [
+                "0120-person-000",
+                "0120-person-002",
+                "0120-person-001",
+                "0120-person-003",
+                "0120-person-004"
+            ]
+        }
+    ],
+    "howToCite": "disposer_pish.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0120-record-002",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-12-29",
+    "datePublished": "2024-01-29",
+    "size": "289.8 MB"
+}

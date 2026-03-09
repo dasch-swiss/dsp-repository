@@ -1,0 +1,48 @@
+{
+    "id": "0838-record-086",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0838-record-086",
+    "label": {
+        "en": "ew_unkempt_whereas.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-01-22",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0838-organization-002",
+            "authorship": [
+                "0838-person-000",
+                "0838-person-001",
+                "0838-person-002",
+                "0838-person-003",
+                "0838-person-004"
+            ]
+        }
+    ],
+    "howToCite": "ew_unkempt_whereas.jpg (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0838-record-086",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-05-09",
+    "datePublished": "2024-12-19",
+    "size": "354.4 MB",
+    "dateModified": "2024-08-02",
+    "description": {
+        "en": "Abstergo valens debitis strenuus defaeco cruentus clementia ocer volaticus cubitum. Eius caries cibo accusator cohaero. Coadunatio accusamus adsuesco viscus in terreo verus amplitudo coerceo."
+    },
+    "keywords": [
+        {
+            "en": "verbera"
+        },
+        {
+            "en": "communis"
+        },
+        {
+            "en": "doloribus"
+        }
+    ]
+}

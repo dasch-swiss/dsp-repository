@@ -1,0 +1,41 @@
+{
+    "id": "083C-record-080",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-080",
+    "label": {
+        "en": "harmful_who_seemingly.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "harmful_who_seemingly.txt (2002). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-080",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1993-09-28",
+    "datePublished": "2002-08-04",
+    "size": "335.1 MB",
+    "description": {
+        "en": "Vinum voluptatum praesentium vociferor apparatus solutio. Atrocitas templum aeger suppono cresco vinum deporto vomica thalassinus. Sodalitas verecundia bellicus civitas amitto nihil."
+    },
+    "keywords": [
+        {
+            "en": "ventus"
+        },
+        {
+            "en": "cogito"
+        }
+    ]
+}

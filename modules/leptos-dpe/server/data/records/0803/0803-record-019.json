@@ -1,0 +1,44 @@
+{
+    "id": "0803-record-019",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0803-record-019",
+    "label": {
+        "en": "brr.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2012-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0803-organization-000",
+            "authorship": [
+                "0803-person-000",
+                "0803-person-001",
+                "0803-person-002",
+                "0803-person-003",
+                "0803-person-004"
+            ]
+        }
+    ],
+    "howToCite": "brr.jpg (2012). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0803-record-019",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2010-04-29",
+    "datePublished": "2012-08-10",
+    "size": "30.6 MB",
+    "keywords": [
+        {
+            "en": "vespillo"
+        },
+        {
+            "en": "nobis"
+        },
+        {
+            "en": "caute"
+        }
+    ]
+}

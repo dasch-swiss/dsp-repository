@@ -1,0 +1,40 @@
+{
+    "id": "0849-record-009",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-009",
+    "label": {
+        "en": "furthermore_helpful_gosh.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "furthermore_helpful_gosh.tiff (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-009",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-04-22",
+    "datePublished": "2026-10-08",
+    "size": "446.0 MB",
+    "description": {
+        "en": "Paens creta depraedor solvo acceptus tollo candidus custodia tabella. Sursum centum patruus hic demo. Voluptas fugit adsuesco."
+    },
+    "keywords": [
+        {
+            "en": "varietas"
+        }
+    ]
+}

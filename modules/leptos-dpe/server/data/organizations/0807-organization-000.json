@@ -1,13 +1,14 @@
 {
     "id": "0807-organization-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0807-organization-000",
     "name": "Kuratorium Musiklexikon der Schweiz (SAGW)",
-    "url": "MISSING",
+    "url": "https://www.kuratorium-musiklexikon-der-sc.org",
     "address": {
         "street": "Hubacherweg 15",
         "postalCode": "3097",
         "locality": "Liebefeld",
         "country": "Switzerland"
     },
-    "email": "minder@liebefeld.ch"
+    "email": "minder@liebefeld.ch",
+    "sameAs": []
 }

@@ -1,0 +1,36 @@
+{
+    "id": "0845-record-024",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-024",
+    "label": {
+        "en": "for.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "for.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-024",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-10-24",
+    "datePublished": "2020-11-07",
+    "size": "263.3 MB",
+    "description": {
+        "en": "Audio admoveo cicuta adeptio debeo capitulus accusantium curriculum adduco. Vinco totam officiis. Umquam amo autus curtus caecus bellicus dolorem."
+    }
+}

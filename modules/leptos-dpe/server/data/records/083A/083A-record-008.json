@@ -1,0 +1,41 @@
+{
+    "id": "083A-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083A-record-008",
+    "label": {
+        "en": "out_within_slight.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-01-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083A-organization-000",
+            "authorship": [
+                "083A-person-000",
+                "083A-person-001",
+                "083A-person-002",
+                "083A-person-003",
+                "083A-person-004"
+            ]
+        }
+    ],
+    "howToCite": "out_within_slight.doc (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083A-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-01-02",
+    "datePublished": "2025-03-29",
+    "size": "89.3 MB",
+    "keywords": [
+        {
+            "en": "cubo"
+        },
+        {
+            "en": "adeo"
+        }
+    ]
+}

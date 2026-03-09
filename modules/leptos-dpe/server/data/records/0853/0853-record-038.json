@@ -1,0 +1,35 @@
+{
+    "id": "0853-record-038",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-038",
+    "label": {
+        "en": "to_swill.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "to_swill.doc (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-038",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-10-25",
+    "datePublished": "2023-01-31",
+    "size": "257.6 MB",
+    "keywords": [
+        {
+            "en": "avaritia"
+        }
+    ]
+}

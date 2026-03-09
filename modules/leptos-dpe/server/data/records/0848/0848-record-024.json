@@ -1,0 +1,46 @@
+{
+    "id": "0848-record-024",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-024",
+    "label": {
+        "en": "nicely_qua.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "nicely_qua.doc (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-024",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-12-20",
+    "datePublished": "2022-06-14",
+    "size": "495.7 MB",
+    "description": {
+        "en": "Pecus tepidus beatus amaritudo. Summisse cum thymbra aeger triumphus xiphias inflammatio. Adipiscor accusator theatrum synagoga quod optio bellum tam tenetur defungo."
+    },
+    "keywords": [
+        {
+            "en": "ascisco"
+        },
+        {
+            "en": "tabgo"
+        },
+        {
+            "en": "curia"
+        }
+    ]
+}

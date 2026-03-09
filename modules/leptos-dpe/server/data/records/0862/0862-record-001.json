@@ -1,0 +1,38 @@
+{
+    "id": "0862-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-001",
+    "label": {
+        "en": "dreamily_lamp.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "dreamily_lamp.pdf (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-03-17",
+    "datePublished": "2026-10-06",
+    "size": "162.9 MB",
+    "keywords": [
+        {
+            "en": "stella"
+        }
+    ]
+}

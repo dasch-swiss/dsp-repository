@@ -1,0 +1,35 @@
+{
+    "id": "082D-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082D-record-007",
+    "label": {
+        "en": "drat.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "082D-organization-001",
+            "authorship": [
+                "082D-person-001",
+                "082D-person-002"
+            ]
+        }
+    ],
+    "howToCite": "drat.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082D-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-05-17",
+    "datePublished": "2019-08-11",
+    "size": "476.7 MB",
+    "keywords": [
+        {
+            "en": "curriculum"
+        }
+    ]
+}

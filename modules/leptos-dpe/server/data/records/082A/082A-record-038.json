@@ -1,0 +1,43 @@
+{
+    "id": "082A-record-038",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082A-record-038",
+    "label": {
+        "en": "outlaw_modulo_bonfire.flac"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "SGV Schweizerisches Volksliedarchiv",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+            },
+            "copyrightHolder": "082A-organization-001",
+            "authorship": [
+                "082A-person-000",
+                "082A-person-003",
+                "082A-person-001",
+                "082A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "outlaw_modulo_bonfire.flac (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082A-record-038",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2017-11-05",
+    "datePublished": "2019-10-17",
+    "size": "375.5 MB",
+    "keywords": [
+        {
+            "en": "autus"
+        },
+        {
+            "en": "odio"
+        },
+        {
+            "en": "velociter"
+        }
+    ]
+}

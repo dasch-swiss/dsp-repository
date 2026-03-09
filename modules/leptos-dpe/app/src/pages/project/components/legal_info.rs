@@ -1,7 +1,50 @@
 use leptos::prelude::*;
 use mosaic_tiles::link::Link;
 
+use super::info_card::InfoCard;
+use super::person::Person;
 use crate::domain::project::LegalInfo as LegalInfoData;
+use crate::domain::{get_organization, get_person};
+
+#[component]
+fn EntityName(id: String) -> impl IntoView {
+    if id.contains("-person-") {
+        let fallback = id.clone();
+        let resource = Resource::new(move || id.clone(), |id| async move { get_person(id).await });
+        view! {
+            <Suspense>
+                {move || {
+                    let name = resource
+                        .get()
+                        .and_then(|r| r.ok())
+                        .flatten()
+                        .map(|p| {
+                            format!("{} {}", p.given_names.join(" "), p.family_names.join(" "))
+                        });
+                    name.unwrap_or_else(|| fallback.clone())
+                }}
+            </Suspense>
+        }
+        .into_any()
+    } else if id.contains("-organization-") {
+        let fallback = id.clone();
+        let resource = Resource::new(
+            move || id.clone(),
+            |id| async move { get_organization(id).await },
+        );
+        view! {
+            <Suspense>
+                {move || {
+                    let name = resource.get().and_then(|r| r.ok()).flatten().map(|o| o.name);
+                    name.unwrap_or_else(|| fallback.clone())
+                }}
+            </Suspense>
+        }
+        .into_any()
+    } else {
+        view! { <span>{id}</span> }.into_any()
+    }
+}
 
 #[component]
 pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
@@ -44,18 +87,55 @@ pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
                         "(" {info.license.license_date.clone()} ")"
                     </div>
                     <div class="dpe-subtitle">"Copyright"</div>
-                    <div>{info.copyright_holder.clone()}</div>
+                    <div>
+                        <EntityName id=info.copyright_holder.clone() />
+                    </div>
                     {(!info.authorship.is_empty())
                         .then(|| {
+                            let ids = info.authorship.clone();
                             view! {
                                 <div class="dpe-subtitle">"Authorship"</div>
-                                {info.authorship.join(", ")}
+                                <div>
+                                    {ids
+                                        .into_iter()
+                                        .map(|id| {
+                                            view! {
+                                                <div>
+                                                    <EntityName id=id />
+                                                </div>
+                                            }
+                                        })
+                                        .collect_view()}
+                                </div>
                             }
                         })}
                 </div>
             }
         })
         .collect_view()
+}
+
+#[component]
+pub fn ContactSection(ids: Vec<String>) -> impl IntoView {
+    view! {
+        <div class="space-y-2">
+            <div class="dpe-subtitle">"Contact"</div>
+            <div>
+                {ids
+                    .into_iter()
+                    .map(|id| {
+                        view! {
+                            <InfoCard>
+                                <div class="text-sm">
+                                    <Person person_id=id roles=None show_email=true />
+                                </div>
+                            </InfoCard>
+                        }
+                    })
+                    .collect_view()}
+            </div>
+        </div>
+    }
 }
 
 fn get_cc_license_info(license_uri: &str, license_identifier: &str) -> Option<(String, String)> {

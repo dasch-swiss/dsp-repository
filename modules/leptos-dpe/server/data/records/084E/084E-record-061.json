@@ -1,0 +1,37 @@
+{
+    "id": "084E-record-061",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-061",
+    "label": {
+        "en": "meh_ouch_but.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "meh_ouch_but.doc (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-061",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-12-13",
+    "datePublished": "2021-10-23",
+    "size": "89.1 MB",
+    "dateModified": "2024-01-01",
+    "description": {
+        "en": "Ait temporibus careo ambitus delinquo tot. Assumenda claro temporibus trepide adicio aliquam aduro viriliter. Beatus vulnus cui conqueror stabilis creo accusamus collum."
+    }
+}

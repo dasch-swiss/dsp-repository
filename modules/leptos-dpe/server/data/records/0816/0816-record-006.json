@@ -1,0 +1,34 @@
+{
+    "id": "0816-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0816-record-006",
+    "label": {
+        "en": "ack.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2014-01-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0816-organization-000",
+            "authorship": [
+                "0816-organization-000",
+                "0816-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "ack.pdf (2015). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0816-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2015-03-07",
+    "datePublished": "2015-03-11",
+    "size": "316.0 MB",
+    "description": {
+        "en": "Curvo curiositas temeritas caries eius absconditus victus ustilo voluptate. Turpis versus ipsa deficio centum. Uter baiulus crustulum."
+    },
+    "source": "Ustilo advenio delectus."
+}

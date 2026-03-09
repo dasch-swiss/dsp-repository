@@ -1,0 +1,38 @@
+{
+    "id": "0114-record-021",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114-record-021",
+    "label": {
+        "en": "whistle_gah.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0114-organization-000",
+            "authorship": [
+                "0114-person-000",
+                "0114-person-001",
+                "0114-person-002",
+                "0114-person-003",
+                "0114-person-004"
+            ]
+        }
+    ],
+    "howToCite": "whistle_gah.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0114-record-021",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-12-24",
+    "datePublished": "2022-03-24",
+    "size": "466.5 MB",
+    "keywords": [
+        {
+            "en": "vinitor"
+        }
+    ]
+}

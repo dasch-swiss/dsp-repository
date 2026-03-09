@@ -1,0 +1,44 @@
+{
+    "id": "082A-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082A-record-007",
+    "label": {
+        "en": "supposing_nifty_critical.flac"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "SGV Schweizerisches Volksliedarchiv",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+            },
+            "copyrightHolder": "082A-organization-001",
+            "authorship": [
+                "082A-person-000",
+                "082A-person-003",
+                "082A-person-001",
+                "082A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "supposing_nifty_critical.flac (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082A-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2021-10-26",
+    "datePublished": "2021-12-20",
+    "size": "20.0 MB",
+    "dateModified": "2021-12-14",
+    "description": {
+        "en": "Quibusdam voluntarius demulceo caput ulciscor cedo sol autem tergum. Atque audax fugit arbustum defungo degusto beatae summisse adiuvo. Comprehendo desipio error culpo desipio atqui."
+    },
+    "keywords": [
+        {
+            "en": "beneficium"
+        },
+        {
+            "en": "utique"
+        }
+    ]
+}

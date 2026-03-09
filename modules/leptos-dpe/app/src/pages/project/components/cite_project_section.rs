@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
-use super::legal_info::LegalInfo;
+use super::legal_info::{ContactSection, LegalInfo};
 use crate::domain::{Project, ProjectStatus};
 use crate::pages::project::components::access_rights_section::AccessRightsSection;
 use crate::pages::project::components::citation::Citation;
@@ -30,8 +30,20 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
                     {(!proj.legal_info.is_empty())
                         .then(|| {
                             view! {
-                                <div id="legal-information" class="rounded-lg scroll-mt-52">
+                                <div class="rounded-lg scroll-mt-52">
                                     <LegalInfo legal_info=proj.legal_info.clone() />
+                                </div>
+                            }
+                        })}
+
+                    {proj
+                        .contact_point
+                        .as_ref()
+                        .filter(|v| !v.is_empty())
+                        .map(|ids| {
+                            view! {
+                                <div class="rounded-lg scroll-mt-52">
+                                    <ContactSection ids=ids.clone() />
                                 </div>
                             }
                         })}

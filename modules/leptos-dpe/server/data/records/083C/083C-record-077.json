@@ -1,0 +1,36 @@
+{
+    "id": "083C-record-077",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-077",
+    "label": {
+        "en": "zowie_which.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "zowie_which.xml (2012). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-077",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2007-09-20",
+    "datePublished": "2012-12-24",
+    "size": "125.7 MB",
+    "keywords": [
+        {
+            "en": "vesica"
+        }
+    ],
+    "source": "Verecundia audeo admiratio vobis."
+}

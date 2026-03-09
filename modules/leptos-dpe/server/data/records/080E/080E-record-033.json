@@ -1,0 +1,34 @@
+{
+    "id": "080E-record-033",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-033",
+    "label": {
+        "en": "inside.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "inside.txt (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-033",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-09-19",
+    "datePublished": "2018-02-11",
+    "size": "133.9 MB",
+    "keywords": [
+        {
+            "en": "exercitationem"
+        }
+    ]
+}

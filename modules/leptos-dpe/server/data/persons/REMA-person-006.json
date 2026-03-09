@@ -1,6 +1,6 @@
 {
     "id": "REMA-person-006",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-006",
     "givenNames": [
         "Manuela"
     ],
@@ -14,5 +14,6 @@
         "REMA-organization-000",
         "REMA-organization-002"
     ],
-    "email": "Manuela.Gianandrea@unil.ch"
+    "email": "Manuela.Gianandrea@unil.ch",
+    "sameAs": []
 }

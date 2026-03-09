@@ -1,0 +1,39 @@
+{
+    "id": "0846-record-040",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-040",
+    "label": {
+        "en": "knitting_scotch_pish.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2026-04-18"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "knitting_scotch_pish.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-040",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-02-16",
+    "datePublished": "2023-04-19",
+    "size": "145.5 MB",
+    "keywords": [
+        {
+            "en": "veritas"
+        },
+        {
+            "en": "vis"
+        }
+    ]
+}

@@ -1,0 +1,43 @@
+{
+    "id": "0853-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-001",
+    "label": {
+        "en": "with_buck_as.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access",
+        "embargoDate": "2026-01-21"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "with_buck_as.txt (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2025-05-20",
+    "datePublished": "2026-03-03",
+    "size": "422.5 MB",
+    "dateModified": "2027-04-14",
+    "description": {
+        "en": "Tracto arca adipisci accedo tactus cogo varietas. Valeo cavus acer. Undique suffoco doloribus desidero tutis titulus administratio talis."
+    },
+    "keywords": [
+        {
+            "en": "soluta"
+        },
+        {
+            "en": "quos"
+        }
+    ]
+}

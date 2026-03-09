@@ -1,0 +1,48 @@
+{
+    "id": "084E-record-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-003",
+    "label": {
+        "en": "commodity_hmph.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "commodity_hmph.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-003",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-09-05",
+    "datePublished": "2023-02-24",
+    "size": "411.0 MB",
+    "description": {
+        "en": "Averto appono sui neque convoco absque velit. Ventito urbs cubo angulus incidunt astrum recusandae repellendus. Blandior urbanus adinventitias vito ter trado."
+    },
+    "keywords": [
+        {
+            "en": "auctor"
+        },
+        {
+            "en": "sint"
+        },
+        {
+            "en": "tripudio"
+        }
+    ],
+    "source": "Tres alias abduco."
+}

@@ -1,0 +1,44 @@
+{
+    "id": "0861-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0861-record-008",
+    "label": {
+        "en": "rebuff_bashfully_by.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-07-07",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0861-organization-000",
+            "authorship": [
+                "0861-person-000",
+                "0861-person-001",
+                "0861-person-002",
+                "0861-person-003",
+                "0861-person-004"
+            ]
+        }
+    ],
+    "howToCite": "rebuff_bashfully_by.xml (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0861-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2025-05-09",
+    "datePublished": "2025-06-08",
+    "size": "177.5 MB",
+    "description": {
+        "en": "Dolorum aut voveo depulso impedit statim amaritudo turpis minus. Currus confugo alii copiose. Cauda exercitationem bibo."
+    },
+    "keywords": [
+        {
+            "en": "cura"
+        },
+        {
+            "en": "infit"
+        }
+    ]
+}

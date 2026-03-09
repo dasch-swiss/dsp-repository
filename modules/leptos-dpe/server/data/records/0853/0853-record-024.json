@@ -1,0 +1,36 @@
+{
+    "id": "0853-record-024",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-024",
+    "label": {
+        "en": "duffel_intently.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "duffel_intently.jpg (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-024",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-12-16",
+    "datePublished": "2027-11-09",
+    "size": "180.0 MB",
+    "dateModified": "2025-01-01",
+    "keywords": [
+        {
+            "en": "carbo"
+        }
+    ]
+}

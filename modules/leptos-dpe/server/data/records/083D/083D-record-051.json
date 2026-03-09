@@ -1,0 +1,36 @@
+{
+    "id": "083D-record-051",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083D-record-051",
+    "label": {
+        "en": "whoa_finally_but.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-08-18",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "083D-organization-000",
+            "authorship": [
+                "083D-person-000",
+                "083D-person-001",
+                "083D-person-002",
+                "083D-person-003",
+                "083D-person-004"
+            ]
+        }
+    ],
+    "howToCite": "whoa_finally_but.doc (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D-record-051",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-06-11",
+    "datePublished": "2021-08-08",
+    "size": "412.6 MB",
+    "description": {
+        "en": "Aduro consectetur amet coadunatio venio caries distinctio super. Ascisco administratio sollers bonus studio pecus deleniti virgo accommodo. Pax ulciscor minima perspiciatis pecto synagoga aptus acerbitas at."
+    }
+}

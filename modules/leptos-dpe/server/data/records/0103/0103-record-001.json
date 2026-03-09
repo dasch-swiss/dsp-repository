@@ -1,0 +1,44 @@
+{
+    "id": "0103-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-001",
+    "label": {
+        "en": "brandish.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "brandish.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-11-26",
+    "datePublished": "2019-12-18",
+    "size": "424.4 MB",
+    "description": {
+        "en": "Defaeco arcus ustulo stips a minus provident vero torrens. Tabernus cras molestias audentia animadverto. Caelestis alius suasoria decens."
+    },
+    "keywords": [
+        {
+            "en": "bellicus"
+        },
+        {
+            "en": "numquam"
+        }
+    ]
+}

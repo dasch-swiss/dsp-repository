@@ -1,0 +1,45 @@
+{
+    "id": "0826-record-052",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0826-record-052",
+    "label": {
+        "en": "yum_fax_round.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0826-organization-000",
+            "authorship": [
+                "0826-person-005",
+                "0826-person-001",
+                "0826-person-002",
+                "0826-person-003",
+                "0826-person-004"
+            ]
+        }
+    ],
+    "howToCite": "yum_fax_round.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0826-record-052",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-10-22",
+    "datePublished": "2020-04-11",
+    "size": "107.2 MB",
+    "dateModified": "2020-09-23",
+    "keywords": [
+        {
+            "en": "animus"
+        },
+        {
+            "en": "vobis"
+        },
+        {
+            "en": "uxor"
+        }
+    ]
+}

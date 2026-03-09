@@ -1,0 +1,46 @@
+{
+    "id": "0101-record-049",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-049",
+    "label": {
+        "en": "thread.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "thread.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-049",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2016-10-30",
+    "datePublished": "2019-04-08",
+    "size": "257.2 MB",
+    "dateModified": "2019-02-27",
+    "description": {
+        "en": "Volo bellicus synagoga carpo vae. Averto caveo valetudo creo statim suscipio arcesso corpus. Pax reprehenderit tabgo unus universe ventito adipiscor."
+    },
+    "keywords": [
+        {
+            "en": "dolores"
+        },
+        {
+            "en": "tener"
+        },
+        {
+            "en": "texo"
+        }
+    ]
+}

@@ -1,12 +1,12 @@
 use leptos::prelude::*;
 
-use crate::domain::Discipline;
+use crate::domain::{lang_value, Discipline};
 
 #[component]
 pub fn DisciplinesSection(disciplines: Vec<Discipline>) -> impl IntoView {
     (!disciplines.is_empty()).then(|| {
         view! {
-            <div id="disciplines">
+            <div>
                 <h3 class="text-sm font-semibold text-gray-700 mb-2">"Disciplines"</h3>
                 <div class="flex flex-wrap gap-1.5">
                     {disciplines
@@ -14,12 +14,7 @@ pub fn DisciplinesSection(disciplines: Vec<Discipline>) -> impl IntoView {
                         .map(|d| {
                             let (label, url) = match d {
                                 Discipline::Text(map) => {
-                                    let text = map
-                                        .get("en")
-                                        .cloned()
-                                        .unwrap_or_else(|| {
-                                            map.values().next().cloned().unwrap_or_default()
-                                        });
+                                    let text = lang_value(map).cloned().unwrap_or_default();
                                     (text, None)
                                 }
                                 Discipline::Reference(ref_) => {

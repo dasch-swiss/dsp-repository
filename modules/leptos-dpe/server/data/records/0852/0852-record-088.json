@@ -1,0 +1,41 @@
+{
+    "id": "0852-record-088",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-088",
+    "label": {
+        "en": "pace_tighten.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "pace_tighten.tiff (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-088",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-07-28",
+    "datePublished": "2024-05-18",
+    "size": "49.7 MB",
+    "dateModified": "2023-09-03",
+    "description": {
+        "en": "Crastinus careo suadeo sustineo coepi. Contra temeritas venustas victus victoria crur. Audax conforto certus aestas aveho curis absorbeo."
+    },
+    "keywords": [
+        {
+            "en": "bellum"
+        },
+        {
+            "en": "vociferor"
+        }
+    ]
+}

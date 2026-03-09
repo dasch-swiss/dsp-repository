@@ -1,0 +1,41 @@
+{
+    "id": "084C-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084C-record-008",
+    "label": {
+        "en": "cuddly.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-10-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084C-organization-000",
+            "authorship": [
+                "084C-person-000",
+                "084C-person-001",
+                "084C-person-002",
+                "084C-person-003",
+                "084C-person-004"
+            ]
+        }
+    ],
+    "howToCite": "cuddly.jpg (2005). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084C-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2005-03-05",
+    "datePublished": "2005-06-21",
+    "size": "495.3 MB",
+    "description": {
+        "en": "Usque supplanto maxime. Asporto fugiat quod aspernatur adaugeo similique. Conqueror canis video confido illo spiritus sunt comptus aeternus."
+    },
+    "keywords": [
+        {
+            "en": "vapulus"
+        }
+    ]
+}

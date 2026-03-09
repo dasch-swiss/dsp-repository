@@ -1,0 +1,83 @@
+{
+    "id": "0801-record-019",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-record-019",
+    "label": {
+        "en": "excepting_basket.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        }
+    ],
+    "howToCite": "excepting_basket.png (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801-record-019",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-06-25",
+    "datePublished": "2018-04-14",
+    "size": "209.2 MB",
+    "keywords": [
+        {
+            "en": "coruscus"
+        }
+    ]
+}

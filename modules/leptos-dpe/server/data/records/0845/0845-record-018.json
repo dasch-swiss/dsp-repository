@@ -1,0 +1,44 @@
+{
+    "id": "0845-record-018",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-018",
+    "label": {
+        "en": "sticker.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "sticker.png (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-018",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-01-16",
+    "datePublished": "2018-10-14",
+    "size": "411.0 MB",
+    "keywords": [
+        {
+            "en": "iste"
+        },
+        {
+            "en": "coma"
+        },
+        {
+            "en": "acsi"
+        }
+    ]
+}

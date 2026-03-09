@@ -1,0 +1,35 @@
+{
+    "id": "083D-record-046",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083D-record-046",
+    "label": {
+        "en": "superior.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-08-18",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "083D-organization-000",
+            "authorship": [
+                "083D-person-000",
+                "083D-person-001",
+                "083D-person-002",
+                "083D-person-003",
+                "083D-person-004"
+            ]
+        }
+    ],
+    "howToCite": "superior.pdf (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D-record-046",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-07-10",
+    "datePublished": "2019-02-14",
+    "size": "174.8 MB",
+    "dateModified": "2020-01-02",
+    "source": "Officiis tolero vitae tergiversatio ab capitulus conscendo quae coma."
+}

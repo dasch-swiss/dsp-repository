@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 use mosaic_tiles::badge::{Badge, BadgeSize, BadgeVariant};
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
+use mosaic_tiles::icon::{Icon, OpenDocument};
 
 use super::statusbadge::ProjectCardIndicators;
 use crate::domain::{AccessRightsType, ProjectStatus};
@@ -12,14 +13,24 @@ pub fn ProjectCard(
     status: ProjectStatus,
     access_rights: AccessRightsType,
     btn_target: String,
+    shortcode: String,
     #[prop(optional)] keywords: Vec<String>,
 ) -> impl IntoView {
+    let image_src = format!("/assets/images/{shortcode}.webp");
     view! {
         <a href=btn_target class="block h-full relative hover:z-10">
             <Card variant=CardVariant::AutoHover class="flex flex-col h-full ![overflow:visible]">
                 <figure class="bg-neutral-900 relative rounded-t-[inherit]">
                     <div class="overflow-hidden rounded-t-[inherit]">
-                        <img src="https://dasch.swiss/projects/0854.webp" alt="Shoes" />
+                        <img
+                            src=image_src
+                            alt=title.clone()
+                            class="w-full h-48 object-cover"
+                            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                        />
+                        <div class="w-full h-48 bg-gray-100 items-center justify-center hidden">
+                            <Icon icon=OpenDocument class="w-12 h-12 text-gray-300" />
+                        </div>
                     </div>
                     <ProjectCardIndicators status=status access_rights=access_rights />
                 </figure>

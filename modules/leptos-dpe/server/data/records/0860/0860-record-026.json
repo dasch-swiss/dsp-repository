@@ -1,0 +1,34 @@
+{
+    "id": "0860-record-026",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0860-record-026",
+    "label": {
+        "en": "gladly.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0860-organization-000",
+            "authorship": [
+                "0860-person-000",
+                "0860-person-001",
+                "0860-person-002",
+                "0860-person-003",
+                "0860-person-004"
+            ]
+        }
+    ],
+    "howToCite": "gladly.tif (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0860-record-026",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-10-10",
+    "datePublished": "2024-09-15",
+    "size": "210.0 MB",
+    "dateModified": "2024-05-31"
+}

@@ -1,0 +1,44 @@
+{
+    "id": "0117-record-031",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-031",
+    "label": {
+        "en": "verbally_around_regarding.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "verbally_around_regarding.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-031",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-02-11",
+    "datePublished": "2019-10-20",
+    "size": "81.0 MB",
+    "dateModified": "2020-03-11",
+    "keywords": [
+        {
+            "en": "aestus"
+        },
+        {
+            "en": "ex"
+        },
+        {
+            "en": "amaritudo"
+        }
+    ]
+}

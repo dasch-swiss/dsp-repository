@@ -1,6 +1,13 @@
 {
     "id": "0820-person-049",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-person-049",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.iem.uzh.ch/en/people/ppms/rogerseiler.html",
+            "text": "https://www.iem.uzh.ch/en/people/ppms/rogerseiler.html"
+        }
+    ],
     "givenNames": [
         "Roger"
     ],

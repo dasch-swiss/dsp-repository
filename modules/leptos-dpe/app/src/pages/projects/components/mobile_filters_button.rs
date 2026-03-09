@@ -88,7 +88,24 @@ pub fn MobileFiltersButton() -> impl IntoView {
                     >
                         "✕"
                     </button>
-                    <ProjectFiltersContent status_items=filter_items.clone() type_of_data_items=vec![] data_language_items=vec![] access_rights_items=vec![] />
+                    <ProjectFiltersContent
+                        status_items=filter_items.clone()
+                        type_of_data_items=vec![]
+                        data_language_items=vec![]
+                        access_rights_items=vec![]
+                        clear_href={
+                            let q = ProjectQuery {
+                                ongoing: None,
+                                finished: None,
+                                search: if search.is_empty() { None } else { Some(search.clone()) },
+                                page: Some(1),
+                                type_of_data: None,
+                                data_language: None,
+                                access_rights: None,
+                            };
+                            format!("/projects{}", q.to_query_string())
+                        }
+                    />
                 </div>
             </div>
         </Show>

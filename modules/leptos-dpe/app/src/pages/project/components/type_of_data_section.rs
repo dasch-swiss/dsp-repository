@@ -4,7 +4,7 @@ use leptos::prelude::*;
 pub fn TypeOfDataSection(type_of_data: Option<Vec<String>>) -> impl IntoView {
     type_of_data.map(|types| {
         view! {
-            <div id="type-of-data">
+            <div>
                 <h3 class="text-sm font-semibold text-gray-700 mb-2">"Type of Data"</h3>
                 <div class="flex flex-wrap gap-1.5">
                     {types

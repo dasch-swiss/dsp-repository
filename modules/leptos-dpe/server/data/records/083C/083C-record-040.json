@@ -1,0 +1,38 @@
+{
+    "id": "083C-record-040",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-040",
+    "label": {
+        "en": "warmly_bah.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "warmly_bah.doc (2004). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-040",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1992-08-23",
+    "datePublished": "2004-10-18",
+    "size": "191.7 MB",
+    "keywords": [
+        {
+            "en": "ceno"
+        },
+        {
+            "en": "viscus"
+        }
+    ]
+}

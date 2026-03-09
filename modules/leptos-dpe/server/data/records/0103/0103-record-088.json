@@ -1,0 +1,39 @@
+{
+    "id": "0103-record-088",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-088",
+    "label": {
+        "en": "consequently_dash_ah.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "consequently_dash_ah.pdf (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-088",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-05-03",
+    "datePublished": "2021-03-28",
+    "size": "381.2 MB",
+    "keywords": [
+        {
+            "en": "conspergo"
+        }
+    ],
+    "source": "Magnam sophismata neque carpo bardus."
+}

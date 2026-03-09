@@ -1,0 +1,36 @@
+{
+    "id": "084E-record-062",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-062",
+    "label": {
+        "en": "likely_story_yuppify.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "likely_story_yuppify.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-062",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-07-07",
+    "datePublished": "2024-07-10",
+    "size": "299.4 MB",
+    "description": {
+        "en": "Defendo ventito avaritia sperno demoror vado. Amplus bardus defero clibanus compono fuga abbas sufficio aeger. Vomica decor speculum virgo crebro."
+    }
+}

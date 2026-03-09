@@ -1,0 +1,42 @@
+{
+    "id": "0813-record-053",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-record-053",
+    "label": {
+        "en": "whether_damaged.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0813-organization-001",
+            "authorship": [
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "whether_damaged.tiff (2016). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0813-record-053",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2015-09-11",
+    "datePublished": "2016-08-03",
+    "size": "446.4 MB",
+    "description": {
+        "en": "Animus thorax amor strenuus decor advenio cultura crebro. Ventosus balbus tepesco vulnus aetas speciosus tantillus valetudo umerus. Comitatus crux temporibus aspernatur."
+    },
+    "keywords": [
+        {
+            "en": "textor"
+        },
+        {
+            "en": "canonicus"
+        }
+    ]
+}

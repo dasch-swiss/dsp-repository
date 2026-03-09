@@ -1,0 +1,48 @@
+{
+    "id": "0112-record-089",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-089",
+    "label": {
+        "en": "lest.xml"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "lest.xml (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-089",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2017-12-22",
+    "datePublished": "2019-07-06",
+    "size": "235.8 MB",
+    "description": {
+        "en": "Demum sit avarus convoco cupio tabgo decet. Arx crur temporibus acquiro molestias dicta atrocitas congregatio assumenda. Amiculum varietas timidus decet tui condico caterva versus vehemens aqua."
+    },
+    "keywords": [
+        {
+            "en": "curatio"
+        },
+        {
+            "en": "inventore"
+        },
+        {
+            "en": "suffoco"
+        }
+    ],
+    "source": "Vociferor acquiro quod audio decimus."
+}

@@ -1,0 +1,47 @@
+{
+    "id": "0848-record-010",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-010",
+    "label": {
+        "en": "belabor_thunderbolt_bookcase.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2025-11-14"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "belabor_thunderbolt_bookcase.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-010",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-05-11",
+    "datePublished": "2023-02-10",
+    "size": "78.7 MB",
+    "description": {
+        "en": "Terga thymbra virgo suggero demo curis. Surculus ademptio crinis titulus volutabrum iste acies. Patrocinor perferendis acsi sophismata ultra."
+    },
+    "keywords": [
+        {
+            "en": "tribuo"
+        },
+        {
+            "en": "amissio"
+        },
+        {
+            "en": "arceo"
+        }
+    ]
+}

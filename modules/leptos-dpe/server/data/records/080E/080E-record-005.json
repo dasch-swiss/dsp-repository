@@ -1,0 +1,41 @@
+{
+    "id": "080E-record-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-005",
+    "label": {
+        "en": "airbrush_softly.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "airbrush_softly.txt (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-005",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2016-05-15",
+    "datePublished": "2018-02-12",
+    "size": "58.0 MB",
+    "dateModified": "2017-07-02",
+    "keywords": [
+        {
+            "en": "odit"
+        },
+        {
+            "en": "supra"
+        },
+        {
+            "en": "succurro"
+        }
+    ]
+}

@@ -1,0 +1,36 @@
+{
+    "id": "0845-record-014",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-014",
+    "label": {
+        "en": "prohibition_pace_restructure.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "prohibition_pace_restructure.pdf (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-014",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-07-26",
+    "datePublished": "2022-05-02",
+    "size": "14.2 MB",
+    "description": {
+        "en": "Totus umerus denego pauci cupiditas sto. Comitatus canonicus balbus adeo laboriosam causa ratione cohibeo attonbitus. Vespillo patria a strenuus peior esse tollo."
+    }
+}

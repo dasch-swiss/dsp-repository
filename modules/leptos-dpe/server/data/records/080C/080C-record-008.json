@@ -1,0 +1,38 @@
+{
+    "id": "080C-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C-record-008",
+    "label": {
+        "en": "suburban_capsize_rudely.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/deed.en"
+            },
+            "copyrightHolder": "080C-organization-001",
+            "authorship": [
+                "080C-person-001",
+                "080C-person-002",
+                "080C-person-003",
+                "080C-person-000"
+            ]
+        }
+    ],
+    "howToCite": "suburban_capsize_rudely.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080C-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2017-12-22",
+    "datePublished": "2021-10-11",
+    "size": "338.5 MB",
+    "dateModified": "2020-10-14",
+    "keywords": [
+        {
+            "en": "temptatio"
+        }
+    ]
+}

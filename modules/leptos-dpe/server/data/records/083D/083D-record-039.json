@@ -1,0 +1,39 @@
+{
+    "id": "083D-record-039",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083D-record-039",
+    "label": {
+        "en": "past_sorrowful.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-08-18",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "083D-organization-000",
+            "authorship": [
+                "083D-person-000",
+                "083D-person-001",
+                "083D-person-002",
+                "083D-person-003",
+                "083D-person-004"
+            ]
+        }
+    ],
+    "howToCite": "past_sorrowful.doc (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D-record-039",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-02-08",
+    "datePublished": "2021-05-23",
+    "size": "356.1 MB",
+    "dateModified": "2020-10-08",
+    "keywords": [
+        {
+            "en": "curvo"
+        }
+    ]
+}

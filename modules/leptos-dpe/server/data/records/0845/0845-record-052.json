@@ -1,0 +1,45 @@
+{
+    "id": "0845-record-052",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-052",
+    "label": {
+        "en": "twine_brr.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "twine_brr.jpg (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-052",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2021-07-26",
+    "datePublished": "2022-09-17",
+    "size": "318.2 MB",
+    "dateModified": "2022-11-19",
+    "keywords": [
+        {
+            "en": "coerceo"
+        },
+        {
+            "en": "tam"
+        },
+        {
+            "en": "quia"
+        }
+    ]
+}

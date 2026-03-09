@@ -1,0 +1,30 @@
+{
+    "id": "0846-record-024",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-024",
+    "label": {
+        "en": "considerate_atrium_boohoo.avi"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "considerate_atrium_boohoo.avi (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-024",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2021-05-02",
+    "datePublished": "2023-04-18",
+    "size": "228.5 MB"
+}

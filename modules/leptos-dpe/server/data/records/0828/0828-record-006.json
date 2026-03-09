@@ -1,0 +1,45 @@
+{
+    "id": "0828-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0828-record-006",
+    "label": {
+        "en": "gee.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2024-03-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0828-organization-001",
+            "authorship": [
+                "0828-person-000",
+                "0828-person-001",
+                "0828-person-002",
+                "0828-person-003",
+                "0828-person-004"
+            ]
+        }
+    ],
+    "howToCite": "gee.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0828-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2015-11-13",
+    "datePublished": "2020-04-30",
+    "size": "277.3 MB",
+    "dateModified": "2022-09-21",
+    "description": {
+        "en": "Arcus uter alter antea sunt verbum auxilium pauci claro. Vesco summisse curis porro teneo tutis una torqueo suspendo velum. Colligo civitas cunabula celer somniculosus pauci."
+    },
+    "keywords": [
+        {
+            "en": "depulso"
+        },
+        {
+            "en": "molestiae"
+        }
+    ]
+}

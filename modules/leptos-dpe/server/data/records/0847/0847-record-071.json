@@ -1,0 +1,42 @@
+{
+    "id": "0847-record-071",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-071",
+    "label": {
+        "en": "etch_about.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "etch_about.tiff (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-071",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-06-17",
+    "datePublished": "2020-04-10",
+    "size": "61.6 MB",
+    "keywords": [
+        {
+            "en": "despecto"
+        },
+        {
+            "en": "tardus"
+        },
+        {
+            "en": "vel"
+        }
+    ],
+    "source": "Tolero cilicium celo."
+}

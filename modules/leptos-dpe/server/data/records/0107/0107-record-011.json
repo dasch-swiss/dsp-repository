@@ -1,0 +1,45 @@
+{
+    "id": "0107-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0107-record-011",
+    "label": {
+        "en": "woot_amid_whisper.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0107-organization-001",
+            "authorship": [
+                "0107-person-000",
+                "0107-person-001",
+                "0107-person-002",
+                "0107-person-003",
+                "0107-person-004"
+            ]
+        }
+    ],
+    "howToCite": "woot_amid_whisper.pdf (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0107-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-07-03",
+    "datePublished": "2019-11-30",
+    "size": "402.1 MB",
+    "keywords": [
+        {
+            "en": "bos"
+        },
+        {
+            "en": "tardus"
+        },
+        {
+            "en": "careo"
+        }
+    ],
+    "source": "Aspernatur creta vae ullam sum."
+}

@@ -1,0 +1,44 @@
+{
+    "id": "0849-record-082",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-082",
+    "label": {
+        "en": "which_brandish.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "which_brandish.tiff (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-082",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2026-06-24",
+    "datePublished": "2026-12-30",
+    "size": "440.1 MB",
+    "keywords": [
+        {
+            "en": "utpote"
+        },
+        {
+            "en": "curatio"
+        },
+        {
+            "en": "aggredior"
+        }
+    ],
+    "source": "Distinctio advenio annus ter decet triumphus vitiosus."
+}

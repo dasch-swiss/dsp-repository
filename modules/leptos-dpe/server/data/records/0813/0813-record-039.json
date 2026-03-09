@@ -1,0 +1,40 @@
+{
+    "id": "0813-record-039",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-record-039",
+    "label": {
+        "en": "lifestyle_ack.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0813-organization-001",
+            "authorship": [
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "lifestyle_ack.tiff (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0813-record-039",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-06-03",
+    "datePublished": "2018-11-28",
+    "size": "452.4 MB",
+    "dateModified": "2018-11-24",
+    "keywords": [
+        {
+            "en": "agnosco"
+        },
+        {
+            "en": "ambitus"
+        }
+    ]
+}

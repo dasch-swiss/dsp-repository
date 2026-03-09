@@ -1,0 +1,59 @@
+{
+    "id": "083B-record-017",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083B-record-017",
+    "label": {
+        "en": "unit.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2025-01-28",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083B-organization-001",
+            "authorship": [
+                "083B-person-000",
+                "083B-person-001",
+                "083B-person-002",
+                "083B-person-003",
+                "083B-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2025-01-28",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083B-organization-001",
+            "authorship": [
+                "083B-person-000",
+                "083B-person-001",
+                "083B-person-002",
+                "083B-person-003",
+                "083B-person-000"
+            ]
+        }
+    ],
+    "howToCite": "unit.pdf (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083B-record-017",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-10-12",
+    "datePublished": "2024-06-20",
+    "size": "336.6 MB",
+    "description": {
+        "en": "Placeat corporis aegrus. Aiunt verto solitudo aestivus spargo cur numquam surculus aptus attero. Attonbitus exercitationem bellum animadverto veniam."
+    },
+    "keywords": [
+        {
+            "en": "aperte"
+        },
+        {
+            "en": "capillus"
+        }
+    ]
+}

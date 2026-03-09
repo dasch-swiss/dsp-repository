@@ -1,0 +1,37 @@
+{
+    "id": "085A-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085A-record-011",
+    "label": {
+        "en": "under_tattered_yippee.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2019-03-14",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "085A-organization-002",
+            "authorship": [
+                "085A-person-001"
+            ]
+        }
+    ],
+    "howToCite": "under_tattered_yippee.png (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085A-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-02-27",
+    "datePublished": "2018-11-19",
+    "size": "408.1 MB",
+    "keywords": [
+        {
+            "en": "alienus"
+        },
+        {
+            "en": "articulus"
+        }
+    ]
+}

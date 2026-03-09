@@ -1,0 +1,43 @@
+{
+    "id": "0828-record-014",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0828-record-014",
+    "label": {
+        "en": "notwithstanding_important_offset.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2024-03-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0828-organization-001",
+            "authorship": [
+                "0828-person-000",
+                "0828-person-001",
+                "0828-person-002",
+                "0828-person-003",
+                "0828-person-004"
+            ]
+        }
+    ],
+    "howToCite": "notwithstanding_important_offset.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0828-record-014",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-12-19",
+    "datePublished": "2023-09-18",
+    "size": "194.4 MB",
+    "dateModified": "2020-01-25",
+    "keywords": [
+        {
+            "en": "cursim"
+        },
+        {
+            "en": "constans"
+        }
+    ],
+    "source": "Comminor neque tollo succedo coma."
+}

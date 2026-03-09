@@ -1,0 +1,34 @@
+{
+    "id": "0847-record-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-005",
+    "label": {
+        "en": "gadzooks.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "gadzooks.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-005",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-10-28",
+    "datePublished": "2020-06-16",
+    "size": "21.6 MB",
+    "dateModified": "2022-08-19",
+    "description": {
+        "en": "Arbitro arguo illo. Careo spectaculum voluptates accedo talis conitor cura clementia cohibeo spiculum. Coaegresco acsi temporibus."
+    }
+}

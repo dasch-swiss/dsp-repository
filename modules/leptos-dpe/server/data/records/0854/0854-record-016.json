@@ -1,0 +1,52 @@
+{
+    "id": "0854-record-016",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-016",
+    "label": {
+        "en": "unblinking_advanced.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2026-10-20"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "unblinking_advanced.doc (2028). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-016",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2027-02-04",
+    "datePublished": "2028-03-16",
+    "size": "309.7 MB",
+    "keywords": [
+        {
+            "en": "suppono"
+        }
+    ]
+}

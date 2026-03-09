@@ -1,0 +1,41 @@
+{
+    "id": "0848-record-046",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-046",
+    "label": {
+        "en": "clearly_gently.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "clearly_gently.doc (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-046",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-12-08",
+    "datePublished": "2023-03-11",
+    "size": "469.9 MB",
+    "dateModified": "2023-01-12",
+    "keywords": [
+        {
+            "en": "substantia"
+        },
+        {
+            "en": "coerceo"
+        }
+    ]
+}

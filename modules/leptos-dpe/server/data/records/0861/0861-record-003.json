@@ -1,0 +1,44 @@
+{
+    "id": "0861-record-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0861-record-003",
+    "label": {
+        "en": "but_abandoned_woot.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-07-07",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0861-organization-000",
+            "authorship": [
+                "0861-person-000",
+                "0861-person-001",
+                "0861-person-002",
+                "0861-person-003",
+                "0861-person-004"
+            ]
+        }
+    ],
+    "howToCite": "but_abandoned_woot.xml (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0861-record-003",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2024-03-12",
+    "datePublished": "2024-09-08",
+    "size": "477.7 MB",
+    "keywords": [
+        {
+            "en": "uberrime"
+        },
+        {
+            "en": "tergo"
+        },
+        {
+            "en": "iste"
+        }
+    ]
+}

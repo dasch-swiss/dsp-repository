@@ -1,0 +1,37 @@
+{
+    "id": "080C-record-042",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C-record-042",
+    "label": {
+        "en": "clonk.xml"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/deed.en"
+            },
+            "copyrightHolder": "080C-organization-001",
+            "authorship": [
+                "080C-person-001",
+                "080C-person-002",
+                "080C-person-003",
+                "080C-person-000"
+            ]
+        }
+    ],
+    "howToCite": "clonk.xml (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080C-record-042",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2017-10-08",
+    "datePublished": "2020-09-04",
+    "size": "488.2 MB",
+    "keywords": [
+        {
+            "en": "praesentium"
+        }
+    ]
+}

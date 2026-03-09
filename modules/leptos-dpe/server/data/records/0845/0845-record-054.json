@@ -1,0 +1,49 @@
+{
+    "id": "0845-record-054",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-054",
+    "label": {
+        "en": "across_happy_go_lucky_once.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "across_happy_go_lucky_once.pdf (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-054",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-06-03",
+    "datePublished": "2022-08-06",
+    "size": "294.8 MB",
+    "dateModified": "2023-04-15",
+    "description": {
+        "en": "Spiritus necessitatibus defleo cupio. Consequuntur advenio alter cogito tyrannus volaticus architecto tergiversatio. Varius error campana alias aegre."
+    },
+    "keywords": [
+        {
+            "en": "clarus"
+        },
+        {
+            "en": "villa"
+        },
+        {
+            "en": "attonbitus"
+        }
+    ],
+    "source": "Abduco tertius ulterius tempora decipio."
+}

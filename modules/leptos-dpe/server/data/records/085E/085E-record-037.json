@@ -1,0 +1,36 @@
+{
+    "id": "085E-record-037",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085E-record-037",
+    "label": {
+        "en": "sonar_across.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-07-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.en"
+            },
+            "copyrightHolder": "085E-organization-001",
+            "authorship": [
+                "085E-person-001",
+                "085E-person-002",
+                "085E-person-003"
+            ]
+        }
+    ],
+    "howToCite": "sonar_across.doc (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085E-record-037",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2026-03-04",
+    "datePublished": "2027-02-19",
+    "size": "256.6 MB",
+    "keywords": [
+        {
+            "en": "similique"
+        }
+    ]
+}

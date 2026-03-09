@@ -18,7 +18,9 @@ pub fn LinkCardSection(title: String, items: Vec<(String, String, String)>) -> i
                                     class="block bg-gray-50 border border-gray-200 rounded p-3 hover:border-primary-400 transition-colors"
                                 >
                                     <div class="font-medium text-gray-900">{name}</div>
-                                    <div class="text-sm text-gray-600 line-clamp-2">{description}</div>
+                                    <div class="text-sm text-gray-600 line-clamp-2">
+                                        {description}
+                                    </div>
                                 </a>
                             }
                         })

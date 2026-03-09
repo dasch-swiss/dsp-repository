@@ -1,0 +1,39 @@
+{
+    "id": "0813-record-032",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-record-032",
+    "label": {
+        "en": "overstay_instead.avi"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0813-organization-001",
+            "authorship": [
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "overstay_instead.avi (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0813-record-032",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2014-07-14",
+    "datePublished": "2017-04-30",
+    "size": "126.8 MB",
+    "keywords": [
+        {
+            "en": "admoveo"
+        },
+        {
+            "en": "ceno"
+        }
+    ]
+}

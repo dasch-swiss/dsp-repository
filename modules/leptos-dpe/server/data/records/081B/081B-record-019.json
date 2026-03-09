@@ -1,0 +1,30 @@
+{
+    "id": "081B-record-019",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-019",
+    "label": {
+        "en": "gust_leading.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "gust_leading.xml (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-019",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2018-02-04",
+    "datePublished": "2018-03-06",
+    "size": "134.6 MB",
+    "source": "Tepesco sollers succedo ara volubilis confugo taceo averto repellat subito."
+}

@@ -1,0 +1,43 @@
+{
+    "id": "0116-record-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0116-record-003",
+    "label": {
+        "en": "since_officially_modulo.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0116-organization-002",
+            "authorship": [
+                "0116-person-000",
+                "0116-person-001",
+                "0116-person-002",
+                "0116-person-003"
+            ]
+        }
+    ],
+    "howToCite": "since_officially_modulo.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0116-record-003",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-11-29",
+    "datePublished": "2023-01-22",
+    "size": "302.7 MB",
+    "description": {
+        "en": "Sopor ipsum demens veritas stella caveo ceno causa casus vitiosus. Caste bene quo statim taedium deporto aro pecus fugiat. Synagoga virga arto aurum conicio textus tametsi arto a sonitus."
+    },
+    "keywords": [
+        {
+            "en": "adipiscor"
+        },
+        {
+            "en": "suasoria"
+        }
+    ]
+}

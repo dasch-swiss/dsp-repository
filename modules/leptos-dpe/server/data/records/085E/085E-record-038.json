@@ -1,0 +1,39 @@
+{
+    "id": "085E-record-038",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085E-record-038",
+    "label": {
+        "en": "defiantly.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-07-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.en"
+            },
+            "copyrightHolder": "085E-organization-001",
+            "authorship": [
+                "085E-person-001",
+                "085E-person-002",
+                "085E-person-003"
+            ]
+        }
+    ],
+    "howToCite": "defiantly.doc (2028). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085E-record-038",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2027-11-06",
+    "datePublished": "2028-02-25",
+    "size": "246.8 MB",
+    "description": {
+        "en": "Peccatus comparo adamo desolo blandior conatus vilis pauci. Volaticus ver non vox possimus allatus tandem aestus contabesco. Beatae aro cui officiis tamisium."
+    },
+    "keywords": [
+        {
+            "en": "vomer"
+        }
+    ]
+}

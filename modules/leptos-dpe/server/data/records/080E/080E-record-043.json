@@ -1,0 +1,39 @@
+{
+    "id": "080E-record-043",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-043",
+    "label": {
+        "en": "bah.tif"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access",
+        "embargoDate": "2025-12-17"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "bah.tif (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-043",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2016-02-21",
+    "datePublished": "2017-05-19",
+    "size": "470.1 MB",
+    "dateModified": "2017-10-17",
+    "keywords": [
+        {
+            "en": "tabula"
+        },
+        {
+            "en": "dedico"
+        }
+    ]
+}

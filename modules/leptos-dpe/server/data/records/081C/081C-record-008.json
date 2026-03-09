@@ -1,0 +1,35 @@
+{
+    "id": "081C-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081C-record-008",
+    "label": {
+        "en": "denitrify_ugh.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0"
+            },
+            "copyrightHolder": "081C-organization-000",
+            "authorship": [
+                "081C-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "denitrify_ugh.pdf (2012). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081C-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2009-06-15",
+    "datePublished": "2012-07-20",
+    "size": "109.8 MB",
+    "keywords": [
+        {
+            "en": "voveo"
+        }
+    ],
+    "source": "Aiunt exercitationem cohibeo complectus vobis viscus."
+}

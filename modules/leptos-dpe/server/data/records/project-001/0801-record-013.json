@@ -1,0 +1,54 @@
+{
+    "id": "0801-record-013",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-record-013",
+    "label": {
+        "en": "Velociter suppono copia clam tempore cometes auctor animadverto voluptatem aranea"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2025-12-31"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2022-01-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "organization-001",
+            "authorship": [
+                "person-001",
+                "person-002",
+                "person-003"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-06-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "organization-002",
+            "authorship": [
+                "person-004"
+            ]
+        }
+    ],
+    "howToCite": "Velociter suppono copia clam tempore cometes auctor animadverto voluptatem aranea (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801-record-013",
+    "publisher": "DaSCH",
+    "typeOfData": "Annotation",
+    "dateCreated": "2024-07-21",
+    "datePublished": "2025-08-12",
+    "size": "328.6 MB",
+    "description": {
+        "en": "Claudeo vulgo assentator aestus collum demens. Cultellus cupiditas cavus verto. Alii conitor defessus."
+    },
+    "keywords": [
+        {
+            "en": "eius"
+        },
+        {
+            "en": "turpis"
+        }
+    ]
+}

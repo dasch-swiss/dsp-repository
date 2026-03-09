@@ -1,0 +1,38 @@
+{
+    "id": "083C-record-034",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-034",
+    "label": {
+        "en": "different_besides_fail.doc"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "different_besides_fail.doc (2011). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-034",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2009-09-01",
+    "datePublished": "2011-12-02",
+    "size": "160.2 MB",
+    "description": {
+        "en": "Vigilo cunabula corporis astrum vereor auctor. Bos defessus inflammatio coadunatio damnatio. Ater subito defetiscor cariosus tondeo cariosus color."
+    },
+    "keywords": [
+        {
+            "en": "delectus"
+        }
+    ]
+}

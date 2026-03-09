@@ -1,0 +1,44 @@
+{
+    "id": "081C-record-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081C-record-002",
+    "label": {
+        "en": "lazily_bitterly_other.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0"
+            },
+            "copyrightHolder": "081C-organization-000",
+            "authorship": [
+                "081C-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "lazily_bitterly_other.pdf (2009). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081C-record-002",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2009-10-21",
+    "datePublished": "2009-12-27",
+    "size": "216.3 MB",
+    "description": {
+        "en": "Solutio cetera copiose vulnero umquam corporis ulterius degusto. Concido derideo sophismata tredecim denego. Ultra vester substantia decretum cunae tergum carbo."
+    },
+    "keywords": [
+        {
+            "en": "valetudo"
+        },
+        {
+            "en": "caput"
+        },
+        {
+            "en": "dedico"
+        }
+    ],
+    "source": "Coadunatio tot stipes blanditiis ventosus voluptatibus denuncio talus."
+}

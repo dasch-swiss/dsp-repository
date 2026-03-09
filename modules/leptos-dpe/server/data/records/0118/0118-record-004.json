@@ -1,0 +1,41 @@
+{
+    "id": "0118-record-004",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0118-record-004",
+    "label": {
+        "en": "phew_gosh_happy_go_lucky.tif"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2022-07-13",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "REMA-organization-001",
+            "authorship": [
+                "REMA-person-000",
+                "REMA-person-001",
+                "REMA-person-006",
+                "REMA-person-005",
+                "REMA-person-004"
+            ]
+        }
+    ],
+    "howToCite": "phew_gosh_happy_go_lucky.tif (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0118-record-004",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-05-03",
+    "datePublished": "2023-01-13",
+    "size": "399.3 MB",
+    "keywords": [
+        {
+            "en": "toties"
+        },
+        {
+            "en": "illo"
+        }
+    ]
+}

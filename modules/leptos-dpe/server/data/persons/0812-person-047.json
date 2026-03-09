@@ -1,6 +1,6 @@
 {
     "id": "0812-person-047",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-person-047",
     "givenNames": [
         "Véronique"
     ],
@@ -14,5 +14,6 @@
     "affiliations": [
         "0812-organization-000",
         "0812-organization-003"
-    ]
+    ],
+    "sameAs": []
 }

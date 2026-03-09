@@ -1,0 +1,35 @@
+{
+    "id": "0847-record-076",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-076",
+    "label": {
+        "en": "incidentally_upside_down_musty.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "incidentally_upside_down_musty.png (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-076",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-03-11",
+    "datePublished": "2023-08-19",
+    "size": "350.7 MB",
+    "keywords": [
+        {
+            "en": "approbo"
+        }
+    ]
+}

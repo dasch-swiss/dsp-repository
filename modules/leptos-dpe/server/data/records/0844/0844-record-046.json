@@ -1,0 +1,35 @@
+{
+    "id": "0844-record-046",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-046",
+    "label": {
+        "en": "french.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "french.xml (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-046",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2023-06-14",
+    "datePublished": "2023-08-30",
+    "size": "437.6 MB",
+    "dateModified": "2023-09-29",
+    "description": {
+        "en": "Ducimus contra aspernatur virga tyrannus ancilla deduco. Surculus sol laudantium carmen confugo ventito. Solium apostolus tubineus antepono beatae cognomen cornu ad vergo."
+    }
+}

@@ -1,6 +1,6 @@
 {
     "id": "0111-organization-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0111-organization-000",
     "name": "Archives d’État de Genève",
     "url": "https://ge.ch/archives/",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Genève",
         "country": "Switzerland",
         "additional": "Case postale 3964"
-    }
+    },
+    "sameAs": []
 }

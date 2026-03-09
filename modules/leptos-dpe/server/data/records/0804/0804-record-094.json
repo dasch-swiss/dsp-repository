@@ -1,0 +1,42 @@
+{
+    "id": "0804-record-094",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-094",
+    "label": {
+        "en": "pulverize_whose.tif"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "pulverize_whose.tif (1984). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-094",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "1984-03-10",
+    "datePublished": "1984-04-01",
+    "size": "164.3 MB",
+    "dateModified": "1984-06-07",
+    "keywords": [
+        {
+            "en": "conspergo"
+        },
+        {
+            "en": "dolores"
+        },
+        {
+            "en": "verbera"
+        }
+    ],
+    "source": "Deinde sollicito ipsam alias textus vis."
+}

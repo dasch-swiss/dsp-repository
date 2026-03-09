@@ -1,0 +1,41 @@
+{
+    "id": "0103-record-087",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-087",
+    "label": {
+        "en": "heavily_tough.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "heavily_tough.doc (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-087",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-07-28",
+    "datePublished": "2021-07-11",
+    "size": "253.4 MB",
+    "keywords": [
+        {
+            "en": "caste"
+        },
+        {
+            "en": "volup"
+        }
+    ]
+}

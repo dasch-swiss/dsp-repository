@@ -1,0 +1,47 @@
+{
+    "id": "0854-record-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-003",
+    "label": {
+        "en": "dime_fortunate.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "dime_fortunate.tiff (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-003",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2026-09-02",
+    "datePublished": "2027-08-09",
+    "size": "364.4 MB",
+    "dateModified": "2028-07-22"
+}

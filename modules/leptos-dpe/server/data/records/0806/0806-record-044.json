@@ -1,0 +1,36 @@
+{
+    "id": "0806-record-044",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-record-044",
+    "label": {
+        "en": "out_supposing_supposing.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+            },
+            "copyrightHolder": "0806-organization-004",
+            "authorship": [
+                "0806-person-000",
+                "0806-person-001",
+                "0806-person-002",
+                "0806-person-003",
+                "0806-person-004"
+            ]
+        }
+    ],
+    "howToCite": "out_supposing_supposing.doc (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0806-record-044",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-04-13",
+    "datePublished": "2024-04-20",
+    "size": "223.5 MB",
+    "description": {
+        "en": "Debeo quis compello. Caecus voluptas chirographum spargo carpo teneo. Corporis alter acquiro cuppedia curriculum supra."
+    }
+}

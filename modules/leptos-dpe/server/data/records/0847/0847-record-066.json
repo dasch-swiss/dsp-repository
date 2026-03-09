@@ -1,0 +1,42 @@
+{
+    "id": "0847-record-066",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-066",
+    "label": {
+        "en": "cod_for.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "cod_for.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-066",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-01-12",
+    "datePublished": "2022-04-21",
+    "size": "383.5 MB",
+    "keywords": [
+        {
+            "en": "tumultus"
+        },
+        {
+            "en": "bellum"
+        },
+        {
+            "en": "acies"
+        }
+    ],
+    "source": "Attonbitus clamo termes deprecator speculum adduco asperiores deinde sui distinctio."
+}

@@ -1,0 +1,45 @@
+{
+    "id": "0107-record-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0107-record-008",
+    "label": {
+        "en": "supportive_spellcheck.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0107-organization-001",
+            "authorship": [
+                "0107-person-000",
+                "0107-person-001",
+                "0107-person-002",
+                "0107-person-003",
+                "0107-person-004"
+            ]
+        }
+    ],
+    "howToCite": "supportive_spellcheck.jpg (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0107-record-008",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2020-04-16",
+    "datePublished": "2020-06-15",
+    "size": "148.3 MB",
+    "keywords": [
+        {
+            "en": "cetera"
+        },
+        {
+            "en": "unus"
+        },
+        {
+            "en": "ambitus"
+        }
+    ],
+    "source": "Tabernus basium cerno decimus summopere sulum cubo adinventitias."
+}

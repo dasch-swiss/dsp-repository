@@ -1,0 +1,42 @@
+{
+    "id": "083C-record-026",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-026",
+    "label": {
+        "en": "bah_uncover.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "bah_uncover.txt (2009). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-026",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2000-03-20",
+    "datePublished": "2009-06-03",
+    "size": "71.7 MB",
+    "dateModified": "2010-10-22",
+    "description": {
+        "en": "Cattus quam adeptio torqueo. Suggero solutio ater adeo iure denuo sumptus adicio. Curvo valetudo bis atrocitas."
+    },
+    "keywords": [
+        {
+            "en": "copia"
+        },
+        {
+            "en": "ab"
+        }
+    ]
+}

@@ -1,0 +1,37 @@
+{
+    "id": "082A-record-051",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082A-record-051",
+    "label": {
+        "en": "graduate_gloomy_tidy.wav"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "SGV Schweizerisches Volksliedarchiv",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+            },
+            "copyrightHolder": "082A-organization-001",
+            "authorship": [
+                "082A-person-000",
+                "082A-person-003",
+                "082A-person-001",
+                "082A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "graduate_gloomy_tidy.wav (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082A-record-051",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2019-09-13",
+    "datePublished": "2021-06-30",
+    "size": "483.8 MB",
+    "keywords": [
+        {
+            "en": "vester"
+        }
+    ]
+}

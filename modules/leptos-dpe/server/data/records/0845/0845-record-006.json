@@ -1,0 +1,45 @@
+{
+    "id": "0845-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-006",
+    "label": {
+        "en": "peter.mp4"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "peter.mp4 (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2021-12-07",
+    "datePublished": "2023-03-08",
+    "size": "215.0 MB",
+    "keywords": [
+        {
+            "en": "arguo"
+        },
+        {
+            "en": "aut"
+        },
+        {
+            "en": "vomito"
+        }
+    ],
+    "source": "Capitulus creber creo neque totidem vero ubi utrum trepide terror."
+}

@@ -1,0 +1,37 @@
+{
+    "id": "0846-record-025",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-025",
+    "label": {
+        "en": "off.avi"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "off.avi (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-025",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2022-04-15",
+    "datePublished": "2022-10-20",
+    "size": "382.4 MB",
+    "dateModified": "2023-03-03",
+    "keywords": [
+        {
+            "en": "atrox"
+        }
+    ],
+    "source": "Angelus tremo attero numquam."
+}

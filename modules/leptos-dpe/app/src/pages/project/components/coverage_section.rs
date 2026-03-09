@@ -12,8 +12,10 @@ pub fn CoverageSection(
         {(!temporal_coverage.is_empty())
             .then(|| {
                 view! {
-                    <div id="temporal-coverage">
-                        <h3 class="text-sm font-semibold text-gray-700 mb-2">"Temporal Coverage"</h3>
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-700 mb-2">
+                            "Temporal Coverage"
+                        </h3>
                         <div class="flex flex-wrap gap-1.5">
                             {temporal_coverage
                                 .iter()
@@ -59,7 +61,7 @@ pub fn CoverageSection(
         {(!spatial_coverage.is_empty())
             .then(|| {
                 view! {
-                    <div id="spatial-coverage">
+                    <div>
                         <h3 class="text-sm font-semibold text-gray-700 mb-2">"Spatial Coverage"</h3>
                         <div class="flex flex-wrap gap-1.5">
                             {spatial_coverage

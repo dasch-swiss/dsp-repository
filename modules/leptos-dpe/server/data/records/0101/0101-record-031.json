@@ -1,0 +1,43 @@
+{
+    "id": "0101-record-031",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-record-031",
+    "label": {
+        "en": "hm.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0101-organization-000",
+            "authorship": [
+                "0101-person-000",
+                "0101-person-001",
+                "0101-person-002"
+            ]
+        }
+    ],
+    "howToCite": "hm.pdf (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0101-record-031",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-02-02",
+    "datePublished": "2018-04-23",
+    "size": "165.6 MB",
+    "keywords": [
+        {
+            "en": "quisquam"
+        },
+        {
+            "en": "rerum"
+        },
+        {
+            "en": "comburo"
+        }
+    ],
+    "source": "Acies iusto creber coniuratio utilis depereo animus stella aperio defetiscor."
+}

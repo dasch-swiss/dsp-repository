@@ -1,0 +1,29 @@
+{
+    "id": "080E-record-088",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-088",
+    "label": {
+        "en": "furthermore_too_pro.txt"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "furthermore_too_pro.txt (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-088",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-08-23",
+    "datePublished": "2018-07-15",
+    "size": "244.1 MB"
+}

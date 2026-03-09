@@ -1,0 +1,40 @@
+{
+    "id": "0804-record-028",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0804-record-028",
+    "label": {
+        "en": "pish.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2024-12-10",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0804-organization-000",
+            "authorship": [
+                "0804-organization-000"
+            ]
+        }
+    ],
+    "howToCite": "pish.doc (1983). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0804-record-028",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "1982-05-04",
+    "datePublished": "1983-11-06",
+    "size": "7.0 MB",
+    "description": {
+        "en": "Illo suppellex sto. Vilis advoco celebrer degusto vulariter vicissitudo defungo. Cohaero tremo occaecati cometes torqueo charisma non."
+    },
+    "keywords": [
+        {
+            "en": "absconditus"
+        },
+        {
+            "en": "defungo"
+        }
+    ]
+}

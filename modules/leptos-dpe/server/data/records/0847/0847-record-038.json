@@ -1,0 +1,34 @@
+{
+    "id": "0847-record-038",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-038",
+    "label": {
+        "en": "consequently_zowie_bah.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "consequently_zowie_bah.jpg (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-038",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2020-10-29",
+    "datePublished": "2023-07-15",
+    "size": "10.3 MB",
+    "dateModified": "2021-10-04",
+    "description": {
+        "en": "Surculus custodia acerbitas vobis collum sortitus varietas adhuc considero adhaero. Tabesco ipsam sumo carmen creo. Comburo adeo advenio argumentum vestrum."
+    }
+}

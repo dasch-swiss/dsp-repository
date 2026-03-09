@@ -1,0 +1,49 @@
+{
+    "id": "0854-record-012",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-012",
+    "label": {
+        "en": "closed_secrecy_over.tif"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "closed_secrecy_over.tif (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-012",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-08-15",
+    "datePublished": "2024-10-10",
+    "size": "475.3 MB",
+    "description": {
+        "en": "Illum volaticus cariosus id solio vesper molestias caveo creber. Aptus carbo asper. Venio alii angelus attonbitus."
+    }
+}

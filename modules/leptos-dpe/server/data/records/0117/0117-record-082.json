@@ -1,0 +1,42 @@
+{
+    "id": "0117-record-082",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-082",
+    "label": {
+        "en": "crowded_foolhardy_hm.txt"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access",
+        "embargoDate": "2026-03-25"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "crowded_foolhardy_hm.txt (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-082",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-02-16",
+    "datePublished": "2018-06-02",
+    "size": "19.2 MB",
+    "keywords": [
+        {
+            "en": "umquam"
+        },
+        {
+            "en": "usus"
+        }
+    ],
+    "source": "Ciminatio amo clam ipsum advoco ait aurum aestas congregatio."
+}

@@ -1,0 +1,33 @@
+{
+    "id": "0828-record-009",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0828-record-009",
+    "label": {
+        "en": "impressionable_merit.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2024-03-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0828-organization-001",
+            "authorship": [
+                "0828-person-000",
+                "0828-person-001",
+                "0828-person-002",
+                "0828-person-003",
+                "0828-person-004"
+            ]
+        }
+    ],
+    "howToCite": "impressionable_merit.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0828-record-009",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2014-11-02",
+    "datePublished": "2019-03-27",
+    "size": "444.2 MB"
+}

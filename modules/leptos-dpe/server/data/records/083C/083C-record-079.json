@@ -1,0 +1,35 @@
+{
+    "id": "083C-record-079",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-079",
+    "label": {
+        "en": "carnival.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "carnival.jpg (2008). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-079",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "1995-11-06",
+    "datePublished": "2008-07-13",
+    "size": "289.2 MB",
+    "keywords": [
+        {
+            "en": "defessus"
+        }
+    ]
+}

@@ -1,0 +1,30 @@
+{
+    "id": "082D-record-004",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082D-record-004",
+    "label": {
+        "en": "concerning_so.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "082D-organization-001",
+            "authorship": [
+                "082D-person-001",
+                "082D-person-002"
+            ]
+        }
+    ],
+    "howToCite": "concerning_so.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082D-record-004",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-01-10",
+    "datePublished": "2020-02-06",
+    "size": "19.0 MB"
+}

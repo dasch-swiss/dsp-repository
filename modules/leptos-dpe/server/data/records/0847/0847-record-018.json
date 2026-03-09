@@ -1,0 +1,41 @@
+{
+    "id": "0847-record-018",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-018",
+    "label": {
+        "en": "chasuble_honestly.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "chasuble_honestly.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-018",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-05-21",
+    "datePublished": "2023-06-17",
+    "size": "191.8 MB",
+    "description": {
+        "en": "Subseco vereor consequuntur laudantium perferendis colo terminatio aliquam coerceo adiuvo. Tredecim testimonium addo ceno. Coepi cometes paulatim arma deporto stella comminor vitae."
+    },
+    "keywords": [
+        {
+            "en": "turpis"
+        },
+        {
+            "en": "custodia"
+        }
+    ]
+}

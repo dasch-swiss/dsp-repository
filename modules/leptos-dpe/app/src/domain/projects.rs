@@ -72,8 +72,8 @@ pub async fn list_data_languages() -> Result<Vec<String>, ServerFnError> {
                         if let Ok(raw) = serde_json::from_str::<ProjectRaw>(&json_data) {
                             if let Some(languages) = raw.data_language {
                                 for lang_map in languages {
-                                    if let Some(en) = lang_map.get("en") {
-                                        all_languages.insert(en.clone());
+                                    if let Some(val) = super::utils::lang_value(&lang_map) {
+                                        all_languages.insert(val.clone());
                                     }
                                 }
                             }
@@ -152,7 +152,7 @@ pub async fn list_projects(
 
     // Apply filtering
     let search_lower = query.search().to_lowercase();
-    let filtered_projects: Vec<Project> = projects
+    let mut filtered_projects: Vec<Project> = projects
         .into_iter()
         .filter(|project| {
             // Status filter
@@ -196,7 +196,7 @@ pub async fn list_projects(
                     .as_ref()
                     .map(|langs| {
                         langs.iter().any(|lang_map| {
-                            lang_map.get("en").map(|en| data_language_filter.contains(en)).unwrap_or(false)
+                            super::utils::lang_value(lang_map).map(|v| data_language_filter.contains(v)).unwrap_or(false)
                         })
                     })
                     .unwrap_or(false)
@@ -221,6 +221,8 @@ pub async fn list_projects(
         })
         .collect();
 
+    filtered_projects.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+
     // Calculate pagination
     let total_items = filtered_projects.len() as i32;
     let nr_pages = (total_items as usize).div_ceil(items_per_page).max(1) as i32;
@@ -244,7 +246,7 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
     use std::fs;
     use std::path::PathBuf;
 
-    use super::cluster::ClusterRef;
+    use super::cluster::ClusterRaw;
     use super::collection::CollectionRef;
     use super::project::ProjectRaw;
     use super::utils::get_data_dir;
@@ -274,20 +276,28 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
                         let raw: ProjectRaw = serde_json::from_str(&json_data)
                             .map_err(|e| ServerFnError::new(format!("Failed to parse JSON: {}", e)))?;
 
-                        let cluster_ids = raw.clusters.clone().unwrap_or_default();
                         let collection_ids = raw.collections.clone().unwrap_or_default();
 
                         let mut project = Project::from(raw);
 
-                        // Resolve cluster IDs
+                        // Resolve clusters by reverse lookup: scan all cluster files for those listing this project
                         let clusters_dir = data_path.join("clusters");
-                        project.clusters = cluster_ids
-                            .iter()
-                            .filter_map(|id| {
-                                let cluster_path = clusters_dir.join(format!("{}.json", id));
-                                fs::read_to_string(&cluster_path)
-                                    .ok()
-                                    .and_then(|json| serde_json::from_str::<ClusterRef>(&json).ok())
+                        project.clusters = fs::read_dir(&clusters_dir)
+                            .into_iter()
+                            .flatten()
+                            .flatten()
+                            .filter_map(|entry| {
+                                let path = entry.path();
+                                if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                                    return None;
+                                }
+                                let json = fs::read_to_string(&path).ok()?;
+                                let raw: ClusterRaw = serde_json::from_str(&json).ok()?;
+                                if raw.projects.iter().any(|p| p == &shortcode) {
+                                    Some(raw.into_ref())
+                                } else {
+                                    None
+                                }
                             })
                             .collect();
 

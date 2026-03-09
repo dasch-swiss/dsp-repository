@@ -1,0 +1,42 @@
+{
+    "id": "0812-record-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-record-005",
+    "label": {
+        "en": "sugary_although.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-01-25",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0812-organization-019",
+            "authorship": [
+                "0812-person-000",
+                "0812-person-001",
+                "0812-person-002",
+                "0812-person-003",
+                "0812-person-004"
+            ]
+        }
+    ],
+    "howToCite": "sugary_although.tif (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0812-record-005",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2015-09-20",
+    "datePublished": "2017-06-13",
+    "size": "162.9 MB",
+    "dateModified": "2018-12-09",
+    "description": {
+        "en": "Video conduco quibusdam velit concido depromo alii. Carus canto temptatio. Aranea verbum adstringo defendo artificiose tersus depereo fugiat."
+    },
+    "keywords": [
+        {
+            "en": "aranea"
+        }
+    ]
+}

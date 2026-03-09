@@ -1,0 +1,35 @@
+{
+    "id": "084E-record-020",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-020",
+    "label": {
+        "en": "not.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "not.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-020",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-07-25",
+    "datePublished": "2023-09-16",
+    "size": "270.7 MB",
+    "dateModified": "2024-01-17",
+    "source": "Arceo deprimo solum demergo nobis blanditiis."
+}

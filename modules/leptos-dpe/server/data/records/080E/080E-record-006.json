@@ -1,0 +1,37 @@
+{
+    "id": "080E-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-006",
+    "label": {
+        "en": "reopen_phooey_lest.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "reopen_phooey_lest.tiff (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-10-27",
+    "datePublished": "2017-12-05",
+    "size": "15.4 MB",
+    "keywords": [
+        {
+            "en": "alius"
+        },
+        {
+            "en": "adhaero"
+        }
+    ]
+}

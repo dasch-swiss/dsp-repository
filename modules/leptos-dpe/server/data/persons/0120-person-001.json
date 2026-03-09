@@ -1,6 +1,6 @@
 {
     "id": "0120-person-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0120-person-001",
     "givenNames": [
         "Clotilde"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0120-organization-000"
     ],
-    "email": "clotilde.robin@unil.ch"
+    "email": "clotilde.robin@unil.ch",
+    "sameAs": []
 }

@@ -1,0 +1,31 @@
+{
+    "id": "0844-record-031",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-031",
+    "label": {
+        "en": "meh_toaster_splash.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "meh_toaster_splash.png (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-031",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-01-30",
+    "datePublished": "2023-08-24",
+    "size": "445.6 MB"
+}

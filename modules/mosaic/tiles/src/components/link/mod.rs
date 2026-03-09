@@ -18,6 +18,9 @@ pub fn Link(
     /// Optional rel attribute (e.g., "noopener noreferrer")
     #[prop(optional, into)]
     rel: Option<String>,
+    /// Optional aria-label for icon-only or image-only links
+    #[prop(optional, into)]
+    aria_label: Option<String>,
     /// Toggle whether the link is disabled
     #[prop(optional, into)]
     disabled: MaybeProp<bool>,
@@ -40,6 +43,7 @@ pub fn Link(
                 class=variant.css_class()
                 target=target
                 rel=rel
+                aria-label=aria_label.clone()
                 aria-disabled=move || if is_disabled.get() { Some("true") } else { None }
                 tabindex=move || if is_disabled.get() { Some("-1") } else { None }
             >
@@ -67,6 +71,7 @@ pub fn Link(
             }
             target=target
             rel=rel
+            aria-label=aria_label
             aria-disabled=move || if is_disabled.get() { Some("true") } else { None }
         >
             {if let Some(children) = children {

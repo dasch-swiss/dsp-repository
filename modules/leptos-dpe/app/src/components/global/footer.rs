@@ -111,6 +111,7 @@ pub fn Footer() -> impl IntoView {
                         target="_blank"
                         rel="noopener noreferrer"
                         class="text-gray-400 hover:text-white transition-colors"
+                        aria-label="DaSCH on LinkedIn"
                     >
                         <Icon icon=IconLinkedIn class="w-6 h-6" />
                     </a>
@@ -119,6 +120,7 @@ pub fn Footer() -> impl IntoView {
                         target="_blank"
                         rel="noopener noreferrer"
                         class="text-gray-400 hover:text-white transition-colors"
+                        aria-label="DaSCH on X (Twitter)"
                     >
                         <Icon icon=IconX class="w-6 h-6" />
                     </a>
@@ -127,6 +129,7 @@ pub fn Footer() -> impl IntoView {
                         target="_blank"
                         rel="noopener noreferrer"
                         class="text-gray-400 hover:text-white transition-colors"
+                        aria-label="DaSCH on GitHub"
                     >
                         <Icon icon=IconGitHub class="w-6 h-6" />
                     </a>

@@ -1,0 +1,40 @@
+{
+    "id": "0844-record-029",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-029",
+    "label": {
+        "en": "throughout_angrily_parched.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "throughout_angrily_parched.xml (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-029",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2022-03-21",
+    "datePublished": "2023-06-07",
+    "size": "471.5 MB",
+    "dateModified": "2022-08-17",
+    "keywords": [
+        {
+            "en": "adipisci"
+        },
+        {
+            "en": "vitium"
+        }
+    ]
+}

@@ -1,6 +1,6 @@
 {
     "id": "0106-person-004",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0106-person-004",
     "givenNames": [
         "Loïc"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0106-organization-000"
     ],
-    "email": "loic.jaouen@unil.ch"
+    "email": "loic.jaouen@unil.ch",
+    "sameAs": []
 }

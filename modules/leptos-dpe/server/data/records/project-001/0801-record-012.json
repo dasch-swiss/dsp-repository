@@ -1,0 +1,52 @@
+{
+    "id": "0801-record-012",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-record-012",
+    "label": {
+        "en": "mortally.tif"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2025-12-31"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2022-01-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "organization-001",
+            "authorship": [
+                "person-001",
+                "person-002",
+                "person-003"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-06-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "organization-002",
+            "authorship": [
+                "person-004"
+            ]
+        }
+    ],
+    "howToCite": "mortally.tif (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801-record-012",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-12-04",
+    "datePublished": "2026-05-07",
+    "size": "381.1 MB",
+    "dateModified": "2026-10-21",
+    "keywords": [
+        {
+            "en": "creber"
+        },
+        {
+            "en": "talus"
+        }
+    ]
+}

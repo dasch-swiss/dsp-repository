@@ -1,0 +1,40 @@
+{
+    "id": "080C-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C-record-011",
+    "label": {
+        "en": "neighboring_shoot_huzzah.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/deed.en"
+            },
+            "copyrightHolder": "080C-organization-001",
+            "authorship": [
+                "080C-person-001",
+                "080C-person-002",
+                "080C-person-003",
+                "080C-person-000"
+            ]
+        }
+    ],
+    "howToCite": "neighboring_shoot_huzzah.tiff (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080C-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2021-07-02",
+    "datePublished": "2021-08-05",
+    "size": "496.1 MB",
+    "description": {
+        "en": "Terror succurro curo sui alius unde. Sit stips vergo acer tersus aufero spiritus vulgus amoveo assentator. Terminatio caelestis demitto debeo tumultus vomer contego corrumpo creator."
+    },
+    "keywords": [
+        {
+            "en": "iste"
+        }
+    ]
+}

@@ -1,6 +1,6 @@
 {
     "id": "0102-person-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0102-person-002",
     "givenNames": [
         "Jeanne"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0102-organization-000"
     ],
-    "email": "jeanne.modoux@unil.ch"
+    "email": "jeanne.modoux@unil.ch",
+    "sameAs": []
 }

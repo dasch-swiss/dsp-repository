@@ -1,0 +1,32 @@
+{
+    "id": "082A-record-063",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082A-record-063",
+    "label": {
+        "en": "proceed.mp3"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "SGV Schweizerisches Volksliedarchiv",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+            },
+            "copyrightHolder": "082A-organization-001",
+            "authorship": [
+                "082A-person-000",
+                "082A-person-003",
+                "082A-person-001",
+                "082A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "proceed.mp3 (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082A-record-063",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2018-02-16",
+    "datePublished": "2020-04-19",
+    "size": "362.1 MB"
+}

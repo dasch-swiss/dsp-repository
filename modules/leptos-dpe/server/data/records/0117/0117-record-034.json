@@ -1,0 +1,43 @@
+{
+    "id": "0117-record-034",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-034",
+    "label": {
+        "en": "during_shakily.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "during_shakily.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-034",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2016-09-10",
+    "datePublished": "2019-12-24",
+    "size": "318.6 MB",
+    "keywords": [
+        {
+            "en": "vos"
+        },
+        {
+            "en": "audacia"
+        },
+        {
+            "en": "ex"
+        }
+    ]
+}

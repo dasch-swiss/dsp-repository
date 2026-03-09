@@ -1,6 +1,6 @@
 {
     "id": "0813-organization-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-organization-001",
     "name": "Bruno Manser Fonds",
     "url": "https://www.bmf.ch/",
     "address": {
@@ -9,5 +9,6 @@
         "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "info@bmf.ch"
+    "email": "info@bmf.ch",
+    "sameAs": []
 }

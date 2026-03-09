@@ -1,6 +1,6 @@
 {
     "id": "0801-person-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-person-002",
     "givenNames": [
         "Fritz"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0801-organization-003"
     ],
-    "email": "fritz.nagel@unibas.ch"
+    "email": "fritz.nagel@unibas.ch",
+    "sameAs": []
 }

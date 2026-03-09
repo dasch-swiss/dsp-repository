@@ -1,0 +1,45 @@
+{
+    "id": "0862-record-050",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-050",
+    "label": {
+        "en": "incidentally_plus.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "incidentally_plus.xml (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-050",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2015-11-26",
+    "datePublished": "2022-08-17",
+    "size": "336.0 MB",
+    "description": {
+        "en": "Alias modi sufficio dedico audio vulgus clementia vito aptus. Curo adsuesco creta ter commodo capio verumtamen. Numquam tergiversatio summopere caste decerno vero."
+    },
+    "keywords": [
+        {
+            "en": "decerno"
+        },
+        {
+            "en": "animadverto"
+        }
+    ],
+    "source": "Congregatio voluptas pecto alveus dolorem bibo una."
+}

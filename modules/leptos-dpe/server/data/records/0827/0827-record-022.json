@@ -1,0 +1,38 @@
+{
+    "id": "0827-record-022",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0827-record-022",
+    "label": {
+        "en": "although_between.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-05-06",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0827-organization-000",
+            "authorship": [
+                "0827-person-000"
+            ]
+        }
+    ],
+    "howToCite": "although_between.jpg (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0827-record-022",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2020-01-06",
+    "datePublished": "2020-08-17",
+    "size": "480.7 MB",
+    "keywords": [
+        {
+            "en": "arcus"
+        },
+        {
+            "en": "tollo"
+        }
+    ],
+    "source": "Tergiversatio vivo ubi autus sit textor spectaculum ullam amita."
+}

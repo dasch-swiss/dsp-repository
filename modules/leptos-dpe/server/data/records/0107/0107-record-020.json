@@ -1,0 +1,39 @@
+{
+    "id": "0107-record-020",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0107-record-020",
+    "label": {
+        "en": "makeover_near.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0107-organization-001",
+            "authorship": [
+                "0107-person-000",
+                "0107-person-001",
+                "0107-person-002",
+                "0107-person-003",
+                "0107-person-004"
+            ]
+        }
+    ],
+    "howToCite": "makeover_near.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0107-record-020",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-07-15",
+    "datePublished": "2019-09-29",
+    "size": "244.4 MB",
+    "dateModified": "2018-01-28",
+    "keywords": [
+        {
+            "en": "adipisci"
+        }
+    ]
+}

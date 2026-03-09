@@ -1,6 +1,6 @@
 {
     "id": "0807-person-005",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0807-person-005",
     "givenNames": [
         "Marco"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0807-organization-000"
     ],
-    "email": "marco.a.jorio@gmail.com"
+    "email": "marco.a.jorio@gmail.com",
+    "sameAs": []
 }

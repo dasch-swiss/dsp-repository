@@ -1,0 +1,38 @@
+{
+    "id": "0846-record-027",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-027",
+    "label": {
+        "en": "pack_likewise_dividend.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "pack_likewise_dividend.pdf (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-027",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-06-23",
+    "datePublished": "2021-05-14",
+    "size": "189.5 MB",
+    "keywords": [
+        {
+            "en": "patria"
+        },
+        {
+            "en": "deleo"
+        }
+    ]
+}

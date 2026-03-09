@@ -1,0 +1,38 @@
+{
+    "id": "0114-record-024",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114-record-024",
+    "label": {
+        "en": "airman_thankfully_against.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0114-organization-000",
+            "authorship": [
+                "0114-person-000",
+                "0114-person-001",
+                "0114-person-002",
+                "0114-person-003",
+                "0114-person-004"
+            ]
+        }
+    ],
+    "howToCite": "airman_thankfully_against.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0114-record-024",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-02-22",
+    "datePublished": "2022-01-26",
+    "size": "34.1 MB",
+    "keywords": [
+        {
+            "en": "succedo"
+        }
+    ]
+}

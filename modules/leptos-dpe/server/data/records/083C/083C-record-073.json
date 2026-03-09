@@ -1,0 +1,35 @@
+{
+    "id": "083C-record-073",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-073",
+    "label": {
+        "en": "final_baseboard_garrote.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "final_baseboard_garrote.tiff (2011). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-073",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2010-03-28",
+    "datePublished": "2011-03-09",
+    "size": "352.5 MB",
+    "keywords": [
+        {
+            "en": "statim"
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "id": "0806-record-028",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-record-028",
+    "label": {
+        "en": "about_kiddingly_bravely.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/deed.de"
+            },
+            "copyrightHolder": "0806-organization-004",
+            "authorship": [
+                "0806-person-000",
+                "0806-person-001",
+                "0806-person-002",
+                "0806-person-003",
+                "0806-person-004"
+            ]
+        }
+    ],
+    "howToCite": "about_kiddingly_bravely.png (2015). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0806-record-028",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2014-12-09",
+    "datePublished": "2015-05-15",
+    "size": "81.7 MB",
+    "keywords": [
+        {
+            "en": "terga"
+        },
+        {
+            "en": "acidus"
+        },
+        {
+            "en": "cimentarius"
+        }
+    ]
+}

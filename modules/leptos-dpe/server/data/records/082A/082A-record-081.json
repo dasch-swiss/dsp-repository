@@ -1,0 +1,37 @@
+{
+    "id": "082A-record-081",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082A-record-081",
+    "label": {
+        "en": "stranger_pace.flac"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "SGV Schweizerisches Volksliedarchiv",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+            },
+            "copyrightHolder": "082A-organization-001",
+            "authorship": [
+                "082A-person-000",
+                "082A-person-003",
+                "082A-person-001",
+                "082A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "stranger_pace.flac (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082A-record-081",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2018-07-23",
+    "datePublished": "2021-11-06",
+    "size": "128.8 MB",
+    "keywords": [
+        {
+            "en": "aureus"
+        }
+    ]
+}

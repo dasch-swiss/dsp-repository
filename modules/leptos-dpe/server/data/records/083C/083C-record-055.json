@@ -1,0 +1,41 @@
+{
+    "id": "083C-record-055",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-055",
+    "label": {
+        "en": "lucky.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "lucky.pdf (2010). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-055",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2000-10-28",
+    "datePublished": "2010-10-14",
+    "size": "111.4 MB",
+    "keywords": [
+        {
+            "en": "patria"
+        },
+        {
+            "en": "tametsi"
+        },
+        {
+            "en": "corroboro"
+        }
+    ]
+}

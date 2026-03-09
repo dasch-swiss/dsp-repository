@@ -1,0 +1,42 @@
+{
+    "id": "0843-record-009",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0843-record-009",
+    "label": {
+        "en": "mid.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-02-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "woposs-organization-001",
+            "authorship": [
+                "woposs-person-000",
+                "woposs-person-001",
+                "woposs-person-002",
+                "woposs-person-003",
+                "woposs-person-004"
+            ]
+        }
+    ],
+    "howToCite": "mid.xml (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0843-record-009",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2023-08-27",
+    "datePublished": "2024-10-03",
+    "size": "10.7 MB",
+    "keywords": [
+        {
+            "en": "terebro"
+        },
+        {
+            "en": "sum"
+        }
+    ],
+    "source": "Delibero toties articulus arbor."
+}

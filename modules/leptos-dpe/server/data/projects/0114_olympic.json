@@ -1,9 +1,9 @@
 {
     "id": "0114",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114",
     "name": "The International Olympic Committee members (1894-1972). A transnational elite prosopography",
     "shortcode": "0114",
-    "officialName": "MISSING",
+    "officialName": "Research Project: The International Olympic Committee members (1894-1972). A transnational elite prosopography",
     "status": "Ongoing",
     "shortDescription": "Ce projet reconstituera les trajectoires familiales, professionnelles, sociales et politiques des 213 membres du CIO cooptés avant 1972.",
     "description": {
@@ -25,13 +25,18 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "0114-organization-000",
             "authorship": [
-                "MISSING"
+                "0114-person-000",
+                "0114-person-001",
+                "0114-person-002",
+                "0114-person-003",
+                "0114-person-004"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
+    "dataPublicationYear": "2022-01-01",
     "typeOfData": [
         "Text"
     ],
@@ -155,5 +160,40 @@
         {
             "en": "elites-cio"
         }
+    ],
+    "records": [
+        "0114-record-001",
+        "0114-record-002",
+        "0114-record-003",
+        "0114-record-004",
+        "0114-record-005",
+        "0114-record-006",
+        "0114-record-007",
+        "0114-record-008",
+        "0114-record-009",
+        "0114-record-010",
+        "0114-record-011",
+        "0114-record-012",
+        "0114-record-013",
+        "0114-record-014",
+        "0114-record-015",
+        "0114-record-016",
+        "0114-record-017",
+        "0114-record-018",
+        "0114-record-019",
+        "0114-record-020",
+        "0114-record-021",
+        "0114-record-022",
+        "0114-record-023",
+        "0114-record-024",
+        "0114-record-025",
+        "0114-record-026",
+        "0114-record-027",
+        "0114-record-028",
+        "0114-record-029",
+        "0114-record-030",
+        "0114-record-031",
+        "0114-record-032",
+        "0114-record-033"
     ]
 }

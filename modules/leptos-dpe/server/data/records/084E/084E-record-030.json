@@ -1,0 +1,42 @@
+{
+    "id": "084E-record-030",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-030",
+    "label": {
+        "en": "where_writhing.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "where_writhing.pdf (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-030",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-03-03",
+    "datePublished": "2024-01-10",
+    "size": "178.5 MB",
+    "description": {
+        "en": "Vesica centum minima alienus torrens barba sui illum animus tot. Esse odio cohaero tamisium crux conitor strues sumptus. Aperte tam complectus tubineus."
+    },
+    "keywords": [
+        {
+            "en": "solitudo"
+        }
+    ],
+    "source": "Censura eligendi vado vis inventore."
+}

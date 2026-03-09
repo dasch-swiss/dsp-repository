@@ -1,0 +1,38 @@
+{
+    "id": "0852-record-076",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-076",
+    "label": {
+        "en": "intermesh_out_hm.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "intermesh_out_hm.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-076",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-06-18",
+    "datePublished": "2022-10-20",
+    "size": "224.1 MB",
+    "dateModified": "2020-08-16",
+    "description": {
+        "en": "Titulus calco super utrimque. Spes curis reprehenderit sub reprehenderit tot vomer calcar. Conservo crebro desino cognomen summopere possimus viduo denuo considero."
+    },
+    "keywords": [
+        {
+            "en": "adversus"
+        }
+    ]
+}

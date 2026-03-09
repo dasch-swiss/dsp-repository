@@ -1,0 +1,33 @@
+{
+    "id": "0848-record-020",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-020",
+    "label": {
+        "en": "unabashedly_fluctuate_before.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "unabashedly_fluctuate_before.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-020",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-01-23",
+    "datePublished": "2023-01-30",
+    "size": "20.0 MB",
+    "dateModified": "2023-03-23"
+}

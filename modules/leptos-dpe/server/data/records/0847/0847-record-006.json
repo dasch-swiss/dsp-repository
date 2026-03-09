@@ -1,0 +1,41 @@
+{
+    "id": "0847-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-006",
+    "label": {
+        "en": "midst_censor_strictly.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "midst_censor_strictly.jpg (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-07-19",
+    "datePublished": "2023-07-21",
+    "size": "74.2 MB",
+    "keywords": [
+        {
+            "en": "ager"
+        },
+        {
+            "en": "coerceo"
+        },
+        {
+            "en": "vae"
+        }
+    ]
+}

@@ -1,0 +1,35 @@
+{
+    "id": "080C-record-056",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C-record-056",
+    "label": {
+        "en": "welcome.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/deed.en"
+            },
+            "copyrightHolder": "080C-organization-001",
+            "authorship": [
+                "080C-person-001",
+                "080C-person-002",
+                "080C-person-003",
+                "080C-person-000"
+            ]
+        }
+    ],
+    "howToCite": "welcome.xml (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080C-record-056",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2018-06-03",
+    "datePublished": "2019-10-06",
+    "size": "215.9 MB",
+    "description": {
+        "en": "Verumtamen verumtamen fugit ratione tempora autus. Trans admoneo pauper aureus careo socius. Aestas cernuus caecus vulpes subvenio cuius at cras teneo ipsa."
+    }
+}

@@ -1,0 +1,45 @@
+{
+    "id": "0105-record-020",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0105-record-020",
+    "label": {
+        "en": "about_drat_uncommon.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0105-organization-000",
+            "authorship": [
+                "0105-person-000",
+                "0105-person-001",
+                "0105-person-002",
+                "0105-person-003",
+                "0105-person-004"
+            ]
+        }
+    ],
+    "howToCite": "about_drat_uncommon.txt (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0105-record-020",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-05-15",
+    "datePublished": "2018-12-08",
+    "size": "327.4 MB",
+    "description": {
+        "en": "Speculum calco cauda delibero pax valeo adficio. Abduco cibo voveo culpa solio creator cimentarius caelestis. Uterque itaque vomer auxilium carus caute inventore aptus."
+    },
+    "keywords": [
+        {
+            "en": "aegrotatio"
+        },
+        {
+            "en": "versus"
+        }
+    ],
+    "source": "Sapiente civis tamquam valens iure contigo aperio comptus libero."
+}

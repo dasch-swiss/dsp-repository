@@ -1,0 +1,44 @@
+{
+    "id": "0848-record-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-003",
+    "label": {
+        "en": "finally_gah_cricket.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "finally_gah_cricket.txt (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-003",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-12-24",
+    "datePublished": "2021-08-07",
+    "size": "166.2 MB",
+    "description": {
+        "en": "Terra truculenter audacia allatus reiciendis beneficium nam tenuis. Adsidue urbs cubicularis tabula creta demoror adduco vitiosus harum. Vero stabilis tres perferendis."
+    },
+    "keywords": [
+        {
+            "en": "deprecator"
+        },
+        {
+            "en": "abundans"
+        }
+    ],
+    "source": "Quibusdam comedo et."
+}

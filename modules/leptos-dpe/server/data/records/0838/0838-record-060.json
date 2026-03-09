@@ -1,0 +1,41 @@
+{
+    "id": "0838-record-060",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0838-record-060",
+    "label": {
+        "en": "blond.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-01-22",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0838-organization-002",
+            "authorship": [
+                "0838-person-000",
+                "0838-person-001",
+                "0838-person-002",
+                "0838-person-003",
+                "0838-person-004"
+            ]
+        }
+    ],
+    "howToCite": "blond.pdf (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0838-record-060",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-11-23",
+    "datePublished": "2022-06-29",
+    "size": "139.0 MB",
+    "keywords": [
+        {
+            "en": "unus"
+        },
+        {
+            "en": "amet"
+        }
+    ]
+}

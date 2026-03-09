@@ -1,0 +1,42 @@
+{
+    "id": "084A-record-017",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084A-record-017",
+    "label": {
+        "en": "aw_perp_epic.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-02-21",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084A-organization-001",
+            "authorship": [
+                "084A-person-000",
+                "084A-person-001",
+                "084A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "aw_perp_epic.doc (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084A-record-017",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-05-04",
+    "datePublished": "2023-06-03",
+    "size": "420.7 MB",
+    "keywords": [
+        {
+            "en": "vitiosus"
+        },
+        {
+            "en": "comedo"
+        },
+        {
+            "en": "tepesco"
+        }
+    ]
+}

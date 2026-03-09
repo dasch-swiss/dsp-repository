@@ -1,0 +1,39 @@
+{
+    "id": "083C-record-021",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-021",
+    "label": {
+        "en": "generously_busily_validity.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "generously_busily_validity.doc (2005). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-021",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2001-04-13",
+    "datePublished": "2005-08-13",
+    "size": "416.5 MB",
+    "dateModified": "2011-02-19",
+    "keywords": [
+        {
+            "en": "certus"
+        },
+        {
+            "en": "thermae"
+        }
+    ]
+}

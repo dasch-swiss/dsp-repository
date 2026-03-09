@@ -1,0 +1,44 @@
+{
+    "id": "0105-record-019",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0105-record-019",
+    "label": {
+        "en": "electronics_wearily_inspect.tif"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0105-organization-000",
+            "authorship": [
+                "0105-person-000",
+                "0105-person-001",
+                "0105-person-002",
+                "0105-person-003",
+                "0105-person-004"
+            ]
+        }
+    ],
+    "howToCite": "electronics_wearily_inspect.tif (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0105-record-019",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-10-12",
+    "datePublished": "2019-11-17",
+    "size": "135.4 MB",
+    "keywords": [
+        {
+            "en": "cribro"
+        },
+        {
+            "en": "blanditiis"
+        },
+        {
+            "en": "debilito"
+        }
+    ]
+}

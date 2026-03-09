@@ -1,0 +1,42 @@
+{
+    "id": "0843-record-042",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0843-record-042",
+    "label": {
+        "en": "commonly.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-02-15",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "woposs-organization-001",
+            "authorship": [
+                "woposs-person-000",
+                "woposs-person-001",
+                "woposs-person-002",
+                "woposs-person-003",
+                "woposs-person-004"
+            ]
+        }
+    ],
+    "howToCite": "commonly.xml (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0843-record-042",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2024-10-28",
+    "datePublished": "2024-11-03",
+    "size": "345.6 MB",
+    "dateModified": "2024-11-23",
+    "description": {
+        "en": "Vobis defero ater conatus ventosus non torrens. Suffragium decumbo quos viridis comis. Vester umerus commodo dolor antea curo cruentus curto quaerat aliqua."
+    },
+    "keywords": [
+        {
+            "en": "vociferor"
+        }
+    ]
+}

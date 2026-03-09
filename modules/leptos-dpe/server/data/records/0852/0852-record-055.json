@@ -1,0 +1,30 @@
+{
+    "id": "0852-record-055",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-055",
+    "label": {
+        "en": "mid_meander_ick.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "mid_meander_ick.doc (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-055",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2015-11-14",
+    "datePublished": "2024-02-09",
+    "size": "187.7 MB",
+    "dateModified": "2021-03-28"
+}

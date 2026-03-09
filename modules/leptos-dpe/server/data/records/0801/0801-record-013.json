@@ -1,0 +1,92 @@
+{
+    "id": "0801-record-013",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-record-013",
+    "label": {
+        "en": "longingly_colonialism.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0801-organization-000",
+            "authorship": [
+                "0801-person-000",
+                "0801-person-001",
+                "0801-person-004",
+                "0801-person-005",
+                "0801-person-000"
+            ]
+        }
+    ],
+    "howToCite": "longingly_colonialism.tif (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801-record-013",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-03-26",
+    "datePublished": "2019-08-06",
+    "size": "484.9 MB",
+    "description": {
+        "en": "Contra ambitus id textilis. Coma corrigo ratione sumptus balbus uxor. Trepide tamdiu aedificium defaeco censura tondeo ars abscido."
+    },
+    "keywords": [
+        {
+            "en": "voveo"
+        },
+        {
+            "en": "decimus"
+        },
+        {
+            "en": "depopulo"
+        }
+    ]
+}

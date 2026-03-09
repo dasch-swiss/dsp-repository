@@ -1,9 +1,9 @@
 {
     "id": "0803",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0803",
     "name": "Die Bilderfolgen der Basler Frühdrucke: Spätmittelalterliche Didaxe als Bild-Text-Lektüre",
     "shortcode": "0803",
-    "officialName": "MISSING",
+    "officialName": "Research Project: Die Bilderfolgen der Basler Frühdrucke: Spätmittelalterliche Didaxe als Bild-Text-Lektüre",
     "status": "Finished",
     "shortDescription": "An art-scientific monograph of the richly illustrated early prints in Basel - the most important center of early letterpress printing in the territory of present-day Switzerland.",
     "description": {
@@ -25,13 +25,18 @@
                 "licenseDate": "2012-08-31",
                 "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "0803-organization-000",
             "authorship": [
-                "MISSING"
+                "0803-person-000",
+                "0803-person-001",
+                "0803-person-002",
+                "0803-person-003",
+                "0803-person-004"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
+    "dataPublicationYear": "2012-01-01",
     "typeOfData": [
         "Image"
     ],
@@ -157,5 +162,31 @@
         {
             "en": "Incunabula"
         }
+    ],
+    "records": [
+        "0803-record-001",
+        "0803-record-002",
+        "0803-record-003",
+        "0803-record-004",
+        "0803-record-005",
+        "0803-record-006",
+        "0803-record-007",
+        "0803-record-008",
+        "0803-record-009",
+        "0803-record-010",
+        "0803-record-011",
+        "0803-record-012",
+        "0803-record-013",
+        "0803-record-014",
+        "0803-record-015",
+        "0803-record-016",
+        "0803-record-017",
+        "0803-record-018",
+        "0803-record-019",
+        "0803-record-020",
+        "0803-record-021",
+        "0803-record-022",
+        "0803-record-023",
+        "0803-record-024"
     ]
 }

@@ -1,0 +1,40 @@
+{
+    "id": "080E-record-070",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-070",
+    "label": {
+        "en": "bowling_rewarding_since.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "bowling_rewarding_since.png (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-070",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2016-03-21",
+    "datePublished": "2017-10-17",
+    "size": "441.9 MB",
+    "keywords": [
+        {
+            "en": "vilitas"
+        },
+        {
+            "en": "somniculosus"
+        },
+        {
+            "en": "tergeo"
+        }
+    ]
+}

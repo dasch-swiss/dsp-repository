@@ -1,0 +1,40 @@
+{
+    "id": "080C-record-037",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C-record-037",
+    "label": {
+        "en": "crossly_within_terraform.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/deed.en"
+            },
+            "copyrightHolder": "080C-organization-001",
+            "authorship": [
+                "080C-person-001",
+                "080C-person-002",
+                "080C-person-003",
+                "080C-person-000"
+            ]
+        }
+    ],
+    "howToCite": "crossly_within_terraform.png (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080C-record-037",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-08-26",
+    "datePublished": "2019-08-21",
+    "size": "119.8 MB",
+    "keywords": [
+        {
+            "en": "copia"
+        },
+        {
+            "en": "amita"
+        }
+    ]
+}

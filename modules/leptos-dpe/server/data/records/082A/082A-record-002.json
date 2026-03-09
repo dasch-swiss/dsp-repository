@@ -1,0 +1,40 @@
+{
+    "id": "082A-record-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082A-record-002",
+    "label": {
+        "en": "hence.mp3"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "SGV Schweizerisches Volksliedarchiv",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+            },
+            "copyrightHolder": "082A-organization-001",
+            "authorship": [
+                "082A-person-000",
+                "082A-person-003",
+                "082A-person-001",
+                "082A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "hence.mp3 (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082A-record-002",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2021-09-12",
+    "datePublished": "2021-12-08",
+    "size": "417.8 MB",
+    "keywords": [
+        {
+            "en": "auditor"
+        },
+        {
+            "en": "crux"
+        }
+    ]
+}

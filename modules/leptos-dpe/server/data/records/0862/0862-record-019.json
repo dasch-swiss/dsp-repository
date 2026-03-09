@@ -1,0 +1,45 @@
+{
+    "id": "0862-record-019",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-019",
+    "label": {
+        "en": "whoever_nougat.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "whoever_nougat.pdf (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-019",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-03-16",
+    "datePublished": "2024-12-16",
+    "size": "187.9 MB",
+    "dateModified": "2020-10-02",
+    "keywords": [
+        {
+            "en": "subvenio"
+        },
+        {
+            "en": "statua"
+        },
+        {
+            "en": "concido"
+        }
+    ]
+}

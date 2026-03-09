@@ -1,0 +1,41 @@
+{
+    "id": "0105-record-030",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0105-record-030",
+    "label": {
+        "en": "ugh.png"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0105-organization-000",
+            "authorship": [
+                "0105-person-000",
+                "0105-person-001",
+                "0105-person-002",
+                "0105-person-003",
+                "0105-person-004"
+            ]
+        }
+    ],
+    "howToCite": "ugh.png (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0105-record-030",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2015-06-07",
+    "datePublished": "2017-07-23",
+    "size": "140.0 MB",
+    "keywords": [
+        {
+            "en": "ait"
+        },
+        {
+            "en": "sordeo"
+        }
+    ]
+}

@@ -1,6 +1,6 @@
 {
     "id": "0120-person-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0120-person-002",
     "givenNames": [
         "Ana Claudia"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0120-organization-000"
     ],
-    "email": "anaclaudia.keck@unil.ch"
+    "email": "anaclaudia.keck@unil.ch",
+    "sameAs": []
 }

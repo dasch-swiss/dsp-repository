@@ -1,0 +1,40 @@
+{
+    "id": "0849-record-015",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-015",
+    "label": {
+        "en": "since.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "since.jpg (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-015",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-01-02",
+    "datePublished": "2025-08-21",
+    "size": "248.9 MB",
+    "description": {
+        "en": "Cupressus confido crustulum tyrannus. Cornu explicabo abduco tertius animus adficio attonbitus thymum odio textilis. Antepono cum vel atque accusantium."
+    },
+    "keywords": [
+        {
+            "en": "demum"
+        }
+    ]
+}

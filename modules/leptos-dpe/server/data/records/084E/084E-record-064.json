@@ -1,0 +1,33 @@
+{
+    "id": "084E-record-064",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-064",
+    "label": {
+        "en": "aside_extremely.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "aside_extremely.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-064",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-12-06",
+    "datePublished": "2024-01-20",
+    "size": "420.5 MB"
+}

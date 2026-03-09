@@ -1,0 +1,48 @@
+{
+    "id": "083B-record-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083B-record-002",
+    "label": {
+        "en": "by_given_jumbo.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2025-01-28",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083B-organization-001",
+            "authorship": [
+                "083B-person-000",
+                "083B-person-001",
+                "083B-person-002",
+                "083B-person-003",
+                "083B-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2025-01-28",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083B-organization-001",
+            "authorship": [
+                "083B-person-000",
+                "083B-person-001",
+                "083B-person-002",
+                "083B-person-003",
+                "083B-person-000"
+            ]
+        }
+    ],
+    "howToCite": "by_given_jumbo.txt (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083B-record-002",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-12-14",
+    "datePublished": "2025-11-30",
+    "size": "438.6 MB"
+}

@@ -1,0 +1,34 @@
+{
+    "id": "0813-record-046",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-record-046",
+    "label": {
+        "en": "wherever.tif"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0813-organization-001",
+            "authorship": [
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "wherever.tif (2016). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0813-record-046",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2016-03-31",
+    "datePublished": "2016-08-07",
+    "size": "278.1 MB",
+    "description": {
+        "en": "Aut color vulgus dolor vulnero auditor caelestis ad appello coma. Adsuesco demergo pax succurro exercitationem vesper triduana turbo vero. Consectetur cinis vicissitudo trans adsuesco apto vulnero cupio."
+    }
+}

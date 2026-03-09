@@ -1,0 +1,41 @@
+{
+    "id": "083C-record-048",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-048",
+    "label": {
+        "en": "nor_mostly.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "nor_mostly.xml (2011). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-048",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2006-06-24",
+    "datePublished": "2011-07-16",
+    "size": "232.3 MB",
+    "keywords": [
+        {
+            "en": "demo"
+        },
+        {
+            "en": "administratio"
+        },
+        {
+            "en": "agnitio"
+        }
+    ]
+}

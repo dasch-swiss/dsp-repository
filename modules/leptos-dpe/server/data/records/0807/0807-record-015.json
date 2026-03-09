@@ -1,0 +1,41 @@
+{
+    "id": "0807-record-015",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0807-record-015",
+    "label": {
+        "en": "than.mp4"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-05-09",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0807-organization-000",
+            "authorship": [
+                "0807-person-004",
+                "0807-person-003",
+                "0807-person-005",
+                "0807-person-006",
+                "0807-person-007"
+            ]
+        }
+    ],
+    "howToCite": "than.mp4 (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0807-record-015",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2015-02-12",
+    "datePublished": "2017-03-16",
+    "size": "922 KB",
+    "keywords": [
+        {
+            "en": "cotidie"
+        },
+        {
+            "en": "maxime"
+        }
+    ]
+}

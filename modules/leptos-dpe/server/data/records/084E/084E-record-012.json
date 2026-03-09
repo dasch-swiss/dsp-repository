@@ -1,0 +1,33 @@
+{
+    "id": "084E-record-012",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-012",
+    "label": {
+        "en": "who_save.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "who_save.txt (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-012",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-02-20",
+    "datePublished": "2022-11-25",
+    "size": "193.4 MB"
+}

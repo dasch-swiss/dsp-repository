@@ -1,0 +1,40 @@
+{
+    "id": "080E-record-091",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-091",
+    "label": {
+        "en": "analyse.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "analyse.doc (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-091",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-02-06",
+    "datePublished": "2018-10-10",
+    "size": "431.5 MB",
+    "keywords": [
+        {
+            "en": "constans"
+        },
+        {
+            "en": "cotidie"
+        },
+        {
+            "en": "conforto"
+        }
+    ]
+}

@@ -1,0 +1,31 @@
+{
+    "id": "0847-record-027",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-027",
+    "label": {
+        "en": "however.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "however.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-027",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-09-02",
+    "datePublished": "2023-03-30",
+    "size": "8.4 MB",
+    "dateModified": "2023-02-25"
+}

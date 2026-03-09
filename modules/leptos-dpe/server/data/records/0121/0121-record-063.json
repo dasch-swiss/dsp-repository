@@ -1,0 +1,35 @@
+{
+    "id": "0121-record-063",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0121-record-063",
+    "label": {
+        "en": "fond_upright_to.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-02-20",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0121-organization-001",
+            "authorship": [
+                "0121-person-000",
+                "0121-person-002",
+                "0121-person-001",
+                "0121-person-003"
+            ]
+        }
+    ],
+    "howToCite": "fond_upright_to.doc (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0121-record-063",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-02-24",
+    "datePublished": "2024-04-04",
+    "size": "159.7 MB",
+    "description": {
+        "en": "Claro socius altus solvo. Curis aggredior socius vos tui cupressus vicinus vomito. Solitudo officia creator."
+    }
+}

@@ -1,0 +1,43 @@
+{
+    "id": "082A-record-009",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082A-record-009",
+    "label": {
+        "en": "light_through.wav"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "SGV Schweizerisches Volksliedarchiv",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+            },
+            "copyrightHolder": "082A-organization-001",
+            "authorship": [
+                "082A-person-000",
+                "082A-person-003",
+                "082A-person-001",
+                "082A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "light_through.wav (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082A-record-009",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2017-08-07",
+    "datePublished": "2021-11-21",
+    "size": "332.0 MB",
+    "description": {
+        "en": "Compono sapiente aequus viduo cunae terminatio. Cubicularis pecus vesica adulescens averto crebro comes. Deficio voluptas adinventitias artificiose valetudo velut cibus."
+    },
+    "keywords": [
+        {
+            "en": "arbor"
+        },
+        {
+            "en": "aliquid"
+        }
+    ]
+}

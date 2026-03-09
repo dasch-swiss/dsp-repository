@@ -1,0 +1,39 @@
+{
+    "id": "082C-record-024",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082C-record-024",
+    "label": {
+        "en": "whoever_yippee.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2019-10-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "082C-organization-000",
+            "authorship": [
+                "082C-person-000",
+                "082C-person-001",
+                "082C-person-002",
+                "082C-person-003",
+                "082C-person-004"
+            ]
+        }
+    ],
+    "howToCite": "whoever_yippee.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082C-record-024",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2022-08-08",
+    "datePublished": "2023-02-19",
+    "size": "384.7 MB",
+    "dateModified": "2023-08-21",
+    "keywords": [
+        {
+            "en": "clibanus"
+        }
+    ]
+}

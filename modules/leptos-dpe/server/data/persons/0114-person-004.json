@@ -1,6 +1,6 @@
 {
     "id": "0114-person-004",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114-person-004",
     "givenNames": [
         "Christophe"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0114-organization-001"
     ],
-    "email": "christophe.metzger@unil.ch"
+    "email": "christophe.metzger@unil.ch",
+    "sameAs": []
 }

@@ -1,0 +1,56 @@
+{
+    "id": "083B-record-027",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083B-record-027",
+    "label": {
+        "en": "yowza_quick_witted_jealously.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2025-01-28",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083B-organization-001",
+            "authorship": [
+                "083B-person-000",
+                "083B-person-001",
+                "083B-person-002",
+                "083B-person-003",
+                "083B-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2025-01-28",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083B-organization-001",
+            "authorship": [
+                "083B-person-000",
+                "083B-person-001",
+                "083B-person-002",
+                "083B-person-003",
+                "083B-person-000"
+            ]
+        }
+    ],
+    "howToCite": "yowza_quick_witted_jealously.txt (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083B-record-027",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-11-17",
+    "datePublished": "2023-12-17",
+    "size": "188.3 MB",
+    "keywords": [
+        {
+            "en": "tondeo"
+        },
+        {
+            "en": "occaecati"
+        }
+    ]
+}

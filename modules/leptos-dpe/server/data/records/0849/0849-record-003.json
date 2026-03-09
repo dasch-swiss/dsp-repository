@@ -1,0 +1,45 @@
+{
+    "id": "0849-record-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-003",
+    "label": {
+        "en": "engage.tif"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "engage.tif (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-003",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-01-26",
+    "datePublished": "2026-05-09",
+    "size": "209.4 MB",
+    "dateModified": "2025-11-07",
+    "description": {
+        "en": "Stultus velum sophismata deporto appono toties velum ventito magnam. Solus ipsum acerbitas tersus textilis sto. Terminatio dedecor curatio quam denique velociter totam."
+    },
+    "keywords": [
+        {
+            "en": "tergiversatio"
+        },
+        {
+            "en": "incidunt"
+        }
+    ],
+    "source": "Quibusdam careo torqueo corpus."
+}

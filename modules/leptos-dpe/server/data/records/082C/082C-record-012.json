@@ -1,0 +1,38 @@
+{
+    "id": "082C-record-012",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082C-record-012",
+    "label": {
+        "en": "off_fully.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2019-10-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "082C-organization-000",
+            "authorship": [
+                "082C-person-000",
+                "082C-person-001",
+                "082C-person-002",
+                "082C-person-003",
+                "082C-person-004"
+            ]
+        }
+    ],
+    "howToCite": "off_fully.txt (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082C-record-012",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-08-24",
+    "datePublished": "2021-01-22",
+    "size": "434.2 MB",
+    "keywords": [
+        {
+            "en": "adsuesco"
+        }
+    ]
+}

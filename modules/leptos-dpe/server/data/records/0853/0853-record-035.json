@@ -1,0 +1,34 @@
+{
+    "id": "0853-record-035",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-035",
+    "label": {
+        "en": "deck.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "deck.tiff (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-035",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-05-30",
+    "datePublished": "2026-11-05",
+    "size": "201.1 MB",
+    "dateModified": "2023-08-08",
+    "description": {
+        "en": "Itaque subiungo copiose tactus adsidue ab. Taedium avaritia tergo comes vesco claro esse velit. Assumenda bis degenero demens triduana."
+    }
+}

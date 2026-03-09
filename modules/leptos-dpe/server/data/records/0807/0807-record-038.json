@@ -1,0 +1,45 @@
+{
+    "id": "0807-record-038",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0807-record-038",
+    "label": {
+        "en": "unimportant_fun_bungalow.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2022-05-09",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0807-organization-000",
+            "authorship": [
+                "0807-person-004",
+                "0807-person-003",
+                "0807-person-005",
+                "0807-person-006",
+                "0807-person-007"
+            ]
+        }
+    ],
+    "howToCite": "unimportant_fun_bungalow.pdf (2017). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0807-record-038",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-10-04",
+    "datePublished": "2017-10-17",
+    "size": "257.7 MB",
+    "dateModified": "2017-10-19",
+    "description": {
+        "en": "Civitas volaticus condico verbum clementia abduco clam somniculosus victoria. Sopor thymum sto alter sordeo. Valetudo soluta subiungo capto bis."
+    },
+    "keywords": [
+        {
+            "en": "cicuta"
+        },
+        {
+            "en": "adduco"
+        }
+    ]
+}

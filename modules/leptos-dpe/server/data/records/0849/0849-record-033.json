@@ -1,0 +1,40 @@
+{
+    "id": "0849-record-033",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-033",
+    "label": {
+        "en": "analogy_helplessly_owlishly.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "analogy_helplessly_owlishly.txt (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-033",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2026-08-19",
+    "datePublished": "2026-10-27",
+    "size": "1.7 MB",
+    "description": {
+        "en": "Administratio acidus cognatus videlicet conicio suadeo aut comedo. Neque est succurro testimonium universe a toties. Chirographum commemoro nisi dedecor."
+    },
+    "keywords": [
+        {
+            "en": "officia"
+        }
+    ]
+}

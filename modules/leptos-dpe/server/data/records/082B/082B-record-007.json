@@ -1,0 +1,44 @@
+{
+    "id": "082B-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082B-record-007",
+    "label": {
+        "en": "prime.doc"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "082B-organization-003",
+            "authorship": [
+                "082B-person-001",
+                "082B-person-002",
+                "082B-person-003",
+                "082B-person-004",
+                "082B-person-005"
+            ]
+        }
+    ],
+    "howToCite": "prime.doc (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082B-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-06-07",
+    "datePublished": "2020-12-18",
+    "size": "88.3 MB",
+    "description": {
+        "en": "Arx amet correptius casso copiose cupiditate speculum patria acervus antepono. Trucido cervus commodi argentum tum barba. Addo comprehendo eaque quod statim molestiae temporibus absconditus aliquam amplexus."
+    },
+    "keywords": [
+        {
+            "en": "terebro"
+        },
+        {
+            "en": "aveho"
+        }
+    ]
+}

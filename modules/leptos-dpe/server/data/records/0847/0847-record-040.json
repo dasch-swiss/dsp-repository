@@ -1,0 +1,46 @@
+{
+    "id": "0847-record-040",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-040",
+    "label": {
+        "en": "during.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "during.tiff (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-040",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2020-11-09",
+    "datePublished": "2022-12-24",
+    "size": "403.0 MB",
+    "dateModified": "2023-08-26",
+    "description": {
+        "en": "Amet cilicium advenio curso terreo tollo eaque tollo censura arguo. Auxilium suadeo terra arcesso repellat tonsor. Bonus denique attollo creator adeptio color."
+    },
+    "keywords": [
+        {
+            "en": "trado"
+        },
+        {
+            "en": "eveniet"
+        },
+        {
+            "en": "ver"
+        }
+    ],
+    "source": "Admoneo coniuratio deputo utroque bonus amplus dolore."
+}

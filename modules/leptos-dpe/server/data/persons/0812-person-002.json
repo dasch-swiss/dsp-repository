@@ -1,6 +1,6 @@
 {
     "id": "0812-person-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-person-002",
     "givenNames": [
         "Regula"
     ],
@@ -14,5 +14,6 @@
     "affiliations": [
         "0812-organization-002"
     ],
-    "email": "regula.anklin@bluewin.ch"
+    "email": "regula.anklin@bluewin.ch",
+    "sameAs": []
 }

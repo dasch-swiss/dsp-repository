@@ -1,0 +1,57 @@
+{
+    "id": "0854-record-077",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-077",
+    "label": {
+        "en": "and_supposing.wav"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "and_supposing.wav (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-077",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2025-01-16",
+    "datePublished": "2027-04-21",
+    "size": "120.6 MB",
+    "description": {
+        "en": "Aer vivo corrumpo statim veniam optio acerbitas. Crustulum peior teres sursum mollitia validus attero talis. Amitto allatus adflicto aedificium stillicidium culpa."
+    },
+    "keywords": [
+        {
+            "en": "aufero"
+        },
+        {
+            "en": "creo"
+        }
+    ]
+}

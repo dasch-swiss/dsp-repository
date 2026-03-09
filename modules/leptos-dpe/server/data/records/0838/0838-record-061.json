@@ -1,0 +1,41 @@
+{
+    "id": "0838-record-061",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0838-record-061",
+    "label": {
+        "en": "supposing_or.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-01-22",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0838-organization-002",
+            "authorship": [
+                "0838-person-000",
+                "0838-person-001",
+                "0838-person-002",
+                "0838-person-003",
+                "0838-person-004"
+            ]
+        }
+    ],
+    "howToCite": "supposing_or.jpg (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0838-record-061",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2023-03-08",
+    "datePublished": "2024-08-17",
+    "size": "291.7 MB",
+    "keywords": [
+        {
+            "en": "cognatus"
+        },
+        {
+            "en": "confugo"
+        }
+    ]
+}

@@ -1,0 +1,47 @@
+{
+    "id": "082A-record-050",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082A-record-050",
+    "label": {
+        "en": "which_characterization.wav"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "SGV Schweizerisches Volksliedarchiv",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+            },
+            "copyrightHolder": "082A-organization-001",
+            "authorship": [
+                "082A-person-000",
+                "082A-person-003",
+                "082A-person-001",
+                "082A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "which_characterization.wav (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082A-record-050",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2017-07-19",
+    "datePublished": "2019-10-01",
+    "size": "112.8 MB",
+    "dateModified": "2021-09-03",
+    "description": {
+        "en": "Appositus cernuus umbra volaticus auditor odio tantillus. Dolor turbo talus ipsam summa careo balbus dolorum. Acervus cenaculum amo celer studio conturbo summopere cogo utroque socius."
+    },
+    "keywords": [
+        {
+            "en": "altus"
+        },
+        {
+            "en": "sustineo"
+        },
+        {
+            "en": "accendo"
+        }
+    ]
+}

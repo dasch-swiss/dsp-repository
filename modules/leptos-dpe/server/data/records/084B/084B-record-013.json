@@ -1,0 +1,35 @@
+{
+    "id": "084B-record-013",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084B-record-013",
+    "label": {
+        "en": "bitterly.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-07-08",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "084B-organization-001",
+            "authorship": [
+                "084B-person-001",
+                "084B-person-000"
+            ]
+        }
+    ],
+    "howToCite": "bitterly.tiff (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084B-record-013",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2021-07-27",
+    "datePublished": "2023-02-16",
+    "size": "277.4 MB",
+    "keywords": [
+        {
+            "en": "sto"
+        }
+    ]
+}

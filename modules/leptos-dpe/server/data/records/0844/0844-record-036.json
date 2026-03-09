@@ -1,0 +1,43 @@
+{
+    "id": "0844-record-036",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-036",
+    "label": {
+        "en": "commandeer_the_until.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "commandeer_the_until.tiff (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-036",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-04-17",
+    "datePublished": "2022-12-18",
+    "size": "485.8 MB",
+    "dateModified": "2022-09-09",
+    "description": {
+        "en": "Patrocinor copia certus comis versus. Apud numquam tametsi. Canto defluo vulgus benevolentia."
+    },
+    "keywords": [
+        {
+            "en": "doloribus"
+        },
+        {
+            "en": "defendo"
+        }
+    ]
+}

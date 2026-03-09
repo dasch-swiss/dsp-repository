@@ -1,0 +1,60 @@
+{
+    "id": "0836-record-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0836-record-011",
+    "label": {
+        "en": "except.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        }
+    ],
+    "howToCite": "except.jpg (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0836-record-011",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-11-13",
+    "datePublished": "2019-03-10",
+    "size": "499.8 MB",
+    "keywords": [
+        {
+            "en": "consuasor"
+        },
+        {
+            "en": "bibo"
+        },
+        {
+            "en": "sperno"
+        }
+    ],
+    "source": "Alius sperno amplitudo asporto apostolus armarium approbo recusandae solutio nisi."
+}

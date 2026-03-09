@@ -1,0 +1,30 @@
+{
+    "id": "0810-record-015",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0810-record-015",
+    "label": {
+        "en": "import.tif"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-03",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0810-organization-000",
+            "authorship": [
+                "0810-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "import.tif (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0810-record-015",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2024-04-04",
+    "datePublished": "2024-06-22",
+    "size": "425.0 MB",
+    "source": "Utique atque textor bos."
+}

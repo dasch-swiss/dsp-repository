@@ -1,0 +1,120 @@
+{
+    "$schema": "../../schema/collection-schema.json",
+    "id": "collection-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/collection-003",
+    "name": "20th Century Swiss Visual Archive",
+    "description": {
+        "en": "A cross-disciplinary visual archive documenting Swiss cultural life, medical practices, and social transformations throughout the 20th century through photography and film. Combines ethnographic photography from rural and urban Switzerland with scientific medical films from psychiatric institutions.",
+        "de": "Ein interdisziplinäres visuelles Archiv, das das schweizerische Kulturleben, medizinische Praktiken und soziale Transformationen des 20. Jahrhunderts durch Fotografie und Film dokumentiert.",
+        "fr": "Une archive visuelle interdisciplinaire documentant la vie culturelle suisse, les pratiques médicales et les transformations sociales du XXe siècle à travers la photographie et le cinéma."
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-01-25",
+                "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0812-organization-019",
+            "authorship": [
+                "0812-person-000"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-07-13",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0106-organization-001",
+            "authorship": [
+                "0106-person-000"
+            ]
+        }
+    ],
+    "howToCite": "Swiss Visual Culture and Documentation (2025). 20th Century Swiss Visual Archive [Collection]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/collection-003",
+    "typeOfData": [
+        "Image",
+        "Video"
+    ],
+    "dateCreated": "2014-01-01",
+    "languages": [
+        {
+            "de": "Deutsch",
+            "en": "German"
+        },
+        {
+            "de": "Französisch",
+            "en": "French"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Photography",
+            "de": "Fotografie"
+        },
+        {
+            "en": "Switzerland",
+            "de": "Schweiz"
+        },
+        {
+            "en": "Visual Anthropology"
+        },
+        {
+            "en": "Medical Film",
+            "fr": "Film médical"
+        }
+    ],
+    "records": [
+        "0812-record-003",
+        "0106-record-005",
+        "0106-record-018",
+        "0106-record-034",
+        "0812-record-011",
+        "0106-record-002",
+        "0812-record-007",
+        "0106-record-017",
+        "0812-record-004",
+        "0812-record-009",
+        "0106-record-036",
+        "0106-record-006",
+        "0106-record-004",
+        "0106-record-007",
+        "0106-record-025",
+        "0812-record-006",
+        "0106-record-023",
+        "0812-record-010",
+        "0812-record-013",
+        "0106-record-015",
+        "0106-record-003",
+        "0106-record-016",
+        "0106-record-014",
+        "0106-record-035",
+        "0106-record-013",
+        "0106-record-022",
+        "0106-record-029",
+        "0106-record-009",
+        "0812-record-002",
+        "0106-record-012",
+        "0812-record-014",
+        "0106-record-032",
+        "0106-record-026",
+        "0106-record-024",
+        "0812-record-001",
+        "0812-record-012",
+        "0106-record-031",
+        "0106-record-021",
+        "0106-record-033",
+        "0106-record-019",
+        "0106-record-020",
+        "0106-record-010",
+        "0812-record-005",
+        "0812-record-008",
+        "0106-record-001",
+        "0106-record-008",
+        "0106-record-011"
+    ]
+}

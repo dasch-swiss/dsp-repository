@@ -1,0 +1,48 @@
+{
+    "id": "0112-record-024",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-024",
+    "label": {
+        "en": "ew.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "ew.xml (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-024",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2019-08-19",
+    "datePublished": "2020-02-12",
+    "size": "452.5 MB",
+    "dateModified": "2020-07-15",
+    "description": {
+        "en": "Centum tener demum subseco. Suadeo ullus accedo caute. Vereor creta teneo bellicus spiritus sulum tam."
+    },
+    "keywords": [
+        {
+            "en": "adflicto"
+        },
+        {
+            "en": "torrens"
+        },
+        {
+            "en": "appono"
+        }
+    ]
+}

@@ -1,0 +1,43 @@
+{
+    "id": "0112-record-044",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-044",
+    "label": {
+        "en": "silky_though.xml"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access",
+        "embargoDate": "2026-05-20"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "silky_though.xml (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-044",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2020-10-03",
+    "datePublished": "2021-07-17",
+    "size": "44.2 MB",
+    "dateModified": "2021-07-07",
+    "description": {
+        "en": "Coadunatio statim solus crapula spiritus repudiandae tantillus voluntarius possimus. Magni stultus solum quos cupiditas. Caelum demum vulgus eveniet."
+    },
+    "keywords": [
+        {
+            "en": "curo"
+        }
+    ]
+}

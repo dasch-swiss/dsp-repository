@@ -1,0 +1,40 @@
+{
+    "id": "080E-record-062",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-062",
+    "label": {
+        "en": "hole_yet_deny.txt"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2026-07-01"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "hole_yet_deny.txt (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-062",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2014-11-11",
+    "datePublished": "2018-03-04",
+    "size": "61.6 MB",
+    "dateModified": "2018-08-17",
+    "description": {
+        "en": "Adflicto quis conscendo vulgo supellex charisma. Benigne certus curis defluo cilicium nostrum speciosus super confugo. Virga tenuis totam argentum vitae labore quaerat."
+    },
+    "keywords": [
+        {
+            "en": "nobis"
+        }
+    ],
+    "source": "Tracto atqui sit."
+}

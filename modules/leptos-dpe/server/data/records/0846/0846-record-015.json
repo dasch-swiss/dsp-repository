@@ -1,0 +1,31 @@
+{
+    "id": "0846-record-015",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-015",
+    "label": {
+        "en": "valiantly_hunger_present.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "valiantly_hunger_present.png (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-015",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2020-08-24",
+    "datePublished": "2022-06-14",
+    "size": "472.3 MB",
+    "source": "Termes cognatus accusantium corrigo turbo creo vinco soluta viriliter."
+}

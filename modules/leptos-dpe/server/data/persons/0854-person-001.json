@@ -1,6 +1,6 @@
 {
     "id": "0854-person-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-person-001",
     "givenNames": [
         "Daniela"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0854-organization-000"
     ],
-    "email": "daniela.subotic@dasch.swiss"
+    "email": "daniela.subotic@dasch.swiss",
+    "sameAs": []
 }

@@ -1,0 +1,48 @@
+{
+    "id": "0103-record-030",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-030",
+    "label": {
+        "en": "huzzah_cute_upon.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "huzzah_cute_upon.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-030",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2017-01-02",
+    "datePublished": "2020-06-10",
+    "size": "285.3 MB",
+    "description": {
+        "en": "Undique demulceo pax consectetur uberrime sursum debitis eaque rerum. Tego vulnero convoco denuncio vel coaegresco ventus tonsor callide comparo. Abutor somnus conforto tubineus benevolentia sed suasoria velut corrupti."
+    },
+    "keywords": [
+        {
+            "en": "sum"
+        },
+        {
+            "en": "curiositas"
+        },
+        {
+            "en": "torrens"
+        }
+    ],
+    "source": "Angulus vulgivagus cresco ipsam vulgus."
+}

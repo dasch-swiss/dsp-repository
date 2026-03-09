@@ -1,0 +1,47 @@
+{
+    "id": "0862-record-054",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-054",
+    "label": {
+        "en": "more.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "more.xml (2039). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-054",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2026-07-09",
+    "datePublished": "2039-05-05",
+    "size": "295.2 MB",
+    "description": {
+        "en": "Subnecto curo congregatio tum aegre desidero. Arbor tredecim terga terror conservo. Vomica tempus patior deleo."
+    },
+    "keywords": [
+        {
+            "en": "demo"
+        },
+        {
+            "en": "vilicus"
+        },
+        {
+            "en": "at"
+        }
+    ]
+}

@@ -1,6 +1,6 @@
 {
     "id": "0114-person-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114-person-002",
     "givenNames": [
         "Helena"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "0114-organization-001"
     ],
-    "email": "helena.klima@unil.ch"
+    "email": "helena.klima@unil.ch",
+    "sameAs": []
 }

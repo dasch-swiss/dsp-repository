@@ -1,0 +1,43 @@
+{
+    "id": "0117-record-038",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-038",
+    "label": {
+        "en": "distant.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "distant.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-038",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-07-26",
+    "datePublished": "2019-03-31",
+    "size": "475.4 MB",
+    "keywords": [
+        {
+            "en": "decretum"
+        },
+        {
+            "en": "vox"
+        },
+        {
+            "en": "totus"
+        }
+    ]
+}

@@ -1,0 +1,39 @@
+{
+    "id": "0803-record-023",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0803-record-023",
+    "label": {
+        "en": "excitedly.png"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2012-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0803-organization-000",
+            "authorship": [
+                "0803-person-000",
+                "0803-person-001",
+                "0803-person-002",
+                "0803-person-003",
+                "0803-person-004"
+            ]
+        }
+    ],
+    "howToCite": "excitedly.png (2012). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0803-record-023",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2010-08-21",
+    "datePublished": "2012-05-01",
+    "size": "1.0 MB",
+    "dateModified": "2012-03-05",
+    "keywords": [
+        {
+            "en": "mollitia"
+        }
+    ]
+}

@@ -1,0 +1,34 @@
+{
+    "id": "0813-record-033",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-record-033",
+    "label": {
+        "en": "at.mp4"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0813-organization-001",
+            "authorship": [
+                "0813-person-001",
+                "0813-person-002",
+                "0813-organization-001"
+            ]
+        }
+    ],
+    "howToCite": "at.mp4 (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0813-record-033",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2017-11-02",
+    "datePublished": "2018-04-16",
+    "size": "73.9 MB",
+    "description": {
+        "en": "Abeo creator vita suffragium deripio earum animadverto. Acceptus excepturi super canis pecto tam arbor sursum. Utroque aequus turpis terror ver correptius eum timor vestrum cunae."
+    }
+}

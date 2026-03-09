@@ -1,0 +1,31 @@
+{
+    "id": "0847-record-013",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-013",
+    "label": {
+        "en": "enormously_now_athwart.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "enormously_now_athwart.jpg (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-013",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2018-09-25",
+    "datePublished": "2021-08-01",
+    "size": "303.3 MB",
+    "source": "Ventosus acquiro vinco."
+}

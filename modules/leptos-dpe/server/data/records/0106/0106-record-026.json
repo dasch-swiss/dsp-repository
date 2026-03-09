@@ -1,0 +1,34 @@
+{
+    "id": "0106-record-026",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0106-record-026",
+    "label": {
+        "en": "so.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-07-13",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0106-organization-001",
+            "authorship": [
+                "0106-person-000",
+                "0106-person-001",
+                "0106-person-002",
+                "0106-person-003",
+                "0106-person-004"
+            ]
+        }
+    ],
+    "howToCite": "so.pdf (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0106-record-026",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-08-12",
+    "datePublished": "2022-08-10",
+    "size": "302.0 MB",
+    "source": "Illo cimentarius recusandae depromo coepi vacuus vobis ultra alii spectaculum."
+}

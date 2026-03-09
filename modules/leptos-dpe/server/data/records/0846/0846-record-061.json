@@ -1,0 +1,44 @@
+{
+    "id": "0846-record-061",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-061",
+    "label": {
+        "en": "backburn.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "backburn.doc (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-061",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-03-10",
+    "datePublished": "2020-06-30",
+    "size": "312.8 MB",
+    "description": {
+        "en": "Venustas amor tametsi veritatis perspiciatis cilicium utpote vehemens talio appono. Supra cui animadverto sordeo vorax sulum terror. Suppellex arbitro advenio tremo arbitro demulceo surculus uredo."
+    },
+    "keywords": [
+        {
+            "en": "cumque"
+        },
+        {
+            "en": "conitor"
+        },
+        {
+            "en": "decet"
+        }
+    ]
+}

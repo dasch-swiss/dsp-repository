@@ -1,0 +1,36 @@
+{
+    "id": "0112-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-001",
+    "label": {
+        "en": "how.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "how.xml (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2018-08-22",
+    "datePublished": "2019-09-08",
+    "size": "209.2 MB",
+    "description": {
+        "en": "Voluptates consequuntur dedico. Surgo curto commemoro. Autus at comburo possimus nulla terra summopere aufero animadverto."
+    }
+}

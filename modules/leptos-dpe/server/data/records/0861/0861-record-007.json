@@ -1,0 +1,44 @@
+{
+    "id": "0861-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0861-record-007",
+    "label": {
+        "en": "bowler.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-07-07",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0861-organization-000",
+            "authorship": [
+                "0861-person-000",
+                "0861-person-001",
+                "0861-person-002",
+                "0861-person-003",
+                "0861-person-004"
+            ]
+        }
+    ],
+    "howToCite": "bowler.xml (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0861-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2024-12-03",
+    "datePublished": "2025-01-08",
+    "size": "46.7 MB",
+    "keywords": [
+        {
+            "en": "spectaculum"
+        },
+        {
+            "en": "arbustum"
+        },
+        {
+            "en": "ultra"
+        }
+    ]
+}

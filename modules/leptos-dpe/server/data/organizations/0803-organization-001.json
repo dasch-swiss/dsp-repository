@@ -1,6 +1,7 @@
 {
     "id": "0803-organization-001",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0803-organization-001",
     "name": "Kunsthistorisches Seminar Universität Basel",
-    "url": "MISSING"
+    "url": "https://www.kunsthistorisches-seminar-univ.org",
+    "sameAs": []
 }

@@ -1,0 +1,39 @@
+{
+    "id": "0103-record-066",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-066",
+    "label": {
+        "en": "unzip.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "unzip.doc (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-066",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-05-09",
+    "datePublished": "2021-03-12",
+    "size": "42.7 MB",
+    "dateModified": "2020-09-02",
+    "keywords": [
+        {
+            "en": "subseco"
+        }
+    ]
+}

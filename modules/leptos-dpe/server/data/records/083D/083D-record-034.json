@@ -1,0 +1,45 @@
+{
+    "id": "083D-record-034",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083D-record-034",
+    "label": {
+        "en": "scamper_negligible.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2022-08-18",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "083D-organization-000",
+            "authorship": [
+                "083D-person-000",
+                "083D-person-001",
+                "083D-person-002",
+                "083D-person-003",
+                "083D-person-004"
+            ]
+        }
+    ],
+    "howToCite": "scamper_negligible.txt (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D-record-034",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-05-16",
+    "datePublished": "2020-08-19",
+    "size": "100.8 MB",
+    "dateModified": "2020-09-10",
+    "keywords": [
+        {
+            "en": "cornu"
+        },
+        {
+            "en": "abeo"
+        },
+        {
+            "en": "vindico"
+        }
+    ]
+}

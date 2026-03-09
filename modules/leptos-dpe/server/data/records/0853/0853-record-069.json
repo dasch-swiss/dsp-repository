@@ -1,0 +1,41 @@
+{
+    "id": "0853-record-069",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-069",
+    "label": {
+        "en": "boastfully_pfft.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "boastfully_pfft.doc (2026). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-069",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-03-30",
+    "datePublished": "2026-01-20",
+    "size": "24.5 MB",
+    "keywords": [
+        {
+            "en": "decumbo"
+        },
+        {
+            "en": "venia"
+        },
+        {
+            "en": "thymum"
+        }
+    ]
+}

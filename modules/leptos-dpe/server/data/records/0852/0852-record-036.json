@@ -1,0 +1,38 @@
+{
+    "id": "0852-record-036",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-record-036",
+    "label": {
+        "en": "forearm_lanky.txt"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2025-01-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0852-organization-001",
+            "authorship": [
+                "0852-person-000"
+            ]
+        }
+    ],
+    "howToCite": "forearm_lanky.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0852-record-036",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-04-22",
+    "datePublished": "2024-09-09",
+    "size": "43.5 MB",
+    "dateModified": "2024-05-19",
+    "keywords": [
+        {
+            "en": "tepesco"
+        },
+        {
+            "en": "calculus"
+        }
+    ]
+}

@@ -1,0 +1,41 @@
+{
+    "id": "0847-record-080",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-080",
+    "label": {
+        "en": "never_rudely_violently.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "never_rudely_violently.doc (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-080",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2021-11-09",
+    "datePublished": "2023-04-06",
+    "size": "439.5 MB",
+    "keywords": [
+        {
+            "en": "ventosus"
+        },
+        {
+            "en": "blanditiis"
+        },
+        {
+            "en": "aspernatur"
+        }
+    ]
+}

@@ -1,0 +1,43 @@
+{
+    "id": "0121-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0121-record-006",
+    "label": {
+        "en": "definitive.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-02-20",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0121-organization-001",
+            "authorship": [
+                "0121-person-000",
+                "0121-person-002",
+                "0121-person-001",
+                "0121-person-003"
+            ]
+        }
+    ],
+    "howToCite": "definitive.doc (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0121-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-05-25",
+    "datePublished": "2024-06-30",
+    "size": "109.7 MB",
+    "keywords": [
+        {
+            "en": "approbo"
+        },
+        {
+            "en": "rem"
+        },
+        {
+            "en": "terreo"
+        }
+    ]
+}

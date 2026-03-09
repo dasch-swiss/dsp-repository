@@ -1,0 +1,39 @@
+{
+    "id": "0847-record-049",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0847-record-049",
+    "label": {
+        "en": "against_fooey.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-12-04",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0847-organization-001",
+            "authorship": [
+                "0847-person-000",
+                "0847-person-001"
+            ]
+        }
+    ],
+    "howToCite": "against_fooey.jpg (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0847-record-049",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-12-30",
+    "datePublished": "2020-05-22",
+    "size": "376.6 MB",
+    "dateModified": "2020-11-14",
+    "keywords": [
+        {
+            "en": "dolorum"
+        },
+        {
+            "en": "virgo"
+        }
+    ]
+}

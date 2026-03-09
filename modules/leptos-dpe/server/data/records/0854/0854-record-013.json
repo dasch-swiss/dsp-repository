@@ -1,0 +1,56 @@
+{
+    "id": "0854-record-013",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-013",
+    "label": {
+        "en": "drat_while.mp3"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions",
+        "embargoDate": "2026-05-21"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "drat_while.mp3 (2028). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-013",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2028-10-12",
+    "datePublished": "2028-11-19",
+    "size": "376.3 MB",
+    "dateModified": "2028-11-14",
+    "keywords": [
+        {
+            "en": "corrupti"
+        },
+        {
+            "en": "argentum"
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+{
+    "id": "083C-record-035",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-record-035",
+    "label": {
+        "en": "synthesise_ouch_unsightly.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "1991-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "083C-organization-001",
+            "authorship": [
+                "083C-person-000",
+                "083C-person-002"
+            ]
+        }
+    ],
+    "howToCite": "synthesise_ouch_unsightly.pdf (2010). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083C-record-035",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2009-11-01",
+    "datePublished": "2010-06-12",
+    "size": "227.7 MB",
+    "description": {
+        "en": "Placeat dolores charisma comitatus vapulus absorbeo id cur claudeo desparatus. Tamquam coniecto repudiandae sui tabula conturbo alveus caecus ultra. Comedo ancilla adficio casus delectus suscipio volup."
+    },
+    "keywords": [
+        {
+            "en": "capio"
+        }
+    ]
+}

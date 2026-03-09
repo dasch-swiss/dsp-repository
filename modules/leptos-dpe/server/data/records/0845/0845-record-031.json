@@ -1,0 +1,44 @@
+{
+    "id": "0845-record-031",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-record-031",
+    "label": {
+        "en": "yum.png"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-05-05",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "0845-organization-001",
+            "authorship": [
+                "0845-person-000",
+                "0845-person-001",
+                "0845-person-002",
+                "0845-person-003",
+                "0845-person-004"
+            ]
+        }
+    ],
+    "howToCite": "yum.png (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0845-record-031",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2020-12-30",
+    "datePublished": "2023-02-08",
+    "size": "296.1 MB",
+    "keywords": [
+        {
+            "en": "arceo"
+        },
+        {
+            "en": "brevis"
+        },
+        {
+            "en": "curo"
+        }
+    ]
+}

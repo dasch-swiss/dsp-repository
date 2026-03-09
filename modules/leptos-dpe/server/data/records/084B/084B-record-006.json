@@ -1,0 +1,39 @@
+{
+    "id": "084B-record-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084B-record-006",
+    "label": {
+        "en": "nor.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-07-08",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "084B-organization-001",
+            "authorship": [
+                "084B-person-001",
+                "084B-person-000"
+            ]
+        }
+    ],
+    "howToCite": "nor.jpg (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084B-record-006",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2022-03-16",
+    "datePublished": "2023-08-15",
+    "size": "114.0 MB",
+    "dateModified": "2023-10-28",
+    "keywords": [
+        {
+            "en": "temperantia"
+        },
+        {
+            "en": "pecco"
+        }
+    ]
+}

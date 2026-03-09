@@ -1,0 +1,42 @@
+{
+    "id": "0112-record-066",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0112-record-066",
+    "label": {
+        "en": "little_supposing_which.tiff"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0112-organization-001",
+            "authorship": [
+                "0112-person-000",
+                "0112-person-001",
+                "0112-person-002",
+                "0112-person-003",
+                "0112-person-004"
+            ]
+        }
+    ],
+    "howToCite": "little_supposing_which.tiff (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0112-record-066",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2021-02-08",
+    "datePublished": "2021-06-07",
+    "size": "249.1 MB",
+    "dateModified": "2021-07-05",
+    "keywords": [
+        {
+            "en": "arguo"
+        },
+        {
+            "en": "videlicet"
+        }
+    ]
+}

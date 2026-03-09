@@ -1,12 +1,13 @@
 {
     "id": "081B-organization-002",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-organization-002",
     "name": "University of Basel",
-    "url": "MISSING",
+    "url": "https://www.university-of-basel.org",
     "address": {
         "street": "Maiengasse 51",
         "postalCode": "4056",
         "locality": "Basel",
         "country": "Switzerland"
-    }
+    },
+    "sameAs": []
 }

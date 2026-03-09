@@ -1,0 +1,45 @@
+{
+    "id": "084E-record-009",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-record-009",
+    "label": {
+        "en": "pants_mantua_beyond.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2024-07-25",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "084E-organization-001",
+            "authorship": [
+                "084E-person-000",
+                "084E-person-001",
+                "084E-person-002",
+                "084E-person-003",
+                "084E-person-004"
+            ]
+        }
+    ],
+    "howToCite": "pants_mantua_beyond.doc (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084E-record-009",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-04-21",
+    "datePublished": "2024-06-06",
+    "size": "466.5 MB",
+    "dateModified": "2024-07-24",
+    "description": {
+        "en": "Doloremque crustulum aetas vociferor ventito suadeo summa. Velut adulescens eos maiores tamdiu audio nam. Vivo allatus considero libero."
+    },
+    "keywords": [
+        {
+            "en": "texo"
+        },
+        {
+            "en": "amaritudo"
+        }
+    ]
+}

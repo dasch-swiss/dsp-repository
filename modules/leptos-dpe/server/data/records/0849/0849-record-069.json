@@ -1,0 +1,39 @@
+{
+    "id": "0849-record-069",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0849-record-069",
+    "label": {
+        "en": "simple_whether_exotic.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-12-19",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0849-organization-001",
+            "authorship": [
+                "0849-person-000",
+                "0849-person-001",
+                "0849-person-002",
+                "0849-person-003"
+            ]
+        }
+    ],
+    "howToCite": "simple_whether_exotic.pdf (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0849-record-069",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2023-02-02",
+    "datePublished": "2024-08-28",
+    "size": "488.4 MB",
+    "dateModified": "2025-11-19",
+    "keywords": [
+        {
+            "en": "curatio"
+        }
+    ],
+    "source": "Suppellex aiunt solus libero sophismata subseco quis cattus esse cubicularis."
+}

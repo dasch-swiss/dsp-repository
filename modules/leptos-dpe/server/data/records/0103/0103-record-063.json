@@ -1,0 +1,35 @@
+{
+    "id": "0103-record-063",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0103-record-063",
+    "label": {
+        "en": "following_yahoo_ignorance.doc"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access",
+        "embargoDate": "2026-03-01"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0103-organization-001",
+            "authorship": [
+                "0103-person-000",
+                "0103-person-001",
+                "0103-person-002",
+                "0103-person-003",
+                "0103-person-004"
+            ]
+        }
+    ],
+    "howToCite": "following_yahoo_ignorance.doc (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0103-record-063",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2016-09-29",
+    "datePublished": "2020-08-11",
+    "size": "308.0 MB",
+    "dateModified": "2018-11-06"
+}

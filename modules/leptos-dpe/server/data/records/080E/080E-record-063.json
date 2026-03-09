@@ -1,0 +1,41 @@
+{
+    "id": "080E-record-063",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080E-record-063",
+    "label": {
+        "en": "ew_electric_likable.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "080E-organization-000",
+            "authorship": [
+                "080E-organization-005"
+            ]
+        }
+    ],
+    "howToCite": "ew_electric_likable.jpg (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080E-record-063",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2017-04-09",
+    "datePublished": "2018-03-01",
+    "size": "404.7 MB",
+    "dateModified": "2018-07-22",
+    "keywords": [
+        {
+            "en": "uter"
+        },
+        {
+            "en": "accedo"
+        },
+        {
+            "en": "vehemens"
+        }
+    ]
+}

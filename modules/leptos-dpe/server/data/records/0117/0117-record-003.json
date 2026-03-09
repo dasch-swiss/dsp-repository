@@ -1,0 +1,32 @@
+{
+    "id": "0117-record-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0117-record-003",
+    "label": {
+        "en": "scotch_oh_qua.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2023-08-24",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
+            },
+            "copyrightHolder": "0117-organization-001",
+            "authorship": [
+                "0117-person-000",
+                "0117-person-001",
+                "0117-person-002",
+                "0117-person-003"
+            ]
+        }
+    ],
+    "howToCite": "scotch_oh_qua.pdf (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0117-record-003",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-07-16",
+    "datePublished": "2020-07-30",
+    "size": "369.2 MB"
+}

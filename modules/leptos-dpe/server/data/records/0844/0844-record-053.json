@@ -1,0 +1,40 @@
+{
+    "id": "0844-record-053",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0844-record-053",
+    "label": {
+        "en": "seemingly_eyebrow_scholarship.xml"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2023-04-28",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0844-organization-001",
+            "authorship": [
+                "0844-person-000",
+                "0844-person-001",
+                "0844-person-002"
+            ]
+        }
+    ],
+    "howToCite": "seemingly_eyebrow_scholarship.xml (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0844-record-053",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2020-04-27",
+    "datePublished": "2020-05-13",
+    "size": "260.1 MB",
+    "dateModified": "2021-11-22",
+    "keywords": [
+        {
+            "en": "eos"
+        },
+        {
+            "en": "adaugeo"
+        }
+    ]
+}

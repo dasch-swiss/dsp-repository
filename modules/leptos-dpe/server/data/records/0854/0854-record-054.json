@@ -1,0 +1,58 @@
+{
+    "id": "0854-record-054",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-054",
+    "label": {
+        "en": "worth_upside_down.mp3"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "worth_upside_down.mp3 (2028). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-054",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2028-09-23",
+    "datePublished": "2028-10-12",
+    "size": "48.5 MB",
+    "dateModified": "2028-11-25",
+    "keywords": [
+        {
+            "en": "corrigo"
+        },
+        {
+            "en": "sortitus"
+        },
+        {
+            "en": "tres"
+        }
+    ]
+}

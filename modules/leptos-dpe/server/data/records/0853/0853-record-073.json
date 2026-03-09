@@ -1,0 +1,35 @@
+{
+    "id": "0853-record-073",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0853-record-073",
+    "label": {
+        "en": "meander_hm_liberalize.jpg"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-08-31",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0853-organization-000",
+            "authorship": [
+                "0853-person-000",
+                "0853-person-001"
+            ]
+        }
+    ],
+    "howToCite": "meander_hm_liberalize.jpg (2027). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853-record-073",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2027-08-15",
+    "datePublished": "2027-10-03",
+    "size": "273.6 MB",
+    "keywords": [
+        {
+            "en": "curis"
+        }
+    ]
+}

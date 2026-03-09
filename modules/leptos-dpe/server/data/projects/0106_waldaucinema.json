@@ -1,9 +1,9 @@
 {
     "id": "0106",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0106",
     "name": "Cinéma et (neuro)psychiatrie en Suisse : autour de la collection Waldau (1920-1990)",
     "shortcode": "0106",
-    "officialName": "MISSING",
+    "officialName": "Research Project: Cinéma et (neuro)psychiatrie en Suisse : autour de la collection Waldau (1920-1990)",
     "status": "Ongoing",
     "shortDescription": "Comment les psychiatres et neurologues suisses se sont-ils emparés, au XXe siècle, du médium filmique dans leur pratique de médecins, d’enseignants et de chercheurs ?",
     "description": {
@@ -25,13 +25,18 @@
                 "licenseDate": "2023-07-13",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "0106-organization-001",
             "authorship": [
-                "MISSING"
+                "0106-person-000",
+                "0106-person-001",
+                "0106-person-002",
+                "0106-person-003",
+                "0106-person-004"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
+    "dataPublicationYear": "2023-01-01",
     "typeOfData": [
         "Image",
         "Text"
@@ -174,5 +179,43 @@
         {
             "fr": "Waldau-cinema"
         }
+    ],
+    "records": [
+        "0106-record-001",
+        "0106-record-002",
+        "0106-record-003",
+        "0106-record-004",
+        "0106-record-005",
+        "0106-record-006",
+        "0106-record-007",
+        "0106-record-008",
+        "0106-record-009",
+        "0106-record-010",
+        "0106-record-011",
+        "0106-record-012",
+        "0106-record-013",
+        "0106-record-014",
+        "0106-record-015",
+        "0106-record-016",
+        "0106-record-017",
+        "0106-record-018",
+        "0106-record-019",
+        "0106-record-020",
+        "0106-record-021",
+        "0106-record-022",
+        "0106-record-023",
+        "0106-record-024",
+        "0106-record-025",
+        "0106-record-026",
+        "0106-record-027",
+        "0106-record-028",
+        "0106-record-029",
+        "0106-record-030",
+        "0106-record-031",
+        "0106-record-032",
+        "0106-record-033",
+        "0106-record-034",
+        "0106-record-035",
+        "0106-record-036"
     ]
 }

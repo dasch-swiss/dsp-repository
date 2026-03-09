@@ -1,0 +1,39 @@
+{
+    "id": "083E-record-021",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083E-record-021",
+    "label": {
+        "en": "ribbon.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-07-19",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "083E-organization-001",
+            "authorship": [
+                "083E-person-000",
+                "083E-person-002",
+                "083E-person-001"
+            ]
+        }
+    ],
+    "howToCite": "ribbon.doc (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083E-record-021",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-08-23",
+    "datePublished": "2025-07-03",
+    "size": "413.5 MB",
+    "keywords": [
+        {
+            "en": "animadverto"
+        },
+        {
+            "en": "casus"
+        }
+    ]
+}

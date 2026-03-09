@@ -1,0 +1,45 @@
+{
+    "id": "082A-record-084",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082A-record-084",
+    "label": {
+        "en": "afore_truly_gah.wav"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "SGV Schweizerisches Volksliedarchiv",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://www.volkskunde.ch/sgv/archive-und-sammlungen/volksliederarchiv"
+            },
+            "copyrightHolder": "082A-organization-001",
+            "authorship": [
+                "082A-person-000",
+                "082A-person-003",
+                "082A-person-001",
+                "082A-person-002"
+            ]
+        }
+    ],
+    "howToCite": "afore_truly_gah.wav (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082A-record-084",
+    "publisher": "DaSCH",
+    "typeOfData": "Audio",
+    "dateCreated": "2021-08-31",
+    "datePublished": "2021-12-09",
+    "size": "123.3 MB",
+    "dateModified": "2021-11-17",
+    "description": {
+        "en": "Carus cresco artificiose. Fugiat aer adipisci animadverto calculus textor ager aetas vulgivagus. Possimus contego cariosus debilito quas possimus."
+    },
+    "keywords": [
+        {
+            "en": "constans"
+        },
+        {
+            "en": "custodia"
+        }
+    ],
+    "source": "Aqua aperio pecus tredecim votum."
+}

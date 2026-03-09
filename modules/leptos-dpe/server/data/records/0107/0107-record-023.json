@@ -1,0 +1,44 @@
+{
+    "id": "0107-record-023",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0107-record-023",
+    "label": {
+        "en": "once_admired_yuck.tif"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0107-organization-001",
+            "authorship": [
+                "0107-person-000",
+                "0107-person-001",
+                "0107-person-002",
+                "0107-person-003",
+                "0107-person-004"
+            ]
+        }
+    ],
+    "howToCite": "once_admired_yuck.tif (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0107-record-023",
+    "publisher": "DaSCH",
+    "typeOfData": "Image",
+    "dateCreated": "2019-07-04",
+    "datePublished": "2020-07-29",
+    "size": "144.0 MB",
+    "description": {
+        "en": "Explicabo cervus atque delego tactus. Deduco damno repudiandae denuncio numquam. Antepono adflicto theca subito."
+    },
+    "keywords": [
+        {
+            "en": "candidus"
+        },
+        {
+            "en": "summa"
+        }
+    ]
+}

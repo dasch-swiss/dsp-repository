@@ -1,0 +1,42 @@
+{
+    "id": "082D-record-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082D-record-001",
+    "label": {
+        "en": "self_assured_brace.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "082D-organization-001",
+            "authorship": [
+                "082D-person-001",
+                "082D-person-002"
+            ]
+        }
+    ],
+    "howToCite": "self_assured_brace.pdf (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082D-record-001",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-07-27",
+    "datePublished": "2019-10-27",
+    "size": "341.6 MB",
+    "dateModified": "2020-01-24",
+    "description": {
+        "en": "Provident cinis demoror dolore amiculum vulticulus. Aetas calcar careo sapiente talis ademptio vinum. Tergo deludo ratione approbo sodalitas nihil tubineus nostrum deputo."
+    },
+    "keywords": [
+        {
+            "en": "adhaero"
+        },
+        {
+            "en": "capto"
+        }
+    ]
+}

@@ -1,11 +1,11 @@
 {
     "id": "0820-person-032",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0820-person-032",
     "sameAs": [
         {
             "type": "URL",
-            "url": "https://experts.exeter.ac.uk/37070-iwona-kozieradzkaogunmakin",
-            "text": "https://experts.exeter.ac.uk/37070-iwona-kozieradzkaogunmakin"
+            "url": "https://research.manchester.ac.uk/en/persons/iwona.kozieradzka-ogunmakin",
+            "text": "https://research.manchester.ac.uk/en/persons/iwona.kozieradzka-ogunmakin"
         }
     ],
     "givenNames": [

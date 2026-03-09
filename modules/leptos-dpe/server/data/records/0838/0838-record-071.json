@@ -1,0 +1,44 @@
+{
+    "id": "0838-record-071",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0838-record-071",
+    "label": {
+        "en": "ick.doc"
+    },
+    "accessRights": {
+        "accessRights": "Metadata only Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2024-01-22",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0838-organization-002",
+            "authorship": [
+                "0838-person-000",
+                "0838-person-001",
+                "0838-person-002",
+                "0838-person-003",
+                "0838-person-004"
+            ]
+        }
+    ],
+    "howToCite": "ick.doc (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0838-record-071",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-06-24",
+    "datePublished": "2022-09-08",
+    "size": "375.2 MB",
+    "description": {
+        "en": "Calcar stultus velum ea cotidie degenero dignissimos amoveo. Carus venio peccatus debeo sed tactus amplexus virga. Sequi valens sono conor baiulus."
+    },
+    "keywords": [
+        {
+            "en": "arca"
+        },
+        {
+            "en": "utrum"
+        }
+    ]
+}

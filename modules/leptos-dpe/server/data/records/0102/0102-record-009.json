@@ -1,0 +1,39 @@
+{
+    "id": "0102-record-009",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0102-record-009",
+    "label": {
+        "en": "spherical_kindly.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2022-09-08",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0102-organization-000",
+            "authorship": [
+                "0102-person-000",
+                "0102-person-001",
+                "0102-person-002"
+            ]
+        }
+    ],
+    "howToCite": "spherical_kindly.doc (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0102-record-009",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-09-02",
+    "datePublished": "2025-07-11",
+    "size": "329.3 MB",
+    "keywords": [
+        {
+            "en": "volva"
+        },
+        {
+            "en": "conservo"
+        }
+    ]
+}

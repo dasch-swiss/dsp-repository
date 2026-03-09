@@ -1,0 +1,40 @@
+{
+    "id": "081B-record-017",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/081B-record-017",
+    "label": {
+        "en": "versus_fun_palate.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 3.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by/3.0"
+            },
+            "copyrightHolder": "081B-organization-001",
+            "authorship": [
+                "081B-person-001"
+            ]
+        }
+    ],
+    "howToCite": "versus_fun_palate.xml (2018). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/081B-record-017",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2018-05-10",
+    "datePublished": "2018-11-18",
+    "size": "250.5 MB",
+    "description": {
+        "en": "Mollitia volup ipsam eius. Beatus trucido addo quisquam voluptatum veniam varietas ter. Nostrum numquam cognatus eaque."
+    },
+    "keywords": [
+        {
+            "en": "vitae"
+        },
+        {
+            "en": "sto"
+        }
+    ]
+}

@@ -1,0 +1,43 @@
+{
+    "id": "0805-record-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0805-record-005",
+    "label": {
+        "en": "thoroughly_reconsideration.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2021-09-30",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0805-organization-001",
+            "authorship": [
+                "0805-person-000"
+            ]
+        }
+    ],
+    "howToCite": "thoroughly_reconsideration.doc (2019). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0805-record-005",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-09-16",
+    "datePublished": "2019-12-21",
+    "size": "431.9 MB",
+    "description": {
+        "en": "Accusamus comedo unde tremo aduro. Approbo crapula aequus comminor. Timor tergeo volubilis."
+    },
+    "keywords": [
+        {
+            "en": "auxilium"
+        },
+        {
+            "en": "cimentarius"
+        },
+        {
+            "en": "deleniti"
+        }
+    ]
+}

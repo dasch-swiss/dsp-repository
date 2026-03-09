@@ -1,0 +1,36 @@
+{
+    "id": "0862-record-037",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-037",
+    "label": {
+        "en": "advertisement.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "advertisement.pdf (2023). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-037",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2018-06-18",
+    "datePublished": "2023-04-06",
+    "size": "29.0 MB",
+    "description": {
+        "en": "Vitiosus caritas cotidie abeo tantillus conservo decet undique. Carbo caecus armarium ocer sponte. Viridis vacuus subiungo desparatus temptatio accusator cariosus antiquus adulatio universe."
+    }
+}

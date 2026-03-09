@@ -1,0 +1,39 @@
+{
+    "id": "0102-record-007",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0102-record-007",
+    "label": {
+        "en": "drat.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2022-09-08",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0102-organization-000",
+            "authorship": [
+                "0102-person-000",
+                "0102-person-001",
+                "0102-person-002"
+            ]
+        }
+    ],
+    "howToCite": "drat.doc (2025). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0102-record-007",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-12-12",
+    "datePublished": "2025-02-06",
+    "size": "225.9 MB",
+    "description": {
+        "en": "Cursim benigne ultio. Acies suppellex artificiose. Suscipio argentum pauci illum talio bestia bellum admoneo debitis."
+    },
+    "keywords": [
+        {
+            "en": "at"
+        }
+    ]
+}

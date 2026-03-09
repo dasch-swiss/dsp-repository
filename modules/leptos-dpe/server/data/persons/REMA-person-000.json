@@ -1,6 +1,6 @@
 {
     "id": "REMA-person-000",
-    "pid": "MISSING",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-000",
     "givenNames": [
         "Chiara"
     ],
@@ -13,5 +13,6 @@
     "affiliations": [
         "REMA-organization-000"
     ],
-    "email": "Chiara.Croci@unil.ch"
+    "email": "Chiara.Croci@unil.ch",
+    "sameAs": []
 }

@@ -1,0 +1,41 @@
+{
+    "id": "0846-record-066",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-record-066",
+    "label": {
+        "en": "ponder_eek.mov"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2023-06-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "0846-organization-001",
+            "authorship": [
+                "0846-person-000",
+                "0846-person-001"
+            ]
+        }
+    ],
+    "howToCite": "ponder_eek.mov (2022). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0846-record-066",
+    "publisher": "DaSCH",
+    "typeOfData": "Video",
+    "dateCreated": "2019-03-17",
+    "datePublished": "2022-07-08",
+    "size": "276.8 MB",
+    "keywords": [
+        {
+            "en": "catena"
+        },
+        {
+            "en": "campana"
+        },
+        {
+            "en": "candidus"
+        }
+    ]
+}

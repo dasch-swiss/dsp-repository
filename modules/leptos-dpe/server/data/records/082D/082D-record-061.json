@@ -1,0 +1,38 @@
+{
+    "id": "082D-record-061",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/082D-record-061",
+    "label": {
+        "en": "when.doc"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "082D-organization-001",
+            "authorship": [
+                "082D-person-001",
+                "082D-person-002"
+            ]
+        }
+    ],
+    "howToCite": "when.doc (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/082D-record-061",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-05-14",
+    "datePublished": "2020-06-18",
+    "size": "474.5 MB",
+    "keywords": [
+        {
+            "en": "inventore"
+        },
+        {
+            "en": "at"
+        }
+    ]
+}

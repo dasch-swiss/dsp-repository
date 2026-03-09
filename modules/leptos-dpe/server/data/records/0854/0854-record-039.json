@@ -1,0 +1,47 @@
+{
+    "id": "0854-record-039",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854-record-039",
+    "label": {
+        "en": "unless_empty.xml"
+    },
+    "accessRights": {
+        "accessRights": "Open Access with Restrictions"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2025-02-01",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "0854-organization-000",
+            "authorship": [
+                "0854-person-000",
+                "0854-person-001",
+                "0854-person-000",
+                "0854-person-001"
+            ]
+        }
+    ],
+    "howToCite": "unless_empty.xml (2028). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854-record-039",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2026-11-12",
+    "datePublished": "2028-06-12",
+    "size": "189.2 MB",
+    "source": "Amet comis conatus nemo torqueo ventosus acervus approbo."
+}

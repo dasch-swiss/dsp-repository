@@ -1,0 +1,40 @@
+{
+    "id": "0857-record-012",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0857-record-012",
+    "label": {
+        "en": "across_pick_better.txt"
+    },
+    "accessRights": {
+        "accessRights": "Embargoed Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY NC 4.0",
+                "licenseDate": "2025-07-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0857-organization-000",
+            "authorship": [
+                "0857-person-000"
+            ]
+        }
+    ],
+    "howToCite": "across_pick_better.txt (2024). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0857-record-012",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2024-01-13",
+    "datePublished": "2024-06-30",
+    "size": "318.3 MB",
+    "keywords": [
+        {
+            "en": "vigor"
+        },
+        {
+            "en": "possimus"
+        },
+        {
+            "en": "cresco"
+        }
+    ]
+}

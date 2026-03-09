@@ -1,0 +1,63 @@
+{
+    "id": "0836-record-012",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0836-record-012",
+    "label": {
+        "en": "last_before_sure_footed.doc"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        },
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2021-11-23",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.de"
+            },
+            "copyrightHolder": "0836-organization-000",
+            "authorship": [
+                "0836-person-000",
+                "0836-person-001",
+                "0836-person-002",
+                "0836-person-003",
+                "0836-person-004"
+            ]
+        }
+    ],
+    "howToCite": "last_before_sure_footed.doc (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0836-record-012",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2019-11-24",
+    "datePublished": "2021-08-14",
+    "size": "217.8 MB",
+    "dateModified": "2021-02-22",
+    "description": {
+        "en": "Similique surculus deserunt vulgus attollo alveus patria. Qui capillus pectus adipisci bos auditor utpote. Tres verumtamen umbra adimpleo corona ars sequi amaritudo."
+    },
+    "keywords": [
+        {
+            "en": "quam"
+        },
+        {
+            "en": "eaque"
+        },
+        {
+            "en": "bellicus"
+        }
+    ]
+}

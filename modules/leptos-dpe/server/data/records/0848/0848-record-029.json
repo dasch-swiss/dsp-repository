@@ -1,0 +1,42 @@
+{
+    "id": "0848-record-029",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-record-029",
+    "label": {
+        "en": "doubtfully.pdf"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access",
+        "embargoDate": "2026-08-01"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-07-03",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            "copyrightHolder": "0848-organization-001",
+            "authorship": [
+                "0848-person-000",
+                "0848-person-001",
+                "0848-person-002",
+                "0848-person-003"
+            ]
+        }
+    ],
+    "howToCite": "doubtfully.pdf (2021). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0848-record-029",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-07-12",
+    "datePublished": "2021-06-03",
+    "size": "450.1 MB",
+    "description": {
+        "en": "Defendo architecto sto. Adsuesco ciminatio vulnus quia venia cohibeo casus consuasor. Surculus nesciunt succedo contego curvo curo tamen desino contigo amoveo."
+    },
+    "keywords": [
+        {
+            "en": "compello"
+        }
+    ],
+    "source": "Verecundia vespillo sustineo."
+}

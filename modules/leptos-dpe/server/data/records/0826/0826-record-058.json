@@ -1,0 +1,45 @@
+{
+    "id": "0826-record-058",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0826-record-058",
+    "label": {
+        "en": "haul_what_elevator.txt"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "0826-organization-000",
+            "authorship": [
+                "0826-person-005",
+                "0826-person-001",
+                "0826-person-002",
+                "0826-person-003",
+                "0826-person-004"
+            ]
+        }
+    ],
+    "howToCite": "haul_what_elevator.txt (2020). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0826-record-058",
+    "publisher": "DaSCH",
+    "typeOfData": "Text",
+    "dateCreated": "2020-04-26",
+    "datePublished": "2020-05-07",
+    "size": "214.9 MB",
+    "dateModified": "2020-09-25",
+    "keywords": [
+        {
+            "en": "coma"
+        },
+        {
+            "en": "suspendo"
+        },
+        {
+            "en": "autus"
+        }
+    ]
+}

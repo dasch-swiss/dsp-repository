@@ -1,0 +1,34 @@
+{
+    "id": "0862-record-061",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-record-061",
+    "label": {
+        "en": "sharply_dramatic_foolishly.xml"
+    },
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-04-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "0862-organization-001",
+            "authorship": [
+                "0862-person-000",
+                "0862-person-001",
+                "0862-person-004",
+                "0862-person-003",
+                "0862-person-002"
+            ]
+        }
+    ],
+    "howToCite": "sharply_dramatic_foolishly.xml (2033). [Data Record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0862-record-061",
+    "publisher": "DaSCH",
+    "typeOfData": "XML",
+    "dateCreated": "2028-03-03",
+    "datePublished": "2033-11-07",
+    "size": "258.0 MB",
+    "source": "Bene deputo vigor verecundia depereo viriliter."
+}

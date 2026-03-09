@@ -1,5 +1,4 @@
 use leptos::prelude::*;
-use mosaic_tiles::badge::{Badge, BadgeSize, BadgeVariant};
 
 use crate::domain::Discipline;
 
@@ -8,8 +7,8 @@ pub fn DisciplinesSection(disciplines: Vec<Discipline>) -> impl IntoView {
     (!disciplines.is_empty()).then(|| {
         view! {
             <div id="disciplines">
-                <h3 class="dpe-subtitle">"Disciplines"</h3>
-                <div class="flex flex-wrap gap-2">
+                <h3 class="text-sm font-semibold text-gray-700 mb-2">"Disciplines"</h3>
+                <div class="flex flex-wrap gap-1.5">
                     {disciplines
                         .iter()
                         .map(|d| {
@@ -35,15 +34,19 @@ pub fn DisciplinesSection(disciplines: Vec<Discipline>) -> impl IntoView {
                                 Some(href) => {
                                     view! {
                                         <a href=href>
-                                            <Badge variant=BadgeVariant::Primary size=BadgeSize::Small>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700">
                                                 {label}
-                                            </Badge>
+                                            </span>
                                         </a>
                                     }
                                         .into_any()
                                 }
                                 None => {
-                                    view! { <Badge size=BadgeSize::Small>{label}</Badge> }
+                                    view! {
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700">
+                                            {label}
+                                        </span>
+                                    }
                                         .into_any()
                                 }
                             }

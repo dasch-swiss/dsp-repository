@@ -12,6 +12,8 @@ use crate::pages::project::components::publication_tab::PublicationTab;
 pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl IntoView {
     let abstract_en = proj.abstract_text.as_ref().and_then(|m| m.get("en").cloned());
     let publications = proj.publications.clone();
+    let has_publications_tab = abstract_en.is_some()
+        || publications.as_ref().map(|p| !p.is_empty()).unwrap_or(false);
 
     view! {
         <Card variant=CardVariant::Bordered class="flex-1 pt-4">
@@ -25,9 +27,19 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
                 >
                     <DatasetOverviewSection proj=proj />
                 </Tab>
-                <Tab name="project-tabs" value="publications" label="Publications" icon=Document>
-                    <PublicationTab abstract_en=abstract_en publications=publications />
-                </Tab>
+                {has_publications_tab
+                    .then(|| {
+                        view! {
+                            <Tab
+                                name="project-tabs"
+                                value="publications"
+                                label="Publications"
+                                icon=Document
+                            >
+                                <PublicationTab abstract_en=abstract_en publications=publications />
+                            </Tab>
+                        }
+                    })}
                 <Tab name="project-tabs" value="contributors" label="Contributors" icon=People>
                     <AttributionsSection attributions=attributions />
                 </Tab>

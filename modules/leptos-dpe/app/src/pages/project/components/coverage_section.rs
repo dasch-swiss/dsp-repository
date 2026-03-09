@@ -1,5 +1,4 @@
 use leptos::prelude::*;
-use mosaic_tiles::badge::{Badge, BadgeSize, BadgeVariant};
 
 use crate::domain::models::AuthorityFileReference;
 use crate::domain::TemporalCoverage;
@@ -14,8 +13,8 @@ pub fn CoverageSection(
             .then(|| {
                 view! {
                     <div id="temporal-coverage">
-                        <h3 class="dpe-subtitle">"Temporal Coverage"</h3>
-                        <div class="flex flex-wrap gap-2">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-2">"Temporal Coverage"</h3>
+                        <div class="flex flex-wrap gap-1.5">
                             {temporal_coverage
                                 .iter()
                                 .map(|t| match t {
@@ -25,7 +24,11 @@ pub fn CoverageSection(
                                             .map(|(lang, text)| format!("{} ({})", text, lang))
                                             .collect::<Vec<_>>()
                                             .join(" / ");
-                                        view! { <Badge size=BadgeSize::Small>{label}</Badge> }
+                                        view! {
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700">
+                                                {label}
+                                            </span>
+                                        }
                                             .into_any()
                                     }
                                     TemporalCoverage::Reference(ref_) => {
@@ -39,9 +42,9 @@ pub fn CoverageSection(
                                                 class="tooltip"
                                                 data-tip=ref_.url.clone()
                                             >
-                                                <Badge variant=BadgeVariant::Primary size=BadgeSize::Small>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700">
                                                     {label}
-                                                </Badge>
+                                                </span>
                                             </a>
                                         }
                                             .into_any()
@@ -57,8 +60,8 @@ pub fn CoverageSection(
             .then(|| {
                 view! {
                     <div id="spatial-coverage">
-                        <h3 class="dpe-subtitle">"Spatial Coverage"</h3>
-                        <div class="flex flex-wrap gap-2">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-2">"Spatial Coverage"</h3>
+                        <div class="flex flex-wrap gap-1.5">
                             {spatial_coverage
                                 .iter()
                                 .map(|s| {
@@ -69,9 +72,9 @@ pub fn CoverageSection(
                                             class="tooltip"
                                             data-tip=s.url.clone()
                                         >
-                                            <Badge variant=BadgeVariant::Primary size=BadgeSize::Small>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700">
                                                 {label}
-                                            </Badge>
+                                            </span>
                                         </a>
                                     }
                                 })

@@ -3,6 +3,8 @@ use leptos_router::params::Params;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use super::cluster::ClusterRef;
+use super::collection::CollectionRef;
 use super::models::AuthorityFileReference;
 
 fn make_ref(url: String) -> AuthorityFileReference {
@@ -58,6 +60,8 @@ pub(super) struct ProjectRaw {
     pub type_of_data: Option<Vec<String>>,
     #[serde(rename = "dataLanguage", default)]
     pub data_language: Option<Vec<std::collections::HashMap<String, String>>>,
+    #[serde(default)]
+    pub clusters: Option<Vec<String>>,
     #[serde(default)]
     pub collections: Option<Vec<String>>,
     #[serde(default)]
@@ -221,7 +225,8 @@ pub struct Project {
     pub data_publication_year: Option<String>,
     pub type_of_data: Option<Vec<String>>,
     pub data_language: Option<Vec<std::collections::HashMap<String, String>>>,
-    pub collections: Option<Vec<String>>,
+    pub clusters: Vec<ClusterRef>,
+    pub collections: Vec<CollectionRef>,
     pub records: Option<Vec<String>>,
     pub keywords: Vec<std::collections::HashMap<String, String>>,
     pub disciplines: Vec<Discipline>,
@@ -264,7 +269,8 @@ impl From<ProjectRaw> for Project {
             data_publication_year: raw.data_publication_year,
             type_of_data: raw.type_of_data,
             data_language: raw.data_language,
-            collections: raw.collections,
+            clusters: Vec::new(),
+            collections: Vec::new(),
             records: raw.records,
             keywords: raw.keywords,
             disciplines: raw.disciplines,

@@ -13,6 +13,7 @@ pub mod disciplines_section;
 pub mod funding_section;
 pub mod info_card;
 pub mod legal_info;
+pub mod link_card_section;
 pub mod link_list_section;
 pub mod organization_name;
 pub mod permalink;

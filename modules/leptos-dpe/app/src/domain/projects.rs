@@ -244,10 +244,14 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
     use std::fs;
     use std::path::PathBuf;
 
+    use super::cluster::ClusterRef;
+    use super::collection::CollectionRef;
+    use super::project::ProjectRaw;
     use super::utils::get_data_dir;
 
     let data_dir = get_data_dir();
-    let projects_dir = PathBuf::from(data_dir).join("projects");
+    let data_path = PathBuf::from(data_dir);
+    let projects_dir = data_path.join("projects");
 
     // Read all entries in the projects directory
     let entries = fs::read_dir(projects_dir)
@@ -267,9 +271,37 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
                         let json_data = fs::read_to_string(&path)
                             .map_err(|e| ServerFnError::new(format!("Failed to read file: {}", e)))?;
 
-                        let project: Project = serde_json::from_str::<super::project::ProjectRaw>(&json_data)
-                            .map(Project::from)
+                        let raw: ProjectRaw = serde_json::from_str(&json_data)
                             .map_err(|e| ServerFnError::new(format!("Failed to parse JSON: {}", e)))?;
+
+                        let cluster_ids = raw.clusters.clone().unwrap_or_default();
+                        let collection_ids = raw.collections.clone().unwrap_or_default();
+
+                        let mut project = Project::from(raw);
+
+                        // Resolve cluster IDs
+                        let clusters_dir = data_path.join("clusters");
+                        project.clusters = cluster_ids
+                            .iter()
+                            .filter_map(|id| {
+                                let cluster_path = clusters_dir.join(format!("{}.json", id));
+                                fs::read_to_string(&cluster_path)
+                                    .ok()
+                                    .and_then(|json| serde_json::from_str::<ClusterRef>(&json).ok())
+                            })
+                            .collect();
+
+                        // Resolve collection IDs
+                        let collections_dir = data_path.join("collections");
+                        project.collections = collection_ids
+                            .iter()
+                            .filter_map(|id| {
+                                let collection_path = collections_dir.join(format!("{}.json", id));
+                                fs::read_to_string(&collection_path)
+                                    .ok()
+                                    .and_then(|json| serde_json::from_str::<CollectionRef>(&json).ok())
+                            })
+                            .collect();
 
                         return Ok(Some(project));
                     }

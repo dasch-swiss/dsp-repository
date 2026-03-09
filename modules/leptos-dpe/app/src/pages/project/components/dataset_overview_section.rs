@@ -1,18 +1,20 @@
 use leptos::prelude::*;
-use mosaic_tiles::badge::{Badge, BadgeSize};
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
 use crate::domain::Project;
 use crate::pages::project::components::coverage_section::CoverageSection;
 use crate::pages::project::components::data_language_section::DataLanguageSection;
 use crate::pages::project::components::disciplines_section::DisciplinesSection;
+use crate::pages::project::components::link_card_section::LinkCardSection;
 use crate::pages::project::components::link_list_section::LinkListSection;
 use crate::pages::project::components::publication_year::PublicationYear;
 use crate::pages::project::components::type_of_data_section::TypeOfDataSection;
 
 #[component]
 pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
-    let english_keywords: Vec<String> = proj.keywords.iter().filter_map(|map| map.get("en").cloned()).collect();
+    // Collect all keyword values across all language maps
+    let all_keywords: Vec<String> =
+        proj.keywords.iter().flat_map(|map| map.values().cloned()).collect();
     let data_languages: Vec<String> = proj
         .data_language
         .as_deref()
@@ -20,6 +22,19 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
         .iter()
         .filter_map(|map| map.get("en").cloned())
         .collect();
+
+    let cluster_items: Vec<(String, String, String)> = proj
+        .clusters
+        .iter()
+        .map(|c| (format!("/cluster/{}", c.id), c.name.clone(), c.description.clone()))
+        .collect();
+
+    let collection_items: Vec<(String, String, String)> = proj
+        .collections
+        .iter()
+        .map(|c| (format!("/collection/{}", c.id), c.name.clone(), c.description.clone()))
+        .collect();
+
     view! {
         <div class="space-y-4">
             <TypeOfDataSection type_of_data=proj.type_of_data.clone() />
@@ -27,16 +42,20 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
             <DataLanguageSection data_languages=data_languages />
             <PublicationYear year=proj.data_publication_year.clone() />
 
-            {(!english_keywords.is_empty())
+            {(!all_keywords.is_empty())
                 .then(|| {
                     view! {
                         <div id="keywords" class="scroll-mt-52">
-                            <h3 class="dpe-subtitle">"Keywords"</h3>
-                            <div class="flex flex-wrap gap-2">
-                                {english_keywords
+                            <h3 class="text-sm font-semibold text-gray-700 mb-2">"Keywords"</h3>
+                            <div class="flex flex-wrap gap-1.5">
+                                {all_keywords
                                     .into_iter()
                                     .map(|k| {
-                                        view! { <Badge size=BadgeSize::Small>{k}</Badge> }
+                                        view! {
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
+                                                {k}
+                                            </span>
+                                        }
                                     })
                                     .collect_view()}
                             </div>
@@ -52,18 +71,9 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
                 spatial_coverage=proj.spatial_coverage.clone()
             />
 
-            {proj
-                .collections
-                .as_ref()
-                .and_then(|c| if c.is_empty() { None } else { Some(c) })
-                .map(|collections| {
-                    view! {
-                        <LinkListSection
-                            title="Collections".to_string()
-                            items=collections.clone()
-                        />
-                    }
-                })}
+            <LinkCardSection title="Part of Cluster".to_string() items=cluster_items />
+
+            <LinkCardSection title="Collections".to_string() items=collection_items />
 
             {proj
                 .records

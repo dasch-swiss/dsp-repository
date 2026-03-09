@@ -64,6 +64,31 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
                     <h3 class="dpe-title">"Funding"</h3>
 
                     <FundingSection funding=proj.funding.clone() />
+
+                    {proj
+                        .data_management_plan
+                        .map(|dmp| {
+                            view! {
+                                <div>
+                                    <div class="dpe-subtitle">"Data Management Plan"</div>
+                                    {if dmp == "not accessible" {
+                                        view! { <div>"Not accessible"</div> }.into_any()
+                                    } else {
+                                        view! {
+                                            <a
+                                                href=dmp
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="text-primary"
+                                            >
+                                                "Available"
+                                            </a>
+                                        }
+                                            .into_any()
+                                    }}
+                                </div>
+                            }
+                        })}
                 </div>
             </CardBody>
         </Card>

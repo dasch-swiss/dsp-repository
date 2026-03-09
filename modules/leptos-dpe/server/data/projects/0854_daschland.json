@@ -43,6 +43,8 @@
             ]
         }
     ],
+    "clusters": ["cluster-004"],
+    "collections": ["collection-006", "collection-007"],
     "dataManagementPlan": "not accessible",
     "typeOfData": [
         "Audio",

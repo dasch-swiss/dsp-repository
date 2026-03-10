@@ -1,0 +1,21 @@
+name: Publish DPE release image
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish release image
+    if: startsWith(github.event.release.tag_name, 'dpe-v')
+    uses: ./.github/workflows/docker-publish.yml
+    with:
+      dockerfile: modules/leptos-dpe/Dockerfile
+      image-name: daschswiss/dpe
+      image-tag: ${{ github.event.release.tag_name }}
+    secrets:
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
+      DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}

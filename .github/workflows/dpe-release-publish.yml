@@ -15,15 +15,10 @@ jobs:
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.release.tag_name }}
-
-      - name: Extract version from release-please manifest
+      - name: Extract version from tag
         id: tag
         run: |
-          VERSION=$(jq -r '.["modules/leptos-dpe/server"]' .release-please-manifest.json)
-          echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${GITHUB_REF_NAME#leptos-server-v}" >> "$GITHUB_OUTPUT"
 
   publish:
     name: Publish release image

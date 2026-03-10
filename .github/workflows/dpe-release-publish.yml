@@ -20,7 +20,7 @@ jobs:
       - name: Extract version from Cargo.toml
         id: tag
         run: |
-          VERSION=$(grep '^version' modules/leptos-dpe/server/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
+          VERSION=$(grep -m1 '^version' modules/leptos-dpe/server/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
           echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
 
   publish:

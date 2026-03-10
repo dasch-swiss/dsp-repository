@@ -26,7 +26,7 @@ jobs:
       - name: Generate docker image tag
         id: tag
         run: |
-          VERSION=$(grep '^version' modules/leptos-dpe/server/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
+          VERSION=$(grep -m1 '^version' modules/leptos-dpe/server/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           echo "tag=${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 

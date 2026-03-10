@@ -22,7 +22,7 @@ function formatViolations(violations: Result[]): string {
     .join("\n\n");
 }
 
-test.describe("DPE accessibility", () => {
+test.describe("DPE accessibility against WCAG 2.1 Level AA", () => {
   test("page has no violations against WCAG 2.1 Level AA", async ({ page }) => {
     await page.goto("http://localhost:4000/");
     // WCAG 2.1 Level AA — required by EU Directive 2019/882 (EAA) via EN 301 549 is covered by "wcag2a", "wcag2aa", "wcag21a", "wcag21aa"

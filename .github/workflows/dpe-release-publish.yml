@@ -19,10 +19,10 @@ jobs:
         with:
           ref: ${{ github.event.release.tag_name }}
 
-      - name: Extract version from Cargo.toml
+      - name: Extract version from release-please manifest
         id: tag
         run: |
-          VERSION=$(grep -m1 '^version' modules/leptos-dpe/server/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
+          VERSION=$(jq -r '.["modules/leptos-dpe/server"]' .release-please-manifest.json)
           echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
 
   publish:

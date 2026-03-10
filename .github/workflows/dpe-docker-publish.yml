@@ -25,9 +25,11 @@ jobs:
 
       - name: Generate docker image tag
         id: tag
+        env:
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           VERSION=$(jq -r '.["modules/leptos-dpe/server"]' .release-please-manifest.json)
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          SHORT_SHA=$(echo "${COMMIT_SHA}" | cut -c1-7)
           echo "tag=${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
   publish:

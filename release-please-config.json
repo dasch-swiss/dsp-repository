@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "rust",
+  "include-component-in-tag": true,
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": true,
+  "packages": {
+    "modules/leptos-dpe/server": { "component": "leptos-server" },
+    "modules/leptos-dpe/app": { "component": "app" },
+    "modules/leptos-dpe/frontend": { "component": "frontend" }
+  },
+  "plugins": [
+    { "type": "cargo-workspace" },
+    {
+      "type": "linked-versions",
+      "groupName": "dpe",
+      "components": ["leptos-server", "app", "frontend"]
+    }
+  ]
+}

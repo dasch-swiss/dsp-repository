@@ -1,3 +1,4 @@
+#[cfg(feature = "ssr")]
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
@@ -9,6 +10,7 @@ pub struct ClusterRef {
     pub description: String,
 }
 
+#[cfg(feature = "ssr")]
 #[derive(Debug, Deserialize)]
 pub struct ClusterRaw {
     pub id: String,
@@ -18,6 +20,7 @@ pub struct ClusterRaw {
     pub projects: Vec<String>,
 }
 
+#[cfg(feature = "ssr")]
 impl ClusterRaw {
     pub fn into_ref(self) -> ClusterRef {
         let description = self

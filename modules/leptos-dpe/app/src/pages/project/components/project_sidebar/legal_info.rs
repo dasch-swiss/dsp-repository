@@ -60,6 +60,7 @@ pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
                                     <a
                                         href=info.license.license_uri.clone()
                                         rel="noopener noreferrer"
+                                        class="block mb-1"
                                     >
 
                                         <img
@@ -78,11 +79,11 @@ pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
                                 view! { <Link href=href>{text}</Link> }.into_any()
                             }
                         }}
-                    </div>
-
                     <div>
                         "(" {info.license.license_date.clone()} ")"
                     </div>
+                    </div>
+
 
                 <div>
                     <h3 class="dpe-subtitle">"Copyright"</h3>

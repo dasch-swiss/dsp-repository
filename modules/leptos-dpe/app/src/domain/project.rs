@@ -120,6 +120,7 @@ impl ProjectQuery {
         self.finished.unwrap_or(false)
     }
 
+    #[cfg(feature = "ssr")]
     pub fn search(&self) -> String {
         self.search.clone().unwrap_or_default()
     }

@@ -26,7 +26,7 @@ pub fn ProjectSidebar(proj: Project) -> impl IntoView {
                     <div>
                         <Citation citation=proj.how_to_cite.clone() />
                     </div>
-                    <div class="border-t border-gray-200"></div>
+                    <div class="dpe-divider"></div>
 
                     <div>
                     <h3 class="dpe-title">"Data Access"</h3>
@@ -52,7 +52,7 @@ pub fn ProjectSidebar(proj: Project) -> impl IntoView {
                             }
                         })}
 
-                    <div class="border-t border-gray-200"></div>
+                    <div class="dpe-divider"></div>
 
                     <h3 class="dpe-title">"Project Timeline"</h3>
                     <div>
@@ -75,7 +75,7 @@ pub fn ProjectSidebar(proj: Project) -> impl IntoView {
                         </div>
                     </div>
 
-                    <div class="border-t border-gray-200"></div>
+                    <div class="dpe-divider"></div>
 
                     <h3 class="dpe-title">"Funding"</h3>
 

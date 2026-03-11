@@ -8,7 +8,7 @@ use crate::pages::project::components::info_card::InfoCard;
 #[component]
 pub fn PublicationsSection(publications: Vec<Publication>) -> impl IntoView {
     view! {
-        <div class="scroll-mt-52">
+        <div>
             <h3 class="dpe-subtitle">"Publications"</h3>
             <div class="space-y-2 text-sm">
                 {publications

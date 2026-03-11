@@ -39,6 +39,10 @@
         }
     }
 
+    .dpe-divider {
+        @apply border-t border-gray-200;
+    }
+
     .dpe-max-layout-width {
         max-width: 1536px;
     }

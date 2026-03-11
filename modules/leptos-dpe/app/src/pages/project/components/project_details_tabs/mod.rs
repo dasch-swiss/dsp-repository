@@ -3,12 +3,11 @@ mod dataset_overview_section;
 mod publication_tab;
 
 use leptos::prelude::*;
-use mosaic_tiles::card::{Card, CardVariant};
 use mosaic_tiles::icon::{Document, Info, People};
 use mosaic_tiles::tabs::{Tab, Tabs};
 
-use attributions_section::AttributionsSection;
 use crate::domain::{lang_value, Attribution, Project};
+use attributions_section::AttributionsSection;
 use dataset_overview_section::DatasetOverviewSection;
 use publication_tab::PublicationTab;
 
@@ -19,7 +18,7 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
     let has_publications_tab = abstract_en.is_some() || publications.as_ref().map(|p| !p.is_empty()).unwrap_or(false);
 
     view! {
-        <Card variant=CardVariant::Bordered class="dpe-card flex-1 pt-4">
+        <div class="dpe-card flex-1 pt-4">
             <Tabs>
                 <Tab
                     name="project-tabs"
@@ -47,6 +46,6 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
                     <AttributionsSection attributions=attributions />
                 </Tab>
             </Tabs>
-        </Card>
+        </div>
     }
 }

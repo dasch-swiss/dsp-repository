@@ -4,7 +4,7 @@ use leptos::prelude::*;
 pub fn DataLanguageSection(data_languages: Vec<String>) -> impl IntoView {
     (!data_languages.is_empty()).then(|| {
         view! {
-            <div class="scroll-mt-52">
+            <div>
                 <h3 class="dpe-subtitle">"Data Languages"</h3>
                 <div class="flex flex-wrap gap-1.5">
                     {data_languages

@@ -47,14 +47,15 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
             <TypeOfDataSection type_of_data=proj.type_of_data.clone() />
 
             <DataLanguageSection data_languages=data_languages />
-            <PublicationYear year=proj.data_publication_year.clone() />
+            {proj.data_publication_year.clone().map(|year| view! {
+                <div><PublicationYear year=year /></div> })}
 
             {(!all_keywords.is_empty())
                 .then(|| {
                     view! {
-                        <div class="scroll-mt-52">
+                        <div>
                             <h3 class="dpe-subtitle">"Keywords"</h3>
-                            <div class="flex flex-wrap gap-1.5">
+                            <div class="flex flex-wrap gap-2">
                                 {all_keywords
                                     .into_iter()
                                     .map(|k| {

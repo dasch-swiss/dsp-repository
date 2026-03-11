@@ -1,12 +1,16 @@
+mod attributions_section;
+mod dataset_overview_section;
+mod publication_tab;
+
 use leptos::prelude::*;
 use mosaic_tiles::card::{Card, CardVariant};
 use mosaic_tiles::icon::{Document, Info, People};
 use mosaic_tiles::tabs::{Tab, Tabs};
 
+use attributions_section::AttributionsSection;
 use crate::domain::{lang_value, Attribution, Project};
-use crate::pages::project::components::attributions_section::AttributionsSection;
-use crate::pages::project::components::dataset_overview_section::DatasetOverviewSection;
-use crate::pages::project::components::publication_tab::PublicationTab;
+use dataset_overview_section::DatasetOverviewSection;
+use publication_tab::PublicationTab;
 
 #[component]
 pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl IntoView {

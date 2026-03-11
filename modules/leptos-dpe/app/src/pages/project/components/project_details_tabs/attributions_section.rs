@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use super::contributor::Contributor;
+use super::super::contributor::Contributor;
 use crate::domain::Attribution;
 
 #[component]

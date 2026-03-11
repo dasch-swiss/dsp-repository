@@ -2,7 +2,7 @@ use leptos::prelude::*;
 
 use crate::domain::{lang_value, Project};
 use crate::pages::project::components::breadcrumb::Breadcrumb;
-use crate::pages::project::components::cite_project_section::CiteProjectSection;
+use crate::pages::project::components::project_sidebar::ProjectSidebar;
 use crate::pages::project::components::project_details_tabs::ProjectDetailsTabs;
 use crate::pages::project::components::project_header::ProjectHeader;
 
@@ -29,7 +29,7 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
 
             <div class="flex flex-col lg:flex-row gap-6 lg:items-start">
                 <ProjectDetailsTabs proj=proj.clone() attributions=proj.attributions.clone() />
-                <CiteProjectSection proj=proj />
+                <ProjectSidebar proj=proj />
             </div>
         </div>
     }

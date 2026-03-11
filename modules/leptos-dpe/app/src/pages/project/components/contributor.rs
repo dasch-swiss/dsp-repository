@@ -19,9 +19,7 @@ pub fn Contributor(attr: Attribution) -> impl IntoView {
 fn PersonContributor(person_id: String, roles: Option<String>) -> impl IntoView {
     view! {
         <InfoCard>
-            <div class="text-sm">
                 <Person person_id=person_id roles=roles />
-            </div>
         </InfoCard>
     }
 }
@@ -31,7 +29,6 @@ fn OrgContributor(org_id: String, roles: Option<String>) -> impl IntoView {
     let resource = Resource::new(move || org_id.clone(), |id| async move { get_organization(id).await });
     view! {
         <InfoCard>
-            <div class="text-sm">
                 <Suspense>
                     {move || {
                         let org_opt = resource.get().and_then(|r| r.ok()).flatten();
@@ -65,7 +62,6 @@ fn OrgContributor(org_id: String, roles: Option<String>) -> impl IntoView {
                         }
                     }}
                 </Suspense>
-            </div>
         </InfoCard>
     }
 }

@@ -1,8 +1,8 @@
 use leptos::prelude::*;
 use mosaic_tiles::icon::{Icon, LinkExternal};
 
-use super::info_card::InfoCard;
-use super::organization_name::OrganizationName;
+use super::super::info_card::InfoCard;
+use super::super::organization_name::OrganizationName;
 use crate::domain::Funding;
 
 #[component]

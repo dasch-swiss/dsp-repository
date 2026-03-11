@@ -1,14 +1,22 @@
+mod coverage_section;
+mod data_language_section;
+mod disciplines_section;
+mod link_card_section;
+mod link_list_section;
+mod publication_year;
+mod type_of_data_section;
+
 use leptos::prelude::*;
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
 use crate::domain::{lang_value, Project};
-use crate::pages::project::components::coverage_section::CoverageSection;
-use crate::pages::project::components::data_language_section::DataLanguageSection;
-use crate::pages::project::components::disciplines_section::DisciplinesSection;
-use crate::pages::project::components::link_card_section::LinkCardSection;
-use crate::pages::project::components::link_list_section::LinkListSection;
-use crate::pages::project::components::publication_year::PublicationYear;
-use crate::pages::project::components::type_of_data_section::TypeOfDataSection;
+use coverage_section::CoverageSection;
+use data_language_section::DataLanguageSection;
+use disciplines_section::DisciplinesSection;
+use link_card_section::LinkCardSection;
+use link_list_section::LinkListSection;
+use publication_year::PublicationYear;
+use type_of_data_section::TypeOfDataSection;
 
 #[component]
 pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
@@ -110,7 +118,7 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
                         <Card variant=CardVariant::Bordered>
                             <CardBody>
                                 <h3 class="text-base font-semibold mb-3">"Provenance"</h3>
-                                <p class="text-sm">{prov}</p>
+                                <p>{prov}</p>
                             </CardBody>
                         </Card>
                     }

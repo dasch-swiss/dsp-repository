@@ -4,6 +4,7 @@
   "include-component-in-tag": true,
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
+  "group-pull-request-title-pattern": "chore(dpe): release",
   "packages": {
     "modules/leptos-dpe/server": { "component": "leptos-server" },
     "modules/leptos-dpe/app": { "component": "app" },

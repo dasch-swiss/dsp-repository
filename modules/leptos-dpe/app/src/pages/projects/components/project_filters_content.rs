@@ -8,14 +8,26 @@ pub fn ProjectFiltersContent(
     type_of_data_items: Vec<(String, bool, String)>,
     data_language_items: Vec<(String, bool, String)>,
     access_rights_items: Vec<(String, bool, String)>,
-    clear_href: String,
+    #[prop(default = false)] dialog_open: bool,
 ) -> impl IntoView {
+    let any_filter_active = status_items.iter().any(|(_, checked, _)| *checked)
+        || type_of_data_items.iter().any(|(_, checked, _)| *checked)
+        || data_language_items.iter().any(|(_, checked, _)| *checked)
+        || access_rights_items.iter().any(|(_, checked, _)| *checked);
+
     view! {
-        <div class="flex items-center justify-between mb-4">
+        <div class=if dialog_open { "flex flex-col justify-between mb-4" } else { "flex items-center justify-between" }>
             <h4 class="dpe-title">"Filters"</h4>
-            <a href=clear_href class="text-xs text-primary hover:underline">
-                "Clear all"
-            </a>
+            {if any_filter_active {
+                view! {
+                    <a href="/projects" class="text-xs text-primary hover:underline">
+                        "Clear all"
+                    </a>
+                }
+                    .into_any()
+            } else {
+                ().into_any()
+            }}
         </div>
         <div class="space-y-4">
             <div>

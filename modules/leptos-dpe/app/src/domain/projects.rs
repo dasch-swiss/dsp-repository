@@ -89,6 +89,7 @@ pub async fn list_data_languages() -> Result<Vec<String>, ServerFnError> {
     Ok(result)
 }
 
+#[allow(clippy::too_many_arguments)]
 #[server]
 pub async fn list_projects(
     ongoing: Option<bool>,
@@ -106,7 +107,7 @@ pub async fn list_projects(
     use super::project::{ProjectQuery, ProjectStatus};
     use super::utils::get_data_dir;
 
-    let query = ProjectQuery { ongoing, finished, search, page, type_of_data, data_language, access_rights };
+    let query = ProjectQuery { ongoing, finished, search, page, type_of_data, data_language, access_rights, dialog: None };
 
     let items_per_page = page_size.unwrap_or(9).max(1) as usize;
 
@@ -158,7 +159,10 @@ pub async fn list_projects(
             // Status filter
             let is_ongoing = project.status == ProjectStatus::Ongoing;
             let is_finished = project.status == ProjectStatus::Finished;
-            let status_match = (query.ongoing() && is_ongoing) || (query.finished() && is_finished);
+            let status_match = match (query.ongoing, query.finished) {
+                (None, None) => true,
+                _ => (query.ongoing() && is_ongoing) || (query.finished() && is_finished),
+            };
 
             // Search filter - check all properties
             let status_str = match project.status {

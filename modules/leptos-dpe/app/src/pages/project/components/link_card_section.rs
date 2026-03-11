@@ -7,7 +7,7 @@ pub fn LinkCardSection(title: String, items: Vec<(String, String, String)>) -> i
     (!items.is_empty()).then(|| {
         view! {
             <div>
-                <h3 class="text-sm font-semibold text-gray-700 mb-2">{title}</h3>
+                <h3 class="dpe-subtitle">{title}</h3>
                 <div class="flex flex-col gap-2">
                     {items
                         .into_iter()

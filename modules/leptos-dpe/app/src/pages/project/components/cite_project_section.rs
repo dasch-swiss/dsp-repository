@@ -1,5 +1,4 @@
 use leptos::prelude::*;
-use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
 use super::legal_info::{ContactSection, LegalInfo};
 use crate::domain::{Project, ProjectStatus};
@@ -11,8 +10,7 @@ use crate::pages::project::components::permalink::Permalink;
 #[component]
 pub fn CiteProjectSection(proj: Project) -> impl IntoView {
     view! {
-        <Card variant=CardVariant::Bordered class="lg:w-96">
-            <CardBody>
+        <div class="dpe-card dpe-small lg:w-96">
                 <div class="space-y-4 text-sm">
                     <h2 class="dpe-title">"Cite this Project"</h2>
 
@@ -102,7 +100,6 @@ pub fn CiteProjectSection(proj: Project) -> impl IntoView {
                             }
                         })}
                 </div>
-            </CardBody>
-        </Card>
+        </div>
     }
 }

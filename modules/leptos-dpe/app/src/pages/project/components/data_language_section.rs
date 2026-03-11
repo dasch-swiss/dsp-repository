@@ -5,7 +5,7 @@ pub fn DataLanguageSection(data_languages: Vec<String>) -> impl IntoView {
     (!data_languages.is_empty()).then(|| {
         view! {
             <div class="scroll-mt-52">
-                <h3 class="text-sm font-semibold text-gray-700 mb-2">"Data Languages"</h3>
+                <h3 class="dpe-subtitle">"Data Languages"</h3>
                 <div class="flex flex-wrap gap-1.5">
                     {data_languages
                         .into_iter()

@@ -12,11 +12,10 @@ use crate::pages::project::components::publication_tab::PublicationTab;
 pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl IntoView {
     let abstract_en = proj.abstract_text.as_ref().and_then(|m| lang_value(m).cloned());
     let publications = proj.publications.clone();
-    let has_publications_tab = abstract_en.is_some()
-        || publications.as_ref().map(|p| !p.is_empty()).unwrap_or(false);
+    let has_publications_tab = abstract_en.is_some() || publications.as_ref().map(|p| !p.is_empty()).unwrap_or(false);
 
     view! {
-        <Card variant=CardVariant::Bordered class="flex-1 pt-4">
+        <Card variant=CardVariant::Bordered class="dpe-card flex-1 pt-4">
             <Tabs>
                 <Tab
                     name="project-tabs"

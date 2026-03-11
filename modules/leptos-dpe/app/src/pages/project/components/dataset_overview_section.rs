@@ -45,7 +45,7 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
                 .then(|| {
                     view! {
                         <div class="scroll-mt-52">
-                            <h3 class="text-sm font-semibold text-gray-700 mb-2">"Keywords"</h3>
+                            <h3 class="dpe-subtitle">"Keywords"</h3>
                             <div class="flex flex-wrap gap-1.5">
                                 {all_keywords
                                     .into_iter()

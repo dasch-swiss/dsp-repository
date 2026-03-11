@@ -21,13 +21,16 @@ jobs:
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Generate docker image tag
         id: tag
+        env:
+          COMMIT_SHA: ${{ github.sha }}
         run: |
-          VERSION=$(grep '^version' modules/leptos-dpe/server/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
-          echo "tag=${VERSION}" >> "$GITHUB_OUTPUT"
+          VERSION=$(jq -r '.["modules/leptos-dpe/server"]' .release-please-manifest.json)
+          SHORT_SHA=$(echo "${COMMIT_SHA}" | cut -c1-7)
+          echo "tag=${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
   publish:
     name: Build and publish DPE

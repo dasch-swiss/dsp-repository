@@ -21,12 +21,12 @@ jobs:
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Generate docker image tag
         id: tag
         run: |
-          VERSION=$(grep '^version' modules/mosaic/demo/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
+          VERSION=$(grep -m1 '^version' modules/mosaic/demo/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
           SHORT_SHA=$(git rev-parse --short HEAD)
           echo "tag=${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 

@@ -56,7 +56,7 @@ pub const SUPPORTED_PREFIXES: [&str; 2] = ["oai_dc", "oai_datacite"];
 
 /// Main OAI-PMH handler that dispatches to verb-specific handlers.
 pub async fn oai_handler(Query(params): Query<OaiParams>) -> impl IntoResponse {
-    let data_dir = get_data_root_dir();
+    let data_dir = get_data_dir();
     let repo = FsProjectRepository::new(data_dir.clone());
     let record_repo = FsRecordRepository::new(data_dir);
 

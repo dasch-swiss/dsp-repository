@@ -144,6 +144,7 @@ fn main() {
                 .join("components")
                 .join(feature)
                 .join(format!("{}.css", &feature));
+            println!("cargo:rerun-if-changed={}", feature_css.display());
             bundle_css(feature_css, &bundle);
         }
     }

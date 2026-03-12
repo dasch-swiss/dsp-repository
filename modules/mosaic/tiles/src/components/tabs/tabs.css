@@ -28,7 +28,7 @@
 
 /* Tab Panels */
 .tab-panel {
-    @apply hidden p-4;
+    @apply hidden p-4 border-t border-neutral-200;
     width: 100%;
     order: 999;
 }

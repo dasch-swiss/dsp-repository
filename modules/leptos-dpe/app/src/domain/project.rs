@@ -346,6 +346,8 @@ pub struct Project {
     pub data_language: Option<Vec<std::collections::HashMap<String, String>>>,
     pub clusters: Vec<ClusterRef>,
     pub collections: Vec<CollectionRef>,
+    /// Raw collection IDs from JSON, used to resolve `collections` on demand.
+    pub collection_ids: Vec<String>,
     pub records: Option<Vec<String>>,
     pub keywords: Vec<std::collections::HashMap<String, String>>,
     pub disciplines: Vec<Discipline>,
@@ -390,6 +392,7 @@ impl From<ProjectRaw> for Project {
             data_language: raw.data_language,
             clusters: Vec::new(),
             collections: Vec::new(),
+            collection_ids: raw.collections.unwrap_or_default(),
             records: raw.records,
             keywords: raw.keywords,
             disciplines: raw.disciplines,

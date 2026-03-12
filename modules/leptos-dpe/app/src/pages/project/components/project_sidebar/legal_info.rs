@@ -49,45 +49,42 @@ pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
         .iter()
         .map(|info| {
             view! {
-                    <div>
-                        <div class="dpe-subtitle">"License"</div>
-                        {match get_cc_license_info(
-                            &info.license.license_uri,
-                            &info.license.license_identifier,
-                        ) {
-                            Some((img_url, alt_text)) => {
-                                view! {
-                                    <a
-                                        href=info.license.license_uri.clone()
-                                        rel="noopener noreferrer"
-                                        class="block mb-1"
-                                    >
+                <div>
+                    <div class="dpe-subtitle">"License"</div>
+                    {match get_cc_license_info(
+                        &info.license.license_uri,
+                        &info.license.license_identifier,
+                    ) {
+                        Some((img_url, alt_text)) => {
+                            view! {
+                                <a
+                                    href=info.license.license_uri.clone()
+                                    rel="noopener noreferrer"
+                                    class="block mb-1"
+                                >
 
-                                        <img
-                                            src=img_url
-                                            alt=alt_text
-                                            class="h-8"
-                                            title=info.license.license_identifier.clone()
-                                        />
-                                    </a>
-                                }
-                                    .into_any()
+                                    <img
+                                        src=img_url
+                                        alt=alt_text
+                                        class="h-8"
+                                        title=info.license.license_identifier.clone()
+                                    />
+                                </a>
                             }
-                            None => {
-                                let href = info.license.license_uri.clone();
-                                let text = info.license.license_identifier.clone();
-                                view! { <Link href=href>{text}</Link> }.into_any()
-                            }
-                        }}
-                    <div>
-                        "(" {info.license.license_date.clone()} ")"
-                    </div>
-                    </div>
-
+                                .into_any()
+                        }
+                        None => {
+                            let href = info.license.license_uri.clone();
+                            let text = info.license.license_identifier.clone();
+                            view! { <Link href=href>{text}</Link> }.into_any()
+                        }
+                    }}
+                    <div>"(" {info.license.license_date.clone()} ")"</div>
+                </div>
 
                 <div>
                     <h3 class="dpe-subtitle">"Copyright"</h3>
-                        <EntityName id=info.copyright_holder.clone() />
+                    <EntityName id=info.copyright_holder.clone() />
                 </div>
                 <div>
                     {(!info.authorship.is_empty())
@@ -118,18 +115,18 @@ pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
 #[component]
 pub fn ContactSection(ids: Vec<String>) -> impl IntoView {
     view! {
-            <h3 class="dpe-subtitle">"Contact"</h3>
-            <div class="space-y-2">
-                {ids
-                    .into_iter()
-                    .map(|id| {
-                        view! {
-                            <InfoCard>
-                                    <Person person_id=id roles=None show_email=true />
-                            </InfoCard>
-                        }
-                    })
-                    .collect_view()}
+        <h3 class="dpe-subtitle">"Contact"</h3>
+        <div class="space-y-2">
+            {ids
+                .into_iter()
+                .map(|id| {
+                    view! {
+                        <InfoCard>
+                            <Person person_id=id roles=None show_email=true />
+                        </InfoCard>
+                    }
+                })
+                .collect_view()}
         </div>
     }
 }

@@ -1,16 +1,21 @@
+use std::time::Duration;
+
 use leptos::prelude::*;
 use mosaic_tiles::icon::{Icon, IconSearch};
 
 use crate::domain::list_projects;
 
+const DEBOUNCE_MS: u64 = 300;
+
 #[island]
 pub fn ProjectSearchInput() -> impl IntoView {
     let (value, set_value) = signal(String::new());
+    let (debounced_value, set_debounced_value) = signal(String::new());
     let (focused, set_focused) = signal(false);
-    let show_dropdown = Memo::new(move |_| !value.get().is_empty() && focused.get());
+    let show_dropdown = Memo::new(move |_| !debounced_value.get().is_empty() && focused.get());
 
     let results = Resource::new(
-        move || value.get(),
+        move || debounced_value.get(),
         |search| async move {
             let search_opt = if search.is_empty() { None } else { Some(search) };
             list_projects(None, None, search_opt, None, Some(5), None, None, None).await
@@ -28,7 +33,12 @@ pub fn ProjectSearchInput() -> impl IntoView {
                         class="grow"
                         prop:value=move || value.get()
                         on:input=move |ev| {
-                            set_value.set(event_target_value(&ev));
+                            let v = event_target_value(&ev);
+                            set_value.set(v.clone());
+                            set_timeout(
+                                move || set_debounced_value.set(v),
+                                Duration::from_millis(DEBOUNCE_MS),
+                            );
                         }
                         on:focus=move |_| set_focused.set(true)
                         on:blur=move |_| set_focused.set(false)
@@ -44,7 +54,7 @@ pub fn ProjectSearchInput() -> impl IntoView {
                             view! { <p class="text-sm px-2 py-1">"Loading..."</p> }
                         }>
                             {move || {
-                                let query = value.get();
+                                let query = debounced_value.get();
                                 results
                                     .get()
                                     .map(|res| match res {

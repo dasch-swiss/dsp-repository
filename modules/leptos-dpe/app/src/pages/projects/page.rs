@@ -20,43 +20,9 @@ pub fn ProjectsPage() -> impl IntoView {
     let available_languages = Resource::new(|| (), |_| async { list_data_languages().await });
 
     let cq = current_query.clone();
-    let type_items = move || {
-        available_types
-            .get()
-            .and_then(|r| r.ok())
-            .unwrap_or_default()
-            .into_iter()
-            .map(|t| {
-                let checked = cq.type_of_data().contains(&t);
-                let href = format!("/projects{}", cq.with_type_of_data_toggled(&t).to_query_string());
-                (t, checked, href)
-            })
-            .collect::<Vec<_>>()
-    };
-
     let cq2 = current_query.clone();
-    let language_items = move || {
-        available_languages
-            .get()
-            .and_then(|r| r.ok())
-            .unwrap_or_default()
-            .into_iter()
-            .map(|l| {
-                let checked = cq2.data_language().contains(&l);
-                let href =
-                    format!("/projects{}", cq2.with_data_language_toggled(&l).to_query_string());
-                (l, checked, href)
-            })
-            .collect::<Vec<_>>()
-    };
-
-    let type_items_data = type_items();
-    let language_items_data = language_items();
-
     let status_items_mobile = status_items.clone();
     let access_rights_items_mobile = access_rights_items.clone();
-    let type_items_mobile = type_items_data.clone();
-    let language_items_mobile = language_items_data.clone();
 
     let dialog_open = current_query.dialog.unwrap_or(false);
     let open_dialog_href =
@@ -68,12 +34,46 @@ pub fn ProjectsPage() -> impl IntoView {
         <div class="flex gap-4">
             <div class="hidden lg:block lg:w-72 2xl:w-80 flex-shrink-0">
                 <Suspense>
-                    <ProjectFilters
-                        status_items=status_items
-                        type_of_data_items=type_items_data
-                        data_language_items=language_items_data
-                        access_rights_items=access_rights_items
-                    />
+                    {move || {
+                        let type_of_data = cq.type_of_data();
+                        let data_language = cq.data_language();
+                        let type_of_data_items = available_types
+                            .get()
+                            .and_then(|r| r.ok())
+                            .unwrap_or_default()
+                            .into_iter()
+                            .map(|t| {
+                                let checked = type_of_data.contains(&t);
+                                let href = format!(
+                                    "/projects{}",
+                                    cq.with_type_of_data_toggled(&t).to_query_string(),
+                                );
+                                (t, checked, href)
+                            })
+                            .collect::<Vec<_>>();
+                        let data_language_items = available_languages
+                            .get()
+                            .and_then(|r| r.ok())
+                            .unwrap_or_default()
+                            .into_iter()
+                            .map(|l| {
+                                let checked = data_language.contains(&l);
+                                let href = format!(
+                                    "/projects{}",
+                                    cq.with_data_language_toggled(&l).to_query_string(),
+                                );
+                                (l, checked, href)
+                            })
+                            .collect::<Vec<_>>();
+                        view! {
+                            <ProjectFilters
+                                status_items=status_items.clone()
+                                type_of_data_items=type_of_data_items
+                                data_language_items=data_language_items
+                                access_rights_items=access_rights_items.clone()
+                            />
+                        }
+                    }}
                 </Suspense>
             </div>
 
@@ -86,15 +86,49 @@ pub fn ProjectsPage() -> impl IntoView {
                             </div>
                             <div class="lg:hidden">
                                 <Suspense>
-                                    <MobileFiltersButton
-                                        status_items=status_items_mobile
-                                        type_of_data_items=type_items_mobile
-                                        data_language_items=language_items_mobile
-                                        access_rights_items=access_rights_items_mobile
-                                        dialog_open=dialog_open
-                                        open_dialog_href=open_dialog_href
-                                        close_dialog_href=close_dialog_href
-                                    />
+                                    {move || {
+                                        let type_of_data = cq2.type_of_data();
+                                        let data_language = cq2.data_language();
+                                        let type_of_data_items = available_types
+                                            .get()
+                                            .and_then(|r| r.ok())
+                                            .unwrap_or_default()
+                                            .into_iter()
+                                            .map(|t| {
+                                                let checked = type_of_data.contains(&t);
+                                                let href = format!(
+                                                    "/projects{}",
+                                                    cq2.with_type_of_data_toggled(&t).to_query_string(),
+                                                );
+                                                (t, checked, href)
+                                            })
+                                            .collect::<Vec<_>>();
+                                        let data_language_items = available_languages
+                                            .get()
+                                            .and_then(|r| r.ok())
+                                            .unwrap_or_default()
+                                            .into_iter()
+                                            .map(|l| {
+                                                let checked = data_language.contains(&l);
+                                                let href = format!(
+                                                    "/projects{}",
+                                                    cq2.with_data_language_toggled(&l).to_query_string(),
+                                                );
+                                                (l, checked, href)
+                                            })
+                                            .collect::<Vec<_>>();
+                                        view! {
+                                            <MobileFiltersButton
+                                                status_items=status_items_mobile.clone()
+                                                type_of_data_items=type_of_data_items
+                                                data_language_items=data_language_items
+                                                access_rights_items=access_rights_items_mobile.clone()
+                                                dialog_open=dialog_open
+                                                open_dialog_href=open_dialog_href.clone()
+                                                close_dialog_href=close_dialog_href.clone()
+                                            />
+                                        }
+                                    }}
                                 </Suspense>
                             </div>
                         </div>

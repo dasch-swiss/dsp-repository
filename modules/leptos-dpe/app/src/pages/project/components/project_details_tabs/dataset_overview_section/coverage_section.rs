@@ -13,9 +13,7 @@ pub fn CoverageSection(
             .then(|| {
                 view! {
                     <div>
-                        <h3 class="dpe-subtitle">
-                            "Temporal Coverage"
-                        </h3>
+                        <h3 class="dpe-subtitle">"Temporal Coverage"</h3>
                         <div class="flex flex-wrap gap-1.5">
                             {temporal_coverage
                                 .iter()

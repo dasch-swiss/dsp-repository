@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::domain::get_project;
+use crate::domain::{get_contributors, get_project};
 use crate::pages::project::components::project_details::ProjectDetails;
 
 /// ProjectLoader component that handles loading and error states for project data.
@@ -14,10 +14,17 @@ pub fn ProjectLoader(
 ) -> impl IntoView {
     let shortcode_for_error = shortcode.clone();
 
-    // Create resource that loads project data
+    // Load project and contributors in a single resource so they resolve together.
     let resource = Resource::new(
         move || shortcode.clone(),
-        |shortcode| async move { get_project(shortcode).await },
+        |shortcode| async move {
+            let proj = get_project(shortcode).await?;
+            let contributors = match &proj {
+                Some(p) => get_contributors(p.attributions.clone()).await.unwrap_or_default(),
+                None => vec![],
+            };
+            Ok::<_, leptos::server_fn::error::ServerFnError>((proj, contributors))
+        },
     );
 
     view! {
@@ -25,8 +32,10 @@ pub fn ProjectLoader(
             resource
                 .get()
                 .map(|result| match result {
-                    Ok(Some(proj)) => view! { <ProjectDetails proj=proj /> }.into_any(),
-                    Ok(None) => {
+                    Ok((Some(proj), contributors)) => {
+                        view! { <ProjectDetails proj=proj contributors=contributors /> }.into_any()
+                    }
+                    Ok((None, _)) => {
                         view! {
                             <div class="text-center py-12">
                                 <h1 class="font-display text-3xl font-bold mb-4">

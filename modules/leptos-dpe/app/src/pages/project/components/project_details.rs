@@ -1,13 +1,13 @@
 use leptos::prelude::*;
 
-use crate::domain::{lang_value, Project};
+use crate::domain::{lang_value, Project, ResolvedContributor};
 use crate::pages::project::components::breadcrumb::Breadcrumb;
 use crate::pages::project::components::project_sidebar::ProjectSidebar;
 use crate::pages::project::components::project_details_tabs::ProjectDetailsTabs;
 use crate::pages::project::components::project_header::ProjectHeader;
 
 #[component]
-pub fn ProjectDetails(proj: Project) -> impl IntoView {
+pub fn ProjectDetails(proj: Project, contributors: Vec<ResolvedContributor>) -> impl IntoView {
     view! {
         <div class="space-y-6">
             <Breadcrumb project_name=proj.name.clone() />
@@ -28,7 +28,7 @@ pub fn ProjectDetails(proj: Project) -> impl IntoView {
             />
 
             <div class="flex flex-col lg:flex-row gap-6 lg:items-start">
-                <ProjectDetailsTabs proj=proj.clone() attributions=proj.attributions.clone() />
+                <ProjectDetailsTabs proj=proj.clone() contributors=contributors />
                 <ProjectSidebar proj=proj />
             </div>
         </div>

@@ -16,7 +16,11 @@ pub fn ProjectFiltersContent(
         || access_rights_items.iter().any(|(_, checked, _)| *checked);
 
     view! {
-        <div class=if dialog_open { "flex flex-col justify-between mb-4" } else { "flex items-center justify-between" }>
+        <div class=if dialog_open {
+            "flex flex-col justify-between mb-4"
+        } else {
+            "flex items-center justify-between"
+        }>
             <h4 class="dpe-title">"Filters"</h4>
             {if any_filter_active {
                 view! {

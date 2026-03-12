@@ -6,13 +6,13 @@ use leptos::prelude::*;
 use mosaic_tiles::icon::{Document, Info, People};
 use mosaic_tiles::tabs::{Tab, Tabs};
 
-use crate::domain::{lang_value, Attribution, Project};
+use crate::domain::{lang_value, Project, ResolvedContributor};
 use attributions_section::AttributionsSection;
 use dataset_overview_section::DatasetOverviewSection;
 use publication_tab::PublicationTab;
 
 #[component]
-pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl IntoView {
+pub fn ProjectDetailsTabs(proj: Project, contributors: Vec<ResolvedContributor>) -> impl IntoView {
     let abstract_en = proj.abstract_text.as_ref().and_then(|m| lang_value(m).cloned());
     let publications = proj.publications.clone();
     let has_publications_tab = abstract_en.is_some() || publications.as_ref().map(|p| !p.is_empty()).unwrap_or(false);
@@ -43,7 +43,7 @@ pub fn ProjectDetailsTabs(proj: Project, attributions: Vec<Attribution>) -> impl
                         }
                     })}
                 <Tab name="project-tabs" value="contributors" label="Contributors" icon=People>
-                    <AttributionsSection attributions=attributions />
+                    <AttributionsSection contributors=contributors />
                 </Tab>
             </Tabs>
         </div>

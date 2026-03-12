@@ -47,8 +47,16 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
             <TypeOfDataSection type_of_data=proj.type_of_data.clone() />
 
             <DataLanguageSection data_languages=data_languages />
-            {proj.data_publication_year.clone().map(|year| view! {
-                <div><PublicationYear year=year /></div> })}
+            {proj
+                .data_publication_year
+                .clone()
+                .map(|year| {
+                    view! {
+                        <div>
+                            <PublicationYear year=year />
+                        </div>
+                    }
+                })}
 
             {(!all_keywords.is_empty())
                 .then(|| {

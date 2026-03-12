@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecordLicense {
     #[serde(rename = "licenseIdentifier")]
     pub license_identifier: String,
@@ -17,7 +17,7 @@ pub struct RecordLicense {
     pub license_uri: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecordLegalInfo {
     pub license: RecordLicense,
     #[serde(rename = "copyrightHolder")]
@@ -25,7 +25,7 @@ pub struct RecordLegalInfo {
     pub authorship: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Record {
     pub id: String,
     pub pid: String,
@@ -69,6 +69,8 @@ pub fn record_datestamp(record: &Record) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use super::*;
 
     fn a_json() -> &'static str {
@@ -104,20 +106,46 @@ mod tests {
 
     #[test]
     fn deserialise_a_json() {
-        let record: Record = serde_json::from_str(a_json()).expect("deserialise");
-        assert_eq!(record.id, "record-0001");
-        assert_eq!(record.pid, "https://ark.dasch.swiss/ark:/72163/1/record-0001");
-        assert_eq!(record.label.get("en").unwrap(), "Survey Responses on Rural Land Use, 1920–1950");
-        assert_eq!(record.access_rights, "Full Open Access");
-        assert_eq!(record.legal_info.license.license_identifier, "CC-BY-4.0");
-        assert_eq!(record.legal_info.copyright_holder, "University of Basel");
-        assert_eq!(record.legal_info.authorship, vec!["Dr. Anna Müller", "Prof. Hans Bauer"]);
-        assert_eq!(record.date_created, "2024-01-15");
-        assert_eq!(record.date_modified, "2024-06-30");
-        assert_eq!(record.date_published, "2024-02-01");
-        assert_eq!(record.type_of_data, "Text");
-        assert_eq!(record.size, "2.3 GB");
-        assert_eq!(record.keywords.len(), 4);
+        let actual: Record = serde_json::from_str(a_json()).expect("deserialise");
+
+        let expected = Record {
+            id: "record-0001".to_string(),
+            pid: "https://ark.dasch.swiss/ark:/72163/1/record-0001".to_string(),
+            label: HashMap::from([
+                ("en".to_string(), "Survey Responses on Rural Land Use, 1920–1950".to_string()),
+                ("de".to_string(), "Umfrageantworten zur ländlichen Landnutzung, 1920–1950".to_string()),
+            ]),
+            access_rights: "Full Open Access".to_string(),
+            legal_info: RecordLegalInfo {
+                license: RecordLicense {
+                    license_identifier: "CC-BY-4.0".to_string(),
+                    license_date: "2024-01-15".to_string(),
+                    license_uri: "https://creativecommons.org/licenses/by/4.0/".to_string(),
+                },
+                copyright_holder: "University of Basel".to_string(),
+                authorship: vec!["Dr. Anna Müller".to_string(), "Prof. Hans Bauer".to_string()],
+            },
+            how_to_cite: "Müller, A. & Bauer, H. (2024). Survey Responses on Rural Land Use, 1920–1950 [Data record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/record-0001".to_string(),
+            publisher: "DaSCH".to_string(),
+            source: "Swiss Federal Archives, Fond E7350, 1920–1950".to_string(),
+            description: HashMap::from([
+                ("en".to_string(), "A collection of survey responses documenting rural land use patterns across Swiss cantons between 1920 and 1950.".to_string()),
+                ("de".to_string(), "Eine Sammlung von Umfrageantworten zur Dokumentation ländlicher Landnutzungsmuster in Schweizer Kantonen zwischen 1920 und 1950.".to_string()),
+            ]),
+            date_created: "2024-01-15".to_string(),
+            date_modified: "2024-06-30".to_string(),
+            date_published: "2024-02-01".to_string(),
+            type_of_data: "Text".to_string(),
+            size: "2.3 GB".to_string(),
+            keywords: vec![
+                HashMap::from([("en".to_string(), "land use".to_string())]),
+                HashMap::from([("en".to_string(), "rural history".to_string())]),
+                HashMap::from([("de".to_string(), "Landwirtschaft".to_string())]),
+                HashMap::from([("en".to_string(), "Switzerland".to_string())]),
+            ],
+        };
+
+        assert_eq!(actual, expected);
     }
 
     #[test]

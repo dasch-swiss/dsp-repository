@@ -1,0 +1,39 @@
+{
+    "id": "record-0001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/record-0001",
+    "label": {
+      "en": "Survey Responses on Rural Land Use, 1920–1950",
+      "de": "Umfrageantworten zur ländlichen Landnutzung, 1920–1950"
+    },
+    "accessRights": "Full Open Access",
+    "legalInfo": {
+      "license": {
+        "licenseIdentifier": "CC-BY-4.0",
+        "licenseDate": "2024-01-15",
+        "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "copyrightHolder": "University of Basel",
+      "authorship": [
+        "Dr. Anna Müller",
+        "Prof. Hans Bauer"
+      ]
+    },
+    "howToCite": "Müller, A. & Bauer, H. (2024). Survey Responses on Rural Land Use, 1920–1950 [Data record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/record-0001",
+    "publisher": "DaSCH",
+    "source": "Swiss Federal Archives, Fond E7350, 1920–1950",
+    "description": {
+      "en": "A collection of survey responses documenting rural land use patterns across Swiss cantons between 1920 and 1950.",
+      "de": "Eine Sammlung von Umfrageantworten zur Dokumentation ländlicher Landnutzungsmuster in Schweizer Kantonen zwischen 1920 und 1950."
+    },
+    "dateCreated": "2024-01-15",
+    "dateModified": "2024-06-30",
+    "datePublished": "2024-02-01",
+    "typeOfData": "Text",
+    "size": "2.3 GB",
+    "keywords": [
+      { "en": "land use" },
+      { "en": "rural history" },
+      { "de": "Landwirtschaft" },
+      { "en": "Switzerland" }
+    ]
+  }

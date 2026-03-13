@@ -47,7 +47,7 @@ jobs:
   trigger-dev-deployment:
     name: Trigger deployment to DEV
     runs-on: ubuntu-latest
-    needs: compute-tag
+    needs: publish
     steps:
       - name: Trigger deployment to DEV
         env:

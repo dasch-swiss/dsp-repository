@@ -47,11 +47,11 @@ jobs:
   trigger-dev-deployment:
     name: Trigger deployment to DEV
     runs-on: ubuntu-latest
-    needs: compute-tag
+    needs: publish
     steps:
       - name: Trigger deployment to DEV
         env:
-          IMAGE_TAG: ${{ needs.compute-tag.outputs.tag }}
+          IMAGE_TAG: ${{ needs.publish.outputs.tag }}
           JENKINS_BASIC_AUTH_USER: ${{ secrets.JENKINS_BASIC_AUTH_USER }}
           JENKINS_BASIC_AUTH_PASS: ${{ secrets.JENKINS_BASIC_AUTH_PASS }}
           JENKINS_UPDATE_RELEASE_WEBHOOK: ${{ secrets.JENKINS_UPDATE_DPE_DEV_WEBHOOK }}

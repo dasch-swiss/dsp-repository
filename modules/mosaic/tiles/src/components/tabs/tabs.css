@@ -1,49 +1,49 @@
 /* Tabs Container */
 .tabs {
-  @apply w-full border-b border-neutral-200;
-  display: flex;
-  flex-wrap: wrap;
-  position: relative;
+    @apply w-full;
+    display: flex;
+    flex-wrap: wrap;
+    position: relative;
 }
 
 /* Hide radio inputs */
 .tab-input {
-  @apply sr-only;
+    @apply sr-only;
 }
 
 /* Tab Labels (the clickable tab buttons) */
 .tab-label {
-  @apply flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-neutral-600 cursor-pointer transition-colors border-b-2 border-transparent hover:text-neutral-950 hover:border-neutral-400 whitespace-nowrap -mb-px mr-4 select-none;
+    @apply flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-neutral-600 cursor-pointer transition-colors border-b-2 border-transparent hover:text-neutral-950 hover:border-neutral-400 whitespace-nowrap -mb-px mr-4 select-none;
 }
 
 /* Active tab label (underlined style) */
 .tab-input:checked + .tab-label {
-  @apply text-primary-600 border-primary-600;
+    @apply text-primary-600 border-primary-600;
 }
 
 /* Tab icon */
 .tab-icon {
-  @apply w-5 h-5;
+    @apply w-5 h-5;
 }
 
 /* Tab Panels */
 .tab-panel {
-  @apply hidden p-4 border-t border-neutral-200;
-  width: 100%;
-  order: 999;
+    @apply hidden p-4 border-t border-neutral-200;
+    width: 100%;
+    order: 999;
 }
 
 /* Show panel when corresponding radio is checked */
 .tab-input:checked + .tab-label + .tab-panel {
-  @apply block;
+    @apply block;
 }
 
 /* Focus styles for accessibility */
 .tab-input:focus-visible + .tab-label {
-  @apply outline outline-2 outline-offset-2 outline-primary-600;
+    @apply outline outline-2 outline-offset-2 outline-primary-600;
 }
 
 /* Disabled state (if needed in the future) */
 .tab-input:disabled + .tab-label {
-  @apply opacity-50 cursor-not-allowed;
+    @apply opacity-50 cursor-not-allowed;
 }

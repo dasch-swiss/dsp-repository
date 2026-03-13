@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use mosaic_tiles::button::ButtonVariant;
+use mosaic_tiles::icon::{Icon, IconChevronLeft, IconChevronRight};
 use mosaic_tiles::link::Link;
 
 use crate::domain::ProjectQuery;
@@ -13,8 +14,7 @@ pub fn ProjectPagination(nr_pages: i32, query: ProjectQuery) -> impl IntoView {
     let is_last_page = current_page >= nr_pages;
 
     // Helper closure to build page URLs
-    let build_page_url =
-        |page: i32| format!("/projects{}", query.clone().with_page(page).to_query_string());
+    let build_page_url = |page: i32| format!("/projects{}", query.clone().with_page(page).to_query_string());
 
     // Pre-compute navigation URLs
     let prev_url = build_page_url(current_page - 1);
@@ -24,7 +24,7 @@ pub fn ProjectPagination(nr_pages: i32, query: ProjectQuery) -> impl IntoView {
         <nav role="navigation" aria-label="Pagination">
             <div class="flex items-center justify-center gap-2">
                 <Link href=prev_url as_button=ButtonVariant::Outline disabled=is_first_page>
-                    "«"
+                    <Icon icon=IconChevronLeft class="w-3 h-3" />
                 </Link>
                 {(1..=nr_pages)
                     .map(|page| {
@@ -43,7 +43,7 @@ pub fn ProjectPagination(nr_pages: i32, query: ProjectQuery) -> impl IntoView {
                     })
                     .collect_view()}
                 <Link href=next_url as_button=ButtonVariant::Outline disabled=is_last_page>
-                    "»"
+                    <Icon icon=IconChevronRight class="w-3 h-3" />
                 </Link>
             </div>
         </nav>

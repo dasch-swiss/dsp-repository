@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 use leptos::prelude::*;
 use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::components::*;
@@ -53,7 +54,7 @@ pub fn App() -> impl IntoView {
                 <Header />
 
                 <Router>
-                    <main class="flex-1 max-w-7xl mx-auto px-4 w-full">
+                    <main class="flex-1 dpe-max-layout-width mx-auto px-4 w-full">
                         <Routes fallback=|| "Page not found.".into_view()>
                             <Route
                                 path=StaticSegment("")

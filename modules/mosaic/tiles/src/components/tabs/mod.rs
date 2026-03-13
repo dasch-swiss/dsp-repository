@@ -44,7 +44,7 @@ pub fn Tabs(
     children: Option<Children>,
 ) -> impl IntoView {
     view! {
-        <div class="tabs">
+        <div class="tabs" style="border-width: 0">
             {if let Some(children) = children {
                 Either::Left(children())
             } else {

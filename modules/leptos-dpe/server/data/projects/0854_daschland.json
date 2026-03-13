@@ -1,264 +1,267 @@
 {
-    "id": "0854",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/0854",
-    "name": "Alice in DaSCHland",
-    "shortcode": "0854",
-    "officialName": "Research Project: Alice in DaSCHland",
-    "status": "Ongoing",
-    "shortDescription": "Alice in DaSCHland whisks you away on a whimsical digital journey where data and metadata spark fantastical adventures - showcase project from DaSCH!",
-    "description": {
-        "en": "Alice in DaSCHland is the showcase project from DaSCH that reimagines Alice’s adventures through a digital lens. The project blends literary elements with advanced data management systems, offering users a unique exploration of data curation, visualization, and retrieval in a surreal narrative landscape.",
-        "fr": "Alice in DaSCHland est le projet vitrine de DaSCH qui réimagine les aventures d'Alice à travers une perspective numérique. Le projet mélange des éléments littéraires avec des systèmes de gestion de données avancés, offrant aux utilisateurs une exploration unique de la préservation, de la visualisation et de la recherche de données dans un paysage narratif surréaliste."
+  "id": "0854",
+  "pid": "https://ark.dasch.swiss/ark:/72163/1/0854",
+  "name": "Alice in DaSCHland",
+  "shortcode": "0854",
+  "officialName": "Research Project: Alice in DaSCHland",
+  "status": "Ongoing",
+  "shortDescription": "Alice in DaSCHland whisks you away on a whimsical digital journey where data and metadata spark fantastical adventures - showcase project from DaSCH!",
+  "description": {
+    "en": "Alice in DaSCHland is the showcase project from DaSCH that reimagines Alice’s adventures through a digital lens. The project blends literary elements with advanced data management systems, offering users a unique exploration of data curation, visualization, and retrieval in a surreal narrative landscape.",
+    "fr": "Alice in DaSCHland est le projet vitrine de DaSCH qui réimagine les aventures d'Alice à travers une perspective numérique. Le projet mélange des éléments littéraires avec des systèmes de gestion de données avancés, offrant aux utilisateurs une exploration unique de la préservation, de la visualisation et de la recherche de données dans un paysage narratif surréaliste."
+  },
+  "startDate": "2024-01-01",
+  "endDate": "2028-12-31",
+  "url": [
+    "https://app.dasch.swiss/project/0854"
+  ],
+  "howToCite": "DaSCH Team (2025). Alice in DaSCHland [Database]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854.",
+  "accessRights": {
+    "accessRights": "Open Access with Restrictions"
+  },
+  "legalInfo": [
+    {
+      "license": {
+        "licenseIdentifier": "CC BY 4.0",
+        "licenseDate": "2025-02-01",
+        "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "copyrightHolder": "0854-organization-000",
+      "authorship": [
+        "0854-person-000",
+        "0854-person-001"
+      ]
+    }
+  ],
+  "clusters": [
+    "cluster-004"
+  ],
+  "dataManagementPlan": "not accessible",
+  "typeOfData": [
+    "Audio",
+    "Image",
+    "Text",
+    "Video",
+    "XML"
+  ],
+  "dataLanguage": [
+    {
+      "de": "Deutsch",
+      "en": "German",
+      "fr": "allemand"
     },
-    "startDate": "2024-01-01",
-    "endDate": "2028-12-31",
-    "url": [
-        "https://app.dasch.swiss/project/0854"
-    ],
-    "howToCite": "DaSCH Team (2025). Alice in DaSCHland [Database]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0854.",
-    "accessRights": {
-        "accessRights": "Open Access with Restrictions"
+    {
+      "de": "Englisch",
+      "en": "English",
+      "fr": "anglais"
     },
-    "legalInfo": [
-        {
-            "license": {
-                "licenseIdentifier": "CC BY 4.0",
-                "licenseDate": "2025-02-01",
-                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
-            },
-            "copyrightHolder": "0854-organization-000",
-            "authorship": [
-                "0854-person-000",
-                "0854-person-001"
-            ]
-        }
-    ],
-    "dataManagementPlan": "not accessible",
-    "typeOfData": [
-        "Audio",
-        "Image",
-        "Text",
-        "Video",
-        "XML"
-    ],
-    "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        },
-        {
-            "de": "Italienisch",
-            "en": "Italian",
-            "fr": "italien"
-        }
-    ],
-    "keywords": [
-        {
-            "en": "Alice in Wonderland"
-        },
-        {
-            "en": "DaSCH"
-        },
-        {
-            "en": "Data"
-        },
-        {
-            "en": "Data Visualization"
-        },
-        {
-            "en": "Digital Humanities"
-        },
-        {
-            "en": "Humanities"
-        },
-        {
-            "en": "Metadata"
-        },
-        {
-            "en": "Showcase Project"
-        },
-        {
-            "fr": "Alice au pays des merveilles"
-        },
-        {
-            "fr": "Données"
-        },
-        {
-            "fr": "Visualisation des données"
-        },
-        {
-            "fr": "Humanités numériques"
-        },
-        {
-            "fr": "Science humaines"
-        },
-        {
-            "fr": "Métadonnées"
-        },
-        {
-            "fr": "Projet de démonstration"
-        },
-        {
-            "de": "Alice im Wunderland"
-        },
-        {
-            "de": "Daten"
-        },
-        {
-            "de": "Datenvisualisierung"
-        },
-        {
-            "de": "Geisteswissenschaften"
-        },
-        {
-            "de": "Metadaten"
-        },
-        {
-            "de": "Vorzeigeprojekt"
-        }
-    ],
-    "disciplines": [
-        {
-            "type": "Skos",
-            "url": "http://skos.um.es/unescothes/C03636",
-            "text": "Short stories"
-        },
-        {
-            "en": "10501 German and English languages and literature"
-        }
-    ],
-    "temporalCoverage": [
-        {
-            "de": "2024-2025",
-            "en": "2024-2025",
-            "fr": "2024-2025"
-        }
-    ],
-    "spatialCoverage": [
-        {
-            "type": "Geonames",
-            "url": "https://www.geonames.org/2661604/basel.html",
-            "text": "Basel"
-        }
-    ],
-    "attributions": [
-        {
-            "contributor": "0854-person-000",
-            "contributorType": [
-                "Contributor"
-            ]
-        },
-        {
-            "contributor": "0854-person-001",
-            "contributorType": [
-                "Contributor"
-            ]
-        }
-    ],
-    "contactPoint": [
+    {
+      "de": "Französisch",
+      "en": "French",
+      "fr": "français"
+    },
+    {
+      "de": "Italienisch",
+      "en": "Italian",
+      "fr": "italien"
+    }
+  ],
+  "keywords": [
+    {
+      "en": "Alice in Wonderland"
+    },
+    {
+      "en": "DaSCH"
+    },
+    {
+      "en": "Data"
+    },
+    {
+      "en": "Data Visualization"
+    },
+    {
+      "en": "Digital Humanities"
+    },
+    {
+      "en": "Humanities"
+    },
+    {
+      "en": "Metadata"
+    },
+    {
+      "en": "Showcase Project"
+    },
+    {
+      "fr": "Alice au pays des merveilles"
+    },
+    {
+      "fr": "Données"
+    },
+    {
+      "fr": "Visualisation des données"
+    },
+    {
+      "fr": "Humanités numériques"
+    },
+    {
+      "fr": "Science humaines"
+    },
+    {
+      "fr": "Métadonnées"
+    },
+    {
+      "fr": "Projet de démonstration"
+    },
+    {
+      "de": "Alice im Wunderland"
+    },
+    {
+      "de": "Daten"
+    },
+    {
+      "de": "Datenvisualisierung"
+    },
+    {
+      "de": "Geisteswissenschaften"
+    },
+    {
+      "de": "Metadaten"
+    },
+    {
+      "de": "Vorzeigeprojekt"
+    }
+  ],
+  "disciplines": [
+    {
+      "type": "Skos",
+      "url": "http://skos.um.es/unescothes/C03636",
+      "text": "Short stories"
+    },
+    {
+      "en": "10501 German and English languages and literature"
+    }
+  ],
+  "temporalCoverage": [
+    {
+      "de": "2024-2025",
+      "en": "2024-2025",
+      "fr": "2024-2025"
+    }
+  ],
+  "spatialCoverage": [
+    {
+      "type": "Geonames",
+      "url": "https://www.geonames.org/2661604/basel.html",
+      "text": "Basel"
+    }
+  ],
+  "attributions": [
+    {
+      "contributor": "0854-person-000",
+      "contributorType": [
+        "Contributor"
+      ]
+    },
+    {
+      "contributor": "0854-person-001",
+      "contributorType": [
+        "Contributor"
+      ]
+    }
+  ],
+  "contactPoint": [
+    "0854-organization-000"
+  ],
+  "funding": [
+    {
+      "funders": [
         "0854-organization-000"
-    ],
-    "funding": [
-        {
-            "funders": [
-                "0854-organization-000"
-            ],
-            "name": "DaSCH",
-            "url": "https://www.dasch.swiss/"
-        }
-    ],
-    "collections": [
-        "collection-006",
-        "collection-007"
-    ],
-    "records": [
-        "0854-record-001",
-        "0854-record-002",
-        "0854-record-003",
-        "0854-record-004",
-        "0854-record-005",
-        "0854-record-006",
-        "0854-record-007",
-        "0854-record-008",
-        "0854-record-009",
-        "0854-record-010",
-        "0854-record-011",
-        "0854-record-012",
-        "0854-record-013",
-        "0854-record-014",
-        "0854-record-015",
-        "0854-record-016",
-        "0854-record-017",
-        "0854-record-018",
-        "0854-record-019",
-        "0854-record-020",
-        "0854-record-021",
-        "0854-record-022",
-        "0854-record-023",
-        "0854-record-024",
-        "0854-record-025",
-        "0854-record-026",
-        "0854-record-027",
-        "0854-record-028",
-        "0854-record-029",
-        "0854-record-030",
-        "0854-record-031",
-        "0854-record-032",
-        "0854-record-033",
-        "0854-record-034",
-        "0854-record-035",
-        "0854-record-036",
-        "0854-record-037",
-        "0854-record-038",
-        "0854-record-039",
-        "0854-record-040",
-        "0854-record-041",
-        "0854-record-042",
-        "0854-record-043",
-        "0854-record-044",
-        "0854-record-045",
-        "0854-record-046",
-        "0854-record-047",
-        "0854-record-048",
-        "0854-record-049",
-        "0854-record-050",
-        "0854-record-051",
-        "0854-record-052",
-        "0854-record-053",
-        "0854-record-054",
-        "0854-record-055",
-        "0854-record-056",
-        "0854-record-057",
-        "0854-record-058",
-        "0854-record-059",
-        "0854-record-060",
-        "0854-record-061",
-        "0854-record-062",
-        "0854-record-063",
-        "0854-record-064",
-        "0854-record-065",
-        "0854-record-066",
-        "0854-record-067",
-        "0854-record-068",
-        "0854-record-069",
-        "0854-record-070",
-        "0854-record-071",
-        "0854-record-072",
-        "0854-record-073",
-        "0854-record-074",
-        "0854-record-075",
-        "0854-record-076",
-        "0854-record-077"
-    ]
+      ],
+      "name": "DaSCH",
+      "url": "https://www.dasch.swiss/"
+    }
+  ],
+  "collections": [
+    "collection-006",
+    "collection-007"
+  ],
+  "records": [
+    "0854-record-001",
+    "0854-record-002",
+    "0854-record-003",
+    "0854-record-004",
+    "0854-record-005",
+    "0854-record-006",
+    "0854-record-007",
+    "0854-record-008",
+    "0854-record-009",
+    "0854-record-010",
+    "0854-record-011",
+    "0854-record-012",
+    "0854-record-013",
+    "0854-record-014",
+    "0854-record-015",
+    "0854-record-016",
+    "0854-record-017",
+    "0854-record-018",
+    "0854-record-019",
+    "0854-record-020",
+    "0854-record-021",
+    "0854-record-022",
+    "0854-record-023",
+    "0854-record-024",
+    "0854-record-025",
+    "0854-record-026",
+    "0854-record-027",
+    "0854-record-028",
+    "0854-record-029",
+    "0854-record-030",
+    "0854-record-031",
+    "0854-record-032",
+    "0854-record-033",
+    "0854-record-034",
+    "0854-record-035",
+    "0854-record-036",
+    "0854-record-037",
+    "0854-record-038",
+    "0854-record-039",
+    "0854-record-040",
+    "0854-record-041",
+    "0854-record-042",
+    "0854-record-043",
+    "0854-record-044",
+    "0854-record-045",
+    "0854-record-046",
+    "0854-record-047",
+    "0854-record-048",
+    "0854-record-049",
+    "0854-record-050",
+    "0854-record-051",
+    "0854-record-052",
+    "0854-record-053",
+    "0854-record-054",
+    "0854-record-055",
+    "0854-record-056",
+    "0854-record-057",
+    "0854-record-058",
+    "0854-record-059",
+    "0854-record-060",
+    "0854-record-061",
+    "0854-record-062",
+    "0854-record-063",
+    "0854-record-064",
+    "0854-record-065",
+    "0854-record-066",
+    "0854-record-067",
+    "0854-record-068",
+    "0854-record-069",
+    "0854-record-070",
+    "0854-record-071",
+    "0854-record-072",
+    "0854-record-073",
+    "0854-record-074",
+    "0854-record-075",
+    "0854-record-076",
+    "0854-record-077"
+  ]
 }

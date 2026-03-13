@@ -13,7 +13,7 @@ pub fn Footer() -> impl IntoView {
 
     view! {
         <footer class="bg-slate-800 text-gray-300 py-12">
-            <div class="max-w-7xl mx-auto px-4">
+            <div class="dpe-max-layout-width mx-auto px-4">
                 <nav class="flex flex-wrap justify-center gap-6 mb-8 text-sm">
                     <a
                         class="hover:text-white transition-colors"

@@ -1,3 +1,14 @@
+use std::collections::HashMap;
+
+/// Returns the value for the first available language in the priority order: en → de → fr → it.
+/// Falls back to any available value if none of the preferred languages are present.
+pub fn lang_value(map: &HashMap<String, String>) -> Option<&String> {
+    ["en", "de", "fr", "it"]
+        .iter()
+        .find_map(|lang| map.get(*lang))
+        .or_else(|| map.values().next())
+}
+
 /// Get the data directory path, supporting both development and production environments
 #[allow(dead_code)]
 pub fn get_data_dir() -> String {

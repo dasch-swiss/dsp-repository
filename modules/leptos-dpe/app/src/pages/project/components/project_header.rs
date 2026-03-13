@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use mosaic_tiles::button::ButtonVariant;
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
-use mosaic_tiles::icon::{Export, Icon};
+use mosaic_tiles::icon::{Export, Icon, OpenDocument};
 use mosaic_tiles::link::Link;
 
 use super::description::Description;
@@ -10,25 +10,37 @@ use crate::domain::models::AuthorityFileReference;
 #[component]
 pub fn ProjectHeader(
     name: String,
+    shortcode: String,
     description: String,
     alternative_names: Vec<String>,
     url: Option<AuthorityFileReference>,
     secondary_url: Option<AuthorityFileReference>,
 ) -> impl IntoView {
+    let image_src = format!("/assets/images/{shortcode}.webp");
+    let image_alt = name.clone();
     view! {
         <Card variant=CardVariant::Bordered>
             <figure>
-                <img
-                    class="w-full object-cover"
-                    style="height: 200px"
-                    src="https://dasch.swiss/projects/0854.webp"
-                    alt="Alice from Alice in Wonderland walks through a futuristic arched hall covered in glowing binary code toward a doorway labeled \"DasCHland,\" with plants and computer monitors along the sides."
-                />
+                <div class="overflow-hidden">
+                    <img
+                        src=image_src
+                        alt=image_alt
+                        class="w-full object-cover"
+                        style="height: 200px"
+                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                    />
+                    <div
+                        class="w-full bg-gray-100 items-center justify-center hidden"
+                        style="height: 200px"
+                    >
+                        <Icon icon=OpenDocument class="w-12 h-12 text-gray-300" />
+                    </div>
+                </div>
             </figure>
             <CardBody>
                 <div class="p-8 flex flex-row justify-center">
                     <div class="max-w-3xl">
-                        <h2 class="font-display text-3xl text-ellipsis">{name}</h2>
+                        <h2 class="font-bold text-3xl text-ellipsis">{name}</h2>
                         {(!alternative_names.is_empty())
                             .then(|| {
                                 view! {

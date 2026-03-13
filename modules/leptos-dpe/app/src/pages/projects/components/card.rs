@@ -1,9 +1,10 @@
 use leptos::prelude::*;
 use mosaic_tiles::badge::{Badge, BadgeSize, BadgeVariant};
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
+use mosaic_tiles::icon::{Icon, OpenDocument};
 
 use super::statusbadge::ProjectCardIndicators;
-use crate::domain::{AccessRightsType, ProjectStatus, ProjectView};
+use crate::domain::{AccessRightsType, ProjectStatus};
 
 #[component]
 pub fn ProjectCard(
@@ -12,38 +13,34 @@ pub fn ProjectCard(
     status: ProjectStatus,
     access_rights: AccessRightsType,
     btn_target: String,
-    view: ProjectView,
+    shortcode: String,
     #[prop(optional)] keywords: Vec<String>,
 ) -> impl IntoView {
-    let layout_class = match view {
-        ProjectView::List => "flex flex-row h-full",
-        ProjectView::Grid => "flex flex-col h-full",
-    };
-
-    let figure_style = match view {
-        ProjectView::List => "min-width: 300px; width: 300px;",
-        ProjectView::Grid => "",
-    };
-
+    let image_src = format!("/assets/images/{shortcode}.webp");
     view! {
-        <a href=btn_target class="block h-full">
-            <Card variant=CardVariant::AutoHover class=layout_class>
-                <div class="relative">
-                    <figure class="bg-neutral-900 overflow-hidden" style=figure_style>
+        <a href=btn_target class="block h-full relative hover:z-10">
+            <Card variant=CardVariant::AutoHover class="flex flex-col h-full ![overflow:visible]">
+                <figure class="bg-neutral-900 relative rounded-t-[inherit]">
+                    <div class="overflow-hidden rounded-t-[inherit]">
                         <img
-                            src="https://dasch.swiss/projects/0854.webp"
-                            alt="Alice from Alice in Wonderland walks through a futuristic arched hall covered in glowing binary code toward a doorway labeled \"DasCHland,\" with plants and computer monitors along the sides."
+                            src=image_src
+                            alt=title.clone()
+                            class="w-full h-48 object-cover"
+                            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
                         />
-                    </figure>
+                        <div class="w-full h-48 bg-gray-100 items-center justify-center hidden">
+                            <Icon icon=OpenDocument class="w-12 h-12 text-gray-300" />
+                        </div>
+                    </div>
                     <ProjectCardIndicators status=status access_rights=access_rights />
-                </div>
-
+                </figure>
                 <CardBody>
                     <h2 class="font-display font-semibold text-lg text-ellipsis">{title}</h2>
                     <p class="text-sm text-gray-600 line-clamp-4 mt-2">{content}</p>
                     <div class="flex flex-wrap gap-1 mt-3">
                         {keywords
                             .into_iter()
+                            .take(3)
                             .map(|kw| {
                                 view! {
                                     <Badge variant=BadgeVariant::Secondary size=BadgeSize::Small>

@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct RecordLicense {
     #[serde(rename = "licenseIdentifier")]
     pub license_identifier: String,
@@ -17,7 +17,7 @@ pub struct RecordLicense {
     pub license_uri: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct RecordLegalInfo {
     pub license: RecordLicense,
     #[serde(rename = "copyrightHolder")]

@@ -11,7 +11,7 @@ pub fn ProjectFilters(
     access_rights_items: Vec<(String, bool, String)>,
 ) -> impl IntoView {
     view! {
-        <div class="dpe-card w-full">
+        <div class="dpe-card dpe-small w-full">
             <ProjectFiltersContent
                 status_items=status_items
                 type_of_data_items=type_of_data_items

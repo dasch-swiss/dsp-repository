@@ -48,6 +48,7 @@ pub fn FilterCheckboxGroup(
                                     // pointer-events-none makes the link handle the click
                                     class="w-4 h-4 pointer-events-none"
                                     checked=if checked { Some("") } else { None }
+                                    aria-label=label.clone()
                                 />
                                 <span>{label}</span>
                             </a>

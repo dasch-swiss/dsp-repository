@@ -17,14 +17,13 @@ pub fn ProjectHeader(
     secondary_url: Option<AuthorityFileReference>,
 ) -> impl IntoView {
     let image_src = format!("/assets/images/{shortcode}.webp");
-    let image_alt = name.clone();
     view! {
         <Card variant=CardVariant::Bordered>
             <figure>
                 <div class="overflow-hidden">
                     <img
                         src=image_src
-                        alt=image_alt
+                        alt=name.clone()
                         class="w-full object-cover"
                         style="height: 200px"
                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
@@ -62,7 +61,6 @@ pub fn ProjectHeader(
                                 .map(|u| {
                                     let label = u
                                         .text
-                                        .clone()
                                         .unwrap_or_else(|| "Discover Project Data".to_string());
                                     view! {
                                         <Link href=u.url as_button=ButtonVariant::Primary>
@@ -75,7 +73,6 @@ pub fn ProjectHeader(
                                 .map(|u| {
                                     let label = u
                                         .text
-                                        .clone()
                                         .unwrap_or_else(|| "External Project Website".to_string());
                                     view! {
                                         <Link href=u.url as_button=ButtonVariant::Outline>

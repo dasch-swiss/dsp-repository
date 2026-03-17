@@ -84,11 +84,9 @@ pub fn ProjectSearchInput() -> impl IntoView {
                                                                         href=format!("/projects/{}", p.shortcode)
                                                                         class="block px-4 py-3 hover:bg-base-200 transition-colors text-sm"
                                                                     >
-                                                                        <div class="font-medium text-base-content">
-                                                                            {p.name.clone()}
-                                                                        </div>
+                                                                        <div class="font-medium text-base-content">{p.name}</div>
                                                                         <div class="text-sm text-base-content/60 truncate mt-0.5">
-                                                                            {p.short_description.clone()}
+                                                                            {p.short_description}
                                                                         </div>
                                                                     </a>
                                                                 </li>

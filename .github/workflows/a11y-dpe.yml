@@ -1,4 +1,4 @@
-name: a11y / leptos-dpe
+name: a11y / dpe
 
 permissions:
   contents: read
@@ -7,16 +7,16 @@ on:
   push:
     branches: [main]
     paths:
-      - "modules/leptos-dpe/app/**"
-      - "modules/leptos-dpe/style/**"
-      - "modules/leptos-dpe/public/**"
-      - "modules/leptos-dpe/end2end/**"
+      - "modules/dpe/app/**"
+      - "modules/dpe/style/**"
+      - "modules/dpe/public/**"
+      - "modules/dpe/end2end/**"
   pull_request:
     paths:
-      - "modules/leptos-dpe/app/**"
-      - "modules/leptos-dpe/style/**"
-      - "modules/leptos-dpe/public/**"
-      - "modules/leptos-dpe/end2end/**"
+      - "modules/dpe/app/**"
+      - "modules/dpe/style/**"
+      - "modules/dpe/public/**"
+      - "modules/dpe/end2end/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -25,7 +25,7 @@ concurrency:
 jobs:
   a11y:
     runs-on: ubuntu-latest
-    name: a11y / leptos-dpe / WCAG 2.1 AA
+    name: a11y / dpe / WCAG 2.1 AA
     steps:
       - uses: actions/checkout@v4
 
@@ -55,24 +55,24 @@ jobs:
           node-version: 22
 
       - name: Install JS dependencies
-        run: cd modules/leptos-dpe && pnpm install
+        run: cd modules/dpe && pnpm install
 
       - name: Install end2end dependencies
-        run: cd modules/leptos-dpe/end2end && npm install
+        run: cd modules/dpe/end2end && npm install
 
       - name: Install Playwright browsers
-        run: cd modules/leptos-dpe/end2end && npx playwright install chromium --with-deps
+        run: cd modules/dpe/end2end && npx playwright install chromium --with-deps
 
-      - name: Build leptos-dpe
-        run: cargo leptos build --project=leptos-dpe --release
+      - name: Build dpe
+        run: cargo leptos build --project=dpe --release
 
       - name: Run accessibility tests
-        run: just test-a11y-leptos-dpe
+        run: just test-a11y-dpe
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-a11y-leptos-dpe
-          path: modules/leptos-dpe/end2end/playwright-report/
+          name: playwright-report-a11y-dpe
+          path: modules/dpe/end2end/playwright-report/
           retention-days: 7

@@ -19,25 +19,25 @@ install-requirements: install-e2e-requirements
     cargo binstall -y mdbook-alerts@0.8.0
     cargo binstall -y leptosfmt@0.1.33
     cargo binstall -y cargo-leptos@0.3.4
-    cd modules/leptos-dpe && pnpm install
+    cd modules/dpe && pnpm install
 
 # Install Playwright browsers for E2E tests
 install-e2e-requirements:
     cd modules/mosaic/demo/end2end && npx playwright install
-    cd modules/leptos-dpe/end2end && npx playwright install
+    cd modules/dpe/end2end && npx playwright install
 
 # Run all fmt and clippy checks
 check:
     just --check --fmt --unstable
     cargo +nightly fmt -p mosaic-tiles -p demo_macro --check
-    leptosfmt --check modules/leptos-dpe
+    leptosfmt --check modules/dpe
     leptosfmt --check modules/mosaic/demo
     cargo clippy -- -D warnings
 
 # Format all rust code (cargo fmt for non-leptos crates, leptosfmt for leptos crates)
 fmt:
     cargo +nightly fmt -p mosaic-tiles -p demo_macro
-    leptosfmt modules/leptos-dpe
+    leptosfmt modules/dpe
     leptosfmt modules/mosaic/demo
 
 # Fix justfile formatting. Warning: will change existing file. Please first use check.
@@ -134,25 +134,25 @@ run-docker-mosaic-demo:
     docker run --rm -p 8080:8080 mosaic-demo
 
 ###################
-# Leptos DPE targets
+# DPE targets
 ###################
 
-# Start the leptos-dpe with hot reload
-[group('leptos-dpe')]
-watch-leptos-dpe:
-    cargo leptos watch --project=leptos-dpe -- watch ../mosaic/tiles
+# Start the DPE with hot reload
+[group('dpe')]
+watch-dpe:
+    cargo leptos watch --project=dpe -- watch ../mosaic/tiles
 
-# Build Docker image for leptos-dpe
-[group('leptos-dpe')]
+# Build Docker image for DPE
+[group('dpe')]
 build-docker-dpe:
-    docker build -f modules/leptos-dpe/Dockerfile -t leptos-dpe .
+    docker build -f modules/dpe/Dockerfile -t dpe .
 
-# Run leptos-dpe Docker container on port 8080
-[group('leptos-dpe')]
+# Run DPE Docker container on port 8080
+[group('dpe')]
 run-docker-dpe:
-    docker run --rm -p 8080:8080 leptos-dpe
+    docker run --rm -p 8080:8080 dpe
 
 # Run accessibility E2E tests for the DPE (requires running server on port 4000)
-[group('leptos-dpe')]
-test-a11y-leptos-dpe:
-    cd modules/leptos-dpe/end2end && npx playwright test tests/accessibility.spec.ts --project=chromium
+[group('dpe')]
+test-a11y-dpe:
+    cd modules/dpe/end2end && npx playwright test tests/accessibility.spec.ts --project=chromium

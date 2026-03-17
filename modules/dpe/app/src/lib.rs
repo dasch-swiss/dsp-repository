@@ -43,7 +43,7 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     view! {
-        <Stylesheet id="leptos" href="/pkg/leptos-dpe.css" />
+        <Stylesheet id="leptos" href="/pkg/dpe.css" />
 
         // sets the document title
         <Title text="DaSCH Metadata Browser Projects Overview" />

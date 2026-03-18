@@ -18,23 +18,22 @@ use dublin_core::project_to_dublin_core;
 use record_datacite::record_to_datacite;
 use record_dublin_core::record_to_dublin_core;
 
-use app::domain::{record_datestamp, Project, Record};
+use app::domain::{record_datestamp, Project, Record, ARK_PATH_PREFIX};
 
 const OAI_IDENTIFIER_PREFIX: &str = "oai:meta.dasch.swiss:";
 
 /// Creates an OAI identifier from a project shortcode.
 pub fn make_oai_identifier(shortcode: &str) -> String {
-    format!("{}ark:/72163/1/{}", OAI_IDENTIFIER_PREFIX, shortcode)
+    format!("{}{}{}", OAI_IDENTIFIER_PREFIX, ARK_PATH_PREFIX, shortcode)
 }
 
-/// Parses an OAI identifier and extracts the shortcode.
+/// Parses an OAI identifier and extracts the ARK suffix.
 pub fn parse_oai_identifier(identifier: &str) -> Option<String> {
     if !identifier.starts_with(OAI_IDENTIFIER_PREFIX) {
         return None;
     }
     let ark_part = &identifier[OAI_IDENTIFIER_PREFIX.len()..];
-    // Expected format: ark:/72163/1/{shortcode}
-    ark_part.strip_prefix("ark:/72163/1/").map(|s| s.to_string())
+    ark_part.strip_prefix(ARK_PATH_PREFIX).map(|s| s.to_string())
 }
 
 /// Creates an OAI record from a project for the given metadata prefix.
@@ -69,7 +68,6 @@ pub fn to_oai_record(project: &Project, metadata_prefix: &str) -> OaiRecord {
 /// Returns everything after `ark:/72163/1/`, preserving two-level paths like
 /// `"0803/lklK7rVuVOmpBZYWrF8o=gh"` as well as single-segment ones like `"record-0001"`.
 pub fn ark_suffix_from_pid(pid: &str) -> Option<&str> {
-    const ARK_PATH_PREFIX: &str = "ark:/72163/1/";
     pid.find(ARK_PATH_PREFIX)
         .map(|pos| &pid[pos + ARK_PATH_PREFIX.len()..])
         .filter(|s| !s.is_empty())

@@ -3,6 +3,11 @@
 //! Represents an individual data Record within a Research Project,
 //! as defined in the DaSCH Metadata 2.0 schema.
 
+/// ARK path prefix for DaSCH resources.
+///
+/// `72163` is DaSCH's NAAN (Name Assigning Authority Number).
+pub const ARK_PATH_PREFIX: &str = "ark:/72163/1/";
+
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};

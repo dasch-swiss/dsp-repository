@@ -1,6 +1,6 @@
 //! Repository interface and filesystem implementation for Records.
 
-use super::record::Record;
+use super::record::{Record, ARK_PATH_PREFIX};
 
 /// Repository interface for accessing Records.
 pub trait RecordRepository {
@@ -59,7 +59,6 @@ impl RecordRepository for FsRecordRepository {
     }
 
     fn get_by_id(&self, ark_suffix: &str) -> Option<Record> {
-        const ARK_PATH_PREFIX: &str = "ark:/72163/1/";
         self.read_all_records().into_iter().find(|r| {
             r.pid
                 .find(ARK_PATH_PREFIX)

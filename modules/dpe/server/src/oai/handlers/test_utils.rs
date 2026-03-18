@@ -6,7 +6,7 @@ use app::domain::{
         AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo,
         License, Project, ProjectStatus, TemporalCoverage,
     },
-    ProjectRepository, Record, RecordRepository,
+    ARK_PATH_PREFIX, ProjectRepository, Record, RecordRepository,
 };
 
 /// In-memory repository for testing.
@@ -148,7 +148,6 @@ impl RecordRepository for InMemoryRecordRepository {
     }
 
     fn get_by_id(&self, ark_suffix: &str) -> Option<Record> {
-        const ARK_PATH_PREFIX: &str = "ark:/72163/1/";
         self.records
             .iter()
             .find(|r| r.pid.find(ARK_PATH_PREFIX).map(|pos| &r.pid[pos + ARK_PATH_PREFIX.len()..]) == Some(ark_suffix))

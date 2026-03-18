@@ -3,7 +3,7 @@
 use app::domain::Record;
 
 use super::helpers::{extract_year, get_multilingual_value, license_identifier_to_label};
-use super::types::{DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteRecord, DataCiteRights, DataCiteTitle};
+use super::types::{DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteRecord, DataCiteRelatedIdentifier, DataCiteRights, DataCiteTitle};
 
 const PUBLISHER: &str = "DaSCH";
 
@@ -102,6 +102,16 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
         rights_identifier_scheme: if has_identifier { Some("SPDX".to_string()) } else { None },
     }];
 
+    // RelatedIdentifiers — link to parent project via IsPartOf
+    let related_identifiers = record
+        .project_ark()
+        .map(|ark| vec![DataCiteRelatedIdentifier {
+            identifier: ark,
+            related_identifier_type: "URL".to_string(),
+            relation_type: "IsPartOf".to_string(),
+        }])
+        .unwrap_or_default();
+
     DataCiteRecord {
         identifier: ark_path_from_pid(&record.pid),
         identifier_type: "ARK".to_string(),
@@ -114,6 +124,7 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
         dates,
         descriptions,
         rights_list,
+        related_identifiers,
         ..DataCiteRecord::default()
     }
 }
@@ -249,6 +260,25 @@ mod tests {
         assert_eq!(type_of_data_to_general("XML (TEI)"), "Text");
         assert_eq!(type_of_data_to_general("Video"), "Audiovisual");
         assert_eq!(type_of_data_to_general("Audio"), "Sound");
+    }
+
+    #[test]
+    fn related_identifier_links_to_parent_project() {
+        let mut record = test_record();
+        record.pid = "https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh".to_string();
+        let dc = record_to_datacite(&record);
+        assert_eq!(dc.related_identifiers.len(), 1);
+        let ri = &dc.related_identifiers[0];
+        assert_eq!(ri.identifier, "https://ark.dasch.swiss/ark:/72163/1/0803");
+        assert_eq!(ri.related_identifier_type, "URL");
+        assert_eq!(ri.relation_type, "IsPartOf");
+    }
+
+    #[test]
+    fn no_related_identifier_when_pid_has_no_parent() {
+        // single-segment ARK — no parent project
+        let dc = record_to_datacite(&test_record());
+        assert!(dc.related_identifiers.is_empty());
     }
 
     #[test]

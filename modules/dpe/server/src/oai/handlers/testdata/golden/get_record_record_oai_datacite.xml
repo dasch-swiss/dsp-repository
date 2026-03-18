@@ -38,6 +38,9 @@
                 <date dateType="Updated">2024-06-30</date>
                 <date dateType="Available">2024-02-01</date>
               </dates>
+              <relatedIdentifiers>
+                <relatedIdentifier relatedIdentifierType="URL" relationType="IsPartOf">https://ark.dasch.swiss/ark:/72163/1/0803</relatedIdentifier>
+              </relatedIdentifiers>
               <rightsList>
                 <rights rightsURI="https://creativecommons.org/licenses/by/4.0/" rightsIdentifier="CC-BY-4.0" rightsIdentifierScheme="SPDX">Creative Commons Attribution 4.0 International</rights>
               </rightsList>

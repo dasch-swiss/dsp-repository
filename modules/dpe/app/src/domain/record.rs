@@ -45,6 +45,7 @@ pub struct Record {
     pub publisher: String,
     #[serde(default)]
     pub source: String,
+    #[serde(default)]
     pub description: HashMap<String, String>,
     #[serde(rename = "dateCreated", default)]
     pub date_created: String,
@@ -58,6 +59,22 @@ pub struct Record {
     pub size: String,
     #[serde(default)]
     pub keywords: Vec<HashMap<String, String>>,
+}
+
+impl Record {
+    // `https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh` → `https://ark.dasch.swiss/ark:/72163/1/0803`
+    // Returns `None` if the PID does not contain a two-segment ARK path.
+    pub fn project_ark(&self) -> Option<String> {
+        let ark_start = self.pid.find(ARK_PATH_PREFIX)?;
+        let after_prefix = &self.pid[ark_start + ARK_PATH_PREFIX.len()..];
+        // after_prefix is "{shortcode}/{record_id}" — need at least one slash
+        let slash = after_prefix.find('/')?;
+        let shortcode = &after_prefix[..slash];
+        if shortcode.is_empty() {
+            return None;
+        }
+        Some(format!("https://ark.dasch.swiss/{}{}", ARK_PATH_PREFIX, shortcode))
+    }
 }
 
 /// Returns the OAI-PMH datestamp for a record.
@@ -81,7 +98,7 @@ mod tests {
     fn a_json() -> &'static str {
         r#"{
             "id": "record-0001",
-            "pid": "https://ark.dasch.swiss/ark:/72163/1/record-0001",
+            "pid": "https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh",
             "label": { "en": "Survey Responses on Rural Land Use, 1920–1950", "de": "Umfrageantworten zur ländlichen Landnutzung, 1920–1950" },
             "accessRights": "Full Open Access",
             "legalInfo": {
@@ -93,7 +110,7 @@ mod tests {
                 "copyrightHolder": "University of Basel",
                 "authorship": ["Dr. Anna Müller", "Prof. Hans Bauer"]
             },
-            "howToCite": "Müller, A. & Bauer, H. (2024). Survey Responses on Rural Land Use, 1920–1950 [Data record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/record-0001",
+            "howToCite": "Müller, A. & Bauer, H. (2024). Survey Responses on Rural Land Use, 1920–1950 [Data record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh",
             "publisher": "DaSCH",
             "source": "Swiss Federal Archives, Fond E7350, 1920–1950",
             "description": {
@@ -115,7 +132,7 @@ mod tests {
 
         let expected = Record {
             id: "record-0001".to_string(),
-            pid: "https://ark.dasch.swiss/ark:/72163/1/record-0001".to_string(),
+            pid: "https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh".to_string(),
             label: HashMap::from([
                 ("en".to_string(), "Survey Responses on Rural Land Use, 1920–1950".to_string()),
                 ("de".to_string(), "Umfrageantworten zur ländlichen Landnutzung, 1920–1950".to_string()),
@@ -130,7 +147,7 @@ mod tests {
                 copyright_holder: "University of Basel".to_string(),
                 authorship: vec!["Dr. Anna Müller".to_string(), "Prof. Hans Bauer".to_string()],
             },
-            how_to_cite: "Müller, A. & Bauer, H. (2024). Survey Responses on Rural Land Use, 1920–1950 [Data record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/record-0001".to_string(),
+            how_to_cite: "Müller, A. & Bauer, H. (2024). Survey Responses on Rural Land Use, 1920–1950 [Data record]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh".to_string(),
             publisher: "DaSCH".to_string(),
             source: "Swiss Federal Archives, Fond E7350, 1920–1950".to_string(),
             description: HashMap::from([
@@ -173,6 +190,22 @@ mod tests {
         record.date_modified = String::new();
         record.date_published = String::new();
         assert_eq!(record_datestamp(&record), "2024-01-15");
+    }
+
+    #[test]
+    fn project_ark_extracted_from_two_segment_pid() {
+        let record: Record = serde_json::from_str(a_json()).unwrap();
+        assert_eq!(
+            record.project_ark(),
+            Some("https://ark.dasch.swiss/ark:/72163/1/0803".to_string())
+        );
+    }
+
+    #[test]
+    fn project_ark_is_none_for_single_segment_pid() {
+        let mut record: Record = serde_json::from_str(a_json()).unwrap();
+        record.pid = "https://ark.dasch.swiss/ark:/72163/1/record-0001".to_string();
+        assert_eq!(record.project_ark(), None);
     }
 
     #[test]

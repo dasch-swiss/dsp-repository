@@ -48,6 +48,11 @@ pub fn record_to_dublin_core(record: &Record) -> DublinCoreRecord {
     // dc:type derived from typeOfData
     dc.resource_type = type_of_data_to_dc_type(&record.type_of_data);
 
+    // dc:relation — link to parent project
+    if let Some(project_ark) = record.project_ark() {
+        dc.relations.push(project_ark);
+    }
+
     // dc:rights - license identifier and URI
     let id = &record.legal_info.license.license_identifier;
     if !id.is_empty() {
@@ -145,6 +150,21 @@ mod tests {
     fn resource_type_mapped_from_type_of_data() {
         let dc = record_to_dublin_core(&test_record());
         assert_eq!(dc.resource_type, "Text");
+    }
+
+    #[test]
+    fn relation_links_to_parent_project() {
+        let mut record = test_record();
+        record.pid = "https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh".to_string();
+        let dc = record_to_dublin_core(&record);
+        assert!(dc.relations.contains(&"https://ark.dasch.swiss/ark:/72163/1/0803".to_string()));
+    }
+
+    #[test]
+    fn no_relation_when_pid_has_no_parent() {
+        // single-segment ARK — no parent project
+        let dc = record_to_dublin_core(&test_record());
+        assert!(dc.relations.is_empty());
     }
 
     #[test]

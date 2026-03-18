@@ -100,8 +100,8 @@ mod tests {
 
     fn test_record() -> Record {
         Record {
-            id: "record-0001".to_string(),
-            pid: "https://ark.dasch.swiss/ark:/72163/1/record-0001".to_string(),
+            id: "http://rdfh.ch/0803/lklK7rVuVOmpBZYWrF8o-g".to_string(),
+            pid: "https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh".to_string(),
             label: {
                 let mut m = HashMap::new();
                 m.insert("en".to_string(), "Survey Responses on Rural Land Use, 1920–1950".to_string());
@@ -223,7 +223,10 @@ mod tests {
 
     #[test]
     fn record_golden_oai_dc_response() {
-        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/record-0001"), Some("oai_dc"));
+        let params = make_params(
+            Some("oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
+            Some("oai_dc"),
+        );
         let xml = handle_get_record(&params, &InMemoryProjectRepository::new(vec![]), &repo_with_record());
         let expected = golden("get_record_record_oai_dc.xml", &xml);
         assert_eq!(normalize(&xml), expected);
@@ -231,7 +234,10 @@ mod tests {
 
     #[test]
     fn record_golden_oai_datacite_response() {
-        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/record-0001"), Some("oai_datacite"));
+        let params = make_params(
+            Some("oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
+            Some("oai_datacite"),
+        );
         let xml = handle_get_record(&params, &InMemoryProjectRepository::new(vec![]), &repo_with_record());
         let expected = golden("get_record_record_oai_datacite.xml", &xml);
         assert_eq!(normalize(&xml), expected);
@@ -255,14 +261,20 @@ mod tests {
 
     #[test]
     fn record_get_record_oai_dc_response_is_valid_oai_pmh() {
-        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/record-0001"), Some("oai_dc"));
+        let params = make_params(
+            Some("oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
+            Some("oai_dc"),
+        );
         let xml = handle_get_record(&params, &InMemoryProjectRepository::new(vec![]), &repo_with_record());
         crate::oai::handlers::test_utils::validate_against_schema(&xml);
     }
 
     #[test]
     fn record_get_record_oai_datacite_response_is_valid_oai_pmh() {
-        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/record-0001"), Some("oai_datacite"));
+        let params = make_params(
+            Some("oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
+            Some("oai_datacite"),
+        );
         let xml = handle_get_record(&params, &InMemoryProjectRepository::new(vec![]), &repo_with_record());
         crate::oai::handlers::test_utils::validate_against_schema(&xml);
     }

@@ -13,7 +13,7 @@ pub struct RecordLicense {
     pub license_identifier: String,
     #[serde(rename = "licenseDate")]
     pub license_date: String,
-    #[serde(rename = "licenseURI")]
+    #[serde(rename = "licenseURI", alias = "licenseUri")]
     pub license_uri: String,
 }
 

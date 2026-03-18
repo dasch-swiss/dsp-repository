@@ -64,11 +64,15 @@ pub fn to_oai_record(project: &Project, metadata_prefix: &str) -> OaiRecord {
     OaiRecord { header, dublin_core, datacite }
 }
 
-/// Extracts the last path segment from a full ARK URL.
+/// Extracts the ARK suffix from a full ARK URL.
 ///
-/// `"https://ark.dasch.swiss/ark:/72163/1/record-0001"` → `"record-0001"`
+/// Returns everything after `ark:/72163/1/`, preserving two-level paths like
+/// `"0803/lklK7rVuVOmpBZYWrF8o=gh"` as well as single-segment ones like `"record-0001"`.
 pub fn ark_suffix_from_pid(pid: &str) -> Option<&str> {
-    pid.rsplit('/').next().filter(|s| !s.is_empty())
+    const ARK_PATH_PREFIX: &str = "ark:/72163/1/";
+    pid.find(ARK_PATH_PREFIX)
+        .map(|pos| &pid[pos + ARK_PATH_PREFIX.len()..])
+        .filter(|s| !s.is_empty())
 }
 
 /// Creates an OAI record from a Record for the given metadata prefix.

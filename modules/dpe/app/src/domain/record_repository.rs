@@ -58,8 +58,14 @@ impl RecordRepository for FsRecordRepository {
         self.read_all_records()
     }
 
-    fn get_by_id(&self, id: &str) -> Option<Record> {
-        self.read_all_records().into_iter().find(|r| r.id == id)
+    fn get_by_id(&self, ark_suffix: &str) -> Option<Record> {
+        const ARK_PATH_PREFIX: &str = "ark:/72163/1/";
+        self.read_all_records().into_iter().find(|r| {
+            r.pid
+                .find(ARK_PATH_PREFIX)
+                .map(|pos| &r.pid[pos + ARK_PATH_PREFIX.len()..])
+                == Some(ark_suffix)
+        })
     }
 }
 

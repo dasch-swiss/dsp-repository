@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
-  <request verb="GetRecord" identifier="oai:meta.dasch.swiss:ark:/72163/1/record-0001" metadataPrefix="oai_dc">https://meta.dasch.swiss/oai</request>
+  <request verb="GetRecord" identifier="oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh" metadataPrefix="oai_dc">https://meta.dasch.swiss/oai</request>
   <GetRecord>
     <record>
       <header>
-        <identifier>oai:meta.dasch.swiss:ark:/72163/1/record-0001</identifier>
+        <identifier>oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</identifier>
         <datestamp>2024-06-30</datestamp>
         <setSpec>entityType:Record</setSpec>
       </header>
@@ -17,7 +17,7 @@
           <dc:publisher>DaSCH</dc:publisher>
           <dc:date>2024-02-01</dc:date>
           <dc:type>Text</dc:type>
-          <dc:identifier>https://ark.dasch.swiss/ark:/72163/1/record-0001</dc:identifier>
+          <dc:identifier>https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</dc:identifier>
           <dc:rights>Creative Commons Attribution 4.0 International</dc:rights>
           <dc:rights>https://creativecommons.org/licenses/by/4.0/</dc:rights>
         </oai_dc:dc>

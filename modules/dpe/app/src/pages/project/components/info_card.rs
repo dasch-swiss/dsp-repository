@@ -4,7 +4,7 @@ use mosaic_tiles::card::{Card, CardBody, CardVariant};
 #[component]
 pub fn InfoCard(children: Children) -> impl IntoView {
     view! {
-        <Card variant=CardVariant::Bordered class="w-full bg-gray-50 text-gray-700">
+        <Card variant=CardVariant::Bordered class="w-full bg-gray-50 text-gray-700 text-sm">
             <CardBody>{children()}</CardBody>
         </Card>
     }

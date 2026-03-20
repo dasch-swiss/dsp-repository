@@ -7,9 +7,9 @@ pub async fn get_organization(id: String) -> Result<Option<Organization>, Server
     use std::fs;
     use std::path::PathBuf;
 
-    use super::utils::get_data_dir;
+    use super::utils::get_data_root_dir;
 
-    let data_dir = get_data_dir();
+    let data_dir = get_data_root_dir();
     let organizations_dir = PathBuf::from(data_dir).join("organizations");
 
     // Read all entries in the organizations directory

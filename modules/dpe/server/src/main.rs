@@ -1,8 +1,10 @@
 use app::*;
-use axum::Router;
+use axum::{routing::get, Router};
 use leptos::logging::log;
 use leptos::prelude::*;
 use leptos_axum::{generate_route_list, LeptosRoutes};
+
+mod oai;
 
 #[tokio::main]
 async fn main() {
@@ -14,6 +16,8 @@ async fn main() {
     let routes = generate_route_list(App);
 
     let app = Router::new()
+        // OAI-PMH 2.0 endpoint
+        .route("/oai", get(oai::oai_handler))
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();
             move || shell(leptos_options.clone())

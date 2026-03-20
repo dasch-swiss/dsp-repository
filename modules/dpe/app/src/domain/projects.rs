@@ -104,7 +104,7 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
                 project.name.to_lowercase().contains(&search_lower)
                     || project.short_description.to_lowercase().contains(&search_lower)
                     || project.shortcode.to_lowercase().contains(&search_lower)
-                    || status_str.contains(&search_lower)
+                    || project.status.as_str().contains(&search_lower)
             };
 
             // Type of data filter
@@ -598,9 +598,6 @@ mod tests {
 
 #[server]
 pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnError> {
-    use std::fs;
-    use std::path::PathBuf;
-
     use super::cluster::ClusterRaw;
     use super::collection::CollectionRef;
     use super::project_cache::all_projects;

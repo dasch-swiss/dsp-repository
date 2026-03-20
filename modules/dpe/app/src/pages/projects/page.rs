@@ -22,10 +22,8 @@ pub fn ProjectsPage() -> impl IntoView {
     let cq = current_query.clone();
 
     let dialog_open = current_query.dialog.unwrap_or(false);
-    let open_dialog_href =
-        format!("/projects{}", current_query.clone().with_dialog(true).to_query_string());
-    let close_dialog_href =
-        format!("/projects{}", current_query.clone().with_dialog(false).to_query_string());
+    let open_dialog_href = format!("/projects{}", current_query.clone().with_dialog(true).to_query_string());
+    let close_dialog_href = format!("/projects{}", current_query.clone().with_dialog(false).to_query_string());
 
     view! {
         <Suspense>

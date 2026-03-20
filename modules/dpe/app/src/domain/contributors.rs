@@ -72,8 +72,7 @@ pub async fn get_contributors(
 ) -> Result<Vec<ResolvedContributor>, leptos::server_fn::error::ServerFnError> {
     let mut result = Vec::with_capacity(attributions.len());
     for attr in attributions {
-        let roles =
-            (!attr.contributor_type.is_empty()).then(|| attr.contributor_type.join(", "));
+        let roles = (!attr.contributor_type.is_empty()).then(|| attr.contributor_type.join(", "));
         let id = &attr.contributor;
         if id.contains("-organization-") {
             match load_organization(id).await {

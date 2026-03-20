@@ -4,8 +4,8 @@ mod publication_tab;
 
 use leptos::prelude::*;
 use leptos_router::hooks::use_query_map;
-use mosaic_tiles::icon::{Document, Info, People};
 use mosaic_tiles::icon::IconData;
+use mosaic_tiles::icon::{Document, Info, People};
 
 use crate::domain::{lang_value, Project, ResolvedContributor};
 use attributions_section::AttributionsSection;
@@ -68,12 +68,7 @@ pub fn ProjectDetailsTabs(proj: Project, contributors: Vec<ResolvedContributor>)
 }
 
 #[component]
-fn TabLink(
-    value: &'static str,
-    active_tab: String,
-    icon: IconData,
-    label: &'static str,
-) -> impl IntoView {
+fn TabLink(value: &'static str, active_tab: String, icon: IconData, label: &'static str) -> impl IntoView {
     let is_active = active_tab == value;
     let class = if is_active {
         "tab-label !text-primary-600 !border-primary-600"

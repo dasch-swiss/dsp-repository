@@ -7,13 +7,8 @@ use crate::domain::{get_organization, get_person};
 /// Fetches and renders a person by ID. Used where the caller only has an ID (e.g. legal info sidebar).
 /// For bulk contributor rendering, prefer `PersonView` with pre-resolved data.
 #[component]
-pub fn Person(
-    person_id: String,
-    roles: Option<String>,
-    #[prop(default = false)] show_email: bool,
-) -> impl IntoView {
-    let person_resource =
-        Resource::new(move || person_id.clone(), |id| async move { get_person(id).await });
+pub fn Person(person_id: String, roles: Option<String>, #[prop(default = false)] show_email: bool) -> impl IntoView {
+    let person_resource = Resource::new(move || person_id.clone(), |id| async move { get_person(id).await });
 
     view! {
         <Suspense>
@@ -49,10 +44,8 @@ fn PersonViewWithAffiliationIds(
     roles: Option<String>,
     #[prop(default = false)] show_email: bool,
 ) -> impl IntoView {
-    let full_name =
-        format!("{} {}", person.given_names.join(" "), person.family_names.join(" "),);
-    let orcid_url =
-        person.same_as.iter().find(|r| r.type_ == "ORCID").map(|r| r.url.clone());
+    let full_name = format!("{} {}", person.given_names.join(" "), person.family_names.join(" "),);
+    let orcid_url = person.same_as.iter().find(|r| r.type_ == "ORCID").map(|r| r.url.clone());
     let job_titles = person.job_titles.clone();
     let email = person.email.clone();
 
@@ -115,8 +108,7 @@ fn PersonViewWithAffiliationIds(
 
 #[component]
 pub fn AffiliationName(org_id: String) -> impl IntoView {
-    let org_resource =
-        Resource::new(move || org_id.clone(), |id| async move { get_organization(id).await });
+    let org_resource = Resource::new(move || org_id.clone(), |id| async move { get_organization(id).await });
 
     view! {
         <Suspense>
@@ -137,10 +129,8 @@ pub fn PersonView(
     roles: Option<String>,
     #[prop(default = false)] show_email: bool,
 ) -> impl IntoView {
-    let full_name =
-        format!("{} {}", person.given_names.join(" "), person.family_names.join(" "),);
-    let orcid_url =
-        person.same_as.iter().find(|r| r.type_ == "ORCID").map(|r| r.url.clone());
+    let full_name = format!("{} {}", person.given_names.join(" "), person.family_names.join(" "),);
+    let orcid_url = person.same_as.iter().find(|r| r.type_ == "ORCID").map(|r| r.url.clone());
     let job_titles = person.job_titles.clone();
     let email = person.email.clone();
 

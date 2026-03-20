@@ -127,9 +127,7 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
                     .as_ref()
                     .map(|langs| {
                         langs.iter().any(|lang_map| {
-                            lang_value(lang_map)
-                                .map(|v| data_language_filter.contains(v))
-                                .unwrap_or(false)
+                            lang_value(lang_map).map(|v| data_language_filter.contains(v)).unwrap_or(false)
                         })
                     })
                     .unwrap_or(false)
@@ -141,9 +139,7 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
             } else {
                 let label = match project.access_rights.access_rights {
                     AccessRightsType::FullOpenAccess => "Full Open Access",
-                    AccessRightsType::OpenAccessWithRestrictions => {
-                        "Open Access with Restrictions"
-                    }
+                    AccessRightsType::OpenAccessWithRestrictions => "Open Access with Restrictions",
                     AccessRightsType::EmbargoedAccess => "Embargoed Access",
                     AccessRightsType::MetadataOnlyAccess => "Metadata only Access",
                 };
@@ -163,8 +159,7 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
     let start_idx = page_index * items_per_page;
     let end_idx = (start_idx + items_per_page).min(filtered_projects.len());
 
-    let items: Vec<Project> =
-        filtered_projects[start_idx..end_idx].iter().map(|p| (*p).clone()).collect();
+    let items: Vec<Project> = filtered_projects[start_idx..end_idx].iter().map(|p| (*p).clone()).collect();
 
     Page { items, nr_pages, total_items }
 }
@@ -289,7 +284,11 @@ mod tests {
             make_project("A", "A", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
             make_project("B", "B", ProjectStatus::Finished, None, None, AccessRightsType::FullOpenAccess),
         ];
-        let query = ProjectQuery { ongoing: Some(true), finished: Some(true), ..Default::default() };
+        let query = ProjectQuery {
+            ongoing: Some(true),
+            finished: Some(true),
+            ..Default::default()
+        };
         let page = filter_and_paginate(&projects, &query, None);
         assert_eq!(page.total_items, 2);
     }
@@ -316,8 +315,22 @@ mod tests {
     #[test]
     fn search_matches_shortcode() {
         let projects = vec![
-            make_project("Project One", "SC01", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
-            make_project("Project Two", "SC02", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
+            make_project(
+                "Project One",
+                "SC01",
+                ProjectStatus::Ongoing,
+                None,
+                None,
+                AccessRightsType::FullOpenAccess,
+            ),
+            make_project(
+                "Project Two",
+                "SC02",
+                ProjectStatus::Ongoing,
+                None,
+                None,
+                AccessRightsType::FullOpenAccess,
+            ),
         ];
         let query = ProjectQuery { search: Some("sc01".to_string()), ..Default::default() };
         let page = filter_and_paginate(&projects, &query, None);
@@ -329,7 +342,10 @@ mod tests {
     fn search_matches_short_description() {
         let projects = vec![default_project("Alpha")];
         // default_project sets short_description to "desc of {name}"
-        let query = ProjectQuery { search: Some("desc of alpha".to_string()), ..Default::default() };
+        let query = ProjectQuery {
+            search: Some("desc of alpha".to_string()),
+            ..Default::default()
+        };
         let page = filter_and_paginate(&projects, &query, None);
         assert_eq!(page.total_items, 1);
     }
@@ -348,8 +364,22 @@ mod tests {
     #[test]
     fn type_of_data_filter_matches() {
         let projects = vec![
-            make_project("A", "A", ProjectStatus::Ongoing, Some(vec!["Text"]), None, AccessRightsType::FullOpenAccess),
-            make_project("B", "B", ProjectStatus::Ongoing, Some(vec!["Image"]), None, AccessRightsType::FullOpenAccess),
+            make_project(
+                "A",
+                "A",
+                ProjectStatus::Ongoing,
+                Some(vec!["Text"]),
+                None,
+                AccessRightsType::FullOpenAccess,
+            ),
+            make_project(
+                "B",
+                "B",
+                ProjectStatus::Ongoing,
+                Some(vec!["Image"]),
+                None,
+                AccessRightsType::FullOpenAccess,
+            ),
             make_project("C", "C", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
         ];
         let query = ProjectQuery { type_of_data: Some("Text".to_string()), ..Default::default() };
@@ -361,11 +391,28 @@ mod tests {
     #[test]
     fn type_of_data_filter_multi_value() {
         let projects = vec![
-            make_project("A", "A", ProjectStatus::Ongoing, Some(vec!["Text"]), None, AccessRightsType::FullOpenAccess),
-            make_project("B", "B", ProjectStatus::Ongoing, Some(vec!["Image"]), None, AccessRightsType::FullOpenAccess),
+            make_project(
+                "A",
+                "A",
+                ProjectStatus::Ongoing,
+                Some(vec!["Text"]),
+                None,
+                AccessRightsType::FullOpenAccess,
+            ),
+            make_project(
+                "B",
+                "B",
+                ProjectStatus::Ongoing,
+                Some(vec!["Image"]),
+                None,
+                AccessRightsType::FullOpenAccess,
+            ),
             make_project("C", "C", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
         ];
-        let query = ProjectQuery { type_of_data: Some("Text,Image".to_string()), ..Default::default() };
+        let query = ProjectQuery {
+            type_of_data: Some("Text,Image".to_string()),
+            ..Default::default()
+        };
         let page = filter_and_paginate(&projects, &query, None);
         assert_eq!(page.total_items, 2);
     }
@@ -375,10 +422,27 @@ mod tests {
     #[test]
     fn data_language_filter_matches() {
         let projects = vec![
-            make_project("A", "A", ProjectStatus::Ongoing, None, Some(vec!["English"]), AccessRightsType::FullOpenAccess),
-            make_project("B", "B", ProjectStatus::Ongoing, None, Some(vec!["French"]), AccessRightsType::FullOpenAccess),
+            make_project(
+                "A",
+                "A",
+                ProjectStatus::Ongoing,
+                None,
+                Some(vec!["English"]),
+                AccessRightsType::FullOpenAccess,
+            ),
+            make_project(
+                "B",
+                "B",
+                ProjectStatus::Ongoing,
+                None,
+                Some(vec!["French"]),
+                AccessRightsType::FullOpenAccess,
+            ),
         ];
-        let query = ProjectQuery { data_language: Some("English".to_string()), ..Default::default() };
+        let query = ProjectQuery {
+            data_language: Some("English".to_string()),
+            ..Default::default()
+        };
         let page = filter_and_paginate(&projects, &query, None);
         assert_eq!(page.total_items, 1);
         assert_eq!(page.items[0].name, "A");
@@ -390,7 +454,14 @@ mod tests {
     fn access_rights_filter_matches() {
         let projects = vec![
             make_project("A", "A", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
-            make_project("B", "B", ProjectStatus::Ongoing, None, None, AccessRightsType::OpenAccessWithRestrictions),
+            make_project(
+                "B",
+                "B",
+                ProjectStatus::Ongoing,
+                None,
+                None,
+                AccessRightsType::OpenAccessWithRestrictions,
+            ),
         ];
         let query = ProjectQuery {
             access_rights: Some("Full Open Access".to_string()),
@@ -405,7 +476,11 @@ mod tests {
 
     #[test]
     fn results_sorted_alphabetically_case_insensitive() {
-        let projects = vec![default_project("Zebra"), default_project("apple"), default_project("Mango")];
+        let projects = vec![
+            default_project("Zebra"),
+            default_project("apple"),
+            default_project("Mango"),
+        ];
         let page = filter_and_paginate(&projects, &empty_query(), None);
         let names: Vec<&str> = page.items.iter().map(|p| p.name.as_str()).collect();
         assert_eq!(names, vec!["apple", "Mango", "Zebra"]);
@@ -460,7 +535,10 @@ mod tests {
 
     #[test]
     fn with_type_of_data_toggled_removes_value() {
-        let q = ProjectQuery { type_of_data: Some("Text,Image".to_string()), ..Default::default() };
+        let q = ProjectQuery {
+            type_of_data: Some("Text,Image".to_string()),
+            ..Default::default()
+        };
         let q2 = q.with_type_of_data_toggled("Text");
         assert_eq!(q2.type_of_data(), vec!["Image"]);
     }
@@ -496,7 +574,10 @@ mod tests {
 
     #[test]
     fn to_query_string_with_search() {
-        let q = ProjectQuery { search: Some("hello world".to_string()), ..Default::default() };
+        let q = ProjectQuery {
+            search: Some("hello world".to_string()),
+            ..Default::default()
+        };
         let qs = q.to_query_string();
         assert!(qs.contains("search=hello%20world"));
     }
@@ -546,7 +627,11 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
             }
             let json = fs::read_to_string(&path).ok()?;
             let raw: ClusterRaw = serde_json::from_str(&json).ok()?;
-            if raw.projects.iter().any(|p| p == &shortcode) { Some(raw.into_ref()) } else { None }
+            if raw.projects.iter().any(|p| p == &shortcode) {
+                Some(raw.into_ref())
+            } else {
+                None
+            }
         })
         .collect();
 

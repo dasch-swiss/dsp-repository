@@ -60,9 +60,17 @@ pub fn CardHeader(#[prop(optional)] children: Option<Children>) -> impl IntoView
 }
 
 #[component]
-pub fn CardBody(#[prop(optional)] children: Option<Children>) -> impl IntoView {
+pub fn CardBody(
+    #[prop(optional)] children: Option<Children>,
+    #[prop(optional, into)] class: MaybeProp<String>,
+) -> impl IntoView {
+    let card_body_class = move || {
+        let additional = class.get().unwrap_or_default();
+        format!("card-body {}", additional)
+    };
+
     view! {
-        <div class="card-body">
+        <div class=card_body_class>
             {if let Some(children) = children {
                 Either::Left(children())
             } else {

@@ -34,7 +34,7 @@ pub fn ProjectCard(
                     </div>
                     <ProjectCardIndicators status=status access_rights=access_rights />
                 </figure>
-                <CardBody>
+                <CardBody class="flex-1 flex flex-col">
                     <div class="flex flex-col flex-1">
                         <h2 class="font-display font-bold text-lg line-clamp-2">{title}</h2>
                         <p class="text-sm text-gray-600 line-clamp-4 mt-2 flex-1">{content}</p>

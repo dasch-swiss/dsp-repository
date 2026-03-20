@@ -10,7 +10,14 @@ pub fn Contributor(contributor: ResolvedContributor) -> impl IntoView {
         <InfoCard>
             {match contributor {
                 ResolvedContributor::Person { person, affiliations, roles } => {
-                    view! { <PersonView person=person affiliations=affiliations roles=roles /> }
+                    view! {
+                        <PersonView
+                            person=person
+                            affiliations=affiliations
+                            roles=roles
+                            show_email=true
+                        />
+                    }
                         .into_any()
                 }
                 ResolvedContributor::Organization { org, roles } => {

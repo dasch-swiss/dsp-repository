@@ -35,20 +35,25 @@ pub fn ProjectCard(
                     <ProjectCardIndicators status=status access_rights=access_rights />
                 </figure>
                 <CardBody>
-                    <h2 class="font-display font-semibold text-lg text-ellipsis">{title}</h2>
-                    <p class="text-sm text-gray-600 line-clamp-4 mt-2">{content}</p>
-                    <div class="flex flex-wrap gap-1 mt-3">
-                        {keywords
-                            .into_iter()
-                            .take(3)
-                            .map(|kw| {
-                                view! {
-                                    <Badge variant=BadgeVariant::Secondary size=BadgeSize::Small>
-                                        {kw}
-                                    </Badge>
-                                }
-                            })
-                            .collect_view()}
+                    <div class="flex flex-col flex-1">
+                        <h2 class="font-display font-bold text-lg line-clamp-2">{title}</h2>
+                        <p class="text-sm text-gray-600 line-clamp-4 mt-2 flex-1">{content}</p>
+                        <div class="flex flex-wrap gap-1 mt-3">
+                            {keywords
+                                .into_iter()
+                                .take(3)
+                                .map(|kw| {
+                                    view! {
+                                        <Badge
+                                            variant=BadgeVariant::Secondary
+                                            size=BadgeSize::Small
+                                        >
+                                            {kw}
+                                        </Badge>
+                                    }
+                                })
+                                .collect_view()}
+                        </div>
                     </div>
                 </CardBody>
             </Card>

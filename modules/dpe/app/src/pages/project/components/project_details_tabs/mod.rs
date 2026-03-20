@@ -28,7 +28,7 @@ pub fn ProjectDetailsTabs(proj: Project, contributors: Vec<ResolvedContributor>)
                     value="overview"
                     active_tab=active_tab.clone()
                     icon=Info
-                    label="Dataset Overview"
+                    label="Overview"
                 />
                 {has_publications_tab
                     .then(|| {

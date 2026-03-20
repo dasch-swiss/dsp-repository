@@ -123,6 +123,6 @@
     /* === Typography ===
        Font stacks with graceful fallbacks for when web fonts are not loaded.
        Consuming apps are responsible for loading Lora and Lato (e.g. via Google Fonts). */
-    --font-display: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
-    --font-body: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+    --font-display: 'Lora', Georgia, serif;
+    --font-body: 'Lato', system-ui, Helvetica, Arial, sans-serif;
 }

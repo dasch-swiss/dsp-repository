@@ -13,7 +13,7 @@ const serverBinary = path.resolve(__dirname, "../../..", "target/release/leptos-
 if (!fs.existsSync(serverBinary)) {
   throw new Error(
     `Server binary not found at ${serverBinary}\n` +
-    `Run 'just watch-leptos-dpe' (or 'cargo leptos build --release') before running E2E tests.`
+    `Run 'just watch-dpe' (or 'cargo leptos build --release') before running E2E tests.`
   );
 }
 
@@ -107,7 +107,7 @@ export default defineConfig({
   /* Folder for test artifacts such as screenshots, videos, traces, etc. */
   // outputDir: 'test-results/',
 
-  /* Start the leptos-dpe server before running tests */
+  /* Start the DPE server before running tests */
   webServer: {
     command: serverBinary,
     port: 4000,

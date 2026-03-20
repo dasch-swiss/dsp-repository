@@ -1,5 +1,5 @@
 {
-  "modules/leptos-dpe/server": "0.1.1",
-  "modules/leptos-dpe/app": "0.1.1",
-  "modules/leptos-dpe/frontend": "0.1.1"
+  "modules/dpe/server": "0.1.1",
+  "modules/dpe/app": "0.1.1",
+  "modules/dpe/frontend": "0.1.1"
 }

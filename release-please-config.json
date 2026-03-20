@@ -6,9 +6,9 @@
   "bump-patch-for-minor-pre-major": true,
   "group-pull-request-title-pattern": "chore(dpe): release",
   "packages": {
-    "modules/leptos-dpe/server": { "component": "leptos-server" },
-    "modules/leptos-dpe/app": { "component": "app" },
-    "modules/leptos-dpe/frontend": { "component": "frontend" }
+    "modules/dpe/server": { "component": "leptos-server" },
+    "modules/dpe/app": { "component": "app" },
+    "modules/dpe/frontend": { "component": "frontend" }
   },
   "plugins": [
     { "type": "cargo-workspace" },

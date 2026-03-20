@@ -19,7 +19,7 @@ You may start and run the Mosaic demo application:
 You may start and run the Leptos DPE application:
 
 - Install dependencies: `just install-requirements`
-- Run: `just watch-leptos-dpe`
+- Run: `just watch-dpe`
 
 ## License
 

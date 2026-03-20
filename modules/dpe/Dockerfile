@@ -29,12 +29,12 @@ WORKDIR /app
 COPY . .
 
 # Install npm dependencies
-WORKDIR /app/modules/leptos-dpe
+WORKDIR /app/modules/dpe
 RUN CI=true pnpm install --frozen-lockfile
 
 # Build the project from the workspace root
 WORKDIR /app
-RUN cargo leptos build --project leptos-dpe --release -vv
+RUN cargo leptos build --project dpe --release -vv
 
 # Runtime Stage
 FROM debian:bookworm-slim AS runtime
@@ -55,13 +55,13 @@ RUN useradd -m -u 1001 leptos
 WORKDIR /app
 
 # Copy the server binary from the builder stage
-COPY --from=builder /app/target/release/leptos-server /app/leptos-dpe
+COPY --from=builder /app/target/release/leptos-server /app/dpe
 
 # Copy the site directory (contains WASM, JS, CSS, and static assets)
-COPY --from=builder /app/modules/leptos-dpe/target/site /app/site
+COPY --from=builder /app/modules/dpe/target/site /app/site
 
 # Copy the data files from the builder stage
-COPY --from=builder /app/modules/leptos-dpe/server/data /app/server/data
+COPY --from=builder /app/modules/dpe/server/data /app/server/data
 
 # Change ownership to the non-root user
 RUN chown -R leptos:leptos /app
@@ -69,7 +69,7 @@ USER leptos
 
 # Set environment variables for production
 ENV RUST_LOG="info"
-ENV LEPTOS_OUTPUT_NAME="leptos-dpe"
+ENV LEPTOS_OUTPUT_NAME="dpe"
 ENV LEPTOS_SITE_ROOT="site"
 ENV LEPTOS_SITE_PKG_DIR="pkg"
 ENV LEPTOS_SITE_ADDR="0.0.0.0:8080"
@@ -81,4 +81,4 @@ ENV DATA_DIR="/app/server/data"
 EXPOSE 8080
 
 # Run the server
-CMD ["./leptos-dpe"]
+CMD ["./dpe"]

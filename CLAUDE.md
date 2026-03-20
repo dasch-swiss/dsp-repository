@@ -21,7 +21,7 @@ This includes:
 - **Components**: mosaic-tiles component library
 - **Architecture**: Clean Architecture / Hexagonal Architecture
 - **Structure**: Cargo workspace with modular crates
-- **Data Layer**: Repository pattern; currently backed by static JSON files in `modules/leptos-dpe/server/data/`
+- **Data Layer**: Repository pattern; currently backed by static JSON files in `modules/dpe/server/data/`
 - **Testing**: Cargo test for unit/integration, Playwright for E2E
 - **Documentation**: mdBook with alerts plugin
 
@@ -29,7 +29,7 @@ This includes:
 
 ```txt
 modules/
-├── leptos-dpe/            # Discovery and Presentation Environment (Leptos app)
+├── dpe/                   # Discovery and Presentation Environment (Leptos app)
 │   ├── app/               # Shared app logic, components, pages, domain
 │   ├── server/            # Server binary
 │   ├── frontend/          # Client-side (WASM) entry point
@@ -48,7 +48,7 @@ modules/
 
 - **Rust**: Toolchain managed via `rustup`
 - **Just**: Command runner for development tasks
-- **pnpm**: Package manager for the leptos-dpe frontend
+- **pnpm**: Package manager for the DPE frontend
 
 ### First-Time Setup
 
@@ -60,7 +60,7 @@ just install-requirements
 
 ```bash
 # Development
-just watch-leptos-dpe          # Run DPE with hot reload
+just watch-dpe                 # Run DPE with hot reload
 just watch-mosaic-demo         # Run Mosaic demo with hot reload
 just watch                     # Watch for changes and run tests
 just run                       # Run server (release mode)
@@ -84,7 +84,7 @@ just install-requirements      # Install required tools
 
 - **Formatting**:
   Defined in `.rustfmt.toml`, use Unix newlines.
-  Use `leptosfmt` for Leptos code (`modules/mosaic/`, `modules/leptos-dpe/`).
+  Use `leptosfmt` for Leptos code (`modules/mosaic/`, `modules/dpe/`).
 - **Linting**: Strict clippy warnings
 - **Testing**: Testing pyramid (unit → integration → E2E)
 - **Git**: Rebase workflow, clean commit history

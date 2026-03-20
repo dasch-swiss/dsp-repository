@@ -22,6 +22,5 @@ pub use project_repository::FsProjectRepository;
 pub use project_repository::ProjectRepository;
 pub use projects::{get_project, list_data_languages, list_projects, list_type_of_data};
 #[cfg(feature = "ssr")]
-pub use utils::get_data_root_dir;
+pub use utils::get_data_dir;
 pub use utils::lang_value;
-

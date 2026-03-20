@@ -12,6 +12,7 @@ pub fn ProjectSearchInput() -> impl IntoView {
     let (value, set_value) = signal(String::new());
     let (debounced_value, set_debounced_value) = signal(String::new());
     let (focused, set_focused) = signal(false);
+    let (selected_index, set_selected_index) = signal::<Option<usize>>(None);
     let show_dropdown = Memo::new(move |_| !debounced_value.get().is_empty() && focused.get());
 
     let results = Resource::new(
@@ -35,6 +36,7 @@ pub fn ProjectSearchInput() -> impl IntoView {
                         on:input=move |ev| {
                             let v = event_target_value(&ev);
                             set_value.set(v.clone());
+                            set_selected_index.set(None);
                             set_timeout(
                                 move || set_debounced_value.set(v),
                                 Duration::from_millis(DEBOUNCE_MS),
@@ -42,6 +44,69 @@ pub fn ProjectSearchInput() -> impl IntoView {
                         }
                         on:focus=move |_| set_focused.set(true)
                         on:blur=move |_| set_focused.set(false)
+                        on:keydown=move |ev| {
+                            if !show_dropdown.get() {
+                                return;
+                            }
+                            let key = ev.key();
+                            let item_count = results
+                                .get()
+                                .and_then(|res| res.ok())
+                                .map(|page| {
+                                    if page.items.is_empty() { 0 } else { page.items.len() + 1 }
+                                })
+                                .unwrap_or(0);
+                            if item_count == 0 {
+                                return;
+                            }
+                            match key.as_str() {
+                                "ArrowDown" => {
+                                    ev.prevent_default();
+                                    set_selected_index
+                                        .update(|idx| {
+                                            *idx = Some(
+                                                match *idx {
+                                                    None => 0,
+                                                    Some(i) if i + 1 >= item_count => 0,
+                                                    Some(i) => i + 1,
+                                                },
+                                            );
+                                        });
+                                }
+                                "ArrowUp" => {
+                                    ev.prevent_default();
+                                    set_selected_index
+                                        .update(|idx| {
+                                            *idx = Some(
+                                                match *idx {
+                                                    None | Some(0) => item_count - 1,
+                                                    Some(i) => i - 1,
+                                                },
+                                            );
+                                        });
+                                }
+                                "Enter" => {
+                                    if let Some(i) = selected_index.get() {
+                                        ev.prevent_default();
+                                        if let Some(Ok(page)) = results.get() {
+                                            let url = if i < page.items.len() {
+                                                format!("/projects/{}", page.items[i].shortcode)
+                                            } else {
+                                                let query = debounced_value.get();
+                                                format!("/projects?search={}", urlencoding::encode(&query))
+                                            };
+                                            if let Some(window) = web_sys::window() {
+                                                let _ = window.location().set_href(&url);
+                                            }
+                                        }
+                                    }
+                                }
+                                "Escape" => {
+                                    set_focused.set(false);
+                                }
+                                _ => {}
+                            }
+                        }
                     />
                 </label>
 
@@ -68,6 +133,7 @@ pub fn ProjectSearchInput() -> impl IntoView {
                                         }
                                         Ok(page) => {
                                             let total_items = page.total_items;
+                                            let item_count = page.items.len();
                                             let search_url = format!(
                                                 "/projects?search={}",
                                                 urlencoding::encode(&query),
@@ -77,18 +143,23 @@ pub fn ProjectSearchInput() -> impl IntoView {
                                                     {page
                                                         .items
                                                         .into_iter()
-                                                        .map(|p| {
+                                                        .enumerate()
+                                                        .map(|(i, p)| {
                                                             view! {
                                                                 <li>
                                                                     <a
                                                                         href=format!("/projects/{}", p.shortcode)
-                                                                        class="block px-4 py-3 hover:bg-base-200 transition-colors text-sm"
+                                                                        class=move || {
+                                                                            if selected_index.get() == Some(i) {
+                                                                                "block px-4 py-3 bg-base-200 transition-colors text-sm"
+                                                                            } else {
+                                                                                "block px-4 py-3 hover:bg-base-200 transition-colors text-sm"
+                                                                            }
+                                                                        }
                                                                     >
-                                                                        <div class="font-medium text-base-content">
-                                                                            {p.name.clone()}
-                                                                        </div>
+                                                                        <div class="font-medium text-base-content">{p.name}</div>
                                                                         <div class="text-sm text-base-content/60 truncate mt-0.5">
-                                                                            {p.short_description.clone()}
+                                                                            {p.short_description}
                                                                         </div>
                                                                     </a>
                                                                 </li>
@@ -99,7 +170,13 @@ pub fn ProjectSearchInput() -> impl IntoView {
                                                 <div class="border-t border-base-300 mt-1 pt-1">
                                                     <a
                                                         href=search_url
-                                                        class="flex items-center gap-2 px-2 py-1 hover:bg-base-200 rounded text-sm text-base-content/70"
+                                                        class=move || {
+                                                            if selected_index.get() == Some(item_count) {
+                                                                "flex items-center gap-2 px-2 py-1 bg-base-200 rounded text-sm text-base-content/70"
+                                                            } else {
+                                                                "flex items-center gap-2 px-2 py-1 hover:bg-base-200 rounded text-sm text-base-content/70"
+                                                            }
+                                                        }
                                                     >
                                                         <Icon icon=IconSearch class="w-4 h-4" />
                                                         {format!("Search for \"{query}\" ({total_items} results)")}

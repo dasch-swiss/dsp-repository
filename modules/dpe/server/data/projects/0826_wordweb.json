@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0826",
     "name": "WordWeb / IDEM: A new way of representing Intertextuality in Drama of the Early Modern Period",
     "shortcode": "0826",
-    "officialName": "Research Project: WordWeb / IDEM: A new way of representing Intertextuality in Drama of the Early Modern Period",
+    "officialName": "WordWeb / IDEM: A new way of representing Intertextuality in Drama of the Early Modern Period",
     "status": "Finished",
     "shortDescription": "WordWeb/IDEM offers an innovative digital database for representing intertextuality in the drama of Shakespeare’s time.",
     "description": {
@@ -25,18 +25,13 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
             },
-            "copyrightHolder": "0826-organization-000",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0826-person-005",
-                "0826-person-001",
-                "0826-person-002",
-                "0826-person-003",
-                "0826-person-004"
+                "MISSING"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
-    "dataPublicationYear": "2020-01-01",
     "typeOfData": [
         "Text"
     ],
@@ -137,7 +132,7 @@
     ],
     "attributions": [
         {
-            "contributor": "0826-person-005",
+            "contributor": "0803-person-002",
             "contributorType": [
                 "Applicant"
             ]
@@ -163,7 +158,7 @@
             ]
         },
         {
-            "contributor": "0826-person-004",
+            "contributor": "0812-person-028",
             "contributorType": [
                 "Programmer"
             ]
@@ -178,7 +173,7 @@
     "funding": [
         {
             "funders": [
-                "0826-organization-000"
+                "0101-organization-001"
             ],
             "number": "183259",
             "name": "Digital Lives",
@@ -192,91 +187,5 @@
         {
             "en": "WordWeb / IDEM"
         }
-    ],
-    "records": [
-        "0826-record-001",
-        "0826-record-002",
-        "0826-record-003",
-        "0826-record-004",
-        "0826-record-005",
-        "0826-record-006",
-        "0826-record-007",
-        "0826-record-008",
-        "0826-record-009",
-        "0826-record-010",
-        "0826-record-011",
-        "0826-record-012",
-        "0826-record-013",
-        "0826-record-014",
-        "0826-record-015",
-        "0826-record-016",
-        "0826-record-017",
-        "0826-record-018",
-        "0826-record-019",
-        "0826-record-020",
-        "0826-record-021",
-        "0826-record-022",
-        "0826-record-023",
-        "0826-record-024",
-        "0826-record-025",
-        "0826-record-026",
-        "0826-record-027",
-        "0826-record-028",
-        "0826-record-029",
-        "0826-record-030",
-        "0826-record-031",
-        "0826-record-032",
-        "0826-record-033",
-        "0826-record-034",
-        "0826-record-035",
-        "0826-record-036",
-        "0826-record-037",
-        "0826-record-038",
-        "0826-record-039",
-        "0826-record-040",
-        "0826-record-041",
-        "0826-record-042",
-        "0826-record-043",
-        "0826-record-044",
-        "0826-record-045",
-        "0826-record-046",
-        "0826-record-047",
-        "0826-record-048",
-        "0826-record-049",
-        "0826-record-050",
-        "0826-record-051",
-        "0826-record-052",
-        "0826-record-053",
-        "0826-record-054",
-        "0826-record-055",
-        "0826-record-056",
-        "0826-record-057",
-        "0826-record-058",
-        "0826-record-059",
-        "0826-record-060",
-        "0826-record-061",
-        "0826-record-062",
-        "0826-record-063",
-        "0826-record-064",
-        "0826-record-065",
-        "0826-record-066",
-        "0826-record-067",
-        "0826-record-068",
-        "0826-record-069",
-        "0826-record-070",
-        "0826-record-071",
-        "0826-record-072",
-        "0826-record-073",
-        "0826-record-074",
-        "0826-record-075",
-        "0826-record-076",
-        "0826-record-077",
-        "0826-record-078",
-        "0826-record-079",
-        "0826-record-080",
-        "0826-record-081",
-        "0826-record-082",
-        "0826-record-083",
-        "0826-record-084"
     ]
 }

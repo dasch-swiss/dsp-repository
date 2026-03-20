@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0107",
     "name": "A Gender Perspective on Film Character and Stardom: Studying the Production of Film Representations in the Forties (Claude Autant-Lara Collection, Swiss Film Archive)",
     "shortcode": "0107",
-    "officialName": "Research Project: A Gender Perspective on Film Character and Stardom: Studying the Production of F...",
+    "officialName": "A Gender Perspective on Film Character and Stardom: Studying the Production of Film Representations in the Forties (Claude Autant-Lara Collection, Swiss Film Archive)",
     "status": "Ongoing",
     "shortDescription": "This project studies the mechanisms of the construction of genre representations in the French cinematographic production of the 1940s.",
     "description": {
@@ -25,18 +25,13 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "0107-organization-001",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0107-person-000",
-                "0107-person-001",
-                "0107-person-002",
-                "0107-person-003",
-                "0107-person-004"
+                "MISSING"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
-    "dataPublicationYear": "2020-01-01",
     "typeOfData": [
         "Image",
         "Text"
@@ -100,7 +95,7 @@
     ],
     "attributions": [
         {
-            "contributor": "0107-person-000",
+            "contributor": "0102-person-000",
             "contributorType": [
                 "Project leader",
                 "Data collector"
@@ -135,13 +130,13 @@
             ]
         },
         {
-            "contributor": "0107-person-006",
+            "contributor": "0101-person-007",
             "contributorType": [
                 "Data curator"
             ]
         },
         {
-            "contributor": "0107-person-005",
+            "contributor": "0101-person-006",
             "contributorType": [
                 "Other"
             ]
@@ -151,7 +146,7 @@
         "en": "The ontology of the project comprises 15 distinct classes, 68 properties, mainly describing archive documents (Piece) divided into 7 distinct categories (contractual and legal documents, personal correspondence, published articles, documents related to the organisation of work, script documents, personal documents, documents related to promotion), and listing, for each piece, the natural or legal persons concerned by the writing of the document and, for each page of document, the persons, works and film projects mentioned.\r Some images (pages) are annotated (regions of interest)."
     },
     "contactPoint": [
-        "0107-person-000"
+        "0102-person-000"
     ],
     "publications": [
         {
@@ -188,7 +183,7 @@
     "funding": [
         {
             "funders": [
-                "0107-organization-001"
+                "0101-organization-001"
             ],
             "number": "166366",
             "name": "Project funding",
@@ -199,31 +194,5 @@
         {
             "en": "stardom"
         }
-    ],
-    "records": [
-        "0107-record-001",
-        "0107-record-002",
-        "0107-record-003",
-        "0107-record-004",
-        "0107-record-005",
-        "0107-record-006",
-        "0107-record-007",
-        "0107-record-008",
-        "0107-record-009",
-        "0107-record-010",
-        "0107-record-011",
-        "0107-record-012",
-        "0107-record-013",
-        "0107-record-014",
-        "0107-record-015",
-        "0107-record-016",
-        "0107-record-017",
-        "0107-record-018",
-        "0107-record-019",
-        "0107-record-020",
-        "0107-record-021",
-        "0107-record-022",
-        "0107-record-023",
-        "0107-record-024"
     ]
 }

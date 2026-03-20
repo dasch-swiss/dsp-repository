@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0121",
     "name": "Société de cour, élites et finances : de l’Hôtel des princes de Savoie à l’État moderne",
     "shortcode": "0121",
-    "officialName": "Research Project: Société de cour, élites et finances : de l’Hôtel des princes de Savoie à l’État moderne",
+    "officialName": "Société de cour, élites et finances : de l’Hôtel des princes de Savoie à l’État moderne",
     "status": "Ongoing",
     "shortDescription": "Ce projet étudie l’organisation de l’Hôtel de la cour de Savoie du XIIIe au XVe s., son évolution en une institution réglementée et hiérarchisée et propose une étude prosopographique de ses membres.",
     "description": {
@@ -25,17 +25,13 @@
                 "licenseDate": "2023-02-20",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
             },
-            "copyrightHolder": "0121-organization-001",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0121-person-000",
-                "0121-person-002",
-                "0121-person-001",
-                "0121-person-003"
+                "MISSING"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
-    "dataPublicationYear": "2024-01-01",
     "typeOfData": [
         "Text"
     ],
@@ -130,7 +126,7 @@
             ]
         },
         {
-            "contributor": "0121-person-003",
+            "contributor": "0101-person-007",
             "contributorType": [
                 "Data Curator"
             ]
@@ -145,7 +141,7 @@
     "funding": [
         {
             "funders": [
-                "0121-organization-001"
+                "0101-organization-001"
             ],
             "number": "192168",
             "name": "Project funding",
@@ -156,83 +152,5 @@
         {
             "fr": "societe-savoie"
         }
-    ],
-    "records": [
-        "0121-record-001",
-        "0121-record-002",
-        "0121-record-003",
-        "0121-record-004",
-        "0121-record-005",
-        "0121-record-006",
-        "0121-record-007",
-        "0121-record-008",
-        "0121-record-009",
-        "0121-record-010",
-        "0121-record-011",
-        "0121-record-012",
-        "0121-record-013",
-        "0121-record-014",
-        "0121-record-015",
-        "0121-record-016",
-        "0121-record-017",
-        "0121-record-018",
-        "0121-record-019",
-        "0121-record-020",
-        "0121-record-021",
-        "0121-record-022",
-        "0121-record-023",
-        "0121-record-024",
-        "0121-record-025",
-        "0121-record-026",
-        "0121-record-027",
-        "0121-record-028",
-        "0121-record-029",
-        "0121-record-030",
-        "0121-record-031",
-        "0121-record-032",
-        "0121-record-033",
-        "0121-record-034",
-        "0121-record-035",
-        "0121-record-036",
-        "0121-record-037",
-        "0121-record-038",
-        "0121-record-039",
-        "0121-record-040",
-        "0121-record-041",
-        "0121-record-042",
-        "0121-record-043",
-        "0121-record-044",
-        "0121-record-045",
-        "0121-record-046",
-        "0121-record-047",
-        "0121-record-048",
-        "0121-record-049",
-        "0121-record-050",
-        "0121-record-051",
-        "0121-record-052",
-        "0121-record-053",
-        "0121-record-054",
-        "0121-record-055",
-        "0121-record-056",
-        "0121-record-057",
-        "0121-record-058",
-        "0121-record-059",
-        "0121-record-060",
-        "0121-record-061",
-        "0121-record-062",
-        "0121-record-063",
-        "0121-record-064",
-        "0121-record-065",
-        "0121-record-066",
-        "0121-record-067",
-        "0121-record-068",
-        "0121-record-069",
-        "0121-record-070",
-        "0121-record-071",
-        "0121-record-072",
-        "0121-record-073",
-        "0121-record-074",
-        "0121-record-075",
-        "0121-record-076"
     ]
 }

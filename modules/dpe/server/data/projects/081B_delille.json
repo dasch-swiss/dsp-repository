@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/081B",
     "name": "Delille",
     "shortcode": "081B",
-    "officialName": "Research Project: Delille",
+    "officialName": "Delille",
     "status": "Finished",
     "shortDescription": "NIE-INE outcome for the project `Reconstruire Delille' in relation to the scholarly `reverse' edition of the reception of the third canto of Jacques Delille's L'homme des champs.",
     "description": {
@@ -12,7 +12,7 @@
     "startDate": "2015-02-01",
     "endDate": "2019-01-31",
     "url": [
-        "https://delille.philhist.unibas.ch/dokuwiki/doku.php?id=start"
+        "https://delille.philhist.unibas.ch/"
     ],
     "howToCite": "Reconstruire Delille, 2021",
     "accessRights": {
@@ -25,14 +25,13 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by/3.0"
             },
-            "copyrightHolder": "081B-organization-001",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "081B-person-001"
+                "MISSING"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
-    "dataPublicationYear": "2019-01-01",
     "typeOfData": [
         "XML"
     ],
@@ -100,14 +99,14 @@
         {
             "text": "",
             "pid": {
-                "url": "https://delille.philhist.unibas.ch/dokuwiki/doku.php?id=start"
+                "url": "https://delille.philhist.unibas.ch/"
             }
         }
     ],
     "funding": [
         {
             "funders": [
-                "081B-organization-001"
+                "0101-organization-001"
             ],
             "number": "153189",
             "name": "Project funding",
@@ -118,63 +117,5 @@
         {
             "fr": "L'Homme des champs : éditer une réception littéraire"
         }
-    ],
-    "records": [
-        "081B-record-001",
-        "081B-record-002",
-        "081B-record-003",
-        "081B-record-004",
-        "081B-record-005",
-        "081B-record-006",
-        "081B-record-007",
-        "081B-record-008",
-        "081B-record-009",
-        "081B-record-010",
-        "081B-record-011",
-        "081B-record-012",
-        "081B-record-013",
-        "081B-record-014",
-        "081B-record-015",
-        "081B-record-016",
-        "081B-record-017",
-        "081B-record-018",
-        "081B-record-019",
-        "081B-record-020",
-        "081B-record-021",
-        "081B-record-022",
-        "081B-record-023",
-        "081B-record-024",
-        "081B-record-025",
-        "081B-record-026",
-        "081B-record-027",
-        "081B-record-028",
-        "081B-record-029",
-        "081B-record-030",
-        "081B-record-031",
-        "081B-record-032",
-        "081B-record-033",
-        "081B-record-034",
-        "081B-record-035",
-        "081B-record-036",
-        "081B-record-037",
-        "081B-record-038",
-        "081B-record-039",
-        "081B-record-040",
-        "081B-record-041",
-        "081B-record-042",
-        "081B-record-043",
-        "081B-record-044",
-        "081B-record-045",
-        "081B-record-046",
-        "081B-record-047",
-        "081B-record-048",
-        "081B-record-049",
-        "081B-record-050",
-        "081B-record-051",
-        "081B-record-052",
-        "081B-record-053",
-        "081B-record-054",
-        "081B-record-055",
-        "081B-record-056"
     ]
 }

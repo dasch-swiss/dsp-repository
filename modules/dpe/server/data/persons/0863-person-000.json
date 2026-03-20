@@ -1,0 +1,18 @@
+{
+    "id": "0863-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0863-person-000",
+    "givenNames": [
+        "Claudia E."
+    ],
+    "familyNames": [
+        "Suter"
+    ],
+    "jobTitles": [
+        "Associate Researcher"
+    ],
+    "affiliations": [
+        "0850-organization-001",
+        "0101-organization-001"
+    ],
+    "email": "claudia.suter@faculty.unibe.ch"
+}

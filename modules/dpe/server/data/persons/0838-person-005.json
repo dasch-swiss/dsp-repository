@@ -1,0 +1,17 @@
+{
+    "id": "0838-person-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0838-person-005",
+    "givenNames": [
+        "Simon"
+    ],
+    "familyNames": [
+        "Kübler"
+    ],
+    "jobTitles": [
+        "BA"
+    ],
+    "affiliations": [
+        "0838-organization-000"
+    ],
+    "email": "simon.kuebler@unibas.ch"
+}

@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0103",
     "name": "« Théâtre de société » (Age of Enlightenment - Second French Empire)",
     "shortcode": "0103",
-    "officialName": "Research Project: « Théâtre de société » (Age of Enlightenment - Second French Empire)",
+    "officialName": "« Théâtre de société » (Age of Enlightenment - Second French Empire)",
     "status": "Ongoing",
     "shortDescription": "Théâtre de société is defined as a theater that is mainly or totally amateur, non-profit, practiced in private homes. The project concerns the study of this form of theater.",
     "description": {
@@ -26,18 +26,13 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "0103-organization-001",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0103-person-000",
-                "0103-person-001",
-                "0103-person-002",
-                "0103-person-003",
-                "0103-person-004"
+                "MISSING"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
-    "dataPublicationYear": "2021-01-01",
     "typeOfData": [
         "Text"
     ],
@@ -171,13 +166,13 @@
             ]
         },
         {
-            "contributor": "0103-person-008",
+            "contributor": "0101-person-007",
             "contributorType": [
                 "Data curator"
             ]
         },
         {
-            "contributor": "0103-person-007",
+            "contributor": "0101-person-006",
             "contributorType": [
                 "Other"
             ]
@@ -347,7 +342,7 @@
     "funding": [
         {
             "funders": [
-                "0103-organization-001"
+                "0101-organization-001"
             ],
             "number": "157392",
             "name": "SNSF Professorships",
@@ -355,7 +350,7 @@
         },
         {
             "funders": [
-                "0103-organization-001"
+                "0101-organization-001"
             ],
             "number": "190070",
             "name": "SNSF Professorships",
@@ -366,95 +361,5 @@
         {
             "fr": "theatre-societe"
         }
-    ],
-    "records": [
-        "0103-record-001",
-        "0103-record-002",
-        "0103-record-003",
-        "0103-record-004",
-        "0103-record-005",
-        "0103-record-006",
-        "0103-record-007",
-        "0103-record-008",
-        "0103-record-009",
-        "0103-record-010",
-        "0103-record-011",
-        "0103-record-012",
-        "0103-record-013",
-        "0103-record-014",
-        "0103-record-015",
-        "0103-record-016",
-        "0103-record-017",
-        "0103-record-018",
-        "0103-record-019",
-        "0103-record-020",
-        "0103-record-021",
-        "0103-record-022",
-        "0103-record-023",
-        "0103-record-024",
-        "0103-record-025",
-        "0103-record-026",
-        "0103-record-027",
-        "0103-record-028",
-        "0103-record-029",
-        "0103-record-030",
-        "0103-record-031",
-        "0103-record-032",
-        "0103-record-033",
-        "0103-record-034",
-        "0103-record-035",
-        "0103-record-036",
-        "0103-record-037",
-        "0103-record-038",
-        "0103-record-039",
-        "0103-record-040",
-        "0103-record-041",
-        "0103-record-042",
-        "0103-record-043",
-        "0103-record-044",
-        "0103-record-045",
-        "0103-record-046",
-        "0103-record-047",
-        "0103-record-048",
-        "0103-record-049",
-        "0103-record-050",
-        "0103-record-051",
-        "0103-record-052",
-        "0103-record-053",
-        "0103-record-054",
-        "0103-record-055",
-        "0103-record-056",
-        "0103-record-057",
-        "0103-record-058",
-        "0103-record-059",
-        "0103-record-060",
-        "0103-record-061",
-        "0103-record-062",
-        "0103-record-063",
-        "0103-record-064",
-        "0103-record-065",
-        "0103-record-066",
-        "0103-record-067",
-        "0103-record-068",
-        "0103-record-069",
-        "0103-record-070",
-        "0103-record-071",
-        "0103-record-072",
-        "0103-record-073",
-        "0103-record-074",
-        "0103-record-075",
-        "0103-record-076",
-        "0103-record-077",
-        "0103-record-078",
-        "0103-record-079",
-        "0103-record-080",
-        "0103-record-081",
-        "0103-record-082",
-        "0103-record-083",
-        "0103-record-084",
-        "0103-record-085",
-        "0103-record-086",
-        "0103-record-087",
-        "0103-record-088"
     ]
 }

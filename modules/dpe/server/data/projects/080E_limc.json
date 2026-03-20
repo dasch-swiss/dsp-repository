@@ -3,14 +3,14 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/080E",
     "name": "Digital Lexicon Iconographicum Mythologiae Classicae (Digital LIMC)",
     "shortcode": "080E",
-    "officialName": "Research Project: Digital Lexicon Iconographicum Mythologiae Classicae (Digital LIMC)",
+    "officialName": "Digital Lexicon Iconographicum Mythologiae Classicae (Digital LIMC)",
     "status": "Ongoing",
     "shortDescription": "Digital LIMC contains what we know about the iconography of Greek, Etruscan and Roman mythology, both in ancient Greek, Etruscan and Roman art as well as in neighbouring Mediterranean cultures.",
     "description": {
         "en": "Digital LIMC is a digital platform for Classical Mythology, it contains what we know about the iconography of Greek, Etruscan and Roman mythology, both in ancient Greek, Etruscan and Roman art as well as in the one of neighbouring Mediterranean cultures. These literary and iconographical sources of ancient mythology are key elements of the cultural heritage of mankind. The Foundation for the LIMC prepared and published 10 volumes of the Lexicon Iconographicum Mythologiae Classicae (LIMC) between 1981 and 2009. This publication project was followed by the Thesaurus Cultus et Rituum Antiquorum (ThesCRA; 10 volumes), focussing on ritual and cult in antiquity.\n\nDigital LIMC makes all data accessible which were assembled in the course of the preparation of the printed books and which are stored in the basement of a building of the University of Basel today."
     },
     "startDate": "2014-06-02",
-    "endDate": "2018-12-31",
+    "endDate": "MISSING",
     "url": [
         "https://app.dasch.swiss/project/BRwvcfLLT72IN-fXzQkrdQ",
         "https://weblimc.org"
@@ -26,9 +26,9 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
             },
-            "copyrightHolder": "080E-organization-000",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "080E-organization-005"
+                "MISSING"
             ]
         }
     ],
@@ -147,6 +147,14 @@
     "abstract": {
         "en": "Digital LIMC makes accessible what we know about the iconography of Greek, Etruscan and Roman mythology in ancient Greek, Etruscan and Roman art as well as in the one of the neighbouring civilisations of the Mediterranean, to all people interested in classical antiquity. It contains basic information about more than 55’000 archaeological objects (e.g. vases, sculpture, gems, mosaics) which were assembled in the course of the preparation of the printed books of the LIMC and the ThesCRA from about 1970 onward. Short keyword type object descriptions and links to other research projects or museum databases will be added continuously as far as funds permit. The images of the objects are accessible online if the owning institution has given us permission for diffusion."
     },
+    "publications": [
+        {
+            "text": "Gautschy, R. (2025). Digital LIMC – A Knowledge Graph for Classical Mythology. Journal of Open Humanities Data, 11: 64, pp. 1–5.",
+            "pid": {
+                "url": "https://doi.org/10.5334/johd.403"
+            }
+        }
+    ],
     "funding": [
         {
             "funders": [
@@ -162,7 +170,7 @@
         },
         {
             "funders": [
-                "080E-organization-002"
+                "0101-organization-001"
             ],
             "number": "2015-2371/1.2",
             "name": "Gesuch im Bereich Bildung und Wissenschaft",
@@ -178,7 +186,7 @@
         },
         {
             "funders": [
-                "080E-organization-004"
+                "0101-organization-001"
             ],
             "number": "19-109",
             "name": "Gesuch im Bereich Kultur",
@@ -189,102 +197,5 @@
         {
             "en": "Digital LIMC"
         }
-    ],
-    "records": [
-        "080E-record-001",
-        "080E-record-002",
-        "080E-record-003",
-        "080E-record-004",
-        "080E-record-005",
-        "080E-record-006",
-        "080E-record-007",
-        "080E-record-008",
-        "080E-record-009",
-        "080E-record-010",
-        "080E-record-011",
-        "080E-record-012",
-        "080E-record-013",
-        "080E-record-014",
-        "080E-record-015",
-        "080E-record-016",
-        "080E-record-017",
-        "080E-record-018",
-        "080E-record-019",
-        "080E-record-020",
-        "080E-record-021",
-        "080E-record-022",
-        "080E-record-023",
-        "080E-record-024",
-        "080E-record-025",
-        "080E-record-026",
-        "080E-record-027",
-        "080E-record-028",
-        "080E-record-029",
-        "080E-record-030",
-        "080E-record-031",
-        "080E-record-032",
-        "080E-record-033",
-        "080E-record-034",
-        "080E-record-035",
-        "080E-record-036",
-        "080E-record-037",
-        "080E-record-038",
-        "080E-record-039",
-        "080E-record-040",
-        "080E-record-041",
-        "080E-record-042",
-        "080E-record-043",
-        "080E-record-044",
-        "080E-record-045",
-        "080E-record-046",
-        "080E-record-047",
-        "080E-record-048",
-        "080E-record-049",
-        "080E-record-050",
-        "080E-record-051",
-        "080E-record-052",
-        "080E-record-053",
-        "080E-record-054",
-        "080E-record-055",
-        "080E-record-056",
-        "080E-record-057",
-        "080E-record-058",
-        "080E-record-059",
-        "080E-record-060",
-        "080E-record-061",
-        "080E-record-062",
-        "080E-record-063",
-        "080E-record-064",
-        "080E-record-065",
-        "080E-record-066",
-        "080E-record-067",
-        "080E-record-068",
-        "080E-record-069",
-        "080E-record-070",
-        "080E-record-071",
-        "080E-record-072",
-        "080E-record-073",
-        "080E-record-074",
-        "080E-record-075",
-        "080E-record-076",
-        "080E-record-077",
-        "080E-record-078",
-        "080E-record-079",
-        "080E-record-080",
-        "080E-record-081",
-        "080E-record-082",
-        "080E-record-083",
-        "080E-record-084",
-        "080E-record-085",
-        "080E-record-086",
-        "080E-record-087",
-        "080E-record-088",
-        "080E-record-089",
-        "080E-record-090",
-        "080E-record-091",
-        "080E-record-092",
-        "080E-record-093",
-        "080E-record-094",
-        "080E-record-095"
     ]
 }

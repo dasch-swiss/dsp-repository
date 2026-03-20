@@ -1,0 +1,23 @@
+{
+    "id": "084C-person-014",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084C-person-014",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://faculty-directory.dartmouth.edu/nicola-camerlenghi",
+            "text": "https://faculty-directory.dartmouth.edu/nicola-camerlenghi"
+        }
+    ],
+    "givenNames": [
+        "Nicola"
+    ],
+    "familyNames": [
+        "Camerlenghi"
+    ],
+    "jobTitles": [
+        "Associate Professor of Architectural History / Prof. Dr."
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ]
+}

@@ -1,0 +1,17 @@
+{
+    "id": "0115-person-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0115-person-002",
+    "givenNames": [
+        "Natacha"
+    ],
+    "familyNames": [
+        "Isoz"
+    ],
+    "jobTitles": [
+        "PhD Student"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "natacha.isoz@unil.ch"
+}

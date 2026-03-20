@@ -1,0 +1,158 @@
+{
+    "id": "0868",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0868",
+    "name": "Canon of solar eclipses from 2501 BCE to 1000 CE",
+    "shortcode": "0868",
+    "officialName": "Canon of solar eclipses from 2501 BCE to 1000 CE",
+    "status": "Finished",
+    "shortDescription": "When did the Sun darken in antiquity? Discover calculated solar eclipses and their traces in ancient historical sources.",
+    "description": {
+        "en": "This project examined several applications of astronomical chronology in the field of classical studies. This dataset contains calculations of notable solar eclipses for the period between 2500 BCE and 1000 CE for the areas of present-day Greece, Turkey, Italy, Persia and Egypt. The aim of the study was to create a solar eclipse canon with identifications of the eclipses recorded in historical sources."
+    },
+    "startDate": "2008-11-01",
+    "endDate": "2010-10-31",
+    "url": [
+        "https://gautschy.ch/~rita/archast/solec/solec.html"
+    ],
+    "howToCite": "Gautschy R. (2026). Canon of solar eclipses from 2501 BCE to 1000 CE [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0868.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2026-01-15",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/deed.en"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Solar eclipse"
+        },
+        {
+            "en": "Canon"
+        },
+        {
+            "en": "Near East"
+        },
+        {
+            "en": "Greece"
+        },
+        {
+            "en": "Egypt"
+        },
+        {
+            "en": "Roman Imperium"
+        },
+        {
+            "en": "Italy"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/550622",
+            "text": "History of Science "
+        },
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/7205",
+            "text": "Philosophy of science"
+        },
+        {
+            "en": "20200 Astronomy, Astrophysics and Space Sciences"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "2500 BCE to 1000 CE"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/357994",
+            "text": "Egypt"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://d-nb.info/gnd/4068878-1",
+            "text": "Near East"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/390903",
+            "text": "Greece"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3175395",
+            "text": "Italy"
+        },
+        {
+            "type": "Pleiades",
+            "url": "https://pleiades.stoa.org/places/837",
+            "text": "Asia Minor"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/8354456/imperium-romanum.html",
+            "text": "Imperium Romanum"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0861-person-005",
+            "contributorType": [
+                "Researcher",
+                "Project leader",
+                "Data collector",
+                "Data curator"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "This dataset contains calculations of notable solar eclipses for the period between 2500 BCE and 1000 CE for the areas of present-day Greece, Turkey, Italy, Persia and Egypt. The aim of the study was to create a solar eclipse canon with identifications of the eclipses recorded in historical sources."
+    },
+    "contactPoint": [
+        "0861-person-005"
+    ],
+    "publications": [
+        {
+            "text": "Gautschy, Rita. 2012. Sonnenfinsternisse und ihre chronologische Bedeutung: Ein neuer Sonnenfinsterniskanon für Altertumswissenschaftler. Klio 94.1, 7--17."
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0101-organization-001"
+            ],
+            "number": "122824",
+            "name": "Marie Heim-Voegtlin Beiträge",
+            "url": "https://data.snf.ch/grants/grant/122824"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "solec"
+        }
+    ]
+}

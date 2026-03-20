@@ -1,0 +1,12 @@
+{
+    "id": "0862-organization-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0862-organization-000",
+    "name": "Forschungsstelle Jeremias Gotthelf",
+    "url": "http://www.gotthelf.unibe.ch",
+    "address": {
+        "street": "Universität Bern\r Forschungsstelle Jeremias Gotthelf\r Muesmattstrasse 45",
+        "postalCode": "CH-3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+    }
+}

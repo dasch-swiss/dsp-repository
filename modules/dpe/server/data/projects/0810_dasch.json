@@ -3,14 +3,14 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0810",
     "name": "DaSCH – Swiss National Data and Service Center for the Humanities",
     "shortcode": "0810",
-    "officialName": "Research Project: DaSCH – Swiss National Data and Service Center for the Humanities",
+    "officialName": "DaSCH – Swiss National Data and Service Center for the Humanities",
     "status": "Ongoing",
     "shortDescription": "This project contains material about DaSCH and events organised by DaSCH. All documents are made available in the original language of the presentations.",
     "description": {
         "en": "This project contains material about DaSCH and events organised by DaSCH. All documents are made available in the original language of the presentations."
     },
     "startDate": "2021-01-01",
-    "endDate": "2025-12-31",
+    "endDate": "MISSING",
     "url": [
         "https://app.dasch.swiss/project/v0B3nQt2Q-6aZiFGRe88KQ",
         "https://www.dasch.swiss/"
@@ -26,9 +26,9 @@
                 "licenseDate": "2023-05-03",
                 "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
             },
-            "copyrightHolder": "0810-organization-000",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0810-organization-001"
+                "MISSING"
             ]
         }
     ],
@@ -107,7 +107,7 @@
     ],
     "attributions": [
         {
-            "contributor": "0810-organization-001",
+            "contributor": "0101-organization-001",
             "contributorType": [
                 "Creator"
             ]
@@ -119,7 +119,7 @@
     "funding": [
         {
             "funders": [
-                "0810-organization-000"
+                "0101-organization-001"
             ],
             "number": "189588",
             "name": "Research Infrastructure",
@@ -130,23 +130,5 @@
         {
             "en": "DaSCH"
         }
-    ],
-    "records": [
-        "0810-record-001",
-        "0810-record-002",
-        "0810-record-003",
-        "0810-record-004",
-        "0810-record-005",
-        "0810-record-006",
-        "0810-record-007",
-        "0810-record-008",
-        "0810-record-009",
-        "0810-record-010",
-        "0810-record-011",
-        "0810-record-012",
-        "0810-record-013",
-        "0810-record-014",
-        "0810-record-015",
-        "0810-record-016"
     ]
 }

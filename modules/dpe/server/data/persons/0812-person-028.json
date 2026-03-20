@@ -8,10 +8,11 @@
         "Tissaveerasingham"
     ],
     "jobTitles": [
-        "Research associate"
+        "Research associate",
+        "Scientific collaborator"
     ],
     "affiliations": [
-        "0812-organization-001"
-    ],
-    "sameAs": []
+        "0812-organization-001",
+        "0826-organization-002"
+    ]
 }

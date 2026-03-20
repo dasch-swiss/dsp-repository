@@ -15,10 +15,12 @@
         "Rivoal"
     ],
     "jobTitles": [
-        "Research manager"
+        "Research manager",
+        "Researcher manager",
+        "Research Manager"
     ],
     "affiliations": [
-        "0101-organization-000"
+        "0101-organization-001"
     ],
     "email": "marion.rivoal@unil.ch"
 }

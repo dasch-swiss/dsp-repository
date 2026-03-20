@@ -1,0 +1,17 @@
+{
+    "id": "0860-person-004",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0860-person-004",
+    "givenNames": [
+        "Maurizio"
+    ],
+    "familyNames": [
+        "Aceto"
+    ],
+    "jobTitles": [
+        "Professor"
+    ],
+    "affiliations": [
+        "0860-organization-005"
+    ],
+    "email": "maurizio.aceto@uniupo.it"
+}

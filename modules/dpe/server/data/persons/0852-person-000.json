@@ -1,0 +1,25 @@
+{
+    "id": "0852-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0852-person-000",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0002-3058-2497",
+            "text": "ORCID URL: https://orcid.org/0009-0002-3058-2497"
+        }
+    ],
+    "givenNames": [
+        "Josy",
+        "Martina"
+    ],
+    "familyNames": [
+        "Luginbühl"
+    ],
+    "jobTitles": [
+        "Research assistant at University of Bern; curator of the Antikensammlung der Universität Bern"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "josy.luginbuehl@unibe.ch"
+}

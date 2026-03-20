@@ -1,0 +1,24 @@
+{
+    "id": "0848-person-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0848-person-002",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-1071-1941",
+            "text": "ORCID URL: https://orcid.org/0000-0003-1071-1941"
+        }
+    ],
+    "givenNames": [
+        "Rosalía"
+    ],
+    "familyNames": [
+        "Guerrero Cantarell"
+    ],
+    "jobTitles": [
+        "Teaching and research associate"
+    ],
+    "affiliations": [
+        "0848-organization-000"
+    ],
+    "email": "rgc0403@gmail.com"
+}

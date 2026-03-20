@@ -3,14 +3,14 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0805",
     "name": "University of Basel Kings’ Valley Project",
     "shortcode": "0805",
-    "officialName": "Research Project: University of Basel Kings’ Valley Project",
+    "officialName": "University of Basel Kings’ Valley Project",
     "status": "Ongoing",
     "shortDescription": "Assessment of tombs in the Kings’ Valley used for burials of royal family and entourage (ca. 1350 BCE), looted (ca. 1000 BCE), and reused for burials of members of priestly families (ca. 800–700 BCE).",
     "description": {
         "en": "Archaeological Project exploring undecorated tombs in the Valley of the Kings, Egypt"
     },
     "startDate": "2015-03-01",
-    "endDate": "2019-12-31",
+    "endDate": "MISSING",
     "url": [
         "https://aegyptologie.philhist.unibas.ch/de/forschung/forschungsprojekte/university-of-basel-kings-valley-project/"
     ],
@@ -25,9 +25,9 @@
                 "licenseDate": "2021-09-30",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/"
             },
-            "copyrightHolder": "0805-organization-001",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0805-person-000"
+                "MISSING"
             ]
         }
     ],
@@ -195,7 +195,7 @@
     "funding": [
         {
             "funders": [
-                "0805-organization-001"
+                "0101-organization-001"
             ],
             "number": "156046",
             "name": "Project funding",
@@ -206,13 +206,5 @@
         {
             "en": "UBKVP"
         }
-    ],
-    "records": [
-        "0805-record-001",
-        "0805-record-002",
-        "0805-record-003",
-        "0805-record-004",
-        "0805-record-005",
-        "0805-record-006"
     ]
 }

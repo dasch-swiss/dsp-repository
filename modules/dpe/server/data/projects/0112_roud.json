@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0112",
     "name": "Gustave Roud, Complete works",
     "shortcode": "0112",
-    "officialName": "Research Project: Gustave Roud, Complete works",
+    "officialName": "Gustave Roud, Complete works",
     "status": "Ongoing",
     "shortDescription": "This database is the accompaniment of the critical edition of Gustave Roud’s work. It hosts the digital facsimiles of Gustave Roud’s archive, which includes manuscripts and printed materials.",
     "description": {
@@ -25,18 +25,13 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "0112-organization-001",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0112-person-000",
-                "0112-person-001",
-                "0112-person-002",
-                "0112-person-003",
-                "0112-person-004"
+                "MISSING"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
-    "dataPublicationYear": "2021-01-01",
     "typeOfData": [
         "Image",
         "Text",
@@ -162,13 +157,13 @@
             ]
         },
         {
-            "contributor": "0112-person-008",
+            "contributor": "0101-person-007",
             "contributorType": [
                 "Data curator"
             ]
         },
         {
-            "contributor": "0112-person-007",
+            "contributor": "0101-person-006",
             "contributorType": [
                 "Other"
             ]
@@ -183,7 +178,7 @@
     "funding": [
         {
             "funders": [
-                "0112-organization-001"
+                "0101-organization-001"
             ],
             "number": "157970",
             "name": "Editions",
@@ -194,101 +189,5 @@
         {
             "fr": "roud-oeuvres"
         }
-    ],
-    "records": [
-        "0112-record-001",
-        "0112-record-002",
-        "0112-record-003",
-        "0112-record-004",
-        "0112-record-005",
-        "0112-record-006",
-        "0112-record-007",
-        "0112-record-008",
-        "0112-record-009",
-        "0112-record-010",
-        "0112-record-011",
-        "0112-record-012",
-        "0112-record-013",
-        "0112-record-014",
-        "0112-record-015",
-        "0112-record-016",
-        "0112-record-017",
-        "0112-record-018",
-        "0112-record-019",
-        "0112-record-020",
-        "0112-record-021",
-        "0112-record-022",
-        "0112-record-023",
-        "0112-record-024",
-        "0112-record-025",
-        "0112-record-026",
-        "0112-record-027",
-        "0112-record-028",
-        "0112-record-029",
-        "0112-record-030",
-        "0112-record-031",
-        "0112-record-032",
-        "0112-record-033",
-        "0112-record-034",
-        "0112-record-035",
-        "0112-record-036",
-        "0112-record-037",
-        "0112-record-038",
-        "0112-record-039",
-        "0112-record-040",
-        "0112-record-041",
-        "0112-record-042",
-        "0112-record-043",
-        "0112-record-044",
-        "0112-record-045",
-        "0112-record-046",
-        "0112-record-047",
-        "0112-record-048",
-        "0112-record-049",
-        "0112-record-050",
-        "0112-record-051",
-        "0112-record-052",
-        "0112-record-053",
-        "0112-record-054",
-        "0112-record-055",
-        "0112-record-056",
-        "0112-record-057",
-        "0112-record-058",
-        "0112-record-059",
-        "0112-record-060",
-        "0112-record-061",
-        "0112-record-062",
-        "0112-record-063",
-        "0112-record-064",
-        "0112-record-065",
-        "0112-record-066",
-        "0112-record-067",
-        "0112-record-068",
-        "0112-record-069",
-        "0112-record-070",
-        "0112-record-071",
-        "0112-record-072",
-        "0112-record-073",
-        "0112-record-074",
-        "0112-record-075",
-        "0112-record-076",
-        "0112-record-077",
-        "0112-record-078",
-        "0112-record-079",
-        "0112-record-080",
-        "0112-record-081",
-        "0112-record-082",
-        "0112-record-083",
-        "0112-record-084",
-        "0112-record-085",
-        "0112-record-086",
-        "0112-record-087",
-        "0112-record-088",
-        "0112-record-089",
-        "0112-record-090",
-        "0112-record-091",
-        "0112-record-092",
-        "0112-record-093",
-        "0112-record-094"
     ]
 }

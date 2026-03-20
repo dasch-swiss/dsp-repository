@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0120",
     "name": "Prendre une position épistémique dans l’interaction. Les marqueurs du savoir, du non-savoir et du doute en français",
     "shortcode": "0120",
-    "officialName": "Research Project: Prendre une position épistémique dans l’interaction. Les marqueurs du savoir, du...",
+    "officialName": "Prendre une position épistémique dans l’interaction. Les marqueurs du savoir, du non-savoir et du doute en français",
     "status": "Finished",
     "shortDescription": "A systematic and multimodal study of French epistemic and evidential markers as emerging in various professional/institutional settings documented by “natural“ video-recorded data.",
     "description": {
@@ -25,18 +25,13 @@
                 "licenseDate": "2024-04-30",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "0120-organization-001",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0120-person-000",
-                "0120-person-002",
-                "0120-person-001",
-                "0120-person-003",
-                "0120-person-004"
+                "MISSING"
             ]
         }
     ],
     "dataManagementPlan": "https://doi.org/10.5281/zenodo.7038186",
-    "dataPublicationYear": "2024-01-01",
     "typeOfData": [
         "Text"
     ],
@@ -121,13 +116,13 @@
             ]
         },
         {
-            "contributor": "0120-person-003",
+            "contributor": "0101-person-007",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0120-person-004",
+            "contributor": "0101-person-006",
             "contributorType": [
                 "Other"
             ]
@@ -142,7 +137,7 @@
     "funding": [
         {
             "funders": [
-                "0120-organization-001"
+                "0101-organization-001"
             ],
             "number": "188924",
             "name": "Project funding",
@@ -153,12 +148,5 @@
         {
             "en": "posepi"
         }
-    ],
-    "records": [
-        "0120-record-001",
-        "0120-record-002",
-        "0120-record-003",
-        "0120-record-004",
-        "0120-record-005"
     ]
 }

@@ -1,0 +1,17 @@
+{
+    "id": "084E-person-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-person-001",
+    "givenNames": [
+        "Jan"
+    ],
+    "familyNames": [
+        "Scheller"
+    ],
+    "jobTitles": [
+        "Wissenschaftlicher Mitarbeiter"
+    ],
+    "affiliations": [
+        "084A-organization-000"
+    ],
+    "email": "jan.scheller@uni-greifswald.de"
+}

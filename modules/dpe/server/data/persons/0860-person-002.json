@@ -1,0 +1,17 @@
+{
+    "id": "0860-person-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0860-person-002",
+    "givenNames": [
+        "Sabrina"
+    ],
+    "familyNames": [
+        "Schmid"
+    ],
+    "jobTitles": [
+        "Doctoral student"
+    ],
+    "affiliations": [
+        "0860-organization-001"
+    ],
+    "email": "sabrina.schmid@uzh.ch"
+}

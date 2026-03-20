@@ -1,0 +1,9 @@
+{
+    "id": "cluster-003",
+    "name": "Bernoulli-Euler Online (BEOL)",
+    "description": {
+        "en": "The project Bernoulli-Euler Online (BEOL) integrates edition projects related to the Bernoulli dynasty and Leonhard Euler into one digital platform. It combines correspondence editions, Jacob Bernoulli's scientific notebook Meditationes, and the Basler Edition der Bernoulli-Briefwechsel.",
+        "de": "Das Projekt Bernoulli-Euler Online (BEOL) integriert Editionsprojekte zur Bernoulli-Dynastie und Leonhard Euler in eine digitale Plattform. Es vereint Briefwechsel-Editionen, Jacob Bernoullis wissenschaftliches Notizbuch Meditationes und die Basler Edition der Bernoulli-Briefwechsel."
+    },
+    "projects": ["0801"]
+}

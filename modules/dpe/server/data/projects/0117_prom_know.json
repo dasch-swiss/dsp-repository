@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0117",
     "name": "Promoting Knowledge. The Origins of the Science System and the Making of Professional Structures in European States, 1700-1870",
     "shortcode": "0117",
-    "officialName": "Research Project: Promoting Knowledge. The Origins of the Science System and the Making of Profess...",
+    "officialName": "Promoting Knowledge. The Origins of the Science System and the Making of Professional Structures in European States, 1700-1870",
     "status": "Finished",
     "shortDescription": "The professionalization of science is often conceptualized as the exclusion of amateurs. We show on the contrary that this became only through the development of scientific culture and networks.",
     "description": {
@@ -25,17 +25,13 @@
                 "licenseDate": "2023-08-24",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
             },
-            "copyrightHolder": "0117-organization-001",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0117-person-000",
-                "0117-person-001",
-                "0117-person-002",
-                "0117-person-003"
+                "MISSING"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
-    "dataPublicationYear": "2020-01-01",
     "typeOfData": [
         "Text"
     ],
@@ -133,7 +129,7 @@
     ],
     "attributions": [
         {
-            "contributor": "0117-person-000",
+            "contributor": "0105-person-001",
             "contributorType": [
                 "Project Leader, Project Manager"
             ]
@@ -145,13 +141,13 @@
             ]
         },
         {
-            "contributor": "0117-person-002",
+            "contributor": "0101-person-005",
             "contributorType": [
                 "Project Member, Data Curator"
             ]
         },
         {
-            "contributor": "0117-person-003",
+            "contributor": "0101-person-007",
             "contributorType": [
                 "Data Curator"
             ]
@@ -161,7 +157,7 @@
         "fr": "Cette base de données inclut 11'121 savants reconnus qui étaient âgés de 20 ans et plus entre 1700 et 1870. Est défini comme « savant reconnu » tout individu affilié pour ses travaux scientifiques à l’une au moins des six principales académies de l’époque concernée (Royal Society de Londres ; académies de Paris, Berlin, Stockholm, St-Pétersbourg et Bologne), ou recensé dans le Historical Catalogue of Scientists and Scientific Books publié en 1984 par Robert M. Gascoigne.\r La partie librement accessible de cette base de données (initialement crée en FileMaker Pro), a été migrée dans un modèle relationnel en SQL. Elle inclut une partie des données biographiques, relationnelles et bibliographiques collectées dans le cadre de deux projets FNS successifs, données qui concernent notamment les astronomes, les physiciens, les chimistes et les botanistes européens et nord-américains. Ces données sont plus complètes pour le groupe des « grands savants » (1/4 de l’échantillon environ), ce groupe étant défini comme l’ensemble des individus ayant bénéficié d’affiliations multiples aux six principales académies de la période 1700-1870, ou inclus dans le Dictionary of Scientific Biography édité entre 1970 et 1980 sous la direction de Charles C. Gillispie.\r Le modèle de données repose sur les classes suivantes : « Savant » (informations biographiques et relatives à la carrière des savants) ; « Champ » (principales disciplines dans lesquels ces savants se sont illustrés) ; « Correspondance » (recension de la correspondance qu’ont entretenue ces savants entre eux) et « Lien » (typologie des relations de travail qui se sont nouées entre ces savants)."
     },
     "contactPoint": [
-        "0117-person-000"
+        "0105-person-001"
     ],
     "publications": [
         {
@@ -179,7 +175,7 @@
         {
             "text": "3. René Sigrist & Sonia Zanier, « La botanique dans un contexte local : les jardins de Florence à l’époque des grands-ducs (1569-1859) », Gesnerus, 74/1 (2017), p. 5-52. 01-052_Sigrist.pdf",
             "pid": {
-                "url": "https://gesnerus.ch/_Resources/Persistent/7c128d18e09b9f004a180b30bb680686bde5ba88/0"
+                "url": "https://doi.org/10.24894/Gesn-fr.2017.74001"
             }
         },
         {
@@ -204,7 +200,7 @@
     "funding": [
         {
             "funders": [
-                "0117-organization-001"
+                "0101-organization-001"
             ],
             "number": "166345",
             "name": "Project funding",
@@ -215,89 +211,5 @@
         {
             "en": "prom-know"
         }
-    ],
-    "records": [
-        "0117-record-001",
-        "0117-record-002",
-        "0117-record-003",
-        "0117-record-004",
-        "0117-record-005",
-        "0117-record-006",
-        "0117-record-007",
-        "0117-record-008",
-        "0117-record-009",
-        "0117-record-010",
-        "0117-record-011",
-        "0117-record-012",
-        "0117-record-013",
-        "0117-record-014",
-        "0117-record-015",
-        "0117-record-016",
-        "0117-record-017",
-        "0117-record-018",
-        "0117-record-019",
-        "0117-record-020",
-        "0117-record-021",
-        "0117-record-022",
-        "0117-record-023",
-        "0117-record-024",
-        "0117-record-025",
-        "0117-record-026",
-        "0117-record-027",
-        "0117-record-028",
-        "0117-record-029",
-        "0117-record-030",
-        "0117-record-031",
-        "0117-record-032",
-        "0117-record-033",
-        "0117-record-034",
-        "0117-record-035",
-        "0117-record-036",
-        "0117-record-037",
-        "0117-record-038",
-        "0117-record-039",
-        "0117-record-040",
-        "0117-record-041",
-        "0117-record-042",
-        "0117-record-043",
-        "0117-record-044",
-        "0117-record-045",
-        "0117-record-046",
-        "0117-record-047",
-        "0117-record-048",
-        "0117-record-049",
-        "0117-record-050",
-        "0117-record-051",
-        "0117-record-052",
-        "0117-record-053",
-        "0117-record-054",
-        "0117-record-055",
-        "0117-record-056",
-        "0117-record-057",
-        "0117-record-058",
-        "0117-record-059",
-        "0117-record-060",
-        "0117-record-061",
-        "0117-record-062",
-        "0117-record-063",
-        "0117-record-064",
-        "0117-record-065",
-        "0117-record-066",
-        "0117-record-067",
-        "0117-record-068",
-        "0117-record-069",
-        "0117-record-070",
-        "0117-record-071",
-        "0117-record-072",
-        "0117-record-073",
-        "0117-record-074",
-        "0117-record-075",
-        "0117-record-076",
-        "0117-record-077",
-        "0117-record-078",
-        "0117-record-079",
-        "0117-record-080",
-        "0117-record-081",
-        "0117-record-082"
     ]
 }

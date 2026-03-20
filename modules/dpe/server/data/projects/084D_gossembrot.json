@@ -1,0 +1,165 @@
+{
+    "id": "084D",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084D",
+    "name": "Lesen als soziale Negotiation - Rekonstruktion der Bibliothek von Sigmund Gossembrot (1417–1493)",
+    "shortcode": "084D",
+    "officialName": "Lesen als soziale Negotiation - Rekonstruktion der Bibliothek von Sigmund Gossembrot (1417–1493)",
+    "status": "Ongoing",
+    "shortDescription": "Das Projekt erarbeitet und rekonstruiert den Bestand der Bibliothek von Sigmund Gossembrot (1417-1493)",
+    "description": {
+        "de": "Sigmund Gossembrot (1417–1493) gilt als repräsentativer Förderer des Frühhumanismus im deutschsprachigen Südwesten. Nach einem Studium der Artes in Wien (1433–1436: Bakkalaureat) durchlief er in seiner Heimatstadt Augsburg eine erfolgreiche Ämterlaufbahn, ehe er sich ab 1461 in den Straßburger Konvent zum 'Grünen Wörth' zurückzog, um sich dort einem intensiven Studium der Bücher einer mitgeführten Privatbibliothek zu widmen. Von Gossembrots umfangreicher Büchersammlung zeugen heute noch knapp 40 vorwiegend an europäischen Standorten aufbewahrte Handschriften. Zahlreiche Notizen und Querverweise, die Gossembrot in seinen Codices angebracht hat, zeigen, dass der Bestand einst mindestens 100 weitere Handschriften und etwa ein halbes Dutzend Inkunabeln enthielt (Stand: Dezember 2021). Die umfangreiche Privatbibliothek umfasste neben antiker und spätantiker Literatur mittelalterliche theologische, philosophische und historiographische Schriften, Werke aus den Bereichen der Wissenschaft, Poetik und Dichtung sowie humanistische Literatur und Briefe. Letztere reflektieren das soziale Umfeld Gossembrots in Wien, Schwaben, Franken und am Oberrhein. Die in den Handschriften erhaltenen Notate geben Aufschluss über Gossembrots Kontakte zu Zeitgenossen wie Konrad Säldner oder Sigismund Meisterlin. Sie ermöglichen die Rekonstruktion eines interpersonellen und interinstitutionellen Netzwerks, über das Gossembrot bis hin zum Straßburger Aufenthalt an den intellektuellen Diskursen seiner Zeit partizipierte.\n\nDas Projekt erarbeitet den Bestand von Gossembrots Bibliothek mithilfe digitaler Dokumentations- und Darstellungsverfahren. Auf diese Weise soll auch die Identifizierung weiterer zugehöriger Bände ermöglicht werden. Die Visualisierung und Analyse einschlägiger Lesespuren lässt historische Verfahren der Rezeption, des Ordnens und Verstehens von Wissen und Literatur erkennen. In seiner digitalen Ausrichtung und deren Reflexion trägt das Projekt zu einer «allgemeinen Theorie des neuen Literaturarchivs» (Franco Moretti) bei."
+    },
+    "startDate": "2021-02-01",
+    "endDate": "2026-01-31",
+    "url": [
+        "https://gossembrot.unibe.ch/gossembrot-portal/"
+    ],
+    "howToCite": "Michael Stolz, Ioanna Georgiou, Elena Brandazza (2026). Lesen als soziale Negotiation - Rekonstruktion der Bibliothek von Sigmund Gossembrot (1417–1493) [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084D",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2026-01-31",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Text"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German"
+        }
+    ],
+    "keywords": [
+        {
+            "de": "Bibliothek"
+        },
+        {
+            "de": "Frühhumanismus"
+        },
+        {
+            "de": "Lektürepraxis"
+        },
+        {
+            "de": "Wissensorganisation"
+        },
+        {
+            "en": "Historical Document Analysis"
+        },
+        {
+            "de": "Soziale Negotiation"
+        },
+        {
+            "de": "Bibliotheksgeschichte"
+        },
+        {
+            "de": "Digitale Bestandsrekonstruktion"
+        },
+        {
+            "de": "Sigmund Gossembrot"
+        },
+        {
+            "de": "Leseforschung"
+        },
+        {
+            "de": "Augsburg"
+        },
+        {
+            "de": "Strassburg"
+        }
+    ],
+    "disciplines": [
+        {
+            "de": "10501 Sprach- und Literaturwissenschaften"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "de": "Frühhumanismus 15. Jh."
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2954172/augsburg.html",
+            "text": "Augsburg"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2973783/strasbourg.html",
+            "text": "Strasbourg"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "084D-person-000",
+            "contributorType": [
+                "Project Leader"
+            ]
+        },
+        {
+            "contributor": "084D-person-001",
+            "contributorType": [
+                "Project Member"
+            ]
+        },
+        {
+            "contributor": "084D-person-002",
+            "contributorType": [
+                "Project Member"
+            ]
+        },
+        {
+            "contributor": "084D-person-003",
+            "contributorType": [
+                "Project Member"
+            ]
+        }
+    ],
+    "abstract": {
+        "de": "Das Projekt erarbeitet und rekonstruiert den Bestand der Bibliothek von Sigmund Gossembrot (1417-1493)"
+    },
+    "contactPoint": [
+        "084D-person-000"
+    ],
+    "publications": [
+        {
+            "text": "Michael Stolz: Was die Deutschen lasen, während die Humanisten schrieben. Zur Lesekultur im 15. Jahrhundert, in: Abbrüche – Umbrüche – Aufbrüche. Deutschsprachige Literatur zwischen 1450 und 1520, hg. von Bernd Bastert und Ingrid Bennewitz unter redaktioneller Mitarbeit von Anika Meißner, Wiesbaden 2023 (Jahrbuch der Oswald von Wolkenstein-Gesellschaft 24), S. 185–203"
+        },
+        {
+            "text": "Michael Stolz: Transversale Lektüren. Die Bibliothek des Frühhumanisten Sigmund Gossembrot, in: Die Bibliothek – The Library – La Bibliothèque. Denkräume und Wissensordnungen, hg. von Andreas Speer und Lars Reuke, Berlin/Boston 2020, S. 484–507"
+        },
+        {
+            "text": "Michael Stolz: Otium et negotium. Reading processes in Early Italian and German Humanism, in: Reading Books and Prints as Cultural Objects, hg. von Evanghelia Stead, Cham 2018 (New Directions in Book History), S. 81–106"
+        },
+        {
+            "text": "Michael Stolz: Sigmund Gossembrot. Streiflichter auf seine Bibliothek und Lektürepraxis, in: Pirckheimer Jahrbuch 29 (2015), S. 123–157"
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0101-organization-001"
+            ],
+            "number": "192441",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/192441"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "de": "Rekonstruktion der Bibliothek von Sigmund Gossembrot"
+        }
+    ]
+}

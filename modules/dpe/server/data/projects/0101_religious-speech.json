@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0101",
     "name": "Religious speech embarrassed, radio debates and controversies around gender: Switzerland and France, 2006-2016",
     "shortcode": "0101",
-    "officialName": "Religious Speech and Gender Debates: A Comparative Media Analysis of Switzerland and France (2006-2016)",
+    "officialName": "Religious speech embarrassed, radio debates and controversies around gender: Switzerland and France, 2006-2016",
     "status": "Finished",
     "shortDescription": "Ce projet étudie les mobilisations religieuses sur des questions de genre et de sexualités et comment elles transforment les règles d’interlocution des espaces publics sécularisés et la parole des acteurs religieux.",
     "description": {
@@ -25,16 +25,13 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "0101-organization-000",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0101-person-000",
-                "0101-person-001",
-                "0101-person-002"
+                "MISSING"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
-    "dataPublicationYear": "2019-01-01",
     "typeOfData": [
         "Text"
     ],
@@ -44,59 +41,6 @@
             "en": "French",
             "fr": "français"
         }
-    ],
-    "records": [
-        "0101-record-001",
-        "0101-record-002",
-        "0101-record-003",
-        "0101-record-004",
-        "0101-record-005",
-        "0101-record-006",
-        "0101-record-007",
-        "0101-record-008",
-        "0101-record-009",
-        "0101-record-010",
-        "0101-record-011",
-        "0101-record-012",
-        "0101-record-013",
-        "0101-record-014",
-        "0101-record-015",
-        "0101-record-016",
-        "0101-record-017",
-        "0101-record-018",
-        "0101-record-019",
-        "0101-record-020",
-        "0101-record-021",
-        "0101-record-022",
-        "0101-record-023",
-        "0101-record-024",
-        "0101-record-025",
-        "0101-record-026",
-        "0101-record-027",
-        "0101-record-028",
-        "0101-record-029",
-        "0101-record-030",
-        "0101-record-031",
-        "0101-record-032",
-        "0101-record-033",
-        "0101-record-034",
-        "0101-record-035",
-        "0101-record-036",
-        "0101-record-037",
-        "0101-record-038",
-        "0101-record-039",
-        "0101-record-040",
-        "0101-record-041",
-        "0101-record-042",
-        "0101-record-043",
-        "0101-record-044",
-        "0101-record-045",
-        "0101-record-046",
-        "0101-record-047",
-        "0101-record-048",
-        "0101-record-049",
-        "0101-record-050",
-        "0101-record-051"
     ],
     "keywords": [
         {

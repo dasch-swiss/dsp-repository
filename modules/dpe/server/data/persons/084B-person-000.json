@@ -1,0 +1,24 @@
+{
+    "id": "084B-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084B-person-000",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0005-2811-9454",
+            "text": "ORCID URL: https://orcid.org/0009-0005-2811-9454"
+        }
+    ],
+    "givenNames": [
+        "Michele"
+    ],
+    "familyNames": [
+        "Stefani"
+    ],
+    "jobTitles": [
+        "Phd"
+    ],
+    "affiliations": [
+        "084B-organization-000"
+    ],
+    "email": "michele.stefani@unifr.ch"
+}

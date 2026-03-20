@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0116",
     "name": "The Medieval Frame of Monumental Portal Sculpture (Pedestals, Canopies, Niches) : Cultural Transfers and Agency (12th-13th Centuries)",
     "shortcode": "0116",
-    "officialName": "Research Project: The Medieval Frame of Monumental Portal Sculpture (Pedestals, Canopies, Niches) ...",
+    "officialName": "The Medieval Frame of Monumental Portal Sculpture (Pedestals, Canopies, Niches) : Cultural Transfers and Agency (12th-13th Centuries)",
     "status": "Ongoing",
     "shortDescription": "This project aims to valorise and better comprehend the various elements surrounding monumental statues of church portals, namely pedestals, canopies, and niches.",
     "description": {
@@ -25,17 +25,13 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "0116-organization-002",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0116-person-000",
-                "0116-person-001",
-                "0116-person-002",
-                "0116-person-003"
+                "MISSING"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
-    "dataPublicationYear": "2023-01-01",
     "typeOfData": [
         "Image",
         "Text"
@@ -144,7 +140,7 @@
             ]
         },
         {
-            "contributor": "0116-person-003",
+            "contributor": "0101-person-007",
             "contributorType": [
                 "Data curator"
             ]
@@ -159,7 +155,7 @@
     "funding": [
         {
             "funders": [
-                "0116-organization-002"
+                "0101-organization-001"
             ],
             "number": "179787",
             "name": "PRIMA",
@@ -170,13 +166,5 @@
         {
             "en": "medframes"
         }
-    ],
-    "records": [
-        "0116-record-001",
-        "0116-record-002",
-        "0116-record-003",
-        "0116-record-004",
-        "0116-record-005",
-        "0116-record-006"
     ]
 }

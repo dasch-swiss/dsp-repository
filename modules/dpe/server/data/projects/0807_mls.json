@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0807",
     "name": "Musiklexikon der Schweiz",
     "shortcode": "0807",
-    "officialName": "Research Project: Musiklexikon der Schweiz",
+    "officialName": "Musiklexikon der Schweiz",
     "status": "Ongoing",
     "shortDescription": "Das MLS stellt fundierte Information über die AkteurInnen, Institutionen, Orte, Objekte und Phänomene zur Verfügung, die für die Musikgeschichte Schweiz über alle Sparten und Stile relevant sind.",
     "description": {
@@ -11,7 +11,7 @@
         "fr": "Le Dictionnaire de la musique en Suisse (DMS) est le dictionnaire en ligne consacré à l'histoire de la musique en Suisse, tous genres musicaux confondus. Le DMS se conçoit comme la plate-forme d'information centrale dédiée à la vie musicale en Suisse; il s'adresse aux musiciennes et aux musiciens, aux chercheuses et aux chercheurs, aux étudiantes et aux étudiants, ainsi qu'à toute personne intéressée par le sujet. Le DMS documente aussi bien les personnes qui ont forgé l'histoire de la musique en Suisse que les lieux, les institutions et les objets qui composent les différentes facettes de la vie musicale."
     },
     "startDate": "2013-01-01",
-    "endDate": "2017-12-31",
+    "endDate": "MISSING",
     "url": [
         "https://app.dasch.swiss/project/0807",
         "https://mls.0807.dasch.swiss/home"
@@ -27,13 +27,9 @@
                 "licenseDate": "2022-05-09",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
             },
-            "copyrightHolder": "0807-organization-000",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0807-person-004",
-                "0807-person-003",
-                "0807-person-005",
-                "0807-person-006",
-                "0807-person-007"
+                "MISSING"
             ]
         }
     ],
@@ -164,62 +160,5 @@
         {
             "de": "Dizionario della musica in Svizzera"
         }
-    ],
-    "records": [
-        "0807-record-001",
-        "0807-record-002",
-        "0807-record-003",
-        "0807-record-004",
-        "0807-record-005",
-        "0807-record-006",
-        "0807-record-007",
-        "0807-record-008",
-        "0807-record-009",
-        "0807-record-010",
-        "0807-record-011",
-        "0807-record-012",
-        "0807-record-013",
-        "0807-record-014",
-        "0807-record-015",
-        "0807-record-016",
-        "0807-record-017",
-        "0807-record-018",
-        "0807-record-019",
-        "0807-record-020",
-        "0807-record-021",
-        "0807-record-022",
-        "0807-record-023",
-        "0807-record-024",
-        "0807-record-025",
-        "0807-record-026",
-        "0807-record-027",
-        "0807-record-028",
-        "0807-record-029",
-        "0807-record-030",
-        "0807-record-031",
-        "0807-record-032",
-        "0807-record-033",
-        "0807-record-034",
-        "0807-record-035",
-        "0807-record-036",
-        "0807-record-037",
-        "0807-record-038",
-        "0807-record-039",
-        "0807-record-040",
-        "0807-record-041",
-        "0807-record-042",
-        "0807-record-043",
-        "0807-record-044",
-        "0807-record-045",
-        "0807-record-046",
-        "0807-record-047",
-        "0807-record-048",
-        "0807-record-049",
-        "0807-record-050",
-        "0807-record-051",
-        "0807-record-052",
-        "0807-record-053",
-        "0807-record-054",
-        "0807-record-055"
     ]
 }

@@ -8,10 +8,13 @@
         "Rosenthaler"
     ],
     "jobTitles": [
-        "Project Leader"
+        "Project Leader",
+        "Assistant Professor",
+        "Prof. Dr."
     ],
     "affiliations": [
-        "0803-organization-003"
-    ],
-    "sameAs": []
+        "0101-organization-001",
+        "0812-organization-001",
+        "0826-organization-002"
+    ]
 }

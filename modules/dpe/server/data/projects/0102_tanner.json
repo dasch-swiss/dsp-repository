@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0102",
     "name": "Le scénario chez Alain Tanner : discours et pratiques. Une approche génétique du récit filmique et des représentations de genre",
     "shortcode": "0102",
-    "officialName": "Alain Tanner's Screenplays: Discourse and Practice - A Genetic Approach to Film Narrative and Gender Representations",
+    "officialName": "Le scénario chez Alain Tanner : discours et pratiques. Une approche génétique du récit filmique et des représentations de genre",
     "status": "Ongoing",
     "shortDescription": "Ce projet étudie, dans une perspective narratologique/genre studies, la genèse des scénarios des films d’Alain Tanner, ainsi que les discours sur cette question tenus par le cinéaste.",
     "description": {
@@ -25,16 +25,13 @@
                 "licenseDate": "2022-09-08",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "0102-organization-000",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0102-person-000",
-                "0102-person-001",
-                "0102-person-002"
+                "MISSING"
             ]
         }
     ],
     "dataManagementPlan": "https://doi.org/10.5281/zenodo.7038186",
-    "dataPublicationYear": "2025-01-01",
     "typeOfData": [
         "Image",
         "Text"
@@ -128,13 +125,13 @@
             ]
         },
         {
-            "contributor": "0102-person-003",
+            "contributor": "0101-person-007",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0102-person-004",
+            "contributor": "0101-person-006",
             "contributorType": [
                 "Other"
             ]
@@ -149,7 +146,7 @@
     "funding": [
         {
             "funders": [
-                "0102-organization-001"
+                "0101-organization-001"
             ],
             "number": "204749",
             "name": "Project funding",
@@ -160,36 +157,5 @@
         {
             "fr": "scenario-tanner"
         }
-    ],
-    "records": [
-        "0102-record-001",
-        "0102-record-002",
-        "0102-record-003",
-        "0102-record-004",
-        "0102-record-005",
-        "0102-record-006",
-        "0102-record-007",
-        "0102-record-008",
-        "0102-record-009",
-        "0102-record-010",
-        "0102-record-011",
-        "0102-record-012",
-        "0102-record-013",
-        "0102-record-014",
-        "0102-record-015",
-        "0102-record-016",
-        "0102-record-017",
-        "0102-record-018",
-        "0102-record-019",
-        "0102-record-020",
-        "0102-record-021",
-        "0102-record-022",
-        "0102-record-023",
-        "0102-record-024",
-        "0102-record-025",
-        "0102-record-026",
-        "0102-record-027",
-        "0102-record-028",
-        "0102-record-029"
     ]
 }

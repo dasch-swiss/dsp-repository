@@ -1,0 +1,9 @@
+{
+    "id": "cluster-005",
+    "name": "About DaSCH",
+    "description": {
+        "en": "Public materials and showcase projects of DaSCH, the Swiss National Data and Service Center for the Humanities. Includes institutional documentation, event materials, and the Alice in DaSCHland demonstration project.",
+        "de": "Öffentliche Materialien und Vorzeigeprojekte von DaSCH, dem Schweizer Nationalen Daten- und Dienstleistungszentrum für die Geisteswissenschaften. Umfasst institutionelle Dokumentation, Veranstaltungsmaterialien und das Demonstrationsprojekt Alice in DaSCHland."
+    },
+    "projects": ["0810", "0854"]
+}

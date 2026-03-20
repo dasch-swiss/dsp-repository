@@ -1,0 +1,17 @@
+{
+    "id": "083C-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-person-000",
+    "givenNames": [
+        "Walter"
+    ],
+    "familyNames": [
+        "Morgenthaler"
+    ],
+    "jobTitles": [
+        "Dr. phil."
+    ],
+    "affiliations": [
+        "0101-organization-001",
+        "0101-organization-001"
+    ]
+}

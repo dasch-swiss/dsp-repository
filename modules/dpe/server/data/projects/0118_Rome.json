@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0118",
     "name": "Rome in the Early Middle Ages: Arts and Culture",
     "shortcode": "0118",
-    "officialName": "Research Project: Rome in the Early Middle Ages: Arts and Culture",
+    "officialName": "Rome in the Early Middle Ages: Arts and Culture",
     "status": "Ongoing",
     "shortDescription": "The project addresses the visual culture of the city of Rome (Vth-XIth ct.) by means of an interdisciplinary approach (art history, architecture, archaeology archaeometry, liturgy, epigraphy).",
     "description": {
@@ -25,18 +25,13 @@
                 "licenseDate": "2022-07-13",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "REMA-organization-001",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "REMA-person-000",
-                "REMA-person-001",
-                "REMA-person-006",
-                "REMA-person-005",
-                "REMA-person-004"
+                "MISSING"
             ]
         }
     ],
     "dataManagementPlan": "not accessible",
-    "dataPublicationYear": "2023-01-01",
     "typeOfData": [
         "Image",
         "Text"
@@ -167,7 +162,7 @@
             ]
         },
         {
-            "contributor": "REMA-person-002",
+            "contributor": "0101-person-007",
             "contributorType": [
                 "Data Curator"
             ]
@@ -188,7 +183,7 @@
     "funding": [
         {
             "funders": [
-                "REMA-organization-001"
+                "0101-organization-001"
             ],
             "number": "192854",
             "name": "Project funding",
@@ -199,15 +194,5 @@
         {
             "fr": "rome-siecles-obscurs"
         }
-    ],
-    "records": [
-        "0118-record-001",
-        "0118-record-002",
-        "0118-record-003",
-        "0118-record-004",
-        "0118-record-005",
-        "0118-record-006",
-        "0118-record-007",
-        "0118-record-008"
     ]
 }

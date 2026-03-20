@@ -3,14 +3,14 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0105",
     "name": "Drawings of gods: A Multicultural and Interdisciplinary Approach of Children’s Representations of Supernatural Agents",
     "shortcode": "0105",
-    "officialName": "Research Project: Drawings of gods: A Multicultural and Interdisciplinary Approach of Children’s R...",
+    "officialName": "Drawings of gods: A Multicultural and Interdisciplinary Approach of Children’s Representations of Supernatural Agents",
     "status": "Ongoing",
     "shortDescription": "Fondé sur plusieurs centaines de dessins dans diverses régions du monde, ce projet étudie l’évolution de la représentation de Dieu ou d’autres êtres surnaturels chez des enfants et des adolescents.",
     "description": {
         "fr": "The pictorial representations of the gods are very widely present in various religious traditions. The imagination of children is also impacted by this theme. Their representations vary according to age, of course, but are also influenced by the religious education received and the cultural environment. Collecting drawings is a widely proven technique for studying imaginary representations of children. Based on a collection of several hundred drawings in various regions of the world, including Brazil, Iran, Japan, the Netherlands, Romania, Russia and Switzerland, this project studies the evolution of the representation of God or other supernatural beings (gods, spirits, geniuses, etc.) in children and adolescents between 5 and 18 years old. A focus is put on the strategies implemented by children: recourse to traditional religious representations, to images of supernatural beings conveyed by animated films or comics. At the end of the project, the objective is to have been able to describe the main strategies used by the children while being able to highlight how the choice of one strategy rather than another is influenced by age, sex, religious education and the cultural environment of the child. The work context is interdisciplinary. The analysis of the collected material combines computer processing of images and descriptions provided by specialists in child development, the study of religions and the cultural contexts of origin of the drawings. These image analyzes will be supplemented by textual analyzes of comments provided by the children to explain what they have drawn."
     },
     "startDate": "2015-03-01",
-    "endDate": "2019-12-31",
+    "endDate": "MISSING",
     "url": [
         "https://app.ls-prod-server.dasch.swiss/project/0105",
         "https://ddd.unil.ch/"
@@ -26,13 +26,9 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
             },
-            "copyrightHolder": "0105-organization-000",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "0105-person-000",
-                "0105-person-001",
-                "0105-person-002",
-                "0105-person-003",
-                "0105-person-004"
+                "MISSING"
             ]
         }
     ],
@@ -185,7 +181,7 @@
             ]
         },
         {
-            "contributor": "0105-person-005",
+            "contributor": "0101-person-005",
             "contributorType": [
                 "Project member",
                 "Data curator",
@@ -201,13 +197,13 @@
             ]
         },
         {
-            "contributor": "0105-person-008",
+            "contributor": "0101-person-007",
             "contributorType": [
                 "Data curator"
             ]
         },
         {
-            "contributor": "0105-person-007",
+            "contributor": "0101-person-006",
             "contributorType": [
                 "Other"
             ]
@@ -251,7 +247,7 @@
     "funding": [
         {
             "funders": [
-                "0105-organization-000"
+                "0101-organization-001"
             ],
             "number": "156383",
             "name": "Interdisciplinary Projects",
@@ -262,70 +258,5 @@
         {
             "en": "drawings-gods"
         }
-    ],
-    "records": [
-        "0105-record-001",
-        "0105-record-002",
-        "0105-record-003",
-        "0105-record-004",
-        "0105-record-005",
-        "0105-record-006",
-        "0105-record-007",
-        "0105-record-008",
-        "0105-record-009",
-        "0105-record-010",
-        "0105-record-011",
-        "0105-record-012",
-        "0105-record-013",
-        "0105-record-014",
-        "0105-record-015",
-        "0105-record-016",
-        "0105-record-017",
-        "0105-record-018",
-        "0105-record-019",
-        "0105-record-020",
-        "0105-record-021",
-        "0105-record-022",
-        "0105-record-023",
-        "0105-record-024",
-        "0105-record-025",
-        "0105-record-026",
-        "0105-record-027",
-        "0105-record-028",
-        "0105-record-029",
-        "0105-record-030",
-        "0105-record-031",
-        "0105-record-032",
-        "0105-record-033",
-        "0105-record-034",
-        "0105-record-035",
-        "0105-record-036",
-        "0105-record-037",
-        "0105-record-038",
-        "0105-record-039",
-        "0105-record-040",
-        "0105-record-041",
-        "0105-record-042",
-        "0105-record-043",
-        "0105-record-044",
-        "0105-record-045",
-        "0105-record-046",
-        "0105-record-047",
-        "0105-record-048",
-        "0105-record-049",
-        "0105-record-050",
-        "0105-record-051",
-        "0105-record-052",
-        "0105-record-053",
-        "0105-record-054",
-        "0105-record-055",
-        "0105-record-056",
-        "0105-record-057",
-        "0105-record-058",
-        "0105-record-059",
-        "0105-record-060",
-        "0105-record-061",
-        "0105-record-062",
-        "0105-record-063"
     ]
 }

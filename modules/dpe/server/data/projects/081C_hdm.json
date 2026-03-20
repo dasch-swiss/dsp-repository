@@ -3,14 +3,14 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/081C",
     "name": "Hôtel de Musique Bern",
     "shortcode": "081C",
-    "officialName": "Research Project: Hôtel de Musique Bern",
+    "officialName": "Hôtel de Musique Bern",
     "status": "Finished",
     "shortDescription": "The database documents the different kinds of spectacles such as theatre plays, operas, ballets, or concerts that took place in the Hôtel de Musique in Bern between 1766 and 1905.",
     "description": {
         "en": "The database documents the events that took place in the Hôtel de Musique in Bern between 1766 and 1905. The repertoire was constituted by different kinds of spectacles like theatre plays, operas, ballets, concerts, dance parties, acrobatic performances, conferences or magicians. The list reconstructs the lifely and colourful theatre culture of Bern in the 19th Century."
     },
     "startDate": "2009-04-01",
-    "endDate": "2013-12-31",
+    "endDate": "MISSING",
     "url": [
         "https://app.dasch.swiss/project/081C"
     ],
@@ -25,9 +25,9 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0"
             },
-            "copyrightHolder": "081C-organization-000",
+            "copyrightHolder": "MISSING",
             "authorship": [
-                "081C-organization-000"
+                "MISSING"
             ]
         }
     ],
@@ -128,15 +128,5 @@
     "abstract": {
         "en": "The database documents the events that took place in the Hôtel de Musique in Bern between 1766 and 1905. The repertoire was constituted by different kinds of spectacles like theatre plays, operas, ballets, concerts, dance parties, acrobatic performances, conferences or magicians. The list reconstructs the lifely and colourful theatre culture of Bern in the 19th Century."
     },
-    "funding": "No funding",
-    "records": [
-        "081C-record-001",
-        "081C-record-002",
-        "081C-record-003",
-        "081C-record-004",
-        "081C-record-005",
-        "081C-record-006",
-        "081C-record-007",
-        "081C-record-008"
-    ]
+    "funding": "No funding"
 }

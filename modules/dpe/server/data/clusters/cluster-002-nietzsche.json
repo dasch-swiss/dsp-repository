@@ -1,0 +1,9 @@
+{
+    "id": "cluster-002",
+    "name": "Der späte Nietzsche",
+    "description": {
+        "en": "Digital editions of late Nietzsche sources, comprising both manuscript and print document editions. A collaborative research program producing scholarly digital editions of Friedrich Nietzsche's late works.",
+        "de": "Digitale Editionen der späten Nietzsche-Quellen, bestehend aus einer Manuskript- und einer Druckdokumentenedition. Ein kollaboratives Forschungsprogramm zur Erstellung wissenschaftlicher digitaler Editionen von Friedrich Nietzsches Spätwerk."
+    },
+    "projects": ["0866", "0867"]
+}

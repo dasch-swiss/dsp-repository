@@ -116,7 +116,7 @@ pub fn Footer() -> impl IntoView {
                         <Icon icon=IconLinkedIn class="w-6 h-6" />
                     </a>
                     <a
-                        href="https://twitter.com/dasch_swiss"
+                        href="https://x.com/daschswiss"
                         target="_blank"
                         rel="noopener noreferrer"
                         class="text-gray-400 hover:text-white transition-colors"
@@ -140,7 +140,7 @@ pub fn Footer() -> impl IntoView {
                 <div class="text-center text-sm text-gray-400">
                     <p>
                         {format!(
-                            "DaSCH - Swiss National Data and Service Center for the Humanities © {year}",
+                            "© {year} DaSCH \u{2013} Swiss National Data and Service Center for the Humanities. All rights reserved.",
                         )}
                     </p>
                 </div>

@@ -87,9 +87,17 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
                 spatial_coverage=proj.spatial_coverage.clone()
             />
 
-            <LinkCardSection title="Part of Cluster".to_string() items=cluster_items />
+            <LinkCardSection
+                title="Part of Cluster".to_string()
+                items=cluster_items
+                clickable=false
+            />
 
-            <LinkCardSection title="Collections".to_string() items=collection_items />
+            <LinkCardSection
+                title="Collections".to_string()
+                items=collection_items
+                clickable=false
+            />
 
             {proj
                 .documentation_material

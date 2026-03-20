@@ -25,12 +25,12 @@ pub fn ProjectHeader(
                         src=image_src
                         alt=name.clone()
                         class="w-full object-cover"
-                        style="height: 200px"
+                        style="height: 320px"
                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
                     />
                     <div
                         class="w-full bg-gray-100 items-center justify-center hidden"
-                        style="height: 200px"
+                        style="height: 320px"
                     >
                         <Icon icon=OpenDocument class="w-12 h-12 text-gray-300" />
                     </div>

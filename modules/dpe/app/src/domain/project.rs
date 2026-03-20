@@ -176,8 +176,7 @@ impl ProjectQuery {
             .iter()
             .map(|&v| {
                 let checked = self.access_rights().contains(&v.to_string());
-                let href =
-                    format!("/projects{}", self.with_access_rights_toggled(v).to_query_string());
+                let href = format!("/projects{}", self.with_access_rights_toggled(v).to_query_string());
                 (v.to_string(), checked, href)
             })
             .collect()
@@ -185,13 +184,16 @@ impl ProjectQuery {
 
     /// Build status filter items: `(label, checked, href)` for "Ongoing" and "Finished".
     pub fn status_filter_items(&self) -> Vec<(String, bool, String)> {
-        [("ongoing", "Ongoing", self.ongoing()), ("finished", "Finished", self.finished())]
-            .iter()
-            .map(|(param, label, checked)| {
-                let href = format!("/projects{}", self.with_status_toggled(param).to_query_string());
-                (label.to_string(), *checked, href)
-            })
-            .collect()
+        [
+            ("ongoing", "Ongoing", self.ongoing()),
+            ("finished", "Finished", self.finished()),
+        ]
+        .iter()
+        .map(|(param, label, checked)| {
+            let href = format!("/projects{}", self.with_status_toggled(param).to_query_string());
+            (label.to_string(), *checked, href)
+        })
+        .collect()
     }
 
     /// Return a new `ProjectQuery` with `value` toggled in/out of `type_of_data`, page reset to 1.
@@ -207,7 +209,11 @@ impl ProjectQuery {
             finished: self.finished,
             search: self.search.clone(),
             page: Some(1),
-            type_of_data: if selected.is_empty() { None } else { Some(selected.join(",")) },
+            type_of_data: if selected.is_empty() {
+                None
+            } else {
+                Some(selected.join(","))
+            },
             data_language: self.data_language.clone(),
             access_rights: self.access_rights.clone(),
             dialog: self.dialog,
@@ -228,7 +234,11 @@ impl ProjectQuery {
             search: self.search.clone(),
             page: Some(1),
             type_of_data: self.type_of_data.clone(),
-            data_language: if selected.is_empty() { None } else { Some(selected.join(",")) },
+            data_language: if selected.is_empty() {
+                None
+            } else {
+                Some(selected.join(","))
+            },
             access_rights: self.access_rights.clone(),
             dialog: self.dialog,
         }
@@ -249,7 +259,11 @@ impl ProjectQuery {
             page: Some(1),
             type_of_data: self.type_of_data.clone(),
             data_language: self.data_language.clone(),
-            access_rights: if selected.is_empty() { None } else { Some(selected.join(",")) },
+            access_rights: if selected.is_empty() {
+                None
+            } else {
+                Some(selected.join(","))
+            },
             dialog: self.dialog,
         }
     }

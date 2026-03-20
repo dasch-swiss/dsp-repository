@@ -1,5 +1,4 @@
 pub mod breadcrumb;
-pub mod project_sidebar;
 pub mod contributor;
 pub mod copy_button;
 pub mod description;
@@ -9,4 +8,5 @@ pub mod person;
 pub mod project_details;
 pub mod project_details_tabs;
 pub mod project_header;
+pub mod project_sidebar;
 pub mod publications_section;

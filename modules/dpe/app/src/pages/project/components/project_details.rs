@@ -2,9 +2,9 @@ use leptos::prelude::*;
 
 use crate::domain::{lang_value, Project, ResolvedContributor};
 use crate::pages::project::components::breadcrumb::Breadcrumb;
-use crate::pages::project::components::project_sidebar::ProjectSidebar;
 use crate::pages::project::components::project_details_tabs::ProjectDetailsTabs;
 use crate::pages::project::components::project_header::ProjectHeader;
+use crate::pages::project::components::project_sidebar::ProjectSidebar;
 
 #[component]
 pub fn ProjectDetails(proj: Project, contributors: Vec<ResolvedContributor>) -> impl IntoView {

@@ -1,14 +1,14 @@
 pub mod cluster;
 pub mod collection;
 pub mod contributors;
-#[cfg(feature = "ssr")]
-pub mod project_cache;
 pub mod models;
 pub mod organization;
 pub mod organizations;
 pub mod person;
 pub mod persons;
 pub mod project;
+#[cfg(feature = "ssr")]
+pub mod project_cache;
 pub mod projects;
 pub mod utils;
 

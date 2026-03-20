@@ -1,0 +1,24 @@
+{
+    "id": "0119-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0119-person-000",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0565-2222",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0565-2222"
+        }
+    ],
+    "givenNames": [
+        "Natalia"
+    ],
+    "familyNames": [
+        "Wawrzyniak"
+    ],
+    "jobTitles": [
+        "post-doctoral researcher / senior SNFS researcher"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "natalia.wawrzyniak@unil.ch"
+}

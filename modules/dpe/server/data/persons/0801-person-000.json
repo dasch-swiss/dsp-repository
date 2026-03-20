@@ -1,0 +1,17 @@
+{
+    "id": "0801-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-person-000",
+    "givenNames": [
+        "Martin"
+    ],
+    "familyNames": [
+        "Mattmüller"
+    ],
+    "jobTitles": [
+        "Wissenschaftlicher Mitarbeiter"
+    ],
+    "affiliations": [
+        "0801-organization-003"
+    ],
+    "email": "martin.mattmueller@unibas.ch"
+}

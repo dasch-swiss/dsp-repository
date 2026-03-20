@@ -1,0 +1,17 @@
+{
+    "id": "085C-person-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085C-person-001",
+    "givenNames": [
+        "Svenja"
+    ],
+    "familyNames": [
+        "Berkensträter"
+    ],
+    "jobTitles": [
+        "Collaborator Historische Bestände und Sammlungen, Bestandserhaltung und Digitalisierung"
+    ],
+    "affiliations": [
+        "085C-organization-001"
+    ],
+    "email": "berkenstraeter@ub.uni-koeln.de"
+}

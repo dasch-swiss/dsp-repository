@@ -1,0 +1,31 @@
+{
+    "id": "0861-person-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0861-person-005",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5470-8720",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5470-8720"
+        },
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5470-8720",
+            "text": "ORCID URL: 0000-0002-5470-8720"
+        }
+    ],
+    "givenNames": [
+        "Rita"
+    ],
+    "familyNames": [
+        "Gautschy"
+    ],
+    "jobTitles": [
+        "Prof. Dr.",
+        "Scientific Collaborator",
+        "Professor"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "rita.gautschy@dasch.swiss"
+}

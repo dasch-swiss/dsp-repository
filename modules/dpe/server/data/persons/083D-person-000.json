@@ -1,0 +1,17 @@
+{
+    "id": "083D-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083D-person-000",
+    "givenNames": [
+        "Brigit"
+    ],
+    "familyNames": [
+        "Obrist"
+    ],
+    "jobTitles": [
+        "Professor"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "brigit.obrist@unibas.ch"
+}

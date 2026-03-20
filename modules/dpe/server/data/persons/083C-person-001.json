@@ -1,0 +1,17 @@
+{
+    "id": "083C-person-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083C-person-001",
+    "givenNames": [
+        "Ursula"
+    ],
+    "familyNames": [
+        "Amrein"
+    ],
+    "jobTitles": [
+        "Prof. Dr. phil."
+    ],
+    "affiliations": [
+        "0101-organization-001",
+        "0101-organization-001"
+    ]
+}

@@ -1,0 +1,25 @@
+{
+    "id": "0114-person-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114-person-001",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5735-5350",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5735-5350"
+        }
+    ],
+    "givenNames": [
+        "Florence"
+    ],
+    "familyNames": [
+        "Carpentier"
+    ],
+    "jobTitles": [
+        "Assistant professor",
+        "Senior SNSF Researcher"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "florence.carpentier@unil.ch"
+}

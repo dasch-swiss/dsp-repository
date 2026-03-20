@@ -1,0 +1,16 @@
+{
+    "id": "0811-person-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0811-person-001",
+    "givenNames": [
+        "Helen"
+    ],
+    "familyNames": [
+        "Würsch"
+    ],
+    "jobTitles": [
+        "Student"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ]
+}

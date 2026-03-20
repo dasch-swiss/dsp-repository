@@ -1,0 +1,203 @@
+{
+    "id": "085C",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085C",
+    "name": "Vitae Sanctae Wiboradae — Lebensbeschreibungen der heiligen Wiborada von St. Gallen, herausgegeben, übersetzt und mit einer Einleitung und Anmerkungen versehen von Walter Berschin",
+    "shortcode": "085C",
+    "officialName": "Vitae Sanctae Wiboradae — Lebensbeschreibungen der heiligen Wiborada von St. Gallen, herausgegeben, übersetzt und mit einer Einleitung und Anmerkungen versehen von Walter Berschin",
+    "status": "Finished",
+    "shortDescription": "Edition und Übersetzung der beiden von den St. Galler Mönchen Ekkehart I. und Herimannus verfassten Viten Wiboradas von St. Gallen († 926) durch Walter Berschin.",
+    "description": {
+        "de": "Wiborada, die Schutzpatronin der Bücher und Bibliotheken, wurde im Jahr 1047 als erste Frau überhaupt formell vom Papst heiliggesprochen. Sie hatte sich im 10. Jahrhundert in eine Zelle in St. Gallen einmauern lassen und erlitt bei einem Angriff der Ungarn im Jahr 926 das Martyrium.\n\nIn dieser digitalen Ausgabe sind die beiden Viten von St. Galler Mönchen, die erhalten sind, sorgfältig ediert und übersetzt. Die erste von Klosterdekan Ekkehart I. entstand um 960/970, die zweite des Herimannus um 1072/1076. Dank diesen Lebensbeschreibungen, ergänzt durch weitere Quellen, gehört Wiborada zu den am besten dokumentierten Frauen des Frühmittelalters.",
+        "en": "Wiborada, the patron saint of books and libraries, was formally canonized by the Pope in 1047---the first woman ever to receive this honor. In the 10th century, she chose a life of radical devotion by having herself enclosed in a cell at St. Gall, where she ultimately suffered martyrdom during a Hungarian raid in 926.\n\nThis digital edition offers, in carefully edited and translated form, the two vitae written by monks of St. Gall, that have been preserved. The first was composed by the monastery dean Ekkehart I around 960--970, and the second by Herimannus around 1072--1076. Thanks to these accounts, complemented by additional sources, Wiborada stands among the best-documented women of the early Middle Ages."
+    },
+    "startDate": "2021-06-01",
+    "endDate": "2025-12-31",
+    "url": [
+        "https://app.dasch.swiss/project/085C"
+    ],
+    "howToCite": "Berschin (2026): Vitae Sanctae Wiboradae, DaSCH. https://ark.dasch.swiss/ark:/72163/1/085C",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2026-01-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/ "
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Text",
+        "XML"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Latein",
+            "en": "Latin",
+            "fr": "latin"
+        }
+    ],
+    "keywords": [
+        {
+            "de": "Wiborada"
+        },
+        {
+            "de": "Ekkehart I."
+        },
+        {
+            "de": "Herimannus"
+        },
+        {
+            "de": "Ekkehart IV."
+        },
+        {
+            "de": "St. Gallen"
+        },
+        {
+            "de": "St. Georgen-St. Gallen"
+        },
+        {
+            "de": "St. Mangen-St. Gallen"
+        },
+        {
+            "de": "Inklusin"
+        },
+        {
+            "de": "Märtyrerin"
+        },
+        {
+            "de": "Heilige"
+        },
+        {
+            "de": "Ungarn"
+        },
+        {
+            "en": "Wiborada"
+        },
+        {
+            "en": "Ekkehart I"
+        },
+        {
+            "en": "Herimannus"
+        },
+        {
+            "en": "Ekkehart IV"
+        },
+        {
+            "en": "St Gall"
+        },
+        {
+            "en": "St Georgen-St Gall"
+        },
+        {
+            "en": "St Mangen-St Gall"
+        },
+        {
+            "en": "Recluse"
+        },
+        {
+            "en": "Martyr"
+        },
+        {
+            "en": "Saint"
+        },
+        {
+            "en": "Hungarians"
+        }
+    ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/550403",
+            "text": "Medieval history"
+        },
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/550621",
+            "text": "History of religions"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "de": "9. und 10. Jahrhundert",
+            "en": "9th and 10th century",
+            "fr": "9ème et 10ème siècle"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658822",
+            "text": "St. Gallen"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2657895",
+            "text": "Thurgau"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3169070",
+            "text": "Rome"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "085C-person-000",
+            "contributorType": [
+                "editor",
+                "translator",
+                "author",
+                "commentator"
+            ]
+        },
+        {
+            "contributor": "085C-person-001",
+            "contributorType": [
+                "Data curator"
+            ]
+        },
+        {
+            "contributor": "085C-person-002",
+            "contributorType": [
+                "Layout"
+            ]
+        },
+        {
+            "contributor": "085C-person-003",
+            "contributorType": [
+                "Lectorate"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Wiborada, the patron saint of books and libraries, was formally canonized by the Pope in 1047---the first woman ever to receive this honor. In the 10th century, she chose a life of radical devotion by having herself enclosed in a cell at St. Gall, where she ultimately suffered martyrdom during a Hungarian raid in 926.\n\nThis digital edition offers, in carefully edited and translated form, the two vitae written by monks of St. Gall, that have been preserved. The first was composed by the monastery dean Ekkehart I around 960--970, and the second by Herimannus around 1072--1076. Thanks to these accounts, complemented by additional sources, Wiborada stands among the best-documented women of the early Middle Ages."
+    },
+    "contactPoint": [
+        "085C-organization-003"
+    ],
+    "publications": [
+        {
+            "text": "Ekkehart I. von St. Gallen und Herimannus von St. Gallen, Vitae sanctae Wiboradae. Lebensbeschreibungen der heiligen Wiborada von St. Gallen, Lateinisch/Deutsch, herausgegeben, übersetzt und mit Anmerkungen versehen von Walter Berschin. Zum Druck vorbereitet und mit einem Nachwort versehen von Cornel Dora, Ditzingen, Reclam, Philipp, 2025."
+        }
+    ],
+    "funding": "No funding",
+    "alternativeNames": [
+        {
+            "de": "Edition Wiborada-Viten",
+            "en": "Edition Wiborada-Viten"
+        }
+    ]
+}

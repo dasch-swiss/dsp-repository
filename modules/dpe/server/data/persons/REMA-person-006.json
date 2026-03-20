@@ -1,0 +1,18 @@
+{
+    "id": "REMA-person-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-006",
+    "givenNames": [
+        "Manuela"
+    ],
+    "familyNames": [
+        "Gianandrea"
+    ],
+    "jobTitles": [
+        "Associate Professor"
+    ],
+    "affiliations": [
+        "0101-organization-001",
+        "0101-organization-001"
+    ],
+    "email": "Manuela.Gianandrea@unil.ch"
+}

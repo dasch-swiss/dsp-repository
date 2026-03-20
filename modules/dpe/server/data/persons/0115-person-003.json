@@ -1,0 +1,17 @@
+{
+    "id": "0115-person-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0115-person-003",
+    "givenNames": [
+        "Pierre-Emmanuel"
+    ],
+    "familyNames": [
+        "Jaques"
+    ],
+    "jobTitles": [
+        "Scientific Collaborator"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "pierre-emmanuel.jaques@unil.ch"
+}

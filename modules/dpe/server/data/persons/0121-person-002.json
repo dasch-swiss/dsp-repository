@@ -1,0 +1,17 @@
+{
+    "id": "0121-person-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0121-person-002",
+    "givenNames": [
+        "Simon"
+    ],
+    "familyNames": [
+        "Frei"
+    ],
+    "jobTitles": [
+        "SNSF PhD Student"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "Simon.Frei.1@unil.ch"
+}

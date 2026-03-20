@@ -1,0 +1,17 @@
+{
+    "id": "REMA-person-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-003",
+    "givenNames": [
+        "Maria Elena"
+    ],
+    "familyNames": [
+        "Chiarella"
+    ],
+    "jobTitles": [
+        "PhD Student"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "mariaelena.chiarella@unil.ch"
+}

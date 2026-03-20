@@ -1,0 +1,24 @@
+{
+    "id": "0121-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0121-person-000",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "http://orcid.org/0000-0003-1380-5986",
+            "text": "ORCID URL: orcid.org/0000-0003-1380-5986"
+        }
+    ],
+    "givenNames": [
+        "Eva"
+    ],
+    "familyNames": [
+        "Pibiri"
+    ],
+    "jobTitles": [
+        "Senior lecturer"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "Eva.pibiri@unil.ch"
+}

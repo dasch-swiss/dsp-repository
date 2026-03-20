@@ -1,0 +1,17 @@
+{
+    "id": "REMA-person-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-008",
+    "givenNames": [
+        "Lejosne"
+    ],
+    "familyNames": [
+        "Cassandre"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "Cassandre.Lejosne@unil.ch"
+}

@@ -1,0 +1,17 @@
+{
+    "id": "0116-person-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0116-person-002",
+    "givenNames": [
+        "Sabrina"
+    ],
+    "familyNames": [
+        "Ciardo"
+    ],
+    "jobTitles": [
+        "Scientific collaborator"
+    ],
+    "affiliations": [
+        "0112-organization-002"
+    ],
+    "email": "sabrina.ciardo@gmail.com"
+}

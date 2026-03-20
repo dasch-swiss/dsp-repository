@@ -1,0 +1,17 @@
+{
+    "id": "0101-person-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-person-006",
+    "givenNames": [
+        "Loïc"
+    ],
+    "familyNames": [
+        "Jaouen"
+    ],
+    "jobTitles": [
+        "IT support"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "loic.jaouen@unil.ch"
+}

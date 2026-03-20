@@ -1,0 +1,203 @@
+{
+    "id": "0869",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0869",
+    "name": "GLAUBENMACHENLASSEN",
+    "shortcode": "0869",
+    "officialName": "GLAUBENMACHENLASSEN",
+    "status": "Ongoing",
+    "shortDescription": "GLAUBENMACHENLASSEN is a visual anthropological and film ethnographic dissertation exploring identity in a cinematographic laboratory. Research period: 2009-2022.",
+    "description": {
+        "de": "GLAUBENMACHENLASSEN ist ein visuell-anthropologisches und filmethnographisches Dissertationsprojekt, das Identität bzw. den Identifikationsprozess im Setting eines kinematographischen Labors erforscht. Anhand der Versuchsanordnung im kinematographischen Labor eine experimentelle Herangehensweise zum Gebrauch der digitalen Kinematographie als Forschungsinstrument in den Sozialwissenschaften des dritten Jahrtausends. Forschungszeitraum: 2009-2022. Forscher: Balz Andrea Alter, Universität Basel.",
+        "en": "GLAUBENMACHENLASSEN is a visual anthropological and film ethnographic dissertation project that explores identity and the process of identification in the setting of a cinematographic laboratory. Based on an experimental setup, it takes a novel approach to the use of digital cinematography as a research tool in the actual social sciences."
+    },
+    "startDate": "2012-03-01",
+    "endDate": "2021-03-01",
+    "url": [
+        "https://app.dasch.swiss/project/ONaIjCzpTYGHOF1At1ph_Q"
+    ],
+    "howToCite": "Alter & Ottou (2025). GLAUBENMACHENLASSEN [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0869.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-ND 4.0",
+                "licenseDate": "2026-03-26",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Audio",
+        "Image",
+        "Text",
+        "Video"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        },
+        {
+            "de": "Ewondo",
+            "en": "Ewondo",
+            "fr": "ewondo"
+        },
+        {
+            "de": "Französisch",
+            "en": "French",
+            "fr": "français"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Film as Research"
+        },
+        {
+            "en": "Cinematographic Laboratory"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10102 Ethnology"
+        },
+        {
+            "en": "10603 Musicology"
+        },
+        {
+            "en": "10604 Theatre and Film Studies"
+        },
+        {
+            "en": "10406 Visual arts and Art History"
+        },
+        {
+            "en": "10403 Fine Arts and Art History"
+        },
+        {
+            "en": "10201 Sociology"
+        },
+        {
+            "en": "10207 Social anthropology and ethnology"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "2012-2021"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2233387",
+            "text": "Cameroon"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2988507",
+            "text": "Paris"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2657896",
+            "text": "Zurich"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2624652",
+            "text": "Aarhus"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "0869-person-001",
+            "contributorType": [
+                "Project Leader",
+                "Research Assistant",
+                "Composer",
+                "CO-Author"
+            ]
+        },
+        {
+            "contributor": "0869-person-000",
+            "contributorType": [
+                "Project Manager",
+                "Researcher",
+                "Data Collector",
+                "Creator",
+                "Director",
+                "Author",
+                "Data Curator"
+            ]
+        },
+        {
+            "contributor": "0869-person-002",
+            "contributorType": [
+                "Film Editor"
+            ]
+        },
+        {
+            "contributor": "0869-person-003",
+            "contributorType": [
+                "Text Editor"
+            ]
+        },
+        {
+            "contributor": "0869-person-004",
+            "contributorType": [
+                "Text Editor"
+            ]
+        },
+        {
+            "contributor": "0869-person-005",
+            "contributorType": [
+                "Composer"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "GLAUBENMACHENLASSEN is a visual anthropological and film ethnographic dissertation project that explores identity and the process of identification in the setting of a cinematographic laboratory. Based on an experimental setup, it takes a novel approach to the use of digital cinematography as a research tool in the actual social sciences."
+    },
+    "contactPoint": [
+        "0869-person-000"
+    ],
+    "publications": [
+        {
+            "text": "E 3600 Scientific Artworks. 2015. Otu Bala Jah - Ya Kamerun (Official HD Video). 4:08.",
+            "pid": {
+                "url": "https://www.youtube.com/watch?v=Il2fYT1WmbY"
+            }
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "0101-organization-001"
+            ],
+            "name": "G3S Start-Up Grant"
+        },
+        {
+            "funders": [
+                "0101-organization-001"
+            ],
+            "name": "Guest Research Grant University of Aarhus"
+        },
+        {
+            "funders": [
+                "0101-organization-001"
+            ],
+            "name": "Get-on-Track Grant Universität Basel"
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "id": "0101-person-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-person-003",
+    "givenNames": [
+        "Yves"
+    ],
+    "familyNames": [
+        "Evequoz"
+    ],
+    "jobTitles": [
+        "Scientific collaborator"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ]
+}

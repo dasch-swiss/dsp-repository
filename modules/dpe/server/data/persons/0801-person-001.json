@@ -1,0 +1,16 @@
+{
+    "id": "0801-person-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801-person-001",
+    "givenNames": [
+        "Franz"
+    ],
+    "familyNames": [
+        "Lemmermeyer"
+    ],
+    "jobTitles": [
+        "Mathematiker"
+    ],
+    "affiliations": [
+        "0801-organization-003"
+    ]
+}

@@ -1,0 +1,24 @@
+{
+    "id": "085C-person-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085C-person-002",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-0626-7067",
+            "text": "ORCID URL: 0000-0003-0626-7067"
+        }
+    ],
+    "givenNames": [
+        "Wolfgang"
+    ],
+    "familyNames": [
+        "Meier"
+    ],
+    "jobTitles": [
+        "Director"
+    ],
+    "affiliations": [
+        "085C-organization-002"
+    ],
+    "email": "wolfgang@existsolutions.com"
+}

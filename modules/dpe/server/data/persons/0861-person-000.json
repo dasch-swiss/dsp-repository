@@ -1,0 +1,24 @@
+{
+    "id": "0861-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0861-person-000",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-5970-5388",
+            "text": "ORCID URL: https://orcid.org/0000-0001-5970-5388"
+        }
+    ],
+    "givenNames": [
+        "Ursula"
+    ],
+    "familyNames": [
+        "Bähler"
+    ],
+    "jobTitles": [
+        "Prof. Dr."
+    ],
+    "affiliations": [
+        "0861-organization-001"
+    ],
+    "email": "ubaehler@rom.uzh.ch"
+}

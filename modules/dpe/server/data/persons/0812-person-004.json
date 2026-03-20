@@ -1,0 +1,18 @@
+{
+    "id": "0812-person-004",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-person-004",
+    "givenNames": [
+        "Birgit"
+    ],
+    "familyNames": [
+        "Huber"
+    ],
+    "jobTitles": [
+        "Research associate"
+    ],
+    "affiliations": [
+        "0812-organization-000",
+        "0812-organization-003"
+    ],
+    "email": "birgit.huber@unibas.ch"
+}

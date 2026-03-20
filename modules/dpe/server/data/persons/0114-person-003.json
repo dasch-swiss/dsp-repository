@@ -1,0 +1,17 @@
+{
+    "id": "0114-person-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0114-person-003",
+    "givenNames": [
+        "Fabien"
+    ],
+    "familyNames": [
+        "Défayes"
+    ],
+    "jobTitles": [
+        "Scientif collaborator"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "fabien.def@gmail.com"
+}

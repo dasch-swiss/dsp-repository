@@ -1,0 +1,17 @@
+{
+    "id": "084E-person-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/084E-person-002",
+    "givenNames": [
+        "Jonas"
+    ],
+    "familyNames": [
+        "Schobinger"
+    ],
+    "jobTitles": [
+        "Wissenschaftlicher Mitarbeiter"
+    ],
+    "affiliations": [
+        "084A-organization-000"
+    ],
+    "email": "jonas.schobinger@fhnw.ch"
+}

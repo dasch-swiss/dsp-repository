@@ -1,0 +1,24 @@
+{
+    "id": "0119-person-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0119-person-001",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-4072-0913",
+            "text": "ORCID URL: https://orcid.org/0000-0002-4072-0913"
+        }
+    ],
+    "givenNames": [
+        "Estelle"
+    ],
+    "familyNames": [
+        "Doudet"
+    ],
+    "jobTitles": [
+        "Full professor"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "estelle.doudet@unil.ch"
+}

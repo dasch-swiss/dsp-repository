@@ -1,0 +1,29 @@
+{
+    "id": "083A-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/083A-person-000",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://aegyptologie.philhist.unibas.ch/de/personen/sandrine-vuilleumier/",
+            "text": "https://aegyptologie.philhist.unibas.ch/de/personen/sandrine-vuilleumier/"
+        },
+        {
+            "type": "URL",
+            "url": "https://daw.philhist.unibas.ch/de/personen/sandrine-vuilleumier",
+            "text": "https://daw.philhist.unibas.ch/de/personen/sandrine-vuilleumier"
+        }
+    ],
+    "givenNames": [
+        "Sandrine"
+    ],
+    "familyNames": [
+        "Vuilleumier"
+    ],
+    "jobTitles": [
+        "Prof. Dr."
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "sandrine.vuilleumier@unibas.ch"
+}

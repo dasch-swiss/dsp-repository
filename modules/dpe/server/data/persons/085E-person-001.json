@@ -1,0 +1,17 @@
+{
+    "id": "085E-person-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085E-person-001",
+    "givenNames": [
+        "Oskar"
+    ],
+    "familyNames": [
+        "Kaelin"
+    ],
+    "jobTitles": [
+        "Scientific Collaborator"
+    ],
+    "affiliations": [
+        "085E-organization-002"
+    ],
+    "email": "oskar.kaelin@unibas.ch"
+}

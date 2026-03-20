@@ -1,0 +1,13 @@
+{
+    "id": "0806-organization-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0806-organization-000",
+    "name": "Anton Webern Gesamtausgabe",
+    "url": "https://www.anton-webern.ch",
+    "address": {
+        "street": "Petersgraben 27/29",
+        "postalCode": "CH-4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+    },
+    "email": "info-awg@unibas.ch"
+}

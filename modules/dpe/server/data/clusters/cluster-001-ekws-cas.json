@@ -1,0 +1,9 @@
+{
+    "id": "cluster-001",
+    "name": "EKWS/CAS (Cultural Anthropology Switzerland)",
+    "description": {
+        "en": "Projects of the Cultural Anthropology Switzerland (CAS), formerly the Swiss Society for Folklore (SGV). EKWS/CAS is a learned society founded in 1896 that maintains archival collections and research data on Swiss cultural heritage.",
+        "de": "Projekte der Empirischen Kulturwissenschaft Schweiz (EKWS), vormals Schweizerische Gesellschaft für Volkskunde (SGV). Die EKWS ist eine 1896 gegründete Gelehrtengesellschaft, die Archivsammlungen und Forschungsdaten zum Schweizer Kulturerbe pflegt."
+    },
+    "projects": ["0812", "082A"]
+}

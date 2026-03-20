@@ -1,0 +1,24 @@
+{
+    "id": "0860-person-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0860-person-008",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5578-2850",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5578-2850"
+        }
+    ],
+    "givenNames": [
+        "Dubravka"
+    ],
+    "familyNames": [
+        "Jembrih-Simbürger"
+    ],
+    "jobTitles": [
+        "Conservation scientist"
+    ],
+    "affiliations": [
+        "0860-organization-006"
+    ],
+    "email": "D.Jembrih-Simbuerger@akbild.ac.at"
+}

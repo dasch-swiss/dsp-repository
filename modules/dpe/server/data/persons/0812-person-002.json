@@ -1,0 +1,18 @@
+{
+    "id": "0812-person-002",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-person-002",
+    "givenNames": [
+        "Regula"
+    ],
+    "familyNames": [
+        "Anklin"
+    ],
+    "jobTitles": [
+        "Conservator/Restorer",
+        "Photo archive consultant"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "regula.anklin@bluewin.ch"
+}

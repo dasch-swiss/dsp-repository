@@ -1,0 +1,12 @@
+{
+    "id": "0827-organization-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0827-organization-000",
+    "name": "NOMIS Foundation",
+    "url": "https://nomisfoundation.ch/",
+    "address": {
+        "street": "Claridenstrasse 26",
+        "postalCode": "8002",
+        "locality": "Zurich",
+        "country": "Switzerland"
+    }
+}

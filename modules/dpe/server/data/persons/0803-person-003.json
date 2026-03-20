@@ -1,0 +1,16 @@
+{
+    "id": "0803-person-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0803-person-003",
+    "givenNames": [
+        "Lothar"
+    ],
+    "familyNames": [
+        "Schmitt"
+    ],
+    "jobTitles": [
+        "Data Collector"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ]
+}

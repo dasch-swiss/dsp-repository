@@ -1,0 +1,19 @@
+{
+    "id": "0813-person-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0813-person-001",
+    "givenNames": [
+        "Erwin"
+    ],
+    "familyNames": [
+        "Zbinden"
+    ],
+    "jobTitles": [
+        "Leiter Dokumentationsstelle",
+        "Research associate"
+    ],
+    "affiliations": [
+        "0813-organization-001",
+        "0812-organization-001"
+    ],
+    "email": "erwin.zbinden@bmf.ch"
+}

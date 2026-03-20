@@ -1,0 +1,17 @@
+{
+    "id": "0845-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0845-person-000",
+    "givenNames": [
+        "Thomas"
+    ],
+    "familyNames": [
+        "Drescher"
+    ],
+    "jobTitles": [
+        "Prof. Dr."
+    ],
+    "affiliations": [
+        "0845-organization-000"
+    ],
+    "email": "thomas.drescher@fhnw.ch"
+}

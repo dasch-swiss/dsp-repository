@@ -1,0 +1,17 @@
+{
+    "id": "REMA-person-001",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-001",
+    "givenNames": [
+        "Irene"
+    ],
+    "familyNames": [
+        "Quadri"
+    ],
+    "jobTitles": [
+        "Post-doctoral researcher"
+    ],
+    "affiliations": [
+        "0101-organization-001"
+    ],
+    "email": "Irene.Quadri@unil.ch"
+}

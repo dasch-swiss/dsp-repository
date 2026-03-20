@@ -1,0 +1,9 @@
+{
+    "id": "cluster-004",
+    "name": "Vitrocentre Romont — Glass Art Research",
+    "description": {
+        "en": "Research projects of the Vitrocentre Romont, an institute associated with the University of Fribourg dedicated to the art history, conservation and technology of stained glass, reverse painting on glass, and other glass arts.",
+        "de": "Forschungsprojekte des Vitrocentre Romont, eines mit der Universität Freiburg assoziierten Instituts, das sich der Kunstgeschichte, Konservierung und Technologie von Glasmalerei, Hinterglasmalerei und anderen Glaskünsten widmet."
+    },
+    "projects": ["0816", "0840"]
+}

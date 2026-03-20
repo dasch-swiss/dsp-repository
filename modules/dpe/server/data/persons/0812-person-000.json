@@ -1,0 +1,24 @@
+{
+    "id": "0812-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0812-person-000",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://kulturwissenschaft.philhist.unibas.ch/de/personen/walter-leimgruber/",
+            "text": "https://kulturwissenschaft.philhist.unibas.ch/de/personen/walter-leimgruber/"
+        }
+    ],
+    "givenNames": [
+        "Walter"
+    ],
+    "familyNames": [
+        "Leimgruber"
+    ],
+    "jobTitles": [
+        "Professor"
+    ],
+    "affiliations": [
+        "0812-organization-000",
+        "0812-organization-003"
+    ]
+}

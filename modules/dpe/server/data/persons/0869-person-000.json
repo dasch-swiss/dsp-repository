@@ -1,0 +1,25 @@
+{
+    "id": "0869-person-000",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0869-person-000",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0005-8658-1524",
+            "text": "ORCID URL: 0009-0005-8658-1524"
+        }
+    ],
+    "givenNames": [
+        "Balz Andrea"
+    ],
+    "familyNames": [
+        "Alter"
+    ],
+    "jobTitles": [
+        "Associate Member"
+    ],
+    "affiliations": [
+        "0101-organization-001",
+        "0869-organization-000"
+    ],
+    "email": "Balz.Alter@unibas.ch"
+}

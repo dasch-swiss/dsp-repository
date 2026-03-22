@@ -30,129 +30,7 @@ pub fn handle_list_records(params: &OaiParams, repo: &dyn ProjectRepository) -> 
 mod tests {
     use super::*;
 
-    use app::domain::{
-        models::AuthorityFileReference,
-        project::{
-            AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo,
-            License, Project, ProjectStatus, TemporalCoverage,
-        },
-    };
-
-    struct InMemoryProjectRepository {
-        projects: Vec<Project>,
-    }
-
-    impl InMemoryProjectRepository {
-        fn new(projects: Vec<Project>) -> Self {
-            Self { projects }
-        }
-    }
-
-    impl ProjectRepository for InMemoryProjectRepository {
-        fn get_all(&self) -> Vec<Project> {
-            self.projects.clone()
-        }
-
-        fn get_by_shortcode(&self, shortcode: &str) -> Option<Project> {
-            self.projects.iter().find(|p| p.shortcode == shortcode).cloned()
-        }
-    }
-
-    fn incunabula_project() -> Project {
-        Project {
-            id: "0803".to_string(),
-            pid: "MISSING".to_string(),
-            name: "Die Bilderfolgen der Basler Frühdrucke: Spätmittelalterliche Didaxe als Bild-Text-Lektüre".to_string(),
-            shortcode: "0803".to_string(),
-            official_name: "MISSING".to_string(),
-            status: ProjectStatus::Finished,
-            short_description: "An art-scientific monograph of the richly illustrated early prints in Basel.".to_string(),
-            description: {
-                let mut map = std::collections::HashMap::new();
-                map.insert("en".to_string(), "A description of early prints in Basel.".to_string());
-                map
-            },
-            start_date: "2008-06-01".to_string(),
-            end_date: "2012-08-31".to_string(),
-            url: Some(AuthorityFileReference {
-                type_: "URL".to_string(),
-                url: "https://app.dasch.swiss/project/3ABR_2i8QYGSIDvmP9mlEw".to_string(),
-                text: None,
-            }),
-            secondary_url: None,
-            how_to_cite: "Incunabula (2012) DaSCH. ark.dasch.swiss/ark:/72163/1/0803".to_string(),
-            access_rights: AccessRights {
-                access_rights: AccessRightsType::FullOpenAccess,
-                embargo_date: None,
-            },
-            legal_info: vec![LegalInfo {
-                license: License {
-                    license_identifier: "CC-BY-4.0".to_string(),
-                    license_date: "2012-08-31".to_string(),
-                    license_uri: "https://creativecommons.org/licenses/by/4.0/".to_string(),
-                },
-                copyright_holder: "MISSING".to_string(),
-                authorship: vec!["MISSING".to_string()],
-            }],
-            data_management_plan: Some("not accessible".to_string()),
-            data_publication_year: None,
-            type_of_data: Some(vec!["Image".to_string()]),
-            data_language: Some(vec![{
-                let mut map = std::collections::HashMap::new();
-                map.insert("en".to_string(), "German".to_string());
-                map
-            }]),
-            clusters: vec![],
-            collections: vec![],
-            collection_ids: vec![],
-            records: None,
-            keywords: vec![{
-                let mut map = std::collections::HashMap::new();
-                map.insert("en".to_string(), "Letterpress Printing".to_string());
-                map
-            }],
-            disciplines: vec![Discipline::Text({
-                let mut map = std::collections::HashMap::new();
-                map.insert("en".to_string(), "10404 Visual arts and Art history".to_string());
-                map
-            })],
-            temporal_coverage: vec![TemporalCoverage::Text({
-                let mut map = std::collections::HashMap::new();
-                map.insert("en".to_string(), "Late Middle Ages".to_string());
-                map
-            })],
-            spatial_coverage: vec![AuthorityFileReference {
-                type_: "Geonames".to_string(),
-                url: "https://www.geonames.org/2661604/basel.html".to_string(),
-                text: Some("Basel".to_string()),
-            }],
-            attributions: vec![Attribution {
-                contributor: "0803-person-000".to_string(),
-                contributor_type: vec!["Applicant".to_string()],
-            }],
-            abstract_text: Some({
-                let mut map = std::collections::HashMap::new();
-                map.insert("en".to_string(), "An interdisciplinary research project on image sequences of Basel's early prints.".to_string());
-                map
-            }),
-            contact_point: None,
-            publications: None,
-            funding: Funding::Grants(vec![Grant {
-                funders: vec!["0803-organization-000".to_string()],
-                number: Some("120378".to_string()),
-                name: Some("Project funding".to_string()),
-                url: Some("https://data.snf.ch/grants/grant/120378".to_string()),
-            }]),
-            alternative_names: Some(vec![{
-                let mut map = std::collections::HashMap::new();
-                map.insert("en".to_string(), "Incunabula".to_string());
-                map
-            }]),
-            documentation_material: None,
-            provenance: None,
-            additional_material: None,
-        }
-    }
+    use super::super::test_utils::{golden, incunabula_project, normalize, InMemoryProjectRepository};
 
     fn make_params(metadata_prefix: Option<&str>) -> OaiParams {
         OaiParams {
@@ -165,8 +43,6 @@ mod tests {
             resumption_token: None,
         }
     }
-
-    use super::super::test_utils::{golden, normalize};
 
     // ---- error cases ----
 

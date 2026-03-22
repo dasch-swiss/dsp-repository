@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use app::domain::{
     models::AuthorityFileReference,
     project::{

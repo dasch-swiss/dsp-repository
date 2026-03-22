@@ -9,7 +9,7 @@ use crate::oai::xml::OaiXmlBuilder;
 pub fn handle_list_identifiers(params: &OaiParams, repo: &dyn ProjectRepository) -> String {
     let (prefix, records) = match validate_list_params(params, repo) {
         Ok(result) => result,
-        Err(err) => return build_error_response(err),
+        Err(err) => return build_error_response(err, Some("ListIdentifiers")),
     };
 
     let request_params = build_list_request_params(prefix, params);

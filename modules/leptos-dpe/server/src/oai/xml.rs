@@ -101,9 +101,18 @@ impl OaiXmlBuilder {
         self.end_element("request");
     }
 
-    /// Writes the request element for error responses (no attributes except verb if available).
+    /// Writes the request element for badVerb error responses (no verb attribute).
     pub fn write_error_request(&mut self) {
         self.start_element("request");
+        self.write(Event::Text(BytesText::new(BASE_URL)));
+        self.end_element("request");
+    }
+
+    /// Writes the request element for error responses where the verb was recognized.
+    pub fn write_error_request_with_verb(&mut self, verb: &str) {
+        let mut request = BytesStart::new("request");
+        request.push_attribute(("verb", verb));
+        self.write(Event::Start(request));
         self.write(Event::Text(BytesText::new(BASE_URL)));
         self.end_element("request");
     }

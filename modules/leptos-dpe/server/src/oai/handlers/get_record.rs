@@ -15,7 +15,7 @@ pub fn handle_get_record(params: &OaiParams, repo: &dyn ProjectRepository) -> St
         .and_then(|(id, prefix)| resolve_project(id, repo).map(|project| (id, prefix, project)))
         .map(|(id, prefix, project)| build_response(id, prefix, &project));
 
-    result.unwrap_or_else(build_error_response)
+    result.unwrap_or_else(|err| build_error_response(err, Some("GetRecord")))
 }
 
 fn require_identifier(params: &OaiParams) -> Result<&str, OaiError> {
@@ -101,6 +101,7 @@ mod tests {
         let xml = handle_get_record(&params, &repo);
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
         assert!(xml.contains("identifier argument is required"), "got: {}", xml);
+        assert!(xml.contains("verb=\"GetRecord\""), "verb should be echoed in request element, got: {}", xml);
     }
 
     #[test]

@@ -12,14 +12,15 @@ pub fn handle_list_sets(params: &OaiParams) -> String {
         || params.from.is_some()
         || params.until.is_some()
     {
-        return build_error_response(OaiError::BadArgument(
-            "Unexpected argument for ListSets".to_string(),
-        ));
+        return build_error_response(
+            OaiError::BadArgument("Unexpected argument for ListSets".to_string()),
+            Some("ListSets"),
+        );
     }
 
     // We don't support resumption tokens in v1
     if params.resumption_token.is_some() {
-        return build_error_response(OaiError::BadResumptionToken);
+        return build_error_response(OaiError::BadResumptionToken, Some("ListSets"));
     }
 
     let mut builder = OaiXmlBuilder::new();

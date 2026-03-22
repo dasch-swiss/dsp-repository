@@ -63,17 +63,21 @@ pub async fn oai_handler(Query(params): Query<OaiParams>) -> impl IntoResponse {
         Some("ListIdentifiers") => handle_list_identifiers(&params, &repo),
         Some("ListRecords") => handle_list_records(&params, &repo),
         Some("GetRecord") => handle_get_record(&params, &repo),
-        Some(_) => build_error_response(OaiError::BadVerb),
-        None => build_error_response(OaiError::BadVerb),
+        Some(_) => build_error_response(OaiError::BadVerb, None),
+        None => build_error_response(OaiError::BadVerb, None),
     };
 
     (StatusCode::OK, [(header::CONTENT_TYPE, "text/xml; charset=utf-8")], xml)
 }
 
-/// Builds an error response.
-pub fn build_error_response(error: OaiError) -> String {
+/// Builds an error response. Pass `Some(verb)` for recognized verbs so the verb is echoed
+/// in the request element per OAI-PMH 2.0 section 3.6. Pass `None` only for badVerb.
+pub fn build_error_response(error: OaiError, verb: Option<&str>) -> String {
     let mut builder = OaiXmlBuilder::new();
-    builder.write_error_request();
+    match verb {
+        Some(v) => builder.write_error_request_with_verb(v),
+        None => builder.write_error_request(),
+    }
     builder.write_error(&error);
     builder.finish()
 }
@@ -159,7 +163,8 @@ pub mod test_utils;
 
 #[cfg(test)]
 mod tests {
-    use super::parse_set_filter;
+    use super::{build_error_response, parse_set_filter};
+    use crate::oai::error::OaiError;
 
     #[test]
     fn test_parse_set_filter() {
@@ -167,5 +172,22 @@ mod tests {
         assert_eq!(parse_set_filter(Some("entityType:ProjectCluster")), (true, false));
         assert_eq!(parse_set_filter(Some("entityType:ResearchProject")), (false, true));
         assert_eq!(parse_set_filter(Some("unknown")), (false, false));
+    }
+
+    #[test]
+    fn bad_verb_error_omits_verb_attribute() {
+        let xml = build_error_response(OaiError::BadVerb, None);
+        assert!(xml.contains("<error code=\"badVerb\">"), "got: {}", xml);
+        assert!(!xml.contains("verb="), "badVerb must not echo a verb attribute, got: {}", xml);
+    }
+
+    #[test]
+    fn recognized_verb_error_echoes_verb_attribute() {
+        let xml = build_error_response(
+            OaiError::BadArgument("test".to_string()),
+            Some("ListRecords"),
+        );
+        assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
+        assert!(xml.contains("verb=\"ListRecords\""), "verb should be echoed in request element, got: {}", xml);
     }
 }

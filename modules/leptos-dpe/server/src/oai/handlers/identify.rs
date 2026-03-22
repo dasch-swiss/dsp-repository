@@ -16,9 +16,10 @@ pub fn handle_identify(params: &OaiParams, repo: &dyn ProjectRepository) -> Stri
         || params.set.is_some()
         || params.resumption_token.is_some()
     {
-        return build_error_response(OaiError::BadArgument(
-            "Identify does not accept any arguments".to_string(),
-        ));
+        return build_error_response(
+            OaiError::BadArgument("Identify does not accept any arguments".to_string()),
+            Some("Identify"),
+        );
     }
 
     let mut builder = OaiXmlBuilder::new();
@@ -74,6 +75,7 @@ mod tests {
         let xml = handle_identify(&params, &repo);
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
         assert!(xml.contains("Identify does not accept any arguments"), "got: {}", xml);
+        assert!(xml.contains("verb=\"Identify\""), "verb should be echoed in request element, got: {}", xml);
     }
 
     // ---- golden tests ----

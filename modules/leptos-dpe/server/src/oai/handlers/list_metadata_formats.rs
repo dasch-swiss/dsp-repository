@@ -15,19 +15,20 @@ pub fn handle_list_metadata_formats(params: &OaiParams, repo: &dyn ProjectReposi
         || params.set.is_some()
         || params.resumption_token.is_some()
     {
-        return build_error_response(OaiError::BadArgument(
-            "Unexpected argument for ListMetadataFormats".to_string(),
-        ));
+        return build_error_response(
+            OaiError::BadArgument("Unexpected argument for ListMetadataFormats".to_string()),
+            Some("ListMetadataFormats"),
+        );
     }
 
     // If identifier is provided, verify it exists
     if let Some(ref id) = params.identifier {
         if let Some(shortcode) = parse_oai_identifier(id) {
             if repo.get_by_shortcode(&shortcode).is_none() {
-                return build_error_response(OaiError::IdDoesNotExist);
+                return build_error_response(OaiError::IdDoesNotExist, Some("ListMetadataFormats"));
             }
         } else {
-            return build_error_response(OaiError::IdDoesNotExist);
+            return build_error_response(OaiError::IdDoesNotExist, Some("ListMetadataFormats"));
         }
     }
 

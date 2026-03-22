@@ -118,7 +118,9 @@ mod tests {
                 map.insert("en".to_string(), "German".to_string());
                 map
             }]),
-            collections: None,
+            clusters: vec![],
+            collections: vec![],
+            collection_ids: vec![],
             records: None,
             keywords: vec![{
                 let mut map = std::collections::HashMap::new();

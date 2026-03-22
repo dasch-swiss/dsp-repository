@@ -598,6 +598,9 @@ mod tests {
 
 #[server]
 pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnError> {
+    use std::fs;
+    use std::path::PathBuf;
+
     use super::cluster::ClusterRaw;
     use super::collection::CollectionRef;
     use super::project_cache::all_projects;
@@ -617,9 +620,9 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
         .into_iter()
         .flatten()
         .flatten()
-        .filter_map(|entry| {
+        .filter_map(|entry: std::fs::DirEntry| {
             let path = entry.path();
-            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            if path.extension().and_then(|e: &std::ffi::OsStr| e.to_str()) != Some("json") {
                 return None;
             }
             let json = fs::read_to_string(&path).ok()?;
@@ -641,7 +644,7 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
             let path = collections_dir.join(format!("{}.json", id));
             fs::read_to_string(&path)
                 .ok()
-                .and_then(|json| serde_json::from_str::<CollectionRef>(&json).ok())
+                .and_then(|json: String| serde_json::from_str::<CollectionRef>(&json).ok())
         })
         .collect();
 

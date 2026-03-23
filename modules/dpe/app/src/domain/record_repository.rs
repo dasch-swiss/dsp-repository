@@ -48,8 +48,8 @@ impl FsRecordRepository {
                             return None;
                         }
                     };
-                    match serde_json::from_str::<Record>(&content) {
-                        Ok(record) => Some(record),
+                    match serde_json::from_str::<Vec<Record>>(&content) {
+                        Ok(records) => Some(records),
                         Err(e) => {
                             tracing::warn!("Failed to parse record file {:?}: {}", path, e);
                             None
@@ -59,6 +59,7 @@ impl FsRecordRepository {
                     None
                 }
             })
+            .flatten()
             .collect()
     }
 }

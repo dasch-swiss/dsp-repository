@@ -154,8 +154,6 @@ mod tests {
         InMemoryRecordRepository::new(vec![test_record()])
     }
 
-    use super::super::test_utils::{golden, normalize};
-
     // ---- error cases ----
 
     #[test]

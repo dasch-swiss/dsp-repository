@@ -5,22 +5,20 @@
     <record>
       <header>
         <identifier>oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</identifier>
-        <datestamp>2024-06-30</datestamp>
+        <datestamp>2012-06-19T14:33:33Z</datestamp>
         <setSpec>entityType:Record</setSpec>
       </header>
       <metadata>
         <oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd">
-          <dc:title>Survey Responses on Rural Land Use, 1920–1950</dc:title>
-          <dc:creator>Dr. Anna Müller</dc:creator>
-          <dc:creator>Prof. Hans Bauer</dc:creator>
-          <dc:description>A collection of survey responses.</dc:description>
+          <dc:title>Seitenbezeichnung : o2r</dc:title>
+          <dc:creator>DaSCH</dc:creator>
           <dc:publisher>DaSCH</dc:publisher>
-          <dc:date>2024-02-01</dc:date>
+          <dc:date>2012-06-19T14:33:33Z</dc:date>
           <dc:type>Text</dc:type>
           <dc:identifier>https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</dc:identifier>
           <dc:relation>https://ark.dasch.swiss/ark:/72163/1/0803</dc:relation>
-          <dc:rights>Creative Commons Attribution 4.0 International</dc:rights>
-          <dc:rights>https://creativecommons.org/licenses/by/4.0/</dc:rights>
+          <dc:rights>public domain</dc:rights>
+          <dc:rights>https://creativecommons.org/publicdomain/zero/1.0/</dc:rights>
         </oai_dc:dc>
       </metadata>
     </record>

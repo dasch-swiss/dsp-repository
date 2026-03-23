@@ -5,7 +5,7 @@
     <record>
       <header>
         <identifier>oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</identifier>
-        <datestamp>2024-06-30</datestamp>
+        <datestamp>2012-06-19T14:33:33Z</datestamp>
         <setSpec>entityType:Record</setSpec>
       </header>
       <metadata>
@@ -17,32 +17,24 @@
               <identifier identifierType="ARK">ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</identifier>
               <creators>
                 <creator>
-                  <creatorName nameType="Personal">Dr. Anna Müller</creatorName>
-                </creator>
-                <creator>
-                  <creatorName nameType="Personal">Prof. Hans Bauer</creatorName>
+                  <creatorName nameType="Personal">DaSCH</creatorName>
                 </creator>
               </creators>
               <titles>
-                <title xml:lang="en">Survey Responses on Rural Land Use, 1920–1950</title>
+                <title xml:lang="en">Seitenbezeichnung : o2r</title>
               </titles>
               <publisher>DaSCH</publisher>
-              <publicationYear>2024</publicationYear>
+              <publicationYear>2012</publicationYear>
               <resourceType resourceTypeGeneral="Text">Text</resourceType>
-              <descriptions>
-                <description descriptionType="Abstract">A collection of survey responses.</description>
-                <description descriptionType="TechnicalInfo">2.3 GB</description>
-              </descriptions>
               <dates>
-                <date dateType="Created">2024-01-15</date>
-                <date dateType="Updated">2024-06-30</date>
-                <date dateType="Available">2024-02-01</date>
+                <date dateType="Created">2012-06-19T14:33:33Z</date>
+                <date dateType="Available">2012-06-19T14:33:33Z</date>
               </dates>
               <relatedIdentifiers>
                 <relatedIdentifier relatedIdentifierType="URL" relationType="IsPartOf">https://ark.dasch.swiss/ark:/72163/1/0803</relatedIdentifier>
               </relatedIdentifiers>
               <rightsList>
-                <rights rightsURI="https://creativecommons.org/licenses/by/4.0/" rightsIdentifier="CC-BY-4.0" rightsIdentifierScheme="SPDX">Creative Commons Attribution 4.0 International</rights>
+                <rights rightsURI="https://creativecommons.org/publicdomain/zero/1.0/" rightsIdentifier="public domain" rightsIdentifierScheme="SPDX">public domain</rights>
               </rightsList>
             </resource>
           </payload>

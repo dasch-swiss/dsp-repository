@@ -95,43 +95,12 @@ mod tests {
     use super::super::test_utils::{
         golden, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository,
     };
-    use app::domain::{Record, RecordLegalInfo, RecordLicense};
-    use std::collections::HashMap;
+    use app::domain::Record;
 
-    fn test_record() -> Record {
-        Record {
-            id: "http://rdfh.ch/0803/lklK7rVuVOmpBZYWrF8o-g".to_string(),
-            pid: "https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh".to_string(),
-            label: {
-                let mut m = HashMap::new();
-                m.insert("en".to_string(), "Survey Responses on Rural Land Use, 1920–1950".to_string());
-                m
-            },
-            access_rights: "Full Open Access".to_string(),
-            legal_info: RecordLegalInfo {
-                license: RecordLicense {
-                    license_identifier: "CC-BY-4.0".to_string(),
-                    license_date: "2024-01-15".to_string(),
-                    license_uri: "https://creativecommons.org/licenses/by/4.0/".to_string(),
-                },
-                copyright_holder: "University of Basel".to_string(),
-                authorship: vec!["Dr. Anna Müller".to_string(), "Prof. Hans Bauer".to_string()],
-            },
-            how_to_cite: String::new(),
-            publisher: "DaSCH".to_string(),
-            source: String::new(),
-            description: {
-                let mut m = HashMap::new();
-                m.insert("en".to_string(), "A collection of survey responses.".to_string());
-                m
-            },
-            date_created: "2024-01-15".to_string(),
-            date_modified: "2024-06-30".to_string(),
-            date_published: "2024-02-01".to_string(),
-            type_of_data: "Text".to_string(),
-            size: "2.3 GB".to_string(),
-            keywords: vec![],
-        }
+    fn first_0803_record() -> Record {
+        let json = include_str!("../../../data/records/0803-records.json");
+        let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0803-records.json");
+        record
     }
 
     fn make_params(identifier: Option<&str>, metadata_prefix: Option<&str>) -> OaiParams {
@@ -151,7 +120,7 @@ mod tests {
     }
 
     fn repo_with_record() -> InMemoryRecordRepository {
-        InMemoryRecordRepository::new(vec![test_record()])
+        InMemoryRecordRepository::new(vec![first_0803_record()])
     }
 
     // ---- error cases ----

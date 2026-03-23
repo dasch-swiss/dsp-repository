@@ -97,14 +97,10 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
             let search_match = if search_lower.is_empty() {
                 true
             } else {
-                let status_str = match project.status {
-                    ProjectStatus::Ongoing => "ongoing",
-                    ProjectStatus::Finished => "finished",
-                };
                 project.name.to_lowercase().contains(&search_lower)
                     || project.short_description.to_lowercase().contains(&search_lower)
                     || project.shortcode.to_lowercase().contains(&search_lower)
-                    || status_str.contains(&search_lower)
+                    || project.status.as_str().contains(&search_lower)
             };
 
             // Type of data filter
@@ -620,9 +616,9 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
         .into_iter()
         .flatten()
         .flatten()
-        .filter_map(|entry| {
+        .filter_map(|entry: std::fs::DirEntry| {
             let path = entry.path();
-            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            if path.extension().and_then(|e: &std::ffi::OsStr| e.to_str()) != Some("json") {
                 return None;
             }
             let json = fs::read_to_string(&path).ok()?;
@@ -644,7 +640,7 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
             let path = collections_dir.join(format!("{}.json", id));
             fs::read_to_string(&path)
                 .ok()
-                .and_then(|json| serde_json::from_str::<CollectionRef>(&json).ok())
+                .and_then(|json: String| serde_json::from_str::<CollectionRef>(&json).ok())
         })
         .collect();
 

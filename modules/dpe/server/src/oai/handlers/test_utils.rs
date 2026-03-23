@@ -6,7 +6,7 @@ use app::domain::{
         AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo,
         License, Project, ProjectStatus, TemporalCoverage,
     },
-    ProjectRepository,
+    ProjectRepository, Record, RecordRepository,
 };
 
 /// In-memory repository for testing.
@@ -124,6 +124,31 @@ pub fn incunabula_project() -> Project {
         documentation_material: None,
         provenance: None,
         additional_material: None,
+    }
+}
+
+/// In-memory record repository for testing.
+pub struct InMemoryRecordRepository {
+    records: Vec<Record>,
+}
+
+impl InMemoryRecordRepository {
+    pub fn new(records: Vec<Record>) -> Self {
+        Self { records }
+    }
+
+    pub fn empty() -> Self {
+        Self { records: vec![] }
+    }
+}
+
+impl RecordRepository for InMemoryRecordRepository {
+    fn get_all(&self) -> Vec<Record> {
+        self.records.clone()
+    }
+
+    fn get_by_id(&self, id: &str) -> Option<Record> {
+        self.records.iter().find(|r| r.id == id).cloned()
     }
 }
 

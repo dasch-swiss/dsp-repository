@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+  <request verb="GetRecord" identifier="oai:meta.dasch.swiss:ark:/72163/1/record-0001" metadataPrefix="oai_datacite">https://meta.dasch.swiss/oai</request>
+  <GetRecord>
+    <record>
+      <header>
+        <identifier>oai:meta.dasch.swiss:ark:/72163/1/record-0001</identifier>
+        <datestamp>2024-06-30</datestamp>
+        <setSpec>entityType:Record</setSpec>
+      </header>
+      <metadata>
+        <oai_datacite xmlns="http://schema.datacite.org/oai/oai-1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schema.datacite.org/oai/oai-1.1/ http://schema.datacite.org/oai/oai-1.1/oai.xsd">
+          <schemaVersion>4.6</schemaVersion>
+          <datacentreSymbol>DASCH.DSP</datacentreSymbol>
+          <payload>
+            <resource xmlns="http://datacite.org/schema/kernel-4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-4 https://schema.datacite.org/meta/kernel-4/metadata.xsd">
+              <identifier identifierType="ARK">ark:/72163/1/record-0001</identifier>
+              <creators>
+                <creator>
+                  <creatorName nameType="Personal">Dr. Anna Müller</creatorName>
+                </creator>
+                <creator>
+                  <creatorName nameType="Personal">Prof. Hans Bauer</creatorName>
+                </creator>
+              </creators>
+              <titles>
+                <title xml:lang="en">Survey Responses on Rural Land Use, 1920–1950</title>
+              </titles>
+              <publisher>DaSCH</publisher>
+              <publicationYear>2024</publicationYear>
+              <resourceType resourceTypeGeneral="Text">Text</resourceType>
+              <descriptions>
+                <description descriptionType="Abstract">A collection of survey responses.</description>
+                <description descriptionType="TechnicalInfo">2.3 GB</description>
+              </descriptions>
+              <dates>
+                <date dateType="Created">2024-01-15</date>
+                <date dateType="Updated">2024-06-30</date>
+                <date dateType="Available">2024-02-01</date>
+              </dates>
+              <rightsList>
+                <rights rightsURI="https://creativecommons.org/licenses/by/4.0/" rightsIdentifier="CC-BY-4.0" rightsIdentifierScheme="SPDX">Creative Commons Attribution 4.0 International</rights>
+              </rightsList>
+            </resource>
+          </payload>
+        </oai_datacite>
+      </metadata>
+    </record>
+  </GetRecord>
+</OAI-PMH>

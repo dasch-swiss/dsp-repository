@@ -29,44 +29,31 @@ fn type_of_data_to_general(type_of_data: &str) -> String {
 }
 
 pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
-    let mut dc = DataCiteRecord::default();
-
-    // Identifier (mandatory) - ARK path from pid
-    dc.identifier = ark_path_from_pid(&record.pid);
-    dc.identifier_type = "ARK".to_string();
-
     // Creators (mandatory) - from authorship
-    dc.creators = record
+    let mut creators: Vec<DataCiteCreator> = record
         .legal_info
         .authorship
         .iter()
-        .map(|name| DataCiteCreator {
-            name: name.clone(),
-            name_type: Some("Personal".to_string()),
-        })
+        .map(|name| DataCiteCreator { name: name.clone(), name_type: Some("Personal".to_string()) })
         .collect();
-    if dc.creators.is_empty() {
-        dc.creators.push(DataCiteCreator {
+    if creators.is_empty() {
+        creators.push(DataCiteCreator {
             name: PUBLISHER.to_string(),
             name_type: Some("Organizational".to_string()),
         });
     }
 
-    // Titles (mandatory) - from label, prefer "en"
+    // Titles (mandatory) - prefer "en", other languages as AlternativeTitles
+    let mut titles: Vec<DataCiteTitle> = Vec::new();
     if let Some(title) = get_multilingual_value(&record.label) {
-        dc.titles.push(DataCiteTitle {
-            title,
-            title_type: None,
-            lang: Some("en".to_string()),
-        });
+        titles.push(DataCiteTitle { title, title_type: None, lang: Some("en".to_string()) });
     }
-    // Add other language titles as AlternativeTitles
     let mut lang_keys: Vec<&String> = record.label.keys().collect();
     lang_keys.sort();
     for lang in lang_keys {
         if lang != "en" {
             if let Some(alt_title) = record.label.get(lang) {
-                dc.titles.push(DataCiteTitle {
+                titles.push(DataCiteTitle {
                     title: alt_title.clone(),
                     title_type: Some("AlternativeTitle".to_string()),
                     lang: Some(lang.clone()),
@@ -75,32 +62,28 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
         }
     }
 
-    // Publisher (mandatory)
-    dc.publisher = PUBLISHER.to_string();
-
-    // PublicationYear (mandatory) - from datePublished
-    dc.publication_year = extract_year(&record.date_published);
-
-    // ResourceType (mandatory)
-    dc.resource_type = record.type_of_data.clone();
-    dc.resource_type_general = type_of_data_to_general(&record.type_of_data);
-
     // Dates (recommended)
+    let mut dates: Vec<DataCiteDate> = Vec::new();
     if !record.date_created.is_empty() {
-        dc.dates.push(DataCiteDate { date: record.date_created.clone(), date_type: "Created".to_string() });
+        dates.push(DataCiteDate { date: record.date_created.clone(), date_type: "Created".to_string() });
     }
     if !record.date_modified.is_empty() {
-        dc.dates.push(DataCiteDate { date: record.date_modified.clone(), date_type: "Updated".to_string() });
+        dates.push(DataCiteDate { date: record.date_modified.clone(), date_type: "Updated".to_string() });
     }
     if !record.date_published.is_empty() {
-        dc.dates.push(DataCiteDate { date: record.date_published.clone(), date_type: "Available".to_string() });
+        dates.push(DataCiteDate { date: record.date_published.clone(), date_type: "Available".to_string() });
     }
 
-    // Descriptions (recommended) - from description, prefer "en"
+    // Descriptions (recommended)
+    let mut descriptions: Vec<DataCiteDescription> = Vec::new();
     if let Some(desc) = get_multilingual_value(&record.description) {
-        dc.descriptions.push(DataCiteDescription {
-            description: desc,
-            description_type: "Abstract".to_string(),
+        descriptions.push(DataCiteDescription { description: desc, description_type: "Abstract".to_string(), lang: None });
+    }
+    // Size encoded as TechnicalInfo (DataCiteRecord has no dedicated sizes field)
+    if !record.size.is_empty() {
+        descriptions.push(DataCiteDescription {
+            description: record.size.clone(),
+            description_type: "TechnicalInfo".to_string(),
             lang: None,
         });
     }
@@ -108,7 +91,7 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
     // Rights (optional)
     let license = &record.legal_info.license;
     let has_identifier = !license.license_identifier.is_empty();
-    dc.rights_list.push(DataCiteRights {
+    let rights_list = vec![DataCiteRights {
         rights: if has_identifier {
             license_identifier_to_label(&license.license_identifier)
         } else {
@@ -117,23 +100,22 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
         rights_uri: if !license.license_uri.is_empty() { Some(license.license_uri.clone()) } else { None },
         rights_identifier: if has_identifier { Some(license.license_identifier.clone()) } else { None },
         rights_identifier_scheme: if has_identifier { Some("SPDX".to_string()) } else { None },
-    });
+    }];
 
-    // Sizes (optional)
-    if !record.size.is_empty() {
-        // DataCiteRecord doesn't have a sizes field yet — this is stored in resource_type for now.
-        // The field is part of the XML writer. We put size in descriptions as a workaround
-        // if the type has no dedicated sizes field.
-        // NOTE: DataCiteRecord has no `sizes` field currently. Sizes are appended as a
-        // secondary description with type "TechnicalInfo" to convey this information.
-        dc.descriptions.push(DataCiteDescription {
-            description: record.size.clone(),
-            description_type: "TechnicalInfo".to_string(),
-            lang: None,
-        });
+    DataCiteRecord {
+        identifier: ark_path_from_pid(&record.pid),
+        identifier_type: "ARK".to_string(),
+        creators,
+        titles,
+        publisher: PUBLISHER.to_string(),
+        publication_year: extract_year(&record.date_published),
+        resource_type: record.type_of_data.clone(),
+        resource_type_general: type_of_data_to_general(&record.type_of_data),
+        dates,
+        descriptions,
+        rights_list,
+        ..DataCiteRecord::default()
     }
-
-    dc
 }
 
 #[cfg(test)]

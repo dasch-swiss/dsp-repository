@@ -1,19 +1,23 @@
 //! Handler for the OAI-PMH GetRecord verb.
 
-use app::domain::{Project, ProjectRepository};
+use app::domain::{Project, ProjectRepository, Record, RecordRepository};
 
 use super::{build_error_response, OaiParams, SUPPORTED_PREFIXES};
 use crate::oai::error::OaiError;
-use crate::oai::metadata::{parse_oai_identifier, to_oai_record};
+use crate::oai::metadata::{parse_oai_identifier, to_oai_record, to_oai_record_from_record, OaiRecord};
 use crate::oai::xml::OaiXmlBuilder;
 
 /// Handles the GetRecord verb.
-pub fn handle_get_record(params: &OaiParams, repo: &dyn ProjectRepository) -> String {
+pub fn handle_get_record(
+    params: &OaiParams,
+    repo: &dyn ProjectRepository,
+    record_repo: &dyn RecordRepository,
+) -> String {
     let result = require_identifier(params)
         .and_then(|id| require_metadata_prefix(params).map(|prefix| (id, prefix)))
         .and_then(|(id, prefix)| reject_unexpected_args(params).map(|_| (id, prefix)))
-        .and_then(|(id, prefix)| resolve_project(id, repo).map(|project| (id, prefix, project)))
-        .map(|(id, prefix, project)| build_response(id, prefix, &project));
+        .and_then(|(id, prefix)| resolve_entity(id, repo, record_repo).map(|oai| (id, prefix, oai)))
+        .map(|(id, prefix, oai)| build_response(id, prefix, oai));
 
     result.unwrap_or_else(|err| build_error_response(err, Some("GetRecord")))
 }
@@ -39,33 +43,47 @@ fn require_metadata_prefix(params: &OaiParams) -> Result<&str, OaiError> {
 }
 
 fn reject_unexpected_args(params: &OaiParams) -> Result<(), OaiError> {
-    if params.from.is_some()
-        || params.until.is_some()
-        || params.set.is_some()
-        || params.resumption_token.is_some()
-    {
-        return Err(OaiError::BadArgument(
-            "Unexpected argument for GetRecord".to_string(),
-        ));
+    if params.from.is_some() || params.until.is_some() || params.set.is_some() || params.resumption_token.is_some() {
+        return Err(OaiError::BadArgument("Unexpected argument for GetRecord".to_string()));
     }
     Ok(())
 }
 
-fn resolve_project(identifier: &str, repo: &dyn ProjectRepository) -> Result<Project, OaiError> {
-    let shortcode = parse_oai_identifier(identifier).ok_or(OaiError::IdDoesNotExist)?;
-    repo.get_by_shortcode(&shortcode).ok_or(OaiError::IdDoesNotExist)
+enum OaiEntity {
+    Project(Box<Project>),
+    Record(Box<Record>),
 }
 
-fn build_response(identifier: &str, prefix: &str, project: &Project) -> String {
-    let record = to_oai_record(project, prefix);
+/// Resolves an OAI identifier against both the project and record repositories.
+/// Tries project repo first; falls back to record repo.
+fn resolve_entity(
+    identifier: &str,
+    repo: &dyn ProjectRepository,
+    record_repo: &dyn RecordRepository,
+) -> Result<OaiEntity, OaiError> {
+    let id = parse_oai_identifier(identifier).ok_or(OaiError::IdDoesNotExist)?;
+
+    if let Some(project) = repo.get_by_shortcode(&id) {
+        return Ok(OaiEntity::Project(Box::new(project)));
+    }
+
+    if let Some(record) = record_repo.get_by_id(&id) {
+        return Ok(OaiEntity::Record(Box::new(record)));
+    }
+
+    Err(OaiError::IdDoesNotExist)
+}
+
+fn build_response(identifier: &str, prefix: &str, entity: OaiEntity) -> String {
+    let oai_record: OaiRecord = match entity {
+        OaiEntity::Project(ref project) => to_oai_record(project, prefix),
+        OaiEntity::Record(ref record) => to_oai_record_from_record(record, prefix),
+    };
 
     let mut builder = OaiXmlBuilder::new();
-    builder.write_request(
-        "GetRecord",
-        &[("identifier", identifier), ("metadataPrefix", prefix)],
-    );
+    builder.write_request("GetRecord", &[("identifier", identifier), ("metadataPrefix", prefix)]);
     builder.start_element("GetRecord");
-    builder.write_record(&record);
+    builder.write_record(&oai_record);
     builder.end_element("GetRecord");
     builder.finish()
 }
@@ -74,7 +92,47 @@ fn build_response(identifier: &str, prefix: &str, project: &Project) -> String {
 mod tests {
     use super::*;
 
-    use super::super::test_utils::{golden, incunabula_project, normalize, InMemoryProjectRepository};
+    use super::super::test_utils::{
+        golden, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository,
+    };
+    use app::domain::{Record, RecordLegalInfo, RecordLicense};
+    use std::collections::HashMap;
+
+    fn test_record() -> Record {
+        Record {
+            id: "record-0001".to_string(),
+            pid: "https://ark.dasch.swiss/ark:/72163/1/record-0001".to_string(),
+            label: {
+                let mut m = HashMap::new();
+                m.insert("en".to_string(), "Survey Responses on Rural Land Use, 1920–1950".to_string());
+                m
+            },
+            access_rights: "Full Open Access".to_string(),
+            legal_info: RecordLegalInfo {
+                license: RecordLicense {
+                    license_identifier: "CC-BY-4.0".to_string(),
+                    license_date: "2024-01-15".to_string(),
+                    license_uri: "https://creativecommons.org/licenses/by/4.0/".to_string(),
+                },
+                copyright_holder: "University of Basel".to_string(),
+                authorship: vec!["Dr. Anna Müller".to_string(), "Prof. Hans Bauer".to_string()],
+            },
+            how_to_cite: String::new(),
+            publisher: "DaSCH".to_string(),
+            source: String::new(),
+            description: {
+                let mut m = HashMap::new();
+                m.insert("en".to_string(), "A collection of survey responses.".to_string());
+                m
+            },
+            date_created: "2024-01-15".to_string(),
+            date_modified: "2024-06-30".to_string(),
+            date_published: "2024-02-01".to_string(),
+            type_of_data: "Text".to_string(),
+            size: "2.3 GB".to_string(),
+            keywords: vec![],
+        }
+    }
 
     fn make_params(identifier: Option<&str>, metadata_prefix: Option<&str>) -> OaiParams {
         OaiParams {
@@ -92,23 +150,31 @@ mod tests {
         InMemoryProjectRepository::new(vec![incunabula_project()])
     }
 
+    fn repo_with_record() -> InMemoryRecordRepository {
+        InMemoryRecordRepository::new(vec![test_record()])
+    }
+
+    use super::super::test_utils::{golden, normalize};
+
     // ---- error cases ----
 
     #[test]
     fn missing_identifier_returns_bad_argument() {
         let params = make_params(None, Some("oai_dc"));
-        let repo = repo_with_incunabula();
-        let xml = handle_get_record(&params, &repo);
+        let xml = handle_get_record(&params, &repo_with_incunabula(), &InMemoryRecordRepository::empty());
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
         assert!(xml.contains("identifier argument is required"), "got: {}", xml);
-        assert!(xml.contains("verb=\"GetRecord\""), "verb should be echoed in request element, got: {}", xml);
+        assert!(
+            xml.contains("verb=\"GetRecord\""),
+            "verb should be echoed in request element, got: {}",
+            xml
+        );
     }
 
     #[test]
     fn missing_metadata_prefix_returns_bad_argument() {
         let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), None);
-        let repo = repo_with_incunabula();
-        let xml = handle_get_record(&params, &repo);
+        let xml = handle_get_record(&params, &repo_with_incunabula(), &InMemoryRecordRepository::empty());
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
         assert!(xml.contains("metadataPrefix argument is required"), "got: {}", xml);
     }
@@ -116,57 +182,58 @@ mod tests {
     #[test]
     fn unsupported_metadata_prefix_returns_cannot_disseminate() {
         let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("marc21"));
-        let repo = repo_with_incunabula();
-        let xml = handle_get_record(&params, &repo);
+        let xml = handle_get_record(&params, &repo_with_incunabula(), &InMemoryRecordRepository::empty());
         assert!(xml.contains("<error code=\"cannotDisseminateFormat\">"), "got: {}", xml);
     }
 
     #[test]
-    fn unknown_shortcode_returns_id_does_not_exist() {
-        let params = make_params(
-            Some("oai:meta.dasch.swiss:ark:/72163/1/9999"),
-            Some("oai_dc"),
-        );
-        let repo = repo_with_incunabula();
-        let xml = handle_get_record(&params, &repo);
+    fn unknown_id_not_in_either_repo_returns_id_does_not_exist() {
+        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/9999"), Some("oai_dc"));
+        let xml = handle_get_record(&params, &repo_with_incunabula(), &InMemoryRecordRepository::empty());
         assert!(xml.contains("<error code=\"idDoesNotExist\">"), "got: {}", xml);
     }
 
     #[test]
     fn unexpected_argument_returns_bad_argument() {
-        let mut params = make_params(
-            Some("oai:meta.dasch.swiss:ark:/72163/1/0803"),
-            Some("oai_dc"),
-        );
+        let mut params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("oai_dc"));
         params.set = Some("entityType:ResearchProject".to_string());
-        let repo = repo_with_incunabula();
-        let xml = handle_get_record(&params, &repo);
+        let xml = handle_get_record(&params, &repo_with_incunabula(), &InMemoryRecordRepository::empty());
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
     }
 
-    // ---- golden tests ----
+    // ---- project golden tests (existing behaviour) ----
 
     #[test]
     fn golden_oai_dc_response() {
-        let params = make_params(
-            Some("oai:meta.dasch.swiss:ark:/72163/1/0803"),
-            Some("oai_dc"),
-        );
-        let repo = repo_with_incunabula();
-        let xml = handle_get_record(&params, &repo);
+        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("oai_dc"));
+        let xml = handle_get_record(&params, &repo_with_incunabula(), &InMemoryRecordRepository::empty());
         let expected = golden("get_record_oai_dc.xml", &xml);
         assert_eq!(normalize(&xml), expected);
     }
 
     #[test]
     fn golden_oai_datacite_response() {
-        let params = make_params(
-            Some("oai:meta.dasch.swiss:ark:/72163/1/0803"),
-            Some("oai_datacite"),
-        );
-        let repo = repo_with_incunabula();
-        let xml = handle_get_record(&params, &repo);
+        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("oai_datacite"));
+        let xml = handle_get_record(&params, &repo_with_incunabula(), &InMemoryRecordRepository::empty());
         let expected = golden("get_record_oai_datacite.xml", &xml);
+        assert_eq!(normalize(&xml), expected);
+    }
+
+    // ---- record golden tests ----
+
+    #[test]
+    fn record_golden_oai_dc_response() {
+        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/record-0001"), Some("oai_dc"));
+        let xml = handle_get_record(&params, &InMemoryProjectRepository::new(vec![]), &repo_with_record());
+        let expected = golden("get_record_record_oai_dc.xml", &xml);
+        assert_eq!(normalize(&xml), expected);
+    }
+
+    #[test]
+    fn record_golden_oai_datacite_response() {
+        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/record-0001"), Some("oai_datacite"));
+        let xml = handle_get_record(&params, &InMemoryProjectRepository::new(vec![]), &repo_with_record());
+        let expected = golden("get_record_record_oai_datacite.xml", &xml);
         assert_eq!(normalize(&xml), expected);
     }
 
@@ -174,23 +241,29 @@ mod tests {
 
     #[test]
     fn get_record_oai_dc_response_is_valid_oai_pmh() {
-        let params = make_params(
-            Some("oai:meta.dasch.swiss:ark:/72163/1/0803"),
-            Some("oai_dc"),
-        );
-        let repo = repo_with_incunabula();
-        let xml = handle_get_record(&params, &repo);
+        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("oai_dc"));
+        let xml = handle_get_record(&params, &repo_with_incunabula(), &InMemoryRecordRepository::empty());
         crate::oai::handlers::test_utils::validate_against_schema(&xml);
     }
 
     #[test]
     fn get_record_oai_datacite_response_is_valid_oai_pmh() {
-        let params = make_params(
-            Some("oai:meta.dasch.swiss:ark:/72163/1/0803"),
-            Some("oai_datacite"),
-        );
-        let repo = repo_with_incunabula();
-        let xml = handle_get_record(&params, &repo);
+        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("oai_datacite"));
+        let xml = handle_get_record(&params, &repo_with_incunabula(), &InMemoryRecordRepository::empty());
+        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+    }
+
+    #[test]
+    fn record_get_record_oai_dc_response_is_valid_oai_pmh() {
+        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/record-0001"), Some("oai_dc"));
+        let xml = handle_get_record(&params, &InMemoryProjectRepository::new(vec![]), &repo_with_record());
+        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+    }
+
+    #[test]
+    fn record_get_record_oai_datacite_response_is_valid_oai_pmh() {
+        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/record-0001"), Some("oai_datacite"));
+        let xml = handle_get_record(&params, &InMemoryProjectRepository::new(vec![]), &repo_with_record());
         crate::oai::handlers::test_utils::validate_against_schema(&xml);
     }
 }

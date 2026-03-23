@@ -31,6 +31,8 @@ jobs:
         with:
           key: ${{ matrix.toolchain }}
       - uses: taiki-e/install-action@nextest
+      - name: Install xmllint
+        run: sudo apt-get install -y libxml2-utils
       - name: cargo test --all-targets
         run: cargo nextest run --locked --all-features --all-targets
       - name: cargo test --doc

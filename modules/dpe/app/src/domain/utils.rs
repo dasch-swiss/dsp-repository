@@ -10,7 +10,6 @@ pub fn lang_value(map: &HashMap<String, String>) -> Option<&String> {
 }
 
 /// Get the data directory path, supporting both development and production environments
-#[allow(dead_code)]
 pub fn get_data_dir() -> String {
     // Try environment variable first (for production/custom deployments)
     if let Ok(data_dir) = std::env::var("DATA_DIR") {

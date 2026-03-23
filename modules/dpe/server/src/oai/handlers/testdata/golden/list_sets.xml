@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+  <request verb="ListSets">https://meta.dasch.swiss/oai</request>
+  <ListSets>
+    <set>
+      <setSpec>entityType:ProjectCluster</setSpec>
+      <setName>Project Clusters</setName>
+    </set>
+    <set>
+      <setSpec>entityType:ResearchProject</setSpec>
+      <setName>Research Projects</setName>
+    </set>
+  </ListSets>
+</OAI-PMH>

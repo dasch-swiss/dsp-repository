@@ -6,7 +6,7 @@ use leptos_router::{path, StaticSegment};
 use mosaic_tiles::ThemeProvider;
 
 mod components;
-mod domain;
+pub mod domain;
 mod pages;
 
 use components::{Footer, Header};

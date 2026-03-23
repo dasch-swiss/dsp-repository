@@ -325,6 +325,23 @@ pub enum ProjectStatus {
     Finished,
 }
 
+impl ProjectStatus {
+    pub fn is_ongoing(&self) -> bool {
+        *self == ProjectStatus::Ongoing
+    }
+
+    pub fn is_finished(&self) -> bool {
+        *self == ProjectStatus::Finished
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ProjectStatus::Ongoing => "ongoing",
+            ProjectStatus::Finished => "finished",
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum AccessRightsType {
     #[serde(rename = "Full Open Access")]

@@ -97,10 +97,6 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
             let search_match = if search_lower.is_empty() {
                 true
             } else {
-                let status_str = match project.status {
-                    ProjectStatus::Ongoing => "ongoing",
-                    ProjectStatus::Finished => "finished",
-                };
                 project.name.to_lowercase().contains(&search_lower)
                     || project.short_description.to_lowercase().contains(&search_lower)
                     || project.shortcode.to_lowercase().contains(&search_lower)

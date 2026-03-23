@@ -41,9 +41,20 @@ impl FsRecordRepository {
             .filter_map(|entry| {
                 let path = entry.path();
                 if path.extension().is_some_and(|ext| ext == "json") {
-                    fs::read_to_string(&path)
-                        .ok()
-                        .and_then(|content| serde_json::from_str::<Record>(&content).ok())
+                    let content = match fs::read_to_string(&path) {
+                        Ok(c) => c,
+                        Err(e) => {
+                            tracing::warn!("Failed to read record file {:?}: {}", path, e);
+                            return None;
+                        }
+                    };
+                    match serde_json::from_str::<Record>(&content) {
+                        Ok(record) => Some(record),
+                        Err(e) => {
+                            tracing::warn!("Failed to parse record file {:?}: {}", path, e);
+                            None
+                        }
+                    }
                 } else {
                     None
                 }

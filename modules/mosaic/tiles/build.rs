@@ -151,12 +151,24 @@ fn main() {
 
     // Tailwind
 
+    // Skip tailwind if the CSS bundle hasn't changed since the last run.
+    // This avoids expensive tailwind processing and prevents singlestage.css from
+    // getting a new mtime, which would force lib.rs to recompile via include_str!.
+    drop(bundle); // flush and close the file before hashing
+    let bundle_hash = sha256::try_digest(&bundle_path).expect("Error hashing bundle.css");
+    let hash_path = Path::new(&out_dir).join("bundle.css.hash");
+    let cached_hash = fs::read_to_string(&hash_path).unwrap_or_default();
+
+    if bundle_hash == cached_hash && exists(&singlestage_path).unwrap_or(false) {
+        return;
+    }
+
     let _cleanup = remove_file(&singlestage_path);
 
     // User brought their own tailwind
     if let Ok(tailwind_path) = env::var("SINGLESTAGE_TAILWIND_PATH") {
         if run_tailwind(Some(Path::new(&tailwind_path)), &bundle_path, &singlestage_path).is_ok() {
-            // BYOT tailwind worked, bail
+            fs::write(&hash_path, &bundle_hash).expect("Error saving bundle hash");
             return;
         }
         panic!(
@@ -167,7 +179,7 @@ fn main() {
 
     // Try system tailwind
     if run_tailwind(None, &bundle_path, &singlestage_path).is_ok() {
-        // System tailwind worked, bail
+        fs::write(&hash_path, &bundle_hash).expect("Error saving bundle hash");
         return;
     }
 
@@ -191,7 +203,7 @@ fn main() {
     let downloaded_tailwind_path =
         Path::new(&env::var_os("OUT_DIR").expect("\nError reading OUT_DIR from env. (2)\n")).join(&filename);
     if run_tailwind(Some(&downloaded_tailwind_path), &bundle_path, &singlestage_path).is_ok() {
-        // Downloaded tailwind worked, bail
+        fs::write(&hash_path, &bundle_hash).expect("Error saving bundle hash");
         return;
     }
 
@@ -245,4 +257,5 @@ fn main() {
 
     // Run downloaded tailwind
     let _ = run_tailwind(Some(&downloaded_tailwind_path), &bundle_path, &singlestage_path);
+    fs::write(&hash_path, &bundle_hash).expect("Error saving bundle hash");
 }

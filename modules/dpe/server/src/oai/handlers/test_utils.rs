@@ -127,6 +127,13 @@ pub fn incunabula_project() -> Project {
     }
 }
 
+/// Loads the first record from the 0803-records.json fixture.
+pub fn first_0803_record() -> Record {
+    let json = include_str!("../../../data/records/0803-records.json");
+    let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0803-records.json");
+    record
+}
+
 /// In-memory record repository for testing.
 pub struct InMemoryRecordRepository {
     records: Vec<Record>,

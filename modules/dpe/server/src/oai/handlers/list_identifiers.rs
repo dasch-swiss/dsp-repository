@@ -38,7 +38,7 @@ pub fn handle_list_identifiers(
 mod tests {
     use super::*;
 
-    use super::super::test_utils::{golden, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository};
+    use super::super::test_utils::{first_0803_record, golden, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository};
 
     fn make_params(metadata_prefix: Option<&str>) -> OaiParams {
         OaiParams {
@@ -98,6 +98,35 @@ mod tests {
         assert!(xml.contains("<error code=\"noRecordsMatch\">"), "got: {}", xml);
     }
 
+    #[test]
+    fn record_set_filter_with_no_records_returns_no_records_match() {
+        let mut params = make_params(Some("oai_dc"));
+        params.set = Some("entityType:Record".to_string());
+        let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
+        let xml = handle_list_identifiers(&params, &repo, &InMemoryRecordRepository::empty());
+        assert!(xml.contains("<error code=\"noRecordsMatch\">"), "got: {}", xml);
+    }
+
+    #[test]
+    fn record_set_filter_returns_only_record_identifier() {
+        let mut params = make_params(Some("oai_dc"));
+        params.set = Some("entityType:Record".to_string());
+        let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
+        let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
+        let xml = handle_list_identifiers(&params, &repo, &record_repo);
+        assert!(
+            xml.contains("oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
+            "record identifier should be present, got: {}",
+            xml
+        );
+        assert!(
+            !xml.contains("oai:meta.dasch.swiss:ark:/72163/1/0803\""),
+            "project identifier should be absent, got: {}",
+            xml
+        );
+        assert!(xml.contains("entityType:Record"), "set spec should be Record, got: {}", xml);
+    }
+
     // ---- golden tests ----
 
     #[test]
@@ -118,6 +147,26 @@ mod tests {
         assert_eq!(normalize(&xml), expected);
     }
 
+    #[test]
+    fn golden_mixed_oai_dc_response() {
+        let params = make_params(Some("oai_dc"));
+        let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
+        let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
+        let xml = handle_list_identifiers(&params, &repo, &record_repo);
+        let expected = golden("list_identifiers_mixed_oai_dc.xml", &xml);
+        assert_eq!(normalize(&xml), expected);
+    }
+
+    #[test]
+    fn golden_record_only_oai_dc_response() {
+        let mut params = make_params(Some("oai_dc"));
+        params.set = Some("entityType:Record".to_string());
+        let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
+        let xml = handle_list_identifiers(&params, &InMemoryProjectRepository::new(vec![]), &record_repo);
+        let expected = golden("list_identifiers_record_only_oai_dc.xml", &xml);
+        assert_eq!(normalize(&xml), expected);
+    }
+
     // ---- schema validation tests ----
 
     #[test]
@@ -133,6 +182,24 @@ mod tests {
         let params = make_params(Some("oai_datacite"));
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_identifiers(&params, &repo, &InMemoryRecordRepository::empty());
+        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+    }
+
+    #[test]
+    fn list_identifiers_mixed_response_is_valid_oai_pmh() {
+        let params = make_params(Some("oai_dc"));
+        let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
+        let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
+        let xml = handle_list_identifiers(&params, &repo, &record_repo);
+        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+    }
+
+    #[test]
+    fn list_identifiers_record_only_response_is_valid_oai_pmh() {
+        let mut params = make_params(Some("oai_dc"));
+        params.set = Some("entityType:Record".to_string());
+        let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
+        let xml = handle_list_identifiers(&params, &InMemoryProjectRepository::new(vec![]), &record_repo);
         crate::oai::handlers::test_utils::validate_against_schema(&xml);
     }
 }

@@ -1,0 +1,279 @@
+//! Transformation of Records into DataCite 4.6 metadata.
+
+use app::domain::Record;
+
+use super::helpers::{extract_year, get_multilingual_value, license_identifier_to_label};
+use super::types::{DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteRecord, DataCiteRights, DataCiteTitle};
+
+const PUBLISHER: &str = "DaSCH";
+
+/// Extracts the ARK path from a full ARK URL.
+/// "https://ark.dasch.swiss/ark:/72163/1/record-0001" -> "ark:/72163/1/record-0001"
+fn ark_path_from_pid(pid: &str) -> String {
+    if let Some(pos) = pid.find("ark:/") {
+        pid[pos..].to_string()
+    } else {
+        pid.to_string()
+    }
+}
+
+/// Maps typeOfData to a DataCite resourceTypeGeneral value.
+fn type_of_data_to_general(type_of_data: &str) -> String {
+    match type_of_data {
+        "Image" => "Image".to_string(),
+        "Text" | "XML (TEI)" => "Text".to_string(),
+        "Video" => "Audiovisual".to_string(),
+        "Audio" => "Sound".to_string(),
+        other => other.to_string(),
+    }
+}
+
+pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
+    let mut dc = DataCiteRecord::default();
+
+    // Identifier (mandatory) - ARK path from pid
+    dc.identifier = ark_path_from_pid(&record.pid);
+    dc.identifier_type = "ARK".to_string();
+
+    // Creators (mandatory) - from authorship
+    dc.creators = record
+        .legal_info
+        .authorship
+        .iter()
+        .map(|name| DataCiteCreator {
+            name: name.clone(),
+            name_type: Some("Personal".to_string()),
+        })
+        .collect();
+    if dc.creators.is_empty() {
+        dc.creators.push(DataCiteCreator {
+            name: PUBLISHER.to_string(),
+            name_type: Some("Organizational".to_string()),
+        });
+    }
+
+    // Titles (mandatory) - from label, prefer "en"
+    if let Some(title) = get_multilingual_value(&record.label) {
+        dc.titles.push(DataCiteTitle {
+            title,
+            title_type: None,
+            lang: Some("en".to_string()),
+        });
+    }
+    // Add other language titles as AlternativeTitles
+    let mut lang_keys: Vec<&String> = record.label.keys().collect();
+    lang_keys.sort();
+    for lang in lang_keys {
+        if lang != "en" {
+            if let Some(alt_title) = record.label.get(lang) {
+                dc.titles.push(DataCiteTitle {
+                    title: alt_title.clone(),
+                    title_type: Some("AlternativeTitle".to_string()),
+                    lang: Some(lang.clone()),
+                });
+            }
+        }
+    }
+
+    // Publisher (mandatory)
+    dc.publisher = PUBLISHER.to_string();
+
+    // PublicationYear (mandatory) - from datePublished
+    dc.publication_year = extract_year(&record.date_published);
+
+    // ResourceType (mandatory)
+    dc.resource_type = record.type_of_data.clone();
+    dc.resource_type_general = type_of_data_to_general(&record.type_of_data);
+
+    // Dates (recommended)
+    if !record.date_created.is_empty() {
+        dc.dates.push(DataCiteDate { date: record.date_created.clone(), date_type: "Created".to_string() });
+    }
+    if !record.date_modified.is_empty() {
+        dc.dates.push(DataCiteDate { date: record.date_modified.clone(), date_type: "Updated".to_string() });
+    }
+    if !record.date_published.is_empty() {
+        dc.dates.push(DataCiteDate { date: record.date_published.clone(), date_type: "Available".to_string() });
+    }
+
+    // Descriptions (recommended) - from description, prefer "en"
+    if let Some(desc) = get_multilingual_value(&record.description) {
+        dc.descriptions.push(DataCiteDescription {
+            description: desc,
+            description_type: "Abstract".to_string(),
+            lang: None,
+        });
+    }
+
+    // Rights (optional)
+    let license = &record.legal_info.license;
+    let has_identifier = !license.license_identifier.is_empty();
+    dc.rights_list.push(DataCiteRights {
+        rights: if has_identifier {
+            license_identifier_to_label(&license.license_identifier)
+        } else {
+            record.access_rights.clone()
+        },
+        rights_uri: if !license.license_uri.is_empty() { Some(license.license_uri.clone()) } else { None },
+        rights_identifier: if has_identifier { Some(license.license_identifier.clone()) } else { None },
+        rights_identifier_scheme: if has_identifier { Some("SPDX".to_string()) } else { None },
+    });
+
+    // Sizes (optional)
+    if !record.size.is_empty() {
+        // DataCiteRecord doesn't have a sizes field yet — this is stored in resource_type for now.
+        // The field is part of the XML writer. We put size in descriptions as a workaround
+        // if the type has no dedicated sizes field.
+        // NOTE: DataCiteRecord has no `sizes` field currently. Sizes are appended as a
+        // secondary description with type "TechnicalInfo" to convey this information.
+        dc.descriptions.push(DataCiteDescription {
+            description: record.size.clone(),
+            description_type: "TechnicalInfo".to_string(),
+            lang: None,
+        });
+    }
+
+    dc
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    use app::domain::{RecordLegalInfo, RecordLicense};
+
+    fn test_record() -> Record {
+        Record {
+            id: "record-0001".to_string(),
+            pid: "https://ark.dasch.swiss/ark:/72163/1/record-0001".to_string(),
+            label: {
+                let mut m = HashMap::new();
+                m.insert("en".to_string(), "Survey Responses on Rural Land Use, 1920–1950".to_string());
+                m.insert("de".to_string(), "Umfrageantworten zur ländlichen Landnutzung, 1920–1950".to_string());
+                m
+            },
+            access_rights: "Full Open Access".to_string(),
+            legal_info: RecordLegalInfo {
+                license: RecordLicense {
+                    license_identifier: "CC-BY-4.0".to_string(),
+                    license_date: "2024-01-15".to_string(),
+                    license_uri: "https://creativecommons.org/licenses/by/4.0/".to_string(),
+                },
+                copyright_holder: "University of Basel".to_string(),
+                authorship: vec!["Dr. Anna Müller".to_string(), "Prof. Hans Bauer".to_string()],
+            },
+            how_to_cite: String::new(),
+            publisher: "DaSCH".to_string(),
+            source: String::new(),
+            description: {
+                let mut m = HashMap::new();
+                m.insert("en".to_string(), "A collection of survey responses.".to_string());
+                m
+            },
+            date_created: "2024-01-15".to_string(),
+            date_modified: "2024-06-30".to_string(),
+            date_published: "2024-02-01".to_string(),
+            type_of_data: "Text".to_string(),
+            size: "2.3 GB".to_string(),
+            keywords: vec![],
+        }
+    }
+
+    #[test]
+    fn identifier_is_ark_path() {
+        let dc = record_to_datacite(&test_record());
+        assert_eq!(dc.identifier, "ark:/72163/1/record-0001");
+        assert_eq!(dc.identifier_type, "ARK");
+    }
+
+    #[test]
+    fn creators_from_authorship() {
+        let dc = record_to_datacite(&test_record());
+        assert_eq!(dc.creators.len(), 2);
+        assert_eq!(dc.creators[0].name, "Dr. Anna Müller");
+        assert_eq!(dc.creators[1].name, "Prof. Hans Bauer");
+    }
+
+    #[test]
+    fn title_prefers_english_as_primary() {
+        let dc = record_to_datacite(&test_record());
+        assert!(!dc.titles.is_empty());
+        assert_eq!(dc.titles[0].title, "Survey Responses on Rural Land Use, 1920–1950");
+        assert_eq!(dc.titles[0].title_type, None);
+        // German should appear as AlternativeTitle
+        let alt = dc.titles.iter().find(|t| t.title_type.as_deref() == Some("AlternativeTitle"));
+        assert!(alt.is_some());
+        assert_eq!(alt.unwrap().title, "Umfrageantworten zur ländlichen Landnutzung, 1920–1950");
+    }
+
+    #[test]
+    fn publisher_is_dasch() {
+        let dc = record_to_datacite(&test_record());
+        assert_eq!(dc.publisher, "DaSCH");
+    }
+
+    #[test]
+    fn publication_year_from_date_published() {
+        let dc = record_to_datacite(&test_record());
+        assert_eq!(dc.publication_year, "2024");
+    }
+
+    #[test]
+    fn resource_type_from_type_of_data() {
+        let dc = record_to_datacite(&test_record());
+        assert_eq!(dc.resource_type, "Text");
+        assert_eq!(dc.resource_type_general, "Text");
+    }
+
+    #[test]
+    fn dates_include_created_updated_available() {
+        let dc = record_to_datacite(&test_record());
+        let date_types: Vec<&str> = dc.dates.iter().map(|d| d.date_type.as_str()).collect();
+        assert!(date_types.contains(&"Created"));
+        assert!(date_types.contains(&"Updated"));
+        assert!(date_types.contains(&"Available"));
+    }
+
+    #[test]
+    fn rights_from_license() {
+        let dc = record_to_datacite(&test_record());
+        assert_eq!(dc.rights_list.len(), 1);
+        assert_eq!(dc.rights_list[0].rights, "Creative Commons Attribution 4.0 International");
+        assert_eq!(dc.rights_list[0].rights_identifier.as_deref(), Some("CC-BY-4.0"));
+        assert_eq!(dc.rights_list[0].rights_identifier_scheme.as_deref(), Some("SPDX"));
+    }
+
+    #[test]
+    fn description_from_description_field() {
+        let dc = record_to_datacite(&test_record());
+        let abstract_desc = dc.descriptions.iter().find(|d| d.description_type == "Abstract");
+        assert!(abstract_desc.is_some());
+        assert_eq!(abstract_desc.unwrap().description, "A collection of survey responses.");
+    }
+
+    #[test]
+    fn size_included_as_technical_info() {
+        let dc = record_to_datacite(&test_record());
+        let size_desc = dc.descriptions.iter().find(|d| d.description_type == "TechnicalInfo");
+        assert!(size_desc.is_some());
+        assert_eq!(size_desc.unwrap().description, "2.3 GB");
+    }
+
+    #[test]
+    fn type_of_data_to_general_mappings() {
+        assert_eq!(type_of_data_to_general("Image"), "Image");
+        assert_eq!(type_of_data_to_general("Text"), "Text");
+        assert_eq!(type_of_data_to_general("XML (TEI)"), "Text");
+        assert_eq!(type_of_data_to_general("Video"), "Audiovisual");
+        assert_eq!(type_of_data_to_general("Audio"), "Sound");
+    }
+
+    #[test]
+    fn ark_path_from_pid_extracts_ark() {
+        assert_eq!(
+            ark_path_from_pid("https://ark.dasch.swiss/ark:/72163/1/record-0001"),
+            "ark:/72163/1/record-0001"
+        );
+    }
+}

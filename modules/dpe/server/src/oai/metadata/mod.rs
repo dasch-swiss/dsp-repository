@@ -1,20 +1,24 @@
 //! Metadata transformation for OAI-PMH records.
 //!
-//! This module handles the transformation of Research Projects into Dublin Core
+//! This module handles the transformation of Research Projects and Records into Dublin Core
 //! and DataCite 4.6 metadata formats, following the DaSCH Metadata to DataCite
 //! mapping specification.
 
 mod datacite;
 mod dublin_core;
 mod helpers;
+mod record_datacite;
+mod record_dublin_core;
 mod types;
 
 pub use types::{DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
 
 use datacite::project_to_datacite;
 use dublin_core::project_to_dublin_core;
+use record_datacite::record_to_datacite;
+use record_dublin_core::record_to_dublin_core;
 
-use app::domain::Project;
+use app::domain::{record_datestamp, Project, Record};
 
 const OAI_IDENTIFIER_PREFIX: &str = "oai:meta.dasch.swiss:";
 
@@ -58,6 +62,53 @@ pub fn to_oai_record(project: &Project, metadata_prefix: &str) -> OaiRecord {
     };
 
     OaiRecord { header, dublin_core, datacite }
+}
+
+/// Extracts the last path segment from a full ARK URL.
+///
+/// `"https://ark.dasch.swiss/ark:/72163/1/record-0001"` → `"record-0001"`
+pub fn ark_suffix_from_pid(pid: &str) -> Option<&str> {
+    pid.rsplit('/').next().filter(|s| !s.is_empty())
+}
+
+/// Creates an OAI record from a Record for the given metadata prefix.
+pub fn to_oai_record_from_record(record: &Record, metadata_prefix: &str) -> OaiRecord {
+    let suffix = ark_suffix_from_pid(&record.pid).unwrap_or(&record.id);
+    let header = OaiRecordHeader {
+        identifier: make_oai_identifier(suffix),
+        datestamp: record_datestamp(record),
+        set_specs: vec!["entityType:Record".to_string()],
+    };
+
+    let dublin_core = if metadata_prefix == "oai_dc" {
+        Some(record_to_dublin_core(record))
+    } else {
+        None
+    };
+
+    let datacite = if metadata_prefix == "oai_datacite" {
+        Some(record_to_datacite(record))
+    } else {
+        None
+    };
+
+    OaiRecord { header, dublin_core, datacite }
+}
+
+/// Checks if a record matches the given date filter.
+pub fn matches_date_filter_record(record: &Record, from: Option<&str>, until: Option<&str>) -> bool {
+    let datestamp = record_datestamp(record);
+    if let Some(from_date) = from {
+        if datestamp.as_str() < from_date {
+            return false;
+        }
+    }
+    if let Some(until_date) = until {
+        if datestamp.as_str() > until_date {
+            return false;
+        }
+    }
+    true
 }
 
 /// Checks if a project matches the given date filter.

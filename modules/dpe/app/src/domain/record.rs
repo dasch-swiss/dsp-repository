@@ -12,6 +12,69 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+/// A parsed ARK persistent identifier for a DaSCH record.
+///
+/// Example: `https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh`
+/// - `host`: `https://ark.dasch.swiss`
+/// - `shortcode`: `0803`
+/// - `record_id`: `lklK7rVuVOmpBZYWrF8o=gh`
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub struct Pid {
+    pub host: String,
+    pub shortcode: String,
+    pub record_id: String,
+}
+
+impl Pid {
+    /// Returns the full ARK URL, e.g. `https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh`.
+    pub fn as_url(&self) -> String {
+        format!("{}/{}{}/{}", self.host, ARK_PATH_PREFIX, self.shortcode, self.record_id)
+    }
+
+    /// Returns the ARK path without host, e.g. `ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh`.
+    pub fn ark_path(&self) -> String {
+        format!("{}{}/{}", ARK_PATH_PREFIX, self.shortcode, self.record_id)
+    }
+
+    /// Returns the suffix after the ARK prefix, e.g. `0803/lklK7rVuVOmpBZYWrF8o=gh`.
+    pub fn ark_suffix(&self) -> String {
+        format!("{}/{}", self.shortcode, self.record_id)
+    }
+}
+
+impl Pid {
+    pub fn new(host: &str, shortcode: &str, record_id: &str) -> Self {
+        Self {
+            host: host.to_string(),
+            shortcode: shortcode.to_string(),
+            record_id: record_id.to_string(),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Pid {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        parse_pid(&s).map_err(serde::de::Error::custom)
+    }
+}
+
+fn parse_pid(s: &str) -> Result<Pid, String> {
+    let ark_pos = s.find(ARK_PATH_PREFIX).ok_or_else(|| format!("pid missing ARK prefix: {s}"))?;
+    let host = s[..ark_pos].trim_end_matches('/').to_string();
+    let after_prefix = &s[ark_pos + ARK_PATH_PREFIX.len()..];
+    let slash = after_prefix.find('/').ok_or_else(|| format!("pid missing record_id segment: {s}"))?;
+    let shortcode = after_prefix[..slash].to_string();
+    let record_id = after_prefix[slash + 1..].to_string();
+    if shortcode.is_empty() {
+        return Err(format!("pid has empty shortcode: {s}"));
+    }
+    if record_id.is_empty() {
+        return Err(format!("pid has empty record_id: {s}"));
+    }
+    Ok(Pid { host, shortcode, record_id })
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct RecordLicense {
     #[serde(rename = "licenseIdentifier")]
@@ -33,7 +96,7 @@ pub struct RecordLegalInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Record {
     pub id: String,
-    pub pid: String,
+    pub pid: Pid,
     pub label: HashMap<String, String>,
     #[serde(rename = "accessRights")]
     pub access_rights: String,
@@ -62,18 +125,9 @@ pub struct Record {
 }
 
 impl Record {
-    // `https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh` → `https://ark.dasch.swiss/ark:/72163/1/0803`
-    // Returns `None` if the PID does not contain a two-segment ARK path.
-    pub fn project_ark(&self) -> Option<String> {
-        let ark_start = self.pid.find(ARK_PATH_PREFIX)?;
-        let after_prefix = &self.pid[ark_start + ARK_PATH_PREFIX.len()..];
-        // after_prefix is "{shortcode}/{record_id}" — need at least one slash
-        let slash = after_prefix.find('/')?;
-        let shortcode = &after_prefix[..slash];
-        if shortcode.is_empty() {
-            return None;
-        }
-        Some(format!("https://ark.dasch.swiss/{}{}", ARK_PATH_PREFIX, shortcode))
+    // Returns the project-level ARK URL, e.g. `https://ark.dasch.swiss/ark:/72163/1/0803`.
+    pub fn project_ark(&self) -> String {
+        format!("{}/{}{}", self.pid.host, ARK_PATH_PREFIX, self.pid.shortcode)
     }
 }
 
@@ -106,7 +160,11 @@ mod tests {
         let record = first_0803_record();
 
         assert_eq!(record.id, "http://rdfh.ch/0803/lklK7rVuVOmpBZYWrF8o-g");
-        assert_eq!(record.pid, "https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh");
+        assert_eq!(record.pid, Pid {
+            host: "https://ark.dasch.swiss".to_string(),
+            shortcode: "0803".to_string(),
+            record_id: "lklK7rVuVOmpBZYWrF8o=gh".to_string(),
+        });
         assert_eq!(record.label, HashMap::from([("en".to_string(), "Seitenbezeichnung : o2r".to_string())]));
         assert_eq!(record.access_rights, "Full Open Access");
         assert_eq!(record.legal_info.license.license_identifier, "public domain");
@@ -143,19 +201,14 @@ mod tests {
     }
 
     #[test]
-    fn project_ark_extracted_from_two_segment_pid() {
+    fn project_ark_extracted_from_pid() {
         let record = first_0803_record();
-        assert_eq!(
-            record.project_ark(),
-            Some("https://ark.dasch.swiss/ark:/72163/1/0803".to_string())
-        );
+        assert_eq!(record.project_ark(), "https://ark.dasch.swiss/ark:/72163/1/0803");
     }
 
     #[test]
-    fn project_ark_is_none_for_single_segment_pid() {
-        let mut record = first_0803_record();
-        record.pid = "https://ark.dasch.swiss/ark:/72163/1/record-0001".to_string();
-        assert_eq!(record.project_ark(), None);
+    fn pid_parse_fails_without_record_id_segment() {
+        assert!(parse_pid("https://ark.dasch.swiss/ark:/72163/1/record-0001").is_err());
     }
 
     #[test]

@@ -7,15 +7,6 @@ use super::types::{DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteR
 
 const PUBLISHER: &str = "DaSCH";
 
-/// Extracts the ARK path from a full ARK URL.
-/// "https://ark.dasch.swiss/ark:/72163/1/record-0001" -> "ark:/72163/1/record-0001"
-fn ark_path_from_pid(pid: &str) -> String {
-    if let Some(pos) = pid.find("ark:/") {
-        pid[pos..].to_string()
-    } else {
-        pid.to_string()
-    }
-}
 
 /// Maps typeOfData to a DataCite resourceTypeGeneral value.
 fn type_of_data_to_general(type_of_data: &str) -> String {
@@ -103,17 +94,14 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
     }];
 
     // RelatedIdentifiers — link to parent project via IsPartOf
-    let related_identifiers = record
-        .project_ark()
-        .map(|ark| vec![DataCiteRelatedIdentifier {
-            identifier: ark,
-            related_identifier_type: "URL".to_string(),
-            relation_type: "IsPartOf".to_string(),
-        }])
-        .unwrap_or_default();
+    let related_identifiers = vec![DataCiteRelatedIdentifier {
+        identifier: record.project_ark(),
+        related_identifier_type: "URL".to_string(),
+        relation_type: "IsPartOf".to_string(),
+    }];
 
     DataCiteRecord {
-        identifier: ark_path_from_pid(&record.pid),
+        identifier: record.pid.ark_path(),
         identifier_type: "ARK".to_string(),
         creators,
         titles,
@@ -134,12 +122,12 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
 
-    use app::domain::{RecordLegalInfo, RecordLicense};
+    use app::domain::{Pid, RecordLegalInfo, RecordLicense};
 
     fn test_record() -> Record {
         Record {
             id: "record-0001".to_string(),
-            pid: "https://ark.dasch.swiss/ark:/72163/1/record-0001".to_string(),
+            pid: Pid::new("https://ark.dasch.swiss", "0001", "record-0001"),
             label: {
                 let mut m = HashMap::new();
                 m.insert("en".to_string(), "Survey Responses on Rural Land Use, 1920–1950".to_string());
@@ -176,7 +164,7 @@ mod tests {
     #[test]
     fn identifier_is_ark_path() {
         let dc = record_to_datacite(&test_record());
-        assert_eq!(dc.identifier, "ark:/72163/1/record-0001");
+        assert_eq!(dc.identifier, "ark:/72163/1/0001/record-0001");
         assert_eq!(dc.identifier_type, "ARK");
     }
 
@@ -265,7 +253,7 @@ mod tests {
     #[test]
     fn related_identifier_links_to_parent_project() {
         let mut record = test_record();
-        record.pid = "https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh".to_string();
+        record.pid = Pid::new("https://ark.dasch.swiss", "0803", "lklK7rVuVOmpBZYWrF8o=gh");
         let dc = record_to_datacite(&record);
         assert_eq!(dc.related_identifiers.len(), 1);
         let ri = &dc.related_identifiers[0];
@@ -274,18 +262,4 @@ mod tests {
         assert_eq!(ri.relation_type, "IsPartOf");
     }
 
-    #[test]
-    fn no_related_identifier_when_pid_has_no_parent() {
-        // single-segment ARK — no parent project
-        let dc = record_to_datacite(&test_record());
-        assert!(dc.related_identifiers.is_empty());
-    }
-
-    #[test]
-    fn ark_path_from_pid_extracts_ark() {
-        assert_eq!(
-            ark_path_from_pid("https://ark.dasch.swiss/ark:/72163/1/record-0001"),
-            "ark:/72163/1/record-0001"
-        );
-    }
 }

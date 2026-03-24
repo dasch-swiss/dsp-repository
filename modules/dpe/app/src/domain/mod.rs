@@ -23,7 +23,7 @@ pub use project::*;
 pub use project_repository::FsProjectRepository;
 pub use project_repository::ProjectRepository;
 pub use projects::{get_project, list_data_languages, list_projects, list_type_of_data};
-pub use record::{record_datestamp, Record, RecordLegalInfo, RecordLicense, ARK_PATH_PREFIX};
+pub use record::{record_datestamp, Pid, Record, RecordLegalInfo, RecordLicense, ARK_PATH_PREFIX};
 #[cfg(feature = "ssr")]
 pub use record_repository::FsRecordRepository;
 pub use record_repository::RecordRepository;

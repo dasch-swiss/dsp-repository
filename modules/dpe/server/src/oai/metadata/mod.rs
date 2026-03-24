@@ -63,19 +63,10 @@ pub fn to_oai_record(project: &Project, metadata_prefix: &str) -> OaiRecord {
     OaiRecord { header, dublin_core, datacite }
 }
 
-/// Extracts the ARK suffix from a full ARK URL.
-///
-/// Returns everything after `ark:/72163/1/`, preserving two-level paths like
-/// `"0803/lklK7rVuVOmpBZYWrF8o=gh"` as well as single-segment ones like `"record-0001"`.
-pub fn ark_suffix_from_pid(pid: &str) -> Option<&str> {
-    pid.find(ARK_PATH_PREFIX)
-        .map(|pos| &pid[pos + ARK_PATH_PREFIX.len()..])
-        .filter(|s| !s.is_empty())
-}
-
 /// Creates an OAI record from a Record for the given metadata prefix.
 pub fn to_oai_record_from_record(record: &Record, metadata_prefix: &str) -> OaiRecord {
-    let suffix = ark_suffix_from_pid(&record.pid).unwrap_or(&record.id);
+    let suffix_owned = record.pid.ark_suffix();
+    let suffix = &suffix_owned;
     let header = OaiRecordHeader {
         identifier: make_oai_identifier(suffix),
         datestamp: record_datestamp(record),

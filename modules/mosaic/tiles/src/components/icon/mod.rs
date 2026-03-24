@@ -41,7 +41,8 @@
 pub use icondata::{
     AiAppstoreOutlined as AppStore, AiArrowLeftOutlined as IconArrowLeft, AiArrowRightOutlined as IconArrowRight,
     AiBarsOutlined as Bars, AiClockCircleOutlined as Clock, AiDownOutlined as IconChevronDown,
-    AiExportOutlined as Export, AiInfoCircleOutlined as Info, AiLeftOutlined as IconChevronLeft,
+    AiDownloadOutlined as Download, AiExportOutlined as Export, AiInfoCircleOutlined as Info,
+    AiLeftOutlined as IconChevronLeft,
     AiLinkedinOutlined as IconLinkedIn, AiMailOutlined as Mail, AiQuestionCircleOutlined as Help,
     AiRightOutlined as IconChevronRight, AiSearchOutlined as Search, AiStarOutlined as Star,
     AiUnorderedListOutlined as List, AiUpOutlined as IconChevronUp, BiDataRegular as Data, BiGridRegular as Grid,

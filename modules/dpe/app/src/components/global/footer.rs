@@ -60,9 +60,7 @@ pub fn Footer() -> impl IntoView {
                 <hr class="border-slate-700 mb-8" />
 
                 <div class="text-center mb-8">
-                    <p class="tracking-wider uppercase text-white mb-4">
-                        "Downloads"
-                    </p>
+                    <p class="tracking-wider uppercase text-white mb-4">"Downloads"</p>
                     <nav class="flex flex-wrap justify-center gap-8 text-sm">
                         <a
                             class="hover:text-white transition-colors flex items-center gap-1 px-4"

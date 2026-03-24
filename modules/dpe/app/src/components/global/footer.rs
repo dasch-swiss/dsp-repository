@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use mosaic_tiles::icon::{Document, Icon, IconGitHub, IconLinkedIn, IconX};
+use mosaic_tiles::icon::{Download, Icon, IconGitHub, IconLinkedIn, IconX};
 
 fn current_year() -> u64 {
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -14,7 +14,7 @@ pub fn Footer() -> impl IntoView {
     view! {
         <footer class="bg-slate-800 text-gray-300 py-12">
             <div class="dpe-max-layout-width mx-auto px-4">
-                <nav class="flex flex-wrap justify-center gap-6 mb-8 text-sm">
+                <nav class="flex flex-wrap justify-center gap-6 mb-8">
                     <a
                         class="hover:text-white transition-colors"
                         href="https://dasch.swiss/legal-notice"
@@ -60,57 +60,53 @@ pub fn Footer() -> impl IntoView {
                 <hr class="border-slate-700 mb-8" />
 
                 <div class="text-center mb-8">
-                    <p class="text-xs font-semibold tracking-wider uppercase text-gray-400 mb-4">
-                        "Downloads"
-                    </p>
-                    <nav class="flex flex-wrap justify-center gap-6 text-sm">
+                    <p class="tracking-wider uppercase text-white mb-4">"Downloads"</p>
+                    <nav class="flex flex-wrap justify-center gap-8 text-sm">
                         <a
-                            class="hover:text-white transition-colors flex items-center gap-1"
-                            href="https://dasch.swiss/docs/terms-agb.pdf"
+                            class="hover:text-white transition-colors flex items-center gap-1 px-4"
+                            href="https://dasch.swiss/downloads/AGB_DaSCH_4.0.pdf"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            <Icon icon=Document class="w-4 h-4" />
+                            <Icon icon=Download class="w-4 h-4" />
                             "Terms and Conditions (AGB)"
                         </a>
                         <a
-                            class="hover:text-white transition-colors flex items-center gap-1"
-                            href="https://dasch.swiss/docs/deposit-agreement.pdf"
+                            class="hover:text-white transition-colors flex items-center gap-1 px-4"
+                            href="https://dasch.swiss/downloads/DaSCH_Deposit_Agreement.pdf"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            <Icon icon=Document class="w-4 h-4" />
+                            <Icon icon=Download class="w-4 h-4" />
                             "Deposit Agreement"
                         </a>
                         <a
-                            class="hover:text-white transition-colors flex items-center gap-1"
-                            href="https://dasch.swiss/docs/statutes-2022.pdf"
+                            class="hover:text-white transition-colors flex items-center gap-1 px-4"
+                            href="https://dasch.swiss/downloads/20220214_DaSCH_Statuten_Version_2022_def.pdf"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            <Icon icon=Document class="w-4 h-4" />
+                            <Icon icon=Download class="w-4 h-4" />
                             "DaSCH Statutes 2022"
                         </a>
                         <a
-                            class="hover:text-white transition-colors flex items-center gap-1"
-                            href="https://dasch.swiss/docs/terms-of-service.pdf"
+                            class="hover:text-white transition-colors flex items-center gap-1 px-4"
+                            href="https://dasch.swiss/downloads/ToS_NB_V07.pdf"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            <Icon icon=Document class="w-4 h-4" />
+                            <Icon icon=Download class="w-4 h-4" />
                             "Terms of Service"
                         </a>
                     </nav>
                 </div>
-
-                <hr class="border-slate-700 mb-8" />
 
                 <div class="flex justify-center gap-6 mb-8">
                     <a
                         href="https://www.linkedin.com/company/dasch-swiss"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="text-gray-400 hover:text-white transition-colors"
+                        class="text-white hover:text-white transition-colors"
                         aria-label="DaSCH on LinkedIn"
                     >
                         <Icon icon=IconLinkedIn class="w-6 h-6" />
@@ -119,7 +115,7 @@ pub fn Footer() -> impl IntoView {
                         href="https://x.com/daschswiss"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="text-gray-400 hover:text-white transition-colors"
+                        class="text-white hover:text-white transition-colors"
                         aria-label="DaSCH on X (Twitter)"
                     >
                         <Icon icon=IconX class="w-6 h-6" />
@@ -128,14 +124,12 @@ pub fn Footer() -> impl IntoView {
                         href="https://github.com/dasch-swiss"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="text-gray-400 hover:text-white transition-colors"
+                        class="text-white hover:text-white transition-colors"
                         aria-label="DaSCH on GitHub"
                     >
                         <Icon icon=IconGitHub class="w-6 h-6" />
                     </a>
                 </div>
-
-                <hr class="border-slate-700 mb-8" />
 
                 <div class="text-center text-sm text-gray-400">
                     <p>

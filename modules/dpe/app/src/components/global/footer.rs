@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use mosaic_tiles::icon::{Document, Download, Icon, IconGitHub, IconLinkedIn, IconX};
+use mosaic_tiles::icon::{Download, Icon, IconGitHub, IconLinkedIn, IconX};
 
 fn current_year() -> u64 {
     use std::time::{SystemTime, UNIX_EPOCH};

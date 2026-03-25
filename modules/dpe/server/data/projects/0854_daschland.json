@@ -189,12 +189,12 @@
         }
     ],
     "contactPoint": [
-        "0101-organization-001"
+        "0810-organization-001"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "0810-organization-001"
             ],
             "name": "DaSCH",
             "url": "https://www.dasch.swiss/"

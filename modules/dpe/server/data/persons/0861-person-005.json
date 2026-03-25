@@ -25,7 +25,9 @@
         "Professor"
     ],
     "affiliations": [
-        "0101-organization-001"
+        "0810-organization-001",
+        "0820-organization-001",
+        "085E-organization-004"
     ],
     "email": "rita.gautschy@dasch.swiss"
 }

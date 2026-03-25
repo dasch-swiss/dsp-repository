@@ -39,7 +39,7 @@ pub fn ProjectHeader(
             <CardBody>
                 <div class="p-8 flex flex-row justify-center">
                     <div class="max-w-3xl">
-                        <h2 class="font-bold text-3xl text-ellipsis">{name}</h2>
+                        <h2 class="font-bold font-display text-3xl text-ellipsis">{name}</h2>
                         {(!alternative_names.is_empty())
                             .then(|| {
                                 view! {

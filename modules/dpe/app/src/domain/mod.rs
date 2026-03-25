@@ -11,6 +11,8 @@ pub mod project;
 pub mod project_cache;
 pub mod project_repository;
 pub mod projects;
+pub mod record;
+pub mod record_repository;
 pub mod utils;
 
 pub use contributors::{get_contributors, ResolvedContributor};
@@ -21,6 +23,10 @@ pub use project::*;
 pub use project_repository::FsProjectRepository;
 pub use project_repository::ProjectRepository;
 pub use projects::{get_project, list_data_languages, list_projects, list_type_of_data};
+pub use record::{record_datestamp, Pid, Record, RecordLegalInfo, RecordLicense, ARK_PATH_PREFIX};
+#[cfg(feature = "ssr")]
+pub use record_repository::FsRecordRepository;
+pub use record_repository::RecordRepository;
 #[cfg(feature = "ssr")]
 pub use utils::get_data_dir;
 pub use utils::lang_value;

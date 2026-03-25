@@ -20,6 +20,7 @@ thiserror.workspace = true
 tokio = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
+tracing = { workspace = true, optional = true }
 urlencoding = "2.1"
 wasm-bindgen.workspace = true
 gloo-history = "0.2"
@@ -29,4 +30,4 @@ web-sys = { version = "0.3", features = ["PopStateEvent", "Window", "Location", 
 [features]
 default = []
 hydrate = ["leptos/hydrate", "leptos/islands"]
-ssr = ["leptos/ssr", "leptos/islands", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_axum", "dep:tokio"]
+ssr = ["leptos/ssr", "leptos/islands", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_axum", "dep:tokio", "dep:tracing"]

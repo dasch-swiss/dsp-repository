@@ -1,0 +1,27 @@
+[
+  {
+    "id": "http://rdfh.ch/0803/lklK7rVuVOmpBZYWrF8o-g",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh",
+    "label": {
+      "en": "Seitenbezeichnung : o2r"
+    },
+    "accessRights": "Full Open Access",
+    "legalInfo": {
+      "license": {
+        "licenseIdentifier": "public domain",
+        "licenseDate": "2023-01-01",
+        "licenseURI": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      "copyrightHolder": "DaSCH",
+      "authorship": [
+        "DaSCH"
+      ]
+    },
+    "howToCite": "Seitenbezeichnung : o2r",
+    "publisher": "DaSCH",
+    "dateCreated": "2012-06-19T14:33:33Z",
+    "datePublished": "2012-06-19T14:33:33Z",
+    "typeOfData": "Text",
+    "keywords": []
+  }
+]

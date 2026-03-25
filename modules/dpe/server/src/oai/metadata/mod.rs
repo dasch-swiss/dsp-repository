@@ -1,36 +1,39 @@
 //! Metadata transformation for OAI-PMH records.
 //!
-//! This module handles the transformation of Research Projects into Dublin Core
+//! This module handles the transformation of Research Projects and Records into Dublin Core
 //! and DataCite 4.6 metadata formats, following the DaSCH Metadata to DataCite
 //! mapping specification.
 
 mod datacite;
 mod dublin_core;
 mod helpers;
+mod record_datacite;
+mod record_dublin_core;
 mod types;
 
 pub use types::{DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
 
 use datacite::project_to_datacite;
 use dublin_core::project_to_dublin_core;
+use record_datacite::record_to_datacite;
+use record_dublin_core::record_to_dublin_core;
 
-use app::domain::Project;
+use app::domain::{record_datestamp, Project, Record, ARK_PATH_PREFIX};
 
 const OAI_IDENTIFIER_PREFIX: &str = "oai:meta.dasch.swiss:";
 
 /// Creates an OAI identifier from a project shortcode.
 pub fn make_oai_identifier(shortcode: &str) -> String {
-    format!("{}ark:/72163/1/{}", OAI_IDENTIFIER_PREFIX, shortcode)
+    format!("{}{}{}", OAI_IDENTIFIER_PREFIX, ARK_PATH_PREFIX, shortcode)
 }
 
-/// Parses an OAI identifier and extracts the shortcode.
+/// Parses an OAI identifier and extracts the ARK suffix.
 pub fn parse_oai_identifier(identifier: &str) -> Option<String> {
     if !identifier.starts_with(OAI_IDENTIFIER_PREFIX) {
         return None;
     }
     let ark_part = &identifier[OAI_IDENTIFIER_PREFIX.len()..];
-    // Expected format: ark:/72163/1/{shortcode}
-    ark_part.strip_prefix("ark:/72163/1/").map(|s| s.to_string())
+    ark_part.strip_prefix(ARK_PATH_PREFIX).map(|s| s.to_string())
 }
 
 /// Creates an OAI record from a project for the given metadata prefix.
@@ -58,6 +61,47 @@ pub fn to_oai_record(project: &Project, metadata_prefix: &str) -> OaiRecord {
     };
 
     OaiRecord { header, dublin_core, datacite }
+}
+
+/// Creates an OAI record from a Record for the given metadata prefix.
+pub fn to_oai_record_from_record(record: &Record, metadata_prefix: &str) -> OaiRecord {
+    let suffix_owned = record.pid.ark_suffix();
+    let suffix = &suffix_owned;
+    let header = OaiRecordHeader {
+        identifier: make_oai_identifier(suffix),
+        datestamp: record_datestamp(record),
+        set_specs: vec!["entityType:Record".to_string()],
+    };
+
+    let dublin_core = if metadata_prefix == "oai_dc" {
+        Some(record_to_dublin_core(record))
+    } else {
+        None
+    };
+
+    let datacite = if metadata_prefix == "oai_datacite" {
+        Some(record_to_datacite(record))
+    } else {
+        None
+    };
+
+    OaiRecord { header, dublin_core, datacite }
+}
+
+/// Checks if a record matches the given date filter.
+pub fn matches_date_filter_record(record: &Record, from: Option<&str>, until: Option<&str>) -> bool {
+    let datestamp = record_datestamp(record);
+    if let Some(from_date) = from {
+        if datestamp.as_str() < from_date {
+            return false;
+        }
+    }
+    if let Some(until_date) = until {
+        if datestamp.as_str() > until_date {
+            return false;
+        }
+    }
+    true
 }
 
 /// Checks if a project matches the given date filter.

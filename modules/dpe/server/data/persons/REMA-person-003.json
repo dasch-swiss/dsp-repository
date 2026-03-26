@@ -1,6 +1,6 @@
 {
     "id": "REMA-person-003",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-003",
+    "pid": "MISSING",
     "givenNames": [
         "Maria Elena"
     ],
@@ -11,7 +11,7 @@
         "PhD Student"
     ],
     "affiliations": [
-        "REMA-organization-000"
+        "0101-organization-000"
     ],
     "email": "mariaelena.chiarella@unil.ch"
 }

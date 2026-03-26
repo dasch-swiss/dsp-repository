@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0868",
     "name": "Canon of solar eclipses from 2501 BCE to 1000 CE",
     "shortcode": "0868",
-    "officialName": "Canon of solar eclipses from 2501 BCE to 1000 CE",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "When did the Sun darken in antiquity? Discover calculated solar eclipses and their traces in ancient historical sources.",
     "description": {
@@ -143,7 +143,7 @@
     "funding": [
         {
             "funders": [
-                "0868-organization-001"
+                "0101-organization-001"
             ],
             "number": "122824",
             "name": "Marie Heim-Voegtlin Beiträge",

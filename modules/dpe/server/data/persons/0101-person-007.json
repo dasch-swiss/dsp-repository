@@ -1,6 +1,6 @@
 {
     "id": "0101-person-007",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/0101-person-007",
+    "pid": "MISSING",
     "sameAs": [
         {
             "type": "ORCID",
@@ -21,7 +21,7 @@
     ],
     "affiliations": [
         "0101-organization-000",
-        "REMA-organization-000"
+        "0101-organization-000"
     ],
     "email": "marion.rivoal@unil.ch"
 }

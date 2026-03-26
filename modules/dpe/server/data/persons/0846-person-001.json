@@ -1,6 +1,6 @@
 {
     "id": "0846-person-001",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/0846-person-001",
+    "pid": "MISSING",
     "givenNames": [
         "Jael"
     ],
@@ -11,6 +11,6 @@
         "M.A."
     ],
     "affiliations": [
-        "0846-person-000"
+        "0863-organization-001"
     ]
 }

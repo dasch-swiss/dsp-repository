@@ -1,6 +1,6 @@
 {
     "id": "REMA-person-005",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-005",
+    "pid": "MISSING",
     "givenNames": [
         "Serena"
     ],
@@ -11,7 +11,7 @@
         "Professor Emeritus"
     ],
     "affiliations": [
-        "REMA-organization-000"
+        "0101-organization-000"
     ],
     "email": "Serena.Romano@unil.ch"
 }

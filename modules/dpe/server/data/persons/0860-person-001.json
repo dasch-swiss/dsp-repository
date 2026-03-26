@@ -1,6 +1,6 @@
 {
     "id": "0860-person-001",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/0860-person-001",
+    "pid": "MISSING",
     "givenNames": [
         "Thomas"
     ],
@@ -11,7 +11,7 @@
         "Manging director and program coordinator of eikones"
     ],
     "affiliations": [
-        "0846-person-000"
+        "0863-organization-001"
     ],
     "email": "thomas.rainer@unibas.ch"
 }

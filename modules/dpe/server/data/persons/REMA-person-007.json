@@ -1,6 +1,6 @@
 {
     "id": "REMA-person-007",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-007",
+    "pid": "MISSING",
     "givenNames": [
         "Domenico"
     ],
@@ -11,7 +11,7 @@
         "Freelance photographer"
     ],
     "affiliations": [
-        "REMA-organization-000"
+        "0101-organization-000"
     ],
     "email": "mimmoventura74@gmail.com"
 }

@@ -1,6 +1,6 @@
 {
     "id": "0105-person-003",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/0105-person-003",
+    "pid": "MISSING",
     "sameAs": [
         {
             "type": "ORCID",
@@ -18,7 +18,7 @@
         "Associate professor"
     ],
     "affiliations": [
-        "085A-person-001"
+        "0820-organization-010"
     ],
     "email": "frederic.darbellay@unige.ch"
 }

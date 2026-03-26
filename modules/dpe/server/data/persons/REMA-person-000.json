@@ -1,6 +1,6 @@
 {
     "id": "REMA-person-000",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/REMA-person-000",
+    "pid": "MISSING",
     "givenNames": [
         "Chiara"
     ],
@@ -11,7 +11,7 @@
         "Post-doctoral researcher"
     ],
     "affiliations": [
-        "REMA-organization-000"
+        "0101-organization-000"
     ],
     "email": "Chiara.Croci@unil.ch"
 }

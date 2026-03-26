@@ -15,7 +15,7 @@
     "url": [
         "https://app.dasch.swiss/project/ONaIjCzpTYGHOF1At1ph_Q"
     ],
-    "howToCite": "Alter & Ottou (2025). GLAUBENMACHENLASSEN [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0869.",
+    "howToCite": "Alter (2026). GLAUBENMACHENLASSEN [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0869.",
     "accessRights": {
         "accessRights": "Full Open Access"
     },
@@ -123,46 +123,39 @@
         {
             "contributor": "0869-person-001",
             "contributorType": [
-                "Project Leader",
+                "Protagonist",
                 "Research Assistant",
-                "Composer",
-                "CO-Author"
+                "CO-Author of Filmic Images",
+                "Moi, un Afropéen Production/Main Protagonist 2009-2017"
             ]
         },
         {
             "contributor": "0869-person-000",
             "contributorType": [
-                "Project Manager",
-                "Researcher",
-                "Data Collector",
-                "Creator",
-                "Director",
+                "Principal Investigator",
                 "Author",
-                "Data Curator"
+                "Data Model Designer",
+                "Data Curator",
+                "Moi, un Afropéen Production/Director 2009-2017",
+                "GLAUBENMACHENLASSEN/Author 2017-2021"
             ]
         },
         {
             "contributor": "0869-person-002",
             "contributorType": [
-                "Film Editor"
+                "Moi, un Afropéen Production/Film Editor 2017"
             ]
         },
         {
             "contributor": "0869-person-003",
             "contributorType": [
-                "Text Editor"
+                "GLAUBEMENMACHENLASSEN/Text Editor 2020"
             ]
         },
         {
             "contributor": "0869-person-004",
             "contributorType": [
-                "Text Editor"
-            ]
-        },
-        {
-            "contributor": "0869-person-005",
-            "contributorType": [
-                "Composer"
+                "Moi, un Afropéen Production/Sound Engineer 2009-2017"
             ]
         }
     ],

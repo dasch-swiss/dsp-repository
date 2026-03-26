@@ -6,6 +6,10 @@
         "de": "Das Projekt Bernoulli-Euler Online (BEOL) integriert Editionsprojekte zur Bernoulli-Dynastie und Leonhard Euler in eine digitale Plattform. Es vereint die Euler-Goldbach- und Condorcet-Turgot-Briefwechsel-Editionen, Jacob Bernoullis wissenschaftliches Notizbuch Meditationes, die Basler Edition der Bernoulli-Briefwechsel und die digitale Edition von Jacob Bernoullis Reisebüchlein."
     },
     "projects": [
-        "0801"
+        "0801a",
+        "0801b",
+        "0801c",
+        "0801d",
+        "0801e"
     ]
 }

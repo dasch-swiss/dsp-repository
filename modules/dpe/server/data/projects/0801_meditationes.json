@@ -1,0 +1,125 @@
+{
+    "id": "0801",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801",
+    "shortcode": "0801",
+    "officialName": "MISSING",
+    "url": [
+        "https://app.dasch.swiss/project/yTerZGyxjZVqFMNNKXCDPF",
+        "https://bernoulli-euler.dhlab.unibas.ch/"
+    ],
+    "howToCite": "Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "MISSING",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/12",
+            "text": "Mathematics"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "17th century and 18th century CE"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434",
+            "text": "Switzerland"
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "organization-002"
+            ],
+            "number": "166072",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/166072"
+        },
+        {
+            "funders": [
+                "organization-006"
+            ]
+        }
+    ],
+    "name": "Jacob Bernoulli's Scientific Notebook (Meditationes)",
+    "shortDescription": "First complete digital edition of Jacob Bernoulli's scientific notebook Meditationes, published on the BEOL platform.",
+    "description": {
+        "en": "Edition of Jacob Bernoulli's Scientific Notebook (Meditationes), a document of outstanding significance for the history of mathematics at its turning point around 1700, published for the first time in its entirety as a region-based multilayer interactive digital edition providing access to facsimiles, transcriptions, translations, indices, and commentaries."
+    },
+    "status": "Finished",
+    "startDate": "2016-07-01",
+    "endDate": "MISSING",
+    "typeOfData": [
+        "Image",
+        "Text",
+        "XML"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        },
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Latein",
+            "en": "Latin",
+            "fr": "latin"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Bernoulli"
+        },
+        {
+            "en": "Meditationes"
+        },
+        {
+            "en": "Mathematics"
+        },
+        {
+            "en": "history of mathematics"
+        },
+        {
+            "en": "scientific notebook"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "person-065",
+            "contributorType": [
+                "author"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Edition of Jacob Bernoulli's Scientific Notebook (Meditationes)."
+    },
+    "alternativeNames": [
+        {
+            "en": "Meditationes"
+        }
+    ]
+}

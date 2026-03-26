@@ -7,7 +7,7 @@
         "https://app.dasch.swiss/project/yTerZGyxjZVqFMNNKXCDPF",
         "https://bernoulli-euler.dhlab.unibas.ch/"
     ],
-    "howToCite": "Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
+    "howToCite": "Mattmüller, M. & Lemmermeyer, F. (2019). Briefwechsel von Leonhard Euler mit Christian Goldbach [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
     "accessRights": {
         "accessRights": "Full Open Access"
     },
@@ -70,10 +70,10 @@
         }
     ],
     "name": "Briefwechsel von Leonhard Euler mit Christian Goldbach",
-    "shortDescription": "Digital edition of nearly 200 letters between Leonhard Euler and Christian Goldbach (1729–1764), a key source for 18th-century number theory.",
+    "shortDescription": "Digital edition of nearly 200 letters between Leonhard Euler and Christian Goldbach (1729-1764), a key source for 18th-century number theory.",
     "description": {
-        "en": "The Euler-Goldbach correspondence comprises nearly 200 letters exchanged between Leonhard Euler and the Prussian mathematician Christian Goldbach from 1729 to 1764. As Euler's most substantial long-term correspondence, these letters provide a comprehensive overview of 18th-century number theory — including the famous Goldbach conjecture — and offer insights into academic life in St. Petersburg and Berlin. The digital edition on the BEOL platform is based on the critical edition published in 2015 as part of the Leonhardi Euleri Opera Omnia, edited by Martin Mattmüller and Franz Lemmermeyer.",
-        "de": "Der Euler-Goldbach-Briefwechsel umfasst nahezu 200 Briefe zwischen Leonhard Euler und dem preussischen Mathematiker Christian Goldbach aus den Jahren 1729 bis 1764. Als Eulers umfangreichster Langzeit-Briefwechsel bieten diese Briefe einen umfassenden Überblick über die Zahlentheorie des 18. Jahrhunderts — einschliesslich der berühmten Goldbach'schen Vermutung — sowie Einblicke in das akademische Leben in St. Petersburg und Berlin. Die digitale Edition auf der BEOL-Plattform basiert auf der kritischen Edition, die 2015 als Teil der Leonhardi Euleri Opera Omnia von Martin Mattmüller und Franz Lemmermeyer herausgegeben wurde."
+        "en": "The Euler-Goldbach correspondence comprises nearly 200 letters exchanged between Leonhard Euler and the Prussian mathematician Christian Goldbach from 1729 to 1764. As Euler's most substantial long-term correspondence, these letters provide a comprehensive overview of 18th-century number theory - including the famous Goldbach conjecture - and offer insights into academic life in St. Petersburg and Berlin. The digital edition on the BEOL platform is based on the critical edition published in 2015 as part of the Leonhardi Euleri Opera Omnia, edited by Martin Mattmüller and Franz Lemmermeyer.",
+        "de": "Der Euler-Goldbach-Briefwechsel umfasst nahezu 200 Briefe zwischen Leonhard Euler und dem preussischen Mathematiker Christian Goldbach aus den Jahren 1729 bis 1764. Als Eulers umfangreichster Langzeit-Briefwechsel bieten diese Briefe einen umfassenden Überblick über die Zahlentheorie des 18. Jahrhunderts - einschliesslich der berühmten Goldbach'schen Vermutung - sowie Einblicke in das akademische Leben in St. Petersburg und Berlin. Die digitale Edition auf der BEOL-Plattform basiert auf der kritischen Edition, die 2015 als Teil der Leonhardi Euleri Opera Omnia von Martin Mattmüller und Franz Lemmermeyer herausgegeben wurde."
     },
     "status": "Finished",
     "startDate": "2016-07-01",
@@ -137,7 +137,7 @@
         }
     ],
     "abstract": {
-        "en": "Digital edition of the correspondence between Leonhard Euler and Christian Goldbach (1729–1764), based on the critical edition in the Leonhardi Euleri Opera Omnia."
+        "en": "Digital edition of the correspondence between Leonhard Euler and Christian Goldbach (1729-1764), based on the critical edition in the Leonhardi Euleri Opera Omnia."
     },
     "alternativeNames": [
         {

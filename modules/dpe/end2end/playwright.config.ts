@@ -8,7 +8,7 @@ import * as path from "path";
  */
 // require('dotenv').config();
 
-const serverBinary = path.resolve(__dirname, "../../..", "target/release/leptos-server");
+const serverBinary = path.resolve(__dirname, "../../..", "target/release/server");
 
 if (!fs.existsSync(serverBinary)) {
   throw new Error(

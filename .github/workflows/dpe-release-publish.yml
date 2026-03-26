@@ -13,14 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     # Tag prefix must match the "component" name for modules/dpe/server
     # in release-please-config.json (with include-component-in-tag: true).
-    if: startsWith(github.event.release.tag_name, 'leptos-server-v')
+    if: startsWith(github.event.release.tag_name, 'server-v')
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
       - name: Extract version from tag
         id: tag
         run: |
-          echo "tag=${GITHUB_REF_NAME#leptos-server-v}" >> "$GITHUB_OUTPUT"
+          echo "tag=${GITHUB_REF_NAME#server-v}" >> "$GITHUB_OUTPUT"
 
   publish:
     name: Publish release image

@@ -50,7 +50,7 @@ build:
 
 # Run server
 run:
-    cargo run --bin leptos-server --release
+    cargo run --bin server --release
 
 # Run all tests
 test:

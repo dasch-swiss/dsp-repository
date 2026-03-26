@@ -65,9 +65,10 @@
         }
     ],
     "name": "Basler Edition der Bernoulli-Briefwechsel",
-    "shortDescription": "Digital edition of the Bernoulli family correspondence, published on the BEOL platform.",
+    "shortDescription": "Online edition of the unpublished correspondence of the Bernoulli family, managed by the Bernoulli-Euler-Zentrum at the University of Basel.",
     "description": {
-        "en": "The Basler Edition der Bernoulli-Briefwechsel (BEBB) is a comprehensive edition of the correspondence of the Bernoulli family, one of the most important scientific dynasties of the early modern period."
+        "en": "The Basler Edition der Bernoulli-Briefwechsel (BEBB) is a comprehensive online edition of the as-yet-unpublished correspondence of the Bernoulli family, one of the most important scientific dynasties of the early modern period. The edition covers the letters of Daniel Bernoulli, Jacob II Bernoulli, Johann I Bernoulli, Johann II Bernoulli, Nicolaus I Bernoulli, Nicolaus II Bernoulli, and Jacob Hermann. Managed by the Bernoulli-Euler-Zentrum at the University of Basel, the BEBB provides searchable edited texts linked with facsimiles and the Basler Inventar der Bernoulli-Briefwechsel.",
+        "de": "Die Basler Edition der Bernoulli-Briefwechsel (BEBB) ist eine umfassende Online-Edition der bisher unveröffentlichten Korrespondenz der Familie Bernoulli, einer der bedeutendsten Wissenschaftsdynastien der frühen Neuzeit. Die Edition umfasst die Briefe von Daniel Bernoulli, Jacob II Bernoulli, Johann I Bernoulli, Johann II Bernoulli, Nicolaus I Bernoulli, Nicolaus II Bernoulli und Jacob Hermann. Betreut vom Bernoulli-Euler-Zentrum der Universität Basel, bietet die BEBB durchsuchbare edierte Texte, verknüpft mit Faksimiles und dem Basler Inventar der Bernoulli-Briefwechsel."
     },
     "status": "Ongoing",
     "startDate": "2016-07-01",
@@ -122,7 +123,7 @@
         }
     ],
     "abstract": {
-        "en": "Basler Edition der Bernoulli-Briefwechsel (BEBB)."
+        "en": "Comprehensive online edition of the unpublished correspondence of the Bernoulli family, providing searchable edited texts linked with facsimiles."
     },
     "alternativeNames": [
         {

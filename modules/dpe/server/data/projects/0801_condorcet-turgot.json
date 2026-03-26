@@ -65,9 +65,10 @@
         }
     ],
     "name": "Briefwechsel von Euler mit Condorcet und Turgot",
-    "shortDescription": "Edition of the correspondence between Euler, Condorcet and Turgot, published on the BEOL platform.",
+    "shortDescription": "Edition of the French-language correspondence between Leonhard Euler, the Marquis de Condorcet, and the statesman Turgot.",
     "description": {
-        "en": "Edition of the correspondence between Leonhard Euler, the Marquis de Condorcet, and Anne Robert Jacques Turgot."
+        "en": "This sub-project of BEOL presents the correspondence between Leonhard Euler, the Marquis de Condorcet, and Anne Robert Jacques Turgot. Condorcet, a mathematician and secretary of the Académie royale des Sciences, and Turgot, an economist and French statesman, were both prominent figures of the French Enlightenment. The edition provides access to their exchange with Euler on mathematical and scientific topics, written in French.",
+        "de": "Dieses Teilprojekt von BEOL präsentiert den Briefwechsel zwischen Leonhard Euler, dem Marquis de Condorcet und Anne Robert Jacques Turgot. Condorcet, Mathematiker und Sekretär der Académie royale des Sciences, und Turgot, Ökonom und französischer Staatsmann, waren beide herausragende Figuren der französischen Aufklärung. Die Edition macht ihren Austausch mit Euler zu mathematischen und wissenschaftlichen Themen zugänglich, verfasst in französischer Sprache."
     },
     "status": "Finished",
     "startDate": "2016-07-01",
@@ -116,7 +117,7 @@
         }
     ],
     "abstract": {
-        "en": "Edition of the correspondence between Euler, Condorcet and Turgot."
+        "en": "Edition of the French-language correspondence between Leonhard Euler, the Marquis de Condorcet, and the statesman Anne Robert Jacques Turgot."
     },
     "alternativeNames": [
         {

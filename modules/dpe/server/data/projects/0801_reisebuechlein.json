@@ -78,9 +78,10 @@
         }
     ],
     "name": "Online Edition of Jacob Bernoulli's Reisebüchlein",
-    "shortDescription": "RDF-star-based digital edition of Jacob Bernoulli's travel journal (1676-1683), with facsimiles, transcriptions, and dynamic journey visualizations.",
+    "shortDescription": "Digital edition of Jacob Bernoulli's 195-page travel journal (1676–1683), documenting his journeys across Europe with facsimiles and dynamic visualizations.",
     "description": {
-        "en": "Jacob Bernoulli (1654-1705) embarked on extensive travels spanning seven years (1676-1683) across Switzerland, France, the Netherlands, Belgium, Germany, and England. The Reisebüchlein (little travel book) is a small-format autograph document of 195 pages preserved at the Universitätsbibliothek Basel (UBH L Ia 5). This digital edition project generates an RDF-star-based edition of the travel journal, presenting it as a region-based, multilayered, interactive digital edition with facsimiles, transcriptions, and dynamic visualizations of journeys on the Bernoulli Euler Digital platform."
+        "en": "The Reisebüchlein (little travel book) is a 195-page autograph journal in which Jacob Bernoulli (1654–1705) documented his travels across Switzerland, France, the Netherlands, Belgium, Germany, and England between 1676 and 1683. The journal records details of itineraries, accommodations, means of transportation, food, and costs. This digital edition, developed by Sepideh Alassi at the Digital Humanities Lab of the University of Basel, presents the journal as an RDF-star-based, region-based, multilayer, interactive edition with facsimiles, transcriptions, and dynamic visualizations of Bernoulli's journeys.",
+        "de": "Das Reisebüchlein ist ein 195-seitiges autographes Tagebuch, in dem Jacob Bernoulli (1654–1705) seine Reisen durch die Schweiz, Frankreich, die Niederlande, Belgien, Deutschland und England zwischen 1676 und 1683 dokumentierte. Das Tagebuch verzeichnet Details zu Reiserouten, Unterkünften, Transportmitteln, Verpflegung und Kosten. Diese digitale Edition, entwickelt von Sepideh Alassi am Digital Humanities Lab der Universität Basel, präsentiert das Tagebuch als RDF-star-basierte, regionenbasierte, mehrschichtige, interaktive Edition mit Faksimiles, Transkriptionen und dynamischen Visualisierungen von Bernoullis Reisen."
     },
     "status": "Finished",
     "startDate": "2023-08-01",
@@ -137,7 +138,7 @@
         }
     ],
     "abstract": {
-        "en": "RDF-star-based digital edition of Jacob Bernoulli's Reisebüchlein, his travel journal documenting seven years of journeys across Europe (1676-1683)."
+        "en": "Digital edition of Jacob Bernoulli's Reisebüchlein, a 195-page autograph travel journal documenting seven years of journeys across Europe (1676–1683), with facsimiles, transcriptions, and dynamic journey visualizations."
     },
     "alternativeNames": [
         {

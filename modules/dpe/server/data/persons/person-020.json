@@ -1,0 +1,24 @@
+{
+    "id": "person-020",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-020",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-7835-7008",
+            "text": "ORCID URL: https://orcid.org/0000-0001-7835-7008"
+        }
+    ],
+    "givenNames": [
+        "Dominique"
+    ],
+    "familyNames": [
+        "Vinck"
+    ],
+    "jobTitles": [
+        "Full professor"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "dominique.vinck@unil.ch"
+}

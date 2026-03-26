@@ -1,0 +1,13 @@
+{
+    "id": "organization-057",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/organization-057",
+    "name": "Vitromusée Romont",
+    "url": "https://vitromusee.ch",
+    "address": {
+        "street": "Rue du Château 108 b, Case postale 115",
+        "postalCode": "1680",
+        "locality": "Romont",
+        "country": "Switzerland"
+    },
+    "email": "info@vitromusee.ch"
+}

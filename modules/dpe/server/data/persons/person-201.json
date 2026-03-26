@@ -1,0 +1,23 @@
+{
+    "id": "person-201",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-201",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/alina-zalunardo-137b52197/",
+            "text": "https://www.linkedin.com/in/alina-zalunardo-137b52197/"
+        }
+    ],
+    "givenNames": [
+        "Alina"
+    ],
+    "familyNames": [
+        "Zalunardo"
+    ],
+    "jobTitles": [
+        "Student"
+    ],
+    "affiliations": [
+        "organization-059"
+    ]
+}

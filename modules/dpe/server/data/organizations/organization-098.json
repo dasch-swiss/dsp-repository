@@ -1,0 +1,13 @@
+{
+    "id": "organization-098",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/organization-098",
+    "name": "Text&Bytes GmbH",
+    "url": "https://www.textandbytes.com/",
+    "address": {
+        "street": "Heckenweg 42",
+        "postalCode": "3007",
+        "locality": "Bern",
+        "country": "Switzerland"
+    },
+    "email": "info@textandbytes.com"
+}

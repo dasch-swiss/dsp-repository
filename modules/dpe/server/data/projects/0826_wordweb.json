@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0826",
     "name": "WordWeb / IDEM: A new way of representing Intertextuality in Drama of the Early Modern Period",
     "shortcode": "0826",
-    "officialName": "WordWeb / IDEM: A new way of representing Intertextuality in Drama of the Early Modern Period",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "WordWeb/IDEM offers an innovative digital database for representing intertextuality in the drama of Shakespeare’s time.",
     "description": {
@@ -132,13 +132,13 @@
     ],
     "attributions": [
         {
-            "contributor": "0803-person-002",
+            "contributor": "person-073",
             "contributorType": [
                 "Applicant"
             ]
         },
         {
-            "contributor": "0826-person-001",
+            "contributor": "person-202",
             "contributorType": [
                 "Creator",
                 "Editor",
@@ -146,19 +146,19 @@
             ]
         },
         {
-            "contributor": "0826-person-002",
+            "contributor": "person-203",
             "contributorType": [
                 "Editor"
             ]
         },
         {
-            "contributor": "0826-person-003",
+            "contributor": "person-204",
             "contributorType": [
                 "Editor"
             ]
         },
         {
-            "contributor": "0812-person-028",
+            "contributor": "person-122",
             "contributorType": [
                 "Programmer"
             ]
@@ -168,12 +168,12 @@
         "en": "4500 extracts from plays and other texts written no later than 1688, mostly in English"
     },
     "contactPoint": [
-        "0826-person-001"
+        "person-202"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "183259",
             "name": "Digital Lives",

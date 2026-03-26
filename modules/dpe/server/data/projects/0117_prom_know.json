@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0117",
     "name": "Promoting Knowledge. The Origins of the Science System and the Making of Professional Structures in European States, 1700-1870",
     "shortcode": "0117",
-    "officialName": "Promoting Knowledge. The Origins of the Science System and the Making of Professional Structures in European States, 1700-1870",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "The professionalization of science is often conceptualized as the exclusion of amateurs. We show on the contrary that this became only through the development of scientific culture and networks.",
     "description": {
@@ -129,25 +129,25 @@
     ],
     "attributions": [
         {
-            "contributor": "0105-person-001",
+            "contributor": "person-020",
             "contributorType": [
                 "Project Leader, Project Manager"
             ]
         },
         {
-            "contributor": "0117-person-001",
+            "contributor": "person-056",
             "contributorType": [
                 "Project Member, Data Collector"
             ]
         },
         {
-            "contributor": "0101-person-005",
+            "contributor": "person-006",
             "contributorType": [
                 "Project Member, Data Curator"
             ]
         },
         {
-            "contributor": "0101-person-007",
+            "contributor": "person-008",
             "contributorType": [
                 "Data Curator"
             ]
@@ -157,7 +157,7 @@
         "fr": "Cette base de données inclut 11'121 savants reconnus qui étaient âgés de 20 ans et plus entre 1700 et 1870. Est défini comme « savant reconnu » tout individu affilié pour ses travaux scientifiques à l’une au moins des six principales académies de l’époque concernée (Royal Society de Londres ; académies de Paris, Berlin, Stockholm, St-Pétersbourg et Bologne), ou recensé dans le Historical Catalogue of Scientists and Scientific Books publié en 1984 par Robert M. Gascoigne.\r La partie librement accessible de cette base de données (initialement crée en FileMaker Pro), a été migrée dans un modèle relationnel en SQL. Elle inclut une partie des données biographiques, relationnelles et bibliographiques collectées dans le cadre de deux projets FNS successifs, données qui concernent notamment les astronomes, les physiciens, les chimistes et les botanistes européens et nord-américains. Ces données sont plus complètes pour le groupe des « grands savants » (1/4 de l’échantillon environ), ce groupe étant défini comme l’ensemble des individus ayant bénéficié d’affiliations multiples aux six principales académies de la période 1700-1870, ou inclus dans le Dictionary of Scientific Biography édité entre 1970 et 1980 sous la direction de Charles C. Gillispie.\r Le modèle de données repose sur les classes suivantes : « Savant » (informations biographiques et relatives à la carrière des savants) ; « Champ » (principales disciplines dans lesquels ces savants se sont illustrés) ; « Correspondance » (recension de la correspondance qu’ont entretenue ces savants entre eux) et « Lien » (typologie des relations de travail qui se sont nouées entre ces savants)."
     },
     "contactPoint": [
-        "0105-person-001"
+        "person-020"
     ],
     "publications": [
         {
@@ -200,7 +200,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "166345",
             "name": "Project funding",

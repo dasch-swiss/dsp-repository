@@ -1,0 +1,13 @@
+{
+    "id": "organization-067",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/organization-067",
+    "name": "Basler Münsterbauhütte",
+    "url": "http://www.baslermuenster.ch/bauwerk/muensterbauhuette",
+    "address": {
+        "street": "Basler Münster, Münsterplatz, 9",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+    },
+    "email": "info@muensterbauhuette.ch"
+}

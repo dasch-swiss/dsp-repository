@@ -1,0 +1,24 @@
+{
+    "id": "person-206",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-206",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.ife.uzh.ch/de/institut/emeritiundemeritae/criblezlucien.html",
+            "text": "https://www.ife.uzh.ch/de/institut/emeritiundemeritae/criblezlucien.html"
+        }
+    ],
+    "givenNames": [
+        "Lucien"
+    ],
+    "familyNames": [
+        "Criblez"
+    ],
+    "jobTitles": [
+        "Professor Emeritus of Historical Research in Education and Governance of the Education System"
+    ],
+    "affiliations": [
+        "organization-075"
+    ],
+    "email": "lcriblez@ife.uzh.ch"
+}

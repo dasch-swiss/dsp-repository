@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0101",
     "name": "Religious speech embarrassed, radio debates and controversies around gender: Switzerland and France, 2006-2016",
     "shortcode": "0101",
-    "officialName": "Religious speech embarrassed, radio debates and controversies around gender: Switzerland and France, 2006-2016",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "Ce projet étudie les mobilisations religieuses sur des questions de genre et de sexualités et comment elles transforment les règles d’interlocution des espaces publics sécularisés et la parole des acteurs religieux.",
     "description": {
@@ -96,21 +96,21 @@
     ],
     "attributions": [
         {
-            "contributor": "0101-person-000",
+            "contributor": "person-001",
             "contributorType": [
                 "Project leader",
                 "Data curator"
             ]
         },
         {
-            "contributor": "0101-person-001",
+            "contributor": "person-002",
             "contributorType": [
                 "Project leader",
                 "Data curator"
             ]
         },
         {
-            "contributor": "0101-person-002",
+            "contributor": "person-003",
             "contributorType": [
                 "Project member",
                 "Data collector",
@@ -118,32 +118,32 @@
             ]
         },
         {
-            "contributor": "0101-person-003",
+            "contributor": "person-004",
             "contributorType": [
                 "Project member",
                 "Data collector"
             ]
         },
         {
-            "contributor": "0101-person-004",
+            "contributor": "person-005",
             "contributorType": [
                 "Data collector"
             ]
         },
         {
-            "contributor": "0101-person-005",
+            "contributor": "person-006",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "0101-person-007",
+            "contributor": "person-008",
             "contributorType": [
                 "Data curator"
             ]
         },
         {
-            "contributor": "0101-person-006",
+            "contributor": "person-007",
             "contributorType": [
                 "Other"
             ]
@@ -153,7 +153,7 @@
         "en": "The ontology of the project comprises 15 distinct classes, 68 properties, mainly describing sequences (Sequence) from radio broadcasts (Program), and listing for each sequence the speakers (Intervention, Actor, Nationality), the title in which they intervene (Quality, Institution) and their origin (Place).  The subjects (Gender and Religion) covered by the programs are informed at the program level, then explained at the sequence level, using different concepts related to current events: Event, Common Name or Movement, Phenomenon or controversial subject, Person in the news, Place. 10 controlled vocabularies with 104 entries ensure the quality control of the data entered. The controlled vocabulary Controversial issues' trajectory includes 31 entries. Finally, transcriptions (Transcription) are associated with certain sequences."
     },
     "contactPoint": [
-        "0101-person-000"
+        "person-001"
     ],
     "publications": [
         {
@@ -202,7 +202,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "165652",
             "name": "Project funding",

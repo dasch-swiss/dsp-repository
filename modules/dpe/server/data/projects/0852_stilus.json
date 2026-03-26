@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0852",
     "name": "Mit Stilus, Volumen und Spiegel. Untersuchungen zur Verbreitung von Lesen und Schreiben bei Frauen aus dem römischen Reich anhand von Funden aus dem Grabkontext.",
     "shortcode": "0852",
-    "officialName": "Mit Stilus, Volumen und Spiegel. Untersuchungen zur Verbreitung von Lesen und Schreiben bei Frauen aus dem römischen Reich anhand von Funden aus dem Grabkontext.",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "By analyzing burial finds linked to the deceased, the dissertation «Mit Stilus, Volumen und Spiegel» traces female literacy in the Latin West of the Roman Empire.",
     "description": {
@@ -100,7 +100,7 @@
     ],
     "attributions": [
         {
-            "contributor": "0852-person-000",
+            "contributor": "person-334",
             "contributorType": [
                 "Project Leader"
             ]
@@ -110,7 +110,7 @@
         "en": "Catalogue of graves, grave monuments and grave inscriptions as testimonies of female literacy in the Roman Empire. Collection of graves with writing utensils from the Latin West of the Roman Empire. It includes female, male and sexually indeterminate graves. Funerary monuments remind us of the deceased long after the burial and create a certain image with which they are remembered. In this catalogue, grave monuments of women with writing implements as attributes from the Latin West are compiled. Due to the large number of sarcophagus reliefs, these are only included as a representative sample. Representations of Muses are excluded unless there is an identification with the deceased person. Compilation of funerary inscriptions of women with a connection to literacy. The inscriptions mention activities that presuppose or make probable a certain mastery of reading and writing. This ranges from working as a reader or scribe to attending school and being praised by ones high education."
     },
     "contactPoint": [
-        "0852-person-000"
+        "person-334"
     ],
     "publications": [
         {
@@ -144,7 +144,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "168626",
             "name": "Doc.Mobility",

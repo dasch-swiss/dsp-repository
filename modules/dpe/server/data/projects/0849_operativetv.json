@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0849",
     "name": "Operative TV: Audiovisual Closed-Circuits from the Military to the Classroom, 1930s-1990s",
     "shortcode": "0849",
-    "officialName": "Operative TV: Audiovisual Closed-Circuits from the Military to the Classroom, 1930s-1990s",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "The SNSF PRIMA project “Operative TV: Audiovisual Closed-Circuits from the Military to the Classroom, 1930s-1990s” studies the uses of TV in industrial, medical, educational and military contexts.",
     "description": {
@@ -120,25 +120,25 @@
     ],
     "attributions": [
         {
-            "contributor": "0849-person-000",
+            "contributor": "person-295",
             "contributorType": [
                 "Project Leader, Data Collector, Data Curator, Data Manager "
             ]
         },
         {
-            "contributor": "0849-person-001",
+            "contributor": "person-296",
             "contributorType": [
                 "Project Member, Data Collector, Data Curator, Data Manager "
             ]
         },
         {
-            "contributor": "0849-person-002",
+            "contributor": "person-297",
             "contributorType": [
                 "Project Member, Data Collector, Data Curator, Data Manager"
             ]
         },
         {
-            "contributor": "0849-person-003",
+            "contributor": "person-298",
             "contributorType": [
                 "Project Member, Data Collector, Data Curator, Data Manager"
             ]
@@ -148,12 +148,12 @@
         "en": "The aim of the database is to inform researchers about relevant archives centers / collections / folders for writing a history of useful and closed-circuit television in Western Europe and the United States. \n \n The database offers a view of the archives collected by the Operative TV project and give access to some of them. But the database also contributes to locate and identify archival material for further research. For example, the visitors might find in the database our description of a collection or a folder that don’t exist elsewhere. They will then be able to investigate this collection further.\r \r Finally, the database give access to the outputs of the Operative TV project.\r \r The database is organised as follow:\n \n \n  A.\tResources\n \n  The database is designed around four main interrelated categories (resources): \r •\tArchive Documents in PDF format;\r •\tArchive Folders to which documents belong;\r •\tArchive Fonds to which folders belong; \r •\tArchive Centers or Libraries that hold collections. \r \r A fifth category (resource) named Journals / grey literature includes published archival sources.\r \r A sixth category (resource) includes the scientific Outputs of the Operative TV project.\r \r B.\tThesaurus\r \r While the categories/resources mentioned above bring essentially together \"places\" where archives and archival documents can be found, the Controlled Vocabularies allows a thematic approach to the Documents, Folders and archival Collections, with two exceptions.\r \r \r •\tControlled Vocabularies with thematic approach:\r Useful Television; Function of Television; Technical Dispositif; Users; Operators of Television\r à In each case, there are multiple choices\r \r •\tControlled Vocabularies relating to where the Archives Centers are situated:\r Countries; Cities\r à In each case, there are multiple choices"
     },
     "contactPoint": [
-        "0849-person-000"
+        "person-295"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "208503",
             "name": "PRIMA",

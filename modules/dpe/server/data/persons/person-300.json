@@ -1,0 +1,24 @@
+{
+    "id": "person-300",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-300",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-4079-7387",
+            "text": "ORCID URL: https://orcid.org/0000-0003-4079-7387"
+        }
+    ],
+    "givenNames": [
+        "Dominic"
+    ],
+    "familyNames": [
+        "Studer"
+    ],
+    "jobTitles": [
+        "Wissenschaftlicher Mitarbeiter"
+    ],
+    "affiliations": [
+        "organization-105"
+    ],
+    "email": "dominic.studer@fhnw.ch"
+}

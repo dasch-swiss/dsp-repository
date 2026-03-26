@@ -1,0 +1,23 @@
+{
+    "id": "person-192",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-192",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.ames.ox.ac.uk/people/marina-sartori",
+            "text": "https://www.ames.ox.ac.uk/people/marina-sartori"
+        }
+    ],
+    "givenNames": [
+        "Marina"
+    ],
+    "familyNames": [
+        "Sartori"
+    ],
+    "jobTitles": [
+        "Egyptologist"
+    ],
+    "affiliations": [
+        "organization-059"
+    ]
+}

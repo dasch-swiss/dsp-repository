@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/080E",
     "name": "Digital Lexicon Iconographicum Mythologiae Classicae (Digital LIMC)",
     "shortcode": "080E",
-    "officialName": "Digital Lexicon Iconographicum Mythologiae Classicae (Digital LIMC)",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "Digital LIMC contains what we know about the iconography of Greek, Etruscan and Roman mythology, both in ancient Greek, Etruscan and Roman art as well as in neighbouring Mediterranean cultures.",
     "description": {
@@ -138,7 +138,7 @@
     ],
     "attributions": [
         {
-            "contributor": "080E-organization-005",
+            "contributor": "organization-032",
             "contributorType": [
                 "publisher"
             ]
@@ -158,19 +158,19 @@
     "funding": [
         {
             "funders": [
-                "080E-organization-000"
+                "organization-027"
             ]
         },
         {
             "funders": [
-                "080E-organization-001"
+                "organization-028"
             ],
             "name": "Program Support Education",
             "url": "https://www.snf.org/en/grants/grantees/u/university-of-basel/department-of-ancient-civilisations-program-support/"
         },
         {
             "funders": [
-                "080E-organization-002"
+                "organization-029"
             ],
             "number": "2015-2371/1.2",
             "name": "Gesuch im Bereich Bildung und Wissenschaft",
@@ -178,7 +178,7 @@
         },
         {
             "funders": [
-                "080E-organization-003"
+                "organization-030"
             ],
             "number": "14/17-18",
             "name": "Ceramica Stiftung",
@@ -186,7 +186,7 @@
         },
         {
             "funders": [
-                "080E-organization-004"
+                "organization-031"
             ],
             "number": "19-109",
             "name": "Gesuch im Bereich Kultur",

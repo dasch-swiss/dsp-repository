@@ -1,0 +1,30 @@
+{
+    "id": "person-287",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-287",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://germanistik.philhist.unibas.ch/de/personen/hubert-thuering",
+            "text": "https://germanistik.philhist.unibas.ch/de/personen/hubert-thuering"
+        },
+        {
+            "type": "URL",
+            "url": "https://germanistik.philhist.unibas.ch/de/personen/hubert-thuering/",
+            "text": "https://germanistik.philhist.unibas.ch/de/personen/hubert-thuering/"
+        }
+    ],
+    "givenNames": [
+        "Hubert"
+    ],
+    "familyNames": [
+        "Thüring"
+    ],
+    "jobTitles": [
+        "Prof. Dr. / Universitätsdozent und Titularprofessor",
+        "Prof. Dr."
+    ],
+    "affiliations": [
+        "organization-141"
+    ],
+    "email": "hubert.thuering@unibas.ch"
+}

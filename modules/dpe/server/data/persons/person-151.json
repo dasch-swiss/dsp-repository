@@ -1,0 +1,23 @@
+{
+    "id": "person-151",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-151",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.archaeologie.uzh.ch/de/prehist/%C3%9Cber-uns/Personen/Dr.-Ruven-Turck.html",
+            "text": "https://www.archaeologie.uzh.ch/de/prehist/%C3%9Cber-uns/Personen/Dr.-Ruven-Turck.html"
+        }
+    ],
+    "givenNames": [
+        "Rouven"
+    ],
+    "familyNames": [
+        "Turck"
+    ],
+    "jobTitles": [
+        "Archaeologist"
+    ],
+    "affiliations": [
+        "organization-063"
+    ]
+}

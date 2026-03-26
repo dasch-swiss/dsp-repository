@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/083E",
     "name": "Healing Arts. Representations and Practices of Medical Knowledge in Art and Literature (9th-12th centuries)",
     "shortcode": "083E",
-    "officialName": "Healing Arts. Representations and Practices of Medical Knowledge in Art and Literature (9th-12th centuries)",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "The project explores the entangled histories of botany, art and health. It considers plant images in early medieval herbals as modes of knowledge that articulate and negotiate medical practices.",
     "description": {
@@ -102,20 +102,20 @@
     ],
     "attributions": [
         {
-            "contributor": "083E-person-000",
+            "contributor": "person-273",
             "contributorType": [
                 "PI",
                 "Project Leader"
             ]
         },
         {
-            "contributor": "083E-person-002",
+            "contributor": "person-275",
             "contributorType": [
                 "Data Collector"
             ]
         },
         {
-            "contributor": "083E-person-001",
+            "contributor": "person-274",
             "contributorType": [
                 "Data Collector"
             ]
@@ -125,7 +125,7 @@
         "en": "The database is a comprehensive collection of early medieval herbals prior to 1200. The ontology of the database includes several main classes (e.g. remedy, manuscript, object, person, text) to describe, contextualise and visualise plant images. By linking these classes to each other, the database displays the transmission of individual plant images and the underlying network between manuscript productions. Special attention has been paid to the very diverse medieval botanical nomenclature, including synonyms, spelling variants and the vernacular. This allows a broad search for remedies and their possible identification across geographical borders."
     },
     "contactPoint": [
-        "083E-person-000"
+        "person-273"
     ],
     "publications": [
         {
@@ -138,7 +138,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "201738",
             "name": "Ambizione",

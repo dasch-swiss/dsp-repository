@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0869",
     "name": "GLAUBENMACHENLASSEN",
     "shortcode": "0869",
-    "officialName": "GLAUBENMACHENLASSEN",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "GLAUBENMACHENLASSEN is a visual anthropological and film ethnographic dissertation exploring identity in a cinematographic laboratory. Research period: 2009-2022.",
     "description": {
@@ -15,7 +15,7 @@
     "url": [
         "https://app.dasch.swiss/project/ONaIjCzpTYGHOF1At1ph_Q"
     ],
-    "howToCite": "Alter & Ottou (2025). GLAUBENMACHENLASSEN [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0869.",
+    "howToCite": "Alter (2026). GLAUBENMACHENLASSEN [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0869.",
     "accessRights": {
         "accessRights": "Full Open Access"
     },
@@ -121,48 +121,41 @@
     ],
     "attributions": [
         {
-            "contributor": "0869-person-001",
+            "contributor": "person-378",
             "contributorType": [
-                "Project Leader",
+                "Protagonist",
                 "Research Assistant",
-                "Composer",
-                "CO-Author"
+                "CO-Author of Filmic Images",
+                "Moi, un Afropéen Production/Main Protagonist 2009-2017"
             ]
         },
         {
-            "contributor": "0869-person-000",
+            "contributor": "person-377",
             "contributorType": [
-                "Project Manager",
-                "Researcher",
-                "Data Collector",
-                "Creator",
-                "Director",
+                "Principal Investigator",
                 "Author",
-                "Data Curator"
+                "Data Model Designer",
+                "Data Curator",
+                "Moi, un Afropéen Production/Director 2009-2017",
+                "GLAUBENMACHENLASSEN/Author 2017-2021"
             ]
         },
         {
-            "contributor": "0869-person-002",
+            "contributor": "person-379",
             "contributorType": [
-                "Film Editor"
+                "Moi, un Afropéen Production/Film Editor 2017"
             ]
         },
         {
-            "contributor": "0869-person-003",
+            "contributor": "person-380",
             "contributorType": [
-                "Text Editor"
+                "GLAUBEMENMACHENLASSEN/Text Editor 2020"
             ]
         },
         {
-            "contributor": "0869-person-004",
+            "contributor": "person-381",
             "contributorType": [
-                "Text Editor"
-            ]
-        },
-        {
-            "contributor": "0869-person-005",
-            "contributorType": [
-                "Composer"
+                "Moi, un Afropéen Production/Sound Engineer 2009-2017"
             ]
         }
     ],
@@ -170,7 +163,7 @@
         "en": "GLAUBENMACHENLASSEN is a visual anthropological and film ethnographic dissertation project that explores identity and the process of identification in the setting of a cinematographic laboratory. Based on an experimental setup, it takes a novel approach to the use of digital cinematography as a research tool in the actual social sciences."
     },
     "contactPoint": [
-        "0869-person-000"
+        "person-377"
     ],
     "publications": [
         {
@@ -183,19 +176,19 @@
     "funding": [
         {
             "funders": [
-                "0869-organization-002"
+                "organization-144"
             ],
             "name": "G3S Start-Up Grant"
         },
         {
             "funders": [
-                "0869-organization-007"
+                "organization-147"
             ],
             "name": "Guest Research Grant University of Aarhus"
         },
         {
             "funders": [
-                "0863-organization-001"
+                "organization-140"
             ],
             "name": "Get-on-Track Grant Universität Basel"
         }

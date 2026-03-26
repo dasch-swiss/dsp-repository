@@ -1,0 +1,24 @@
+{
+    "id": "person-166",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-166",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/stephane-fetler-25158383/",
+            "text": "https://www.linkedin.com/in/stephane-fetler-25158383/"
+        }
+    ],
+    "givenNames": [
+        "Stéphane"
+    ],
+    "familyNames": [
+        "Fetler"
+    ],
+    "jobTitles": [
+        "Conservator",
+        "Egyptologist"
+    ],
+    "affiliations": [
+        "organization-065"
+    ]
+}

@@ -1,0 +1,23 @@
+{
+    "id": "person-196",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-196",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.unige.ch/forel/lap/fr/ancienscoll/studer/",
+            "text": "https://www.unige.ch/forel/lap/fr/ancienscoll/studer/"
+        }
+    ],
+    "givenNames": [
+        "Jacqueline"
+    ],
+    "familyNames": [
+        "Studer"
+    ],
+    "jobTitles": [
+        "Archaeozoologist"
+    ],
+    "affiliations": [
+        "organization-068"
+    ]
+}

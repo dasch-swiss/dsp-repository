@@ -1,0 +1,25 @@
+{
+    "id": "person-362",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-362",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5186-4445",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5186-4445"
+        }
+    ],
+    "givenNames": [
+        "Christian"
+    ],
+    "familyNames": [
+        "von Zimmermann"
+    ],
+    "jobTitles": [
+        "Dozent, Leiter der Forschungsstelle Jeremias Gotthelf, PD Dr."
+    ],
+    "affiliations": [
+        "organization-134",
+        "organization-114"
+    ],
+    "email": "christian.vonzimmermann@unibe.ch"
+}

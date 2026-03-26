@@ -1,0 +1,17 @@
+{
+    "id": "person-014",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-014",
+    "givenNames": [
+        "Aline"
+    ],
+    "familyNames": [
+        "Hodroge"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "aline.hodroge@unil.ch"
+}

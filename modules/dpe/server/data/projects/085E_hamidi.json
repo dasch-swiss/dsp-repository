@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/085E",
     "name": "Tall al-Hamidiya Online",
     "shortcode": "085E",
-    "officialName": "Tall al-Hamidiya Online",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "The Swiss excavations at Tall al-Hamidiya (NE Syria) revealed a 245-ha Late Bronze Age city. Architecture and texts make it likely that the site was Taidu, the royal residence of the Mitanni empire.",
     "description": {
@@ -104,7 +104,7 @@
     ],
     "attributions": [
         {
-            "contributor": "085E-person-001",
+            "contributor": "person-344",
             "contributorType": [
                 "Project Leader",
                 "Editor",
@@ -112,13 +112,13 @@
             ]
         },
         {
-            "contributor": "085E-person-002",
+            "contributor": "person-345",
             "contributorType": [
                 "Related Person"
             ]
         },
         {
-            "contributor": "0861-person-005",
+            "contributor": "person-360",
             "contributorType": [
                 "Data Curator"
             ]
@@ -128,7 +128,7 @@
         "en": "Materials from the excavations of the Swiss Archaeological Mission at Tall al-Hamidiya, Northeast Syria (1984-2011)"
     },
     "contactPoint": [
-        "085E-person-001"
+        "person-344"
     ],
     "publications": [
         {
@@ -141,14 +141,14 @@
     "funding": [
         {
             "funders": [
-                "085E-organization-001"
+                "organization-122"
             ],
             "name": "Shelby White and Leon Levy Program for Archaeological Publications",
             "url": "https://whitelevy.fas.harvard.edu/digitisation-and-publication-finds-swiss-archaeological-mission-tall-al-hamidiya-northeast-syria"
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "120549",
             "name": "Project funding",
@@ -156,7 +156,7 @@
         },
         {
             "funders": [
-                "085E-person-002"
+                "person-345"
             ],
             "name": "Private funding"
         }

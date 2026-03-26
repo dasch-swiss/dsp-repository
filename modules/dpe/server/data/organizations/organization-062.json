@@ -1,0 +1,13 @@
+{
+    "id": "organization-062",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/organization-062",
+    "name": "Zurich University of the Arts (ZHdK)",
+    "url": "http://www.zhdk.ch",
+    "address": {
+        "street": "Pfingstweidstrasse 96",
+        "postalCode": "8031",
+        "locality": "Zürich",
+        "country": "Switzerland"
+    },
+    "email": "info.admin@zhdk.ch"
+}

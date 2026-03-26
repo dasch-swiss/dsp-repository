@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0812",
     "name": "Photo Archive of the Cultural Anthropology Switzerland (CAS)",
     "shortcode": "0812",
-    "officialName": "Photo Archive of the Cultural Anthropology Switzerland (CAS)",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "With its approximately 500,000 photo objects from across the world, the photo archive of the CAS fosters new approaches to the study and consumption of photographs.",
     "description": {
@@ -264,307 +264,307 @@
     ],
     "attributions": [
         {
-            "contributor": "0812-person-000",
+            "contributor": "person-095",
             "contributorType": [
                 "Head of project"
             ]
         },
         {
-            "contributor": "0812-person-001",
+            "contributor": "person-096",
             "contributorType": [
                 "Project coordination"
             ]
         },
         {
-            "contributor": "0812-person-002",
+            "contributor": "person-097",
             "contributorType": [
                 "Restoration, Project Consultant"
             ]
         },
         {
-            "contributor": "0812-person-003",
+            "contributor": "person-098",
             "contributorType": [
                 "Coordination web design and development, Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-004",
+            "contributor": "person-099",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-005",
+            "contributor": "person-100",
             "contributorType": [
                 "Coordinator, Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-006",
+            "contributor": "person-101",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-007",
+            "contributor": "person-102",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-008",
+            "contributor": "person-103",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-009",
+            "contributor": "person-104",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-010",
+            "contributor": "person-105",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-011",
+            "contributor": "person-106",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-012",
+            "contributor": "person-107",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-013",
+            "contributor": "person-108",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-014",
+            "contributor": "person-109",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-015",
+            "contributor": "person-110",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-016",
+            "contributor": "person-111",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-017",
+            "contributor": "person-112",
             "contributorType": [
                 "Oral history partner, Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-018",
+            "contributor": "person-113",
             "contributorType": [
                 "Oral history partner"
             ]
         },
         {
-            "contributor": "0812-person-019",
+            "contributor": "person-114",
             "contributorType": [
                 "Oral history partner"
             ]
         },
         {
-            "contributor": "0803-person-002",
+            "contributor": "person-073",
             "contributorType": [
                 "Database programming"
             ]
         },
         {
-            "contributor": "0812-person-021",
+            "contributor": "person-115",
             "contributorType": [
                 "Database programming"
             ]
         },
         {
-            "contributor": "0812-person-022",
+            "contributor": "person-116",
             "contributorType": [
                 "Database programming"
             ]
         },
         {
-            "contributor": "0812-person-023",
+            "contributor": "person-117",
             "contributorType": [
                 "Database programming"
             ]
         },
         {
-            "contributor": "0812-person-024",
+            "contributor": "person-118",
             "contributorType": [
                 "Database programming"
             ]
         },
         {
-            "contributor": "0812-person-025",
+            "contributor": "person-119",
             "contributorType": [
                 "Database programming"
             ]
         },
         {
-            "contributor": "0812-person-026",
+            "contributor": "person-120",
             "contributorType": [
                 "Database programming"
             ]
         },
         {
-            "contributor": "0812-person-027",
+            "contributor": "person-121",
             "contributorType": [
                 "Database programming"
             ]
         },
         {
-            "contributor": "0812-person-028",
+            "contributor": "person-122",
             "contributorType": [
                 "Database programming"
             ]
         },
         {
-            "contributor": "0813-person-001",
+            "contributor": "person-144",
             "contributorType": [
                 "Database programming"
             ]
         },
         {
-            "contributor": "0812-person-030",
+            "contributor": "person-123",
             "contributorType": [
                 "Web design and development"
             ]
         },
         {
-            "contributor": "0812-person-031",
+            "contributor": "person-124",
             "contributorType": [
                 "Typeface"
             ]
         },
         {
-            "contributor": "0812-person-032",
+            "contributor": "person-125",
             "contributorType": [
                 "Conservation, restoration, Data Curator"
             ]
         },
         {
-            "contributor": "0812-person-033",
+            "contributor": "person-126",
             "contributorType": [
                 "Conservation, restoration"
             ]
         },
         {
-            "contributor": "0812-person-034",
+            "contributor": "person-127",
             "contributorType": [
                 "Conservation, restoration"
             ]
         },
         {
-            "contributor": "0812-person-035",
+            "contributor": "person-128",
             "contributorType": [
                 "Conservation, restoration"
             ]
         },
         {
-            "contributor": "0812-person-036",
+            "contributor": "person-129",
             "contributorType": [
                 "Conservation, restoration"
             ]
         },
         {
-            "contributor": "0812-person-037",
+            "contributor": "person-130",
             "contributorType": [
                 "Conservation, restoration"
             ]
         },
         {
-            "contributor": "0812-person-038",
+            "contributor": "person-131",
             "contributorType": [
                 "Conservation, restoration"
             ]
         },
         {
-            "contributor": "0812-person-039",
+            "contributor": "person-132",
             "contributorType": [
                 "Conservation, restoration"
             ]
         },
         {
-            "contributor": "0812-person-040",
+            "contributor": "person-133",
             "contributorType": [
                 "Digitization"
             ]
         },
         {
-            "contributor": "0812-person-041",
+            "contributor": "person-134",
             "contributorType": [
                 "Digitization"
             ]
         },
         {
-            "contributor": "0812-person-042",
+            "contributor": "person-135",
             "contributorType": [
                 "Digitization"
             ]
         },
         {
-            "contributor": "0812-person-043",
+            "contributor": "person-136",
             "contributorType": [
                 "Digitization"
             ]
         },
         {
-            "contributor": "0812-person-044",
+            "contributor": "person-137",
             "contributorType": [
                 "Digitization"
             ]
         },
         {
-            "contributor": "0812-person-045",
+            "contributor": "person-138",
             "contributorType": [
                 "ICT Consultant"
             ]
         },
         {
-            "contributor": "0812-person-046",
+            "contributor": "person-139",
             "contributorType": [
                 "Translation (EN)"
             ]
         },
         {
-            "contributor": "0812-person-047",
+            "contributor": "person-140",
             "contributorType": [
                 "Translation (FR), Editor"
             ]
         },
         {
-            "contributor": "0812-person-048",
+            "contributor": "person-141",
             "contributorType": [
                 "Translation (IT)"
             ]
         },
         {
-            "contributor": "0812-person-049",
+            "contributor": "person-142",
             "contributorType": [
                 "Translation (RM)"
             ]
         },
         {
-            "contributor": "0812-person-050",
+            "contributor": "person-143",
             "contributorType": [
                 "Translation (RM), Data curator"
             ]
@@ -574,7 +574,7 @@
         "en": "The dataset contains the photographic collections of the Cultural Anthropology Switzerland (CAS) as well as about thirty-five films related to them."
     },
     "contactPoint": [
-        "0812-person-001"
+        "person-096"
     ],
     "publications": [
         {
@@ -593,7 +593,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "193788",
             "name": "Participatory Knowledge Practices in Analogue and Digital Image Archives (PIA)",

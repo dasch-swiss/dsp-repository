@@ -1,0 +1,23 @@
+{
+    "id": "person-181",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-181",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/evelyne-marty-80257419a/",
+            "text": "https://www.linkedin.com/in/evelyne-marty-80257419a/"
+        }
+    ],
+    "givenNames": [
+        "Evelyne"
+    ],
+    "familyNames": [
+        "Marty"
+    ],
+    "jobTitles": [
+        "Student"
+    ],
+    "affiliations": [
+        "organization-059"
+    ]
+}

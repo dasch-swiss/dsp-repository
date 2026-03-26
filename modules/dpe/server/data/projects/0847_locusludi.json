@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0847",
     "name": "Locus Ludi database: The Kottabos in the Greek World",
     "shortcode": "0847",
-    "officialName": "Locus Ludi database: The Kottabos in the Greek World",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "This database aims to provide a benchmark by compilating all representations of kottabos in the Greek world, including descriptions, images and links to other reference databases.",
     "description": {
@@ -102,13 +102,13 @@
     ],
     "attributions": [
         {
-            "contributor": "0847-person-000",
+            "contributor": "person-289",
             "contributorType": [
                 "Project Leader"
             ]
         },
         {
-            "contributor": "0847-person-001",
+            "contributor": "person-290",
             "contributorType": [
                 "Researcher and Data Collector"
             ]
@@ -118,7 +118,7 @@
         "en": "The database makes an extensive collection of representation of kottabos on South Italian pottery. The ontology of the database includes five main classes (object, scene, museum, artist and photo) to describe, contextualize and illustrate the vase. Each of five classes contains properties using different criteria (e.g. material, technique, production center, description, attribution, dating, discovery place, location, bibliography and photo credits)."
     },
     "contactPoint": [
-        "0847-person-001"
+        "person-290"
     ],
     "publications": [
         {
@@ -143,7 +143,7 @@
     "funding": [
         {
             "funders": [
-                "0847-organization-001"
+                "organization-103"
             ],
             "number": "741520",
             "name": "ERC Advanced grant",

@@ -1,0 +1,23 @@
+{
+    "id": "person-314",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-314",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.biblhertz.it/de/michael-schmitz",
+            "text": "https://www.biblhertz.it/de/michael-schmitz"
+        }
+    ],
+    "givenNames": [
+        "Michael"
+    ],
+    "familyNames": [
+        "Schmitz"
+    ],
+    "jobTitles": [
+        "Dr. phil."
+    ],
+    "affiliations": [
+        "organization-108"
+    ]
+}

@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0867",
     "name": "Der späte Nietzsche. Digitale Edition der Druckdokumente",
     "shortcode": "0867",
-    "officialName": "Der späte Nietzsche. Digitale Edition der Druckdokumente",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "The digital edition project \"Der späte Nietzsche\" (The Late Nietzsche) publishes Friedrich Nietzsche's late estate digitally congruent to the manuscripts.",
     "description": {
@@ -98,31 +98,31 @@
     ],
     "attributions": [
         {
-            "contributor": "0846-person-000",
+            "contributor": "person-287",
             "contributorType": [
                 "Project lead"
             ]
         },
         {
-            "contributor": "0866-person-001",
+            "contributor": "person-369",
             "contributorType": [
                 "Transcription and philological comments"
             ]
         },
         {
-            "contributor": "0866-person-002",
+            "contributor": "person-370",
             "contributorType": [
                 "Transcription, philological comments and Digital edition"
             ]
         },
         {
-            "contributor": "0866-person-003",
+            "contributor": "person-371",
             "contributorType": [
                 "Transcription, philological comments and Digital edition"
             ]
         },
         {
-            "contributor": "0866-person-007",
+            "contributor": "person-374",
             "contributorType": [
                 "Digital edition"
             ]
@@ -132,12 +132,12 @@
         "de": "Die digitale Edition erschließt die überlieferten Druckdokumente zu Friedrich Nietzsche, Zur Genealogie der Moral. Eine Streitschrift, Verlag von C. G. Naumann, Leipzig 1887. Diese Dokumente beinhalten das Druckmanuskript, Korrekturbogen und den Erstdruck. Die Edition bietet (1.) eine diplomatische Transkription nach topologischem Prinzip des eigenhändigen Druckmanuskripts, (2.) eine lemmatische Wiedergabe der handschriftlichen Korrekturen in den Korrekturbogen und (3.) eine seiten- und zeilengenaue Textwiedergabe des Erstdrucks. Zu allen edierten Dokumenten beziehungsweise Dokumentseiten sind Digitalisate der Originaldokumente aus dem Goethe- und Schiller-Archiv (GSA) und der Herzogin Anna Amalia Bibliothek (HAAB) der Klassik Stiftung Weimar abrufbar."
     },
     "contactPoint": [
-        "0846-person-000"
+        "person-287"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "204401",
             "name": "Editions",

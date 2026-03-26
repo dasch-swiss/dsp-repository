@@ -1,0 +1,24 @@
+{
+    "id": "person-012",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-012",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-6599-5630",
+            "text": "ORCID URL: https://orcid.org/0000-0002-6599-5630"
+        }
+    ],
+    "givenNames": [
+        "Valentina"
+    ],
+    "familyNames": [
+        "Ponzetto"
+    ],
+    "jobTitles": [
+        "Assistant professor"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "valentina.ponzetto@unil.ch"
+}

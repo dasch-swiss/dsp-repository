@@ -1,0 +1,17 @@
+{
+    "id": "person-101",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-101",
+    "givenNames": [
+        "Uta"
+    ],
+    "familyNames": [
+        "Karrer"
+    ],
+    "jobTitles": [
+        "Research associate"
+    ],
+    "affiliations": [
+        "organization-035",
+        "organization-038"
+    ]
+}

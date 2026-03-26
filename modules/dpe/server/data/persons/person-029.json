@@ -1,0 +1,24 @@
+{
+    "id": "person-029",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-029",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-1537-8140",
+            "text": "ORCID URL: https://orcid.org/0000-0002-1537-8140"
+        }
+    ],
+    "givenNames": [
+        "Jeanne"
+    ],
+    "familyNames": [
+        "Rohner"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "jeanne.rohner@unil.ch"
+}

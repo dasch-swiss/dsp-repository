@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/082B",
     "name": "cache",
     "shortcode": "082B",
-    "officialName": "cache",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "cache is a hybrid publication tool for research groups in the humanities.",
     "description": {
@@ -96,79 +96,79 @@
     ],
     "attributions": [
         {
-            "contributor": "082B-person-001",
+            "contributor": "person-229",
             "contributorType": [
                 "project lead"
             ]
         },
         {
-            "contributor": "082B-person-002",
+            "contributor": "person-230",
             "contributorType": [
                 "editorial management"
             ]
         },
         {
-            "contributor": "082B-person-003",
+            "contributor": "person-231",
             "contributorType": [
                 "scientific direction"
             ]
         },
         {
-            "contributor": "082B-person-004",
+            "contributor": "person-232",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "0848-person-003",
+            "contributor": "person-294",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "082B-person-006",
+            "contributor": "person-233",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "082B-person-007",
+            "contributor": "person-234",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "082B-person-008",
+            "contributor": "person-235",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "082B-person-009",
+            "contributor": "person-236",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "082B-person-010",
+            "contributor": "person-237",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "082B-person-011",
+            "contributor": "person-238",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "082B-person-012",
+            "contributor": "person-239",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "082B-organization-002",
+            "contributor": "organization-080",
             "contributorType": [
                 "publisher"
             ]
@@ -178,7 +178,7 @@
         "en": "Genetic engineering, acid rain, nuclear accidents, ozone depletion, computerization — in the years around 1980, science moved center-stage as a socio-political quandary. First and foremost, it were the new social movements that cultivated critiques of science and technology; but soon enough, the desire for an alternative science, or a “counter-knowledge”, diffused into the broader realms of politics, economics and, not least, establishment science. What was this “counter\"-science? Where did it succeed? Where did it fail? And why is this relevant again today?"
     },
     "contactPoint": [
-        "082B-organization-002"
+        "organization-080"
     ],
     "publications": [
         {
@@ -188,7 +188,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "183057",
             "name": "Digital Lives",

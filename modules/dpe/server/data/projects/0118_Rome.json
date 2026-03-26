@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0118",
     "name": "Rome in the Early Middle Ages: Arts and Culture",
     "shortcode": "0118",
-    "officialName": "Rome in the Early Middle Ages: Arts and Culture",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "The project addresses the visual culture of the city of Rome (Vth-XIth ct.) by means of an interdisciplinary approach (art history, architecture, archaeology archaeometry, liturgy, epigraphy).",
     "description": {
@@ -120,55 +120,55 @@
     ],
     "attributions": [
         {
-            "contributor": "REMA-person-000",
+            "contributor": "person-382",
             "contributorType": [
                 "Project Leader"
             ]
         },
         {
-            "contributor": "REMA-person-001",
+            "contributor": "person-383",
             "contributorType": [
                 "Project Leader"
             ]
         },
         {
-            "contributor": "REMA-person-006",
+            "contributor": "person-387",
             "contributorType": [
                 "Project Member"
             ]
         },
         {
-            "contributor": "REMA-person-005",
+            "contributor": "person-386",
             "contributorType": [
                 "Project Member"
             ]
         },
         {
-            "contributor": "REMA-person-004",
+            "contributor": "person-385",
             "contributorType": [
                 "Data Collector"
             ]
         },
         {
-            "contributor": "REMA-person-003",
+            "contributor": "person-384",
             "contributorType": [
                 "Data Collector"
             ]
         },
         {
-            "contributor": "REMA-person-007",
+            "contributor": "person-388",
             "contributorType": [
                 "Data Collector"
             ]
         },
         {
-            "contributor": "0101-person-007",
+            "contributor": "person-008",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "REMA-person-008",
+            "contributor": "person-389",
             "contributorType": [
                 "Data Collector"
             ]
@@ -178,12 +178,12 @@
         "en": "The ontology of the database comprises three main classes, making it possible to describe paintings and mosaics in the buildings where they are found. The class “Oggetto” (i.e.: mosaic, painting) falls under the class “Cappella” and/or the class “Edificio”. Each of these three classes contains properties (custom controlled vocabularies and text fields), making it possible to characterize the building, chapel, paintings or mosaic using names, location, description, state of preservation, analysis, dating, patrons, inscriptions, sources, critical commentary, bibliography. Illustrations can be added to the three main categories using two further classes, ‘Illustrazioni’ and ‘Illustrazioni ad accesso limitato’, whose properties (also text fields and controlled vocabularies) include information on the type of image and photograph credits."
     },
     "contactPoint": [
-        "REMA-person-000"
+        "person-382"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "192854",
             "name": "Project funding",

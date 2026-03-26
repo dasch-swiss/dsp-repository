@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0838",
     "name": "I-GEOARCHive",
     "shortcode": "0838",
-    "officialName": "I-GEOARCHive",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "I-GEOARCHive provides geoarchaeological data and images (profile photos, thin section scans, microscope photos, layer descriptions, mortar and ceramic samples, etc.) from various archaeological sites.",
     "description": {
@@ -150,43 +150,43 @@
     ],
     "attributions": [
         {
-            "contributor": "0838-person-000",
+            "contributor": "person-248",
             "contributorType": [
                 "Project Leader, Data Collector"
             ]
         },
         {
-            "contributor": "0838-person-001",
+            "contributor": "person-249",
             "contributorType": [
                 "Project Leader, Data Collector"
             ]
         },
         {
-            "contributor": "0838-person-002",
+            "contributor": "person-250",
             "contributorType": [
                 "Data Collector"
             ]
         },
         {
-            "contributor": "0838-person-003",
+            "contributor": "person-251",
             "contributorType": [
                 "Data Collector"
             ]
         },
         {
-            "contributor": "0838-person-004",
+            "contributor": "person-252",
             "contributorType": [
                 "Data Collector"
             ]
         },
         {
-            "contributor": "0838-person-005",
+            "contributor": "person-253",
             "contributorType": [
                 "Data Collector"
             ]
         },
         {
-            "contributor": "0838-person-006",
+            "contributor": "person-254",
             "contributorType": [
                 "Project Leader, Data Collector"
             ]
@@ -196,7 +196,7 @@
         "en": "The geoarchaeological collection of  IPAS (Integrative Prehistory and Archaeological Science) at the University of Basel and of  AMGC (Archaeology, Environmental Changes & Geo-Chemistry) at the Vrije Universiteit Brussel includes block and sediment samples of soils and archaeological deposits as well as rocks, flints, ceramics and mortar samples. The I-GEOARCHive image database of thin section scans and microphotographs makes the collection digitally accessible to research and teaching. The freely accessible I-GEOARCHive database enables users to keyword, analyse, publish and archive geoarchaeological samples. Furthermore, micromorphological observations are linked to the thin section scans and thus to the block samples and profiles. This cross-linking enables multidimensional publication and archiving of micromorphological image data and their relation to original archaeological features."
     },
     "contactPoint": [
-        "0838-person-000"
+        "person-248"
     ],
     "publications": [
         {
@@ -206,7 +206,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "205278",
             "name": "Weave (SNSF)",
@@ -214,7 +214,7 @@
         },
         {
             "funders": [
-                "0838-organization-003"
+                "organization-088"
             ],
             "number": "FWOAL1057",
             "name": "Weave (FWO)",

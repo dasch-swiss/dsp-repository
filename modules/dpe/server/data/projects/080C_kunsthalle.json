@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/080C",
     "name": "Fotoarchiv Kunsthalle Basel",
     "shortcode": "080C",
-    "officialName": "Fotoarchiv Kunsthalle Basel",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "Kunsthalle Basel is Switzerland’s oldest active art museum displaying contemporary art.",
     "description": {
@@ -90,25 +90,25 @@
     ],
     "attributions": [
         {
-            "contributor": "080C-person-001",
+            "contributor": "person-090",
             "contributorType": [
                 "creator of the project, editor"
             ]
         },
         {
-            "contributor": "080C-person-002",
+            "contributor": "person-091",
             "contributorType": [
                 "editor, maintainer"
             ]
         },
         {
-            "contributor": "080C-person-003",
+            "contributor": "person-092",
             "contributorType": [
                 "editor"
             ]
         },
         {
-            "contributor": "080C-person-000",
+            "contributor": "person-089",
             "contributorType": [
                 "maintainer, editor"
             ]
@@ -120,69 +120,69 @@
     "funding": [
         {
             "funders": [
-                "080C-organization-001"
+                "organization-019"
             ],
             "name": "Bundesamt für Kultur",
             "url": "https://www.bak.admin.ch/bak/de/home.html"
         },
         {
             "funders": [
-                "080C-organization-002"
+                "organization-020"
             ],
             "name": "UBS Kulturstiftung",
             "url": "https://www.ubs.com/global/de/ubs-society/foundations/culture-foundation.html"
         },
         {
             "funders": [
-                "080C-organization-003"
+                "organization-021"
             ],
             "name": "Kulturelles BL"
         },
         {
             "funders": [
-                "080C-organization-004"
+                "organization-022"
             ],
             "name": "FMB (Freiwilliger Museumsverein Basel)",
             "url": "https://www.fmb-basel.ch/"
         },
         {
             "funders": [
-                "080E-organization-002"
+                "organization-029"
             ],
             "name": "Ernst Göhner Stiftung",
             "url": "https://www.ernst-goehner-stiftung.ch/index.php/de"
         },
         {
             "funders": [
-                "080C-organization-006"
+                "organization-023"
             ],
             "name": "Sulger Stiftung",
             "url": "https://stiftungen.stiftungschweiz.ch/organisation/sulger-stiftung"
         },
         {
             "funders": [
-                "080E-organization-004"
+                "organization-031"
             ],
             "name": "Sophie und Karl Binding Stiftung",
             "url": "https://www.binding-stiftung.ch/"
         },
         {
             "funders": [
-                "080C-organization-008"
+                "organization-024"
             ],
             "name": "Gerda Henkel Stiftung",
             "url": "https://www.gerda-henkel-stiftung.de/"
         },
         {
             "funders": [
-                "080C-organization-009"
+                "organization-025"
             ],
             "name": "Camille Graeser Stiftung",
             "url": "http://www.camille-graeser-stiftung.ch/"
         },
         {
             "funders": [
-                "080C-organization-010"
+                "organization-026"
             ],
             "name": "Beisheim Stiftung",
             "url": "https://www.beisheim-stiftung.com/ch/de"

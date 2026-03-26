@@ -1,0 +1,16 @@
+{
+    "id": "person-005",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-005",
+    "givenNames": [
+        "Selim"
+    ],
+    "familyNames": [
+        "Ben Amor"
+    ],
+    "jobTitles": [
+        "Scientific collaborator"
+    ],
+    "affiliations": [
+        "organization-001"
+    ]
+}

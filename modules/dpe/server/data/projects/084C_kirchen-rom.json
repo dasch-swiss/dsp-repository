@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/084C",
     "name": "The Churches of Rome in the Middle Ages, 1050-1300. Liturgical Furnishing and Architecture (Corpus Cosmatorum II)",
     "shortcode": "084C",
-    "officialName": "The Churches of Rome in the Middle Ages, 1050-1300. Liturgical Furnishing and Architecture (Corpus Cosmatorum II)",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "Each Roman church that was affected by building work in the High Middle Ages is presented in alphabetical order, including its architecture (with associated annexes) and its liturgical furnishing",
     "description": {
@@ -204,115 +204,115 @@
     ],
     "attributions": [
         {
-            "contributor": "084C-person-000",
+            "contributor": "person-304",
             "contributorType": [
                 "Project Leader, Principal Investigator (PI)"
             ]
         },
         {
-            "contributor": "084C-person-001",
+            "contributor": "person-305",
             "contributorType": [
                 "Co-Principal Investigator"
             ]
         },
         {
-            "contributor": "084C-person-002",
+            "contributor": "person-306",
             "contributorType": [
                 "Former Principal Investigator, Co-Editor"
             ]
         },
         {
-            "contributor": "084C-person-003",
+            "contributor": "person-307",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "084C-person-004",
+            "contributor": "person-308",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "084C-person-005",
+            "contributor": "person-309",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "084C-person-006",
+            "contributor": "person-310",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "084C-person-007",
+            "contributor": "person-311",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "084C-person-008",
+            "contributor": "person-312",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "084C-person-009",
+            "contributor": "person-313",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "084C-person-010",
+            "contributor": "person-314",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "084C-person-011",
+            "contributor": "person-315",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "084C-person-012",
+            "contributor": "person-316",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "084C-person-013",
+            "contributor": "person-317",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "084C-person-014",
+            "contributor": "person-318",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "084C-person-015",
+            "contributor": "person-319",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "084C-person-016",
+            "contributor": "person-320",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "084C-person-017",
+            "contributor": "person-321",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "084C-person-018",
+            "contributor": "person-322",
             "contributorType": [
                 "Data Curator"
             ]
@@ -322,7 +322,7 @@
         "en": "The Digital Platform for Corpus Cosmatorum II (DigCorpCosII) aims to create a web-based, interactive map and research platform for datasets related to the “Churches of Rome in the Middle Ages” (Corpus Cosmatorum II) research infrastructure financed by the SNSF. The CorpCos II is the first catalogue of the churches of the city of Rome (1050-1300) in which “cosmatesque” works have been preserved or documented. The so-called “Cosmati” were marble workers and architects active between the 11th and the 13th century, famous for their sculpture and polychrome encrustation works. The CorpCos II platform will offer first glance essential data and research results about the catalogue’s medieval churches and their liturgical furnishing. Short texts (“Schede”), and 1-10 plans / photographs will illustrate each site. In addition, for each church whose research has already been complete (so far 88 out of 133 churches are finished), a pdf file of the scientific text will be freely downloadable via the platform.\r The platform will be useful for different audiences – from interested laymen and women like tourists (Citizen Science) to a specialized audience – as well as a learning tool for university students."
     },
     "contactPoint": [
-        "084C-person-000"
+        "person-304"
     ],
     "publications": [
         {
@@ -344,7 +344,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "65010",
             "name": "Project funding",
@@ -352,7 +352,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "101648",
             "name": "Project funding",
@@ -360,7 +360,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "111716",
             "name": "Project funding",
@@ -368,7 +368,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "120738",
             "name": "Project funding",
@@ -376,7 +376,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "124424",
             "name": "Project funding",
@@ -384,7 +384,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "153229",
             "name": "Project funding",
@@ -392,7 +392,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "170405",
             "name": "Research infrastructure",
@@ -400,7 +400,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "198148",
             "name": "Research infrastructure",
@@ -408,7 +408,7 @@
         },
         {
             "funders": [
-                "084C-organization-001"
+                "organization-107"
             ],
             "number": "USI Internal calls / Projects on OS and ORD USI-Fondo istituzionale per la ricerca",
             "name": "USI DigCorpCos",

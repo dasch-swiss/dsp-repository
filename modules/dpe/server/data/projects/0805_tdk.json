@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0805",
     "name": "University of Basel Kings’ Valley Project",
     "shortcode": "0805",
-    "officialName": "University of Basel Kings’ Valley Project",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "Assessment of tombs in the Kings’ Valley used for burials of royal family and entourage (ca. 1350 BCE), looted (ca. 1000 BCE), and reused for burials of members of priestly families (ca. 800–700 BCE).",
     "description": {
@@ -100,7 +100,7 @@
     ],
     "attributions": [
         {
-            "contributor": "0805-person-000",
+            "contributor": "person-076",
             "contributorType": [
                 "Project Director"
             ]
@@ -195,7 +195,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "156046",
             "name": "Project funding",

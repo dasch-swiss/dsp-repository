@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0863",
     "name": "The Electronic Catalogue of the Samaria Ivory Artifacts and Related Material",
     "shortcode": "0863",
-    "officialName": "The Electronic Catalogue of the Samaria Ivory Artifacts and Related Material",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "\"Samaria Ivories\" provides access to a catalogue with color photographs of the entire assemblage of ivory carvings and related material that once decorated luxurious furniture of the Israelite elite.",
     "description": {
@@ -97,7 +97,7 @@
     ],
     "attributions": [
         {
-            "contributor": "0863-person-000",
+            "contributor": "person-367",
             "contributorType": [
                 "Project leader",
                 "Data Collector",
@@ -109,7 +109,7 @@
         "en": "The assemblage of over 12,500 mostly very fragmentary ivory carvings and related material from ancient Samaria was found in the pioneer times of ancient Near Eastern archaeology. Only a small selection of the best-preserved pieces has previously been published and in a manner that does not conform to today's standards. The present electronic catalogue seeks to remedy this situation. The material was collected based on the unpublished field records and a personal inspection and study of the actual pieces in the seven institutions that house them today. Because the correlation of the inventory numbers of the institutions that house the artifacts and the field numbers assigned to them during the excavations remains in many cases uncertain due to insufficient recording, the data is separated into two cross-referenced relational databases: one containing the examination of the artifacts, the other the information of the field records concerning their discovery and archaeological contexts. The former contains color photographs both of the obverse and reverse of the artifacts, most of which are plaques, with a few fittings, isolated colored glass inlays and gold overlays. The artifacts' description and classification includes their present location, inventory number, measurements, condition, imagery, occasional inscription, possible membership of a set of fragments that belonged to the same artifact or set of artifacts, and their possible membership of particular groups of Levantine ivory carvings of the Iron Age."
     },
     "contactPoint": [
-        "0863-person-000"
+        "person-367"
     ],
     "publications": [
         {
@@ -170,7 +170,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "67219",
             "name": "Project funding",
@@ -178,7 +178,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "103758",
             "name": "Project funding",
@@ -186,7 +186,7 @@
         },
         {
             "funders": [
-                "085E-organization-001"
+                "organization-122"
             ],
             "number": "2005 Claudia E. Suter",
             "name": "Project funding",

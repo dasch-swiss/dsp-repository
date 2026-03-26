@@ -1,0 +1,23 @@
+{
+    "id": "person-170",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-170",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://zgojcic.github.io/",
+            "text": "https://zgojcic.github.io/"
+        }
+    ],
+    "givenNames": [
+        "Zan"
+    ],
+    "familyNames": [
+        "Gojcic"
+    ],
+    "jobTitles": [
+        "Geodesist"
+    ],
+    "affiliations": [
+        "organization-061"
+    ]
+}

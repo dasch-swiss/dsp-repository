@@ -1,0 +1,24 @@
+{
+    "id": "person-019",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-019",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-4485-5807",
+            "text": "ORCID URL: https://orcid.org/0000-0002-4485-5807"
+        }
+    ],
+    "givenNames": [
+        "Pierre-Yves"
+    ],
+    "familyNames": [
+        "Brandt"
+    ],
+    "jobTitles": [
+        "Full professor"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "pierre-yves.brandt@unil.ch"
+}

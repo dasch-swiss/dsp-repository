@@ -1,0 +1,25 @@
+{
+    "id": "person-013",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-013",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-3788-9785",
+            "text": "ORCID URL: https://orcid.org/0000-0002-3788-9785"
+        }
+    ],
+    "givenNames": [
+        "Jennifer"
+    ],
+    "familyNames": [
+        "Ruimi"
+    ],
+    "jobTitles": [
+        "Post-doctoral researcher",
+        "Senior SNSF Researcher"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "jennifer.ruimi@unil.ch"
+}

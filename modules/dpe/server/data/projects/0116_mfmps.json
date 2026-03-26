@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0116",
     "name": "The Medieval Frame of Monumental Portal Sculpture (Pedestals, Canopies, Niches) : Cultural Transfers and Agency (12th-13th Centuries)",
     "shortcode": "0116",
-    "officialName": "The Medieval Frame of Monumental Portal Sculpture (Pedestals, Canopies, Niches) : Cultural Transfers and Agency (12th-13th Centuries)",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "This project aims to valorise and better comprehend the various elements surrounding monumental statues of church portals, namely pedestals, canopies, and niches.",
     "description": {
@@ -116,7 +116,7 @@
     ],
     "attributions": [
         {
-            "contributor": "0116-person-000",
+            "contributor": "person-053",
             "contributorType": [
                 "Project leader",
                 "Data collector",
@@ -124,7 +124,7 @@
             ]
         },
         {
-            "contributor": "0116-person-001",
+            "contributor": "person-054",
             "contributorType": [
                 "Project member",
                 "Data collector",
@@ -132,7 +132,7 @@
             ]
         },
         {
-            "contributor": "0116-person-002",
+            "contributor": "person-055",
             "contributorType": [
                 "Project member",
                 "Data collector",
@@ -140,7 +140,7 @@
             ]
         },
         {
-            "contributor": "0101-person-007",
+            "contributor": "person-008",
             "contributorType": [
                 "Data curator"
             ]
@@ -150,12 +150,12 @@
         "en": "The database regroups the portals of monuments included in the project’s corpus. It is structured by building, and gives access to the photographs as well as the bibliographic and descriptive data of each edifice. The photographs of each portal are presented from general to particular, going from the embrasures to the statues, and to their surrounding elements (pedestals, canopies, capitals). This database is conceived as a working tool allowing for typological groupings to be made between buildings, as well as to conduct comparative analyses. Consequently, the research results can be verified and the data reused to other ends if desired."
     },
     "contactPoint": [
-        "0116-person-000"
+        "person-053"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "179787",
             "name": "PRIMA",

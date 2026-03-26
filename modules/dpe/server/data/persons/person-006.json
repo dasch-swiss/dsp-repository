@@ -1,0 +1,25 @@
+{
+    "id": "person-006",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-006",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-6684-9806",
+            "text": "ORCID URL: https://orcid.org/0000-0001-6684-9806"
+        }
+    ],
+    "givenNames": [
+        "Christelle"
+    ],
+    "familyNames": [
+        "Cocco"
+    ],
+    "jobTitles": [
+        "Post-doctoral researcher",
+        "Scientific collaborator"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "christelle.cocco@unil.ch"
+}

@@ -1,0 +1,24 @@
+{
+    "id": "person-358",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-358",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0006-5768-0379",
+            "text": "ORCID URL: https://orcid.org/0009-0006-5768-0379"
+        }
+    ],
+    "givenNames": [
+        "Yann"
+    ],
+    "familyNames": [
+        "Stricker"
+    ],
+    "jobTitles": [
+        "Dr."
+    ],
+    "affiliations": [
+        "organization-132"
+    ],
+    "email": "yann.stricker@ub.uzh.ch"
+}

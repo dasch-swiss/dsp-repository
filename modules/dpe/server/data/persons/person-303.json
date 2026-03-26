@@ -1,0 +1,24 @@
+{
+    "id": "person-303",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-303",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-7210-3477",
+            "text": "ORCID URL: https://orcid.org/0000-0002-7210-3477"
+        }
+    ],
+    "givenNames": [
+        "Paolo"
+    ],
+    "familyNames": [
+        "Borsa"
+    ],
+    "jobTitles": [
+        "Full Professor"
+    ],
+    "affiliations": [
+        "organization-106"
+    ],
+    "email": "paolo.borsa@unifr.ch"
+}

@@ -1,0 +1,26 @@
+{
+    "id": "person-292",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-292",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-3759-6595",
+            "text": "ORCID URL: https://orcid.org/0000-0002-3759-6595"
+        }
+    ],
+    "givenNames": [
+        "Carmen"
+    ],
+    "familyNames": [
+        "Flury"
+    ],
+    "jobTitles": [
+        "Teaching and research associate",
+        "Project staff"
+    ],
+    "affiliations": [
+        "organization-104",
+        "organization-075"
+    ],
+    "email": "carmen.flury@gmx.net"
+}

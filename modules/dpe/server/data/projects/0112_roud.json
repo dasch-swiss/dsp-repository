@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0112",
     "name": "Gustave Roud, Complete works",
     "shortcode": "0112",
-    "officialName": "Gustave Roud, Complete works",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "This database is the accompaniment of the critical edition of Gustave Roud’s work. It hosts the digital facsimiles of Gustave Roud’s archive, which includes manuscripts and printed materials.",
     "description": {
@@ -108,19 +108,19 @@
     ],
     "attributions": [
         {
-            "contributor": "0112-person-000",
+            "contributor": "person-037",
             "contributorType": [
                 "Project leader"
             ]
         },
         {
-            "contributor": "0112-person-001",
+            "contributor": "person-038",
             "contributorType": [
                 "Project leader"
             ]
         },
         {
-            "contributor": "0112-person-002",
+            "contributor": "person-039",
             "contributorType": [
                 "Project member",
                 "Data collector",
@@ -129,41 +129,41 @@
             ]
         },
         {
-            "contributor": "0112-person-003",
+            "contributor": "person-040",
             "contributorType": [
                 "Project member",
                 "Data collector"
             ]
         },
         {
-            "contributor": "0112-person-004",
+            "contributor": "person-041",
             "contributorType": [
                 "Project member",
                 "Data collector"
             ]
         },
         {
-            "contributor": "0112-person-005",
+            "contributor": "person-042",
             "contributorType": [
                 "Project member",
                 "Data collector"
             ]
         },
         {
-            "contributor": "0112-person-006",
+            "contributor": "person-043",
             "contributorType": [
                 "Project member",
                 "Data collector"
             ]
         },
         {
-            "contributor": "0101-person-007",
+            "contributor": "person-008",
             "contributorType": [
                 "Data curator"
             ]
         },
         {
-            "contributor": "0101-person-006",
+            "contributor": "person-007",
             "contributorType": [
                 "Other"
             ]
@@ -173,12 +173,12 @@
         "en": "The dataset includes information about Roud’s publications (complete bibliographic records, facsimiles) and about the materials in his archive at the University of Lausanne (document descriptions, facsimiles). Each work has attached a critical text and a genetic network; the latter links publications and archival materials. The dataset also includes information about persons, places and artistic works (music, literature, visual arts) mentioned in the texts, and short essays about Roud’s artistic production."
     },
     "contactPoint": [
-        "0112-person-000"
+        "person-037"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "157970",
             "name": "Editions",

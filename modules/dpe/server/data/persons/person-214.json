@@ -1,0 +1,23 @@
+{
+    "id": "person-214",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-214",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-8238-7859",
+            "text": "ORCID URL: https://orcid.org/0000-0001-8238-7859"
+        }
+    ],
+    "givenNames": [
+        "Anja"
+    ],
+    "familyNames": [
+        "Giudici"
+    ],
+    "jobTitles": [
+        "Project staff"
+    ],
+    "affiliations": [
+        "organization-075"
+    ]
+}

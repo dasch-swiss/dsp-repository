@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/085C",
     "name": "Vitae Sanctae Wiboradae — Lebensbeschreibungen der heiligen Wiborada von St. Gallen, herausgegeben, übersetzt und mit einer Einleitung und Anmerkungen versehen von Walter Berschin",
     "shortcode": "085C",
-    "officialName": "Vitae Sanctae Wiboradae — Lebensbeschreibungen der heiligen Wiborada von St. Gallen, herausgegeben, übersetzt und mit einer Einleitung und Anmerkungen versehen von Walter Berschin",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "Edition und Übersetzung der beiden von den St. Galler Mönchen Ekkehart I. und Herimannus verfassten Viten Wiboradas von St. Gallen († 926) durch Walter Berschin.",
     "description": {
@@ -155,7 +155,7 @@
     ],
     "attributions": [
         {
-            "contributor": "085C-person-000",
+            "contributor": "person-340",
             "contributorType": [
                 "editor",
                 "translator",
@@ -164,19 +164,19 @@
             ]
         },
         {
-            "contributor": "085C-person-001",
+            "contributor": "person-341",
             "contributorType": [
                 "Data curator"
             ]
         },
         {
-            "contributor": "085C-person-002",
+            "contributor": "person-342",
             "contributorType": [
                 "Layout"
             ]
         },
         {
-            "contributor": "085C-person-003",
+            "contributor": "person-343",
             "contributorType": [
                 "Lectorate"
             ]
@@ -186,7 +186,7 @@
         "en": "Wiborada, the patron saint of books and libraries, was formally canonized by the Pope in 1047---the first woman ever to receive this honor. In the 10th century, she chose a life of radical devotion by having herself enclosed in a cell at St. Gall, where she ultimately suffered martyrdom during a Hungarian raid in 926.\n\nThis digital edition offers, in carefully edited and translated form, the two vitae written by monks of St. Gall, that have been preserved. The first was composed by the monastery dean Ekkehart I around 960--970, and the second by Herimannus around 1072--1076. Thanks to these accounts, complemented by additional sources, Wiborada stands among the best-documented women of the early Middle Ages."
     },
     "contactPoint": [
-        "085C-organization-003"
+        "organization-121"
     ],
     "publications": [
         {

@@ -1,0 +1,23 @@
+{
+    "id": "person-159",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-159",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.orient-mediterranee.com/member/barahona-mendieta/",
+            "text": "https://www.orient-mediterranee.com/member/barahona-mendieta/"
+        }
+    ],
+    "givenNames": [
+        "Zulema"
+    ],
+    "familyNames": [
+        "Barahona-Mendieta"
+    ],
+    "jobTitles": [
+        "Ceramologist"
+    ],
+    "affiliations": [
+        "organization-059"
+    ]
+}

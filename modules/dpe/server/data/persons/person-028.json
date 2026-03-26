@@ -1,0 +1,24 @@
+{
+    "id": "person-028",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-028",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5080-8409",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5080-8409"
+        }
+    ],
+    "givenNames": [
+        "Delphine"
+    ],
+    "familyNames": [
+        "Chedaleux"
+    ],
+    "jobTitles": [
+        "Post-doctoral researcher"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "delphine.chedaleux@utc.fr"
+}

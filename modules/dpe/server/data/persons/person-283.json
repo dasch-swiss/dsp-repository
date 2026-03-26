@@ -1,0 +1,24 @@
+{
+    "id": "person-283",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-283",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0225-5221",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0225-5221"
+        }
+    ],
+    "givenNames": [
+        "Áurea"
+    ],
+    "familyNames": [
+        "Domínguez"
+    ],
+    "jobTitles": [
+        "PhD"
+    ],
+    "affiliations": [
+        "organization-101"
+    ],
+    "email": "aurea.dominguez@fhnw.ch"
+}

@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0115",
     "name": "Contribution à une histoire de la culture cinématographique en Suisse : étude des activités de la Cinémathèque suisse entre 1951 et 1981",
     "shortcode": "0115",
-    "officialName": "Contribution à une histoire de la culture cinématographique en Suisse : étude des activités de la Cinémathèque suisse entre 1951 et 1981",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "Ce projet étudie les activités de la Cinémathèque suisse de 1951 à 1981 et analyse la manière dont elle s'est construit une légitimité nationale et internationale en l'absence de salle de projection.",
     "description": {
@@ -85,14 +85,14 @@
     ],
     "attributions": [
         {
-            "contributor": "0115-person-000",
+            "contributor": "person-049",
             "contributorType": [
                 "Project Leader",
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0115-person-001",
+            "contributor": "person-050",
             "contributorType": [
                 "Project Member",
                 "Data Collector",
@@ -100,7 +100,7 @@
             ]
         },
         {
-            "contributor": "0115-person-002",
+            "contributor": "person-051",
             "contributorType": [
                 "Project Member",
                 "Data Collector",
@@ -108,14 +108,14 @@
             ]
         },
         {
-            "contributor": "0115-person-003",
+            "contributor": "person-052",
             "contributorType": [
                 "Project Member",
                 "Data Collector"
             ]
         },
         {
-            "contributor": "0101-person-007",
+            "contributor": "person-008",
             "contributorType": [
                 "Data Curator"
             ]
@@ -125,7 +125,7 @@
         "fr": "L'ontologie du projet comprend 36 classes et 268 propriétés, visant à décrire principalement le réseau qui unit la Cinémathèque suisse (en tant qu'institution, mais aussi ensemble de personnes, organisatrice d'événements et productrice de documents – articles, programmes, etc.) à d'autres institutions (autres archives, ciné-clubs – deux ensembles pouvant être réunis en « fédération » - institutions politiques, organisations culturelles diverses, institutions pédagogiques, autorités publiques, médias, etc.), ainsi qu'à des personnes (par exemple des auteurs de films), dans le but de produire des événements (projections, expositions, festivals, conférences, tournées, etc.). Tout cela mobilise un ensemble de documents, qu'ils servent à produire les événements (programmes, correspondance, etc.), ou à en rendre compte (articles, revues de presse). Ces institutions et événements étant localisés – et cette localisation ayant une importance dans la perspective du projet, qui s'intéresse à la reconnaissance nationale comme à la renommée internationale de la Cinémathèque suisse – les classes et propriétés s'attachent aussi spécifier l'ancrage géographique (villes et pays) de la plupart des éléments."
     },
     "contactPoint": [
-        "0115-person-000"
+        "person-049"
     ],
     "publications": [
         {
@@ -138,7 +138,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "185427",
             "name": "Project funding",

@@ -1,0 +1,25 @@
+{
+    "id": "person-098",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-098",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://stephangraf.ch/",
+            "text": "https://stephangraf.ch/"
+        }
+    ],
+    "givenNames": [
+        "Stephan"
+    ],
+    "familyNames": [
+        "Graf"
+    ],
+    "jobTitles": [
+        "Project Consultant",
+        "Research associate"
+    ],
+    "affiliations": [
+        "organization-035"
+    ],
+    "email": "mail@stephangraf.ch"
+}

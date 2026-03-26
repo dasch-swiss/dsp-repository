@@ -1,0 +1,27 @@
+{
+    "id": "person-008",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-008",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-4185-7169",
+            "text": "ORCID URL: https://orcid.org/0000-0003-4185-7169"
+        }
+    ],
+    "givenNames": [
+        "Marion"
+    ],
+    "familyNames": [
+        "Rivoal"
+    ],
+    "jobTitles": [
+        "Research manager",
+        "Researcher manager",
+        "Research Manager"
+    ],
+    "affiliations": [
+        "organization-001",
+        "organization-001"
+    ],
+    "email": "marion.rivoal@unil.ch"
+}

@@ -1,0 +1,13 @@
+{
+    "id": "organization-071",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/organization-071",
+    "name": "Schweizerisch-Liechtensteinische Stiftung für archäologische Forschungen im Ausland (SLSA)",
+    "url": "http://www.slsa.ch/",
+    "address": {
+        "street": "Generalsekretariat SLSA, Museum Rietberg Zürich, Gablerstrasse 15",
+        "postalCode": "8002",
+        "locality": "Zürich",
+        "country": "Switzerland"
+    },
+    "email": "postfach@slsa.ch"
+}

@@ -1,0 +1,25 @@
+{
+    "id": "person-249",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-249",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5540-7938",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5540-7938"
+        }
+    ],
+    "givenNames": [
+        "Sarah"
+    ],
+    "familyNames": [
+        "Lo Russo"
+    ],
+    "jobTitles": [
+        "PhD Student"
+    ],
+    "affiliations": [
+        "organization-086",
+        "organization-087"
+    ],
+    "email": "sarah.lorusso@unibas.ch"
+}

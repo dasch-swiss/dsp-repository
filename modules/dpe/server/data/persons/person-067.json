@@ -1,0 +1,17 @@
+{
+    "id": "person-067",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-067",
+    "givenNames": [
+        "Fritz"
+    ],
+    "familyNames": [
+        "Nagel"
+    ],
+    "jobTitles": [
+        "Leiter Bernoulli-Archiv"
+    ],
+    "affiliations": [
+        "organization-007"
+    ],
+    "email": "fritz.nagel@unibas.ch"
+}

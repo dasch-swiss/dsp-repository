@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/082C",
     "name": "Decolonizing Socialism: Entangled Internationalism. An Intersectional Study of Cold War Projects from East Germany in Cinema and Cybernetics with Relevance for the 21st Century",
     "shortcode": "082C",
-    "officialName": "Decolonizing Socialism: Entangled Internationalism. An Intersectional Study of Cold War Projects from East Germany in Cinema and Cybernetics with Relevance for the 21st Century",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "It aims to apply decolonial methods and to mobilize practice-based approaches to engage in the critical analysis of case studies of art practices from socialist geographies of the Cold War period.",
     "description": {
@@ -92,37 +92,37 @@
     ],
     "attributions": [
         {
-            "contributor": "082C-person-000",
+            "contributor": "person-240",
             "contributorType": [
                 "Applicant"
             ]
         },
         {
-            "contributor": "082C-person-001",
+            "contributor": "person-241",
             "contributorType": [
                 "Employee"
             ]
         },
         {
-            "contributor": "082C-person-002",
+            "contributor": "person-242",
             "contributorType": [
                 "Employee"
             ]
         },
         {
-            "contributor": "082C-person-003",
+            "contributor": "person-243",
             "contributorType": [
                 "Employee"
             ]
         },
         {
-            "contributor": "082C-person-004",
+            "contributor": "person-244",
             "contributorType": [
                 "Project partner"
             ]
         },
         {
-            "contributor": "082C-person-005",
+            "contributor": "person-245",
             "contributorType": [
                 "Project partner"
             ]
@@ -148,7 +148,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "184864",
             "name": "Project funding",

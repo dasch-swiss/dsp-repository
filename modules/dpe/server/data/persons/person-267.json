@@ -1,0 +1,18 @@
+{
+    "id": "person-267",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-267",
+    "givenNames": [
+        "Dominik"
+    ],
+    "familyNames": [
+        "Müller"
+    ],
+    "jobTitles": [
+        "Dr. phil."
+    ],
+    "affiliations": [
+        "organization-090",
+        "organization-092"
+    ],
+    "email": "dom.muller@bluewin.ch"
+}

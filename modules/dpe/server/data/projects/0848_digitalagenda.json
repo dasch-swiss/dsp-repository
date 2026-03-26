@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0848",
     "name": "Education and the European Digital Agenda: Switzerland, Germany and Sweden after 1970",
     "shortcode": "0848",
-    "officialName": "Education and the European Digital Agenda: Switzerland, Germany and Sweden after 1970",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "This database documents the educational implications of technological change in information and communication technologies (ICT) between 1970 and 2000, focusing on political initiatives in Europe.",
     "description": {
@@ -121,25 +121,25 @@
     ],
     "attributions": [
         {
-            "contributor": "0848-person-000",
+            "contributor": "person-291",
             "contributorType": [
                 "Project leader, Author"
             ]
         },
         {
-            "contributor": "0848-person-001",
+            "contributor": "person-292",
             "contributorType": [
                 "Postgraduate researcher, Author"
             ]
         },
         {
-            "contributor": "0848-person-002",
+            "contributor": "person-293",
             "contributorType": [
                 "Postdoctoral researcher, Author, Editor"
             ]
         },
         {
-            "contributor": "0848-person-003",
+            "contributor": "person-294",
             "contributorType": [
                 "Postdoctoral researcher, Author"
             ]
@@ -228,7 +228,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "182217",
             "name": "Project funding",

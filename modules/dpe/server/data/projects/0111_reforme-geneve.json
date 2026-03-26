@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0111",
     "name": "Côté chaire, côté rue, La Réforme à Genève (1517-1617)",
     "shortcode": "0111",
-    "officialName": "Côté chaire, côté rue, La Réforme à Genève (1517-1617)",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "The database is the result of the transposition of a virtual exhibition realized in the context of the 500th anniversary of the Lutheran Reformation (1517).",
     "description": {
@@ -106,28 +106,28 @@
     ],
     "attributions": [
         {
-            "contributor": "0111-person-000",
+            "contributor": "person-034",
             "contributorType": [
                 "Project leader",
                 "Data collector"
             ]
         },
         {
-            "contributor": "0111-person-001",
+            "contributor": "person-035",
             "contributorType": [
                 "Project leader",
                 "Data curator"
             ]
         },
         {
-            "contributor": "0111-person-002",
+            "contributor": "person-036",
             "contributorType": [
                 "Project member",
                 "Data curator"
             ]
         },
         {
-            "contributor": "0101-person-007",
+            "contributor": "person-008",
             "contributorType": [
                 "Data curator"
             ]
@@ -137,7 +137,7 @@
         "en": "The database is the result of the transposition of a virtual exhibition realised with the web application StoryMap, from ArcGIS. It also integrates the transcriptions of archive documents initially published on the website of the State Archives of Geneva.\r The database is structured around three main chronological showcases, which bring together thematic showcases. The showcases are composed of different images, associated with geographical coordinates, and to which transcriptions of archival documents may be associated. Facsimiles are presented next to transcriptions.\r"
     },
     "contactPoint": [
-        "0111-person-000"
+        "person-034"
     ],
     "publications": [
         {

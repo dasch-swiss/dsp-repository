@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0114",
     "name": "The International Olympic Committee members (1894-1972). A transnational elite prosopography",
     "shortcode": "0114",
-    "officialName": "The International Olympic Committee members (1894-1972). A transnational elite prosopography",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "Ce projet reconstituera les trajectoires familiales, professionnelles, sociales et politiques des 213 membres du CIO cooptés avant 1972.",
     "description": {
@@ -94,14 +94,14 @@
     ],
     "attributions": [
         {
-            "contributor": "0114-person-000",
+            "contributor": "person-044",
             "contributorType": [
                 "Project leader",
                 "Data curator"
             ]
         },
         {
-            "contributor": "0114-person-001",
+            "contributor": "person-045",
             "contributorType": [
                 "Project member",
                 "Data collector",
@@ -109,7 +109,7 @@
             ]
         },
         {
-            "contributor": "0114-person-002",
+            "contributor": "person-046",
             "contributorType": [
                 "Project member",
                 "Data collector",
@@ -117,19 +117,19 @@
             ]
         },
         {
-            "contributor": "0114-person-003",
+            "contributor": "person-047",
             "contributorType": [
                 "Data collector"
             ]
         },
         {
-            "contributor": "0114-person-004",
+            "contributor": "person-048",
             "contributorType": [
                 "Data collector"
             ]
         },
         {
-            "contributor": "0101-person-007",
+            "contributor": "person-008",
             "contributorType": [
                 "Data curator"
             ]
@@ -139,12 +139,12 @@
         "fr": "Si la ville de Lausanne a une existence à l'échelle-monde, c'est largement dû à son statut de capitale du sport international. Mais qui sont vraiment les membres du Comité international olympique (CIO) installé sur les bords du Léman depuis 1915 ? De quelle élite transnationale sont-ils le nom ? Constitué en Sorbonne en 1894, le CIO a été doté par son fondateur, le baron français Pierre de Coubertin (1863-1937), d'un système de valeurs qui mêle la culture chevaleresque des aristocraties européennes, l'humanisme de la Renaissance plutôt que celui des Lumières, l'hygiénisme social, l'éducation britannique au struggleforlife, le dogme élitaire de l'amateurisme, et le liberal pacifism transatlantique du second XIXe siècle. Que ce corpus de valeurs ait survécu jusqu'à nos jours s'explique par le principe de cooptation qui prévaut dès l'origine pour le recrutement des membres du CIO. Cela tient également au règlement adopté en 1908 qui stipule que ses membres représentent le CIO dans leurs pays respectifs, et non l'inverse. Au croisement de l'histoire, des sciences politiques, et de la sociologie des élites, notre projet vise donc à connaître les facteurs socio-culturels, économiques et politiques qui ont prévalu dans le self recruitment des 300 membres cooptés avant la mutation commerciale du CIO dans les années 1970-1980. Nous allons reconstituer leurs trajectoires familiales et professionnelles, identifier leurs formes de sociabilité et leurs pratiques culturelles, préciser leurs orientations idéologiques et leurs engagements politiques, et dessiner leurs réseaux. La méthode prosopographique, ou « biographie collective », est accompagnée par l'utilisation d’une base de données comprenant quelque 300 notices biographiques, qui sont mises en ligne à destination des chercheurs et du grand public."
     },
     "contactPoint": [
-        "0114-person-000"
+        "person-044"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "179043",
             "name": "Project funding",

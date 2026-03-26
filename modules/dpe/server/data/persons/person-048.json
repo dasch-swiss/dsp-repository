@@ -1,0 +1,17 @@
+{
+    "id": "person-048",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-048",
+    "givenNames": [
+        "Christophe"
+    ],
+    "familyNames": [
+        "Metzger"
+    ],
+    "jobTitles": [
+        "Scientific collaborator"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "christophe.metzger@unil.ch"
+}

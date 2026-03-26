@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0846",
     "name": "Aura und Effizienz. Leistungsorientierte Materialisierung und Spiritualisierung in der Literatur der 1920-30er-Jahre: Emmy Hennings, Marieluise Fleisser, Friedrich Glauser und Bruno Goetz",
     "shortcode": "0846",
-    "officialName": "Aura und Effizienz. Leistungsorientierte Materialisierung und Spiritualisierung in der Literatur der 1920-30er-Jahre: Emmy Hennings, Marieluise Fleisser, Friedrich Glauser und Bruno Goetz",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "Das Projekt untersucht die diskursiven und praktischen Wechselwirkungen zwischen Materialisierung und Spiritualisierung in der deutschsprachigen Literatur der 1920-30er Jahre.",
     "description": {
@@ -135,13 +135,13 @@
     ],
     "attributions": [
         {
-            "contributor": "0846-person-000",
+            "contributor": "person-287",
             "contributorType": [
                 "Projektleitung, creator"
             ]
         },
         {
-            "contributor": "0846-person-001",
+            "contributor": "person-288",
             "contributorType": [
                 "creator"
             ]
@@ -151,7 +151,7 @@
         "de": "Seminar: „Effizienz. Leistung und Literatur (1900-1930)“, Power Point mit Text, Bild, Audios, exportiert als mp4-Dateien. Vorlesung: „Arbeit. Praktiken und Ökonomien des Alltags in der Literatur 1900-1945“, Word-Datei als pdf und PPP-Datei als pdf."
     },
     "contactPoint": [
-        "0846-person-000"
+        "person-287"
     ],
     "publications": [
         {
@@ -179,7 +179,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "179010",
             "name": "Project funding",

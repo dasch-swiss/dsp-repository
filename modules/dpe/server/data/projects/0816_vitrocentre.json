@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0816",
     "name": "vitrosearch: stained glass and glass art in Switzerland online",
     "shortcode": "0816",
-    "officialName": "vitrosearch: stained glass and glass art in Switzerland online",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "vitrosearch - Database for stained glass and glass art by the Vitrocentre Romont ",
     "description": {
@@ -98,13 +98,13 @@
     ],
     "attributions": [
         {
-            "contributor": "0816-organization-000",
+            "contributor": "organization-056",
             "contributorType": [
                 "publisher, editor"
             ]
         },
         {
-            "contributor": "0816-organization-001",
+            "contributor": "organization-057",
             "contributorType": [
                 "editor"
             ]
@@ -114,7 +114,7 @@
         "en": "vitrosearch comprises research on stained glass, reverse paintings on glass, glass objects as well as graphic works and drawings from artists and workshops. The data is the result of research projects of the Vitrocentre Romont and includes the scientific inventories of the Corpus Vitrearum Switzerland."
     },
     "contactPoint": [
-        "0816-organization-000"
+        "organization-056"
     ],
     "publications": [
         {

@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0854",
     "name": "Alice in DaSCHland",
     "shortcode": "0854",
-    "officialName": "Alice in DaSCHland",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "Alice in DaSCHland whisks you away on a whimsical digital journey where data and metadata spark fantastical adventures - showcase project from DaSCH!",
     "description": {
@@ -164,37 +164,37 @@
     ],
     "attributions": [
         {
-            "contributor": "0854-person-000",
+            "contributor": "person-336",
             "contributorType": [
                 "Contributor"
             ]
         },
         {
-            "contributor": "0854-person-001",
+            "contributor": "person-337",
             "contributorType": [
                 "Contributor"
             ]
         },
         {
-            "contributor": "0854-person-000",
+            "contributor": "person-336",
             "contributorType": [
                 "Contributor"
             ]
         },
         {
-            "contributor": "0854-person-001",
+            "contributor": "person-337",
             "contributorType": [
                 "Contributor"
             ]
         }
     ],
     "contactPoint": [
-        "0810-organization-001"
+        "organization-033"
     ],
     "funding": [
         {
             "funders": [
-                "0810-organization-001"
+                "organization-033"
             ],
             "name": "DaSCH",
             "url": "https://www.dasch.swiss/"

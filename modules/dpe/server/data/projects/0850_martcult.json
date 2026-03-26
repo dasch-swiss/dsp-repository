@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0850",
     "name": "Martial Culture in Late Medieval Towns",
     "shortcode": "0850",
-    "officialName": "Martial Culture in Late Medieval Towns",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "The multifaceted martial culture of the late Medieval European town is sketched by this research project describing the ownership, handling, symbolism, use, and materiality of medieval weapons, and their cultural impact on urban society.",
     "description": {
@@ -85,13 +85,13 @@
     ],
     "attributions": [
         {
-            "contributor": "0850-person-000",
+            "contributor": "person-332",
             "contributorType": [
                 "Author"
             ]
         },
         {
-            "contributor": "0850-person-001",
+            "contributor": "person-333",
             "contributorType": [
                 "Author"
             ]
@@ -101,7 +101,7 @@
         "en": "Collection of primary sources used during the research project (both documents and objects), linked to output of the research data including the exhibition and the research blog."
     },
     "contactPoint": [
-        "0850-person-000"
+        "person-332"
     ],
     "publications": [
         {
@@ -174,7 +174,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "178896",
             "name": "Project funding",

@@ -1,0 +1,24 @@
+{
+    "id": "person-276",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-276",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-1634-2462",
+            "text": "ORCID URL: https://orcid.org/0000-0003-1634-2462"
+        }
+    ],
+    "givenNames": [
+        "Sophie"
+    ],
+    "familyNames": [
+        "Wolf"
+    ],
+    "jobTitles": [
+        "Wissenschaftliche Mitarbeiterin"
+    ],
+    "affiliations": [
+        "organization-056"
+    ],
+    "email": "sophie.wolf@vitrocentre.ch"
+}

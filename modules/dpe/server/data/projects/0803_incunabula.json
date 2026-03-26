@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0803",
     "name": "Die Bilderfolgen der Basler Frühdrucke: Spätmittelalterliche Didaxe als Bild-Text-Lektüre",
     "shortcode": "0803",
-    "officialName": "Die Bilderfolgen der Basler Frühdrucke: Spätmittelalterliche Didaxe als Bild-Text-Lektüre",
+    "officialName": "MISSING",
     "status": "Finished",
     "shortDescription": "An art-scientific monograph of the richly illustrated early prints in Basel - the most important center of early letterpress printing in the territory of present-day Switzerland.",
     "description": {
@@ -78,31 +78,31 @@
     ],
     "attributions": [
         {
-            "contributor": "0803-person-000",
+            "contributor": "person-071",
             "contributorType": [
                 "Applicant"
             ]
         },
         {
-            "contributor": "0803-person-001",
+            "contributor": "person-072",
             "contributorType": [
                 "Co-applicant"
             ]
         },
         {
-            "contributor": "0803-person-002",
+            "contributor": "person-073",
             "contributorType": [
                 "Co-applicant"
             ]
         },
         {
-            "contributor": "0803-person-003",
+            "contributor": "person-074",
             "contributorType": [
                 "Employee"
             ]
         },
         {
-            "contributor": "0803-person-004",
+            "contributor": "person-075",
             "contributorType": [
                 "Employee"
             ]
@@ -146,7 +146,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "120378",
             "name": "Project funding",

@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0843",
     "name": "WoPoss: A world of possibilities. Modal pathways over an extra-long period of time: the diachrony of modality in the Latin language",
     "shortcode": "0843",
-    "officialName": "WoPoss: A world of possibilities. Modal pathways over an extra-long period of time: the diachrony of modality in the Latin language",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "The WoPoss project aims at reconstructing the evolution of modal meanings in Latin from the prehistory of the language up to the 7th century CE, through a linguistically annotated, diachronic corpus.",
     "description": {
@@ -141,7 +141,7 @@
     ],
     "attributions": [
         {
-            "contributor": "woposs-person-000",
+            "contributor": "person-390",
             "contributorType": [
                 "Principal investigator",
                 "annotator",
@@ -149,44 +149,44 @@
             ]
         },
         {
-            "contributor": "woposs-person-001",
+            "contributor": "person-391",
             "contributorType": [
                 "Developer",
                 "annotator"
             ]
         },
         {
-            "contributor": "woposs-person-002",
+            "contributor": "person-392",
             "contributorType": [
                 "Annotator"
             ]
         },
         {
-            "contributor": "woposs-person-003",
+            "contributor": "person-393",
             "contributorType": [
                 "Annotator"
             ]
         },
         {
-            "contributor": "woposs-person-004",
+            "contributor": "person-394",
             "contributorType": [
                 "Annotator"
             ]
         },
         {
-            "contributor": "woposs-person-005",
+            "contributor": "person-395",
             "contributorType": [
                 "Annotator"
             ]
         },
         {
-            "contributor": "woposs-person-006",
+            "contributor": "person-396",
             "contributorType": [
                 "Annotator"
             ]
         },
         {
-            "contributor": "woposs-person-007",
+            "contributor": "person-397",
             "contributorType": [
                 "Annotator"
             ]
@@ -196,7 +196,7 @@
         "en": "A linguistically annotated diachronic corpus of the Latin language (3rd BCE – 7th CE). The corpus enables the investigation of modal meanings and constructions in the history of the Latin language. The texts have been annotated automatically. The modal passages have been manually annotated by the annotators of the WoPoss team (for a more precise responsibility description, see each file)."
     },
     "contactPoint": [
-        "woposs-person-000"
+        "person-390"
     ],
     "publications": [
         {
@@ -293,7 +293,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "176778",
             "name": "SNSF Professorships",
@@ -301,7 +301,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "214102",
             "name": "SNSF Professorships",

@@ -1,0 +1,23 @@
+{
+    "id": "person-156",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-156",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.aeschlimann-illustration.ch/",
+            "text": "https://www.aeschlimann-illustration.ch/"
+        }
+    ],
+    "givenNames": [
+        "Martina"
+    ],
+    "familyNames": [
+        "Aeschlimann-Langer"
+    ],
+    "jobTitles": [
+        "Illustrator"
+    ],
+    "affiliations": [
+        "organization-059"
+    ]
+}

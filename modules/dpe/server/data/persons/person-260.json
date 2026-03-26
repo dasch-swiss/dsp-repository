@@ -1,0 +1,24 @@
+{
+    "id": "person-260",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-260",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0350-2773",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0350-2773"
+        }
+    ],
+    "givenNames": [
+        "Mary"
+    ],
+    "familyNames": [
+        "Flannery"
+    ],
+    "jobTitles": [
+        "SNSF Eccellenza Professorial Fellow"
+    ],
+    "affiliations": [
+        "organization-089"
+    ],
+    "email": "mary.flannery@unibe.ch"
+}

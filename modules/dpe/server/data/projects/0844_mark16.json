@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0844",
     "name": "MARK16",
     "shortcode": "0844",
-    "officialName": "MARK16",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "MARK16 is a SNSF PRIMA project. It reassesses the diverse endings of the Gospel of Mark through manuscript data, available on its Virtual Research Environment ISSN 2673-9836, https://mark16.sib.swiss.",
     "description": {
@@ -203,19 +203,19 @@
     ],
     "attributions": [
         {
-            "contributor": "0844-person-000",
+            "contributor": "person-278",
             "contributorType": [
                 "PI of the project"
             ]
         },
         {
-            "contributor": "0844-person-001",
+            "contributor": "person-279",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "0844-person-002",
+            "contributor": "person-280",
             "contributorType": [
                 "Data Scientist"
             ]
@@ -225,7 +225,7 @@
         "en": "58 datasets of folios with Mark 16 in 58 manuscripts and 11 languages "
     },
     "contactPoint": [
-        "0844-person-000"
+        "person-278"
     ],
     "publications": [
         {
@@ -349,7 +349,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "179755",
             "name": "PRIMA",

@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/084E",
     "name": "Historische Lernprozesse erforschen – Research of Learning Processes in History (RicH)",
     "shortcode": "084E",
-    "officialName": "Historische Lernprozesse erforschen – Research of Learning Processes in History (RicH)",
+    "officialName": "MISSING",
     "status": "Ongoing",
     "shortDescription": "Die RicH-Studie erforscht die Operationen narrativer Kompetenz und deren qualitative Unterschiede anhand eines Novizen-Experten-Vergleichs zwecks empirischer Fundierung eines Progressionsmodelles.",
     "description": {
@@ -95,31 +95,31 @@
     ],
     "attributions": [
         {
-            "contributor": "084E-person-000",
+            "contributor": "person-327",
             "contributorType": [
                 "Projektleiter"
             ]
         },
         {
-            "contributor": "084E-person-001",
+            "contributor": "person-328",
             "contributorType": [
                 "Projektmitglied"
             ]
         },
         {
-            "contributor": "084E-person-002",
+            "contributor": "person-329",
             "contributorType": [
                 "Projektmitglied"
             ]
         },
         {
-            "contributor": "084E-person-003",
+            "contributor": "person-330",
             "contributorType": [
                 "Projektmitglied"
             ]
         },
         {
-            "contributor": "084E-person-004",
+            "contributor": "person-331",
             "contributorType": [
                 "Projektmitglied"
             ]
@@ -129,7 +129,7 @@
         "de": "Aus dem Projekt erarbeitete Resultate: Projektzusammenfassung und Projektbeschreibung\r \r Im Projekt erhobene Daten von Expert*innen und Noviz*innen: Transkripte der Think-Aloud-Aufnahmen inkl. Interviewteil zum ersten Erhebungstermin, Antworttexte inkl. Interviewteil zum zweiten Erhebungstermin, soziodemographische Angaben, Antworten auf Fragebögen zu epistemologischen Beliefs, situationalem Interesse und metakognitiven Strategien der Teilnehmenden sowie die Dokumentation der entsprechenden Erhebungs- und Auswertungsinstrumente."
     },
     "contactPoint": [
-        "084E-person-000"
+        "person-327"
     ],
     "publications": [
         {
@@ -142,7 +142,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "192414",
             "name": "Project funding",

@@ -1,0 +1,17 @@
+{
+    "id": "person-056",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-056",
+    "givenNames": [
+        "René"
+    ],
+    "familyNames": [
+        "Sigrist"
+    ],
+    "jobTitles": [
+        "Scientific collaborator"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "sigrist.rene@bluewin.ch"
+}

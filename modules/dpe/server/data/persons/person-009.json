@@ -1,0 +1,24 @@
+{
+    "id": "person-009",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-009",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-2342-395X",
+            "text": "ORCID URL: https://orcid.org/0000-0002-2342-395X"
+        }
+    ],
+    "givenNames": [
+        "Alain"
+    ],
+    "familyNames": [
+        "Boillat"
+    ],
+    "jobTitles": [
+        "Full professor"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "alain.boillat@unil.ch"
+}

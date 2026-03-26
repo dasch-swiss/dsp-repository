@@ -1,0 +1,17 @@
+{
+    "id": "person-011",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-011",
+    "givenNames": [
+        "Jeanne"
+    ],
+    "familyNames": [
+        "Modoux"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "jeanne.modoux@unil.ch"
+}

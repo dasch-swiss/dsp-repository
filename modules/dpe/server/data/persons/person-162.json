@@ -1,0 +1,23 @@
+{
+    "id": "person-162",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-162",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/rachael-colldeweih-0166a057/",
+            "text": "https://www.linkedin.com/in/rachael-colldeweih-0166a057/"
+        }
+    ],
+    "givenNames": [
+        "Rachael"
+    ],
+    "familyNames": [
+        "Colldeweih"
+    ],
+    "jobTitles": [
+        "Geologist (MA)"
+    ],
+    "affiliations": [
+        "organization-061"
+    ]
+}

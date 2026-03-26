@@ -121,7 +121,7 @@
     ],
     "attributions": [
         {
-            "contributor": "0869-person-001",
+            "contributor": "person-378",
             "contributorType": [
                 "Protagonist",
                 "Research Assistant",
@@ -130,7 +130,7 @@
             ]
         },
         {
-            "contributor": "0869-person-000",
+            "contributor": "person-377",
             "contributorType": [
                 "Principal Investigator",
                 "Author",
@@ -141,19 +141,19 @@
             ]
         },
         {
-            "contributor": "0869-person-002",
+            "contributor": "person-379",
             "contributorType": [
                 "Moi, un Afropéen Production/Film Editor 2017"
             ]
         },
         {
-            "contributor": "0869-person-003",
+            "contributor": "person-380",
             "contributorType": [
                 "GLAUBEMENMACHENLASSEN/Text Editor 2020"
             ]
         },
         {
-            "contributor": "0869-person-004",
+            "contributor": "person-381",
             "contributorType": [
                 "Moi, un Afropéen Production/Sound Engineer 2009-2017"
             ]
@@ -163,7 +163,7 @@
         "en": "GLAUBENMACHENLASSEN is a visual anthropological and film ethnographic dissertation project that explores identity and the process of identification in the setting of a cinematographic laboratory. Based on an experimental setup, it takes a novel approach to the use of digital cinematography as a research tool in the actual social sciences."
     },
     "contactPoint": [
-        "0869-person-000"
+        "person-377"
     ],
     "publications": [
         {
@@ -176,19 +176,19 @@
     "funding": [
         {
             "funders": [
-                "0869-organization-002"
+                "organization-144"
             ],
             "name": "G3S Start-Up Grant"
         },
         {
             "funders": [
-                "0869-organization-007"
+                "organization-147"
             ],
             "name": "Guest Research Grant University of Aarhus"
         },
         {
             "funders": [
-                "0863-organization-001"
+                "organization-140"
             ],
             "name": "Get-on-Track Grant Universität Basel"
         }

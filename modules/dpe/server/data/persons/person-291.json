@@ -1,0 +1,24 @@
+{
+    "id": "person-291",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-291",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0809-2427",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0809-2427"
+        }
+    ],
+    "givenNames": [
+        "Michael"
+    ],
+    "familyNames": [
+        "Geiss"
+    ],
+    "jobTitles": [
+        "Professor, Head of the Centre for Education and Digital Transformation at the Zurich University of Teacher Education Director Centre for Education and Digital Transformation"
+    ],
+    "affiliations": [
+        "organization-104"
+    ],
+    "email": "michael.geiss@phzh.ch"
+}

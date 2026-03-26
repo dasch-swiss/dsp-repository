@@ -1,0 +1,18 @@
+{
+    "id": "person-387",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-387",
+    "givenNames": [
+        "Manuela"
+    ],
+    "familyNames": [
+        "Gianandrea"
+    ],
+    "jobTitles": [
+        "Associate Professor"
+    ],
+    "affiliations": [
+        "organization-001",
+        "organization-148"
+    ],
+    "email": "Manuela.Gianandrea@unil.ch"
+}

@@ -1,0 +1,23 @@
+{
+    "id": "person-182",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-182",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/sabrina-meyer-12977814b/",
+            "text": "https://www.linkedin.com/in/sabrina-meyer-12977814b/"
+        }
+    ],
+    "givenNames": [
+        "Sabrina"
+    ],
+    "familyNames": [
+        "Meyer"
+    ],
+    "jobTitles": [
+        "Anthropologist"
+    ],
+    "affiliations": [
+        "organization-060"
+    ]
+}

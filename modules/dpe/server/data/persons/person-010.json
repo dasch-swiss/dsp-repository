@@ -1,0 +1,17 @@
+{
+    "id": "person-010",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-010",
+    "givenNames": [
+        "Vincent"
+    ],
+    "familyNames": [
+        "Annen"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "vincent.annen@unil.ch"
+}

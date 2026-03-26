@@ -1,0 +1,24 @@
+{
+    "id": "person-189",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-189",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/dr-klaus-powroznik-28180747/",
+            "text": "https://www.linkedin.com/in/dr-klaus-powroznik-28180747/"
+        }
+    ],
+    "givenNames": [
+        "Klaus"
+    ],
+    "familyNames": [
+        "Powroznik"
+    ],
+    "jobTitles": [
+        "Archaeologist",
+        "Photographer"
+    ],
+    "affiliations": [
+        "organization-059"
+    ]
+}

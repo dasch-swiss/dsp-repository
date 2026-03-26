@@ -124,31 +124,31 @@
     ],
     "attributions": [
         {
-            "contributor": "0106-person-000",
+            "contributor": "person-025",
             "contributorType": [
                 "Project Leader, Data Collector, Data Curator"
             ]
         },
         {
-            "contributor": "0106-person-001",
+            "contributor": "person-026",
             "contributorType": [
                 "Project Member, Data Collector, Data Curator"
             ]
         },
         {
-            "contributor": "0106-person-002",
+            "contributor": "person-027",
             "contributorType": [
                 "Project Member, Data Collector, Data Curator"
             ]
         },
         {
-            "contributor": "0101-person-007",
+            "contributor": "person-008",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0101-person-006",
+            "contributor": "person-007",
             "contributorType": [
                 "Other"
             ]
@@ -158,12 +158,12 @@
         "fr": "La base de données vise principalement à rendre accessibles les archives papiers du Musée suisse de la psychiatrie (Berne) relatives à Ernst Grünthal (1894-1972), le psychiatre responsable de la majorité du corpus filmique (correspondant à la classe « Film ») analysé dans le projet – plus d’une centaine de courts et moyens métrages 16 mm montrant des patientes et des patients qui souffrent de troubles psychiques ou neurologiques (dépression, alcoolisme, schizophrénie, démence sénile, troubles mnésiques, troubles du langage, maladie de Parkinson, chorée de Huntington, etc.). Majoritairement en allemand, ces documents (regroupés sous la classe « [Archive papier] ») sont de nature très variée : articles scientifiques, correspondance, notes manuscrites, brochures, papillons, tapuscrits, planches didactiques, documents administratifs. Le modèle de données permet, outre la description des films, de renseigner l’implication des médecins (« Personnel soignant ») dans leur réalisation et fournit des informations sur les personnes (« Patient », « Personnel soignant »), les institutions (« Institutions », « Personne morale »), les dates, les lieux d’archivage, les objets (équipement médical par exemple regroupé sous la classe « Objet »). Les données collectées permettent de reconstituer le réseau de pratiques filmiques initiées par des psychiatres et des neurologues en Suisse, avec plusieurs centres névralgiques : Berne, Bâle, Zurich, Lausanne et Genève. Quelques noms de médecins se distinguent au sein de ce réseau : Ernst Grünthal, Theodor H. Spoerri, Hans Heimann, Michele Risso, Giorgio Pilleri, Maurice Rémy, Walter Rudolf Hess, Karl Kleist, Gustav E. Störring. \r La structure de la base de données a été définie pour permettre une exploration du corpus (en trouvant, par exemple, tous les documents relatifs à un médecin, une maladie ou à un médicament), les recoupements avec des données non filmiques et les comparaisons avec des productions connexes. À plus long terme, la base de données peut constituer un outil utile pour de futures recherches conduites par des chercheuses et chercheurs en histoire des sciences, histoire de la psychiatrie et histoire de la médecine, ainsi qu’à des praticiennes et praticiens dans le secteur de la santé mentale. \r Le modèle de données (classes, propriétés, vocabulaires contrôlés) a été élaboré à partir des documents. Les professions médicales et les pathologies ont été établies sur la base du thésaurus du MeSH : https://mesh.inserm.fr/FrenchMesh/index.htm)"
     },
     "contactPoint": [
-        "0106-person-000"
+        "person-025"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "200598",
             "name": "Project funding",

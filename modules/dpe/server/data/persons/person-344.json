@@ -1,0 +1,17 @@
+{
+    "id": "person-344",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-344",
+    "givenNames": [
+        "Oskar"
+    ],
+    "familyNames": [
+        "Kaelin"
+    ],
+    "jobTitles": [
+        "Scientific Collaborator"
+    ],
+    "affiliations": [
+        "organization-123"
+    ],
+    "email": "oskar.kaelin@unibas.ch"
+}

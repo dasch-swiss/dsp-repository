@@ -1,0 +1,23 @@
+{
+    "id": "person-185",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-185",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://soziologie.philhist.unibas.ch/de/personen/rainer-nutz/",
+            "text": "https://soziologie.philhist.unibas.ch/de/personen/rainer-nutz/"
+        }
+    ],
+    "givenNames": [
+        "Rainer"
+    ],
+    "familyNames": [
+        "Nutz"
+    ],
+    "jobTitles": [
+        "Egyptologist"
+    ],
+    "affiliations": [
+        "organization-059"
+    ]
+}

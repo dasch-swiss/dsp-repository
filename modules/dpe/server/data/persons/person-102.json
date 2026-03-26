@@ -1,0 +1,17 @@
+{
+    "id": "person-102",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-102",
+    "givenNames": [
+        "Aila"
+    ],
+    "familyNames": [
+        "Özvegyi"
+    ],
+    "jobTitles": [
+        "Research associate"
+    ],
+    "affiliations": [
+        "organization-035",
+        "organization-038"
+    ]
+}

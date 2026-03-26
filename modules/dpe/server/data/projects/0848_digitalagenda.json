@@ -121,25 +121,25 @@
     ],
     "attributions": [
         {
-            "contributor": "0848-person-000",
+            "contributor": "person-291",
             "contributorType": [
                 "Project leader, Author"
             ]
         },
         {
-            "contributor": "0848-person-001",
+            "contributor": "person-292",
             "contributorType": [
                 "Postgraduate researcher, Author"
             ]
         },
         {
-            "contributor": "0848-person-002",
+            "contributor": "person-293",
             "contributorType": [
                 "Postdoctoral researcher, Author, Editor"
             ]
         },
         {
-            "contributor": "0848-person-003",
+            "contributor": "person-294",
             "contributorType": [
                 "Postdoctoral researcher, Author"
             ]
@@ -228,7 +228,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "182217",
             "name": "Project funding",

@@ -228,7 +228,7 @@
     ],
     "attributions": [
         {
-            "contributor": "085A-person-001",
+            "contributor": "person-339",
             "contributorType": [
                 "Creator of the project"
             ]
@@ -238,7 +238,7 @@
         "en": "The Interactive Historical Atlas of the Disciplines aims at collecting and mapping data related to the history of the disciplinary structure of science. This database provides several tools to explore the various 'classifications of the sciences' put forward by numerous scholars over the centuries, and to visualize the evolution of disciplinary borders from Antiquity to our days."
     },
     "contactPoint": [
-        "085A-person-001"
+        "person-339"
     ],
     "publications": [
         {
@@ -275,7 +275,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "174428",
             "name": "Advanced Postdoc.Mobility",

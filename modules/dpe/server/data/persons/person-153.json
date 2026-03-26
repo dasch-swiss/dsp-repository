@@ -1,0 +1,23 @@
+{
+    "id": "person-153",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-153",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://erdw.ethz.ch/personen/profil.MTY5MzUy.TGlzdC83NzMsOTI0MjA1OTI2.html",
+            "text": "https://erdw.ethz.ch/personen/profil.MTY5MzUy.TGlzdC83NzMsOTI0MjA1OTI2.html"
+        }
+    ],
+    "givenNames": [
+        "Martin"
+    ],
+    "familyNames": [
+        "Ziegler"
+    ],
+    "jobTitles": [
+        "Engineering Geologist"
+    ],
+    "affiliations": [
+        "organization-061"
+    ]
+}

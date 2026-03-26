@@ -1,0 +1,13 @@
+{
+    "id": "organization-036",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/organization-036",
+    "name": "Digital Humanities Lab (DHLab), University of Basel",
+    "url": "https://dhlab.philhist.unibas.ch/",
+    "address": {
+        "street": "Spalenberg 65",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+    },
+    "email": "sekretariat-dhlab@unibas.ch"
+}

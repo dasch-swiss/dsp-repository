@@ -1,0 +1,23 @@
+{
+    "id": "person-158",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-158",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://selinabaechli.ch/",
+            "text": "https://selinabaechli.ch/"
+        }
+    ],
+    "givenNames": [
+        "Selina"
+    ],
+    "familyNames": [
+        "Bächli"
+    ],
+    "jobTitles": [
+        "Scientific Illustrator (BA)"
+    ],
+    "affiliations": [
+        "organization-062"
+    ]
+}

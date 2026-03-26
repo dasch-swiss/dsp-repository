@@ -1,0 +1,17 @@
+{
+    "id": "person-050",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-050",
+    "givenNames": [
+        "Adèle"
+    ],
+    "familyNames": [
+        "Morerod"
+    ],
+    "jobTitles": [
+        "PhD Student"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "adele.morerod@unil.ch"
+}

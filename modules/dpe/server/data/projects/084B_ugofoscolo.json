@@ -83,13 +83,13 @@
     ],
     "attributions": [
         {
-            "contributor": "084B-person-001",
+            "contributor": "person-303",
             "contributorType": [
                 "Project Leader"
             ]
         },
         {
-            "contributor": "084B-person-000",
+            "contributor": "person-302",
             "contributorType": [
                 "Creator"
             ]
@@ -99,12 +99,12 @@
         "en": "The catalogue of the Foscolo epistolary contains the data, metadata and images relating to the letters, documents, witnesses, preserving institutions and editions of the letters."
     },
     "contactPoint": [
-        "084B-person-001"
+        "person-303"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "197859",
             "name": "Project funding",

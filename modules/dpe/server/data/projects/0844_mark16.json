@@ -203,19 +203,19 @@
     ],
     "attributions": [
         {
-            "contributor": "0844-person-000",
+            "contributor": "person-278",
             "contributorType": [
                 "PI of the project"
             ]
         },
         {
-            "contributor": "0844-person-001",
+            "contributor": "person-279",
             "contributorType": [
                 "Researcher"
             ]
         },
         {
-            "contributor": "0844-person-002",
+            "contributor": "person-280",
             "contributorType": [
                 "Data Scientist"
             ]
@@ -225,7 +225,7 @@
         "en": "58 datasets of folios with Mark 16 in 58 manuscripts and 11 languages "
     },
     "contactPoint": [
-        "0844-person-000"
+        "person-278"
     ],
     "publications": [
         {
@@ -349,7 +349,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "179755",
             "name": "PRIMA",

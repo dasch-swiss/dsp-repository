@@ -1,0 +1,25 @@
+{
+    "id": "person-365",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-365",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0009-7757-0961",
+            "text": "ORCID URL: https://orcid.org/0009-0009-7757-0961"
+        }
+    ],
+    "givenNames": [
+        "Martin"
+    ],
+    "familyNames": [
+        "Sallmann"
+    ],
+    "jobTitles": [
+        "Prof. Dr."
+    ],
+    "affiliations": [
+        "organization-114",
+        "organization-135"
+    ],
+    "email": "martin.sallmann@unibe.ch"
+}

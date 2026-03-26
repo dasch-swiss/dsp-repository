@@ -1,0 +1,24 @@
+{
+    "id": "person-279",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-279",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-7105-5733",
+            "text": "ORCID URL: https://orcid.org/0000-0002-7105-5733"
+        }
+    ],
+    "givenNames": [
+        "Priscille"
+    ],
+    "familyNames": [
+        "Marschall"
+    ],
+    "jobTitles": [
+        "Post-doc"
+    ],
+    "affiliations": [
+        "organization-100"
+    ],
+    "email": "priscille.marschall@sib.swiss"
+}

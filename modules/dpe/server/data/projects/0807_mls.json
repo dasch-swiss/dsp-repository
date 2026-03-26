@@ -106,38 +106,38 @@
     ],
     "attributions": [
         {
-            "contributor": "0807-person-004",
+            "contributor": "person-085",
             "contributorType": [
                 "Project Leader"
             ]
         },
         {
-            "contributor": "0807-person-003",
+            "contributor": "person-084",
             "contributorType": [
                 "Data Curator",
                 "Editor"
             ]
         },
         {
-            "contributor": "0807-person-005",
+            "contributor": "person-086",
             "contributorType": [
                 "Project Member"
             ]
         },
         {
-            "contributor": "0807-person-006",
+            "contributor": "person-087",
             "contributorType": [
                 "Project Member"
             ]
         },
         {
-            "contributor": "0807-person-007",
+            "contributor": "person-088",
             "contributorType": [
                 "Project Member"
             ]
         },
         {
-            "contributor": "0807-person-000",
+            "contributor": "person-083",
             "contributorType": [
                 "Coordination"
             ]
@@ -147,7 +147,7 @@
         "de": "Das Musiklexikon der Schweiz (MLS) ist die zentrale Informationsplattform zur Musik in Geschichte und Gegenwart der Schweiz und beinhaltet Biografien, Ortsartikel und Beiträge zu Sachthemen (Institutionen, Musikgattungen usw.). Es richtet sich an Fachleute und an ein breites Publikum. Zur Zeit besteht es aus zwei Textkorpora: aus rund 6700 retrodigitalisierten Personenartikel aus 24 älteren Lexika (1874-2019) und den ab 2025 erarbeiteten Artikeln des digitalen MLS. Neue Artikel werden laufend aufgeschaltet."
     },
     "contactPoint": [
-        "0807-person-003"
+        "person-084"
     ],
     "funding": "No funding",
     "alternativeNames": [

@@ -1,0 +1,18 @@
+{
+    "id": "person-042",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-042",
+    "givenNames": [
+        "Julien"
+    ],
+    "familyNames": [
+        "Burry"
+    ],
+    "jobTitles": [
+        "Junior SNSF Researcher",
+        "Scientific collaborator"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "julien.burri@unil.ch"
+}

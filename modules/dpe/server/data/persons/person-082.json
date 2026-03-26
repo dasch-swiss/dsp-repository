@@ -1,0 +1,25 @@
+{
+    "id": "person-082",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-082",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0744-5374",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0744-5374"
+        }
+    ],
+    "givenNames": [
+        "Stefan"
+    ],
+    "familyNames": [
+        "Münnich"
+    ],
+    "jobTitles": [
+        "Research associate"
+    ],
+    "affiliations": [
+        "organization-011",
+        "organization-012"
+    ],
+    "email": "stefan.muennich@unibas.ch"
+}

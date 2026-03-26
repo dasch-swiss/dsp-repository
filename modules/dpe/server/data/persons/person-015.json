@@ -1,0 +1,17 @@
+{
+    "id": "person-015",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-015",
+    "givenNames": [
+        "Thibault"
+    ],
+    "familyNames": [
+        "Hugentobler"
+    ],
+    "jobTitles": [
+        "Research Assistant"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "thibault.hugentobler@unil.ch"
+}

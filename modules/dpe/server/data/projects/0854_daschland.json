@@ -164,37 +164,37 @@
     ],
     "attributions": [
         {
-            "contributor": "0854-person-000",
+            "contributor": "person-336",
             "contributorType": [
                 "Contributor"
             ]
         },
         {
-            "contributor": "0854-person-001",
+            "contributor": "person-337",
             "contributorType": [
                 "Contributor"
             ]
         },
         {
-            "contributor": "0854-person-000",
+            "contributor": "person-336",
             "contributorType": [
                 "Contributor"
             ]
         },
         {
-            "contributor": "0854-person-001",
+            "contributor": "person-337",
             "contributorType": [
                 "Contributor"
             ]
         }
     ],
     "contactPoint": [
-        "0810-organization-001"
+        "organization-033"
     ],
     "funding": [
         {
             "funders": [
-                "0810-organization-001"
+                "organization-033"
             ],
             "name": "DaSCH",
             "url": "https://www.dasch.swiss/"

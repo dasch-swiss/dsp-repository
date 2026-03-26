@@ -1,0 +1,24 @@
+{
+    "id": "person-295",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-295",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-6639-8822",
+            "text": "ORCID URL: https://orcid.org/0000-0001-6639-8822"
+        }
+    ],
+    "givenNames": [
+        "Anne-Katrin"
+    ],
+    "familyNames": [
+        "Weber"
+    ],
+    "jobTitles": [
+        "Assistant Professor"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "anne-katrin.weber@unil.ch"
+}

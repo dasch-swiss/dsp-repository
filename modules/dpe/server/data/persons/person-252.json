@@ -1,0 +1,24 @@
+{
+    "id": "person-252",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-252",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0398-6907",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0398-6907"
+        }
+    ],
+    "givenNames": [
+        "Kristin"
+    ],
+    "familyNames": [
+        "Ismail-Meyer"
+    ],
+    "jobTitles": [
+        "Scientific Collaborator"
+    ],
+    "affiliations": [
+        "organization-086"
+    ],
+    "email": "k.ismail-meyer@unibas.ch"
+}

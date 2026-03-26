@@ -1,0 +1,24 @@
+{
+    "id": "person-254",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-254",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-7518-7987",
+            "text": "ORCID URL: https://orcid.org/0000-0002-7518-7987"
+        }
+    ],
+    "givenNames": [
+        "Philippe"
+    ],
+    "familyNames": [
+        "Rentzel"
+    ],
+    "jobTitles": [
+        "PD Dr."
+    ],
+    "affiliations": [
+        "organization-086"
+    ],
+    "email": "philippe.rentzel@unibas.ch"
+}

@@ -1,0 +1,25 @@
+{
+    "id": "person-205",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-205",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-0473-5883",
+            "text": "ORCID URL: https://orcid.org/0000-0003-0473-5883"
+        }
+    ],
+    "givenNames": [
+        "Zeynep",
+        "Devrim"
+    ],
+    "familyNames": [
+        "Gürsel"
+    ],
+    "jobTitles": [
+        "Associate Professor"
+    ],
+    "affiliations": [
+        "organization-074"
+    ],
+    "email": "z.gursel@rutgers.edu"
+}

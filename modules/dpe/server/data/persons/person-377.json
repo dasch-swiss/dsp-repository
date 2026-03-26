@@ -1,0 +1,22 @@
+{
+    "id": "person-377",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-377",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0005-8658-1524",
+            "text": "ORCID URL: 0009-0005-8658-1524"
+        }
+    ],
+    "givenNames": [
+        "Balz Andrea"
+    ],
+    "familyNames": [
+        "Alter"
+    ],
+    "affiliations": [
+        "organization-143",
+        "organization-142"
+    ],
+    "email": "Balz.Alter@unibas.ch"
+}

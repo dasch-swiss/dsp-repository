@@ -1,0 +1,23 @@
+{
+    "id": "person-316",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-316",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.brynmawr.edu/inside/people/dale-kinney",
+            "text": "https://www.brynmawr.edu/inside/people/dale-kinney"
+        }
+    ],
+    "givenNames": [
+        "Dale"
+    ],
+    "familyNames": [
+        "Kinney"
+    ],
+    "jobTitles": [
+        "Prof. ermeritus of History of Art"
+    ],
+    "affiliations": [
+        "organization-110"
+    ]
+}

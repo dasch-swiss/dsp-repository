@@ -1,0 +1,26 @@
+{
+    "id": "person-294",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-294",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0809-2427",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0809-2427"
+        }
+    ],
+    "givenNames": [
+        "Fabian"
+    ],
+    "familyNames": [
+        "Grütter"
+    ],
+    "jobTitles": [
+        "Teaching and research associate",
+        "Historian"
+    ],
+    "affiliations": [
+        "organization-104",
+        "organization-079"
+    ],
+    "email": "fabian.gruetter@hotmail.com"
+}

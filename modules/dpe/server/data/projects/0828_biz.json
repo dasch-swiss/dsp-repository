@@ -245,121 +245,121 @@
     ],
     "attributions": [
         {
-            "contributor": "0828-person-000",
+            "contributor": "person-206",
             "contributorType": [
                 "Project Leader (2010–2023), Editor"
             ]
         },
         {
-            "contributor": "0828-person-001",
+            "contributor": "person-207",
             "contributorType": [
                 "Project Manager (2021–2023), Editor, Contributor"
             ]
         },
         {
-            "contributor": "0828-person-002",
+            "contributor": "person-208",
             "contributorType": [
                 "Project Manager (2019–2023), Editor, Contributor"
             ]
         },
         {
-            "contributor": "0828-person-003",
+            "contributor": "person-209",
             "contributorType": [
                 "Project Manager (2014–2019), Editor, Contributor"
             ]
         },
         {
-            "contributor": "0828-person-004",
+            "contributor": "person-210",
             "contributorType": [
                 "Project Manager (2010–2018), Editor, Contributor"
             ]
         },
         {
-            "contributor": "0828-person-005",
+            "contributor": "person-211",
             "contributorType": [
                 "Project Member (2022–2023), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-006",
+            "contributor": "person-212",
             "contributorType": [
                 "Project Member (2020–2021), Contributor"
             ]
         },
         {
-            "contributor": "0848-person-001",
+            "contributor": "person-292",
             "contributorType": [
                 "Project Member (2014–2019), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-008",
+            "contributor": "person-213",
             "contributorType": [
                 "Project Member (2010–2013), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-009",
+            "contributor": "person-214",
             "contributorType": [
                 "Project Member (2010–2013), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-010",
+            "contributor": "person-215",
             "contributorType": [
                 "Project Member (2023), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-011",
+            "contributor": "person-216",
             "contributorType": [
                 "Project Member (2017–2022), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-012",
+            "contributor": "person-217",
             "contributorType": [
                 "Project Member (2017–2020), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-013",
+            "contributor": "person-218",
             "contributorType": [
                 "Project Member (2020–2023), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-014",
+            "contributor": "person-219",
             "contributorType": [
                 "Project Member (2010–2013), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-015",
+            "contributor": "person-220",
             "contributorType": [
                 "Project Member (2020–2023), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-016",
+            "contributor": "person-221",
             "contributorType": [
                 "Project Member (2010–2013), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-017",
+            "contributor": "person-222",
             "contributorType": [
                 "Project Member (2010–2013), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-018",
+            "contributor": "person-223",
             "contributorType": [
                 "Project Member (2014–2017), Contributor"
             ]
         },
         {
-            "contributor": "0828-person-019",
+            "contributor": "person-224",
             "contributorType": [
                 "Project Member (2018–2022), Contributor"
             ]
@@ -369,12 +369,12 @@
         "en": "The infrastructure comprises (1) annotated historical long-term education statistics series (data on teachers, students in training, educational qualifications, school organization and school operations), (2) contextual documentation of this data, (3) graphics and chronicles of school structure development and (4) short biographies of cantonal education directors."
     },
     "contactPoint": [
-        "0828-person-000"
+        "person-206"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "130398",
             "name": "Project funding",
@@ -382,7 +382,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "146239",
             "name": "Project funding",
@@ -390,7 +390,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "170407",
             "name": "Research Infrastructure",
@@ -398,7 +398,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "198049",
             "name": "Research Infrastructure",

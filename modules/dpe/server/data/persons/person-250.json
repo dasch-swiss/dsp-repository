@@ -1,0 +1,24 @@
+{
+    "id": "person-250",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-250",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5315-1916",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5315-1916"
+        }
+    ],
+    "givenNames": [
+        "Yannick"
+    ],
+    "familyNames": [
+        "Devos"
+    ],
+    "jobTitles": [
+        "Prof. Dr."
+    ],
+    "affiliations": [
+        "organization-087"
+    ],
+    "email": "Yannick.George.Devos@vub.be"
+}

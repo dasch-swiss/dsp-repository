@@ -1,0 +1,13 @@
+{
+    "id": "organization-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/organization-003",
+    "name": "Repubblica e Cantone Ticino, Dipartimento dell'educazione, della cultura e dello sport",
+    "url": "https://www.ti.ch/decs/",
+    "address": {
+        "street": "Piazza Governo 7",
+        "postalCode": "6501",
+        "locality": "Bellinzona",
+        "country": "Switzerland"
+    },
+    "email": "decs-dc@ti.ch"
+}

@@ -1,0 +1,24 @@
+{
+    "id": "person-018",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-018",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-7683-515X",
+            "text": "ORCID URL: https://orcid.org/0000-0001-7683-515X"
+        }
+    ],
+    "givenNames": [
+        "Christophe"
+    ],
+    "familyNames": [
+        "Schuwey"
+    ],
+    "jobTitles": [
+        "IT support"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "christophe.schuwey@yale.edu"
+}

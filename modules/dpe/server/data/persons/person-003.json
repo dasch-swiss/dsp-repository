@@ -1,0 +1,17 @@
+{
+    "id": "person-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-003",
+    "givenNames": [
+        "Joan"
+    ],
+    "familyNames": [
+        "Stavo Debauge"
+    ],
+    "jobTitles": [
+        "Post-doctoral researcher"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "joan.stavo-debauge@epfl.ch"
+}

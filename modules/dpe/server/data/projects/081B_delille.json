@@ -83,7 +83,7 @@
     ],
     "attributions": [
         {
-            "contributor": "081B-person-001",
+            "contributor": "person-146",
             "contributorType": [
                 "Editor"
             ]
@@ -93,7 +93,7 @@
         "en": "NIE-INE outcome for the project `Reconstruire Delille' in relation to the scholarly `reverse' edition of the reception of the third canto of Jacques Delille's L'homme des champs."
     },
     "contactPoint": [
-        "081B-person-001"
+        "person-146"
     ],
     "publications": [
         {
@@ -106,7 +106,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "153189",
             "name": "Project funding",

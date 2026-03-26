@@ -114,19 +114,19 @@
     ],
     "attributions": [
         {
-            "contributor": "0813-person-001",
+            "contributor": "person-144",
             "contributorType": [
                 "Projektleiter"
             ]
         },
         {
-            "contributor": "0813-person-002",
+            "contributor": "person-145",
             "contributorType": [
                 "Author"
             ]
         },
         {
-            "contributor": "0813-organization-001",
+            "contributor": "organization-055",
             "contributorType": [
                 "Editor"
             ]
@@ -138,7 +138,7 @@
     "funding": [
         {
             "funders": [
-                "0813-organization-001"
+                "organization-055"
             ]
         }
     ],

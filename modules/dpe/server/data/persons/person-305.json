@@ -1,0 +1,24 @@
+{
+    "id": "person-305",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-305",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0000-7383-8590",
+            "text": "ORCID URL: https://orcid.org/0009-0000-7383-8590"
+        }
+    ],
+    "givenNames": [
+        "Carola"
+    ],
+    "familyNames": [
+        "Jäggi"
+    ],
+    "jobTitles": [
+        "Prof. Dr., chair/full professor for art history of the Middle Ages and post-classical archaeology"
+    ],
+    "affiliations": [
+        "organization-108"
+    ],
+    "email": "carola.jaeggi@uzh.ch"
+}

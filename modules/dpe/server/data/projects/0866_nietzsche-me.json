@@ -98,61 +98,61 @@
     ],
     "attributions": [
         {
-            "contributor": "0846-person-000",
+            "contributor": "person-287",
             "contributorType": [
                 "Project lead"
             ]
         },
         {
-            "contributor": "0866-person-001",
+            "contributor": "person-369",
             "contributorType": [
                 "Transcription and philological comments"
             ]
         },
         {
-            "contributor": "0866-person-002",
+            "contributor": "person-370",
             "contributorType": [
                 "Transcription and philological comments"
             ]
         },
         {
-            "contributor": "0866-person-003",
+            "contributor": "person-371",
             "contributorType": [
                 "Transcription and philological comments"
             ]
         },
         {
-            "contributor": "0866-person-004",
+            "contributor": "person-372",
             "contributorType": [
                 "Transcription and philological comments"
             ]
         },
         {
-            "contributor": "0866-person-005",
+            "contributor": "person-373",
             "contributorType": [
                 "Transcription and philological comments"
             ]
         },
         {
-            "contributor": "084D-person-003",
+            "contributor": "person-326",
             "contributorType": [
                 "Digital edition"
             ]
         },
         {
-            "contributor": "0866-person-007",
+            "contributor": "person-374",
             "contributorType": [
                 "Digital edition"
             ]
         },
         {
-            "contributor": "0866-person-008",
+            "contributor": "person-375",
             "contributorType": [
                 "Digital edition"
             ]
         },
         {
-            "contributor": "0866-person-009",
+            "contributor": "person-376",
             "contributorType": [
                 "Digital edition"
             ]
@@ -162,12 +162,12 @@
         "en": "The data set represents the notation and draft character of Nietzsche's later manuscripts with corrections, deletions and revisions, which are mapped together with the topological information and the context in a highly detailed granularity reaching down to the level of lines, single words and their  changes through corrections.  Manuscript descriptions, cross-references and comments are integrated into the published manuscript pages / transcriptions."
     },
     "contactPoint": [
-        "0846-person-000"
+        "person-287"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "198240",
             "name": "Editions",

@@ -138,14 +138,14 @@
     ],
     "attributions": [
         {
-            "contributor": "083A-person-000",
+            "contributor": "person-255",
             "contributorType": [
                 "Project Leader",
                 "Creator"
             ]
         },
         {
-            "contributor": "0853-person-001",
+            "contributor": "person-335",
             "contributorType": [
                 "Project Member",
                 "Creator",
@@ -157,7 +157,7 @@
         "en": "The dataset consists of elements documenting the paleography of the hieroglyphs from the temple of Deir el-Medina. It includes images, orthophotos, DEMs, sections associated with external 3D models and drawings. It includes descriptive, analytical and bibliographical information relating to each sign associated with a hieroglyph."
     },
     "contactPoint": [
-        "083A-person-000"
+        "person-255"
     ],
     "publications": [
         {
@@ -167,7 +167,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "193226",
             "name": "PRIMA",

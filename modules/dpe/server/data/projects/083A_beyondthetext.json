@@ -201,31 +201,31 @@
     ],
     "attributions": [
         {
-            "contributor": "083A-person-000",
+            "contributor": "person-255",
             "contributorType": [
                 "Applicant"
             ]
         },
         {
-            "contributor": "083A-person-001",
+            "contributor": "person-256",
             "contributorType": [
                 "Contributor"
             ]
         },
         {
-            "contributor": "083A-person-002",
+            "contributor": "person-257",
             "contributorType": [
                 "Contributor"
             ]
         },
         {
-            "contributor": "083A-person-003",
+            "contributor": "person-258",
             "contributorType": [
                 "Contributor"
             ]
         },
         {
-            "contributor": "083A-person-004",
+            "contributor": "person-259",
             "contributorType": [
                 "Contributor"
             ]
@@ -237,7 +237,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "193226",
             "name": "PRIMA",

@@ -1,0 +1,24 @@
+{
+    "id": "person-346",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-346",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-6559-8937",
+            "text": "ORCID URL: https://orcid.org/0000-0001-6559-8937"
+        }
+    ],
+    "givenNames": [
+        "David"
+    ],
+    "familyNames": [
+        "Ganz"
+    ],
+    "jobTitles": [
+        "Chair of Medieval Art History / full professor"
+    ],
+    "affiliations": [
+        "organization-125"
+    ],
+    "email": "david.ganz@uzh.ch"
+}

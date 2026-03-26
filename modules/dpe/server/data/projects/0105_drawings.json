@@ -149,31 +149,31 @@
     ],
     "attributions": [
         {
-            "contributor": "0105-person-000",
+            "contributor": "person-019",
             "contributorType": [
                 "Project leader"
             ]
         },
         {
-            "contributor": "0105-person-001",
+            "contributor": "person-020",
             "contributorType": [
                 "Project leader"
             ]
         },
         {
-            "contributor": "0105-person-002",
+            "contributor": "person-021",
             "contributorType": [
                 "Project leader"
             ]
         },
         {
-            "contributor": "0105-person-003",
+            "contributor": "person-022",
             "contributorType": [
                 "Project leader"
             ]
         },
         {
-            "contributor": "0105-person-004",
+            "contributor": "person-023",
             "contributorType": [
                 "Project member",
                 "Data collector",
@@ -181,7 +181,7 @@
             ]
         },
         {
-            "contributor": "0101-person-005",
+            "contributor": "person-006",
             "contributorType": [
                 "Project member",
                 "Data curator",
@@ -189,7 +189,7 @@
             ]
         },
         {
-            "contributor": "0105-person-006",
+            "contributor": "person-024",
             "contributorType": [
                 "Project member",
                 "Data collector",
@@ -197,13 +197,13 @@
             ]
         },
         {
-            "contributor": "0101-person-007",
+            "contributor": "person-008",
             "contributorType": [
                 "Data curator"
             ]
         },
         {
-            "contributor": "0101-person-006",
+            "contributor": "person-007",
             "contributorType": [
                 "Other"
             ]
@@ -213,7 +213,7 @@
         "fr": "Au cours des dernières décennies l’étude du concept de dieu (ainsi que l’image et la représentation) est devenu l’un des principaux domaines de recherche en psychologie de la religion. Cette question a été abordée au travers de différentes approches psychologiques : la psychologie développementale cognitive, les théories de la relation d’objet, la psychologie cognitive, les théories des attributions et la théorie d’attachement. En dépit des progrès réalisés, la compréhension de ce phénomène très complexe reste toujours limitée. Selon de nombreux chercheurs une des raisons importantes est celle des méthodes utilisées qui, de façon globale, se basent sur des méthodes verbales: des questionnaires, des entretiens, des listes d’adjectifs pour décrire dieu, des associations libres, etc.  Le projet Dessins de dieux, dirigé par le professeur Pierre-Yves Brandt, vise à contribuer à une compréhension ultérieure de l’origine du concept de dieu et son développement chez les enfants. La technique de dessin, critiquée par certains chercheurs, se présente comme un outil opportun pour effectuer une étude à fois développementale et cross-culturelle. Elle est même plus efficace pour mettre en lumière la place et la fonction des images dans le processus de l’acquisition et de l’intériorisation de certains concepts religieux, ainsi que pour révéler des contradictions et des difficultés de l’acquisition de l’idée de dieu par des enfants. L’absence de telles études entrave les progrès de nos savoirs dans ce domaine.  La base de données Dessins de dieux a été créée pour stocker des données de cette recherche et les rendre accessibles non seulement aux chercheurs affiliés au projet mais aussi au grand public qui s’intéresse à cette problématique. Une première collection de 143 dessins a été récoltée en 2003-2004 au Japon. Actuellement, la base de données contient plus de 7100 dessins recueillis au Japon, en Roumanie, en Russie, en Suisse, aux États-Unis, en Iran, au Népal et aux Pays-Bas ; elle continue à s’agrandir.  Nous espérons que cette recherche intéressera les chercheurs d’autres pays afin que cette base de données s’enrichisse de dessins issus d’autres traditions confessionnelles et culturelles."
     },
     "contactPoint": [
-        "0105-person-000"
+        "person-019"
     ],
     "publications": [
         {
@@ -247,7 +247,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "156383",
             "name": "Interdisciplinary Projects",

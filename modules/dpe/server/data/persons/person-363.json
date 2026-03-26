@@ -1,0 +1,25 @@
+{
+    "id": "person-363",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-363",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-3530-507X",
+            "text": "ORCID URL: https://orcid.org/0000-0002-3530-507X"
+        }
+    ],
+    "givenNames": [
+        "Patricia"
+    ],
+    "familyNames": [
+        "Zihlmann-Märki"
+    ],
+    "jobTitles": [
+        "Wissenschaftliche Mitarbeiterin, stv. Leiterin der Forschungsstelle Jeremias Gotthelf, Dr."
+    ],
+    "affiliations": [
+        "organization-134",
+        "organization-114"
+    ],
+    "email": "patricia.zihlmann@unibe.ch"
+}

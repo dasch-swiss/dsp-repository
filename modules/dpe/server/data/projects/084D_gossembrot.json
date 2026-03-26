@@ -103,25 +103,25 @@
     ],
     "attributions": [
         {
-            "contributor": "084D-person-000",
+            "contributor": "person-323",
             "contributorType": [
                 "Project Leader"
             ]
         },
         {
-            "contributor": "084D-person-001",
+            "contributor": "person-324",
             "contributorType": [
                 "Project Member"
             ]
         },
         {
-            "contributor": "084D-person-002",
+            "contributor": "person-325",
             "contributorType": [
                 "Project Member"
             ]
         },
         {
-            "contributor": "084D-person-003",
+            "contributor": "person-326",
             "contributorType": [
                 "Project Member"
             ]
@@ -131,7 +131,7 @@
         "de": "Das Projekt erarbeitet und rekonstruiert den Bestand der Bibliothek von Sigmund Gossembrot (1417-1493)"
     },
     "contactPoint": [
-        "084D-person-000"
+        "person-323"
     ],
     "publications": [
         {
@@ -150,7 +150,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "192441",
             "name": "Project funding",

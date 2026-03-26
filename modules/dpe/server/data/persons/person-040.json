@@ -1,0 +1,18 @@
+{
+    "id": "person-040",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-040",
+    "givenNames": [
+        "Bruno"
+    ],
+    "familyNames": [
+        "Pellegrino"
+    ],
+    "jobTitles": [
+        "Junior SNSF Researcher",
+        "Scientific collaborator"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "bruno.pellegrino@unil.ch"
+}

@@ -1,0 +1,23 @@
+{
+    "id": "person-208",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-208",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-0298-4827",
+            "text": "ORCID URL: https://orcid.org/0000-0003-0298-4827"
+        }
+    ],
+    "givenNames": [
+        "Stefan"
+    ],
+    "familyNames": [
+        "Kessler"
+    ],
+    "jobTitles": [
+        "Project staff"
+    ],
+    "affiliations": [
+        "organization-075"
+    ]
+}

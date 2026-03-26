@@ -1,0 +1,24 @@
+{
+    "id": "person-333",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-333",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-1515-3619",
+            "text": "ORCID URL: https://orcid.org/0000-0003-1515-3619"
+        }
+    ],
+    "givenNames": [
+        "Daniel"
+    ],
+    "familyNames": [
+        "Jaquet"
+    ],
+    "jobTitles": [
+        "Senior researcher"
+    ],
+    "affiliations": [
+        "organization-114"
+    ],
+    "email": "daniel.jaquet@unil.ch"
+}

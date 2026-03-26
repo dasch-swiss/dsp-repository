@@ -1,0 +1,23 @@
+{
+    "id": "person-168",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-168",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/ephraim-friedli-91075115a/",
+            "text": "https://www.linkedin.com/in/ephraim-friedli-91075115a/"
+        }
+    ],
+    "givenNames": [
+        "Ephraim"
+    ],
+    "familyNames": [
+        "Friedli"
+    ],
+    "jobTitles": [
+        "Geodesist"
+    ],
+    "affiliations": [
+        "organization-061"
+    ]
+}

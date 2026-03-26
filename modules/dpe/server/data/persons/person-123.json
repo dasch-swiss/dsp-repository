@@ -1,0 +1,16 @@
+{
+    "id": "person-123",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-123",
+    "givenNames": [
+        "Marin"
+    ],
+    "familyNames": [
+        "Aeschbach"
+    ],
+    "jobTitles": [
+        "Design and webapp development"
+    ],
+    "affiliations": [
+        "organization-039"
+    ]
+}

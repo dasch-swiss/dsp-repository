@@ -1,0 +1,24 @@
+{
+    "id": "person-357",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-357",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0006-4458-461X",
+            "text": "ORCID URL: https://orcid.org/0009-0006-4458-461X"
+        }
+    ],
+    "givenNames": [
+        "Reto"
+    ],
+    "familyNames": [
+        "Baumgartner"
+    ],
+    "jobTitles": [
+        "Science IT Consultant"
+    ],
+    "affiliations": [
+        "organization-131"
+    ],
+    "email": "reto.baumgartner@zi.uzh.ch"
+}

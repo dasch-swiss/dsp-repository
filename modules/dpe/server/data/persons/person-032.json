@@ -1,0 +1,25 @@
+{
+    "id": "person-032",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-032",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-9236-6058",
+            "text": "ORCID URL: https://orcid.org/0000-0001-9236-6058"
+        }
+    ],
+    "givenNames": [
+        "Romeo"
+    ],
+    "familyNames": [
+        "Dell'Era"
+    ],
+    "jobTitles": [
+        "associate researcher",
+        "ricercatore associato"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "romeo.dellera@unil.ch"
+}

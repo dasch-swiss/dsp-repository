@@ -1,0 +1,12 @@
+{
+    "id": "organization-066",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/organization-066",
+    "name": "Cairo University",
+    "url": "http://www.cu.edu.eg",
+    "address": {
+        "street": "1, Gamaa Street",
+        "postalCode": "12613",
+        "locality": "Giza",
+        "country": "Egypt"
+    }
+}

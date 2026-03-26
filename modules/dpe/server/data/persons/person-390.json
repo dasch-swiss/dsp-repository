@@ -1,0 +1,24 @@
+{
+    "id": "person-390",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-390",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-8343-356X",
+            "text": "ORCID URL: https://orcid.org/0000-0002-8343-356X"
+        }
+    ],
+    "givenNames": [
+        "Francesca"
+    ],
+    "familyNames": [
+        "Dell’Oro"
+    ],
+    "jobTitles": [
+        "Assistant Professor"
+    ],
+    "affiliations": [
+        "organization-005"
+    ],
+    "email": "francesca.delloro@unine.ch"
+}

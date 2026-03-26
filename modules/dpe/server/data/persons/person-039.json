@@ -1,0 +1,25 @@
+{
+    "id": "person-039",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-039",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-4522-2833",
+            "text": "ORCID URL: https://orcid.org/0000-0002-4522-2833"
+        }
+    ],
+    "givenNames": [
+        "Elena"
+    ],
+    "familyNames": [
+        "Spadini"
+    ],
+    "jobTitles": [
+        "Post-doctoral researcher",
+        "Senior SNSF Researcher"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "elena.spadini@unil.ch"
+}

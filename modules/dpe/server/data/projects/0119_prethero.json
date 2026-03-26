@@ -95,19 +95,19 @@
     ],
     "attributions": [
         {
-            "contributor": "0119-person-001",
+            "contributor": "person-058",
             "contributorType": [
                 "Project Leader"
             ]
         },
         {
-            "contributor": "0119-person-000",
+            "contributor": "person-057",
             "contributorType": [
                 "Project Member, Data Collector, Data Curator"
             ]
         },
         {
-            "contributor": "0101-person-007",
+            "contributor": "person-008",
             "contributorType": [
                 "Data Curator"
             ]
@@ -117,12 +117,12 @@
         "en": "The database “Early French-Swiss Theater” documents the development of theatrical practices in the French-speaking regions of present-day Switzerland between the fifteenth and sixteenth centuries. It contains records of performances, groups and individuals involved in theater activities, and provides access to surviving plays, historical testimonies, archives of performances, and a bibliography that allow researchers and the public to reconstruct the origins of Swiss theatrical culture in French."
     },
     "contactPoint": [
-        "0119-person-001"
+        "person-058"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "192400",
             "name": "Project funding",

@@ -74,48 +74,48 @@
     ],
     "attributions": [
         {
-            "contributor": "0861-person-000",
+            "contributor": "person-355",
             "contributorType": [
                 "Project Leader",
                 "Editor"
             ]
         },
         {
-            "contributor": "0861-person-001",
+            "contributor": "person-356",
             "contributorType": [
                 "Project Manager",
                 "Editor"
             ]
         },
         {
-            "contributor": "0861-person-002",
+            "contributor": "person-357",
             "contributorType": [
                 "Data Curator",
                 "Data Collector"
             ]
         },
         {
-            "contributor": "0861-person-003",
+            "contributor": "person-358",
             "contributorType": [
                 "Project Manager"
             ]
         },
         {
-            "contributor": "0861-person-004",
+            "contributor": "person-359",
             "contributorType": [
                 "Metadata specialist",
                 "Related Person"
             ]
         },
         {
-            "contributor": "0861-person-005",
+            "contributor": "person-360",
             "contributorType": [
                 "Archiving specialist",
                 "Related Person"
             ]
         },
         {
-            "contributor": "0861-person-006",
+            "contributor": "person-361",
             "contributorType": [
                 "Project Manager"
             ]
@@ -125,7 +125,7 @@
         "en": "Seven digitally scholarly edited letters with indices (places, names, organizations, bibliography, keywords)."
     },
     "contactPoint": [
-        "0861-person-000"
+        "person-355"
     ],
     "publications": [
         {
@@ -144,7 +144,7 @@
     "funding": [
         {
             "funders": [
-                "080E-organization-000"
+                "organization-027"
             ],
             "name": "Swiss Open Research Data Grants Track A: Explore projects"
         }

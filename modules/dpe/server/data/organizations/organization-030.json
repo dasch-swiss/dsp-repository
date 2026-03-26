@@ -1,0 +1,12 @@
+{
+    "id": "organization-030",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/organization-030",
+    "name": "Ceramica Stiftung",
+    "url": "https://ceramica-ch.ch/",
+    "address": {
+        "street": "St. Jakobs-Strasse 7",
+        "postalCode": "4002",
+        "locality": "Basel",
+        "country": "Switzerland"
+    }
+}

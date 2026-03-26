@@ -107,31 +107,31 @@
     ],
     "attributions": [
         {
-            "contributor": "0102-person-000",
+            "contributor": "person-009",
             "contributorType": [
                 "Project Leader, Data Collector, Data Curator"
             ]
         },
         {
-            "contributor": "0102-person-001",
+            "contributor": "person-010",
             "contributorType": [
                 "Project Member, Data Collector, Data Curator"
             ]
         },
         {
-            "contributor": "0102-person-002",
+            "contributor": "person-011",
             "contributorType": [
                 "Project Member, Data Collector, Data Curator"
             ]
         },
         {
-            "contributor": "0101-person-007",
+            "contributor": "person-008",
             "contributorType": [
                 "Data Curator"
             ]
         },
         {
-            "contributor": "0101-person-006",
+            "contributor": "person-007",
             "contributorType": [
                 "Other"
             ]
@@ -141,12 +141,12 @@
         "fr": "La base de données est organisée autour 1) des pièces d’archives (= PIECE) issues du Fonds Alain Tanner de la Cinémathèque suisse (CS), numérisées professionnellement par cette institution, ou du Fonds « Bernard Comment » des Archives littéraires suisses (ALS, Berne) ; 2) d’archives audio et audiovisuelles de la RTS (retranscription) et 3) d’entretiens audio avec des collaborateurs/trices de Tanner réalisés par les membres du projet.\r \r L’ontologie est conçue autour des classes suivantes : FILM (19 films d’Alain Tanner), PERSONNE (collaborateurs/trices associé-e-s aux instances de la classe FILM avec désignation de leur fonction ou personnes mentionnées dans les archives), PIECE (avec les sous-classes Scénario ; Production ; Promotion ; Correspondance ; Réception critique ; Entretien) et PAGE, dont les différentes instances sont constitutives des PIECES.\r \r La classe PAGE est celle qui comporte le plus de propriétés : 7 textes formatés, 5 booléens et 3 vocabulaires contrôlés."
     },
     "contactPoint": [
-        "0102-person-000"
+        "person-009"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "204749",
             "name": "Project funding",

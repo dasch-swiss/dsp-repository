@@ -1,0 +1,25 @@
+{
+    "id": "person-081",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-081",
+    "sameAs": [
+        {
+            "type": "GND",
+            "url": "http://d-nb.info/gnd/1069569267",
+            "text": "GND URL: http://d-nb.info/gnd/1069569267"
+        }
+    ],
+    "givenNames": [
+        "Michael"
+    ],
+    "familyNames": [
+        "Matter"
+    ],
+    "jobTitles": [
+        "Research associate"
+    ],
+    "affiliations": [
+        "organization-011",
+        "organization-012"
+    ],
+    "email": "michael.matter@unibas.ch"
+}

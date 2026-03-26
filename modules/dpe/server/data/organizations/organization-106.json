@@ -1,0 +1,12 @@
+{
+    "id": "organization-106",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/organization-106",
+    "name": "Université de Fribourg",
+    "url": "https://www.unifr.ch",
+    "address": {
+        "street": "Av. de l'Europe 20",
+        "postalCode": "1700",
+        "locality": "Fribourg",
+        "country": "Switzerland"
+    }
+}

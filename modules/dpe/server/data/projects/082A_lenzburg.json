@@ -98,25 +98,25 @@
     ],
     "attributions": [
         {
-            "contributor": "082A-person-000",
+            "contributor": "person-225",
             "contributorType": [
                 "PI"
             ]
         },
         {
-            "contributor": "082A-person-003",
+            "contributor": "person-228",
             "contributorType": [
                 "PI"
             ]
         },
         {
-            "contributor": "082A-person-001",
+            "contributor": "person-226",
             "contributorType": [
                 "Archivist, Information Specialist"
             ]
         },
         {
-            "contributor": "082A-person-002",
+            "contributor": "person-227",
             "contributorType": [
                 "Creator, Maintainer"
             ]
@@ -126,7 +126,7 @@
         "en": "The collection consists of cassette tapes and magnetic tapes. They were recorded during the concerts at the festival (1972–1980). The metadata entail the original archival number (tape numbers), song titles, duration, band names and artist names as well as further information such as song incipits."
     },
     "contactPoint": [
-        "082A-organization-000"
+        "organization-076"
     ],
     "publications": [
         {
@@ -145,7 +145,7 @@
     "funding": [
         {
             "funders": [
-                "082A-organization-001"
+                "organization-077"
             ],
             "name": "Digitale Erschliessung Tonbandsammlung Lenzburg"
         }

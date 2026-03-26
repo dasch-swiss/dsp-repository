@@ -1,0 +1,13 @@
+{
+    "id": "organization-040",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/organization-040",
+    "name": "Dinamo Basel",
+    "url": "https://abcdinamo.com/",
+    "address": {
+        "street": "Klingelbergstrasse 11",
+        "postalCode": "4056",
+        "locality": "Basel",
+        "country": "Switzerland"
+    },
+    "email": "mail@abcdinamo.com"
+}

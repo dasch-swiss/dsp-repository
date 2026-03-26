@@ -1,0 +1,24 @@
+{
+    "id": "person-034",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-034",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-1930-6275",
+            "text": "ORCID URL: https://orcid.org/0000-0002-1930-6275"
+        }
+    ],
+    "givenNames": [
+        "Christian"
+    ],
+    "familyNames": [
+        "Grosse"
+    ],
+    "jobTitles": [
+        "Full professor"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "christian.grosse@unil.ch"
+}

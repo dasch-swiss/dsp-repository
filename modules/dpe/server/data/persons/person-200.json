@@ -1,0 +1,16 @@
+{
+    "id": "person-200",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-200",
+    "givenNames": [
+        "Andrea"
+    ],
+    "familyNames": [
+        "Wolter"
+    ],
+    "jobTitles": [
+        "Geologist"
+    ],
+    "affiliations": [
+        "organization-061"
+    ]
+}

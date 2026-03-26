@@ -1,0 +1,31 @@
+{
+    "id": "person-076",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-076",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://daw.philhist.unibas.ch/de/personen/susanne-bickel/",
+            "text": "https://daw.philhist.unibas.ch/de/personen/susanne-bickel/"
+        },
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0213-1069",
+            "text": "https://orcid.org/0000-0002-0213-1069"
+        }
+    ],
+    "givenNames": [
+        "Susanne"
+    ],
+    "familyNames": [
+        "Bickel"
+    ],
+    "jobTitles": [
+        "Professor of Egyptology",
+        "Professor (Chair of Egyptology)"
+    ],
+    "affiliations": [
+        "organization-140",
+        "organization-059"
+    ],
+    "email": "s.bickel@unibas.ch"
+}

@@ -1,0 +1,24 @@
+{
+    "id": "person-261",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-261",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-9865-3637",
+            "text": "ORCID URL: https://orcid.org/0000-0002-9865-3637"
+        }
+    ],
+    "givenNames": [
+        "Lucy"
+    ],
+    "familyNames": [
+        "Fleming"
+    ],
+    "jobTitles": [
+        "Postdoctoral Researcher"
+    ],
+    "affiliations": [
+        "organization-089"
+    ],
+    "email": "lucy.fleming@unibe.ch"
+}

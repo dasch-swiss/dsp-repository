@@ -120,7 +120,7 @@
     ],
     "attributions": [
         {
-            "contributor": "0861-person-005",
+            "contributor": "person-360",
             "contributorType": [
                 "Researcher",
                 "Project leader",
@@ -133,7 +133,7 @@
         "en": "This dataset contains calculations of notable solar eclipses for the period between 2500 BCE and 1000 CE for the areas of present-day Greece, Turkey, Italy, Persia and Egypt. The aim of the study was to create a solar eclipse canon with identifications of the eclipses recorded in historical sources."
     },
     "contactPoint": [
-        "0861-person-005"
+        "person-360"
     ],
     "publications": [
         {
@@ -143,7 +143,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "122824",
             "name": "Marie Heim-Voegtlin Beiträge",

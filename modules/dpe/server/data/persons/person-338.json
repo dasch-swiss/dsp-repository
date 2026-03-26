@@ -1,0 +1,24 @@
+{
+    "id": "person-338",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-338",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0120-5249",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0120-5249"
+        }
+    ],
+    "givenNames": [
+        "Eva"
+    ],
+    "familyNames": [
+        "Spinazzè"
+    ],
+    "jobTitles": [
+        "Post-doc researcher"
+    ],
+    "affiliations": [
+        "organization-117"
+    ],
+    "email": "eva.spinazze@alumni.unive.it"
+}

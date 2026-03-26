@@ -179,43 +179,43 @@
     ],
     "attributions": [
         {
-            "contributor": "0801-person-000",
+            "contributor": "person-065",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "0801-person-001",
+            "contributor": "person-066",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "0801-person-004",
+            "contributor": "person-069",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "0801-person-005",
+            "contributor": "person-070",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "0801-person-000",
+            "contributor": "person-065",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "0801-person-002",
+            "contributor": "person-067",
             "contributorType": [
                 "author"
             ]
         },
         {
-            "contributor": "0801-person-003",
+            "contributor": "person-068",
             "contributorType": [
                 "author"
             ]
@@ -227,7 +227,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "166072",
             "name": "Project funding",
@@ -235,7 +235,7 @@
         },
         {
             "funders": [
-                "0801-organization-002"
+                "organization-006"
             ]
         }
     ],

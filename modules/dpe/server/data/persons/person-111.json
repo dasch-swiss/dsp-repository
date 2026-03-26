@@ -1,0 +1,16 @@
+{
+    "id": "person-111",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-111",
+    "givenNames": [
+        "Annerose"
+    ],
+    "familyNames": [
+        "Scheidegger"
+    ],
+    "jobTitles": [
+        "Volunteer"
+    ],
+    "affiliations": [
+        "organization-035"
+    ]
+}

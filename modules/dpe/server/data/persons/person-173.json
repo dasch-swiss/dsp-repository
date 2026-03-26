@@ -1,0 +1,24 @@
+{
+    "id": "person-173",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-173",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://daw.philhist.unibas.ch/de/personen/charlotte-hunkeler/",
+            "text": "https://daw.philhist.unibas.ch/de/personen/charlotte-hunkeler/"
+        }
+    ],
+    "givenNames": [
+        "Charlotte"
+    ],
+    "familyNames": [
+        "Hunkeler"
+    ],
+    "jobTitles": [
+        "Assistant (Chair of Egyptology)",
+        "PhD Candidate (Egyptology)"
+    ],
+    "affiliations": [
+        "organization-059"
+    ]
+}

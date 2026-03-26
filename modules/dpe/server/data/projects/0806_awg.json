@@ -173,20 +173,20 @@
     ],
     "attributions": [
         {
-            "contributor": "0806-person-000",
+            "contributor": "person-077",
             "contributorType": [
                 "Project manager",
                 "Member of the editorial management"
             ]
         },
         {
-            "contributor": "0806-person-001",
+            "contributor": "person-078",
             "contributorType": [
                 "Member of the editorial management"
             ]
         },
         {
-            "contributor": "0806-person-002",
+            "contributor": "person-079",
             "contributorType": [
                 "Member of the editorial management",
                 "Creator",
@@ -194,21 +194,21 @@
             ]
         },
         {
-            "contributor": "0806-person-003",
+            "contributor": "person-080",
             "contributorType": [
                 "Creator",
                 "Contributor"
             ]
         },
         {
-            "contributor": "0806-person-004",
+            "contributor": "person-081",
             "contributorType": [
                 "Creator",
                 "Contributor"
             ]
         },
         {
-            "contributor": "0806-person-005",
+            "contributor": "person-082",
             "contributorType": [
                 "Creator",
                 "Contributor"
@@ -219,7 +219,7 @@
         "en": "The Anton Webern Gesamtausgabe (AWG) is a critical-historical edition of Anton Webern’s oeuvre. This edition makes his work freely accessible to the public in a form that is academically appropriate and serves musical practice. The edition includes not only the works that Webern himself brought to print, but also currently unpublished variants of his works, as well as compositions unpublished during his lifetime, fragments, sketches and arrangements. The AWG will be published in hybrid form. The printed volumes will be published by Universal Edition, Vienna, while the components and databases accessible online will be presented in a dedicated web application, as well as within the generic web application developed by DaSCH - Swiss National Data and Service Center for the Humanities with the aim of securing direct long-term access to the data. The AWG is also working on a documentation of the composer's biography, as well as the history of the creation, publication and performance of his works. To achieve this, information of various kinds has been archived and linked in the database, reflecting a chronology that describes Webern’s private and professional life in detail. The documentation of the development of his works is verified by references to material evidence (e.g. correspondence as archived in the letters section). Furthermore, brief, keyword-based information on relevant persons serves to provide a better overview of the composer’s contacts and social environment."
     },
     "contactPoint": [
-        "0806-organization-000"
+        "organization-011"
     ],
     "publications": [
         {
@@ -232,13 +232,13 @@
     "funding": [
         {
             "funders": [
-                "0801-organization-002"
+                "organization-006"
             ],
             "name": "Editionen [2021–2024]"
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "157968",
             "name": "Editions",
@@ -246,7 +246,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "162871",
             "name": "Project funding",
@@ -254,7 +254,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "143565",
             "name": "Project funding",
@@ -262,7 +262,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "126789",
             "name": "Project funding",
@@ -270,7 +270,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "113769",
             "name": "Project funding",
@@ -278,7 +278,7 @@
         },
         {
             "funders": [
-                "0806-organization-005"
+                "organization-014"
             ],
             "number": "E13_1003",
             "name": "[2014–2016]",
@@ -286,7 +286,7 @@
         },
         {
             "funders": [
-                "0806-organization-005"
+                "organization-014"
             ],
             "number": "E09_471",
             "name": "[2010–2012]",

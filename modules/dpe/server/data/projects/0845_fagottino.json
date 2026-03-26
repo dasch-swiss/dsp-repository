@@ -98,37 +98,37 @@
     ],
     "attributions": [
         {
-            "contributor": "0845-person-000",
+            "contributor": "person-281",
             "contributorType": [
                 "Research project leader"
             ]
         },
         {
-            "contributor": "0845-person-001",
+            "contributor": "person-282",
             "contributorType": [
                 "Senior researcher"
             ]
         },
         {
-            "contributor": "0845-person-002",
+            "contributor": "person-283",
             "contributorType": [
                 "Senior researcher"
             ]
         },
         {
-            "contributor": "0845-person-003",
+            "contributor": "person-284",
             "contributorType": [
                 "Junior researcher"
             ]
         },
         {
-            "contributor": "0845-person-004",
+            "contributor": "person-285",
             "contributorType": [
                 "Junior researcher"
             ]
         },
         {
-            "contributor": "0845-person-005",
+            "contributor": "person-286",
             "contributorType": [
                 "Research project member"
             ]
@@ -138,7 +138,7 @@
         "en": "The dataset contains basic data and images of 62 fagottini and tenoroons as well as several articles, including an instrument catalogue of small bassoons covering the key questions addressed during the research project. Furthermore, the dataset contains 3D models of six 3D-CT scanned historical fagottino and tenoroon (FT6; FT30; FT40: FT42; FT44; FT50). Each such Zip file includes the round-bore version, the corrected bore version, and the keys of each instrument. The files are in STL format."
     },
     "contactPoint": [
-        "0845-person-000"
+        "person-281"
     ],
     "publications": [
         {
@@ -160,7 +160,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "173363",
             "name": "Project funding",
@@ -168,7 +168,7 @@
         },
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "192375",
             "name": "Project funding",

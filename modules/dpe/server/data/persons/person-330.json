@@ -1,0 +1,24 @@
+{
+    "id": "person-330",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-330",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0633-4509",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0633-4509"
+        }
+    ],
+    "givenNames": [
+        "Julia"
+    ],
+    "familyNames": [
+        "Thyroff"
+    ],
+    "jobTitles": [
+        "Wissenschaftliche Mitarbeiterin"
+    ],
+    "affiliations": [
+        "organization-105"
+    ],
+    "email": "julia.thyroff@fhnw.ch"
+}

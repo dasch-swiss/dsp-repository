@@ -1,0 +1,27 @@
+{
+    "id": "person-077",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-077",
+    "sameAs": [
+        {
+            "type": "GND",
+            "url": "http://d-nb.info/gnd/12307195X",
+            "text": "GND URL: http://d-nb.info/gnd/12307195X"
+        }
+    ],
+    "givenNames": [
+        "Matthias"
+    ],
+    "familyNames": [
+        "Schmidt"
+    ],
+    "jobTitles": [
+        "Full professor",
+        "Member of the editorial management",
+        "Project manager"
+    ],
+    "affiliations": [
+        "organization-011",
+        "organization-012"
+    ],
+    "email": "matthias.schmidt@unibas.ch"
+}

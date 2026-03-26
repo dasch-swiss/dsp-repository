@@ -122,40 +122,40 @@
     ],
     "attributions": [
         {
-            "contributor": "0862-person-000",
+            "contributor": "person-362",
             "contributorType": [
                 "Project Leader",
                 "Editor"
             ]
         },
         {
-            "contributor": "0862-person-001",
+            "contributor": "person-363",
             "contributorType": [
                 "Data Manager",
                 "Editor"
             ]
         },
         {
-            "contributor": "0862-person-004",
+            "contributor": "person-366",
             "contributorType": [
                 "Researcher",
                 "Textphilologe"
             ]
         },
         {
-            "contributor": "0862-person-003",
+            "contributor": "person-365",
             "contributorType": [
                 "Präsident des Wissenschaftlichen Beirats der Historisch-kritischen Gesamtausgabe Jeremias Gotthelf"
             ]
         },
         {
-            "contributor": "0862-person-002",
+            "contributor": "person-364",
             "contributorType": [
                 "Editor (retired)"
             ]
         },
         {
-            "contributor": "0862-organization-000",
+            "contributor": "organization-134",
             "contributorType": [
                 "Research Group",
                 "Data Creator"
@@ -166,7 +166,7 @@
         "en": "The data set includes the works and letters of the Swiss author Jeremias Gotthelf (Albert Bitzius). The text documents are supplemented with comprehensive commentaries and indexes, which are also available as XML-documents."
     },
     "contactPoint": [
-        "0862-person-000"
+        "person-362"
     ],
     "publications": [
         {
@@ -182,11 +182,11 @@
     "funding": [
         {
             "funders": [
-                "0850-organization-001",
-                "0862-organization-003",
-                "0862-organization-004",
-                "0101-organization-001",
-                "080E-organization-002"
+                "organization-114",
+                "organization-136",
+                "organization-137",
+                "organization-002",
+                "organization-029"
             ]
         }
     ]

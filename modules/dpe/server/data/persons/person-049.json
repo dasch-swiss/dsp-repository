@@ -1,0 +1,17 @@
+{
+    "id": "person-049",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-049",
+    "givenNames": [
+        "Laurent"
+    ],
+    "familyNames": [
+        "Le Forestier"
+    ],
+    "jobTitles": [
+        "Full Professor"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "laurent.leforestier@unil.ch"
+}

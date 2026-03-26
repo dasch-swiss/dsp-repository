@@ -1,0 +1,24 @@
+{
+    "id": "person-343",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-343",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0009-6829-5814",
+            "text": "ORCID URL: 0009-0009-6829-5814"
+        }
+    ],
+    "givenNames": [
+        "Cornel"
+    ],
+    "familyNames": [
+        "Dora"
+    ],
+    "jobTitles": [
+        "Director"
+    ],
+    "affiliations": [
+        "organization-121"
+    ],
+    "email": "cornel.dora@stibi.ch"
+}

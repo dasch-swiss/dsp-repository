@@ -112,7 +112,7 @@
     ],
     "attributions": [
         {
-            "contributor": "0857-person-000",
+            "contributor": "person-338",
             "contributorType": [
                 "Project Leader",
                 "Data Collector",
@@ -124,12 +124,12 @@
         "en": "This dataset contains the source data of the symblight project, which investigates the symbolism of light in Early Christian sacred buildings in the Swiss Alpine valleys."
     },
     "contactPoint": [
-        "0857-person-000"
+        "person-338"
     ],
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "217184",
             "name": "Postdoctoral Fellowships",

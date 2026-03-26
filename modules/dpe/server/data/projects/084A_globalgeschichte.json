@@ -88,19 +88,19 @@
     ],
     "attributions": [
         {
-            "contributor": "084A-person-000",
+            "contributor": "person-299",
             "contributorType": [
                 "Projektleitung"
             ]
         },
         {
-            "contributor": "084A-person-001",
+            "contributor": "person-300",
             "contributorType": [
                 "Projektmitarbeit"
             ]
         },
         {
-            "contributor": "084A-person-002",
+            "contributor": "person-301",
             "contributorType": [
                 "Projektmitarbeit"
             ]
@@ -110,7 +110,7 @@
         "de": "Das Dataset beinhaltet im Projekt erhobene Daten aus Lehrer:innen- und Schüler:innenperspektive: Transkripte der «Stimulated Recall»-Interviews, Transkripte der Eingangsinterviews, soziodemographische Angaben, Fragebögen der Schüler:innen sowie die Dokumentation der entsprechenden Erhebungsinstrumente."
     },
     "contactPoint": [
-        "084A-person-000"
+        "person-299"
     ],
     "publications": [
         {
@@ -123,7 +123,7 @@
     "funding": [
         {
             "funders": [
-                "0101-organization-001"
+                "organization-002"
             ],
             "number": "192169",
             "name": "Project funding",

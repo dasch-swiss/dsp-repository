@@ -1773,26 +1773,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "leptos-server"
-version = "0.1.1"
-dependencies = [
- "app",
- "axum",
- "chrono",
- "leptos 0.8.14",
- "leptos_axum",
- "log",
- "quick-xml",
- "serde",
- "serde_json",
- "simple_logger",
- "tempfile",
- "tokio",
- "tower",
- "tower-http",
-]
-
-[[package]]
 name = "leptos-use"
 version = "0.15.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3109,6 +3089,26 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "server"
+version = "0.1.1"
+dependencies = [
+ "app",
+ "axum",
+ "chrono",
+ "leptos 0.8.14",
+ "leptos_axum",
+ "log",
+ "quick-xml",
+ "serde",
+ "serde_json",
+ "simple_logger",
+ "tempfile",
+ "tokio",
+ "tower",
+ "tower-http",
 ]
 
 [[package]]

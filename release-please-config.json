@@ -6,7 +6,7 @@
   "bump-patch-for-minor-pre-major": true,
   "group-pull-request-title-pattern": "chore(dpe): release",
   "packages": {
-    "modules/dpe/server": { "component": "leptos-server" },
+    "modules/dpe/server": { "component": "server" },
     "modules/dpe/app": { "component": "app" },
     "modules/dpe/frontend": { "component": "frontend" }
   },
@@ -15,7 +15,7 @@
     {
       "type": "linked-versions",
       "groupName": "dpe",
-      "components": ["leptos-server", "app", "frontend"]
+      "components": ["server", "app", "frontend"]
     }
   ]
 }

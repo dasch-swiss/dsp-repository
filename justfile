@@ -23,8 +23,8 @@ install-requirements: install-e2e-requirements
 
 # Install Playwright browsers for E2E tests
 install-e2e-requirements:
-    cd modules/mosaic/demo/end2end && npx playwright install
-    cd modules/dpe/end2end && npx playwright install
+    cd modules/mosaic/playground-e2e-tests && npx playwright install
+    cd modules/dpe/web-e2e-tests && npx playwright install
 
 # Run all fmt and clippy checks
 check:
@@ -155,4 +155,4 @@ run-docker-dpe:
 # Run accessibility E2E tests for the DPE (requires running server on port 4000)
 [group('dpe')]
 test-a11y-dpe:
-    cd modules/dpe/end2end && npx playwright test tests/accessibility.spec.ts --project=chromium
+    cd modules/dpe/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium

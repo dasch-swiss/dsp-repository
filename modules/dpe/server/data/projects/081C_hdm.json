@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/081C",
     "name": "Hôtel de Musique Bern",
     "shortcode": "081C",
-    "officialName": "MISSING",
+    "officialName": "Hôtel de Musique Bern",
     "status": "Finished",
     "shortDescription": "The database documents the different kinds of spectacles such as theatre plays, operas, ballets, or concerts that took place in the Hôtel de Musique in Bern between 1766 and 1905.",
     "description": {
@@ -25,7 +25,7 @@
                 "licenseDate": "2021-09-02",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "Hôtel de Musique Bern",
             "authorship": [
                 "MISSING"
             ]

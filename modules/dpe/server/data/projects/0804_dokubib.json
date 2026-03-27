@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0804",
     "name": "Bilddatenbank Bibliothek St. Moritz",
     "shortcode": "0804",
-    "officialName": "MISSING",
+    "officialName": "Bilddatenbank Bibliothek St. Moritz",
     "status": "Ongoing",
     "shortDescription": "Bibliothek St. Moritz Dokumentation is the local history archive of the community of St. Moritz, Switzerland.",
     "description": {
@@ -26,7 +26,7 @@
                 "licenseDate": "2024-12-10",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "Bilddatenbank Bibliothek St. Moritz",
             "authorship": [
                 "MISSING"
             ]

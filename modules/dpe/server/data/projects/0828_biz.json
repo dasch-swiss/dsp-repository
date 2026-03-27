@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0828",
     "name": "Bildung in Zahlen (Education by numbers)",
     "shortcode": "0828",
-    "officialName": "MISSING",
+    "officialName": "Bildung in Zahlen (Education by numbers)",
     "status": "Finished",
     "shortDescription": "Annotated historical statistics on the development and use of cantonal education programmes and the vocational education and training system in Switzerland in the 19th and 20th centuries.",
     "description": {
@@ -26,7 +26,7 @@
                 "licenseDate": "2024-03-01",
                 "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "Bildung in Zahlen (Education by numbers)",
             "authorship": [
                 "MISSING"
             ]

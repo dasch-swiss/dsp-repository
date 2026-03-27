@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/085A",
     "name": "Interactive Historical Atlas of the Disciplines",
     "shortcode": "085A",
-    "officialName": "MISSING",
+    "officialName": "Interactive Historical Atlas of the Disciplines",
     "status": "Finished",
     "shortDescription": "The Interactive Historical Atlas of the Disciplines aims to map data related to the history of academic disciplines and provides tools to visualize the evolution of disciplinary borders over time.",
     "description": {
@@ -26,7 +26,7 @@
                 "licenseDate": "2019-03-14",
                 "licenseURI": "http://creativecommons.org/licenses/by-nc-nd/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "Interactive Historical Atlas of the Disciplines",
             "authorship": [
                 "MISSING"
             ]

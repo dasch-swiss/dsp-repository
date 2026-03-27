@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0838",
     "name": "I-GEOARCHive",
     "shortcode": "0838",
-    "officialName": "MISSING",
+    "officialName": "I-GEOARCHive",
     "status": "Ongoing",
     "shortDescription": "I-GEOARCHive provides geoarchaeological data and images (profile photos, thin section scans, microscope photos, layer descriptions, mortar and ceramic samples, etc.) from various archaeological sites.",
     "description": {
@@ -25,7 +25,7 @@
                 "licenseDate": "2024-01-22",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "I-GEOARCHive",
             "authorship": [
                 "MISSING"
             ]

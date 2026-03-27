@@ -5,6 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
+dpe-core = { path = "../core" }
 dpe-api-oai = { path = "../api-oai" }
 dpe-web = { path = "../app", default-features = false, features = ["ssr"] }
 leptos = { workspace = true, features = [ "ssr", "islands" ]}

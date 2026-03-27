@@ -39,4 +39,4 @@ pub use project_repository::FsProjectRepository;
 #[cfg(not(target_arch = "wasm32"))]
 pub use record_repository::FsRecordRepository;
 #[cfg(not(target_arch = "wasm32"))]
-pub use utils::get_data_dir;
+pub use utils::{get_data_dir, set_data_dir};

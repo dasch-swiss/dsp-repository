@@ -27,10 +27,8 @@ async fn main() {
         tracing::info!(fathom_site_id = %site_id, "Fathom Analytics enabled");
     }
 
-    // Set DATA_DIR for dpe-core's get_data_dir() if not already set
-    if std::env::var("DATA_DIR").is_err() {
-        std::env::set_var("DATA_DIR", &dpe_config.data_dir);
-    }
+    // Set data directory for dpe-core (thread-safe OnceLock, no env mutation)
+    dpe_core::set_data_dir(&dpe_config.data_dir.to_string_lossy());
 
     // Load Leptos configuration from Cargo.toml metadata
     let conf = get_configuration(None).unwrap();

@@ -658,6 +658,7 @@ dependencies = [
  "axum",
  "datastar",
  "dpe-api-oai",
+ "dpe-core",
  "dpe-web",
  "figment",
  "futures",

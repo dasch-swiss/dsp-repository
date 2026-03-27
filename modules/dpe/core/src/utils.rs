@@ -9,15 +9,31 @@ pub fn lang_value(map: &HashMap<String, String>) -> Option<&String> {
         .or_else(|| map.values().next())
 }
 
-/// Get the data directory path, supporting both development and production environments.
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::OnceLock;
+
+#[cfg(not(target_arch = "wasm32"))]
+static DATA_DIR: OnceLock<String> = OnceLock::new();
+
+/// Set the data directory path at startup. Must be called before any data access.
+/// Thread-safe: uses OnceLock (first call wins, subsequent calls are no-ops).
+#[cfg(not(target_arch = "wasm32"))]
+pub fn set_data_dir(path: &str) {
+    let _ = DATA_DIR.set(path.to_string());
+}
+
+/// Get the data directory path.
+///
+/// Priority: OnceLock (set by main.rs) → DATA_DIR env var → development default.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn get_data_dir() -> String {
-    // Try environment variable first (for production/custom deployments)
+    if let Some(dir) = DATA_DIR.get() {
+        return dir.clone();
+    }
+
     if let Ok(data_dir) = std::env::var("DATA_DIR") {
         return data_dir;
     }
 
-    // For development with cargo-leptos, use relative path from workspace root
-    // cargo-leptos runs from the workspace root
     "modules/dpe/server/data".to_string()
 }

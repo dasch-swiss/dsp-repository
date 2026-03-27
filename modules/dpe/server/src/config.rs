@@ -42,7 +42,7 @@ impl DpeConfig {
         Figment::new()
             .merge(Serialized::defaults(DpeConfig::default()))
             .merge(Toml::file("dpe.toml"))
-            .merge(Env::prefixed("DPE_").lowercase(false))
+            .merge(Env::prefixed("DPE_"))
             // Also respect the legacy DATA_DIR env var (used in Dockerfile)
             .merge(Env::raw().only(&["DATA_DIR"]).map(|_| "data_dir".into()))
             .extract()

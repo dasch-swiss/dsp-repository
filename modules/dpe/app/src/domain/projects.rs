@@ -72,7 +72,7 @@ pub async fn list_projects(
 pub fn filter_and_paginate(projects: &[Project], query: &super::project::ProjectQuery, page_size: Option<i32>) -> Page {
     use dpe_core::{AccessRightsType, ProjectStatus, lang_value};
 
-    let items_per_page = page_size.unwrap_or(9).max(1) as usize;
+    let items_per_page = page_size.unwrap_or(9).clamp(1, 100) as usize;
     let search_lower = query.search().to_lowercase();
     let type_of_data_filter = query.type_of_data();
     let data_language_filter = query.data_language();

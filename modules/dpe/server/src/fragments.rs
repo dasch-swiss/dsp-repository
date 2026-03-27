@@ -24,6 +24,11 @@ use serde::Deserialize;
 
 const VALID_TABS: &[&str] = &["overview", "publications", "contributors"];
 
+/// Returns true if the string is a valid project shortcode (alphanumeric only).
+fn is_valid_shortcode(s: &str) -> bool {
+    !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric())
+}
+
 #[derive(Deserialize)]
 pub struct TabParams {
     pub id: String,
@@ -39,6 +44,11 @@ pub async fn tab_fragment_handler(
     Path(params): Path<TabParams>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, impl IntoResponse> {
     let TabParams { id, tab } = params;
+
+    // Validate shortcode format (alphanumeric only — prevents XSS in ExecuteScript)
+    if !is_valid_shortcode(&id) {
+        return Err(StatusCode::NOT_FOUND);
+    }
 
     // Validate tab name
     if !VALID_TABS.contains(&tab.as_str()) {

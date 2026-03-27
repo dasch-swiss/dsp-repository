@@ -12,8 +12,11 @@ leptos = { workspace = true, features = [ "ssr", "islands" ]}
 leptos_axum.workspace = true
 
 axum.workspace = true
+datastar.workspace = true
+mosaic-tiles = { path = "../../mosaic/tiles", default-features = false, features = ["icon"] }
 simple_logger.workspace = true
 tokio.workspace = true
+futures = "0.3"
 tower.workspace = true
 tower-http.workspace = true
 log.workspace = true

@@ -4,6 +4,7 @@ use leptos::logging::log;
 use leptos::prelude::*;
 use leptos_axum::{generate_route_list, LeptosRoutes};
 
+mod fragments;
 mod oai;
 
 #[tokio::main]
@@ -18,6 +19,8 @@ async fn main() {
     let app = Router::new()
         // OAI-PMH 2.0 endpoint
         .route("/oai", get(oai::oai_handler))
+        // Datastar SSE fragment endpoints
+        .route("/projects/{id}/tab/{tab}", get(fragments::tab_fragment_handler))
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();
             move || shell(leptos_options.clone())

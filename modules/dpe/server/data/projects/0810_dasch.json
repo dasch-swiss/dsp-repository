@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0810",
     "name": "DaSCH – Swiss National Data and Service Center for the Humanities",
     "shortcode": "0810",
-    "officialName": "MISSING",
+    "officialName": "DaSCH – Swiss National Data and Service Center for the Humanities",
     "status": "Ongoing",
     "shortDescription": "This project contains material about DaSCH and events organised by DaSCH. All documents are made available in the original language of the presentations.",
     "description": {
@@ -26,7 +26,7 @@
                 "licenseDate": "2023-05-03",
                 "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "DaSCH – Swiss National Data and Service Center for the Humanities",
             "authorship": [
                 "MISSING"
             ]

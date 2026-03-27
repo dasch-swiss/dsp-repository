@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/dasch-swiss/dsp-repository/compare/frontend-v0.1.1...frontend-v0.1.2) (2026-03-27)
+
+
+### Miscellaneous Chores
+
+* **frontend:** Synchronize dpe versions
+
 ## [0.1.1](https://github.com/dasch-swiss/dsp-repository/compare/frontend-v0.1.0...frontend-v0.1.1) (2026-03-11)
 
 

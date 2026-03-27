@@ -2,13 +2,14 @@ use leptos::prelude::*;
 use mosaic_tiles::link::Link;
 
 use super::super::info_card::InfoCard;
+use super::super::person::AffiliationName;
 use super::super::person::Person;
 use crate::domain::project::LegalInfo as LegalInfoData;
 use crate::domain::{get_organization, get_person};
 
 #[component]
 fn EntityName(id: String) -> impl IntoView {
-    if id.contains("-person-") {
+    if id.starts_with("person-") || id.contains("-person-") {
         let fallback = id.clone();
         let resource = Resource::new(move || id.clone(), |id| async move { get_person(id).await });
         view! {
@@ -26,7 +27,7 @@ fn EntityName(id: String) -> impl IntoView {
             </Suspense>
         }
         .into_any()
-    } else if id.contains("-organization-") {
+    } else if id.starts_with("organization-") || id.contains("-organization-") {
         let fallback = id.clone();
         let resource = Resource::new(move || id.clone(), |id| async move { get_organization(id).await });
         view! {
@@ -120,10 +121,20 @@ pub fn ContactSection(ids: Vec<String>) -> impl IntoView {
             {ids
                 .into_iter()
                 .map(|id| {
-                    view! {
-                        <InfoCard>
-                            <Person person_id=id roles=None show_email=true />
-                        </InfoCard>
+                    if id.starts_with("organization-") || id.contains("-organization-") {
+                        view! {
+                            <InfoCard>
+                                <AffiliationName org_id=id />
+                            </InfoCard>
+                        }
+                            .into_any()
+                    } else {
+                        view! {
+                            <InfoCard>
+                                <Person person_id=id roles=None show_email=true />
+                            </InfoCard>
+                        }
+                            .into_any()
                     }
                 })
                 .collect_view()}

@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0847",
     "name": "Locus Ludi database: The Kottabos in the Greek World",
     "shortcode": "0847",
-    "officialName": "MISSING",
+    "officialName": "Locus Ludi database: The Kottabos in the Greek World",
     "status": "Finished",
     "shortDescription": "This database aims to provide a benchmark by compilating all representations of kottabos in the Greek world, including descriptions, images and links to other reference databases.",
     "description": {
@@ -25,7 +25,7 @@
                 "licenseDate": "2023-12-04",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "Locus Ludi database: The Kottabos in the Greek World",
             "authorship": [
                 "MISSING"
             ]

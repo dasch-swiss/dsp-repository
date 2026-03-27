@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0844",
     "name": "MARK16",
     "shortcode": "0844",
-    "officialName": "MISSING",
+    "officialName": "MARK16",
     "status": "Ongoing",
     "shortDescription": "MARK16 is a SNSF PRIMA project. It reassesses the diverse endings of the Gospel of Mark through manuscript data, available on its Virtual Research Environment ISSN 2673-9836, https://mark16.sib.swiss.",
     "description": {
@@ -26,7 +26,7 @@
                 "licenseDate": "2023-04-28",
                 "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "MARK16",
             "authorship": [
                 "MISSING"
             ]

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.2](https://github.com/dasch-swiss/dsp-repository/compare/app-v0.1.1...app-v0.1.2) (2026-03-27)
+
+
+### Features
+
+* metadata v1-to-v2 migration data and Rust fixes ([#162](https://github.com/dasch-swiss/dsp-repository/issues/162)) ([470c473](https://github.com/dasch-swiss/dsp-repository/commit/470c473fcbfa81e0d295e404645829714e5c92dd))
+* OAI-PMH 2.0 endpoint, with goldens and XSD specs ([#131](https://github.com/dasch-swiss/dsp-repository/issues/131)) ([acaf46f](https://github.com/dasch-swiss/dsp-repository/commit/acaf46fb547d0fbc7e3013bafd224e8844207563))
+* OAI-PMH with records (DEV-5946) ([#153](https://github.com/dasch-swiss/dsp-repository/issues/153)) ([d6aefdb](https://github.com/dasch-swiss/dsp-repository/commit/d6aefdb676f7628ce0219d87ef714528f1c4a409))
+
+
+### Bug Fixes
+
+* adapt design to mockup (iteration 3) ([#150](https://github.com/dasch-swiss/dsp-repository/issues/150)) ([3c3ca1d](https://github.com/dasch-swiss/dsp-repository/commit/3c3ca1d49ccda149756b3dd651985043fa04fdc5))
+* improve footer and font family on titles ([#156](https://github.com/dasch-swiss/dsp-repository/issues/156)) ([ace59cc](https://github.com/dasch-swiss/dsp-repository/commit/ace59cc8cee4755b3570f86ae3c6542b614b5321))
+
 ## [0.1.1](https://github.com/dasch-swiss/dsp-repository/compare/app-v0.1.0...app-v0.1.1) (2026-03-11)
 
 

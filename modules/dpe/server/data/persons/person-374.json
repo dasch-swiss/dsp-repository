@@ -1,13 +1,10 @@
 {
     "id": "person-374",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-374",
     "givenNames": [
         "Christian"
     ],
     "familyNames": [
         "Steiner"
     ],
-    "jobTitles": [
-        "MISSING"
-    ]
+    "jobTitles": []
 }

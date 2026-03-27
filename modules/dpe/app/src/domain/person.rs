@@ -5,7 +5,6 @@ use super::models::AuthorityFileReference;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Person {
     pub id: String,
-    pub pid: String,
     #[serde(rename = "givenNames")]
     pub given_names: Vec<String>,
     #[serde(rename = "familyNames")]

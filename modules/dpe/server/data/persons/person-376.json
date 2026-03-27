@@ -1,13 +1,10 @@
 {
     "id": "person-376",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-376",
     "givenNames": [
         "Myriam"
     ],
     "familyNames": [
         "Schmidt"
     ],
-    "jobTitles": [
-        "MISSING"
-    ]
+    "jobTitles": []
 }

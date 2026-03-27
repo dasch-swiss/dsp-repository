@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/080C",
     "name": "Fotoarchiv Kunsthalle Basel",
     "shortcode": "080C",
-    "officialName": "MISSING",
+    "officialName": "Fotoarchiv Kunsthalle Basel",
     "status": "Ongoing",
     "shortDescription": "Kunsthalle Basel is Switzerland’s oldest active art museum displaying contemporary art.",
     "description": {
@@ -25,7 +25,7 @@
                 "licenseDate": "2023-12-07",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/deed.en"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "Fotoarchiv Kunsthalle Basel",
             "authorship": [
                 "MISSING"
             ]

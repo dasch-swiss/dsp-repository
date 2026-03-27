@@ -1,0 +1,126 @@
+{
+    "id": "0801c",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801",
+    "shortcode": "0801c",
+    "officialName": "Jacob Bernoulli's Scientific Notebook (Meditationes)",
+    "url": [
+        "https://app.dasch.swiss/project/yTerZGyxjZVqFMNNKXCDPF",
+        "https://bernoulli-euler.dhlab.unibas.ch/"
+    ],
+    "howToCite": "Jacob Bernoulli's Scientific Notebook (Meditationes), Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "Jacob Bernoulli's Scientific Notebook (Meditationes)",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/12",
+            "text": "Mathematics"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "17th century and 18th century CE"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434",
+            "text": "Switzerland"
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "organization-002"
+            ],
+            "number": "166072",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/166072"
+        },
+        {
+            "funders": [
+                "organization-006"
+            ]
+        }
+    ],
+    "name": "Jacob Bernoulli's Scientific Notebook (Meditationes)",
+    "shortDescription": "First complete digital edition of Jacob Bernoulli's 367-page scientific notebook (begun ca. 1676), a key source for the history of mathematics around 1700.",
+    "description": {
+        "en": "The Meditationes is the scientific notebook of the mathematician Jacob Bernoulli (1654-1705), comprising 367 pages with over 287 entries, more than 90% of which deal with mathematics and physics. Begun around 1676, it is a document of outstanding significance for the history of mathematics at its turning point around 1700. The BEOL platform presents the first complete edition of the notebook as a region-based, multilayer, interactive digital edition providing access to facsimiles, transcriptions, translations, indices, and commentaries.",
+        "de": "Die Meditationes sind das wissenschaftliche Notizbuch des Mathematikers Jacob Bernoulli (1654-1705) mit 367 Seiten und über 287 Einträgen, von denen mehr als 90% mathematische und physikalische Themen behandeln. Das um 1676 begonnene Notizbuch ist ein Dokument von herausragender Bedeutung für die Geschichte der Mathematik an ihrem Wendepunkt um 1700. Die BEOL-Plattform präsentiert die erste vollständige Edition des Notizbuchs als regionenbasierte, mehrschichtige, interaktive digitale Edition mit Zugang zu Faksimiles, Transkriptionen, Übersetzungen, Registern und Kommentaren."
+    },
+    "status": "Finished",
+    "startDate": "2016-07-01",
+    "endDate": "MISSING",
+    "typeOfData": [
+        "Image",
+        "Text",
+        "XML"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        },
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Latein",
+            "en": "Latin",
+            "fr": "latin"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Bernoulli"
+        },
+        {
+            "en": "Meditationes"
+        },
+        {
+            "en": "Mathematics"
+        },
+        {
+            "en": "history of mathematics"
+        },
+        {
+            "en": "scientific notebook"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "person-065",
+            "contributorType": [
+                "author"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "First complete digital edition of the Meditationes, the scientific notebook of Jacob Bernoulli (1654-1705), comprising 367 pages with over 287 entries on mathematics and physics."
+    },
+    "alternativeNames": [
+        {
+            "en": "Meditationes"
+        }
+    ]
+}

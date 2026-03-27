@@ -1,0 +1,147 @@
+{
+    "id": "0801a",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801",
+    "shortcode": "0801a",
+    "officialName": "Briefwechsel von Leonhard Euler mit Christian Goldbach",
+    "url": [
+        "https://app.dasch.swiss/project/yTerZGyxjZVqFMNNKXCDPF",
+        "https://bernoulli-euler.dhlab.unibas.ch/"
+    ],
+    "howToCite": "Briefwechsel von Leonhard Euler mit Christian Goldbach, Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "Briefwechsel von Leonhard Euler mit Christian Goldbach",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/12",
+            "text": "Mathematics"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "17th century and 18th century CE"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434",
+            "text": "Switzerland"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/11961320",
+            "text": "European Russia"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2921044",
+            "text": "Germany"
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "organization-002"
+            ],
+            "number": "166072",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/166072"
+        },
+        {
+            "funders": [
+                "organization-006"
+            ]
+        }
+    ],
+    "name": "Briefwechsel von Leonhard Euler mit Christian Goldbach",
+    "shortDescription": "Digital edition of nearly 200 letters between Leonhard Euler and Christian Goldbach (1729-1764), a key source for 18th-century number theory.",
+    "description": {
+        "en": "The Euler-Goldbach correspondence comprises nearly 200 letters exchanged between Leonhard Euler and the Prussian mathematician Christian Goldbach from 1729 to 1764. As Euler's most substantial long-term correspondence, these letters provide a comprehensive overview of 18th-century number theory - including the famous Goldbach conjecture - and offer insights into academic life in St. Petersburg and Berlin. The digital edition on the BEOL platform is based on the critical edition published in 2015 as part of the Leonhardi Euleri Opera Omnia, edited by Martin Mattmüller and Franz Lemmermeyer.",
+        "de": "Der Euler-Goldbach-Briefwechsel umfasst nahezu 200 Briefe zwischen Leonhard Euler und dem preussischen Mathematiker Christian Goldbach aus den Jahren 1729 bis 1764. Als Eulers umfangreichster Langzeit-Briefwechsel bieten diese Briefe einen umfassenden Überblick über die Zahlentheorie des 18. Jahrhunderts - einschliesslich der berühmten Goldbach'schen Vermutung - sowie Einblicke in das akademische Leben in St. Petersburg und Berlin. Die digitale Edition auf der BEOL-Plattform basiert auf der kritischen Edition, die 2015 als Teil der Leonhardi Euleri Opera Omnia von Martin Mattmüller und Franz Lemmermeyer herausgegeben wurde."
+    },
+    "status": "Finished",
+    "startDate": "2016-07-01",
+    "endDate": "MISSING",
+    "typeOfData": [
+        "Image",
+        "Text",
+        "XML"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        },
+        {
+            "de": "Französisch",
+            "en": "French",
+            "fr": "français"
+        },
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Latein",
+            "en": "Latin",
+            "fr": "latin"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Euler"
+        },
+        {
+            "en": "Goldbach"
+        },
+        {
+            "en": "correspondence"
+        },
+        {
+            "en": "Mathematics"
+        },
+        {
+            "en": "history of mathematics"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "person-065",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "person-066",
+            "contributorType": [
+                "author"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Digital edition of the correspondence between Leonhard Euler and Christian Goldbach (1729-1764), based on the critical edition in the Leonhardi Euleri Opera Omnia."
+    },
+    "alternativeNames": [
+        {
+            "en": "Euler-Goldbach"
+        }
+    ]
+}

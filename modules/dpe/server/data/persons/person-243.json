@@ -1,15 +1,12 @@
 {
     "id": "person-243",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-243",
     "givenNames": [
         "Rada"
     ],
     "familyNames": [
         "Leu"
     ],
-    "jobTitles": [
-        "MISSING"
-    ],
+    "jobTitles": [],
     "affiliations": [
         "organization-082"
     ]

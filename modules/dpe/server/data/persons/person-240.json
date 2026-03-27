@@ -1,15 +1,12 @@
 {
     "id": "person-240",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-240",
     "givenNames": [
         "Doreen"
     ],
     "familyNames": [
         "Mende"
     ],
-    "jobTitles": [
-        "MISSING"
-    ],
+    "jobTitles": [],
     "affiliations": [
         "organization-081"
     ]

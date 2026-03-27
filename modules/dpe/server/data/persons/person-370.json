@@ -1,13 +1,10 @@
 {
     "id": "person-370",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-370",
     "givenNames": [
         "Beat"
     ],
     "familyNames": [
         "Röllin"
     ],
-    "jobTitles": [
-        "MISSING"
-    ]
+    "jobTitles": []
 }

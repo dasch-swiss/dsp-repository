@@ -74,7 +74,7 @@ pub async fn get_contributors(
     for attr in attributions {
         let roles = (!attr.contributor_type.is_empty()).then(|| attr.contributor_type.join(", "));
         let id = &attr.contributor;
-        if id.contains("-organization-") {
+        if id.starts_with("organization-") || id.contains("-organization-") {
             match load_organization(id).await {
                 Some(org) => result.push(ResolvedContributor::Organization { org, roles }),
                 None => result.push(ResolvedContributor::Unknown { id: id.clone(), roles }),

@@ -1,15 +1,12 @@
 {
     "id": "person-324",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-324",
     "givenNames": [
         "Ioanna"
     ],
     "familyNames": [
         "Georgiou"
     ],
-    "jobTitles": [
-        "MISSING"
-    ],
+    "jobTitles": [],
     "affiliations": [
         "organization-113"
     ]

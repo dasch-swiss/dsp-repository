@@ -1,0 +1,148 @@
+{
+    "id": "0801e",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801",
+    "shortcode": "0801e",
+    "officialName": "Online Edition of Jacob Bernoulli's Reisebüchlein",
+    "url": [
+        "https://app.dasch.swiss/project/yTerZGyxjZVqFMNNKXCDPF",
+        "https://bernoulli-euler.dhlab.unibas.ch/"
+    ],
+    "howToCite": "Online Edition of Jacob Bernoulli's Reisebüchlein, Bernoulli-Euler Online (BEOL), 2024, DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC-SA 4.0",
+                "licenseDate": "2021-09-02",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            "copyrightHolder": "Online Edition of Jacob Bernoulli's Reisebüchlein",
+            "authorship": [
+                "MISSING"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/12",
+            "text": "Mathematics"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "17th century and 18th century CE"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434",
+            "text": "Switzerland"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3017382",
+            "text": "France"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2921044",
+            "text": "Germany"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2750405",
+            "text": "Netherlands"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2635167",
+            "text": "United Kingdom"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2802361",
+            "text": "Belgium"
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "organization-007"
+            ],
+            "name": "Nachwuchsförderung Forschungsfonds, University of Basel"
+        }
+    ],
+    "name": "Online Edition of Jacob Bernoulli's Reisebüchlein",
+    "shortDescription": "Digital edition of Jacob Bernoulli's 195-page travel journal (1676-1683), documenting his journeys across Europe with facsimiles and dynamic visualizations.",
+    "description": {
+        "en": "The Reisebüchlein (little travel book) is a 195-page autograph journal in which Jacob Bernoulli (1654-1705) documented his travels across Switzerland, France, the Netherlands, Belgium, Germany, and England between 1676 and 1683. The journal records details of itineraries, accommodations, means of transportation, food, and costs. This digital edition, developed by Sepideh Alassi at the Digital Humanities Lab of the University of Basel, presents the journal as an RDF-star-based, region-based, multilayer, interactive edition with facsimiles, transcriptions, and dynamic visualizations of Bernoulli's journeys.",
+        "de": "Das Reisebüchlein ist ein 195-seitiges autographes Tagebuch, in dem Jacob Bernoulli (1654-1705) seine Reisen durch die Schweiz, Frankreich, die Niederlande, Belgien, Deutschland und England zwischen 1676 und 1683 dokumentierte. Das Tagebuch verzeichnet Details zu Reiserouten, Unterkünften, Transportmitteln, Verpflegung und Kosten. Diese digitale Edition, entwickelt von Sepideh Alassi am Digital Humanities Lab der Universität Basel, präsentiert das Tagebuch als RDF-star-basierte, regionenbasierte, mehrschichtige, interaktive Edition mit Faksimiles, Transkriptionen und dynamischen Visualisierungen von Bernoullis Reisen."
+    },
+    "status": "Finished",
+    "startDate": "2023-08-01",
+    "endDate": "2024-01-31",
+    "typeOfData": [
+        "Image",
+        "Text",
+        "XML"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Deutsch",
+            "en": "German",
+            "fr": "allemand"
+        },
+        {
+            "de": "Latein",
+            "en": "Latin",
+            "fr": "latin"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Jacob Bernoulli"
+        },
+        {
+            "en": "Reisebüchlein"
+        },
+        {
+            "en": "travel journal"
+        },
+        {
+            "en": "digital edition"
+        },
+        {
+            "en": "RDF-star"
+        },
+        {
+            "en": "history of science"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "person-120",
+            "contributorType": [
+                "author"
+            ]
+        },
+        {
+            "contributor": "person-073",
+            "contributorType": [
+                "author"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Digital edition of Jacob Bernoulli's Reisebüchlein, a 195-page autograph travel journal documenting seven years of journeys across Europe (1676-1683), with facsimiles, transcriptions, and dynamic journey visualizations."
+    },
+    "alternativeNames": [
+        {
+            "de": "Reisbüchlein"
+        }
+    ]
+}

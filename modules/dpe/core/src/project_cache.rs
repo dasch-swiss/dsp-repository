@@ -3,24 +3,20 @@
 /// All projects are loaded from disk once on first access and held in memory
 /// for the lifetime of the server process. This avoids re-reading and
 /// re-deserializing every JSON file on every request.
-#[cfg(not(target_arch = "wasm32"))]
+///
+/// Note: This module is already gated with `#[cfg(not(target_arch = "wasm32"))]` in lib.rs.
 use std::sync::OnceLock;
 
-#[cfg(not(target_arch = "wasm32"))]
 use super::project::{Project, ProjectRaw};
-#[cfg(not(target_arch = "wasm32"))]
 use super::utils::get_data_dir;
 
-#[cfg(not(target_arch = "wasm32"))]
 static PROJECTS: OnceLock<Vec<Project>> = OnceLock::new();
 
 /// Return a reference to the cached project list, loading it on first call.
-#[cfg(not(target_arch = "wasm32"))]
 pub fn all_projects() -> &'static Vec<Project> {
     PROJECTS.get_or_init(load_all_projects)
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 fn load_all_projects() -> Vec<Project> {
     use std::fs;
     use std::path::PathBuf;

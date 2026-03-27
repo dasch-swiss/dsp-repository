@@ -49,4 +49,3 @@ Each API is a separate crate under `modules/dpe/`:
 
 - `web-e2e-tests/` for DPE Playwright tests (sibling of the app, not nested)
 - `playground-e2e-tests/` for Mosaic Playwright tests
-- Not `end2end/` (legacy name, will be renamed)

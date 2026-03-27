@@ -26,7 +26,7 @@ dpe/
 │                     # Depends on dpe-core for domain types
 ├── server/           # Server binary: route composition (crate: dpe-server, binary: dpe)
 │                     # Composes dpe-web (Leptos routes) + dpe-api-oai (API routes)
-├── end2end/          # Playwright E2E tests
+├── web-e2e-tests/    # Playwright E2E tests
 ├── public/           # Static assets
 └── style/            # CSS/Tailwind configuration
 ```

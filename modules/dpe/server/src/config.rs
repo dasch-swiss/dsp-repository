@@ -38,7 +38,7 @@ impl Default for DpeConfig {
 
 impl DpeConfig {
     /// Load configuration from defaults → dpe.toml → DPE_* env vars.
-    pub fn load() -> Result<Self, figment::Error> {
+    pub fn load() -> Result<Self, Box<figment::Error>> {
         Figment::new()
             .merge(Serialized::defaults(DpeConfig::default()))
             .merge(Toml::file("dpe.toml"))
@@ -46,6 +46,7 @@ impl DpeConfig {
             // Also respect the legacy DATA_DIR env var (used in Dockerfile)
             .merge(Env::raw().only(&["DATA_DIR"]).map(|_| "data_dir".into()))
             .extract()
+            .map_err(Box::new)
     }
 }
 

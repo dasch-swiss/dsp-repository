@@ -8,7 +8,7 @@ use crate::domain::{get_organization, get_person};
 
 #[component]
 fn EntityName(id: String) -> impl IntoView {
-    if id.contains("-person-") {
+    if id.starts_with("person-") || id.contains("-person-") {
         let fallback = id.clone();
         let resource = Resource::new(move || id.clone(), |id| async move { get_person(id).await });
         view! {
@@ -26,7 +26,7 @@ fn EntityName(id: String) -> impl IntoView {
             </Suspense>
         }
         .into_any()
-    } else if id.contains("-organization-") {
+    } else if id.starts_with("organization-") || id.contains("-organization-") {
         let fallback = id.clone();
         let resource = Resource::new(move || id.clone(), |id| async move { get_organization(id).await });
         view! {

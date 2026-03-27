@@ -1,5 +1,6 @@
 {
     "id": "cluster-003",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0801",
     "name": "Bernoulli-Euler Online (BEOL)",
     "description": {
         "en": "The project Bernoulli-Euler Online (BEOL) integrates edition projects related to the Bernoulli dynasty and Leonhard Euler into one digital platform. It combines the Euler-Goldbach and Condorcet-Turgot correspondence editions, Jacob Bernoulli's scientific notebook Meditationes, the Basler Edition der Bernoulli-Briefwechsel, and the digital edition of Jacob Bernoulli's Reisebüchlein.",

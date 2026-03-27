@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0807",
     "name": "Musiklexikon der Schweiz",
     "shortcode": "0807",
-    "officialName": "MISSING",
+    "officialName": "Musiklexikon der Schweiz",
     "status": "Ongoing",
     "shortDescription": "Das MLS stellt fundierte Information über die AkteurInnen, Institutionen, Orte, Objekte und Phänomene zur Verfügung, die für die Musikgeschichte Schweiz über alle Sparten und Stile relevant sind.",
     "description": {
@@ -27,7 +27,7 @@
                 "licenseDate": "2022-05-09",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "Musiklexikon der Schweiz",
             "authorship": [
                 "MISSING"
             ]

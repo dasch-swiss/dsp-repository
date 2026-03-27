@@ -7,7 +7,6 @@ use super::models::AuthorityFileReference;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Organization {
     pub id: String,
-    pub pid: String,
     pub name: String,
     #[serde(rename = "sameAs", default)]
     pub same_as: Vec<AuthorityFileReference>,

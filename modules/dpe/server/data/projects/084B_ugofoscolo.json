@@ -3,7 +3,7 @@
     "pid": "https://ark.dasch.swiss/ark:/72163/1/084B",
     "name": "L’epistolario di Ugo Foscolo: catalogo",
     "shortcode": "084B",
-    "officialName": "MISSING",
+    "officialName": "L’epistolario di Ugo Foscolo: catalogo",
     "status": "Ongoing",
     "shortDescription": "The catalogue of the Foscolo epistolary contains the data, metadata and images relating to the letters, documents, witnesses, holding institutions and editions of the letters.",
     "description": {
@@ -26,7 +26,7 @@
                 "licenseDate": "2025-07-08",
                 "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0"
             },
-            "copyrightHolder": "MISSING",
+            "copyrightHolder": "L’epistolario di Ugo Foscolo: catalogo",
             "authorship": [
                 "MISSING"
             ]

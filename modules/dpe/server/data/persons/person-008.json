@@ -1,6 +1,5 @@
 {
     "id": "person-008",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-008",
     "sameAs": [
         {
             "type": "ORCID",
@@ -20,7 +19,6 @@
         "Research Manager"
     ],
     "affiliations": [
-        "organization-001",
         "organization-001"
     ],
     "email": "marion.rivoal@unil.ch"

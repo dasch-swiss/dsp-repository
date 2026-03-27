@@ -1,6 +1,5 @@
 {
     "id": "person-073",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-073",
     "givenNames": [
         "Lukas"
     ],
@@ -13,8 +12,6 @@
         "Prof. Dr."
     ],
     "affiliations": [
-        "organization-036",
-        "organization-036",
         "organization-036"
     ]
 }

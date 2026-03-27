@@ -1,15 +1,12 @@
 {
     "id": "person-090",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-090",
     "givenNames": [
         "Sören"
     ],
     "familyNames": [
         "Schmeling"
     ],
-    "jobTitles": [
-        "MISSING"
-    ],
+    "jobTitles": [],
     "affiliations": [
         "organization-018"
     ]

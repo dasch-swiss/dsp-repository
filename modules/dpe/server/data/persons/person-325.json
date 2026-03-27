@@ -1,15 +1,12 @@
 {
     "id": "person-325",
-    "pid": "https://ark.dasch.swiss/ark:/72163/1/person-325",
     "givenNames": [
         "Elena"
     ],
     "familyNames": [
         "Brandazza"
     ],
-    "jobTitles": [
-        "MISSING"
-    ],
+    "jobTitles": [],
     "affiliations": [
         "organization-113"
     ]

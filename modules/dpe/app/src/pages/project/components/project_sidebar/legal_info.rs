@@ -120,10 +120,20 @@ pub fn ContactSection(ids: Vec<String>) -> impl IntoView {
             {ids
                 .into_iter()
                 .map(|id| {
-                    view! {
-                        <InfoCard>
-                            <Person person_id=id roles=None show_email=true />
-                        </InfoCard>
+                    if id.starts_with("organization-") || id.contains("-organization-") {
+                        view! {
+                            <InfoCard>
+                                <AffiliationName org_id=id />
+                            </InfoCard>
+                        }
+                        .into_any()
+                    } else {
+                        view! {
+                            <InfoCard>
+                                <Person person_id=id roles=None show_email=true />
+                            </InfoCard>
+                        }
+                        .into_any()
                     }
                 })
                 .collect_view()}

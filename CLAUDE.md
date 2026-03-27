@@ -16,7 +16,8 @@ This includes:
 
 - **Language**: Rust
 - **Web Server**: Axum HTTP server with Tokio runtime
-- **Web UI**: [Leptos](https://book.leptos.dev) with [islands](https://book.leptos.dev/islands.html) for MPA style server-side rendering
+- **Web UI**: [Leptos](https://book.leptos.dev) SSR for pages, [Datastar](https://data-star.dev/) for interactivity
+- **Interactivity**: Datastar SSE fragments (hypermedia-driven, no WASM for DPE)
 - **Styling**: Tailwind CSS
 - **Components**: mosaic-tiles component library
 - **Architecture**: Clean Architecture / Hexagonal Architecture
@@ -24,6 +25,8 @@ This includes:
 - **Data Layer**: Repository pattern; currently backed by static JSON files in `modules/dpe/server/data/`
 - **Testing**: Cargo test for unit/integration, Playwright for E2E
 - **Documentation**: mdBook with alerts plugin
+
+See `docs/src/dpe/architecture.md` for the full architecture description including the Datastar + Leptos SSR hybrid pattern, fragment route conventions, and HATEOAS tab pattern.
 
 ## Key Directories
 
@@ -138,8 +141,15 @@ Before considering ANY change as "done":
 
 - Clean separation between domain, business logic, and infrastructure
 - Single responsibility per crate
-- MPA style server-side rendering with Leptos islands for interactivity
+- MPA style server-side rendering with Datastar for interactivity (DPE)
 - Domain-driven design aligned with research data concepts
+- HATEOAS: server returns complete components, server pushes URLs
+- Graceful degradation: all interactive elements work without JavaScript
+
+## Conventions and Review
+
+- See `CONVENTIONS.md` for fragment route naming, Datastar attribute patterns, and test directory conventions
+- See `REVIEW.md` for the code review checklist
 
 ## Documentation Tone
 

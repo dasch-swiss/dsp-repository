@@ -594,6 +594,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7a1e2f27636f116493b8b860f5546edb47c8d8f8ea73e1d2a20be88e28d1fea"
 
 [[package]]
+name = "datastar"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0805c542838bb4c0769e26e1cdf70ff913e43e146b7e7563241fe95f32606643"
+dependencies = [
+ "axum",
+ "chrono",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "default-struct-builder"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3098,9 +3110,12 @@ dependencies = [
  "app",
  "axum",
  "chrono",
+ "datastar",
+ "futures",
  "leptos 0.8.14",
  "leptos_axum",
  "log",
+ "mosaic-tiles",
  "quick-xml",
  "serde",
  "serde_json",

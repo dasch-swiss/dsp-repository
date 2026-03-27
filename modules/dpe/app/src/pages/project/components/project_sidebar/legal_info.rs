@@ -2,6 +2,7 @@ use leptos::prelude::*;
 use mosaic_tiles::link::Link;
 
 use super::super::info_card::InfoCard;
+use super::super::person::AffiliationName;
 use super::super::person::Person;
 use crate::domain::project::LegalInfo as LegalInfoData;
 use crate::domain::{get_organization, get_person};

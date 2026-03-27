@@ -4,7 +4,7 @@
   "include-component-in-tag": true,
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
-  "group-pull-request-title-pattern": "chore(dpe): release",
+  "group-pull-request-title-pattern": "chore(dpe): release ${version}",
   "packages": {
     "modules/dpe/server": { "component": "server" },
     "modules/dpe/app": { "component": "app" },

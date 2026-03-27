@@ -58,7 +58,7 @@ opt-level = 'z'
 [[workspace.metadata.leptos]]
 name = "dpe"
 bin-package = "dpe-server"
-lib-package = "dpe-app"
+lib-package = "dpe-web"
 site-root = "modules/dpe/target/site"
 site-pkg-dir = "pkg"
 assets-dir = "modules/dpe/public"

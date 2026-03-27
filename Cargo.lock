@@ -625,7 +625,40 @@ dependencies = [
 ]
 
 [[package]]
-name = "dpe-app"
+name = "dpe-core"
+version = "0.1.2"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "dpe-server"
+version = "0.1.2"
+dependencies = [
+ "axum",
+ "chrono",
+ "datastar",
+ "dpe-core",
+ "dpe-web",
+ "futures",
+ "leptos 0.8.14",
+ "leptos_axum",
+ "log",
+ "mosaic-tiles",
+ "quick-xml",
+ "serde",
+ "serde_json",
+ "simple_logger",
+ "tempfile",
+ "tokio",
+ "tower",
+ "tower-http",
+ "urlencoding",
+]
+
+[[package]]
+name = "dpe-web"
 version = "0.1.2"
 dependencies = [
  "cfg-if",
@@ -644,39 +677,6 @@ dependencies = [
  "tracing",
  "urlencoding",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "dpe-core"
-version = "0.1.2"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "dpe-server"
-version = "0.1.2"
-dependencies = [
- "axum",
- "chrono",
- "datastar",
- "dpe-app",
- "dpe-core",
- "futures",
- "leptos 0.8.14",
- "leptos_axum",
- "log",
- "mosaic-tiles",
- "quick-xml",
- "serde",
- "serde_json",
- "simple_logger",
- "tempfile",
- "tokio",
- "tower",
- "tower-http",
- "urlencoding",
 ]
 
 [[package]]

@@ -5,9 +5,9 @@
 use std::borrow::Cow;
 use std::convert::Infallible;
 
-use dpe_app::domain::models::Page;
-use dpe_app::domain::{get_contributors, get_project, lang_value, list_projects, Project, ResolvedContributor};
-use dpe_app::pages::project::components::project_details_tabs::{
+use dpe_web::domain::models::Page;
+use dpe_web::domain::{get_contributors, get_project, lang_value, list_projects, Project, ResolvedContributor};
+use dpe_web::pages::project::components::project_details_tabs::{
     AttributionsSectionComponent, DatasetOverviewSectionComponent, PublicationTabComponent,
     TabLink,
 };

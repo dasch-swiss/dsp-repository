@@ -1,5 +1,5 @@
 [package]
-name = "dpe-app"
+name = "dpe-web"
 version = "0.1.2"
 edition = "2021"
 publish = false

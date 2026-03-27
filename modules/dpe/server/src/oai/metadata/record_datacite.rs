@@ -1,6 +1,6 @@
 //! Transformation of Records into DataCite 4.6 metadata.
 
-use dpe_app::domain::Record;
+use dpe_web::domain::Record;
 
 use super::helpers::{extract_year, get_multilingual_value, license_identifier_to_label};
 use super::types::{DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteRecord, DataCiteRelatedIdentifier, DataCiteRights, DataCiteTitle};
@@ -122,7 +122,7 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
 
-    use dpe_app::domain::{Pid, RecordLegalInfo, RecordLicense};
+    use dpe_web::domain::{Pid, RecordLegalInfo, RecordLicense};
 
     fn test_record() -> Record {
         Record {

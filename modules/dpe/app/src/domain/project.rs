@@ -1,98 +1,15 @@
-use leptos::prelude::*;
+// Domain types (Project, ProjectRaw, etc.) are now in dpe-core.
+// This file retains only ProjectQuery which requires the Leptos Params derive.
+
+pub use dpe_core::project::{
+    AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License,
+    Project, ProjectRaw, ProjectStatus, Publication, TemporalCoverage, ACCESS_RIGHTS_VALUES,
+};
+
 use leptos_router::params::Params;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
-use super::cluster::ClusterRef;
-use super::collection::CollectionRef;
-use super::models::AuthorityFileReference;
-
-fn make_ref(url: String) -> AuthorityFileReference {
-    AuthorityFileReference { type_: "URL".to_string(), url, text: None }
-}
-
-/// Parses the `"url"` JSON value — either a structured object (new format)
-/// or a legacy string array — into primary and secondary references.
-fn parse_url_value(value: Option<Value>) -> (Option<AuthorityFileReference>, Option<AuthorityFileReference>) {
-    match value {
-        Some(Value::Object(_)) => (serde_json::from_value::<AuthorityFileReference>(value.unwrap()).ok(), None),
-        Some(Value::Array(arr)) => {
-            let mut strings = arr.into_iter().filter_map(|v| v.as_str().map(str::to_string));
-            (strings.next().map(make_ref), strings.next().map(make_ref))
-        }
-        _ => (None, None),
-    }
-}
-
-#[derive(Deserialize)]
-pub(super) struct ProjectRaw {
-    pub id: String,
-    pub pid: String,
-    pub name: String,
-    pub shortcode: String,
-    #[serde(rename = "officialName")]
-    pub official_name: String,
-    pub status: ProjectStatus,
-    #[serde(rename = "shortDescription")]
-    pub short_description: String,
-    pub description: std::collections::HashMap<String, String>,
-    #[serde(rename = "startDate")]
-    pub start_date: String,
-    #[serde(rename = "endDate")]
-    pub end_date: String,
-    /// Raw value — either a structured object or a legacy string array.
-    #[serde(default)]
-    pub url: Option<Value>,
-    /// New-format secondary URL (absent in legacy files).
-    #[serde(rename = "secondaryURL", default)]
-    pub secondary_url: Option<AuthorityFileReference>,
-    #[serde(rename = "howToCite")]
-    pub how_to_cite: String,
-    #[serde(rename = "accessRights")]
-    pub access_rights: AccessRights,
-    #[serde(rename = "legalInfo")]
-    pub legal_info: Vec<LegalInfo>,
-    #[serde(rename = "dataManagementPlan", default)]
-    pub data_management_plan: Option<String>,
-    #[serde(rename = "dataPublicationYear", default)]
-    pub data_publication_year: Option<String>,
-    #[serde(rename = "typeOfData", default)]
-    pub type_of_data: Option<Vec<String>>,
-    #[serde(rename = "dataLanguage", default)]
-    pub data_language: Option<Vec<std::collections::HashMap<String, String>>>,
-    #[serde(default)]
-    #[allow(dead_code)]
-    pub clusters: Option<Vec<String>>,
-    #[serde(default)]
-    #[allow(dead_code)]
-    pub collections: Option<Vec<String>>,
-    #[serde(default)]
-    pub records: Option<Vec<String>>,
-    pub keywords: Vec<std::collections::HashMap<String, String>>,
-    pub disciplines: Vec<Discipline>,
-    #[serde(rename = "temporalCoverage")]
-    pub temporal_coverage: Vec<TemporalCoverage>,
-    #[serde(rename = "spatialCoverage")]
-    pub spatial_coverage: Vec<AuthorityFileReference>,
-    pub attributions: Vec<Attribution>,
-    #[serde(rename = "abstract", default)]
-    pub abstract_text: Option<std::collections::HashMap<String, String>>,
-    #[serde(rename = "contactPoint", default)]
-    pub contact_point: Option<Vec<String>>,
-    #[serde(default)]
-    pub publications: Option<Vec<Publication>>,
-    pub funding: Funding,
-    #[serde(rename = "alternativeNames", default)]
-    pub alternative_names: Option<Vec<std::collections::HashMap<String, String>>>,
-    #[serde(rename = "documentationMaterial", default)]
-    pub documentation_material: Option<Vec<String>>,
-    #[serde(default)]
-    pub provenance: Option<String>,
-    #[serde(rename = "additionalMaterial", default)]
-    pub additional_material: Option<Vec<String>>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Params, PartialEq, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, leptos::Params, PartialEq, Default)]
 pub struct ProjectQuery {
     pub ongoing: Option<bool>,
     pub finished: Option<bool>,
@@ -103,13 +20,6 @@ pub struct ProjectQuery {
     pub access_rights: Option<String>,
     pub dialog: Option<bool>,
 }
-
-pub const ACCESS_RIGHTS_VALUES: &[&str] = &[
-    "Full Open Access",
-    "Open Access with Restrictions",
-    "Embargoed Access",
-    "Metadata only Access",
-];
 
 impl ProjectQuery {
     pub fn ongoing(&self) -> bool {
@@ -209,11 +119,7 @@ impl ProjectQuery {
             finished: self.finished,
             search: self.search.clone(),
             page: Some(1),
-            type_of_data: if selected.is_empty() {
-                None
-            } else {
-                Some(selected.join(","))
-            },
+            type_of_data: if selected.is_empty() { None } else { Some(selected.join(",")) },
             data_language: self.data_language.clone(),
             access_rights: self.access_rights.clone(),
             dialog: self.dialog,
@@ -234,11 +140,7 @@ impl ProjectQuery {
             search: self.search.clone(),
             page: Some(1),
             type_of_data: self.type_of_data.clone(),
-            data_language: if selected.is_empty() {
-                None
-            } else {
-                Some(selected.join(","))
-            },
+            data_language: if selected.is_empty() { None } else { Some(selected.join(",")) },
             access_rights: self.access_rights.clone(),
             dialog: self.dialog,
         }
@@ -259,11 +161,7 @@ impl ProjectQuery {
             page: Some(1),
             type_of_data: self.type_of_data.clone(),
             data_language: self.data_language.clone(),
-            access_rights: if selected.is_empty() {
-                None
-            } else {
-                Some(selected.join(","))
-            },
+            access_rights: if selected.is_empty() { None } else { Some(selected.join(",")) },
             dialog: self.dialog,
         }
     }
@@ -317,206 +215,4 @@ impl ProjectQuery {
             format!("?{}", parts.join("&"))
         }
     }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub enum ProjectStatus {
-    Ongoing,
-    Finished,
-}
-
-impl ProjectStatus {
-    pub fn is_ongoing(&self) -> bool {
-        *self == ProjectStatus::Ongoing
-    }
-
-    pub fn is_finished(&self) -> bool {
-        *self == ProjectStatus::Finished
-    }
-
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            ProjectStatus::Ongoing => "ongoing",
-            ProjectStatus::Finished => "finished",
-        }
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub enum AccessRightsType {
-    #[serde(rename = "Full Open Access")]
-    FullOpenAccess,
-    #[serde(rename = "Open Access with Restrictions")]
-    OpenAccessWithRestrictions,
-    #[serde(rename = "Embargoed Access")]
-    EmbargoedAccess,
-    #[serde(rename = "Metadata only Access")]
-    MetadataOnlyAccess,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Project {
-    pub id: String,
-    pub pid: String,
-    pub name: String,
-    pub shortcode: String,
-    pub official_name: String,
-    pub status: ProjectStatus,
-    pub short_description: String,
-    pub description: std::collections::HashMap<String, String>,
-    pub start_date: String,
-    pub end_date: String,
-    pub url: Option<AuthorityFileReference>,
-    pub secondary_url: Option<AuthorityFileReference>,
-    pub how_to_cite: String,
-    pub access_rights: AccessRights,
-    pub legal_info: Vec<LegalInfo>,
-    pub data_management_plan: Option<String>,
-    pub data_publication_year: Option<String>,
-    pub type_of_data: Option<Vec<String>>,
-    pub data_language: Option<Vec<std::collections::HashMap<String, String>>>,
-    pub clusters: Vec<ClusterRef>,
-    pub collections: Vec<CollectionRef>,
-    /// Raw collection IDs from JSON, used to resolve `collections` on demand.
-    pub collection_ids: Vec<String>,
-    pub records: Option<Vec<String>>,
-    pub keywords: Vec<std::collections::HashMap<String, String>>,
-    pub disciplines: Vec<Discipline>,
-    pub temporal_coverage: Vec<TemporalCoverage>,
-    pub spatial_coverage: Vec<AuthorityFileReference>,
-    pub attributions: Vec<Attribution>,
-    pub abstract_text: Option<std::collections::HashMap<String, String>>,
-    pub contact_point: Option<Vec<String>>,
-    pub publications: Option<Vec<Publication>>,
-    pub funding: Funding,
-    pub alternative_names: Option<Vec<std::collections::HashMap<String, String>>>,
-    pub documentation_material: Option<Vec<String>>,
-    pub provenance: Option<String>,
-    pub additional_material: Option<Vec<String>>,
-}
-
-impl From<ProjectRaw> for Project {
-    fn from(raw: ProjectRaw) -> Self {
-        let (url, secondary_url_from_array) = parse_url_value(raw.url);
-        // New-format files have `secondaryURL` as a separate key; legacy files encode
-        // it as the second element of the `url` array.
-        let secondary_url = raw.secondary_url.or(secondary_url_from_array);
-        Project {
-            id: raw.id,
-            pid: raw.pid,
-            name: raw.name,
-            shortcode: raw.shortcode,
-            official_name: raw.official_name,
-            status: raw.status,
-            short_description: raw.short_description,
-            description: raw.description,
-            start_date: raw.start_date,
-            end_date: raw.end_date,
-            url,
-            secondary_url,
-            how_to_cite: raw.how_to_cite,
-            access_rights: raw.access_rights,
-            legal_info: raw.legal_info,
-            data_management_plan: raw.data_management_plan,
-            data_publication_year: raw.data_publication_year,
-            type_of_data: raw.type_of_data,
-            data_language: raw.data_language,
-            clusters: Vec::new(),
-            collections: Vec::new(),
-            collection_ids: raw.collections.unwrap_or_default(),
-            records: raw.records,
-            keywords: raw.keywords,
-            disciplines: raw.disciplines,
-            temporal_coverage: raw.temporal_coverage,
-            spatial_coverage: raw.spatial_coverage,
-            attributions: raw.attributions,
-            abstract_text: raw.abstract_text,
-            contact_point: raw.contact_point,
-            publications: raw.publications,
-            funding: raw.funding,
-            alternative_names: raw.alternative_names,
-            documentation_material: raw.documentation_material,
-            provenance: raw.provenance,
-            additional_material: raw.additional_material,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum TemporalCoverage {
-    Reference(AuthorityFileReference),
-    Text(std::collections::HashMap<String, String>),
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum Discipline {
-    Reference(AuthorityFileReference),
-    Text(std::collections::HashMap<String, String>),
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum Funding {
-    Grants(Vec<Grant>),
-    Text(String),
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AccessRights {
-    #[serde(rename = "accessRights")]
-    pub access_rights: AccessRightsType,
-    #[serde(rename = "embargoDate", default)]
-    pub embargo_date: Option<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct LegalInfo {
-    pub license: License,
-    #[serde(rename = "copyrightHolder")]
-    pub copyright_holder: String,
-    pub authorship: Vec<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct License {
-    #[serde(rename = "licenseIdentifier")]
-    pub license_identifier: String,
-    #[serde(rename = "licenseDate")]
-    pub license_date: String,
-    #[serde(rename = "licenseURI")]
-    pub license_uri: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Attribution {
-    pub contributor: String,
-    #[serde(rename = "contributorType")]
-    pub contributor_type: Vec<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Publication {
-    pub text: String,
-    #[serde(default)]
-    pub pid: Option<Pid>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Pid {
-    pub url: String,
-    #[serde(default)]
-    pub text: Option<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Grant {
-    pub funders: Vec<String>,
-    #[serde(default)]
-    pub number: Option<String>,
-    #[serde(default)]
-    pub name: Option<String>,
-    #[serde(default)]
-    pub url: Option<String>,
 }

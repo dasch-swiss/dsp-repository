@@ -7,17 +7,17 @@ pub trait ProjectRepository {
 }
 
 /// Production implementation of [`ProjectRepository`] backed by the in-process cache.
-#[cfg(feature = "ssr")]
+#[cfg(not(target_arch = "wasm32"))]
 pub struct FsProjectRepository;
 
-#[cfg(feature = "ssr")]
+#[cfg(not(target_arch = "wasm32"))]
 impl FsProjectRepository {
     pub fn new(_data_dir: String) -> Self {
         Self
     }
 }
 
-#[cfg(feature = "ssr")]
+#[cfg(not(target_arch = "wasm32"))]
 impl ProjectRepository for FsProjectRepository {
     fn get_all(&self) -> Vec<Project> {
         super::project_cache::all_projects().to_vec()

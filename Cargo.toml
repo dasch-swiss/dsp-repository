@@ -4,7 +4,6 @@ members = [
   "modules/mosaic/demo_macro",
   "modules/mosaic/tiles",
   "modules/dpe/app",
-  "modules/dpe/frontend",
   "modules/dpe/server",
 ]
 resolver = "3"
@@ -48,14 +47,6 @@ thiserror = "2.0.12"
 quick-xml = "0.37"
 chrono = { version = "0.4" }
 
-# Defines a size-optimized profile for the WASM bundle in release mode
-[profile.wasm-release]
-inherits = "release"
-opt-level = 'z'
-lto = true
-codegen-units = 1
-panic = "abort"
-
 # Build profiles
 [profile.release]
 codegen-units = 1
@@ -66,7 +57,7 @@ opt-level = 'z'
 [[workspace.metadata.leptos]]
 name = "dpe"
 bin-package = "server"
-lib-package = "frontend"
+lib-package = "app"
 site-root = "modules/dpe/target/site"
 site-pkg-dir = "pkg"
 assets-dir = "modules/dpe/public"
@@ -82,4 +73,3 @@ bin-default-features = false
 lib-features = []
 lib-default-features = false
 tailwind-input-file = "modules/dpe/style/main.css"
-lib-profile-release = "wasm-release"

@@ -2,20 +2,24 @@
 ///
 /// Each handler renders a Leptos component to an HTML string and returns it
 /// as an SSE stream with Datastar events (PatchElements + ExecuteScript).
+use std::borrow::Cow;
 use std::convert::Infallible;
 
-use app::domain::{get_contributors, get_project, lang_value, Project, ResolvedContributor};
+use app::domain::models::Page;
+use app::domain::{get_contributors, get_project, lang_value, list_projects, Project, ResolvedContributor};
 use app::pages::project::components::project_details_tabs::{
     AttributionsSectionComponent, DatasetOverviewSectionComponent, PublicationTabComponent,
+    TabLink,
 };
 use axum::extract::Path;
 use axum::response::sse::{Event, Sse};
 use axum::response::IntoResponse;
+use datastar::axum::ReadSignals;
 use datastar::prelude::{ExecuteScript, PatchElements};
 use futures::stream::{self, Stream};
 use axum::http::StatusCode;
 use leptos::prelude::*;
-use mosaic_tiles::icon::{Document, Info, People};
+use mosaic_tiles::icon::{Document, IconSearch, Info, People};
 use serde::Deserialize;
 
 const VALID_TABS: &[&str] = &["overview", "publications", "contributors"];
@@ -64,6 +68,9 @@ pub async fn tab_fragment_handler(
 
     // Render the full tab component (tab bar + panel) to HTML
     let html = render_project_tabs(&project, &contributors, &tab, has_publications_tab);
+
+    // Strip Leptos hot-reload comments that interfere with Datastar morphing
+    let html = strip_hot_reload_comments(&html);
 
     // Build SSE events
     let patch = PatchElements::new(html)
@@ -121,25 +128,26 @@ fn render_project_tabs(
                 aria-label="Project details"
                 data-on:datastar-fetch="(evt.detail.type === 'error' || evt.detail.type === 'retries-failed') && evt.detail.el.closest('#project-tabs') && (window.location.href = evt.detail.el.getAttribute('href'))"
             >
-                <FragmentTabLink
+                <TabLink
                     value="overview"
                     active_tab=active_tab.clone()
                     icon=Info
                     label="Overview"
                     shortcode=shortcode.clone()
                 />
-                {has_publications_tab.then(|| {
-                    view! {
-                        <FragmentTabLink
-                            value="publications"
-                            active_tab=active_tab.clone()
-                            icon=Document
-                            label="Publications"
-                            shortcode=shortcode.clone()
-                        />
-                    }
-                })}
-                <FragmentTabLink
+                {has_publications_tab
+                    .then(|| {
+                        view! {
+                            <TabLink
+                                value="publications"
+                                active_tab=active_tab.clone()
+                                icon=Document
+                                label="Publications"
+                                shortcode=shortcode.clone()
+                            />
+                        }
+                    })}
+                <TabLink
                     value="contributors"
                     active_tab=active_tab.clone()
                     icon=People
@@ -156,29 +164,24 @@ fn render_project_tabs(
                 >
                     {match active_tab.as_str() {
                         "publications" if has_publications_tab => {
-                            let abstract_en = project.abstract_text.as_ref().and_then(|m| lang_value(m).cloned());
+                            let abstract_en = project
+                                .abstract_text
+                                .as_ref()
+                                .and_then(|m| lang_value(m).cloned());
                             let publications = project.publications.clone();
                             view! {
                                 <PublicationTabComponent
                                     abstract_en=abstract_en
                                     publications=publications
                                 />
-                            }.into_any()
+                            }
+                                .into_any()
                         }
                         "contributors" => {
-                            view! {
-                                <AttributionsSectionComponent
-                                    contributors=contributors
-                                />
-                            }.into_any()
+                            view! { <AttributionsSectionComponent contributors=contributors /> }
+                                .into_any()
                         }
-                        _ => {
-                            view! {
-                                <DatasetOverviewSectionComponent
-                                    proj=project
-                                />
-                            }.into_any()
-                        }
+                        _ => view! { <DatasetOverviewSectionComponent proj=project /> }.into_any(),
                     }}
                 </div>
             </div>
@@ -187,47 +190,122 @@ fn render_project_tabs(
     })
 }
 
-/// Tab link component for fragment rendering (with Datastar attributes).
+
+// --- Search Fragment Handler ---
+
+#[derive(Deserialize)]
+pub struct SearchSignals {
+    pub search: String,
+}
+
+/// SSE fragment handler for project search autocomplete.
 ///
-/// Unlike the original TabLink in the app crate, this version includes
-/// Datastar `data-on:click__prevent` for SSE-driven tab switching and
-/// the project shortcode for building the fragment URL.
-#[component]
-fn FragmentTabLink(
-    value: &'static str,
-    active_tab: String,
-    icon: mosaic_tiles::icon::IconData,
-    label: &'static str,
-    shortcode: String,
-) -> impl IntoView {
-    let is_active = active_tab == value;
-    let class = if is_active {
-        "tab-label !text-primary-600 !border-primary-600"
+/// Returns search results as a Datastar PatchElements event targeting
+/// `#search-results`. Called by the `data-on:input__debounce` on the
+/// search input.
+pub async fn search_fragment_handler(
+    ReadSignals(signals): ReadSignals<SearchSignals>,
+) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, StatusCode> {
+    let search = signals.search.trim().to_string();
+
+    let results = if search.is_empty() {
+        Page { items: vec![], nr_pages: 0, total_items: 0 }
     } else {
-        "tab-label"
+        list_projects(
+            None,                     // status
+            None,                     // ongoing
+            Some(search.clone()),     // search
+            None,                     // type_of_data
+            Some(5),                  // page_size
+            None,                     // page
+            None,                     // data_language
+            None,                     // access_rights
+        )
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     };
 
-    view! {
-        <a
-            href=format!("/projects/{}?tab={}", shortcode, value)
-            role="tab"
-            id=format!("tab-{value}")
-            aria-selected=is_active.to_string()
-            aria-controls="tab-panel"
-            tabindex=if is_active { "0" } else { "-1" }
-            data-on:click__prevent=format!("@get('/projects/{}/tab/{}', {{retry: 'never'}})", shortcode, value)
-            class=class
-        >
-            <svg
-                class="tab-icon"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox=icon.view_box
-                fill="currentColor"
-                inner_html=icon.data
-            ></svg>
-            <span>{label}</span>
-        </a>
+    let html = render_search_results(&search, &results);
+    let html = strip_hot_reload_comments(&html);
+
+    let patch = PatchElements::new(html)
+        .selector("#search-results")
+        .mode(datastar::prelude::ElementPatchMode::Inner);
+
+    let stream = stream::iter(vec![Ok::<_, Infallible>(patch.into())]);
+    Ok(Sse::new(stream))
+}
+
+/// Render search results dropdown content.
+fn render_search_results(query: &str, results: &Page) -> String {
+    let query = query.to_string();
+    let items = results.items.clone();
+    let total_items = results.total_items;
+    let encoded_query = urlencoding::encode(&query).to_string();
+
+    let owner = Owner::new();
+    owner.with(|| {
+        if items.is_empty() {
+            view! { <p class="text-sm text-base-content/60 px-2 py-1">"No results"</p> }
+            .to_html()
+        } else {
+            view! {
+                <ul>
+                    {items
+                        .iter()
+                        .map(|p| {
+                            let shortcode = p.shortcode.clone();
+                            let name = p.name.clone();
+                            let desc = p.short_description.clone();
+                            view! {
+                                <li>
+                                    <a
+                                        href=format!("/projects/{}", shortcode)
+                                        class="block px-4 py-3 hover:bg-base-200 transition-colors text-sm"
+                                    >
+                                        <div class="font-medium text-base-content">{name}</div>
+                                        <div class="text-sm text-base-content/60 truncate mt-0.5">
+                                            {desc}
+                                        </div>
+                                    </a>
+                                </li>
+                            }
+                        })
+                        .collect_view()}
+                </ul>
+                <div class="border-t border-base-300 mt-1 pt-1">
+                    <a
+                        href=format!("/projects?search={}", encoded_query)
+                        class="flex items-center gap-2 px-2 py-1 hover:bg-base-200 rounded text-sm text-base-content/70"
+                    >
+                        <mosaic_tiles::icon::Icon icon=IconSearch class="w-4 h-4" />
+                        {format!("Search for \"{query}\" ({total_items} results)")}
+                    </a>
+                </div>
+            }
+            .to_html()
+        }
+    })
+}
+
+/// Strip Leptos hot-reload HTML comments that interfere with Datastar morphing.
+///
+/// In dev mode, Leptos wraps component output in `<!--hot-reload|...|open-->` and
+/// `<!--hot-reload|...|close-->` comments. These confuse Datastar's morph algorithm
+/// because the fragment's root node becomes a comment instead of the target element.
+fn strip_hot_reload_comments(html: &str) -> Cow<'_, str> {
+    if !html.contains("<!--hot-reload") {
+        return Cow::Borrowed(html);
     }
+    let mut result = html.to_string();
+    while let Some(start) = result.find("<!--hot-reload") {
+        if let Some(end) = result[start..].find("-->") {
+            result.replace_range(start..start + end + 3, "");
+        } else {
+            break;
+        }
+    }
+    Cow::Owned(result)
 }
 
 #[cfg(test)]
@@ -277,9 +355,7 @@ mod tests {
 
         let owner = Owner::new();
         let html = owner.with(|| {
-            view! {
-                <TestTabPanel active_tab="overview".to_string() project_name="Test Project".to_string() />
-            }
+            view! { <TestTabPanel active_tab="overview".to_string() project_name="Test Project".to_string() /> }
             .to_html()
         });
 

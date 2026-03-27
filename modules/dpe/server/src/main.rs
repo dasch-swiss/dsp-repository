@@ -1,7 +1,10 @@
 use dpe_web::*;
-use axum::{routing::get, Router};
+use axum::http::StatusCode;
+use axum::routing::get;
+use axum::Router;
 use leptos::prelude::*;
 use leptos_axum::{generate_route_list, LeptosRoutes};
+use tower_http::trace::TraceLayer;
 
 mod config;
 mod fragments;
@@ -38,6 +41,8 @@ async fn main() {
     let routes = generate_route_list(App);
 
     let app = Router::new()
+        // Health check — lightweight probe for Traefik/load balancers
+        .route("/healthz", get(|| async { StatusCode::OK }))
         // OAI-PMH 2.0 endpoint (from dpe-api-oai crate)
         .route("/oai", get(dpe_api_oai::oai_handler))
         // Datastar SSE fragment endpoints
@@ -48,6 +53,7 @@ async fn main() {
             move || shell(leptos_options.clone())
         })
         .fallback(leptos_axum::file_and_error_handler(shell))
+        .layer(TraceLayer::new_for_http())
         .with_state(leptos_options);
 
     tracing::info!("listening on http://{}", &addr);

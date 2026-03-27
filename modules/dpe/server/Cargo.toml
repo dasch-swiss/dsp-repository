@@ -4,10 +4,6 @@ version = "0.1.2"
 edition = "2021"
 publish = false
 
-[[bin]]
-name = "dpe"
-path = "src/main.rs"
-
 [dependencies]
 dpe-api-oai = { path = "../api-oai" }
 dpe-web = { path = "../app", default-features = false, features = ["ssr"] }

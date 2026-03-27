@@ -55,7 +55,7 @@ RUN useradd -m -u 1001 leptos
 WORKDIR /app
 
 # Copy the server binary from the builder stage
-COPY --from=builder /app/target/release/dpe /app/dpe
+COPY --from=builder /app/target/release/dpe-server /app/dpe-server
 
 # Copy the site directory (contains WASM, JS, CSS, and static assets)
 COPY --from=builder /app/modules/dpe/target/site /app/site
@@ -81,4 +81,4 @@ ENV DATA_DIR="/app/server/data"
 EXPOSE 8080
 
 # Run the server
-CMD ["./dpe"]
+CMD ["./dpe-server"]

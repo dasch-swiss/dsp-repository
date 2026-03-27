@@ -21,6 +21,7 @@ async fn main() {
         .route("/oai", get(oai::oai_handler))
         // Datastar SSE fragment endpoints
         .route("/projects/{id}/tab/{tab}", get(fragments::tab_fragment_handler))
+        .route("/projects/search", get(fragments::search_fragment_handler))
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();
             move || shell(leptos_options.clone())

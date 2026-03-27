@@ -17,6 +17,7 @@ pub use attributions_section::AttributionsSection as AttributionsSectionComponen
 pub use dataset_overview_section::DatasetOverviewSection as DatasetOverviewSectionComponent;
 pub use publication_tab::PublicationTab as PublicationTabComponent;
 
+
 #[component]
 pub fn ProjectDetailsTabs(
     proj: Project,
@@ -102,7 +103,7 @@ pub fn ProjectDetailsTabs(
 }
 
 #[component]
-fn TabLink(
+pub fn TabLink(
     value: &'static str,
     active_tab: String,
     icon: IconData,
@@ -119,6 +120,7 @@ fn TabLink(
     view! {
         <a
             href=format!("/projects/{}?tab={}", shortcode, value)
+            rel="external"
             role="tab"
             id=format!("tab-{value}")
             aria-selected=is_active.to_string()

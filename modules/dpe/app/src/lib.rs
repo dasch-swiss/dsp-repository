@@ -27,18 +27,16 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                     href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap"
                 />
                 <AutoReload options=options.clone() />
-                <HydrationScripts options islands=true />
+                <MetaTags />
+            </head>
+            <body class="font-body">
+                <App />
                 <script
                     type="module"
                     src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
                     integrity="sha384-l31DqEvDq6UMs2jK/XNO8hHjWNkHvwcU4xr3h2Sq+w0zH0lvnL4WYwpPUXiKa1Z7"
                     crossorigin="anonymous"
-                    defer
                 ></script>
-                <MetaTags />
-            </head>
-            <body class="font-body">
-                <App />
             </body>
         </html>
     }

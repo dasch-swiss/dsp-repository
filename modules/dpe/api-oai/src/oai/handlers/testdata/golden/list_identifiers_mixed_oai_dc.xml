@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+  <request verb="ListIdentifiers" metadataPrefix="oai_dc">https://meta.dasch.swiss/oai</request>
+  <ListIdentifiers>
+    <header>
+      <identifier>oai:meta.dasch.swiss:ark:/72163/1/0803</identifier>
+      <datestamp>2008-06-01</datestamp>
+      <setSpec>entityType:ResearchProject</setSpec>
+    </header>
+    <header>
+      <identifier>oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</identifier>
+      <datestamp>2012-06-19T14:33:33Z</datestamp>
+      <setSpec>entityType:Record</setSpec>
+    </header>
+  </ListIdentifiers>
+</OAI-PMH>

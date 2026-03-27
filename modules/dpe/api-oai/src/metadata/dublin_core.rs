@@ -1,6 +1,6 @@
 //! Transformation of Research Projects into Dublin Core metadata.
 
-use dpe_web::domain::{Discipline, Project, TemporalCoverage};
+use dpe_core::{Discipline, Project, TemporalCoverage};
 
 use super::helpers::{access_rights_to_string, get_multilingual_value, is_creator};
 use super::make_oai_identifier;

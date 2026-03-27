@@ -1,11 +1,11 @@
 //! Handler for the OAI-PMH ListMetadataFormats verb.
 
-use dpe_web::domain::ProjectRepository;
+use dpe_core::ProjectRepository;
 
 use super::{build_error_response, OaiParams};
-use crate::oai::error::OaiError;
-use crate::oai::metadata::parse_oai_identifier;
-use crate::oai::xml::OaiXmlBuilder;
+use crate::error::OaiError;
+use crate::metadata::parse_oai_identifier;
+use crate::xml::OaiXmlBuilder;
 
 /// Handles the ListMetadataFormats verb.
 pub fn handle_list_metadata_formats(params: &OaiParams, repo: &dyn ProjectRepository) -> String {
@@ -98,6 +98,6 @@ mod tests {
         let params = make_params(None);
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_metadata_formats(&params, &repo);
-        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+        crate::handlers::test_utils::validate_against_schema(&xml);
     }
 }

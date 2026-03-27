@@ -625,6 +625,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "dpe-api-oai"
+version = "0.1.2"
+dependencies = [
+ "axum",
+ "chrono",
+ "dpe-core",
+ "quick-xml",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "dpe-core"
 version = "0.1.2"
 dependencies = [
@@ -637,20 +650,17 @@ name = "dpe-server"
 version = "0.1.2"
 dependencies = [
  "axum",
- "chrono",
  "datastar",
- "dpe-core",
+ "dpe-api-oai",
  "dpe-web",
  "futures",
  "leptos 0.8.14",
  "leptos_axum",
  "log",
  "mosaic-tiles",
- "quick-xml",
  "serde",
  "serde_json",
  "simple_logger",
- "tempfile",
  "tokio",
  "tower",
  "tower-http",

@@ -1,8 +1,8 @@
 //! Handler for the OAI-PMH ListSets verb.
 
 use super::{build_error_response, OaiParams};
-use crate::oai::error::OaiError;
-use crate::oai::xml::OaiXmlBuilder;
+use crate::error::OaiError;
+use crate::xml::OaiXmlBuilder;
 
 /// Handles the ListSets verb.
 pub fn handle_list_sets(params: &OaiParams) -> String {
@@ -83,6 +83,6 @@ mod tests {
     fn list_sets_response_is_valid_oai_pmh() {
         let params = make_params();
         let xml = handle_list_sets(&params);
-        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+        crate::handlers::test_utils::validate_against_schema(&xml);
     }
 }

@@ -1,9 +1,9 @@
 //! Handler for the OAI-PMH ListRecords verb.
 
-use dpe_web::domain::{ProjectRepository, RecordRepository};
+use dpe_core::{ProjectRepository, RecordRepository};
 
 use super::{build_error_response, build_list_request_params, validate_list_params, OaiParams};
-use crate::oai::xml::OaiXmlBuilder;
+use crate::xml::OaiXmlBuilder;
 
 /// Handles the ListRecords verb.
 pub fn handle_list_records(
@@ -170,7 +170,7 @@ mod tests {
         let params = make_params(Some("oai_dc"));
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(&params, &repo, &InMemoryRecordRepository::empty());
-        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+        crate::handlers::test_utils::validate_against_schema(&xml);
     }
 
     #[test]
@@ -178,7 +178,7 @@ mod tests {
         let params = make_params(Some("oai_datacite"));
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_records(&params, &repo, &InMemoryRecordRepository::empty());
-        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+        crate::handlers::test_utils::validate_against_schema(&xml);
     }
 
     #[test]
@@ -187,7 +187,7 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
         let xml = handle_list_records(&params, &repo, &record_repo);
-        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+        crate::handlers::test_utils::validate_against_schema(&xml);
     }
 
     #[test]
@@ -196,6 +196,6 @@ mod tests {
         params.set = Some("entityType:Record".to_string());
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
         let xml = handle_list_records(&params, &InMemoryProjectRepository::new(vec![]), &record_repo);
-        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+        crate::handlers::test_utils::validate_against_schema(&xml);
     }
 }

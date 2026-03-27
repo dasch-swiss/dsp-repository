@@ -1,11 +1,11 @@
 //! Handler for the OAI-PMH GetRecord verb.
 
-use dpe_web::domain::{Project, ProjectRepository, Record, RecordRepository};
+use dpe_core::{Project, ProjectRepository, Record, RecordRepository};
 
 use super::{build_error_response, OaiParams, SUPPORTED_PREFIXES};
-use crate::oai::error::OaiError;
-use crate::oai::metadata::{parse_oai_identifier, to_oai_record, to_oai_record_from_record, OaiRecord};
-use crate::oai::xml::OaiXmlBuilder;
+use crate::error::OaiError;
+use crate::metadata::{parse_oai_identifier, to_oai_record, to_oai_record_from_record, OaiRecord};
+use crate::xml::OaiXmlBuilder;
 
 /// Handles the GetRecord verb.
 pub fn handle_get_record(
@@ -95,10 +95,10 @@ mod tests {
     use super::super::test_utils::{
         golden, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository,
     };
-    use dpe_web::domain::Record;
+    use dpe_core::Record;
 
     fn first_0803_record() -> Record {
-        let json = include_str!("../../../data/records/0803-records.json");
+        let json = include_str!("../../../server/data/records/0803-records.json");
         let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0803-records.json");
         record
     }
@@ -216,14 +216,14 @@ mod tests {
     fn get_record_oai_dc_response_is_valid_oai_pmh() {
         let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("oai_dc"));
         let xml = handle_get_record(&params, &repo_with_incunabula(), &InMemoryRecordRepository::empty());
-        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+        crate::handlers::test_utils::validate_against_schema(&xml);
     }
 
     #[test]
     fn get_record_oai_datacite_response_is_valid_oai_pmh() {
         let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("oai_datacite"));
         let xml = handle_get_record(&params, &repo_with_incunabula(), &InMemoryRecordRepository::empty());
-        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+        crate::handlers::test_utils::validate_against_schema(&xml);
     }
 
     #[test]
@@ -233,7 +233,7 @@ mod tests {
             Some("oai_dc"),
         );
         let xml = handle_get_record(&params, &InMemoryProjectRepository::new(vec![]), &repo_with_record());
-        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+        crate::handlers::test_utils::validate_against_schema(&xml);
     }
 
     #[test]
@@ -243,6 +243,6 @@ mod tests {
             Some("oai_datacite"),
         );
         let xml = handle_get_record(&params, &InMemoryProjectRepository::new(vec![]), &repo_with_record());
-        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+        crate::handlers::test_utils::validate_against_schema(&xml);
     }
 }

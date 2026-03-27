@@ -50,7 +50,7 @@ build:
 
 # Run server
 run:
-    cargo run --bin dpe --release
+    cargo run --bin dpe-server --release
 
 # Run all tests
 test:

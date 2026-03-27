@@ -55,6 +55,14 @@ codegen-units = 1
 lto = true
 opt-level = 'z'
 
+# WASM-optimized release profile for mosaic-playground (Leptos islands + WASM)
+[profile.wasm-release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"
+
 # Leptos configuration for cargo-leptos
 [[workspace.metadata.leptos]]
 name = "dpe"

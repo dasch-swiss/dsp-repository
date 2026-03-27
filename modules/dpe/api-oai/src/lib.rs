@@ -9,9 +9,3 @@ mod metadata;
 mod xml;
 
 pub use handlers::oai_handler;
-
-/// Returns an Axum router for the OAI-PMH endpoint.
-pub fn router() -> axum::Router {
-    use axum::routing::get;
-    axum::Router::new().route("/oai", get(oai_handler))
-}

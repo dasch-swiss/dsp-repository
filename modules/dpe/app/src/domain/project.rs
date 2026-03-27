@@ -1,11 +1,7 @@
 // Domain types (Project, ProjectRaw, etc.) are now in dpe-core.
 // This file retains only ProjectQuery which requires the Leptos Params derive.
 
-pub use dpe_core::project::{
-    AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License,
-    Project, ProjectRaw, ProjectStatus, Publication, TemporalCoverage, ACCESS_RIGHTS_VALUES,
-};
-
+use dpe_core::ACCESS_RIGHTS_VALUES;
 use leptos_router::params::Params;
 use serde::{Deserialize, Serialize};
 

@@ -2,6 +2,30 @@
 
 The Discovery and Presentation Environment (DPE) serves research project metadata as a web application.
 
+## Crate Structure
+
+```
+dpe-core          Pure domain types, repositories, data loading
+                  Dependencies: serde, serde_json only
+                       │
+          ┌────────────┼────────────┐
+          │            │            │
+     dpe-api-oai   dpe-web     (future APIs)
+     OAI-PMH 2.0  Leptos SSR
+     + axum        + Datastar
+          │            │
+          └────────────┘
+                 │
+           dpe-server
+           Route composition
+           (binary: dpe)
+```
+
+- **dpe-core**: Framework-free domain layer. All types, repository traits, Fs implementations, and data loading.
+- **dpe-api-oai**: OAI-PMH 2.0 endpoint. Depends only on dpe-core — no Leptos.
+- **dpe-web**: Leptos SSR components, pages, and `#[server]` wrappers. Re-exports dpe-core types for backward compatibility.
+- **dpe-server**: Thin composition root. Wires Leptos routes (dpe-web) and API handlers (dpe-api-oai) into a single Axum server.
+
 ## Hypermedia-Driven Architecture
 
 The DPE uses a **hypermedia-driven architecture** where the server is the single source of truth for UI state. Interactivity is provided by [Datastar](https://data-star.dev/) (~14KB JS) instead of client-side frameworks or WASM.

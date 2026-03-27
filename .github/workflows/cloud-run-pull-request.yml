@@ -1,4 +1,4 @@
-name: Cloud Run PR Preview for Mosaic Demo
+name: Cloud Run PR Preview for Mosaic Playground
 
 on:
   pull_request:
@@ -92,7 +92,7 @@ jobs:
           edit-mode: replace
           body: |
             <!-- mosaic-playground-preview -->
-            ### Mosaic Demo Preview
+            ### Mosaic Playground Preview
 
             | | |
             |---|---|

@@ -1,4 +1,4 @@
-# demo_macro
+# mosaic-playground-macro
 
 Procedural macros for generating Mosaic component documentation pages.
 
@@ -66,7 +66,7 @@ description = "Visual style variant"
 In the demo crate's `lib.rs`:
 
 ```rust
-demo_macro::generate_component_pages!();
+mosaic_playground_macro::generate_component_pages!();
 ```
 
 This generates components like `ButtonRoute`, `CardRoute`, etc., which can be used in Leptos router definitions.

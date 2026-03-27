@@ -6,15 +6,18 @@ RUN wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/c
 RUN tar -xvf cargo-binstall-x86_64-unknown-linux-musl.tgz
 RUN cp cargo-binstall /usr/local/cargo/bin
 
-# Install build dependencies
+# Install build dependencies (clang for linking, musl-tools for static builds)
 RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends clang
+  && apt-get install -y --no-install-recommends clang musl-tools
 
 # Install cargo-leptos
 RUN cargo binstall cargo-leptos -y
 
-# Add the WASM target
+# Add the WASM target (needed by cargo-leptos for the lib crate stub)
 RUN rustup target add wasm32-unknown-unknown
+
+# Add musl target for static binary
+RUN rustup target add x86_64-unknown-linux-musl
 
 # Install Node.js and pnpm for Tailwind CSS / DaisyUI
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
@@ -36,36 +39,22 @@ RUN CI=true pnpm install --frozen-lockfile
 WORKDIR /app
 RUN cargo leptos build --project dpe --release -vv
 
-# Runtime Stage
-FROM debian:bookworm-slim AS runtime
+# Runtime Stage — distroless (no shell, no package manager, minimal attack surface)
+FROM gcr.io/distroless/static-debian12:nonroot AS runtime
 
-# Install runtime dependencies (OpenSSL and CA certificates)
-RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends \
-    openssl \
-    ca-certificates && \
-    apt-get autoremove -y && \
-    apt-get clean -y && \
-    rm -rf /var/lib/apt/lists/*
-
-# Create a non-root user
-RUN useradd -m -u 1001 leptos
-
-# Set the working directory
 WORKDIR /app
 
 # Copy the server binary from the builder stage
 COPY --from=builder /app/target/release/dpe-server /app/dpe-server
 
-# Copy the site directory (contains WASM, JS, CSS, and static assets)
+# Copy the site directory (contains JS, CSS, and static assets — no WASM)
 COPY --from=builder /app/modules/dpe/target/site /app/site
 
 # Copy the data files from the builder stage
 COPY --from=builder /app/modules/dpe/server/data /app/server/data
 
-# Change ownership to the non-root user
-RUN chown -R leptos:leptos /app
-USER leptos
+# Copy CA certificates for outbound HTTPS (if ever needed)
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Set environment variables for production
 ENV RUST_LOG="info"
@@ -75,10 +64,10 @@ ENV LEPTOS_SITE_PKG_DIR="pkg"
 ENV LEPTOS_SITE_ADDR="0.0.0.0:8080"
 ENV LEPTOS_RELOAD_PORT="8081"
 ENV LEPTOS_ENV="PROD"
-ENV DATA_DIR="/app/server/data"
+ENV DPE_DATA_DIR="/app/server/data"
 
 # Expose the port
 EXPOSE 8080
 
-# Run the server
+# Run the server (distroless :nonroot runs as uid 65534 by default)
 CMD ["./dpe-server"]

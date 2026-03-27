@@ -64,7 +64,7 @@ fn resolve_entity(
     let id = parse_oai_identifier(identifier).ok_or(OaiError::IdDoesNotExist)?;
 
     if let Some(project) = repo.get_by_shortcode(&id) {
-        return Ok(OaiEntity::Project(Box::new(project)));
+        return Ok(OaiEntity::Project(Box::new(project.clone())));
     }
 
     if let Some(record) = record_repo.get_by_id(&id) {

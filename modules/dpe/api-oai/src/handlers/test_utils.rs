@@ -21,12 +21,12 @@ impl InMemoryProjectRepository {
 }
 
 impl ProjectRepository for InMemoryProjectRepository {
-    fn get_all(&self) -> Vec<Project> {
-        self.projects.clone()
+    fn get_all(&self) -> &[Project] {
+        &self.projects
     }
 
-    fn get_by_shortcode(&self, shortcode: &str) -> Option<Project> {
-        self.projects.iter().find(|p| p.shortcode == shortcode).cloned()
+    fn get_by_shortcode(&self, shortcode: &str) -> Option<&Project> {
+        self.projects.iter().find(|p| p.shortcode == shortcode)
     }
 }
 

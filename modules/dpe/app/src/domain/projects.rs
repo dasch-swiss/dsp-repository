@@ -234,6 +234,8 @@ mod tests {
         ProjectQuery::default()
     }
 
+    // --- status filtering ---
+
     #[test]
     fn no_status_filter_returns_all() {
         let projects = vec![
@@ -257,6 +259,35 @@ mod tests {
     }
 
     #[test]
+    fn finished_filter_returns_only_finished() {
+        let projects = vec![
+            make_project("A", "A", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
+            make_project("B", "B", ProjectStatus::Finished, None, None, AccessRightsType::FullOpenAccess),
+        ];
+        let query = ProjectQuery { finished: Some(true), ..Default::default() };
+        let page = filter_and_paginate(&projects, &query, None);
+        assert_eq!(page.total_items, 1);
+        assert_eq!(page.items[0].name, "B");
+    }
+
+    #[test]
+    fn both_status_flags_returns_all() {
+        let projects = vec![
+            make_project("A", "A", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
+            make_project("B", "B", ProjectStatus::Finished, None, None, AccessRightsType::FullOpenAccess),
+        ];
+        let query = ProjectQuery {
+            ongoing: Some(true),
+            finished: Some(true),
+            ..Default::default()
+        };
+        let page = filter_and_paginate(&projects, &query, None);
+        assert_eq!(page.total_items, 2);
+    }
+
+    // --- search filtering ---
+
+    #[test]
     fn search_matches_name() {
         let projects = vec![default_project("Alpha"), default_project("Beta")];
         let query = ProjectQuery { search: Some("alph".to_string()), ..Default::default() };
@@ -264,6 +295,126 @@ mod tests {
         assert_eq!(page.total_items, 1);
         assert_eq!(page.items[0].name, "Alpha");
     }
+
+    #[test]
+    fn search_is_case_insensitive() {
+        let projects = vec![default_project("Alpha")];
+        let query = ProjectQuery { search: Some("ALPHA".to_string()), ..Default::default() };
+        let page = filter_and_paginate(&projects, &query, None);
+        assert_eq!(page.total_items, 1);
+    }
+
+    #[test]
+    fn search_matches_shortcode() {
+        let projects = vec![
+            make_project("Project One", "SC01", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
+            make_project("Project Two", "SC02", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
+        ];
+        let query = ProjectQuery { search: Some("sc01".to_string()), ..Default::default() };
+        let page = filter_and_paginate(&projects, &query, None);
+        assert_eq!(page.total_items, 1);
+        assert_eq!(page.items[0].shortcode, "SC01");
+    }
+
+    #[test]
+    fn search_matches_short_description() {
+        let projects = vec![default_project("Alpha")];
+        let query = ProjectQuery {
+            search: Some("desc of alpha".to_string()),
+            ..Default::default()
+        };
+        let page = filter_and_paginate(&projects, &query, None);
+        assert_eq!(page.total_items, 1);
+    }
+
+    #[test]
+    fn search_no_match_returns_empty() {
+        let projects = vec![default_project("Alpha"), default_project("Beta")];
+        let query = ProjectQuery { search: Some("xyz".to_string()), ..Default::default() };
+        let page = filter_and_paginate(&projects, &query, None);
+        assert_eq!(page.total_items, 0);
+        assert_eq!(page.items.len(), 0);
+    }
+
+    // --- type_of_data filtering ---
+
+    #[test]
+    fn type_of_data_filter_matches() {
+        let projects = vec![
+            make_project("A", "A", ProjectStatus::Ongoing, Some(vec!["Text"]), None, AccessRightsType::FullOpenAccess),
+            make_project("B", "B", ProjectStatus::Ongoing, Some(vec!["Image"]), None, AccessRightsType::FullOpenAccess),
+            make_project("C", "C", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
+        ];
+        let query = ProjectQuery { type_of_data: Some("Text".to_string()), ..Default::default() };
+        let page = filter_and_paginate(&projects, &query, None);
+        assert_eq!(page.total_items, 1);
+        assert_eq!(page.items[0].name, "A");
+    }
+
+    #[test]
+    fn type_of_data_filter_multi_value() {
+        let projects = vec![
+            make_project("A", "A", ProjectStatus::Ongoing, Some(vec!["Text"]), None, AccessRightsType::FullOpenAccess),
+            make_project("B", "B", ProjectStatus::Ongoing, Some(vec!["Image"]), None, AccessRightsType::FullOpenAccess),
+            make_project("C", "C", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
+        ];
+        let query = ProjectQuery {
+            type_of_data: Some("Text,Image".to_string()),
+            ..Default::default()
+        };
+        let page = filter_and_paginate(&projects, &query, None);
+        assert_eq!(page.total_items, 2);
+    }
+
+    // --- data_language filtering ---
+
+    #[test]
+    fn data_language_filter_matches() {
+        let projects = vec![
+            make_project("A", "A", ProjectStatus::Ongoing, None, Some(vec!["English"]), AccessRightsType::FullOpenAccess),
+            make_project("B", "B", ProjectStatus::Ongoing, None, Some(vec!["French"]), AccessRightsType::FullOpenAccess),
+        ];
+        let query = ProjectQuery {
+            data_language: Some("English".to_string()),
+            ..Default::default()
+        };
+        let page = filter_and_paginate(&projects, &query, None);
+        assert_eq!(page.total_items, 1);
+        assert_eq!(page.items[0].name, "A");
+    }
+
+    // --- access_rights filtering ---
+
+    #[test]
+    fn access_rights_filter_matches() {
+        let projects = vec![
+            make_project("A", "A", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
+            make_project("B", "B", ProjectStatus::Ongoing, None, None, AccessRightsType::OpenAccessWithRestrictions),
+        ];
+        let query = ProjectQuery {
+            access_rights: Some("Full Open Access".to_string()),
+            ..Default::default()
+        };
+        let page = filter_and_paginate(&projects, &query, None);
+        assert_eq!(page.total_items, 1);
+        assert_eq!(page.items[0].name, "A");
+    }
+
+    // --- sorting ---
+
+    #[test]
+    fn results_sorted_alphabetically_case_insensitive() {
+        let projects = vec![
+            default_project("Zebra"),
+            default_project("apple"),
+            default_project("Mango"),
+        ];
+        let page = filter_and_paginate(&projects, &empty_query(), None);
+        let names: Vec<&str> = page.items.iter().map(|p| p.name.as_str()).collect();
+        assert_eq!(names, vec!["apple", "Mango", "Zebra"]);
+    }
+
+    // --- pagination ---
 
     #[test]
     fn pagination_first_page() {
@@ -275,6 +426,26 @@ mod tests {
     }
 
     #[test]
+    fn pagination_second_page() {
+        let projects: Vec<Project> = (0..20).map(|i| default_project(&format!("P{i:02}"))).collect();
+        let query = ProjectQuery { page: Some(2), ..Default::default() };
+        let page = filter_and_paginate(&projects, &query, Some(5));
+        assert_eq!(page.items.len(), 5);
+        assert_eq!(page.total_items, 20);
+    }
+
+    #[test]
+    fn pagination_last_partial_page() {
+        let projects: Vec<Project> = (0..11).map(|i| default_project(&format!("P{i:02}"))).collect();
+        let query = ProjectQuery { page: Some(2), ..Default::default() };
+        let page = filter_and_paginate(&projects, &query, Some(5));
+        assert_eq!(page.items.len(), 5);
+        let query3 = ProjectQuery { page: Some(3), ..Default::default() };
+        let page3 = filter_and_paginate(&projects, &query3, Some(5));
+        assert_eq!(page3.items.len(), 1);
+    }
+
+    #[test]
     fn empty_result_has_one_page() {
         let page = filter_and_paginate(&[], &empty_query(), None);
         assert_eq!(page.total_items, 0);
@@ -282,9 +453,74 @@ mod tests {
         assert_eq!(page.items.len(), 0);
     }
 
+    // --- ProjectQuery toggle methods ---
+
+    #[test]
+    fn with_type_of_data_toggled_adds_value() {
+        let q = empty_query().with_type_of_data_toggled("Text");
+        assert_eq!(q.type_of_data(), vec!["Text"]);
+    }
+
+    #[test]
+    fn with_type_of_data_toggled_removes_value() {
+        let q = ProjectQuery {
+            type_of_data: Some("Text,Image".to_string()),
+            ..Default::default()
+        };
+        let q2 = q.with_type_of_data_toggled("Text");
+        assert_eq!(q2.type_of_data(), vec!["Image"]);
+    }
+
+    #[test]
+    fn with_type_of_data_toggled_resets_page() {
+        let q = ProjectQuery { page: Some(3), ..Default::default() };
+        let q2 = q.with_type_of_data_toggled("Text");
+        assert_eq!(q2.page(), 1);
+    }
+
+    #[test]
+    fn with_status_toggled_flips_ongoing() {
+        let q = empty_query().with_status_toggled("ongoing");
+        assert!(q.ongoing());
+        let q2 = q.with_status_toggled("ongoing");
+        assert!(!q2.ongoing());
+    }
+
+    #[test]
+    fn with_status_toggled_resets_page() {
+        let q = ProjectQuery { page: Some(5), ..Default::default() };
+        let q2 = q.with_status_toggled("ongoing");
+        assert_eq!(q2.page(), 1);
+    }
+
+    // --- to_query_string ---
+
     #[test]
     fn to_query_string_empty() {
         assert_eq!(empty_query().to_query_string(), "");
+    }
+
+    #[test]
+    fn to_query_string_with_search() {
+        let q = ProjectQuery {
+            search: Some("hello world".to_string()),
+            ..Default::default()
+        };
+        let qs = q.to_query_string();
+        assert!(qs.contains("search=hello%20world"));
+    }
+
+    #[test]
+    fn to_query_string_page_1_omitted() {
+        let q = ProjectQuery { page: Some(1), ..Default::default() };
+        assert_eq!(q.to_query_string(), "");
+    }
+
+    #[test]
+    fn to_query_string_page_2_included() {
+        let q = ProjectQuery { page: Some(2), ..Default::default() };
+        let qs = q.to_query_string();
+        assert!(qs.contains("page=2"), "got: {qs}");
     }
 }
 

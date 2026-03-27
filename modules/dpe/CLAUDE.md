@@ -1,29 +1,34 @@
-# AI Agent Guide for Leptos Learning Project
+# AI Agent Guide for DPE
 
-This document provides guidance for AI coding assistants (like Claude Code, GitHub Copilot, etc.) working with this Leptos project.
+This document provides guidance for AI coding assistants working with the Discovery and Presentation Environment (DPE).
 
 ## Project Overview
 
-This is a **Leptos 0.8.2** full-stack web application using the **Axum** backend framework. It's a workspace project with server-side rendering (SSR) and client-side hydration capabilities.
+DPE is a **Leptos 0.8.2** web application using **Axum** for the backend. Server-side rendered (SSR) with **Datastar** for interactivity (no WASM/client-side hydration for DPE).
 
 ### Architecture
 
-- **Framework**: Leptos (Rust full-stack web framework)
-- **Backend**: Axum web server
-- **Frontend**: WebAssembly (WASM) with Leptos reactive components
+- **Web Framework**: Leptos SSR (server-side rendering only)
+- **Interactivity**: Datastar (hypermedia-driven SSE fragments)
+- **Backend**: Axum web server with Tokio runtime
 - **Styling**: Tailwind CSS 4.x + DaisyUI
-- **Testing**: Playwright for end-to-end tests
+- **Testing**: Cargo tests for unit/integration, Playwright for E2E
 
-### Workspace Structure
+### Crate Structure
 
 ```
 dpe/
-├── app/              # Shared application code (components, pages, logic)
-├── frontend/         # WASM frontend entry point
-├── server/           # Axum server binary
+├── core/             # Pure domain types, repositories, data loading (crate: dpe-core)
+│                     # Zero framework deps — only serde + serde_json
+├── api-oai/          # OAI-PMH 2.0 API (crate: dpe-api-oai)
+│                     # Depends on dpe-core only
+├── app/              # Web layer: Leptos components, pages, #[server] fns (crate: dpe-web)
+│                     # Depends on dpe-core for domain types
+├── server/           # Server binary: route composition (crate: dpe-server, binary: dpe)
+│                     # Composes dpe-web (Leptos routes) + dpe-api-oai (API routes)
+├── end2end/          # Playwright E2E tests
 ├── public/           # Static assets
-├── style/            # CSS/Tailwind configuration
-└── end2end/          # Playwright E2E tests
+└── style/            # CSS/Tailwind configuration
 ```
 
 ## Key Technologies & Versions

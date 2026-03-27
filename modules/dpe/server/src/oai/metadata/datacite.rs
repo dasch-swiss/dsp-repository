@@ -1,6 +1,6 @@
 //! Transformation of Research Projects into DataCite 4.6 metadata.
 
-use app::domain::{Discipline, Funding, Project, TemporalCoverage};
+use dpe_app::domain::{Discipline, Funding, Project, TemporalCoverage};
 
 use super::helpers::{
     access_rights_to_string, extract_year, format_date_range, get_multilingual_value,

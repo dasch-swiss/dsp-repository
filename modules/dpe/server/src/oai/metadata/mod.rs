@@ -18,7 +18,7 @@ use dublin_core::project_to_dublin_core;
 use record_datacite::record_to_datacite;
 use record_dublin_core::record_to_dublin_core;
 
-use app::domain::{record_datestamp, Project, Record, ARK_PATH_PREFIX};
+use dpe_app::domain::{record_datestamp, Project, Record, ARK_PATH_PREFIX};
 
 const OAI_IDENTIFIER_PREFIX: &str = "oai:meta.dasch.swiss:";
 

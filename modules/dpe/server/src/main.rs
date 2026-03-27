@@ -1,4 +1,4 @@
-use app::*;
+use dpe_app::*;
 use axum::{routing::get, Router};
 use leptos::logging::log;
 use leptos::prelude::*;

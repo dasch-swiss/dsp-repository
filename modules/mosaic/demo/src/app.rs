@@ -82,7 +82,7 @@ pub fn App() -> impl IntoView {
     view! {
         // injects a stylesheet into the document <head>
         // id=leptos means cargo-leptos will hot-reload this stylesheet
-        <Stylesheet id="leptos" href="/pkg/mosaic-demo.css" />
+        <Stylesheet id="leptos" href="/pkg/mosaic-playground.css" />
 
         // sets the document title
         <Title text="Welcome to the Mosaic component library demo" />

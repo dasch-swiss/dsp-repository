@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SERVICE_NAME: mosaic-demo-pr-${{ github.event.pull_request.number }}
+  SERVICE_NAME: mosaic-playground-pr-${{ github.event.pull_request.number }}
   IMAGE_TAG: pr-${{ github.event.pull_request.number }}
 
 jobs:
@@ -57,7 +57,7 @@ jobs:
           context: .
           file: modules/mosaic/demo/Dockerfile
           push: true
-          tags: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-demo:${{ env.IMAGE_TAG }}
+          tags: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-playground:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -67,7 +67,7 @@ jobs:
         with:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ secrets.GCP_REGION }}
-          image: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-demo:${{ env.IMAGE_TAG }}
+          image: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-playground:${{ env.IMAGE_TAG }}
           flags: >-
             --port=8080
             --allow-unauthenticated
@@ -82,7 +82,7 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: github-actions[bot]
-          body-includes: "<!-- mosaic-demo-preview -->"
+          body-includes: "<!-- mosaic-playground-preview -->"
 
       - name: Post or update preview URL comment
         uses: peter-evans/create-or-update-comment@v4
@@ -91,7 +91,7 @@ jobs:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           edit-mode: replace
           body: |
-            <!-- mosaic-demo-preview -->
+            <!-- mosaic-playground-preview -->
             ### Mosaic Demo Preview
 
             | | |
@@ -130,5 +130,5 @@ jobs:
       - name: Delete container image (if it exists)
         run: |
           gcloud artifacts docker images delete \
-            "${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-demo:${{ env.IMAGE_TAG }}" \
+            "${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-playground:${{ env.IMAGE_TAG }}" \
             --delete-tags --quiet 2>/dev/null || echo "Image not found, nothing to clean up."

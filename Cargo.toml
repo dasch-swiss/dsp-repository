@@ -56,8 +56,8 @@ opt-level = 'z'
 # Leptos configuration for cargo-leptos
 [[workspace.metadata.leptos]]
 name = "dpe"
-bin-package = "server"
-lib-package = "app"
+bin-package = "dpe-server"
+lib-package = "dpe-app"
 site-root = "modules/dpe/target/site"
 site-pkg-dir = "pkg"
 assets-dir = "modules/dpe/public"

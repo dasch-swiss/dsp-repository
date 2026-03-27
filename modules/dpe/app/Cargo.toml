@@ -1,5 +1,5 @@
 [package]
-name = "app"
+name = "dpe-app"
 version = "0.1.2"
 edition = "2021"
 publish = false

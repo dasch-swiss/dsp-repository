@@ -50,27 +50,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f0e0fee31ef5ed1ba1316088939cea399010ed7731dba877ed44aeb407a75ea"
 
 [[package]]
-name = "app"
-version = "0.1.2"
-dependencies = [
- "cfg-if",
- "http",
- "leptos 0.8.14",
- "leptos-use",
- "leptos_axum",
- "leptos_meta",
- "leptos_router",
- "mosaic-tiles",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "urlencoding",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "async-lock"
 version = "3.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -605,17 +584,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "demo_macro"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "serde",
- "syn",
- "toml 0.8.23",
-]
-
-[[package]]
 name = "deranged"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -654,6 +622,51 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "dpe-app"
+version = "0.1.2"
+dependencies = [
+ "cfg-if",
+ "http",
+ "leptos 0.8.14",
+ "leptos-use",
+ "leptos_axum",
+ "leptos_meta",
+ "leptos_router",
+ "mosaic-tiles",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "urlencoding",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "dpe-server"
+version = "0.1.2"
+dependencies = [
+ "axum",
+ "chrono",
+ "datastar",
+ "dpe-app",
+ "futures",
+ "leptos 0.8.14",
+ "leptos_axum",
+ "log",
+ "mosaic-tiles",
+ "quick-xml",
+ "serde",
+ "serde_json",
+ "simple_logger",
+ "tempfile",
+ "tokio",
+ "tower",
+ "tower-http",
+ "urlencoding",
 ]
 
 [[package]]
@@ -2118,19 +2131,30 @@ dependencies = [
 ]
 
 [[package]]
-name = "mosaic-demo"
+name = "mosaic-playground"
 version = "0.2.0"
 dependencies = [
  "axum",
  "console_error_panic_hook",
- "demo_macro",
  "leptos 0.8.14",
  "leptos_axum",
  "leptos_meta",
  "leptos_router",
+ "mosaic-playground-macro",
  "mosaic-tiles",
  "tokio",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "mosaic-playground-macro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde",
+ "syn",
+ "toml 0.8.23",
 ]
 
 [[package]]
@@ -3023,30 +3047,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "server"
-version = "0.1.2"
-dependencies = [
- "app",
- "axum",
- "chrono",
- "datastar",
- "futures",
- "leptos 0.8.14",
- "leptos_axum",
- "log",
- "mosaic-tiles",
- "quick-xml",
- "serde",
- "serde_json",
- "simple_logger",
- "tempfile",
- "tokio",
- "tower",
- "tower-http",
- "urlencoding",
 ]
 
 [[package]]

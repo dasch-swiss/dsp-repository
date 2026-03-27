@@ -26,7 +26,7 @@ The `/create-new-component` and `/add-component-to-demo` skills automate these s
 ## Testing and Verification
 
 ```bash
-just watch-mosaic-demo    # Run demo with hot reload
+just watch-mosaic-playground    # Run demo with hot reload
 just fmt                  # Format all code
 just check                # Clippy and formatting for the whole repo
 ```

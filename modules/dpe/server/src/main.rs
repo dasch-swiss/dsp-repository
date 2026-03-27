@@ -1,13 +1,35 @@
 use dpe_web::*;
 use axum::{routing::get, Router};
-use leptos::logging::log;
 use leptos::prelude::*;
 use leptos_axum::{generate_route_list, LeptosRoutes};
 
+mod config;
 mod fragments;
 
 #[tokio::main]
 async fn main() {
+    // Initialize structured logging via RUST_LOG env var
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "info,tower_http=debug".into()),
+        )
+        .init();
+
+    // Load DPE-specific configuration (defaults → dpe.toml → DPE_* env vars)
+    let dpe_config = config::DpeConfig::load().expect("failed to load DPE configuration");
+    tracing::info!(data_dir = %dpe_config.data_dir.display(), "DPE configuration loaded");
+
+    if let Some(ref site_id) = dpe_config.fathom_site_id {
+        tracing::info!(fathom_site_id = %site_id, "Fathom Analytics enabled");
+    }
+
+    // Set DATA_DIR for dpe-core's get_data_dir() if not already set
+    if std::env::var("DATA_DIR").is_err() {
+        std::env::set_var("DATA_DIR", &dpe_config.data_dir);
+    }
+
+    // Load Leptos configuration from Cargo.toml metadata
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
     let leptos_options = conf.leptos_options;
@@ -28,9 +50,7 @@ async fn main() {
         .fallback(leptos_axum::file_and_error_handler(shell))
         .with_state(leptos_options);
 
-    // run our app with hyper
-    // `axum::Server` is a re-export of `hyper::Server`
-    log!("listening on http://{}", &addr);
+    tracing::info!("listening on http://{}", &addr);
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app.into_make_service()).await.unwrap();
 }

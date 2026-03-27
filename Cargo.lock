@@ -51,7 +51,7 @@ checksum = "5f0e0fee31ef5ed1ba1316088939cea399010ed7731dba877ed44aeb407a75ea"
 
 [[package]]
 name = "app"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "cfg-if",
  "gloo-history",
@@ -778,7 +778,7 @@ dependencies = [
 
 [[package]]
 name = "frontend"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "app",
  "console_error_panic_hook",
@@ -3093,7 +3093,7 @@ dependencies = [
 
 [[package]]
 name = "server"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "app",
  "axum",

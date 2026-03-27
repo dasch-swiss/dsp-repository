@@ -1,0 +1,9 @@
+[package]
+name = "dpe-core"
+version = "0.1.2"
+edition = "2021"
+publish = false
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }

@@ -1,6 +1,3 @@
-#[cfg(feature = "ssr")]
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -10,19 +7,19 @@ pub struct ClusterRef {
     pub description: String,
 }
 
-#[cfg(feature = "ssr")]
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug, Deserialize)]
 pub struct ClusterRaw {
     pub id: String,
     pub name: String,
-    pub description: HashMap<String, String>,
+    pub description: std::collections::HashMap<String, String>,
     #[serde(default)]
     pub pid: Option<String>,
     #[serde(default)]
     pub projects: Vec<String>,
 }
 
-#[cfg(feature = "ssr")]
+#[cfg(not(target_arch = "wasm32"))]
 impl ClusterRaw {
     pub fn into_ref(self) -> ClusterRef {
         let description = self

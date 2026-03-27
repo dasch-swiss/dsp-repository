@@ -150,7 +150,7 @@ mod tests {
     use super::*;
 
     fn first_0803_record() -> Record {
-        let json = include_str!("../../../server/data/records/0803-records.json");
+        let json = include_str!("../../server/data/records/0803-records.json");
         let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0803-records.json");
         record
     }

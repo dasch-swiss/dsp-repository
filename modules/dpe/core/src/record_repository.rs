@@ -11,12 +11,12 @@ pub trait RecordRepository {
 /// Filesystem-backed implementation of [`RecordRepository`].
 ///
 /// Reads record JSON files from the configured data directory.
-#[cfg(feature = "ssr")]
+#[cfg(not(target_arch = "wasm32"))]
 pub struct FsRecordRepository {
     data_dir: String,
 }
 
-#[cfg(feature = "ssr")]
+#[cfg(not(target_arch = "wasm32"))]
 impl FsRecordRepository {
     pub fn new(data_dir: String) -> Self {
         Self { data_dir }
@@ -44,14 +44,14 @@ impl FsRecordRepository {
                     let content = match fs::read_to_string(&path) {
                         Ok(c) => c,
                         Err(e) => {
-                            tracing::warn!("Failed to read record file {:?}: {}", path, e);
+                            eprintln!("Failed to read record file {:?}: {}", path, e);
                             return None;
                         }
                     };
                     match serde_json::from_str::<Vec<Record>>(&content) {
                         Ok(records) => Some(records),
                         Err(e) => {
-                            tracing::warn!("Failed to parse record file {:?}: {}", path, e);
+                            eprintln!("Failed to parse record file {:?}: {}", path, e);
                             None
                         }
                     }
@@ -64,7 +64,7 @@ impl FsRecordRepository {
     }
 }
 
-#[cfg(feature = "ssr")]
+#[cfg(not(target_arch = "wasm32"))]
 impl RecordRepository for FsRecordRepository {
     fn get_all(&self) -> Vec<Record> {
         self.read_all_records()
@@ -74,4 +74,3 @@ impl RecordRepository for FsRecordRepository {
         self.read_all_records().into_iter().find(|r| r.pid.ark_suffix() == ark_suffix)
     }
 }
-

@@ -629,6 +629,7 @@ name = "dpe-app"
 version = "0.1.2"
 dependencies = [
  "cfg-if",
+ "dpe-core",
  "http",
  "leptos 0.8.14",
  "leptos-use",
@@ -646,6 +647,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "dpe-core"
+version = "0.1.2"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "dpe-server"
 version = "0.1.2"
 dependencies = [
@@ -653,6 +662,7 @@ dependencies = [
  "chrono",
  "datastar",
  "dpe-app",
+ "dpe-core",
  "futures",
  "leptos 0.8.14",
  "leptos_axum",

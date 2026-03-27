@@ -126,14 +126,14 @@ pub fn ContactSection(ids: Vec<String>) -> impl IntoView {
                                 <AffiliationName org_id=id />
                             </InfoCard>
                         }
-                        .into_any()
+                            .into_any()
                     } else {
                         view! {
                             <InfoCard>
                                 <Person person_id=id roles=None show_email=true />
                             </InfoCard>
                         }
-                        .into_any()
+                            .into_any()
                     }
                 })
                 .collect_view()}

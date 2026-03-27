@@ -1,4 +1,4 @@
-name: Docker publish mosaic-demo image
+name: Docker publish mosaic-playground image
 
 on:
   push:
@@ -31,12 +31,12 @@ jobs:
           echo "tag=${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
   publish:
-    name: Build and publish mosaic-demo
+    name: Build and publish mosaic-playground
     needs: compute-tag
     uses: ./.github/workflows/docker-publish.yml
     with:
       dockerfile: modules/mosaic/demo/Dockerfile
-      image-name: daschswiss/mosaic-demo
+      image-name: daschswiss/mosaic-playground
       image-tag: ${{ needs.compute-tag.outputs.tag }}
     secrets:
       DOCKER_USER: ${{ secrets.DOCKER_USER }}

@@ -22,7 +22,7 @@ use axum::{
 };
 use serde::Deserialize;
 
-use app::domain::{get_data_dir, FsProjectRepository, FsRecordRepository, ProjectRepository, RecordRepository};
+use dpe_app::domain::{get_data_dir, FsProjectRepository, FsRecordRepository, ProjectRepository, RecordRepository};
 
 use super::error::OaiError;
 use super::xml::OaiXmlBuilder;

@@ -32,7 +32,7 @@ Accordion, Badge, Breadcrumb, Button, ButtonGroup, Card, Icon, Link, Popover, Ta
 ## Development
 
 ```bash
-just watch-mosaic-demo    # Run demo with hot reload (watches tiles changes)
+just watch-mosaic-playground    # Run playground with hot reload (watches tiles changes)
 just fmt-mosaic           # Format with leptosfmt
 ```
 

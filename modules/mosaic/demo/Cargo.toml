@@ -1,5 +1,5 @@
 [package]
-name = "mosaic-demo"
+name = "mosaic-playground"
 version = "0.2.0"
 edition = "2021"
 publish = false
@@ -17,7 +17,7 @@ leptos_meta.workspace = true
 tokio = { workspace = true, optional = true }
 wasm-bindgen = { workspace = true, optional = true }
 mosaic-tiles = { path = "../tiles" }
-demo_macro = { path = "../demo_macro" }
+mosaic-playground-macro = { path = "../demo_macro" }
 
 [features]
 hydrate = [
@@ -38,7 +38,7 @@ ssr = [
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name
-output-name = "mosaic-demo"
+output-name = "mosaic-playground"
 
 # The site root folder is where cargo-leptos generate all output. WARNING: all content of this folder will be erased on a rebuild. Use it in your server setup.
 site-root = "target/site"

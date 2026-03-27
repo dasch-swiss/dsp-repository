@@ -1,6 +1,6 @@
 //! Handler for the OAI-PMH GetRecord verb.
 
-use app::domain::{Project, ProjectRepository, Record, RecordRepository};
+use dpe_app::domain::{Project, ProjectRepository, Record, RecordRepository};
 
 use super::{build_error_response, OaiParams, SUPPORTED_PREFIXES};
 use crate::oai::error::OaiError;
@@ -95,7 +95,7 @@ mod tests {
     use super::super::test_utils::{
         golden, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository,
     };
-    use app::domain::Record;
+    use dpe_app::domain::Record;
 
     fn first_0803_record() -> Record {
         let json = include_str!("../../../data/records/0803-records.json");

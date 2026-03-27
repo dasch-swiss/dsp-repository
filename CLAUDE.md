@@ -64,7 +64,7 @@ just install-requirements
 ```bash
 # Development
 just watch-dpe                 # Run DPE with hot reload
-just watch-mosaic-demo         # Run Mosaic demo with hot reload
+just watch-mosaic-playground    # Run Mosaic playground with hot reload
 just watch                     # Watch for changes and run tests
 just run                       # Run server (release mode)
 

@@ -20,7 +20,7 @@
       "Bash(just fmt:*)",
       "Bash(just test)",
       "Bash(just test:*)",
-      "Bash(just watch-mosaic-demo)",
+      "Bash(just watch-mosaic-playground)",
       "Bash(rg:*)",
       "WebFetch(domain:crates.io)",
       "WebFetch(domain:just.systems)",

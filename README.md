@@ -12,9 +12,9 @@ You may also view the rendered documentation by following these steps:
 - Build and run the documentation with `just docs-serve`
 - Open your browser and navigate to `http://localhost:3000`
 
-You may start and run the Mosaic demo application:
+You may start and run the Mosaic playground application:
 
-- Run: `just watch-mosaic-demo`
+- Run: `just watch-mosaic-playground`
 
 You may start and run the Leptos DPE application:
 

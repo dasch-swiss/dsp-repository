@@ -17,6 +17,8 @@ pub struct ClusterRaw {
     pub name: String,
     pub description: HashMap<String, String>,
     #[serde(default)]
+    pub pid: Option<String>,
+    #[serde(default)]
     pub projects: Vec<String>,
 }
 

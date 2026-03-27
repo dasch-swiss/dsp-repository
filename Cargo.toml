@@ -4,6 +4,7 @@ members = [
   "modules/mosaic/demo_macro",
   "modules/mosaic/tiles",
   "modules/dpe/core",
+  "modules/dpe/api-oai",
   "modules/dpe/app",
   "modules/dpe/server",
 ]

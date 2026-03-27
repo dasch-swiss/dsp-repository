@@ -9,7 +9,7 @@ name = "dpe"
 path = "src/main.rs"
 
 [dependencies]
-dpe-core = { path = "../core" }
+dpe-api-oai = { path = "../api-oai" }
 dpe-web = { path = "../app", default-features = false, features = ["ssr"] }
 leptos = { workspace = true, features = [ "ssr", "islands" ]}
 leptos_axum.workspace = true
@@ -23,11 +23,8 @@ futures = "0.3"
 tower.workspace = true
 tower-http.workspace = true
 log.workspace = true
-quick-xml.workspace = true
-chrono.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 urlencoding = "2.1"
 
 [dev-dependencies]
-tempfile = "3"

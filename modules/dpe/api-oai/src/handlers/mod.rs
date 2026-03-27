@@ -22,11 +22,11 @@ use axum::{
 };
 use serde::Deserialize;
 
-use dpe_web::domain::{get_data_dir, FsProjectRepository, FsRecordRepository, ProjectRepository, RecordRepository};
+use dpe_core::{get_data_dir, FsProjectRepository, FsRecordRepository, ProjectRepository, RecordRepository};
 
 use super::error::OaiError;
 use super::xml::OaiXmlBuilder;
-use crate::oai::metadata::{
+use crate::metadata::{
     matches_date_filter, matches_date_filter_record, to_oai_record, to_oai_record_from_record, OaiRecord,
 };
 
@@ -186,7 +186,7 @@ pub mod test_utils;
 #[cfg(test)]
 mod tests {
     use super::{build_error_response, parse_set_filter};
-    use crate::oai::error::OaiError;
+    use crate::error::OaiError;
 
     #[test]
     fn test_parse_set_filter() {

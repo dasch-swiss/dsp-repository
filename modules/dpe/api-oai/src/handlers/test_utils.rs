@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use dpe_web::domain::{
+use dpe_core::{
     models::AuthorityFileReference,
     project::{
         AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo,
@@ -129,7 +129,7 @@ pub fn incunabula_project() -> Project {
 
 /// Loads the first record from the 0803-records.json fixture.
 pub fn first_0803_record() -> Record {
-    let json = include_str!("../../../data/records/0803-records.json");
+    let json = include_str!("../../../server/data/records/0803-records.json");
     let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0803-records.json");
     record
 }
@@ -188,7 +188,7 @@ pub fn golden(name: &str, actual: &str) -> String {
 
 pub fn validate_against_schema(xml: &str) {
     let xsd_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("src/oai/handlers/testdata/schemas/validate.xsd");
+        .join("src/handlers/testdata/schemas/validate.xsd");
 
     let mut tmp = tempfile::NamedTempFile::new().expect("create temp file");
     std::io::Write::write_all(&mut tmp, xml.as_bytes()).expect("write temp file");

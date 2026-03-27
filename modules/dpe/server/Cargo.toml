@@ -10,7 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 dpe-core = { path = "../core" }
-dpe-app = { path = "../app", default-features = false, features = ["ssr"] }
+dpe-web = { path = "../app", default-features = false, features = ["ssr"] }
 leptos = { workspace = true, features = [ "ssr", "islands" ]}
 leptos_axum.workspace = true
 

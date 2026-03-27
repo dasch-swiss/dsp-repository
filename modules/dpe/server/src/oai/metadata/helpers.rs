@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use dpe_app::domain::AccessRightsType;
+use dpe_web::domain::AccessRightsType;
 
 /// Extracts a value from a multilingual HashMap, preferring English.
 pub fn get_multilingual_value(map: &HashMap<String, String>) -> Option<String> {

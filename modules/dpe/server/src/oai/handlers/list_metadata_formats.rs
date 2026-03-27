@@ -1,6 +1,6 @@
 //! Handler for the OAI-PMH ListMetadataFormats verb.
 
-use dpe_app::domain::ProjectRepository;
+use dpe_web::domain::ProjectRepository;
 
 use super::{build_error_response, OaiParams};
 use crate::oai::error::OaiError;

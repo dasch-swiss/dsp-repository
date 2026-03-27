@@ -1,6 +1,6 @@
 //! Handler for the OAI-PMH ListRecords verb.
 
-use dpe_app::domain::{ProjectRepository, RecordRepository};
+use dpe_web::domain::{ProjectRepository, RecordRepository};
 
 use super::{build_error_response, build_list_request_params, validate_list_params, OaiParams};
 use crate::oai::xml::OaiXmlBuilder;

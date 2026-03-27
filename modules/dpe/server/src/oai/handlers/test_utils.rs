@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use dpe_app::domain::{
+use dpe_web::domain::{
     models::AuthorityFileReference,
     project::{
         AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo,

@@ -7,6 +7,8 @@ pub mod person;
 pub mod project;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod project_cache;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod record_cache;
 pub mod project_repository;
 pub mod record;
 pub mod record_repository;

@@ -222,12 +222,12 @@ pub async fn search_fragment_handler(
         Page { items: vec![], nr_pages: 0, total_items: 0 }
     } else {
         list_projects(
-            None,                     // status
             None,                     // ongoing
+            None,                     // finished
             Some(search.clone()),     // search
-            None,                     // type_of_data
-            Some(5),                  // page_size
             None,                     // page
+            Some(5),                  // page_size
+            None,                     // type_of_data
             None,                     // data_language
             None,                     // access_rights
         )

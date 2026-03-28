@@ -1,76 +1,66 @@
-<picture>
-    <source srcset="https://raw.githubusercontent.com/leptos-rs/leptos/main/docs/logos/Leptos_logo_Solid_White.svg" media="(prefers-color-scheme: dark)">
-    <img src="https://raw.githubusercontent.com/leptos-rs/leptos/main/docs/logos/Leptos_logo_RGB.svg" alt="Leptos Logo">
-</picture>
+# DPE -- Discovery and Presentation Environment
 
-# Leptos Axum Starter Template
+Server-side rendered web application built with [Leptos](https://github.com/leptos-rs/leptos) and [Axum](https://github.com/tokio-rs/axum). Interactive behavior (tab switching, live search) is driven by [Datastar](https://data-star.dev/) SSE fragments -- no client-side WASM.
 
-This is a template for use with the [Leptos](https://github.com/leptos-rs/leptos) web framework and the [cargo-leptos](https://github.com/leptos-rs/cargo-leptos) tool using [Axum](https://github.com/tokio-rs/axum).
+## Project Structure
 
-## Creating your template repo
+```
+dpe/
+├── core/             # Pure domain types and data loading (crate: dpe-core)
+├── api-oai/          # OAI-PMH 2.0 API (crate: dpe-api-oai)
+├── app/              # Leptos components and pages (crate: dpe-web)
+├── server/           # Server binary and fragment handlers (crate: dpe-server)
+├── web-e2e-tests/    # Playwright E2E tests
+├── public/           # Static assets
+└── style/            # CSS / Tailwind configuration
+```
 
-If you don't have `cargo-leptos` installed you can install it with
+## Prerequisites
+
+- Rust toolchain (managed via `rustup`)
+- `cargo-leptos` (`cargo install cargo-leptos --locked`)
+- Node.js + pnpm (for Tailwind CSS / DaisyUI)
+- [just](https://github.com/casey/just) command runner
+
+## Running the Development Server
 
 ```bash
-cargo install cargo-leptos --locked
+just watch-dpe
 ```
 
-Then run
-```bash
-cargo leptos new --git https://github.com/leptos-rs/start-axum-workspace/
-```
+Starts the server with hot reload at `http://127.0.0.1:4000`.
 
-to generate a new project template.
+## Building for Production
 
 ```bash
-cd dpe
+cargo leptos build --project dpe --release
 ```
 
-to go to your newly created project.
-Feel free to explore the project structure, but the best place to start with your application code is in `app/src/lib.rs`.
-Additionally, Cargo.toml may need updating as new versions of the dependencies are released, especially if things are not working after a `cargo update`.
+Output:
+- Server binary: `target/release/dpe-server`
+- Site assets: `modules/dpe/target/site/`
 
-### Islands support
+## Testing
 
-Note that for islands to work correctly, you need to have a `use app;` in your frontend `lib.rs` otherwise rustc / wasm_bindgen gets confused.
-To prevent clippy from complaining, at the top of the `frontend/src/lib.rs` file place:
-```rust
-#[allow(clippy::single_component_path_imports)]
-#[allow(unused_imports)]
-use app;
-```
-
-## Running your project
+### Unit and Integration Tests
 
 ```bash
-cargo leptos watch
+just test
 ```
 
-## Installing Additional Tools
+### E2E Tests
 
-By default, `cargo-leptos` uses `nightly` Rust, `cargo-generate`, and `sass`. If you run into any trouble, you may need to install one or more of these tools.
+E2E tests use [Playwright](https://playwright.dev) and live in `web-e2e-tests/`.
 
-1. `rustup toolchain install nightly --allow-downgrade` - make sure you have Rust nightly
-2. `rustup default nightly` - setup nightly as default, or you can use rust-toolchain file later on
-3. `rustup target add wasm32-unknown-unknown` - add the ability to compile Rust to WebAssembly
-4. `cargo install cargo-generate` - install `cargo-generate` binary (should be installed automatically in future)
-5. `npm install -g sass` - install `dart-sass` (should be optional in future
-
-## Compiling for Release
 ```bash
-cargo leptos build --release
+cd modules/dpe/web-e2e-tests
+pnpm install
+npx playwright test
 ```
 
-Will generate your server binary in target/server/release and your site package in target/site
+A web-based test report is available via `npx playwright show-report` from the `web-e2e-tests/` directory.
 
 ## Docker Deployment
-
-This project includes optimized Docker configuration for production deployment with the following optimizations:
-- WASM-specific release profile for minimal binary size
-- Cargo release profile with LTO and size optimization (opt-level='z')
-- Multi-stage build for minimal final image size
-- Non-root user for security
-- Proper compression and optimization flags
 
 ### Building the Docker Image
 
@@ -84,75 +74,26 @@ docker build -t dpe .
 docker run -p 8080:8080 dpe
 ```
 
-The application will be available at `http://localhost:8080`
-
-### Using Docker Compose
-
-For easier management, use Docker Compose:
-
-```bash
-# Build and start
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
-```
+The application will be available at `http://localhost:8080`.
 
 ### Environment Variables
 
-The following environment variables can be configured:
-- `RUST_LOG` - Logging level (default: "info")
-- `LEPTOS_OUTPUT_NAME` - Output file name (default: "dpe")
-- `LEPTOS_SITE_ROOT` - Site root directory (default: "site")
-- `LEPTOS_SITE_PKG_DIR` - Package directory (default: "pkg")
-- `LEPTOS_SITE_ADDR` - Server bind address (default: "0.0.0.0:8080")
-- `LEPTOS_ENV` - Environment mode (default: "PROD")
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RUST_LOG` | `info` | Logging level |
+| `LEPTOS_OUTPUT_NAME` | `dpe` | Output file name |
+| `LEPTOS_SITE_ROOT` | `site` | Site root directory |
+| `LEPTOS_SITE_PKG_DIR` | `pkg` | Package directory |
+| `LEPTOS_SITE_ADDR` | `0.0.0.0:8080` | Server bind address |
+| `LEPTOS_ENV` | `PROD` | Environment mode |
+| `DPE_DATA_DIR` | `server/data` | Path to JSON data files |
 
-## Testing Your Project
+## Remote Deployment Without Toolchain
 
-Cargo-leptos uses [Playwright](https://playwright.dev) as the end-to-end test tool.
+After `cargo leptos build --release`, copy:
 
-Prior to the first run of the end-to-end tests run Playwright must be installed.
-In the project's `end2end` directory run `npm install -D playwright @playwright/test` to install playwright and browser specific APIs.
+1. The server binary from `target/release/dpe-server`
+2. The `site/` directory from `modules/dpe/target/site/`
+3. The data directory from `modules/dpe/server/data/`
 
-To run the tests during development in the project root run:
-```bash
-cargo leptos end-to-end
-```
-
-To run tests for release in the project root run:
-```bash
-cargo leptos end-to-end --release
-```
-There are some examples tests are located in `end2end/tests` directory that pass tests with the sample Leptos app.
-
-A web-based report on tests is available by running `npx playwright show-report` in the `end2end` directory.
-
-
-## Executing a Server on a Remote Machine Without the Toolchain
-After running a `cargo leptos build --release` the minimum files needed are:
-
-1. The server binary located in `target/server/release`
-2. The `site` directory and all files within located in `target/site`
-
-Copy these files to your remote server. The directory structure should be:
-```text
-dpe
-site/
-```
-Set the following environment variables (updating for your project as needed):
-```text
-LEPTOS_OUTPUT_NAME="dpe"
-LEPTOS_SITE_ROOT="site"
-LEPTOS_SITE_PKG_DIR="pkg"
-LEPTOS_SITE_ADDR="127.0.0.1:4000"
-LEPTOS_RELOAD_PORT="4001"
-```
-Finally, run the server binary.
-
-## Licensing
-
-This template itself is released under the Unlicense. You should replace the LICENSE for your own application with an appropriate license if you plan to release it publicly.
+Set the environment variables listed above and run the binary.

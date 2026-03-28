@@ -5,6 +5,14 @@ use super::cluster::ClusterRef;
 use super::collection::CollectionRef;
 use super::models::AuthorityFileReference;
 
+/// Valid tab names for project detail pages.
+pub const VALID_TABS: &[&str] = &["overview", "publications", "contributors"];
+
+/// Returns true if the string is a valid project shortcode (alphanumeric only).
+pub fn is_valid_shortcode(s: &str) -> bool {
+    !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric())
+}
+
 fn make_ref(url: String) -> AuthorityFileReference {
     AuthorityFileReference { type_: "URL".to_string(), url, text: None }
 }

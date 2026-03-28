@@ -22,7 +22,7 @@ use axum::{
 };
 use serde::Deserialize;
 
-use dpe_core::{get_data_dir, FsProjectRepository, FsRecordRepository, ProjectRepository, RecordRepository};
+use dpe_core::{FsProjectRepository, FsRecordRepository, ProjectRepository, RecordRepository};
 
 use super::error::OaiError;
 use super::xml::OaiXmlBuilder;
@@ -56,9 +56,8 @@ pub const SUPPORTED_PREFIXES: [&str; 2] = ["oai_dc", "oai_datacite"];
 
 /// Main OAI-PMH handler that dispatches to verb-specific handlers.
 pub async fn oai_handler(Query(params): Query<OaiParams>) -> impl IntoResponse {
-    let data_dir = get_data_dir();
-    let repo = FsProjectRepository::new(data_dir.clone());
-    let record_repo = FsRecordRepository::new(data_dir);
+    let repo = FsProjectRepository::new();
+    let record_repo = FsRecordRepository::new();
 
     let xml = match params.verb.as_deref() {
         Some("Identify") => handle_identify(&params, &repo),

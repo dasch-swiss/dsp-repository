@@ -22,7 +22,7 @@ use leptos::prelude::*;
 use mosaic_tiles::icon::{Document, IconSearch, Info, People};
 use serde::Deserialize;
 
-const VALID_TABS: &[&str] = &["overview", "publications", "contributors"];
+use dpe_core::project::{VALID_TABS, is_valid_shortcode};
 
 #[derive(Deserialize)]
 pub struct TabParams {
@@ -40,9 +40,9 @@ pub async fn tab_fragment_handler(
 ) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, impl IntoResponse> {
     let TabParams { id, tab } = params;
 
-    // Validate shortcode format (defense-in-depth for ExecuteScript interpolation)
-    if !id.chars().all(|c| c.is_ascii_alphanumeric()) {
-        return Err(StatusCode::BAD_REQUEST);
+    // Validate shortcode format (alphanumeric only — prevents XSS in ExecuteScript)
+    if !is_valid_shortcode(&id) {
+        return Err(StatusCode::NOT_FOUND);
     }
 
     // Validate tab name
@@ -64,15 +64,19 @@ pub async fn tab_fragment_handler(
 
     // Load contributors if needed
     let contributors = if tab == "contributors" {
-        get_contributors(project.attributions.clone())
-            .await
-            .unwrap_or_default()
+        match get_contributors(project.attributions.clone()).await {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::warn!(shortcode = %id, error = %e, "failed to load contributors");
+                vec![]
+            }
+        }
     } else {
         vec![]
     };
 
     // Render the full tab component (tab bar + panel) to HTML
-    let html = render_project_tabs(&project, &contributors, &tab, has_publications_tab);
+    let html = render_project_tabs(project, contributors, &tab, has_publications_tab);
 
     // Strip Leptos hot-reload comments that interfere with Datastar morphing
     let html = strip_hot_reload_comments(&html);
@@ -119,13 +123,11 @@ fn has_publications(project: &Project) -> bool {
 
 /// Render the full project tabs component (tab bar + panel) to an HTML string.
 fn render_project_tabs(
-    project: &Project,
-    contributors: &[ResolvedContributor],
+    project: Project,
+    contributors: Vec<ResolvedContributor>,
     active_tab: &str,
     has_publications_tab: bool,
 ) -> String {
-    let project = project.clone();
-    let contributors = contributors.to_vec();
     let active_tab = active_tab.to_string();
     let shortcode = project.shortcode.clone();
 
@@ -331,82 +333,464 @@ fn strip_hot_reload_comments(html: &str) -> Cow<'_, str> {
 
 #[cfg(test)]
 mod tests {
-    use leptos::prelude::*;
+    use super::*;
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode as AxumStatusCode};
+    use axum::routing::get;
+    use axum::Router;
+    use http_body_util::BodyExt;
+    use tower::ServiceExt;
 
-    /// Phase 0 Spike: Verify that Leptos `view!` macro output can be rendered
-    /// to an HTML string from outside the Leptos routing context.
+    // --- Unit tests: is_valid_shortcode ---
+
     #[test]
-    fn spike_leptos_view_renders_to_html_string() {
-        let html = view! { <div class="test">"Hello from fragment"</div> }.to_html();
-        assert!(html.contains("Hello from fragment"));
-        assert!(html.contains(r#"class="test""#));
+    fn valid_shortcode_alphanumeric() {
+        assert!(is_valid_shortcode("0803"));
+        assert!(is_valid_shortcode("080C"));
+        assert!(is_valid_shortcode("abc123"));
     }
 
     #[test]
-    fn spike_leptos_component_renders_with_owner() {
-        #[component]
-        fn TestTabPanel(active_tab: String, project_name: String) -> impl IntoView {
-            let is_overview = active_tab == "overview";
-            view! {
-                <div id="project-tabs">
-                    <div class="tabs">
-                        <a
-                            href="?tab=overview"
-                            class=if is_overview { "tab-active" } else { "tab" }
-                        >
-                            "Overview"
-                        </a>
-                        <a
-                            href="?tab=publications"
-                            class=if !is_overview { "tab-active" } else { "tab" }
-                        >
-                            "Publications"
-                        </a>
-                    </div>
-                    <div id="tab-panel">
-                        {if is_overview {
-                            view! { <p>{format!("Overview of {}", project_name)}</p> }.into_any()
-                        } else {
-                            view! { <p>"Publications list"</p> }.into_any()
-                        }}
-                    </div>
-                </div>
-            }
-        }
-
-        let owner = Owner::new();
-        let html = owner.with(|| {
-            view! { <TestTabPanel active_tab="overview".to_string() project_name="Test Project".to_string() /> }
-            .to_html()
-        });
-
-        assert!(html.contains("project-tabs"));
-        assert!(html.contains("tab-panel"));
-        assert!(html.contains("Overview of Test Project"));
-        assert!(html.contains(r#"class="tab-active""#));
+    fn invalid_shortcode_empty() {
+        assert!(!is_valid_shortcode(""));
     }
 
     #[test]
-    fn spike_leptos_component_renders_different_tab() {
-        #[component]
-        fn TabContent(tab: String) -> impl IntoView {
-            match tab.as_str() {
-                "publications" => view! { <div>"Publications content"</div> }.into_any(),
-                "contributors" => view! { <div>"Contributors content"</div> }.into_any(),
-                _ => view! { <div>"Overview content"</div> }.into_any(),
-            }
+    fn invalid_shortcode_special_chars() {
+        assert!(!is_valid_shortcode("08/03"));
+        assert!(!is_valid_shortcode("../etc"));
+        assert!(!is_valid_shortcode("<script>"));
+        assert!(!is_valid_shortcode("ab cd"));
+        assert!(!is_valid_shortcode("ab-cd"));
+        assert!(!is_valid_shortcode("ab_cd"));
+    }
+
+    #[test]
+    fn invalid_shortcode_xss_attempt() {
+        assert!(!is_valid_shortcode("0803'OR'1'='1"));
+        assert!(!is_valid_shortcode("0803&tab=overview"));
+    }
+
+    // --- Unit tests: strip_hot_reload_comments ---
+
+    #[test]
+    fn strip_no_comments_returns_borrowed() {
+        let input = "<div>hello</div>";
+        let result = strip_hot_reload_comments(input);
+        assert!(matches!(result, Cow::Borrowed(_)));
+        assert_eq!(result.as_ref(), input);
+    }
+
+    #[test]
+    fn strip_single_comment() {
+        let input = "<!--hot-reload|abc|open--><div>content</div><!--hot-reload|abc|close-->";
+        let result = strip_hot_reload_comments(input);
+        assert_eq!(result.as_ref(), "<div>content</div>");
+    }
+
+    #[test]
+    fn strip_nested_comments() {
+        let input = "<!--hot-reload|outer|open--><!--hot-reload|inner|open--><p>text</p><!--hot-reload|inner|close--><!--hot-reload|outer|close-->";
+        let result = strip_hot_reload_comments(input);
+        assert_eq!(result.as_ref(), "<p>text</p>");
+    }
+
+    #[test]
+    fn strip_preserves_regular_comments() {
+        let input = "<!-- normal comment --><div>ok</div>";
+        let result = strip_hot_reload_comments(input);
+        assert!(matches!(result, Cow::Borrowed(_)));
+        assert_eq!(result.as_ref(), input);
+    }
+
+    // --- Unit tests: has_publications ---
+
+    #[test]
+    fn has_publications_with_abstract_only() {
+        let mut project = minimal_test_project();
+        let mut abstract_map = std::collections::HashMap::new();
+        abstract_map.insert("en".to_string(), "Some abstract text".to_string());
+        project.abstract_text = Some(abstract_map);
+        assert!(has_publications(&project));
+    }
+
+    #[test]
+    fn has_publications_with_pubs_only() {
+        let mut project = minimal_test_project();
+        project.publications = Some(vec![dpe_core::Publication {
+            text: "A paper".to_string(),
+            pid: None,
+        }]);
+        assert!(has_publications(&project));
+    }
+
+    #[test]
+    fn has_publications_empty_project() {
+        let project = minimal_test_project();
+        assert!(!has_publications(&project));
+    }
+
+    #[test]
+    fn has_publications_empty_pubs_vec() {
+        let mut project = minimal_test_project();
+        project.publications = Some(vec![]);
+        assert!(!has_publications(&project));
+    }
+
+    // --- Unit tests: render_project_tabs ---
+
+    #[test]
+    fn render_overview_tab_contains_aria_roles() {
+        let project = minimal_test_project();
+        let html = render_project_tabs(project, vec![],"overview", false);
+        assert!(html.contains(r#"role="tablist""#), "missing tablist role");
+        assert!(html.contains(r#"role="tab""#), "missing tab role");
+        assert!(html.contains(r#"role="tabpanel""#), "missing tabpanel role");
+    }
+
+    #[test]
+    fn render_overview_tab_marks_overview_as_selected() {
+        let project = minimal_test_project();
+        let html = render_project_tabs(project, vec![],"overview", false);
+        assert!(
+            html.contains(r#"id="tab-overview" aria-selected="true""#),
+            "overview tab should be selected, got: {}",
+            html
+        );
+    }
+
+    #[test]
+    fn render_contributors_tab_marks_contributors_as_selected() {
+        let project = minimal_test_project();
+        let html = render_project_tabs(project, vec![],"contributors", false);
+        assert!(
+            html.contains(r#"id="tab-contributors" aria-selected="true""#),
+            "contributors tab should be selected, got: {}",
+            html
+        );
+        assert!(
+            html.contains(r#"id="tab-overview" aria-selected="false""#),
+            "overview tab should not be selected"
+        );
+    }
+
+    #[test]
+    fn render_tabs_includes_tabpanel_labelledby() {
+        let project = minimal_test_project();
+        let html = render_project_tabs(project, vec![],"overview", false);
+        assert!(
+            html.contains(r#"aria-labelledby="tab-overview""#),
+            "tabpanel should reference active tab"
+        );
+    }
+
+    #[test]
+    fn render_tabs_hides_publications_when_none() {
+        let project = minimal_test_project();
+        let html = render_project_tabs(project, vec![],"overview", false);
+        // Should only have overview and contributors tabs, not publications
+        assert!(
+            !html.contains("tab-publications"),
+            "publications tab should not appear when has_publications_tab=false"
+        );
+    }
+
+    #[test]
+    fn render_tabs_shows_publications_when_available() {
+        let project = minimal_test_project();
+        let html = render_project_tabs(project, vec![],"overview", true);
+        assert!(
+            html.contains("tab-publications"),
+            "publications tab should appear when has_publications_tab=true"
+        );
+    }
+
+    // --- Snapshot tests: render_project_tabs ---
+
+    #[test]
+    fn snapshot_overview_tab_html() {
+        let project = minimal_test_project();
+        let html = render_project_tabs(project, vec![],"overview", false);
+        let html = strip_hot_reload_comments(&html);
+        insta::with_settings!({
+            filters => vec![
+                // Scrub any Leptos-generated IDs or dynamic content
+                (r"data-hk=\S+", "[DATA-HK]"),
+            ],
+        }, {
+            insta::assert_snapshot!("overview_tab", html.as_ref());
+        });
+    }
+
+    #[test]
+    fn snapshot_contributors_tab_html() {
+        let project = minimal_test_project();
+        let html = render_project_tabs(project, vec![],"contributors", false);
+        let html = strip_hot_reload_comments(&html);
+        insta::with_settings!({
+            filters => vec![
+                (r"data-hk=\S+", "[DATA-HK]"),
+            ],
+        }, {
+            insta::assert_snapshot!("contributors_tab", html.as_ref());
+        });
+    }
+
+    #[test]
+    fn snapshot_publications_tab_html() {
+        let mut project = minimal_test_project();
+        let mut abstract_map = std::collections::HashMap::new();
+        abstract_map.insert("en".to_string(), "An example abstract".to_string());
+        project.abstract_text = Some(abstract_map);
+        project.publications = Some(vec![dpe_core::Publication {
+            text: "Test Publication (2024)".to_string(),
+            pid: Some(dpe_core::project::Pid {
+                url: "https://example.org/pub".to_string(),
+                text: None,
+            }),
+        }]);
+        let html = render_project_tabs(project, vec![],"publications", true);
+        let html = strip_hot_reload_comments(&html);
+        insta::with_settings!({
+            filters => vec![
+                (r"data-hk=\S+", "[DATA-HK]"),
+            ],
+        }, {
+            insta::assert_snapshot!("publications_tab", html.as_ref());
+        });
+    }
+
+    // --- Integration tests: tab_fragment_handler via tower ---
+
+    fn init_test_data() {
+        use std::sync::Once;
+        static INIT: Once = Once::new();
+        INIT.call_once(|| {
+            let data_dir = format!("{}/data", env!("CARGO_MANIFEST_DIR"));
+            dpe_core::set_data_dir(&data_dir);
+        });
+    }
+
+    fn test_app() -> Router {
+        init_test_data();
+        Router::new().route(
+            "/projects/{id}/tab/{tab}",
+            get(tab_fragment_handler),
+        )
+    }
+
+    #[tokio::test]
+    async fn handler_invalid_tab_returns_404() {
+        let app = test_app();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/projects/0803/tab/nonexistent")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), AxumStatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn handler_invalid_shortcode_returns_404() {
+        let app = test_app();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/projects/../etc/tab/overview")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), AxumStatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn handler_nonexistent_project_returns_404() {
+        let app = test_app();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/projects/9999/tab/overview")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), AxumStatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn handler_overview_tab_returns_sse_stream() {
+        let app = test_app();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/projects/0803/tab/overview")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), AxumStatusCode::OK);
+
+        let content_type = response
+            .headers()
+            .get("content-type")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("");
+        assert!(
+            content_type.contains("text/event-stream"),
+            "expected SSE content type, got: {}",
+            content_type
+        );
+
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body_str = String::from_utf8_lossy(&body);
+
+        // SSE stream should contain datastar-patch-elements event
+        assert!(
+            body_str.contains("datastar-patch-elements"),
+            "SSE body should contain patch-elements event, got: {}",
+            &body_str[..body_str.len().min(500)]
+        );
+    }
+
+    #[tokio::test]
+    async fn handler_sse_contains_replace_state_script() {
+        let app = test_app();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/projects/0803/tab/contributors")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), AxumStatusCode::OK);
+
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body_str = String::from_utf8_lossy(&body);
+
+        // Should contain replaceState script (delivered via Datastar ExecuteScript)
+        assert!(
+            body_str.contains("history.replaceState"),
+            "SSE body should contain replaceState call, got: {}",
+            &body_str[..body_str.len().min(2000)]
+        );
+        assert!(
+            body_str.contains("/projects/0803?tab=contributors"),
+            "replaceState URL should match request"
+        );
+    }
+
+    #[tokio::test]
+    async fn handler_sse_html_contains_aria_attributes() {
+        let app = test_app();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/projects/0803/tab/overview")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body_str = String::from_utf8_lossy(&body);
+
+        assert!(body_str.contains(r#"role="tablist""#), "missing tablist role in SSE HTML");
+        assert!(body_str.contains(r#"role="tab""#), "missing tab role in SSE HTML");
+        assert!(body_str.contains(r#"role="tabpanel""#), "missing tabpanel role in SSE HTML");
+        assert!(
+            body_str.contains(r#"aria-selected="true""#),
+            "missing aria-selected on active tab"
+        );
+    }
+
+    #[tokio::test]
+    async fn snapshot_sse_overview_response() {
+        let app = test_app();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/projects/0803/tab/overview")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body_str = String::from_utf8_lossy(&body);
+
+        insta::with_settings!({
+            filters => vec![
+                // Scrub Leptos-generated hydration keys
+                (r"data-hk=\S+", "[DATA-HK]"),
+                // Scrub dynamic data content that may change
+                (r"https://ark\.dasch\.swiss/ark:/\S+", "[ARK-URL]"),
+            ],
+        }, {
+            insta::assert_snapshot!("sse_overview_response", body_str.as_ref());
+        });
+    }
+
+    // --- Test helpers ---
+
+    /// Create a minimal Project for unit tests that don't need real data.
+    fn minimal_test_project() -> Project {
+        use dpe_web::domain::{AccessRights, AccessRightsType, Funding, ProjectStatus};
+
+        Project {
+            id: "test-001".to_string(),
+            pid: "https://ark.dasch.swiss/ark:/72163/1/0001".to_string(),
+            name: "Test Project".to_string(),
+            shortcode: "0001".to_string(),
+            official_name: "Test Project Official".to_string(),
+            status: ProjectStatus::Ongoing,
+            short_description: "A test project".to_string(),
+            description: std::collections::HashMap::from([(
+                "en".to_string(),
+                "A test project for unit tests".to_string(),
+            )]),
+            start_date: "2020-01-01".to_string(),
+            end_date: "2025-12-31".to_string(),
+            url: None,
+            secondary_url: None,
+            how_to_cite: "Test Project (2024)".to_string(),
+            access_rights: AccessRights {
+                access_rights: AccessRightsType::FullOpenAccess,
+                embargo_date: None,
+            },
+            legal_info: vec![],
+            data_management_plan: None,
+            data_publication_year: None,
+            type_of_data: None,
+            data_language: None,
+            clusters: vec![],
+            collections: vec![],
+            collection_ids: vec![],
+            records: None,
+            keywords: vec![],
+            disciplines: vec![],
+            temporal_coverage: vec![],
+            spatial_coverage: vec![],
+            attributions: vec![],
+            abstract_text: None,
+            contact_point: None,
+            publications: None,
+            funding: Funding::Grants(vec![]),
+            alternative_names: None,
+            documentation_material: None,
+            provenance: None,
+            additional_material: None,
         }
-
-        let owner = Owner::new();
-        let html = owner.with(|| {
-            view! { <TabContent tab="overview".to_string() /> }.to_html()
-        });
-        assert!(html.contains("Overview content"));
-
-        let owner2 = Owner::new();
-        let html = owner2.with(|| {
-            view! { <TabContent tab="publications".to_string() /> }.to_html()
-        });
-        assert!(html.contains("Publications content"));
     }
 }

@@ -37,7 +37,7 @@ modules/
 │   ├── api-oai/           # OAI-PMH 2.0 API crate (depends on dpe-core only)
 │   ├── app/               # Web layer: Leptos components, pages, #[server] wrappers (crate: dpe-web)
 │   ├── server/            # Server binary: route composition, Datastar fragments (crate: dpe-server)
-│   ├── end2end/           # Playwright E2E tests
+│   ├── web-e2e-tests/     # Playwright E2E tests
 │   ├── public/            # Static assets
 │   └── style/             # CSS / Tailwind
 └── mosaic/                # Mosaic component library

@@ -80,6 +80,19 @@ jobs:
       - name: cargo hack
         run: cargo hack --feature-powerset --exclude-no-default-features --exclude mosaic-tiles check
 
+  lint-e2e:
+    runs-on: ubuntu-latest
+    name: check / biome / e2e
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+      - name: Lint DPE E2E tests
+        run: cd modules/dpe/web-e2e-tests && npx @biomejs/biome check .
+      - name: Lint Mosaic E2E tests
+        run: cd modules/mosaic/playground-e2e-tests && npx @biomejs/biome check .
+
   docs:
     runs-on: ubuntu-latest
     name: check / docs / stable

@@ -23,6 +23,7 @@ authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
 
 [workspace.dependencies]
 axum = { version = "0.8.8", features = ["macros", "ws"] }
+insta = { version = "1.46", features = ["yaml", "filters"] }
 datastar = { version = "0.3", features = ["axum"] }
 console_error_panic_hook = "0.1.7"
 leptos = { version = "0.8.2", features = ["islands"] }
@@ -44,7 +45,6 @@ leptos_axum = "0.8.2"
 cfg-if = "1.0.0"
 console_log = "1.0.0"
 http = "1.3.1"
-simple_logger = "5.2.0"
 thiserror = "2.0.12"
 quick-xml = "0.37"
 chrono = { version = "0.4" }
@@ -74,7 +74,7 @@ assets-dir = "modules/dpe/public"
 site-addr = "127.0.0.1:4000"
 reload-port = 4001
 end2end-cmd = "npx playwright test"
-end2end-dir = "modules/dpe/end2end"
+end2end-dir = "modules/dpe/web-e2e-tests"
 browserquery = "defaults"
 watch = false
 env = "DEV"

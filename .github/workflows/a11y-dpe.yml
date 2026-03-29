@@ -64,7 +64,15 @@ jobs:
         run: cd modules/dpe/web-e2e-tests && npx playwright install chromium --with-deps
 
       - name: Build dpe
-        run: cargo leptos build --project=dpe --release
+        run: |
+          # cargo-leptos 0.3.4 expects binary at target/release/{package-name} but
+          # [[bin]] name = "dpe" produces target/release/dpe. Build with cargo-leptos
+          # (which handles Tailwind/site assets) and ignore the post-build copy failure,
+          # then create a compatibility symlink.
+          cargo leptos build --project=dpe --release || true
+          if [ -f target/release/dpe ] && [ ! -f target/release/dpe-server ]; then
+            ln -s dpe target/release/dpe-server
+          fi
 
       - name: Run accessibility tests
         run: just test-a11y-dpe

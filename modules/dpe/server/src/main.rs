@@ -68,6 +68,10 @@ async fn serve() -> ExitCode {
     let dpe_config = config::DpeConfig::load().expect("failed to load DPE configuration");
     tracing::info!(data_dir = %dpe_config.data_dir.display(), "DPE configuration loaded");
 
+    if let Some(ref site_id) = dpe_config.fathom_site_id {
+        tracing::info!(fathom_site_id = %site_id, "Fathom Analytics enabled");
+    }
+
     // Set data directory for dpe-core (thread-safe OnceLock, no env mutation)
     dpe_core::set_data_dir(
         dpe_config.data_dir.to_str().expect("data_dir path must be valid UTF-8"),
@@ -81,6 +85,7 @@ async fn serve() -> ExitCode {
 
     // Generate the list of routes in your Leptos App
     let routes = generate_route_list(App);
+    let fathom_site_id = dpe_config.fathom_site_id.clone();
 
     let app = Router::new()
         // Health check — lightweight probe for Traefik/load balancers
@@ -95,9 +100,13 @@ async fn serve() -> ExitCode {
         .route("/projects/search", get(fragments::search_fragment_handler))
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();
-            move || shell(leptos_options.clone())
+            let fathom_site_id = fathom_site_id.clone();
+            move || shell(leptos_options.clone(), fathom_site_id.clone())
         })
-        .fallback(leptos_axum::file_and_error_handler(shell))
+        .fallback(leptos_axum::file_and_error_handler({
+            let fathom_site_id = fathom_site_id.clone();
+            move |options| shell(options, fathom_site_id.clone())
+        }))
         .layer(TraceLayer::new_for_http())
         .with_state(leptos_options);
 

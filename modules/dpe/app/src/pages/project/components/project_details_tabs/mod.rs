@@ -38,38 +38,43 @@ pub fn ProjectDetailsTabs(
         <div class="dpe-card flex-1 pt-4">
             <div
                 id="project-tabs"
-                class="tabs"
-                style="border-width: 0"
-                role="tablist"
-                aria-label="Project details"
                 data-on:datastar-fetch="(evt.detail.type === 'error' || evt.detail.type === 'retries-failed') && evt.detail.el.closest('#project-tabs') && (window.location.href = evt.detail.el.getAttribute('href'))"
             >
-                <TabLink
-                    value="overview"
-                    active_tab=active_tab.clone()
-                    icon=Info
-                    label="Overview"
-                    shortcode=shortcode.clone()
-                />
-                {has_publications_tab
-                    .then(|| {
-                        view! {
-                            <TabLink
-                                value="publications"
-                                active_tab=active_tab.clone()
-                                icon=Document
-                                label="Publications"
-                                shortcode=shortcode.clone()
-                            />
-                        }
-                    })}
-                <TabLink
-                    value="contributors"
-                    active_tab=active_tab.clone()
-                    icon=People
-                    label="Contributors"
-                    shortcode=shortcode.clone()
-                />
+                <div
+                    class="tabs"
+                    style="border-width: 0"
+                    role="tablist"
+                    aria-label="Project details"
+                    aria-orientation="horizontal"
+                    data-on:keydown="const tabs=[...evt.currentTarget.querySelectorAll('[role=tab]')];const idx=tabs.indexOf(evt.target);if(idx<0)return;let next;if(evt.key==='ArrowRight')next=tabs[(idx+1)%tabs.length];else if(evt.key==='ArrowLeft')next=tabs[(idx-1+tabs.length)%tabs.length];else if(evt.key==='Home')next=tabs[0];else if(evt.key==='End')next=tabs[tabs.length-1];else if(evt.key===' '){evt.preventDefault();evt.target.click();return}else return;evt.preventDefault();next.focus()"
+                >
+                    <TabLink
+                        value="overview"
+                        active_tab=active_tab.clone()
+                        icon=Info
+                        label="Overview"
+                        shortcode=shortcode.clone()
+                    />
+                    {has_publications_tab
+                        .then(|| {
+                            view! {
+                                <TabLink
+                                    value="publications"
+                                    active_tab=active_tab.clone()
+                                    icon=Document
+                                    label="Publications"
+                                    shortcode=shortcode.clone()
+                                />
+                            }
+                        })}
+                    <TabLink
+                        value="contributors"
+                        active_tab=active_tab.clone()
+                        icon=People
+                        label="Contributors"
+                        shortcode=shortcode.clone()
+                    />
+                </div>
 
                 <div
                     id="tab-panel"
@@ -129,6 +134,7 @@ fn TabLink(
         >
             <svg
                 class="tab-icon"
+                aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox=icon.view_box
                 fill="currentColor"

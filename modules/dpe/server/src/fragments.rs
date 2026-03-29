@@ -75,9 +75,16 @@ pub async fn tab_fragment_handler(
         id, tab
     ));
 
+    // Restore focus to the active tab after DOM patch (prevents focus loss to <body>)
+    let focus_tab = ExecuteScript::new(format!(
+        "document.getElementById('tab-{}')?.focus()",
+        tab
+    ));
+
     let stream = stream::iter(vec![
         Ok::<_, Infallible>(patch.into()),
         Ok(url_update.into()),
+        Ok(focus_tab.into()),
     ]);
 
     Ok(Sse::new(stream))
@@ -115,38 +122,43 @@ fn render_project_tabs(
         view! {
             <div
                 id="project-tabs"
-                class="tabs"
-                style="border-width: 0"
-                role="tablist"
-                aria-label="Project details"
                 data-on:datastar-fetch="(evt.detail.type === 'error' || evt.detail.type === 'retries-failed') && evt.detail.el.closest('#project-tabs') && (window.location.href = evt.detail.el.getAttribute('href'))"
             >
-                <FragmentTabLink
-                    value="overview"
-                    active_tab=active_tab.clone()
-                    icon=Info
-                    label="Overview"
-                    shortcode=shortcode.clone()
-                />
-                {has_publications_tab
-                    .then(|| {
-                        view! {
-                            <FragmentTabLink
-                                value="publications"
-                                active_tab=active_tab.clone()
-                                icon=Document
-                                label="Publications"
-                                shortcode=shortcode.clone()
-                            />
-                        }
-                    })}
-                <FragmentTabLink
-                    value="contributors"
-                    active_tab=active_tab.clone()
-                    icon=People
-                    label="Contributors"
-                    shortcode=shortcode.clone()
-                />
+                <div
+                    class="tabs"
+                    style="border-width: 0"
+                    role="tablist"
+                    aria-label="Project details"
+                    aria-orientation="horizontal"
+                    data-on:keydown="const tabs=[...evt.currentTarget.querySelectorAll('[role=tab]')];const idx=tabs.indexOf(evt.target);if(idx<0)return;let next;if(evt.key==='ArrowRight')next=tabs[(idx+1)%tabs.length];else if(evt.key==='ArrowLeft')next=tabs[(idx-1+tabs.length)%tabs.length];else if(evt.key==='Home')next=tabs[0];else if(evt.key==='End')next=tabs[tabs.length-1];else if(evt.key===' '){evt.preventDefault();evt.target.click();return}else return;evt.preventDefault();next.focus()"
+                >
+                    <FragmentTabLink
+                        value="overview"
+                        active_tab=active_tab.clone()
+                        icon=Info
+                        label="Overview"
+                        shortcode=shortcode.clone()
+                    />
+                    {has_publications_tab
+                        .then(|| {
+                            view! {
+                                <FragmentTabLink
+                                    value="publications"
+                                    active_tab=active_tab.clone()
+                                    icon=Document
+                                    label="Publications"
+                                    shortcode=shortcode.clone()
+                                />
+                            }
+                        })}
+                    <FragmentTabLink
+                        value="contributors"
+                        active_tab=active_tab.clone()
+                        icon=People
+                        label="Contributors"
+                        shortcode=shortcode.clone()
+                    />
+                </div>
 
                 <div
                     id="tab-panel"
@@ -220,6 +232,7 @@ fn FragmentTabLink(
         >
             <svg
                 class="tab-icon"
+                aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox=icon.view_box
                 fill="currentColor"

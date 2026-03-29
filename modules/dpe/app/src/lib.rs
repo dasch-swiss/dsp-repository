@@ -30,7 +30,9 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 <HydrationScripts options islands=true />
                 <script
                     type="module"
-                    src="https://cdn.jsdelivr.net/npm/@starfederation/datastar@v1.0.0-rc.8"
+                    src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+                    integrity="sha384-l31DqEvDq6UMs2jK/XNO8hHjWNkHvwcU4xr3h2Sq+w0zH0lvnL4WYwpPUXiKa1Z7"
+                    crossorigin="anonymous"
                     defer
                 ></script>
                 <MetaTags />

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "exclude-paths": [".github"]
+    }
+  },
+  "include-component-in-tag": false,
+  "bump-minor-pre-major": true,
+  "changelog-sections": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "perf", "section": "Performance" },
+    { "type": "revert", "section": "Reverts" },
+    { "type": "docs", "section": "Documentation", "hidden": true },
+    { "type": "style", "section": "Styles", "hidden": true },
+    { "type": "chore", "section": "Miscellaneous", "hidden": true },
+    { "type": "refactor", "section": "Refactoring", "hidden": true },
+    { "type": "test", "section": "Tests", "hidden": true },
+    { "type": "build", "section": "Build System", "hidden": true },
+    { "type": "ci", "section": "CI", "hidden": true }
+  ],
+  "extra-files": [
+    { "type": "toml", "path": "Cargo.toml", "jsonpath": "$.workspace.package.version" },
+    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'dpe-server')].version" },
+    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'dpe-web')].version" },
+    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'dpe-core')].version" },
+    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'dpe-api-oai')].version" },
+    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'mosaic-tiles')].version" },
+    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'mosaic-playground')].version" },
+    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'mosaic-playground-macro')].version" }
+  ]
+}

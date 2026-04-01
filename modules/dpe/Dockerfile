@@ -1,5 +1,5 @@
 # Chef base image — includes cargo-chef and Rust toolchain
-FROM lukemathwalker/cargo-chef:latest-rust-1.92.0-bookworm AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.93.0-bookworm AS chef
 WORKDIR /app
 
 # Planner — compute dependency recipe (changes only when Cargo.toml/Cargo.lock change)

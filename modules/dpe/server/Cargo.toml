@@ -22,5 +22,8 @@ log.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 urlencoding = "2.1"
+clap = { version = "4", features = ["derive"] }
+ureq = "3"
+dpe-core = { path = "../core" }
 
 [dev-dependencies]

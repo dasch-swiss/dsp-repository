@@ -81,4 +81,5 @@ ENV DATA_DIR="/app/server/data"
 EXPOSE 8080
 
 # Run the server
-CMD ["./dpe-server"]
+ENTRYPOINT ["./dpe-server"]
+CMD ["serve"]

@@ -1,11 +1,16 @@
-# Get started with a build env with Rust nightly
-# FROM rustlang/rust:nightly-trixie as builder
+# Chef base image — includes cargo-chef and Rust toolchain
+FROM lukemathwalker/cargo-chef:latest-rust-1.92.0-bookworm AS chef
+WORKDIR /app
 
-# If you're using stable, use this instead
-FROM rust:1.92.0-bookworm AS builder
+# Planner — compute dependency recipe (changes only when Cargo.toml/Cargo.lock change)
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Install cargo-binstall, which makes it easier to install other
-# cargo extensions like cargo-leptos
+# Builder — cook dependencies (cached), then build source
+FROM chef AS builder
+
+# Install cargo-binstall
 RUN wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
 RUN tar -xvf cargo-binstall-x86_64-unknown-linux-musl.tgz
 RUN cp cargo-binstall /usr/local/cargo/bin
@@ -25,11 +30,12 @@ RUN curl -fsSL https://github.com/tailwindlabs/tailwindcss/releases/download/v4.
     -o /usr/local/bin/tailwindcss \
     && chmod +x /usr/local/bin/tailwindcss
 
-# Make an /app dir, which everything will eventually live in
-RUN mkdir -p /app
-WORKDIR /app
+# Cook dependencies (cached as long as Cargo.toml/Cargo.lock don't change)
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+RUN cargo chef cook --release --target wasm32-unknown-unknown -p mosaic-playground -p mosaic-tiles --recipe-path recipe.json
 
-# Copy the entire workspace (needed for workspace dependencies)
+# Copy full source and build
 COPY . .
 
 # Build the app from the demo directory

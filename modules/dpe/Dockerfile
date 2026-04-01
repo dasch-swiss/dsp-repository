@@ -1,5 +1,14 @@
-# Build Stage
-FROM rust:1.92.0-bookworm AS builder
+# Chef base image — includes cargo-chef and Rust toolchain
+FROM lukemathwalker/cargo-chef:latest-rust-1.92.0-bookworm AS chef
+WORKDIR /app
+
+# Planner — compute dependency recipe (changes only when Cargo.toml/Cargo.lock change)
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# Builder — cook dependencies (cached), then build source
+FROM chef AS builder
 
 # Install cargo-binstall (pinned version with integrity check)
 RUN BINSTALL_VERSION="1.17.9" && \
@@ -26,11 +35,14 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g pnpm
 
-# Set the working directory
-RUN mkdir -p /app
-WORKDIR /app
+# Cook dependencies (cached as long as Cargo.toml/Cargo.lock don't change)
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+RUN cargo chef cook --release --target wasm32-unknown-unknown -p dpe-web --recipe-path recipe.json
+RUN rustup target add x86_64-unknown-linux-musl && \
+    cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
 
-# Copy the entire workspace (needed for workspace dependencies)
+# Copy full source and build
 COPY . .
 
 # Install npm dependencies

@@ -22,6 +22,7 @@ authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
 
 [workspace.dependencies]
 axum = { version = "0.8.8", features = ["macros", "ws"] }
+datastar = { version = "0.3", features = ["axum"] }
 console_error_panic_hook = "0.1.7"
 leptos = { version = "0.8.2", features = ["islands"] }
 leptos_meta = "0.8.2"

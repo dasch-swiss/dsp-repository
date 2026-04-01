@@ -7,7 +7,7 @@ use mosaic_tiles::ThemeProvider;
 
 mod components;
 pub mod domain;
-mod pages;
+pub mod pages;
 
 use components::{Footer, Header};
 use pages::{AboutPage, ProjectPage, ProjectsPage};
@@ -28,6 +28,13 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 />
                 <AutoReload options=options.clone() />
                 <HydrationScripts options islands=true />
+                <script
+                    type="module"
+                    src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+                    integrity="sha384-l31DqEvDq6UMs2jK/XNO8hHjWNkHvwcU4xr3h2Sq+w0zH0lvnL4WYwpPUXiKa1Z7"
+                    crossorigin="anonymous"
+                    defer
+                ></script>
                 <MetaTags />
             </head>
             <body class="font-body">

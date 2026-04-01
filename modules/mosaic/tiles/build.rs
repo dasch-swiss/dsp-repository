@@ -229,7 +229,7 @@ fn main() {
 
     for line in buf_reader.lines().map_while(Result::ok) {
         let split_line = line.split_whitespace().collect::<Vec<&str>>();
-        if format!("./{}", filename) == split_line[1] {
+        if split_line.len() >= 2 && format!("./{}", filename) == split_line[1] {
             expected_checksum = split_line[0].into()
         }
     }

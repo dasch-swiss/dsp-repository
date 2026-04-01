@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Project Structure - DSP-Repository Developer Documentation</title>
+        <title>Operations - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -242,71 +242,110 @@
 }
 
 </style>
-<h1 id="dpe-project-structure"><a class="header" href="#dpe-project-structure">DPE Project Structure</a></h1>
-<h2 id="workspace-layout"><a class="header" href="#workspace-layout">Workspace Layout</a></h2>
-<pre><code>modules/dpe/
-├── core/             dpe-core          Pure domain (serde only)
-├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
-├── app/              dpe-web           Leptos SSR + Datastar fragments
-├── server/           dpe-server        Axum binary (composition root)
-├── web-e2e-tests/                      Playwright E2E tests
-├── public/                             Static assets
-└── style/                              Tailwind CSS
+<h1 id="dpe-operations-guide"><a class="header" href="#dpe-operations-guide">DPE Operations Guide</a></h1>
+<p>Operations documentation for the DPE infrastructure team.</p>
+<h2 id="docker-image"><a class="header" href="#docker-image">Docker Image</a></h2>
+<ul>
+<li><strong>Base</strong>: <code>gcr.io/distroless/static-debian12:nonroot</code></li>
+<li><strong>User</strong>: uid 65534 (nonroot, built-in to distroless)</li>
+<li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
+<li><strong>Binary</strong>: Static musl-linked <code>dpe</code> (CLI with subcommands)</li>
+</ul>
+<h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
+<p>The <code>dpe</code> binary provides three subcommands:</p>
+<div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>dpe serve</code></td><td>Start the web server</td></tr>
+<tr><td><code>dpe validate &lt;data_dir&gt;</code></td><td>Validate all data files under the given directory</td></tr>
+<tr><td><code>dpe healthcheck [--url URL]</code></td><td>Check if the server is healthy (default: <code>http://localhost:8080/healthz</code>)</td></tr>
+</tbody></table>
+</div>
+<h3 id="dpe-validate"><a class="header" href="#dpe-validate"><code>dpe validate</code></a></h3>
+<p>Validates JSON data files for structural correctness and cross-reference integrity.</p>
+<pre><code class="language-bash">dpe validate ./data
 </code></pre>
-<h2 id="dependency-graph"><a class="header" href="#dependency-graph">Dependency Graph</a></h2>
-<pre><code>dpe-core          ← pure domain, no framework deps
-  ↑
-  ├── dpe-api-oai ← OAI-PMH endpoint
-  ├── dpe-web     ← Leptos SSR pages + components
-  └── dpe-server  ← composition root, Datastar fragment handlers
+<p><strong>What it checks:</strong></p>
+<ul>
+<li>JSON schema validity for all data file types (projects, persons, organizations, records, clusters, collections)</li>
+<li>Cross-references between projects, persons, and organizations</li>
+<li>Orphaned files that are not referenced by any parent entity</li>
+</ul>
+<p><strong>Exit codes:</strong></p>
+<ul>
+<li><code>0</code> — all data files are valid</li>
+<li><code>1</code> — validation errors found (details printed to stderr)</li>
+</ul>
+<h3 id="dpe-healthcheck"><a class="header" href="#dpe-healthcheck"><code>dpe healthcheck</code></a></h3>
+<p>Lightweight probe for Docker HEALTHCHECK or monitoring:</p>
+<pre><code class="language-bash">dpe healthcheck                                    # default: http://localhost:8080/healthz
+dpe healthcheck --url http://localhost:9090/healthz # custom URL
 </code></pre>
-<h2 id="crate-responsibilities"><a class="header" href="#crate-responsibilities">Crate Responsibilities</a></h2>
-<h3 id="dpe-core-core"><a class="header" href="#dpe-core-core"><code>dpe-core</code> (core/)</a></h3>
-<p>Framework-free domain layer. Contains:</p>
+<h2 id="ports"><a class="header" href="#ports">Ports</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody>
+<tr><td>8080</td><td>HTTP</td><td>Application server</td></tr>
+</tbody></table>
+</div>
+<h2 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Required</th><th>Default</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g., <code>dpe_server=info,tower_http=debug</code>)</td></tr>
+<tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>modules/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
+<tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret)</td></tr>
+<tr><td><code>LEPTOS_SITE_ADDR</code></td><td>No</td><td><code>0.0.0.0:8080</code></td><td>Listen address and port</td></tr>
+<tr><td><code>LEPTOS_SITE_ROOT</code></td><td>No</td><td><code>site</code></td><td>Path to static site assets</td></tr>
+<tr><td><code>LEPTOS_SITE_PKG_DIR</code></td><td>No</td><td><code>pkg</code></td><td>JS/CSS package subdirectory</td></tr>
+<tr><td><code>LEPTOS_OUTPUT_NAME</code></td><td>No</td><td><code>dpe</code></td><td>CSS/JS output filename prefix</td></tr>
+<tr><td><code>LEPTOS_ENV</code></td><td>No</td><td><code>PROD</code></td><td>Leptos environment (DEV or PROD)</td></tr>
+</tbody></table>
+</div>
+<h2 id="health-check"><a class="header" href="#health-check">Health Check</a></h2>
 <ul>
-<li><strong>Domain types</strong>: <code>Project</code>, <code>Record</code>, <code>Person</code>, <code>Organization</code>, <code>Attribution</code>, etc.</li>
-<li><strong>Repository traits</strong>: <code>ProjectRepository</code>, <code>RecordRepository</code></li>
-<li><strong>Fs implementations</strong>: <code>FsProjectRepository</code>, <code>FsRecordRepository</code> (backed by in-memory caches)</li>
-<li><strong>Data loading</strong>: Project and record caches (<code>OnceLock&lt;Vec&lt;T&gt;&gt;</code>) loaded from JSON on first access</li>
-<li><strong>Utilities</strong>: <code>lang_value()</code>, <code>get_data_dir()</code></li>
+<li><strong>Endpoint</strong>: <code>GET /healthz</code></li>
+<li><strong>Response</strong>: <code>200 OK</code> (no body)</li>
+<li><strong>Purpose</strong>: Lightweight probe for Traefik/load balancers. Does not hit Leptos SSR.</li>
 </ul>
-<p>Dependencies: <code>serde</code>, <code>serde_json</code> only.</p>
-<h3 id="dpe-api-oai-api-oai"><a class="header" href="#dpe-api-oai-api-oai"><code>dpe-api-oai</code> (api-oai/)</a></h3>
-<p>OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord).</p>
-<p>Depends on <code>dpe-core</code> for domain types — no Leptos or web framework dependency.</p>
-<h3 id="dpe-web-app"><a class="header" href="#dpe-web-app"><code>dpe-web</code> (app/)</a></h3>
-<p>Leptos SSR web layer. Contains:</p>
+<h2 id="data-volume"><a class="header" href="#data-volume">Data Volume</a></h2>
 <ul>
-<li><strong>Pages</strong>: <code>home</code>, <code>about</code>, <code>project</code>, <code>projects</code> (with filters and pagination)</li>
-<li><strong>Components</strong>: navbar, footer, project cards, tab panels, search input</li>
-<li><strong>Domain re-exports</strong>: <code>domain/mod.rs</code> re-exports <code>dpe-core</code> types for a single import path</li>
-<li><strong>Server functions</strong>: <code>#[server]</code> wrappers around <code>dpe-core</code> functions</li>
+<li><strong>Mount point</strong>: Value of <code>DPE_DATA_DIR</code></li>
+<li><strong>Access</strong>: Read-only</li>
+<li><strong>Contents</strong>: Project metadata JSON files, organized by type (<code>projects/</code>, <code>persons/</code>, <code>organizations/</code>, <code>clusters/</code>, <code>collections/</code>, <code>records/</code>)</li>
 </ul>
-<h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
-<p>Composition root and Axum binary. Contains:</p>
+<h2 id="resource-requirements"><a class="header" href="#resource-requirements">Resource Requirements</a></h2>
+<p>The DPE is lightweight — it serves static data with no database.</p>
 <ul>
-<li><strong>Route wiring</strong>: Leptos SSR routes, OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code></li>
-<li><strong>Fragment handlers</strong>: <code>fragments.rs</code> — pure Axum handlers that render Leptos components to HTML and return Datastar SSE events</li>
-<li><strong>Configuration</strong>: <code>config.rs</code> — figment-based layered config (defaults → <code>dpe.toml</code> → <code>DPE_*</code> env vars)</li>
-<li><strong>Logging</strong>: <code>tracing-subscriber</code> with env-filter and JSON support</li>
+<li><strong>Memory</strong>: ~50-100 MB typical</li>
+<li><strong>CPU</strong>: Minimal (SSR rendering is fast, data is cached in-memory)</li>
+<li><strong>Disk</strong>: Data files + static assets (~50 MB)</li>
 </ul>
-<h2 id="key-patterns"><a class="header" href="#key-patterns">Key Patterns</a></h2>
+<h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
+<p>Structured logging via <code>tracing-subscriber</code>. Configure levels with <code>RUST_LOG</code>:</p>
+<pre><code class="language-bash"># Default (info level)
+RUST_LOG=info
+
+# Debug HTTP requests
+RUST_LOG=dpe_server=info,tower_http=debug
+
+# Verbose debugging
+RUST_LOG=debug
+</code></pre>
+<h2 id="observability"><a class="header" href="#observability">Observability</a></h2>
+<h3 id="fathom-analytics"><a class="header" href="#fathom-analytics">Fathom Analytics</a></h3>
+<p>Privacy-friendly, GDPR-compliant analytics. No cookies, no personal data collected.</p>
+<p><strong>Configuration:</strong> Set the <code>DPE_FATHOM_SITE_ID</code> environment variable to your Fathom site ID (not a secret). The tracking script is automatically injected into the HTML shell.</p>
+<p><strong>What gets tracked:</strong></p>
 <ul>
-<li><strong>Domain types in <code>dpe-core</code></strong>, not in web or API crates</li>
-<li><strong>API crates depend on <code>dpe-core</code> only</strong>, never on each other or on <code>dpe-web</code></li>
-<li><strong><code>dpe-server</code> contains no business logic</strong> — only route composition and fragment rendering</li>
-<li><strong>Fragment handlers</strong> use <code>Owner::new()</code> + <code>view! { ... }.to_html()</code> to render Leptos components from pure Axum handlers</li>
+<li>Page views</li>
+<li>Tab switches (detected automatically via <code>history.replaceState</code>)</li>
 </ul>
+<p><strong>Disable:</strong> Omit the <code>DPE_FATHOM_SITE_ID</code> environment variable — no tracking script is rendered.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../dpe/architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../dpe/testing-strategy.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../dpe/testing-strategy.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../fundamentals/processes.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -316,11 +355,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../dpe/architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../dpe/testing-strategy.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../dpe/testing-strategy.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../fundamentals/processes.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

@@ -1,0 +1,103 @@
+name: Nightly Fuzz Testing
+
+on:
+  schedule:
+    # Run every night at 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  fuzz:
+    name: Fuzz ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - tab_validation
+          - query_params
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install cargo-fuzz
+        run: cargo binstall cargo-fuzz -y
+
+      - name: Restore corpus cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: modules/dpe/server/fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: |
+            fuzz-corpus-${{ matrix.target }}-
+
+      - name: Run fuzzer (10 min budget)
+        working-directory: modules/dpe/server
+        run: |
+          cargo +nightly fuzz run ${{ matrix.target }} -- \
+            -max_total_time=600 \
+            -max_len=4096
+        continue-on-error: true
+        id: fuzz
+
+      - name: Upload corpus as artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fuzz-corpus-${{ matrix.target }}
+          path: modules/dpe/server/fuzz/corpus/${{ matrix.target }}
+          retention-days: 30
+
+      - name: Upload crash artifacts
+        if: failure() || steps.fuzz.outcome == 'failure'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fuzz-crashes-${{ matrix.target }}
+          path: modules/dpe/server/fuzz/artifacts/${{ matrix.target }}
+          retention-days: 90
+
+      - name: Create issue on crash
+        if: failure() || steps.fuzz.outcome == 'failure'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const fs = require('fs');
+            const target = '${{ matrix.target }}';
+            const artifactsDir = `modules/dpe/server/fuzz/artifacts/${target}`;
+
+            let crashFiles = [];
+            try {
+              crashFiles = fs.readdirSync(artifactsDir)
+                .filter(f => f.startsWith('crash-') || f.startsWith('oom-'));
+            } catch (e) {
+              // No artifacts directory
+            }
+
+            const body = [
+              `## Fuzz crash detected in \`${target}\``,
+              '',
+              `**Workflow run:** ${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+              `**Target:** \`${target}\``,
+              `**Crash files found:** ${crashFiles.length}`,
+              '',
+              'Download the crash artifacts from the workflow run to reproduce locally:',
+              '```bash',
+              `cd modules/dpe/server`,
+              `cargo +nightly fuzz run ${target} <crash-file>`,
+              '```',
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Fuzz crash: ${target}`,
+              body,
+              labels: ['bug', 'fuzz'],
+            });

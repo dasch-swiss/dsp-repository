@@ -1,6 +1,6 @@
-import { devices, defineConfig } from "@playwright/test";
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { defineConfig, devices } from "@playwright/test";
 
 /**
  * Read environment variables from file.
@@ -8,12 +8,16 @@ import * as path from "path";
  */
 // require('dotenv').config();
 
-const serverBinary = path.resolve(__dirname, "../../..", "target/release/dpe-server");
+const serverBinary = path.resolve(
+  __dirname,
+  "../../..",
+  "target/release/dpe-server",
+);
 
 if (!fs.existsSync(serverBinary)) {
   throw new Error(
     `Server binary not found at ${serverBinary}\n` +
-    `Run 'just watch-dpe' (or 'cargo leptos build --release') before running E2E tests.`
+      `Run 'just watch-dpe' (or 'cargo leptos build --release') before running E2E tests.`,
   );
 }
 
@@ -109,12 +113,16 @@ export default defineConfig({
 
   /* Start the DPE server before running tests */
   webServer: {
-    command: serverBinary,
+    command: `${serverBinary} serve`,
     port: 4000,
     reuseExistingServer: !process.env.CI,
     env: {
+      LEPTOS_OUTPUT_NAME: "dpe",
       LEPTOS_SITE_ROOT: path.resolve(__dirname, "..", "target/site"),
+      LEPTOS_SITE_PKG_DIR: "pkg",
       LEPTOS_SITE_ADDR: "127.0.0.1:4000",
+      LEPTOS_ENV: "PROD",
+      RUST_LOG: "error",
     },
   },
 });

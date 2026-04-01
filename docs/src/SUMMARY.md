@@ -19,6 +19,8 @@
 - [Discovery and Presentation Environment]()
   - [Architecture](./dpe/architecture.md)
   - [Project Structure](./dpe/project_structure.md)
+  - [Testing Strategy](./dpe/testing-strategy.md)
+  - [Operations](./dpe/operations.md)
 
 ---
 

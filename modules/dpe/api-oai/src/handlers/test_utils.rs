@@ -21,12 +21,12 @@ impl InMemoryProjectRepository {
 }
 
 impl ProjectRepository for InMemoryProjectRepository {
-    fn get_all(&self) -> Vec<Project> {
-        self.projects.clone()
+    fn get_all(&self) -> &[Project] {
+        &self.projects
     }
 
-    fn get_by_shortcode(&self, shortcode: &str) -> Option<Project> {
-        self.projects.iter().find(|p| p.shortcode == shortcode).cloned()
+    fn get_by_shortcode(&self, shortcode: &str) -> Option<&Project> {
+        self.projects.iter().find(|p| p.shortcode == shortcode)
     }
 }
 
@@ -150,15 +150,14 @@ impl InMemoryRecordRepository {
 }
 
 impl RecordRepository for InMemoryRecordRepository {
-    fn get_all(&self) -> Vec<Record> {
-        self.records.clone()
+    fn get_all(&self) -> &[Record] {
+        &self.records
     }
 
-    fn get_by_id(&self, ark_suffix: &str) -> Option<Record> {
+    fn get_by_id(&self, ark_suffix: &str) -> Option<&Record> {
         self.records
             .iter()
             .find(|r| r.pid.ark_suffix() == ark_suffix)
-            .cloned()
     }
 }
 

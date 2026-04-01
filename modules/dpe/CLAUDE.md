@@ -4,261 +4,210 @@ This document provides guidance for AI coding assistants working with the Discov
 
 ## Project Overview
 
-DPE is a **Leptos 0.8.2** web application using **Axum** for the backend. Server-side rendered (SSR) with **Datastar** for interactivity (no WASM/client-side hydration for DPE).
+DPE is a server-side rendered web application. Pages are rendered on the server with **Leptos SSR** and served as plain HTML. Interactive behavior (tab switching, live search) is handled by **Datastar**, which streams HTML fragments over SSE -- there is no client-side WASM, no hydration, and no islands architecture for DPE.
 
-### Architecture
-
-- **Web Framework**: Leptos SSR (server-side rendering only)
-- **Interactivity**: Datastar (hypermedia-driven SSE fragments)
-- **Backend**: Axum web server with Tokio runtime
-- **Styling**: Tailwind CSS 4.x + DaisyUI
-- **Testing**: Cargo tests for unit/integration, Playwright for E2E
-
-### Crate Structure
+## Crate Structure
 
 ```
 dpe/
 ├── core/             # Pure domain types, repositories, data loading (crate: dpe-core)
-│                     # Zero framework deps — only serde + serde_json
+│                     # Zero framework deps -- only serde, serde_json, tracing
 ├── api-oai/          # OAI-PMH 2.0 API (crate: dpe-api-oai)
 │                     # Depends on dpe-core only
-├── app/              # Web layer: Leptos components, pages, #[server] fns (crate: dpe-web)
+├── app/              # Web layer: Leptos components, pages, domain re-exports (crate: dpe-web)
 │                     # Depends on dpe-core for domain types
-├── server/           # Server binary: route composition (crate: dpe-server)
+├── server/           # Server binary and fragment handlers (crate: dpe-server)
 │                     # Composes dpe-web (Leptos routes) + dpe-api-oai (API routes)
-├── end2end/          # Playwright E2E tests
+├── web-e2e-tests/    # Playwright E2E tests
 ├── public/           # Static assets
-└── style/            # CSS/Tailwind configuration
+└── style/            # CSS / Tailwind configuration
 ```
 
-## Key Technologies & Versions
+### Crate Responsibilities
 
-- **Leptos**: 0.8.2
-- **Axum**: 0.8.4
-- **Tailwind CSS**: 4.1.18
-- **DaisyUI**: 5.5.14
+- **dpe-core** -- Domain types (`Project`, `Organization`, `Person`, etc.), repository functions (`get_project`, `list_projects`), and data loading from JSON files. No framework dependencies.
+- **dpe-api-oai** -- OAI-PMH 2.0 XML endpoint. Depends only on dpe-core.
+- **dpe-web** (app/) -- Leptos `#[component]` functions for pages and reusable UI elements. Re-exports domain types from dpe-core via its `domain` module so that the server crate has a single import path.
+- **dpe-server** (server/) -- The composition root. Wires up Axum routes for Leptos pages, OAI-PMH, health checks, and Datastar fragment endpoints. Contains `fragments.rs` with pure Axum handlers.
+
+## Key Technologies and Versions
+
+- **Leptos**: 0.8.2 (SSR only -- no `hydrate` feature for DPE)
+- **Axum**: 0.8.8
+- **Datastar**: SSE-based interactivity via `datastar` crate (0.3)
+- **Tailwind CSS**: 4.x + DaisyUI
 - **Rust Edition**: 2021
-- **Target**: wasm32-unknown-unknown (for frontend)
+- **Runtime**: Tokio
 
 ## Development Commands
 
-### Running the Development Server
+All commands should be run from the workspace root using `just`:
 
 ```bash
-cargo leptos watch
+just watch-dpe          # Run DPE dev server with hot reload (http://127.0.0.1:4000)
+just check              # Run fmt checks + clippy
+just fmt                # Format all Rust code (cargo fmt + leptosfmt)
+just test               # Run all cargo tests
+just build              # Build all targets
 ```
 
-This starts the development server with hot-reload on `http://127.0.0.1:4000`
-
-### Building for Production
+For running cargo tests directly within the DPE module:
 
 ```bash
-cargo leptos build --release
-```
-
-### Running Tests
-
-```bash
-cargo leptos end-to-end        # Development mode
-cargo leptos end-to-end --release  # Release mode
-```
-
-### Installing Prerequisites
-
-```bash
-rustup target add wasm32-unknown-unknown
-cargo install cargo-leptos --locked
+cargo test -p dpe-core
+cargo test -p dpe-web
+cargo test -p dpe-server
+cargo test -p dpe-api-oai
 ```
 
 ## Code Organization Patterns
 
-### Component Structure
+### Components
 
-Components are located in [app/src/components/](app/src/components/):
+Components live in `app/src/components/`. Each file exports one or more Leptos `#[component]` functions. Re-export new components in `app/src/components/mod.rs`.
 
-- [navbar.rs](app/src/components/navbar.rs) - Navigation bar
-- [menu.rs](app/src/components/menu.rs) - Side menu
-- [card.rs](app/src/components/card.rs) - Reusable card component
-- [footer.rs](app/src/components/footer.rs) - Page footer
-- [mod.rs](app/src/components/mod.rs) - Module exports
+Subdirectories under `components/` group related pieces (e.g., `components/global/` for layout-level elements).
 
-### Page Structure
+### Pages
 
-Pages are located in [app/src/pages/](app/src/pages/):
+Pages live in `app/src/pages/`. Each page is a top-level Leptos component rendered by the router. Subdirectories group page-specific sub-components (e.g., `pages/project/components/`).
 
-- [home.rs](app/src/pages/home.rs) - Home page
-- [about.rs](app/src/pages/about.rs) - About page
-- [project.rs](app/src/pages/project.rs) - Project detail page
-- [mod.rs](app/src/pages/mod.rs) - Module exports
-
-### Main Application
-
-- [app/src/lib.rs](app/src/lib.rs) - Main app component with routing setup
-- Uses Leptos Router with static and dynamic routes
-- SSR shell function for HTML generation
-
-## Important Conventions
-
-### Leptos Component Pattern
+Routes are declared in `app/src/lib.rs` inside the `<Routes>` block:
 
 ```rust
-use leptos::prelude::*;
-
-#[component]
-pub fn ComponentName() -> impl IntoView {
-    view! {
-        <div class="tailwind-classes">
-            // Component content
-        </div>
-    }
-}
+<Route path=StaticSegment("projects") view=ProjectsPage />
+<Route path=path!("projects/:id") view=ProjectPage />
 ```
 
-### Routing
+### Domain Re-exports
 
-- Uses `leptos_router` with new 0.8.x API
-- Static routes: `Route path=StaticSegment("about")`
-- Dynamic routes: `Route path=path!("projects/:id")`
+`app/src/domain/` re-exports types and functions from `dpe-core`. The server crate imports domain items through `dpe_web::domain` so there is a single import path.
 
-### Styling
+### Fragment Handler Pattern
 
-- Tailwind CSS 4.x syntax (note: v4 has breaking changes from v3)
-- DaisyUI component classes available
-- CSS in [style/main.css](style/main.css)
+Interactive updates use **Datastar SSE fragments** -- these are pure Axum route handlers (not Leptos server functions) that:
 
-### Features
+1. Receive a request (path params or Datastar `ReadSignals`)
+2. Load data from dpe-core repositories
+3. Render a Leptos component to an HTML string using `Owner::new()` + `.to_html()`
+4. Return the HTML as a Datastar `PatchElements` SSE event, optionally followed by `ExecuteScript` events
 
-The project uses Cargo features for different compilation targets:
+Fragment routes are registered in `server/src/main.rs` and implemented in `server/src/fragments.rs`. Example routes:
 
-- `hydrate` - Client-side hydration (WASM)
-- `ssr` - Server-side rendering (Axum)
+```
+GET /projects/{id}/tab/{tab}   -> tab_fragment_handler
+GET /projects/search           -> search_fragment_handler
+```
+
+The key point: fragments run entirely on the server. No client-side Rust code is involved.
+
+### Datastar Attributes in Templates
+
+Interactive elements in Leptos templates use Datastar `data-*` attributes:
+
+- `data-on:click` with `@get('/fragment/url')` to fetch SSE fragments
+- `data-on:input__debounce` for debounced search
+- `data-on:datastar-fetch` for error handling fallbacks
+- Fragment targets are identified by CSS selectors (e.g., `#project-tabs`)
+
+## Testing
+
+### Running tests
+
+```bash
+just test                              # All workspace tests
+cargo test -p dpe-server               # Single crate
+cargo test -p dpe-server test_name     # Specific test
+cargo nextest run                      # Faster parallel runner (if installed)
+```
+
+### Snapshot tests (insta)
+
+```bash
+cargo test -p dpe-server               # Run tests — failing snapshots produce .snap.new files
+cargo insta review                     # Interactive review of new/changed snapshots
+cargo insta accept                     # Accept all pending snapshots
+```
+
+Snapshot files (`.snap`) are committed to git. Use `with_settings!` to scrub dynamic values.
+
+### E2E tests (Playwright)
+
+```bash
+cd modules/dpe/web-e2e-tests && npx playwright test
+```
+
+See `docs/src/dpe/testing-strategy.md` for the full testing pyramid documentation.
+
+## Conventions and Review
+
+- See `CONVENTIONS.md` for fragment route naming, Datastar attribute patterns, test directory conventions, and code style rules.
+- See `REVIEW.md` for the code review checklist.
 
 ## When Making Changes
 
 ### Adding a New Component
 
-1. Create file in [app/src/components/](app/src/components/)
+1. Create file in `app/src/components/`
 2. Define component with `#[component]` macro
-3. Export in [app/src/components/mod.rs](app/src/components/mod.rs)
-4. Import in [app/src/lib.rs](app/src/lib.rs) or relevant page
+3. Export in `app/src/components/mod.rs`
+4. Import in the relevant page or layout
 
 ### Adding a New Page
 
-1. Create file in [app/src/pages/](app/src/pages/)
+1. Create file in `app/src/pages/`
 2. Define page component
-3. Export in [app/src/pages/mod.rs](app/src/pages/mod.rs)
-4. Add route in [app/src/lib.rs](app/src/lib.rs) `<Routes>` section
+3. Export in `app/src/pages/mod.rs`
+4. Add route in `app/src/lib.rs` inside `<Routes>`
+
+### Adding a New Fragment Handler
+
+1. Add the async handler function in `server/src/fragments.rs`
+2. Register the route in `server/src/main.rs`
+3. Use `Owner::new()` + `view! { ... }.to_html()` to render Leptos components
+4. Return a `Sse` stream of `PatchElements` (and optionally `ExecuteScript`) events
+5. Strip hot-reload comments with `strip_hot_reload_comments()` in dev mode
 
 ### Modifying Styles
 
-- Global styles: Edit [style/main.css](style/main.css)
-- Component styles: Use Tailwind/DaisyUI classes in components
-- Tailwind config is in Cargo.toml: `tailwind-input-file = "style/main.css"`
+- Global styles: edit `style/main.css`
+- Component styles: use Tailwind / DaisyUI classes in component templates
+- Tailwind input is configured in `Cargo.toml`: `tailwind-input-file = "style/main.css"`
 
-### Server-Side Code
+## Common Pitfalls
 
-- Backend logic goes in [server/src/main.rs](server/src/main.rs)
-- Server actions can be defined in `app/` with `#[server]` macro
+### Leptos 0.8.x API
 
-## Common Pitfalls & Solutions
-
-### Islands Mode
-
-If using islands, the frontend must import the app:
-
-```rust
-// In frontend/src/lib.rs
-#[allow(clippy::single_component_path_imports)]
-#[allow(unused_imports)]
-use app;
-```
-
-### Leptos 0.8.x Breaking Changes
-
-- New reactive primitives API: `use leptos::prelude::*;`
-- Router API changes: Use `StaticSegment` and `path!` macro
-- Signal APIs may differ from 0.7.x examples online
-
-### WASM Build Issues
-
-- Ensure `wasm32-unknown-unknown` target is installed
-- Check that `wasm-bindgen` version matches (currently =0.2.105)
-- Nightly Rust is required by default
+- Import via `use leptos::prelude::*;`
+- Router uses `StaticSegment` and `path!` macro (different from 0.7.x)
+- Signal APIs may differ from older online examples
 
 ### Styling Not Applying
 
-- Stylesheet link is in [app/src/lib.rs](app/src/lib.rs): `<Stylesheet id="leptos" href="/pkg/dpe.css" />`
-- Ensure Tailwind build is working (automatic with `cargo leptos watch`)
-- Check DaisyUI theme configuration in [style/main.css](style/main.css)
+- Stylesheet link is in `app/src/lib.rs`: `<Stylesheet id="leptos" href="/pkg/dpe.css" />`
+- Ensure Tailwind build runs (automatic with `just watch-dpe`)
+- Check DaisyUI theme configuration in `style/main.css`
+
+### Hot-Reload Comments in Fragments
+
+In dev mode, Leptos wraps output in `<!--hot-reload|...|-->` comments. These break Datastar morphing. Always pass fragment HTML through `strip_hot_reload_comments()`.
 
 ## Best Practices for AI Agents
 
-1. **Always read existing code first** before making changes to understand patterns
+1. **Read existing code first** before making changes to understand patterns
 2. **Maintain consistency** with existing component and file structure
-3. **Use Leptos 0.8.x syntax** - many online examples are for 0.7.x
-4. **Test with `cargo leptos watch`** to verify changes compile for both server and WASM
-5. **Follow Rust conventions**: snake_case for functions/variables, PascalCase for types/components
-6. **Keep SSR/CSR compatibility in mind** - code runs in both environments
-7. **Use mosaic tiles components** where appropriate for consistent UI
-8. **Check Tailwind v4 syntax** - some classes changed from v3
+3. **Use Leptos 0.8.x syntax** -- many online examples target 0.7.x
+4. **Follow Rust conventions**: snake_case for functions/variables, PascalCase for types/components
+5. **Use `just check`** to verify formatting and linting before considering work done
+6. **Use mosaic-tiles components** where appropriate for consistent UI
+7. **Check Tailwind v4 syntax** -- some classes changed from v3
 
-## Debugging Tips
+## Note on Mosaic Playground
 
-### Hot Reload Not Working
-
-- Check reload port (4001) isn't blocked
-- Restart `cargo leptos watch`
-
-### WASM Compilation Errors
-
-- Ensure no `std` features incompatible with WASM
-- Check for browser-only APIs not available in SSR
-- Use `cfg_if!` macro for platform-specific code:
-
-```rust
-use cfg_if::cfg_if;
-
-cfg_if! {
-    if #[cfg(feature = "ssr")] {
-        // Server-only code
-    } else {
-        // Client-only code
-    }
-}
-```
-
-### Hydration Mismatches
-
-- Ensure server and client render the same initial HTML
-- Use `suppressHydrationWarning` for dynamic content
-- Check for browser-only code running during SSR
-
-## Project-Specific Notes
-
-- **Public assets** go in `public/` directory
-- **Static site output** goes to `target/site/` (auto-generated)
-- **Release builds** are optimized for size (`opt-level = 'z'`, LTO enabled)
-- **Environment variables** for production are in README.md
-- The project uses a **workspace** setup - be aware of feature flags when adding dependencies
-
-## Resources
-
-- [Leptos Documentation](https://leptos.dev)
-- [Leptos 0.8 Migration Guide](https://leptos-rs.github.io/leptos/)
-- [Cargo Leptos](https://github.com/leptos-rs/cargo-leptos)
-- [DaisyUI Components](https://daisyui.com)
-- [Tailwind CSS v4 Docs](https://tailwindcss.com)
-
-## Questions to Ask When Unsure
-
-- "Should this be a server action or client-side logic?"
-- "Does this code need to be SSR-compatible?"
-- "Should this use an existing DaisyUI component?"
-- "Is this following the project's component structure pattern?"
-- "Will this work in both dev (`cargo leptos watch`) and production builds?"
+The Mosaic component playground (`modules/mosaic/demo/`) is a separate application that does use Leptos islands and WASM. That architecture does not apply to DPE. Do not conflate the two.
 
 ---
 
-**Last Updated**: 2025-12-22
+**Last Updated**: 2026-03-27
 **Leptos Version**: 0.8.2
 **For AI Agents**: This project is actively in development. Always verify current patterns by reading existing code before making changes.

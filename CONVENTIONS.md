@@ -49,4 +49,66 @@ Each API is a separate crate under `modules/dpe/`:
 
 - `web-e2e-tests/` for DPE Playwright tests (sibling of the app, not nested)
 - `playground-e2e-tests/` for Mosaic Playwright tests
-- Not `end2end/` (legacy name, will be renamed)
+
+## Testing Conventions
+
+**Testing pyramid** (approximate distribution):
+
+| Layer | Share | Purpose |
+|-------|-------|---------|
+| Unit | ~50% | Pure logic, domain types, parsing |
+| E2E | ~30% | Full user flows via browser |
+| Snapshot | ~15% | SSR output stability |
+| Fuzz | ~5% | Edge cases, malformed input |
+
+**Unit tests**: In-crate `#[cfg(test)]` modules or adjacent `_tests.rs` files.
+
+**Snapshot tests**: Use the `insta` crate. `.snap` files are committed to git. Use `with_settings!` for scrubbing dynamic values (timestamps, IDs). CI runs with `INSTA_UPDATE=new` so unexpected changes produce `.snap.new` files for review.
+
+**E2E tests**: Playwright in `web-e2e-tests/` (DPE) and `playground-e2e-tests/` (Mosaic).
+
+**Fuzz tests**: `cargo-fuzz`, run on nightly CI. Corpus files are persisted in the repository.
+
+**Test naming**: Use descriptive names following the `test_{what}_{condition}_{expected}` pattern. For example: `test_parse_project_missing_title_returns_error`.
+
+## Commit Conventions
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/). Scopes match crate names: `dpe-server`, `dpe-core`, `dpe-web`, `dpe-api-oai`, `mosaic-tiles`, `mosaic-playground`, `mosaic-playground-macro`. Commits are organized by topic, not implementation journey.
+
+| Prefix | Meaning | Changelog | Version bump |
+|--------|---------|-----------|--------------|
+| `feat:` | New user-visible functionality | Features | minor |
+| `fix:` | Bug fix | Bug Fixes | patch |
+| `perf:` | Performance improvement | Performance | patch |
+| `revert:` | Revert a previous commit | Reverts | patch |
+| `refactor:` | Code restructuring | hidden | none |
+| `test:` | Tests | hidden | none |
+| `ci:` | CI/CD | hidden | none |
+| `docs:` | Documentation | hidden | none |
+| `build:` | Build system, deps | hidden | none |
+| `style:` | Formatting | hidden | none |
+| `chore:` | Maintenance | hidden | none |
+
+## Pull Request Template
+
+```
+## Motivation
+Why is this change needed?
+
+## Summary
+What does this PR do? (1-3 sentences)
+
+## Key Changes
+- Bullet list of significant changes
+
+## Challenges and Decisions
+Any non-obvious choices made during implementation
+
+## Gotchas
+Anything reviewers or future maintainers should watch out for
+
+## Test Plan
+How was this tested?
+
+Closes #{issue_number}
+```

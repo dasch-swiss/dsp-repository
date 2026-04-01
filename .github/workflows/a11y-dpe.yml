@@ -10,13 +10,13 @@ on:
       - "modules/dpe/app/**"
       - "modules/dpe/style/**"
       - "modules/dpe/public/**"
-      - "modules/dpe/end2end/**"
+      - "modules/dpe/web-e2e-tests/**"
   pull_request:
     paths:
       - "modules/dpe/app/**"
       - "modules/dpe/style/**"
       - "modules/dpe/public/**"
-      - "modules/dpe/end2end/**"
+      - "modules/dpe/web-e2e-tests/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -57,11 +57,11 @@ jobs:
       - name: Install JS dependencies
         run: cd modules/dpe && pnpm install
 
-      - name: Install end2end dependencies
-        run: cd modules/dpe/end2end && npm install
+      - name: Install web-e2e-tests dependencies
+        run: cd modules/dpe/web-e2e-tests && npm install
 
       - name: Install Playwright browsers
-        run: cd modules/dpe/end2end && npx playwright install chromium --with-deps
+        run: cd modules/dpe/web-e2e-tests && npx playwright install chromium --with-deps
 
       - name: Build dpe
         run: cargo leptos build --project=dpe --release
@@ -74,5 +74,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-a11y-dpe
-          path: modules/dpe/end2end/playwright-report/
+          path: modules/dpe/web-e2e-tests/playwright-report/
           retention-days: 7

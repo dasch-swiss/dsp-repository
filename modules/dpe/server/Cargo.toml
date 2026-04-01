@@ -5,6 +5,9 @@ edition = "2021"
 publish = false
 
 [dependencies]
+clap = { version = "4", features = ["derive"] }
+ureq = "3"
+dpe-core = { path = "../core" }
 dpe-api-oai = { path = "../api-oai" }
 dpe-web = { path = "../app", default-features = false, features = ["ssr"] }
 leptos = { workspace = true, features = [ "ssr", "islands" ]}
@@ -12,18 +15,20 @@ leptos_axum.workspace = true
 
 axum.workspace = true
 datastar.workspace = true
+figment = { version = "0.10", features = ["env", "toml"] }
 mosaic-tiles = { path = "../../mosaic/tiles", default-features = false, features = ["icon"] }
-simple_logger.workspace = true
 tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter", "json"] }
 futures = "0.3"
 tower.workspace = true
 tower-http.workspace = true
-log.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 urlencoding = "2.1"
-clap = { version = "4", features = ["derive"] }
-ureq = "3"
-dpe-core = { path = "../core" }
 
 [dev-dependencies]
+insta.workspace = true
+tower = { workspace = true, features = ["util"] }
+http-body-util = "0.1"
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

@@ -8,7 +8,7 @@ pub struct ClusterRef {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct ClusterRaw {
     pub id: String,
     pub name: String,

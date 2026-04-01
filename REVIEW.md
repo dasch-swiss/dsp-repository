@@ -15,6 +15,15 @@ Review checklist for the DSP Repository. Organized by priority.
 - axe-core scan passes on affected pages
 - Unit tests for fragment handler edge cases (invalid tab, missing project, etc.)
 
+**Architecture**
+- New API crates follow the `dpe-api-{name}` pattern with `dpe-core` as only domain dependency
+- `dpe-core` has no framework dependencies (no leptos, no axum)
+- Validate command covers all data file types
+- E2E test directory naming: `web-e2e-tests/` for DPE, `playground-e2e-tests/` for Mosaic
+
+**CLI**
+- CLI subcommands are documented in help text
+
 **Documentation**
 - Documentation updated (architecture, CONVENTIONS.md, CLAUDE.md) when patterns change
 - New environment variables documented in `docs/src/dpe/operations.md`
@@ -33,7 +42,9 @@ Review checklist for the DSP Repository. Organized by priority.
 - Follow existing Datastar attribute patterns (signal naming with `_` prefix)
 - Fragment handlers in `fragments/` module, not inline in `main.rs`
 - Domain types belong in `dpe-core` (once extracted), not in web or API crates
+- API crate exposes a handler function (e.g., `pub async fn oai_handler(...)`) for composition in dpe-server
 - Leptos components use `view!` macro consistently
+- Test files follow naming convention: `{feature}_tests.rs` for Rust, `{feature}.spec.ts` for Playwright
 
 ## Skip
 

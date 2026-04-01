@@ -9,7 +9,7 @@ const TRUNCATE_THRESHOLD: usize = 500;
 /// `line-clamp-4` class and button text.
 #[component]
 pub fn Description(text: String) -> impl IntoView {
-    let is_long = text.len() > TRUNCATE_THRESHOLD;
+    let is_long = text.chars().count() > TRUNCATE_THRESHOLD;
 
     if is_long {
         view! {

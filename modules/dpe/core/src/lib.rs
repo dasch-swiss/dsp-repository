@@ -6,7 +6,15 @@ pub mod organization;
 pub mod person;
 pub mod project;
 #[cfg(not(target_arch = "wasm32"))]
+pub mod cluster_cache;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod organization_cache;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod person_cache;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod project_cache;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod record_cache;
 pub mod project_repository;
 pub mod record;
 pub mod record_repository;
@@ -24,7 +32,8 @@ pub use project::{
     Project, ProjectRaw, ProjectStatus, TemporalCoverage, ACCESS_RIGHTS_VALUES,
 };
 pub use project_repository::ProjectRepository;
-pub use record::{record_datestamp, Record, RecordLegalInfo, RecordLicense, ARK_PATH_PREFIX};
+pub use project::Publication;
+pub use record::{record_datestamp, Pid as RecordPid, Record, RecordLegalInfo, RecordLicense, ARK_PATH_PREFIX};
 pub use record_repository::RecordRepository;
 pub use utils::lang_value;
 
@@ -37,4 +46,4 @@ pub use project_repository::FsProjectRepository;
 #[cfg(not(target_arch = "wasm32"))]
 pub use record_repository::FsRecordRepository;
 #[cfg(not(target_arch = "wasm32"))]
-pub use utils::get_data_dir;
+pub use utils::{get_data_dir, set_data_dir};

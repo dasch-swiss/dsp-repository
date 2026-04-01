@@ -9,40 +9,54 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ghcr.io/dasch-swiss/dpe
+
 jobs:
-  compute-tag:
-    name: Compute image tag
+  publish:
+    name: Build and push DPE to GHCR
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          submodules: true
 
-      - name: Generate docker image tag
+      - name: Compute short SHA tag
         id: tag
-        env:
-          COMMIT_SHA: ${{ github.sha }}
         run: |
-          VERSION=$(jq -r '.["modules/dpe/server"]' .release-please-manifest.json)
-          SHORT_SHA=$(echo "${COMMIT_SHA}" | cut -c1-7)
-          echo "tag=${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "tag=sha-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
-  publish:
-    name: Build and publish DPE
-    needs: compute-tag
-    uses: ./.github/workflows/docker-publish.yml
-    with:
-      dockerfile: modules/dpe/Dockerfile
-      image-name: daschswiss/dpe
-      image-tag: ${{ needs.compute-tag.outputs.tag }}
-    secrets:
-      DOCKER_USER: ${{ secrets.DOCKER_USER }}
-      DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: modules/dpe/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+            ${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   trigger-dev-deployment:
     name: Trigger deployment to DEV

@@ -3,24 +3,34 @@
 /// All projects are loaded from disk once on first access and held in memory
 /// for the lifetime of the server process. This avoids re-reading and
 /// re-deserializing every JSON file on every request.
-#[cfg(not(target_arch = "wasm32"))]
+///
+/// Note: This module is already gated with `#[cfg(not(target_arch = "wasm32"))]` in lib.rs.
+use std::collections::HashMap;
 use std::sync::OnceLock;
 
-#[cfg(not(target_arch = "wasm32"))]
 use super::project::{Project, ProjectRaw};
-#[cfg(not(target_arch = "wasm32"))]
 use super::utils::get_data_dir;
 
-#[cfg(not(target_arch = "wasm32"))]
 static PROJECTS: OnceLock<Vec<Project>> = OnceLock::new();
+static SHORTCODE_INDEX: OnceLock<HashMap<String, usize>> = OnceLock::new();
 
 /// Return a reference to the cached project list, loading it on first call.
-#[cfg(not(target_arch = "wasm32"))]
 pub fn all_projects() -> &'static Vec<Project> {
     PROJECTS.get_or_init(load_all_projects)
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+/// O(1) lookup of a project by shortcode using the cached HashMap index.
+pub fn project_by_shortcode(shortcode: &str) -> Option<&'static Project> {
+    let index = SHORTCODE_INDEX.get_or_init(|| {
+        all_projects()
+            .iter()
+            .enumerate()
+            .map(|(i, p)| (p.shortcode.clone(), i))
+            .collect()
+    });
+    index.get(shortcode).map(|&i| &all_projects()[i])
+}
+
 fn load_all_projects() -> Vec<Project> {
     use std::fs;
     use std::path::PathBuf;
@@ -28,7 +38,7 @@ fn load_all_projects() -> Vec<Project> {
     let projects_dir = PathBuf::from(get_data_dir()).join("projects");
 
     let Ok(entries) = fs::read_dir(&projects_dir) else {
-        eprintln!("project_cache: failed to read {:?}", projects_dir);
+        tracing::warn!(dir = ?projects_dir, "failed to read projects directory");
         return vec![];
     };
 
@@ -42,9 +52,9 @@ fn load_all_projects() -> Vec<Project> {
         match fs::read_to_string(&path) {
             Ok(json) => match serde_json::from_str::<ProjectRaw>(&json).map(Project::from) {
                 Ok(p) => projects.push(p),
-                Err(e) => eprintln!("project_cache: failed to parse {}: {}", filename, e),
+                Err(e) => tracing::warn!(file = %filename, error = %e, "failed to parse project"),
             },
-            Err(e) => eprintln!("project_cache: failed to read {}: {}", filename, e),
+            Err(e) => tracing::warn!(file = %filename, error = %e, "failed to read project file"),
         }
     }
     projects

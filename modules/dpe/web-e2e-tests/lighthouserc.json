@@ -1,0 +1,26 @@
+{
+  "$schema": "https://raw.githubusercontent.com/GoogleChrome/lighthouse-ci/main/packages/utils/src/lighthouserc-schema.json",
+  "ci": {
+    "collect": {
+      "url": [
+        "http://localhost:4000/",
+        "http://localhost:4000/projects",
+        "http://localhost:4000/projects/0803"
+      ],
+      "numberOfRuns": 3,
+      "settings": {
+        "preset": "desktop"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.9 }],
+        "categories:accessibility": ["error", { "minScore": 0.95 }],
+        "largest-contentful-paint": ["error", { "maxNumericValue": 2500 }]
+      }
+    },
+    "upload": {
+      "target": "filesystem"
+    }
+  }
+}

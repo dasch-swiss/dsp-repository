@@ -12,7 +12,7 @@ pub mod pages;
 use components::{Footer, Header};
 use pages::{AboutPage, ProjectPage, ProjectsPage};
 
-pub fn shell(options: LeptosOptions) -> impl IntoView {
+pub fn shell(options: LeptosOptions, fathom_site_id: Option<String>) -> impl IntoView {
     view! {
         <!DOCTYPE html>
         <html lang="en">
@@ -28,6 +28,18 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
                 />
                 <AutoReload options=options.clone() />
                 <MetaTags />
+                {fathom_site_id
+                    .map(|site_id| {
+                        view! {
+                            <script
+                                src="https://cdn.usefathom.com/script.js"
+                                data-site=site_id
+                                data-spa="auto"
+                                data-excluded-domains="localhost,dpe.dev.dasch.swiss,dpe.test.dasch.swiss,dpe.stage.dasch.swiss"
+                                defer
+                            ></script>
+                        }
+                    })}
             </head>
             <body class="font-body">
                 <App />

@@ -21,12 +21,17 @@ pub struct DpeConfig {
     /// Default: `modules/dpe/server/data` (for cargo-leptos dev mode).
     /// Production: set via `DPE_DATA_DIR` or `DATA_DIR` env var.
     pub data_dir: PathBuf,
+
+    /// Fathom Analytics site ID. If set, the tracking script is injected into the HTML shell.
+    /// Not a secret (visible in page source). Set via `DPE_FATHOM_SITE_ID`.
+    pub fathom_site_id: Option<String>,
 }
 
 impl Default for DpeConfig {
     fn default() -> Self {
         Self {
             data_dir: PathBuf::from("modules/dpe/server/data"),
+            fathom_site_id: None,
         }
     }
 }
@@ -53,11 +58,13 @@ mod tests {
     fn defaults_are_sensible() {
         let config = DpeConfig::default();
         assert_eq!(config.data_dir, PathBuf::from("modules/dpe/server/data"));
+        assert!(config.fathom_site_id.is_none());
     }
 
     #[test]
     fn load_with_defaults() {
         // Without any env vars or config file, defaults should work
-        let _config = DpeConfig::load().expect("default config should load");
+        let config = DpeConfig::load().expect("default config should load");
+        assert!(config.fathom_site_id.is_none());
     }
 }

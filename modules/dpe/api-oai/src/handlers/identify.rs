@@ -1,10 +1,10 @@
 //! Handler for the OAI-PMH Identify verb.
 
-use app::domain::ProjectRepository;
+use dpe_core::ProjectRepository;
 
 use super::{build_error_response, OaiParams};
-use crate::oai::error::OaiError;
-use crate::oai::xml::{OaiXmlBuilder, EARLIEST_DATESTAMP};
+use crate::error::OaiError;
+use crate::xml::{OaiXmlBuilder, EARLIEST_DATESTAMP};
 
 /// Handles the Identify verb.
 pub fn handle_identify(params: &OaiParams, repo: &dyn ProjectRepository) -> String {
@@ -105,7 +105,7 @@ mod tests {
         let params = make_params();
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_identify(&params, &repo);
-        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+        crate::handlers::test_utils::validate_against_schema(&xml);
 
     }
 
@@ -114,7 +114,7 @@ mod tests {
         let params = make_params();
         let repo = InMemoryProjectRepository::new(vec![]);
         let xml = handle_identify(&params, &repo);
-        crate::oai::handlers::test_utils::validate_against_schema(&xml);
+        crate::handlers::test_utils::validate_against_schema(&xml);
 
     }
 }

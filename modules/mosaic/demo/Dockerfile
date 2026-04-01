@@ -46,7 +46,7 @@ RUN apt-get update -y \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy the server binary to the /app directory
-COPY --from=builder /app/target/release/mosaic-demo /app/
+COPY --from=builder /app/target/release/mosaic-playground /app/
 
 # /target/site contains our JS/WASM/CSS, etc.
 COPY --from=builder /app/target/site /app/site
@@ -61,4 +61,4 @@ ENV LEPTOS_SITE_ROOT="site"
 EXPOSE 8080
 
 # Run the server
-CMD ["/app/mosaic-demo"]
+CMD ["/app/mosaic-playground"]

@@ -29,14 +29,14 @@ install-e2e-requirements:
 # Run all fmt and clippy checks
 check:
     just --check --fmt --unstable
-    cargo +nightly fmt -p mosaic-tiles -p demo_macro --check
+    cargo +nightly fmt -p mosaic-tiles -p mosaic-playground-macro --check
     leptosfmt --check modules/dpe
     leptosfmt --check modules/mosaic/demo
     cargo clippy -- -D warnings
 
 # Format all rust code (cargo fmt for non-leptos crates, leptosfmt for leptos crates)
 fmt:
-    cargo +nightly fmt -p mosaic-tiles -p demo_macro
+    cargo +nightly fmt -p mosaic-tiles -p mosaic-playground-macro
     leptosfmt modules/dpe
     leptosfmt modules/mosaic/demo
 
@@ -50,7 +50,7 @@ build:
 
 # Run server
 run:
-    cargo run --bin server --release
+    cargo run --bin dpe-server --release
 
 # Run all tests
 test:
@@ -116,22 +116,22 @@ docs-test:
 # Mosaic targets
 ###################
 
-# Start the mosaic demo and watch mosaic tiles
+# Start the mosaic playground and watch mosaic tiles
 [group('mosaic')]
-watch-mosaic-demo:
+watch-mosaic-playground:
     #!/usr/bin/env sh
     cd modules/mosaic/demo
     cargo leptos watch -- --watch ../tiles
 
-# Build Docker image for mosaic demo
+# Build Docker image for mosaic playground
 [group('mosaic')]
-build-docker-mosaic-demo:
-    docker build -f modules/mosaic/demo/Dockerfile -t mosaic-demo .
+build-docker-mosaic-playground:
+    docker build -f modules/mosaic/demo/Dockerfile -t mosaic-playground .
 
-# Run mosaic demo Docker container on port 8080
+# Run mosaic playground Docker container on port 8080
 [group('mosaic')]
-run-docker-mosaic-demo:
-    docker run --rm -p 8080:8080 mosaic-demo
+run-docker-mosaic-playground:
+    docker run --rm -p 8080:8080 mosaic-playground
 
 ###################
 # DPE targets

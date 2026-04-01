@@ -1,5 +1,5 @@
 [package]
-name = "app"
+name = "dpe-web"
 version = "0.1.2"
 edition = "2021"
 publish = false
@@ -9,6 +9,7 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+dpe-core = { path = "../core" }
 wasm-bindgen.workspace = true
 leptos.workspace = true
 leptos-use.workspace = true

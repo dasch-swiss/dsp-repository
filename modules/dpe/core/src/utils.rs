@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-/// Returns the value for the first available language in the priority order: en → de → fr → it.
+/// Returns the value for the first available language in the priority order: en -> de -> fr -> it.
 /// Falls back to any available value if none of the preferred languages are present.
 pub fn lang_value(map: &HashMap<String, String>) -> Option<&String> {
     ["en", "de", "fr", "it"]
@@ -9,7 +9,8 @@ pub fn lang_value(map: &HashMap<String, String>) -> Option<&String> {
         .or_else(|| map.values().next())
 }
 
-/// Get the data directory path, supporting both development and production environments
+/// Get the data directory path, supporting both development and production environments.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn get_data_dir() -> String {
     // Try environment variable first (for production/custom deployments)
     if let Ok(data_dir) = std::env::var("DATA_DIR") {

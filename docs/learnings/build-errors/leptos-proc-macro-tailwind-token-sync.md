@@ -17,18 +17,18 @@ tags: [leptos, proc-macro, tailwind-css, design-tokens, build-system, cargo-lept
 
 After changing Rust source files in Mosaic demo example components (replacing hardcoded Tailwind classes like `gray-*` with semantic token classes like `neutral-*`), the changes did not appear in the browser despite:
 
-1. `just watch-mosaic-demo` (cargo-leptos watch) detecting changes and recompiling successfully
+1. `just watch-mosaic-playground` (cargo-leptos watch) detecting changes and recompiling successfully
 2. Hard refresh (`Cmd+Shift+R`) in the browser
 
 Two distinct root causes were identified:
 
 ### Root cause 1: Proc macro stale output
 
-The `demo_macro` proc macro reads example `.rs` files at compile time via `fs::read_to_string`. Cargo's incremental compilation does not track files read inside proc macros -- it only invalidates when the proc macro crate itself or its Cargo-tracked dependencies change. The running server binary continued serving HTML with old file contents baked in from the previous compilation.
+The `mosaic-playground-macro` proc macro reads example `.rs` files at compile time via `fs::read_to_string`. Cargo's incremental compilation does not track files read inside proc macros -- it only invalidates when the proc macro crate itself or its Cargo-tracked dependencies change. The running server binary continued serving HTML with old file contents baked in from the previous compilation.
 
 A hard refresh only re-fetches from the running server. It cannot force re-execution of a proc macro.
 
-**Fix**: Full server restart (kill and re-run `just watch-mosaic-demo`).
+**Fix**: Full server restart (kill and re-run `just watch-mosaic-playground`).
 
 ### Root cause 2: Dual Tailwind pipelines with unshared tokens
 

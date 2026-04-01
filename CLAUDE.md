@@ -32,17 +32,18 @@ See `docs/src/dpe/architecture.md` for the full architecture description includi
 
 ```txt
 modules/
-├── dpe/                   # Discovery and Presentation Environment (Leptos app)
-│   ├── app/               # Shared app logic, components, pages, domain
-│   ├── server/            # Server binary
-│   ├── frontend/          # Client-side (WASM) entry point
+├── dpe/                   # Discovery and Presentation Environment
+│   ├── core/              # Pure domain types, repositories, data loading (no framework deps)
+│   ├── api-oai/           # OAI-PMH 2.0 API crate (depends on dpe-core only)
+│   ├── app/               # Web layer: Leptos components, pages, #[server] wrappers (crate: dpe-web)
+│   ├── server/            # Server binary: route composition, Datastar fragments (crate: dpe-server)
 │   ├── end2end/           # Playwright E2E tests
 │   ├── public/            # Static assets
 │   └── style/             # CSS / Tailwind
 └── mosaic/                # Mosaic component library
-    ├── tiles/             # Reusable Leptos UI components
-    ├── demo/              # Component showcase application
-    └── demo_macro/        # Proc macro for demo page generation
+    ├── tiles/             # Reusable Leptos UI components (crate: mosaic-tiles)
+    ├── demo/              # Component playground application (crate: mosaic-playground)
+    └── demo_macro/        # Proc macro for demo page generation (crate: mosaic-playground-macro)
 ```
 
 ## Setup
@@ -64,7 +65,7 @@ just install-requirements
 ```bash
 # Development
 just watch-dpe                 # Run DPE with hot reload
-just watch-mosaic-demo         # Run Mosaic demo with hot reload
+just watch-mosaic-playground    # Run Mosaic playground with hot reload
 just watch                     # Watch for changes and run tests
 just run                       # Run server (release mode)
 

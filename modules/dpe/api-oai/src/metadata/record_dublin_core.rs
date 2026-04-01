@@ -1,6 +1,6 @@
 //! Transformation of Records into Dublin Core metadata.
 
-use app::domain::Record;
+use dpe_core::Record;
 
 use super::helpers::{get_multilingual_value, license_identifier_to_label};
 use super::types::DublinCoreRecord;
@@ -69,7 +69,8 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
 
-    use app::domain::{Pid, RecordLegalInfo, RecordLicense};
+    use dpe_core::record::Pid;
+    use dpe_core::{RecordLegalInfo, RecordLicense};
 
     fn test_record() -> Record {
         Record {

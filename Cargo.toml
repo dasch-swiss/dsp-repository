@@ -3,6 +3,8 @@ members = [
   "modules/mosaic/demo",
   "modules/mosaic/demo_macro",
   "modules/mosaic/tiles",
+  "modules/dpe/core",
+  "modules/dpe/api-oai",
   "modules/dpe/app",
   "modules/dpe/server",
 ]
@@ -53,11 +55,19 @@ codegen-units = 1
 lto = true
 opt-level = 'z'
 
+# WASM-optimized release profile for mosaic-playground (Leptos islands + WASM)
+[profile.wasm-release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"
+
 # Leptos configuration for cargo-leptos
 [[workspace.metadata.leptos]]
 name = "dpe"
-bin-package = "server"
-lib-package = "app"
+bin-package = "dpe-server"
+lib-package = "dpe-web"
 site-root = "modules/dpe/target/site"
 site-pkg-dir = "pkg"
 assets-dir = "modules/dpe/public"

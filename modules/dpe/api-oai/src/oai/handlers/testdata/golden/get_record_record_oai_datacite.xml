@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+  <request verb="GetRecord" identifier="oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh" metadataPrefix="oai_datacite">https://meta.dasch.swiss/oai</request>
+  <GetRecord>
+    <record>
+      <header>
+        <identifier>oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</identifier>
+        <datestamp>2012-06-19T14:33:33Z</datestamp>
+        <setSpec>entityType:Record</setSpec>
+      </header>
+      <metadata>
+        <oai_datacite xmlns="http://schema.datacite.org/oai/oai-1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schema.datacite.org/oai/oai-1.1/ http://schema.datacite.org/oai/oai-1.1/oai.xsd">
+          <schemaVersion>4.6</schemaVersion>
+          <datacentreSymbol>DASCH.DSP</datacentreSymbol>
+          <payload>
+            <resource xmlns="http://datacite.org/schema/kernel-4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-4 https://schema.datacite.org/meta/kernel-4/metadata.xsd">
+              <identifier identifierType="ARK">ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</identifier>
+              <creators>
+                <creator>
+                  <creatorName nameType="Personal">DaSCH</creatorName>
+                </creator>
+              </creators>
+              <titles>
+                <title xml:lang="en">Seitenbezeichnung : o2r</title>
+              </titles>
+              <publisher>DaSCH</publisher>
+              <publicationYear>2012</publicationYear>
+              <resourceType resourceTypeGeneral="Text">Text</resourceType>
+              <dates>
+                <date dateType="Created">2012-06-19T14:33:33Z</date>
+                <date dateType="Available">2012-06-19T14:33:33Z</date>
+              </dates>
+              <relatedIdentifiers>
+                <relatedIdentifier relatedIdentifierType="URL" relationType="IsPartOf">https://ark.dasch.swiss/ark:/72163/1/0803</relatedIdentifier>
+              </relatedIdentifiers>
+              <rightsList>
+                <rights rightsURI="https://creativecommons.org/publicdomain/zero/1.0/" rightsIdentifier="public domain" rightsIdentifierScheme="SPDX">public domain</rights>
+              </rightsList>
+            </resource>
+          </payload>
+        </oai_datacite>
+      </metadata>
+    </record>
+  </GetRecord>
+</OAI-PMH>

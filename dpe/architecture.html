@@ -244,6 +244,28 @@
 </style>
 <h1 id="dpe-architecture"><a class="header" href="#dpe-architecture">DPE Architecture</a></h1>
 <p>The Discovery and Presentation Environment (DPE) serves research project metadata as a web application.</p>
+<h2 id="crate-structure"><a class="header" href="#crate-structure">Crate Structure</a></h2>
+<pre><code>dpe-core          Pure domain types, repositories, data loading
+                  Dependencies: serde, serde_json only
+                       │
+          ┌────────────┼────────────┐
+          │            │            │
+     dpe-api-oai   dpe-web     (future APIs)
+     OAI-PMH 2.0  Leptos SSR
+     + axum        + Datastar
+          │            │
+          └────────────┘
+                 │
+           dpe-server
+           Route composition
+           (binary: dpe)
+</code></pre>
+<ul>
+<li><strong>dpe-core</strong>: Framework-free domain layer. All types, repository traits, Fs implementations, and data loading.</li>
+<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint. Depends only on dpe-core — no Leptos.</li>
+<li><strong>dpe-web</strong>: Leptos SSR components, pages, and <code>#[server]</code> wrappers. Re-exports dpe-core types for backward compatibility.</li>
+<li><strong>dpe-server</strong>: Thin composition root. Wires Leptos routes (dpe-web) and API handlers (dpe-api-oai) into a single Axum server.</li>
+</ul>
 <h2 id="hypermedia-driven-architecture"><a class="header" href="#hypermedia-driven-architecture">Hypermedia-Driven Architecture</a></h2>
 <p>The DPE uses a <strong>hypermedia-driven architecture</strong> where the server is the single source of truth for UI state. Interactivity is provided by <a href="https://data-star.dev/">Datastar</a> (~14KB JS) instead of client-side frameworks or WASM.</p>
 <p><strong>Why Datastar over Leptos islands:</strong></p>

@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Project Structure - DSP-Repository Developer Documentation</title>
+        <title>Architecture - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -242,229 +242,79 @@
 }
 
 </style>
-<h1 id="project-structure"><a class="header" href="#project-structure">Project Structure</a></h1>
-<div class="mdbook-alerts mdbook-alerts-warning">
-<p class="mdbook-alerts-title">
-  <span class="mdbook-alerts-icon"></span>
-  warning
-</p>
-<p>This page is not up-to-date.</p>
-</div>
-<h2 id="workspace-layout"><a class="header" href="#workspace-layout">Workspace Layout</a></h2>
-<pre><code>.
-├── Cargo.toml         # Workspace manifest
-├── types/             # Domain models, traits, and shared errors
-├── services/          # Pure business logic implementations
-├── storage/           # Data persistence (DB, in-memory) implementations
-├── html_api/          # HTML routes, templates, and SSE endpoints
-├── json_api/          # JSON RPC/REST endpoints
-├── server/            # Web server binary crate
-└── cli/               # CLI binary crate for tools and scripts
-</code></pre>
-<hr />
-<h2 id="crate-responsibilities"><a class="header" href="#crate-responsibilities">Crate Responsibilities</a></h2>
-<h3 id="types--domain-types-and-interfaces"><a class="header" href="#types--domain-types-and-interfaces"><code>types/</code> – Domain Types and Interfaces</a></h3>
-<p>This crate defines all core <strong>data structures</strong>, <strong>error types</strong>, and <strong>trait interfaces</strong> shared across the application. It is dependency-light and logic-free.</p>
+<h1 id="dpe-architecture"><a class="header" href="#dpe-architecture">DPE Architecture</a></h1>
+<p>The Discovery and Presentation Environment (DPE) serves research project metadata as a web application.</p>
+<h2 id="hypermedia-driven-architecture"><a class="header" href="#hypermedia-driven-architecture">Hypermedia-Driven Architecture</a></h2>
+<p>The DPE uses a <strong>hypermedia-driven architecture</strong> where the server is the single source of truth for UI state. Interactivity is provided by <a href="https://data-star.dev/">Datastar</a> (~14KB JS) instead of client-side frameworks or WASM.</p>
+<p><strong>Why Datastar over Leptos islands:</strong></p>
 <ul>
-<li>Domain models (<code>ProjectCluster</code>, <code>ResearchProject</code>, <code>Collection</code>, <code>Dataset</code>, <code>Record</code>, etc.)</li>
-<li>Error types (<code>AppError</code>)</li>
-<li>Trait definitions:
-<ul>
-<li>Service traits: <code>MetadataService</code></li>
-<li>Repository traits: <code>MetadataRepository</code></li>
+<li>No WASM compilation step (faster builds)</li>
+<li>Smaller client-side footprint (~14KB vs ~200KB+ WASM)</li>
+<li>Server controls all state (HATEOAS)</li>
+<li>Graceful degradation — works as plain HTML links without JavaScript</li>
+<li>Simpler mental model — HTML attributes, not reactive signals</li>
 </ul>
-</li>
-</ul>
-<blockquote>
-<p>Example:</p>
-</blockquote>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>pub trait MetadataRepository {
-  async fn find_by_id(&amp;self, id: &amp;str) -&gt; Result&lt;ResearchProject, AppError&gt;;
-}
-<span class="boring">}</span></code></pre></pre>
-<hr />
-<h3 id="services--business-logic"><a class="header" href="#services--business-logic"><code>services/</code> – Business Logic</a></h3>
-<p>Implements the <code>types::service</code> traits and contains all <strong>pure application logic</strong>.</p>
-<ul>
-<li>Depends on <code>types</code></li>
-<li>Free of side effects and I/O</li>
-<li>Easily testable</li>
-<li>Orchestrates workflows and enforces business rules</li>
-</ul>
-<blockquote>
-<p>Example:</p>
-</blockquote>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>pub struct MetadataServiceImpl&lt;R: MetadataRepository&gt; {
-    pub repo: R,
-}
+<h2 id="rendering-model"><a class="header" href="#rendering-model">Rendering Model</a></h2>
+<p>Pages are rendered server-side by <strong>Leptos SSR</strong>. Dynamic content updates (tab switching, search autocomplete) are handled by <strong>Datastar SSE fragments</strong>.</p>
+<pre><code>Initial page load:
+  Browser → GET /projects/ABC1 → Leptos SSR → Full HTML page
 
-#[async_trait]
-impl&lt;R: MetadataRepository&gt; MetadataService for MetadataServiceImpl&lt;R&gt; {
-    async fn find_by_id(&amp;self, id: &amp;str) -&gt; Result&lt;ResearchProject, AppError&gt; {
-        self.repo.find_by_id(id).await
-    }
-}
-<span class="boring">}</span></code></pre></pre>
-<hr />
-<h3 id="storage--persistence-layer"><a class="header" href="#storage--persistence-layer"><code>storage/</code> – Persistence Layer</a></h3>
-<p>Implements the <code>types::storage</code> traits to access data in external systems such as SQLite or in-memory stores.</p>
-<ul>
-<li>No business logic</li>
-<li>Easily swappable with mocks or test implementations</li>
-</ul>
-<blockquote>
-<p>Example:</p>
-</blockquote>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>pub struct InMemoryMetadataRepository { ... }
+Tab switch (with JS):
+  Browser → GET /projects/ABC1/tab/publications (SSE)
+         ← PatchElements (#project-tabs replacement)
+         ← ExecuteScript (history.replaceState for URL)
 
-#[async_trait]
-impl MetadataRepository for InMemoryMetadataRepository { 
-  async fn find_by_id(&amp;self, id: &amp;str) -&gt; Result&lt;ResearchProject, AppError&gt; {
-    // In-memory lookup logic
-  }
-}
-<span class="boring">}</span></code></pre></pre>
-<hr />
-<h3 id="html_api--html--sse"><a class="header" href="#html_api--html--sse"><code>html_api/</code> – HTML + SSE</a></h3>
-<p>Handles the <strong>user-facing UI</strong> layer, serving HTML pages and fragments, and live-updating data via SSE.</p>
+Tab switch (without JS):
+  Browser → GET /projects/ABC1?tab=publications → Full page reload
+</code></pre>
+<h2 id="fragment-route-convention"><a class="header" href="#fragment-route-convention">Fragment Route Convention</a></h2>
+<p>Fragment endpoints are pure Axum handlers (not Leptos routes) that render Leptos components to HTML strings and deliver them as Datastar SSE events.</p>
+<p><strong>Route pattern: resource-action nesting</strong></p>
+<pre><code>GET /projects/{id}              → Full page (Leptos SSR)
+GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
+</code></pre>
+<p>Different path depths in Axum's radix trie mean no conflict and no header-based discrimination.</p>
+<h2 id="hateoas-tab-pattern"><a class="header" href="#hateoas-tab-pattern">HATEOAS Tab Pattern</a></h2>
+<p>The server returns the <strong>complete tab component</strong> (tab bar + panel) in each SSE response. This means:</p>
 <ul>
-<li>HTML templates</li>
-<li>SSE endpoints for live features like notifications, progress updates</li>
-<li>Routes for page rendering and form submissions</li>
+<li>Server controls which tab is active (<code>aria-selected</code>)</li>
+<li>Server controls which tabs are visible (e.g., hide Publications if none exist)</li>
+<li>Server pushes the bookmarkable URL via <code>ExecuteScript</code> + <code>history.replaceState</code></li>
 </ul>
-<blockquote>
-<p>Example:</p>
-</blockquote>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>#[get("/users/:id")]
-async fn user_profile(State(app): State&lt;AppState&gt;, Path(id): Path&lt;Uuid&gt;) -&gt; impl IntoResponse {
-    let user = app.user_service.get_user_profile(id).await?;
-    HtmlTemplate(UserProfileTemplate { user })
-}
-<span class="boring">}</span></code></pre></pre>
-<hr />
-<h3 id="http_api--machine-readable-http-api"><a class="header" href="#http_api--machine-readable-http-api"><code>http_api/</code> – Machine-Readable HTTP API</a></h3>
-<p>Exposes your application logic through a structured JSON API for integration with JavaScript frontends or third-party services.</p>
-<ul>
-<li>Cleanly separates business logic from representation</li>
-<li>Handles serialization and input validation</li>
-</ul>
-<blockquote>
-<p>Example:</p>
-</blockquote>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>#[get("/api/users/:id")]
-async fn get_user(State(app): State&lt;AppState&gt;, Path(id): Path&lt;Uuid&gt;) -&gt; impl IntoResponse {
-    let user = app.user_service.get_user_profile(id).await?;
-    Json(user)
-}
-<span class="boring">}</span></code></pre></pre>
-<hr />
-<h3 id="server--web-server-binary"><a class="header" href="#server--web-server-binary"><code>server/</code> – Web Server Binary</a></h3>
-<p>This crate is the <strong>entrypoint</strong> for running the full web application.</p>
-<ul>
-<li>Loads configuration</li>
-<li>Initializes services and storage</li>
-<li>Combines all route layers (<code>html_api</code>, <code>http_api</code>)</li>
-<li>Starts the Axum server</li>
-</ul>
-<blockquote>
-<p>Example:</p>
-</blockquote>
-<pre><pre class="playground"><code class="language-rust">#[tokio::main]
-async fn main() -&gt; Result&lt;(), AppError&gt; {
-    let storage = PostgresUserRepository::new(...);
-    let service = UserServiceImpl { repo: storage };
+<p>The client never needs to track tab state — the server-rendered HTML IS the state.</p>
+<h2 id="datastar-attribute-patterns"><a class="header" href="#datastar-attribute-patterns">Datastar Attribute Patterns</a></h2>
+<pre><code class="language-html">&lt;!-- Tab link with Datastar enhancement --&gt;
+&lt;a href="/projects/ABC1?tab=publications"
+   role="tab" aria-selected="false"
+   data-on:click__prevent="@get('/projects/ABC1/tab/publications', {retry: 'never'})"
+   data-indicator:_tab_loading&gt;
+  Publications
+&lt;/a&gt;
 
-    let app = Router::new()
-        .merge(html_api::routes(service.clone()))
-        .merge(http_api::routes(service.clone()));
-
-    axum::Server::bind(&amp;addr).serve(app.into_make_service()).await?;
-    Ok(())
-}</code></pre></pre>
-<hr />
-<h3 id="cli--command-line-interface"><a class="header" href="#cli--command-line-interface"><code>cli/</code> – Command-Line Interface</a></h3>
-<p>Provides a CLI for administrative or batch tasks such as:</p>
-<ul>
-<li>Import/export of data</li>
-<li>Cleanup scripts</li>
-<li>Background migrations</li>
-<li>Developer utilities</li>
-</ul>
-<blockquote>
-<p>Example (using <a href="https://docs.rs/clap">clap</a>):</p>
-</blockquote>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>#[derive(Parser)]
-enum Command {
-    ImportUsers { file: PathBuf },
-    ReindexSearch,
-}
-<span class="boring">}</span></code></pre></pre>
-<blockquote>
-<p>Run via:</p>
-</blockquote>
-<pre><code>cargo run --bin cli -- import-users ./users.csv
+&lt;!-- SSE failure fallback on container --&gt;
+&lt;div id="project-tabs"
+     data-on:datastar-fetch="
+       (evt.detail.type === 'error' || evt.detail.type === 'retries-failed')
+       &amp;&amp; evt.detail.el.closest('#project-tabs')
+       &amp;&amp; (window.location.href = evt.detail.el.getAttribute('href'))
+     "&gt;
 </code></pre>
-<hr />
-<h2 id="benefits-of-this-structure"><a class="header" href="#benefits-of-this-structure">Benefits of This Structure</a></h2>
-<div class="table-wrapper"><table><thead><tr><th>Aspect</th><th>Benefit</th></tr></thead><tbody>
-<tr><td><strong>Separation of concerns</strong></td><td>Clear boundaries between domain, logic, persistence, and delivery</td></tr>
-<tr><td><strong>Modular</strong></td><td>Each crate can be tested and reused independently</td></tr>
-<tr><td><strong>Team-friendly</strong></td><td>Frontend-focused devs work in <code>html_api</code>; backend devs focus on <code>services</code> and <code>storage</code></td></tr>
-<tr><td><strong>Testable</strong></td><td>Services and repositories can be mocked for unit/integration testing</td></tr>
-<tr><td><strong>Extensible</strong></td><td>Add more APIs (e.g., GraphQL, CLI commands) without modifying existing code</td></tr>
-</tbody></table>
-</div>
-<hr />
-<h2 id="development-guidelines"><a class="header" href="#development-guidelines">Development Guidelines</a></h2>
+<p>Key conventions:</p>
 <ul>
-<li><strong>Never put business logic in route handlers.</strong> Use the service layer.</li>
-<li><strong>Keep domain models and interfaces free of framework dependencies.</strong></li>
-<li><strong>Each crate has a single responsibility.</strong></li>
-<li><strong>SSE endpoints live in <code>html_api</code>, not as a separate API crate.</strong></li>
-<li><strong>Prefer async traits for I/O-related operations.</strong></li>
-<li><strong>Write integration tests in the same crate or create a top-level <code>tests/</code> crate for system-wide tests.</strong></li>
+<li><code>_</code> prefix on signals (e.g., <code>_tab_loading</code>) excludes them from server payloads</li>
+<li><code>retry: 'never'</code> on <code>@get()</code> calls where navigation fallback is preferred</li>
+<li>Every <code>data-on:click__prevent</code> link has a valid <code>href</code> for graceful degradation</li>
 </ul>
-<hr />
-<h2 id="future-growth-possibilities"><a class="header" href="#future-growth-possibilities">Future Growth Possibilities</a></h2>
-<ul>
-<li>Add a <code>worker/</code> crate for background jobs</li>
-<li>Add a <code>scheduler/</code> crate for periodic tasks</li>
-<li>Add a <code>tests/</code> crate for orchestrated integration tests</li>
-<li>Add a <code>graphql_api/</code> or <code>admin_api/</code> if needed</li>
-</ul>
-<hr />
-<h2 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h2>
-<p>To run the application server:</p>
-<pre><code>cargo run --bin server
-</code></pre>
-<p>To run the CLI:</p>
-<pre><code>cargo run --bin cli -- help
-</code></pre>
-<hr />
-<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
-<p>This modular design ensures clarity, maintainability, and smooth collaboration for both backend and frontend developers. The split between crates follows clean architecture principles and allows for focused development, rapid iteration, and clear testing strategies.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../dpe/architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../deployment.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../fundamentals/processes.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../dpe/project_structure.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -474,11 +324,11 @@ enum Command {
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../dpe/architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../deployment.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../fundamentals/processes.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../dpe/project_structure.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

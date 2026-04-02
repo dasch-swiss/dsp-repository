@@ -26,15 +26,15 @@ DPE is a server-side rendered web application. Pages are rendered on the server 
 
 ### Components
 
-Components live in `app/src/components/`. Each file exports one or more Leptos `#[component]` functions. Re-export new components in `app/src/components/mod.rs`.
+Components live in `web/src/components/`. Each file exports one or more Leptos `#[component]` functions. Re-export new components in `web/src/components/mod.rs`.
 
 Subdirectories under `components/` group related pieces (e.g., `components/global/` for layout-level elements).
 
 ### Pages
 
-Pages live in `app/src/pages/`. Each page is a top-level Leptos component rendered by the router. Subdirectories group page-specific sub-components (e.g., `pages/project/components/`).
+Pages live in `web/src/pages/`. Each page is a top-level Leptos component rendered by the router. Subdirectories group page-specific sub-components (e.g., `pages/project/components/`).
 
-Routes are declared in `app/src/lib.rs` inside the `<Routes>` block:
+Routes are declared in `web/src/lib.rs` inside the `<Routes>` block:
 
 ```rust
 <Route path=StaticSegment("projects") view=ProjectsPage />
@@ -43,7 +43,7 @@ Routes are declared in `app/src/lib.rs` inside the `<Routes>` block:
 
 ### Domain Re-exports
 
-`app/src/domain/` re-exports types and functions from `dpe-core`. The server crate imports domain items through `dpe_web::domain` so there is a single import path.
+`web/src/domain/` re-exports types and functions from `dpe-core`. The server crate imports domain items through `dpe_web::domain` so there is a single import path.
 
 ## Running Tests
 
@@ -71,17 +71,17 @@ cd modules/dpe/web-e2e-tests && npx playwright test
 
 ### Adding a New Component
 
-1. Create file in `app/src/components/`
+1. Create file in `web/src/components/`
 2. Define component with `#[component]` macro
-3. Export in `app/src/components/mod.rs`
+3. Export in `web/src/components/mod.rs`
 4. Import in the relevant page or layout
 
 ### Adding a New Page
 
-1. Create file in `app/src/pages/`
+1. Create file in `web/src/pages/`
 2. Define page component
-3. Export in `app/src/pages/mod.rs`
-4. Add route in `app/src/lib.rs` inside `<Routes>`
+3. Export in `web/src/pages/mod.rs`
+4. Add route in `web/src/lib.rs` inside `<Routes>`
 
 ### Adding a New Fragment Handler
 
@@ -107,7 +107,7 @@ cd modules/dpe/web-e2e-tests && npx playwright test
 
 ### Styling Not Applying
 
-- Stylesheet link is in `app/src/lib.rs`: `<Stylesheet id="leptos" href="/pkg/dpe.css" />`
+- Stylesheet link is in `web/src/lib.rs`: `<Stylesheet id="leptos" href="/pkg/dpe.css" />`
 - Ensure Tailwind build runs (automatic with `just watch-dpe`)
 - Check DaisyUI theme configuration in `style/main.css`
 

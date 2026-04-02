@@ -7,13 +7,13 @@ on:
   push:
     branches: [main]
     paths:
-      - "modules/dpe/app/**"
+      - "modules/dpe/web/**"
       - "modules/dpe/style/**"
       - "modules/dpe/public/**"
       - "modules/dpe/web-e2e-tests/**"
   pull_request:
     paths:
-      - "modules/dpe/app/**"
+      - "modules/dpe/web/**"
       - "modules/dpe/style/**"
       - "modules/dpe/public/**"
       - "modules/dpe/web-e2e-tests/**"

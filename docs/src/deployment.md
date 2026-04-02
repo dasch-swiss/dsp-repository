@@ -15,7 +15,7 @@ Every push and pull request runs:
 
 Defined in `a11y-dpe.yml`.
 
-Runs on PRs and pushes to `main` that touch DPE UI code (`modules/dpe/app/`, `modules/dpe/style/`, `modules/dpe/public/`). Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.
+Runs on PRs and pushes to `main` that touch DPE UI code (`modules/dpe/web/`, `modules/dpe/style/`, `modules/dpe/public/`). Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.
 
 ### Fuzz Testing
 

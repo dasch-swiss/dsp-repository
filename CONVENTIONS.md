@@ -1,90 +1,23 @@
 # Conventions
 
-Project-wide conventions for the DSP Repository.
+Agent reference card for the **work phase**. All authoritative detail lives in `docs/src/`.
 
-## Fragment Route Convention
+## Code Conventions
 
-Fragment routes serve Datastar SSE responses for partial page updates (tab switching, search, etc.).
-
-**Pattern: resource-action nesting**
-
-| Route | Handler | Response |
-|-------|---------|----------|
-| `GET /projects/{id}` | Leptos SSR | Full page (reads `?tab=` for initial tab) |
-| `GET /projects/{id}/tab/{tab}` | Pure Axum | SSE fragment (PatchElements + ExecuteScript) |
-
-Different path depths in Axum's radix trie — no conflict, no header discrimination needed.
-
-## Datastar Attribute Conventions
-
-- **Signal naming**: Use `_` prefix for client-only signals (e.g., `_tab_loading`). The underscore excludes the signal from server payloads.
-- **No `__debounce` on `__prevent` anchors**: Do NOT combine `__prevent` with `__debounce` or `__throttle` on anchor elements — known Datastar timing issue.
-- **`retry: 'never'`**: Use on `@get()` calls where fallback to full navigation is preferred over retrying.
-- **Graceful degradation**: Every Datastar-enhanced `<a>` must have a valid `href` for no-JS fallback.
-
-## Crate Naming Convention
-
-All workspace crates follow the `{module}-{role}` pattern:
-
-| Crate | Role |
-|-------|------|
-| `dpe-core` | Pure domain types and data access (zero framework deps) |
-| `dpe-api-oai` | OAI-PMH 2.0 API (depends on `dpe-core` only) |
-| `dpe-web` | Leptos SSR components, pages, `#[server]` functions |
-| `dpe-server` | Server binary — composes all routes |
-| `mosaic-tiles` | Reusable UI component library |
-| `mosaic-playground` | Component showcase application |
-| `mosaic-playground-macro` | Proc macro for demo page generation |
-
-## API Crate Pattern
-
-Each API is a separate crate under `modules/dpe/`:
-
-- **Naming**: `dpe-api-{name}` (e.g., `dpe-api-oai`)
-- **Dependencies**: `dpe-core` for domain types; never depends on other API crates or `dpe-web`
-- **Entry point**: Exports a handler function (e.g., `pub async fn oai_handler(...)`)
-- **Composition**: `dpe-server` wires the handler into the Axum router
-
-## Test Directory Naming
-
-- `web-e2e-tests/` for DPE Playwright tests (sibling of the app, not nested)
-- `playground-e2e-tests/` for Mosaic Playwright tests
+- **Crate naming and API crate pattern**: See `docs/src/repo_structure.md`
+- **Fragment routes and Datastar attributes**: See `docs/src/dpe/architecture.md`
+- **Formatting**: Defined in `.rustfmt.toml`. Use `leptosfmt` for Leptos code. Run `just fmt`.
+- **Linting**: Strict clippy warnings. Run `just check`.
 
 ## Testing Conventions
 
-**Testing pyramid** (approximate distribution):
-
-| Layer | Share | Purpose |
-|-------|-------|---------|
-| Unit | ~50% | Pure logic, domain types, parsing |
-| E2E | ~30% | Full user flows via browser |
-| Snapshot | ~15% | SSR output stability |
-| Fuzz | ~5% | Edge cases, malformed input |
-
-**Unit tests**: In-crate `#[cfg(test)]` modules or adjacent `_tests.rs` files.
-
-**Snapshot tests**: Use the `insta` crate. `.snap` files are committed to git. Use `with_settings!` for scrubbing dynamic values (timestamps, IDs). CI runs with `INSTA_UPDATE=new` so unexpected changes produce `.snap.new` files for review.
-
-**E2E tests**: Playwright in `web-e2e-tests/` (DPE) and `playground-e2e-tests/` (Mosaic).
-
-**Fuzz tests**: `cargo-fuzz`, run on nightly CI. Corpus files are persisted in the repository.
-
-**Test naming**: Use descriptive names following the `test_{what}_{condition}_{expected}` pattern. For example: `test_parse_project_missing_title_returns_error`.
+- **Testing pyramid and strategy**: See `docs/src/dpe/testing-strategy.md`
+- **Test naming**: `test_{what}_{condition}_{expected}` (e.g., `test_parse_project_missing_title_returns_error`)
+- **Test locations**: `#[cfg(test)]` modules or adjacent `_tests.rs` files for unit tests; `web-e2e-tests/` for DPE E2E; `playground-e2e-tests/` for Mosaic E2E
 
 ## Commit Conventions
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/). Scopes match crate names: `dpe-server`, `dpe-core`, `dpe-web`, `dpe-api-oai`, `mosaic-tiles`, `mosaic-playground`, `mosaic-playground-macro`.
-
-### Commit organization
-
-Group commits by user-visible impact, not by implementation journey.
-
-1. Each `feat:` or `fix:` commit = one changelog entry visible to deployers
-2. Internal work (`build:`, `ci:`, `refactor:`, `docs:`, `chore:`, `test:`) is hidden from changelog — squash aggressively
-3. Ask: "would a developer deploying this care?" If yes → `feat:` or `fix:`. If no → hidden type.
-4. Debugging journeys (trial-and-error, reverts, iterative fixes) belong in the PR description, not the commit history
-
-### Types
+Follow [Conventional Commits](https://www.conventionalcommits.org/). Scopes match crate names.
 
 | Prefix | Meaning | Changelog | Version bump |
 |--------|---------|-----------|--------------|
@@ -100,16 +33,9 @@ Group commits by user-visible impact, not by implementation journey.
 | `style:` | Formatting | hidden | none |
 | `chore:` | Maintenance | hidden | none |
 
-### Where context lives
+Group commits by user-visible impact. Each `feat:` or `fix:` = one changelog entry. Internal work → squash aggressively. See `docs/src/workflows.md` for full details.
 
-| Layer | Audience | Content |
-|-------|----------|---------|
-| Commit messages | Release notes readers | User-visible changes only |
-| PR description | Reviewers + future developers | Full context including challenges |
-| Learnings docs | Future Claude + engineers | Structured, searchable knowledge |
-| Code comments | Code readers | "Why not the obvious approach" |
-
-## Pull Request Template
+## PR Template
 
 ```
 Fixes LINEAR-ID, LINEAR-ID, ...
@@ -126,7 +52,6 @@ Why this work was needed. What problem it solves for users.
 
 ## Challenges and Decisions
 What was tried, what failed, and key architecture decisions.
-Structure as sub-sections when multiple challenges exist:
 
 ### [Challenge title]
 **Problem:** description of the issue encountered
@@ -141,19 +66,4 @@ actionable — not just "this is hard" but "do X instead of Y".
 - [ ] verification steps
 ```
 
-### Why this format matters
-
-The "Challenges and Decisions" section captures the debugging journey that would otherwise be lost when commits are squashed. The `/eng:workflows:compound` skill reads PR descriptions to generate structured learnings — well-structured challenges become high-quality learnings automatically.
-
-### What goes where
-
-| Information | Put it in... |
-|-------------|-------------|
-| New feature / breaking change | Commit message (`feat:` / `feat!:`) |
-| Bug fix | Commit message (`fix:`) |
-| Build/CI/refactor details | Commit message (hidden type) |
-| Why the work was needed | PR Motivation section |
-| What was tried and failed | PR Challenges section |
-| Architecture decisions + rationale | PR Challenges section |
-| Things to watch out for | PR Gotchas section |
-| Structured, searchable knowledge | Learnings doc (dasch-specs) |
+See `docs/src/workflows.md` for rationale and the full "what goes where" guide.

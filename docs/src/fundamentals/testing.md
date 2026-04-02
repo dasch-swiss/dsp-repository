@@ -13,31 +13,18 @@ end-to-end tests are written either in Rust or in JavaScript using Playwright.
 The design system playground includes comprehensive testing infrastructure:
 
 **Interactive Testing (MCP)**:
-- Start playground server: `just run-watch-playground`
+- Start playground server: `just watch-mosaic-playground`
 - Use Claude Code with Playwright MCP commands for visual verification
 - Commands whitelisted in `.claude/settings.json`
 - Best for: Component development, design verification, manual testing
 
 **Automated Testing (CI/CD)**:
-- TypeScript-based Playwright setup with tooling
+- TypeScript-based Playwright setup in `modules/mosaic/playground-e2e-tests/`
 - Functional, accessibility, and responsive design testing in CI
-- ESLint, Prettier, and TypeScript checking
 - HTML + JSON reporters for CI/CD integration
 - Best for: End-to-end user flows, automated regression detection
 
-**Setup**: `just playground install` then `just playground test`
-
-**Key Commands**:
-- `just playground test` - Run all tests
-- `just playground test-ui` - Interactive test runner
-- `just playground test-debug` - Debug mode with browser DevTools
-- `just playground type-check` - TypeScript validation
-- `just playground lint-and-format` - Code quality checks
-
 For single component interactions, prefer Rust tests. Playwright is for complete user flows.
-
-> [!note]
-> We are still evaluating Playwright integration for broader testing use cases.
 
 Unit tests are the foundation of our testing strategy.
 They test individual components in isolation,

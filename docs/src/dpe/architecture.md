@@ -96,7 +96,15 @@ The client never needs to track tab state — the server-rendered HTML IS the st
      ">
 ```
 
-Key conventions:
-- `_` prefix on signals (e.g., `_tab_loading`) excludes them from server payloads
-- `retry: 'never'` on `@get()` calls where navigation fallback is preferred
-- Every `data-on:click__prevent` link has a valid `href` for graceful degradation
+## Datastar Attribute Conventions
+
+- **Signal naming**: Use `_` prefix for client-only signals (e.g., `_tab_loading`). The underscore excludes the signal from server payloads.
+- **No `__debounce` on `__prevent` anchors**: Do NOT combine `__prevent` with `__debounce` or `__throttle` on anchor elements — known Datastar timing issue.
+- **`retry: 'never'`**: Use on `@get()` calls where fallback to full navigation is preferred over retrying.
+- **Graceful degradation**: Every Datastar-enhanced `<a>` must have a valid `href` for no-JS fallback.
+
+## See Also
+
+- [Project Structure](./project_structure.md) — Crate responsibilities and dependency graph
+- [Testing Strategy](./testing-strategy.md) — Testing pyramid and CI pipeline
+- [Operations](./operations.md) — Docker, environment variables, deployment

@@ -34,4 +34,4 @@ To configure the documentation (e.g. adding plugins), modify the `book.toml` fil
 
 ## Deployment
 
-This documentation is not yet deployed. The deployment process will be defined in the future.
+This documentation is deployed to GitHub Pages automatically on every push to `main` via the `gh-pages.yml` workflow.

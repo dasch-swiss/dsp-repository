@@ -22,13 +22,12 @@ jobs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
 
-      - name: Generate docker image tag
+      - name: Compute image tag
         id: tag
-        run: |
-          VERSION=$(grep -m1 '^version' modules/mosaic/demo/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          echo "tag=${VERSION}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+        run: echo "tag=$(git describe --tags --match 'v*' | sed 's/^v//')" >> "$GITHUB_OUTPUT"
 
   publish:
     name: Build and publish mosaic-playground

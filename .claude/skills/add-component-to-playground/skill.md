@@ -1,15 +1,15 @@
 ---
-name: add-mosaic-component-to-demo
-description: Adds a newly created component to the demo crate
+name: add-mosaic-component-to-playground
+description: Adds a newly created component to the playground crate
 ---
-# Mosaic Demo - Component Examples Guide
+# Mosaic Playground - Component Examples Guide
 
-This guide explains how to add a component demo page to the demo application.
-The crate is found in modules/mosaic/demo.
+This guide explains how to add a component page to the playground application.
+The crate is found in modules/mosaic/playground.
 
 ## Overview
 
-The Mosaic Demo application provides a showcase environment for testing and documenting components from the mosaic-tiles library.
+The Mosaic Playground application provides a showcase environment for testing and documenting components from the mosaic-tiles library.
 Its audience is developers and project managers.
 
 It features:
@@ -20,9 +20,9 @@ It features:
 - **Live examples**: Interactive component demonstrations
 - **Structured documentation**: Anatomy diagrams and multiple usage examples
 
-## Demo Structure
+## Component Page Structure
 
-Each component demo follows this structure:
+Each component page follows this structure:
 The `component_name` is ${ARGUMENTS}.
 
 ```
@@ -227,13 +227,13 @@ Add the route in the Routes section (around line 258-260):
 
 ### 9. Build and Test
 
-Run the demo application:
+Run the playground application:
 
 ```bash
 cargo leptos watch
 ```
 
-The demo will be available at `http://localhost:3000`.
+The playground will be available at `http://localhost:3000`.
 
 Navigate to `/component-name` to see your component page.
 
@@ -302,7 +302,7 @@ view! {
 
 ### Manual Testing
 
-1. Run `cargo leptos watch` from the demo directory
+1. Run `cargo leptos watch` from the playground directory
 2. Navigate to the component page
 3. Interact with examples
 4. Verify responsive behavior
@@ -311,7 +311,7 @@ view! {
 
 ## Checklist
 
-When adding a new component demo:
+When adding a new component page:
 
 - [ ] Create `src/components/[name]/` directory
 - [ ] Create `anatomy.rs` with component structure example

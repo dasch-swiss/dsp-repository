@@ -52,6 +52,7 @@ Why this work was needed. What problem it solves for users.
 
 ## Challenges and Decisions
 What was tried, what failed, and key architecture decisions.
+Structure as sub-sections when multiple challenges exist:
 
 ### [Challenge title]
 **Problem:** description of the issue encountered

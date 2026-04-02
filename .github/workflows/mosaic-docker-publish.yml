@@ -34,7 +34,7 @@ jobs:
     needs: compute-tag
     uses: ./.github/workflows/docker-publish.yml
     with:
-      dockerfile: modules/mosaic/demo/Dockerfile
+      dockerfile: modules/mosaic/playground/Dockerfile
       image-name: daschswiss/mosaic-playground
       image-tag: ${{ needs.compute-tag.outputs.tag }}
     secrets:

@@ -59,7 +59,7 @@ fn find_components() -> Vec<(String, PathBuf)> {
     let components_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("Failed to get parent dir")
-        .join("demo/src/components");
+        .join("playground/src/components");
 
     if !components_dir.exists() {
         return Vec::new();

@@ -3,10 +3,10 @@ title: "Proc macro and dual Tailwind pipeline desync with design tokens"
 date: 2026-02-12
 category: build-errors
 component: leptos_component
-module: mosaic/demo, mosaic/tiles
+module: mosaic/playground, mosaic/tiles
 problem_type: integration
 severity: high
-symptoms: "Tailwind CSS class changes in demo example files do not appear in browser after recompile and hard refresh. Watch command recompiles but proc macro output and served CSS remain stale."
+symptoms: "Tailwind CSS class changes in playground example files do not appear in browser after recompile and hard refresh. Watch command recompiles but proc macro output and served CSS remain stale."
 root_cause: "Proc macro reads source files at compile time; cargo-leptos watch does not invalidate proc macro output when those files change. Additionally, design tokens defined in only one of two independent Tailwind CSS pipelines cause utility classes to silently resolve to nothing in the other pipeline."
 tags: [leptos, proc-macro, tailwind-css, design-tokens, build-system, cargo-leptos, css-pipeline, mosaic]
 ---
@@ -15,7 +15,7 @@ tags: [leptos, proc-macro, tailwind-css, design-tokens, build-system, cargo-lept
 
 ## Problem
 
-After changing Rust source files in Mosaic demo example components (replacing hardcoded Tailwind classes like `gray-*` with semantic token classes like `neutral-*`), the changes did not appear in the browser despite:
+After changing Rust source files in Mosaic playground example components (replacing hardcoded Tailwind classes like `gray-*` with semantic token classes like `neutral-*`), the changes did not appear in the browser despite:
 
 1. `just watch-mosaic-playground` (cargo-leptos watch) detecting changes and recompiling successfully
 2. Hard refresh (`Cmd+Shift+R`) in the browser
@@ -37,9 +37,9 @@ The Mosaic project has two independent Tailwind CSS pipelines:
 | Pipeline | Entry point | Runs via |
 |----------|------------|----------|
 | Tiles | `tiles/src/components/theme_provider/main.css` | `build.rs` + standalone Tailwind CLI |
-| Demo | `demo/style/tailwind.css` | cargo-leptos + tailwindcss |
+| Playground | `playground/style/tailwind.css` | cargo-leptos + tailwindcss |
 
-Design tokens (`@theme static` block) were only defined in the tiles pipeline. Tailwind v4 only generates utility classes for custom colors when they are declared via `@theme` in the input CSS. Without the tokens in the demo pipeline, classes like `bg-neutral-50` in the demo layout produced no CSS rules -- silently.
+Design tokens (`@theme static` block) were only defined in the tiles pipeline. Tailwind v4 only generates utility classes for custom colors when they are declared via `@theme` in the input CSS. Without the tokens in the playground pipeline, classes like `bg-neutral-50` in the playground layout produced no CSS rules -- silently.
 
 **Fix**: Extract tokens into a shared `tokens.css` imported by both pipelines. Copy `tokens.css` to `OUT_DIR` in `build.rs` so the `@import "./tokens.css"` resolves correctly.
 

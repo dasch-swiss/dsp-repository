@@ -1,7 +1,7 @@
 [workspace]
 members = [
-  "modules/mosaic/demo",
-  "modules/mosaic/demo_macro",
+  "modules/mosaic/playground",
+  "modules/mosaic/playground_macro",
   "modules/mosaic/tiles",
   "modules/dpe/core",
   "modules/dpe/api-oai",

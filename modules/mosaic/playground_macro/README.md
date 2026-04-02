@@ -4,7 +4,7 @@ Procedural macros for generating Mosaic component documentation pages.
 
 ## Purpose
 
-This crate scans the `demo/src/components` directory for component directories containing `component.toml` metadata files and generates Leptos page components at compile time.
+This crate scans the `playground/src/components` directory for component directories containing `component.toml` metadata files and generates Leptos page components at compile time.
 
 ## Macro
 
@@ -20,10 +20,10 @@ Generates a Leptos page component for each component directory found. Each gener
 
 ## Component Directory Structure
 
-Each component in `demo/src/components/` should follow this structure:
+Each component in `playground/src/components/` should follow this structure:
 
 ```
-demo/src/components/[component_name]/
+playground/src/components/[component_name]/
 ├── component.toml           # Required: component metadata
 ├── mod.rs                   # Example module exports
 ├── anatomy.rs               # Optional: anatomy code snippet
@@ -63,7 +63,7 @@ description = "Visual style variant"
 
 ## Usage
 
-In the demo crate's `lib.rs`:
+In the playground crate's `lib.rs`:
 
 ```rust
 mosaic_playground_macro::generate_component_pages!();

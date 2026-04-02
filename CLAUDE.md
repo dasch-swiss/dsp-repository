@@ -72,10 +72,7 @@ Before considering ANY change as "done":
   Update documentation to reflect the changes.
 - **Ask before committing** —
   Never run git add or commit without explicit permission.
-- **PR creation workflow** —
-  1. Create as draft: `gh pr create --draft`
-  2. Assign to the requesting developer: `gh pr edit [PR_NUMBER] --add-assignee [USERNAME]`
-  3. Include a "Review Notes" section mentioning that separate commits should be checked for easier review
+- **PR creation** — See `docs/src/workflows.md` for the PR workflow and template.
 
 ## Testing Guidelines
 

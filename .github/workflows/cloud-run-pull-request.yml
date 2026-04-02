@@ -22,7 +22,7 @@ env:
 
 jobs:
   # --------------------------------------------------------------------------
-  # Deploy a preview environment for the Mosaic demo on Cloud Run.
+  # Deploy a preview environment for the Mosaic playground on Cloud Run.
   # Only runs for PRs from the same repository (not forks).
   # --------------------------------------------------------------------------
   deploy-preview:
@@ -55,7 +55,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: modules/mosaic/demo/Dockerfile
+          file: modules/mosaic/playground/Dockerfile
           push: true
           tags: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-playground:${{ env.IMAGE_TAG }}
           cache-from: type=gha

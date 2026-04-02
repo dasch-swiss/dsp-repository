@@ -38,5 +38,5 @@ modules/mosaic/playground-e2e-tests/
 
 # Other Docker files
 Dockerfile*
-!modules/mosaic/demo/Dockerfile
+!modules/mosaic/playground/Dockerfile
 !modules/dpe/Dockerfile

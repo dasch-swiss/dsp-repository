@@ -245,15 +245,15 @@ view! {
 
 ### In the Demo Application
 
-The demo app (`modules/mosaic/demo`) provides a full showcase environment for testing and documenting components.
+The playground app (`modules/mosaic/playground`) provides a full showcase environment for testing and documenting components.
 
 #### Quick Testing
 
 For quick testing during development:
 
-1. Import your component in `demo/src/counter.rs` or the HomePage
+1. Import your component in `playground/src/counter.rs` or the HomePage
 2. Use the component in a view
-3. Run the demo: `cargo leptos watch` (from the demo directory)
+3. Run the playground: `cargo leptos watch` (from the playground directory)
 
 Example:
 

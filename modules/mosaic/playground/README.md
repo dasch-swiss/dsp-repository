@@ -1,6 +1,6 @@
-# Mosaic Demo
+# Mosaic Playground
 
-A demo and documentation application for the [mosaic-tiles](../tiles) component library. It serves as both a development playground and a storybook for exploring components with live examples, anatomy diagrams, and API references.
+A showcase and documentation application for the [mosaic-tiles](../tiles) component library. It serves as a development playground and storybook for exploring components with live examples, anatomy diagrams, and API references.
 
 ## Running
 
@@ -12,7 +12,7 @@ The application will be available at `http://localhost:3000`.
 
 ## Structure
 
-Each component demo lives in `src/components/[name]/` with:
+Each component page lives in `src/components/[name]/` with:
 
 - `anatomy.rs` - Component structure visualization
 - `component.toml` - Metadata, example definitions, and API docs
@@ -36,4 +36,4 @@ Routes and pages are auto-generated from the TOML metadata via a procedural macr
 
 ## Adding Components
 
-Use the `/add-component-to-demo` skill which provides step-by-step instructions for adding new component demos, including creating the directory structure, examples, TOML configuration, and registering routes.
+Use the `/add-component-to-playground` skill which provides step-by-step instructions for adding new component pages, including creating the directory structure, examples, TOML configuration, and registering routes.

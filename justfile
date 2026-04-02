@@ -31,14 +31,14 @@ check:
     just --check --fmt --unstable
     cargo +nightly fmt -p mosaic-tiles -p mosaic-playground-macro --check
     leptosfmt --check modules/dpe
-    leptosfmt --check modules/mosaic/demo
+    leptosfmt --check modules/mosaic/playground
     cargo clippy -- -D warnings
 
 # Format all rust code (cargo fmt for non-leptos crates, leptosfmt for leptos crates)
 fmt:
     cargo +nightly fmt -p mosaic-tiles -p mosaic-playground-macro
     leptosfmt modules/dpe
-    leptosfmt modules/mosaic/demo
+    leptosfmt modules/mosaic/playground
 
 # Fix justfile formatting. Warning: will change existing file. Please first use check.
 fix:
@@ -124,13 +124,13 @@ docs-test:
 [group('mosaic')]
 watch-mosaic-playground:
     #!/usr/bin/env sh
-    cd modules/mosaic/demo
+    cd modules/mosaic/playground
     cargo leptos watch -- --watch ../tiles
 
 # Build Docker image for mosaic playground
 [group('mosaic')]
 build-docker-mosaic-playground:
-    docker build -f modules/mosaic/demo/Dockerfile -t mosaic-playground .
+    docker build -f modules/mosaic/playground/Dockerfile -t mosaic-playground .
 
 # Run mosaic playground Docker container on port 8080
 [group('mosaic')]

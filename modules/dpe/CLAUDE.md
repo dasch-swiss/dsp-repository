@@ -127,4 +127,4 @@ In dev mode, Leptos wraps output in `<!--hot-reload|...|-->` comments. These bre
 
 ## Note on Mosaic Playground
 
-The Mosaic component playground (`modules/mosaic/demo/`) is a separate application that does use Leptos islands and WASM. That architecture does not apply to DPE. Do not conflate the two.
+The Mosaic component playground (`modules/mosaic/playground/`) is a separate application that does use Leptos islands and WASM. That architecture does not apply to DPE. Do not conflate the two.

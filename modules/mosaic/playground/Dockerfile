@@ -38,8 +38,8 @@ RUN cargo chef cook --release --target wasm32-unknown-unknown -p mosaic-playgrou
 # Copy full source and build
 COPY . .
 
-# Build the app from the demo directory
-WORKDIR /app/modules/mosaic/demo
+# Build the app from the playground directory
+WORKDIR /app/modules/mosaic/playground
 ENV SINGLESTAGE_TAILWIND_PATH=/usr/local/bin/tailwindcss
 RUN cargo leptos build --release -vv
 
@@ -58,7 +58,7 @@ COPY --from=builder /app/target/release/mosaic-playground /app/
 COPY --from=builder /app/target/site /app/site
 
 # Copy Cargo.toml if it's needed at runtime
-COPY --from=builder /app/modules/mosaic/demo/Cargo.toml /app/
+COPY --from=builder /app/modules/mosaic/playground/Cargo.toml /app/
 
 # Set any required env variables
 ENV RUST_LOG="info"

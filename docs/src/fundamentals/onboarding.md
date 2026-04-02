@@ -72,7 +72,7 @@ For the initial development, we work with static content or JSON files.
 
 The Mosaic component library provides reusable UI components built with Leptos and Tailwind CSS.
 
-Components are defined in `modules/mosaic/tiles/` and can be previewed in the playground application at `modules/mosaic/demo/`.
+Components are defined in `modules/mosaic/tiles/` and can be previewed in the playground application at `modules/mosaic/playground/`.
 
 To run the playground locally:
 

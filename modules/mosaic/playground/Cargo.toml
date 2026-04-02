@@ -17,7 +17,7 @@ leptos_meta.workspace = true
 tokio = { workspace = true, optional = true }
 wasm-bindgen = { workspace = true, optional = true }
 mosaic-tiles = { path = "../tiles" }
-mosaic-playground-macro = { path = "../demo_macro" }
+mosaic-playground-macro = { path = "../playground_macro" }
 
 [features]
 hydrate = [

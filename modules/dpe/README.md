@@ -88,4 +88,4 @@ After `cargo leptos build --release`, copy:
 2. The `site/` directory from `modules/dpe/target/site/`
 3. The data directory from `modules/dpe/server/data/`
 
-Set the environment variables listed above and run the binary.
+Set the environment variables documented in `docs/src/dpe/operations.md` and run the binary.

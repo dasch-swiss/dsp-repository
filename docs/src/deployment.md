@@ -23,15 +23,15 @@ Defined in `fuzz.yml`.
 
 Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes `tab_validation` and `query_params` targets for 10 minutes each using `cargo-fuzz` on nightly Rust. Corpus is cached between runs. On crash, automatically creates a GitHub issue with reproduction instructions.
 
-### Mosaic Demo
+### Mosaic Playground
 
-The Mosaic component library demo has two deployment paths:
+The Mosaic component library playground has two deployment paths:
 
 #### PR Preview (Cloud Run)
 
 Defined in `cloud-run-pull-request.yml`.
 
-When a pull request modifies files under `modules/mosaic/`, a preview of the Mosaic demo is automatically deployed to Google Cloud Run. The preview URL is posted as a comment on the PR and updated on each push.
+When a pull request modifies files under `modules/mosaic/`, a preview of the Mosaic playground is automatically deployed to Google Cloud Run. The preview URL is posted as a comment on the PR and updated on each push.
 
 - **Trigger:** PRs that touch `modules/mosaic/**` (same-repo only, not forks)
 - **Service:** Ephemeral Cloud Run service per PR
@@ -43,7 +43,7 @@ Authentication uses Workload Identity Federation (keyless, OIDC-based).
 
 Defined in `mosaic-docker-publish.yml`.
 
-When changes to `modules/mosaic/` are merged to `main`, the demo image is built, pushed to Docker Hub, and a Jenkins webhook triggers the production deployment.
+When changes to `modules/mosaic/` are merged to `main`, the playground image is built, pushed to Docker Hub, and a Jenkins webhook triggers the production deployment.
 
 ### DPE
 

@@ -17,24 +17,24 @@ modules/
 │   └── Dockerfile             # Production container image
 └── mosaic/                    # Mosaic component library (design system)
     ├── tiles/                 # Reusable Leptos UI components (crate: mosaic-tiles)
-    ├── demo/                  # Component playground application (crate: mosaic-playground)
-    ├── demo_macro/            # Proc macro for demo page generation (crate: mosaic-playground-macro)
+    ├── playground/            # Component playground application (crate: mosaic-playground)
+    ├── playground_macro/      # Proc macro for playground page generation (crate: mosaic-playground-macro)
     └── playground-e2e-tests/  # Playwright E2E tests for the playground
 ```
 
-## Crate Naming Convention
+## Crate and Folder Naming Convention
 
-All workspace crates follow the `{module}-{role}` pattern:
+**Crate names** follow the `{module}-{role}` pattern. **Folder names** strip the module prefix, keeping only the role part. Hyphens in crate names become underscores in folder names when needed for Rust compatibility (proc macro crates).
 
-| Crate | Role |
-|-------|------|
-| `dpe-core` | Pure domain types and data access (zero framework deps) |
-| `dpe-api-oai` | OAI-PMH 2.0 API (depends on `dpe-core` only) |
-| `dpe-web` | Leptos SSR components, pages, `#[server]` functions |
-| `dpe-server` | Server binary — composes all routes |
-| `mosaic-tiles` | Reusable UI component library |
-| `mosaic-playground` | Component showcase application |
-| `mosaic-playground-macro` | Proc macro for demo page generation |
+| Crate | Folder | Role |
+|-------|--------|------|
+| `dpe-core` | `dpe/core` | Pure domain types and data access (zero framework deps) |
+| `dpe-api-oai` | `dpe/api-oai` | OAI-PMH 2.0 API (depends on `dpe-core` only) |
+| `dpe-web` | `dpe/web` | Leptos SSR components, pages, `#[server]` functions |
+| `dpe-server` | `dpe/server` | Server binary — composes all routes |
+| `mosaic-tiles` | `mosaic/tiles` | Reusable UI component library |
+| `mosaic-playground` | `mosaic/playground` | Component showcase application |
+| `mosaic-playground-macro` | `mosaic/playground_macro` | Proc macro for playground page generation |
 
 ## API Crate Pattern
 

@@ -6,14 +6,14 @@ A Leptos-based UI component library for the DaSCH Service Platform.
 
 ```txt
 mosaic/
-├── tiles/        # Reusable component library
-├── demo/         # Showcase and documentation web application
-└── demo_macro/   # Proc macro for generating documentation pages (crate: mosaic-playground-macro)
+├── tiles/             # Reusable component library
+├── playground/        # Showcase and documentation web application
+└── playground_macro/  # Proc macro for generating documentation pages
 ```
 
 - **tiles** contains the components themselves, each feature-gated for selective inclusion. A build script bundles per-component CSS, processes it with Tailwind, and outputs a single minified stylesheet.
-- **demo** is a Leptos web application that renders live examples, anatomy diagrams, and API references for each component. It uses `cargo-leptos` for building and serving.
-- **mosaic-playground-macro** (directory: `demo_macro/`) provides the `generate_component_pages!()` proc macro, which reads `component.toml` metadata and example files to generate documentation pages at compile time.
+- **playground** is a Leptos web application that renders live examples, anatomy diagrams, and API references for each component. It uses `cargo-leptos` for building and serving.
+- **playground_macro** provides the `generate_component_pages!()` proc macro, which reads `component.toml` metadata and example files to generate documentation pages at compile time.
 
 ## Design Tokens
 
@@ -23,7 +23,7 @@ Brand colors, typography, and a neutral scale are defined as CSS custom properti
 **Neutral scale:** Derived from DaSCH Slate (#3B4856), experimental
 **Typography:** `font-display` (Lora) and `font-body` (Lato) with fallback chains
 
-The demo includes a token showcase page under the "Foundation" sidebar section.
+The playground includes a token showcase page under the "Foundation" sidebar section.
 
 ## Components
 

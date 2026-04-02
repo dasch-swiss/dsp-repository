@@ -31,7 +31,6 @@ jobs:
       # because the PR may already exist from a previous run.
       - name: Find release PR branch
         id: find-pr
-        if: "!steps.release.outputs.releases_created"
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |

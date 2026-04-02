@@ -37,7 +37,7 @@ jobs:
           if [ -n '${{ steps.release.outputs.pr }}' ]; then
             BRANCH=$(echo '${{ steps.release.outputs.pr }}' | jq -r '.headBranchName')
           else
-            BRANCH=$(gh pr list --label "autorelease: pending" --json headRefName --jq '.[0].headRefName // empty')
+            BRANCH=$(gh pr list --repo "${{ github.repository }}" --label "autorelease: pending" --json headRefName --jq '.[0].headRefName // empty')
           fi
           if [ -n "$BRANCH" ]; then
             echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"

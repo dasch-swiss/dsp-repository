@@ -26,17 +26,35 @@ jobs:
       # the workspace version in Cargo.toml. The native cargo-workspace
       # plugin cannot handle version.workspace = true (#2111), so we use
       # release-type: simple and regenerate the lockfile ourselves.
+      #
+      # We check for any open release PR (not just newly created ones)
+      # because the PR may already exist from a previous run.
+      - name: Find release PR branch
+        id: find-pr
+        if: "!steps.release.outputs.releases_created"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          if [ -n '${{ steps.release.outputs.pr }}' ]; then
+            BRANCH=$(echo '${{ steps.release.outputs.pr }}' | jq -r '.headBranchName')
+          else
+            BRANCH=$(gh pr list --label "autorelease: pending" --json headRefName --jq '.[0].headRefName // empty')
+          fi
+          if [ -n "$BRANCH" ]; then
+            echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-        if: steps.release.outputs.pr
+        if: steps.find-pr.outputs.branch
         with:
-          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          ref: ${{ steps.find-pr.outputs.branch }}
           token: ${{ secrets.GH_TOKEN }}
 
       - uses: dtolnay/rust-toolchain@stable
-        if: steps.release.outputs.pr
+        if: steps.find-pr.outputs.branch
 
       - name: Update Cargo.lock on release PR
-        if: steps.release.outputs.pr
+        if: steps.find-pr.outputs.branch
         run: |
           cargo update --workspace
           git diff --quiet Cargo.lock && exit 0

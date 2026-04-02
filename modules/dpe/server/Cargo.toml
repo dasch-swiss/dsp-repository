@@ -9,7 +9,7 @@ clap = { version = "4", features = ["derive"] }
 ureq = "3"
 dpe-core = { path = "../core" }
 dpe-api-oai = { path = "../api-oai" }
-dpe-web = { path = "../app", default-features = false, features = ["ssr"] }
+dpe-web = { path = "../web", default-features = false, features = ["ssr"] }
 leptos = { workspace = true, features = [ "ssr", "islands" ]}
 leptos_axum.workspace = true
 

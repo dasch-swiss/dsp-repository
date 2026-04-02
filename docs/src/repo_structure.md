@@ -6,18 +6,20 @@ This repository is a Rust workspace structured as a monorepo. All Rust crates ar
 
 ```txt
 modules/
-├── dpe/                   # Discovery and Presentation Environment
-│   ├── core/              # Pure domain types, repositories, data loading (crate: dpe-core)
-│   ├── api-oai/           # OAI-PMH 2.0 API (crate: dpe-api-oai)
-│   ├── app/               # Web layer: Leptos components, pages (crate: dpe-web)
-│   ├── server/            # Server binary: route composition, Datastar fragments (crate: dpe-server)
-│   ├── web-e2e-tests/     # Playwright E2E tests
-│   ├── public/            # Static assets
-│   └── style/             # CSS / Tailwind
-└── mosaic/                # Mosaic component library (design system)
-    ├── tiles/             # Reusable Leptos UI components (crate: mosaic-tiles)
-    ├── demo/              # Component playground application (crate: mosaic-playground)
-    └── demo_macro/        # Proc macro for demo page generation (crate: mosaic-playground-macro)
+├── dpe/                       # Discovery and Presentation Environment
+│   ├── core/                  # Pure domain types, repositories, data loading (crate: dpe-core)
+│   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
+│   ├── web/                   # Web layer: Leptos components, pages (crate: dpe-web)
+│   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
+│   ├── web-e2e-tests/         # Playwright E2E tests
+│   ├── public/                # Static assets
+│   ├── style/                 # CSS / Tailwind
+│   └── Dockerfile             # Production container image
+└── mosaic/                    # Mosaic component library (design system)
+    ├── tiles/                 # Reusable Leptos UI components (crate: mosaic-tiles)
+    ├── demo/                  # Component playground application (crate: mosaic-playground)
+    ├── demo_macro/            # Proc macro for demo page generation (crate: mosaic-playground-macro)
+    └── playground-e2e-tests/  # Playwright E2E tests for the playground
 ```
 
 ## Crate Naming Convention

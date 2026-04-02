@@ -8,7 +8,7 @@ Server-side rendered web application built with [Leptos](https://github.com/lept
 dpe/
 ├── core/             # Pure domain types and data loading (crate: dpe-core)
 ├── api-oai/          # OAI-PMH 2.0 API (crate: dpe-api-oai)
-├── app/              # Leptos components and pages (crate: dpe-web)
+├── web/              # Leptos components and pages (crate: dpe-web)
 ├── server/           # Server binary and fragment handlers (crate: dpe-server)
 ├── web-e2e-tests/    # Playwright E2E tests
 ├── public/           # Static assets

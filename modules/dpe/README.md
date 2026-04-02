@@ -78,15 +78,7 @@ The application will be available at `http://localhost:8080`.
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `RUST_LOG` | `info` | Logging level |
-| `LEPTOS_OUTPUT_NAME` | `dpe` | Output file name |
-| `LEPTOS_SITE_ROOT` | `site` | Site root directory |
-| `LEPTOS_SITE_PKG_DIR` | `pkg` | Package directory |
-| `LEPTOS_SITE_ADDR` | `0.0.0.0:8080` | Server bind address |
-| `LEPTOS_ENV` | `PROD` | Environment mode |
-| `DPE_DATA_DIR` | `server/data` | Path to JSON data files |
+See `docs/src/dpe/operations.md` for the full list of environment variables, CLI commands, and operations details.
 
 ## Remote Deployment Without Toolchain
 

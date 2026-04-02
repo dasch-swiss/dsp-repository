@@ -33,7 +33,7 @@ Accordion, Badge, Breadcrumb, Button, ButtonGroup, Card, Icon, Link, Popover, Ta
 
 ```bash
 just watch-mosaic-playground    # Run playground with hot reload (watches tiles changes)
-just fmt-mosaic           # Format with leptosfmt
+just fmt                       # Format all code (cargo fmt + leptosfmt)
 ```
 
 See each crate's README for further details.

@@ -23,7 +23,9 @@ It provides reactive primitives and a component model similar to modern JavaScri
 
 Key features:
 
-* Leptos must only be used with the [`island` feature](https://book.leptos.dev/islands.html)
+* The `islands` Cargo feature is enabled workspace-wide (Leptos 0.8 build requirement)
+* Only the Mosaic component library uses actual island components with client-side WASM hydration
+* DPE uses SSR-only with [Datastar](https://data-star.dev/) for interactivity — no client-side WASM
 * The architecture follows the MPA paradigm, a "multi-page app"
 * Server-side rendering
 * Fine-grained reactivity

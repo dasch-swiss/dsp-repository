@@ -14,13 +14,12 @@
 
 # Modules
 
-# DPE
+## DPE
 
-- [Discovery and Presentation Environment]()
-  - [Architecture](./dpe/architecture.md)
-  - [Project Structure](./dpe/project_structure.md)
-  - [Testing Strategy](./dpe/testing-strategy.md)
-  - [Operations](./dpe/operations.md)
+- [Architecture](./dpe/architecture.md)
+- [Project Structure](./dpe/project_structure.md)
+- [Testing Strategy](./dpe/testing-strategy.md)
+- [Operations](./dpe/operations.md)
 
 ---
 
@@ -29,11 +28,5 @@
 - [Discovery, Design and Development Process](./fundamentals/processes.md)
 - [Tech Stack](./fundamentals/tech_stack.md)
 - [Testing and Quality Assurance](./fundamentals/testing.md)
-- [Observability and Monitoring]()
-- [Security and Privacy]()
-- [Archtectural Design Records]()
-- [Miscellaneous]()
-  - [Accessibility]()
-  - [Search Engine Optimization]()
-  - [Internationalization]()
+- [Review Guidelines](./fundamentals/review-guidelines.md)
 - [Onboarding](./fundamentals/onboarding.md)

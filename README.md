@@ -1,25 +1,25 @@
 # DSP-Repository
 
-This is the monorepo for the DSP Repository,
-containing all the code and documentation for the DSP Archive, DPE, and Mosaic component library.
+Monorepo for the DSP Repository — the long-term archive for humanities research data. Contains the Discovery and Presentation Environment (DPE) and the Mosaic component library (design system).
 
-For more information about, see the [documentation](docs/src/introduction.md).
+## Documentation
 
-You may also view the rendered documentation by following these steps:
+Full documentation: [dasch-swiss.github.io/dsp-repository](https://dasch-swiss.github.io/dsp-repository/)
 
-- Verify you have just and cargo installed
-- Install all dependencies with `just install-requirements`
-- Build and run the documentation with `just docs-serve`
-- Open your browser and navigate to `http://localhost:3000`
+Or serve locally:
 
-You may start and run the Mosaic playground application:
+```bash
+just install-requirements
+just docs-serve              # http://localhost:3000
+```
 
-- Run: `just watch-mosaic-playground`
+## Quick Start
 
-You may start and run the Leptos DPE application:
-
-- Install dependencies: `just install-requirements`
-- Run: `just watch-dpe`
+```bash
+just install-requirements    # Install all dependencies
+just watch-dpe               # Run DPE at http://127.0.0.1:4000
+just watch-mosaic-playground # Run Mosaic playground
+```
 
 ## License
 

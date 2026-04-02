@@ -253,36 +253,19 @@ end-to-end tests are written either in Rust or in JavaScript using Playwright.</
 <p>The design system playground includes comprehensive testing infrastructure:</p>
 <p><strong>Interactive Testing (MCP)</strong>:</p>
 <ul>
-<li>Start playground server: <code>just run-watch-playground</code></li>
+<li>Start playground server: <code>just watch-mosaic-playground</code></li>
 <li>Use Claude Code with Playwright MCP commands for visual verification</li>
 <li>Commands whitelisted in <code>.claude/settings.json</code></li>
 <li>Best for: Component development, design verification, manual testing</li>
 </ul>
 <p><strong>Automated Testing (CI/CD)</strong>:</p>
 <ul>
-<li>TypeScript-based Playwright setup with tooling</li>
+<li>TypeScript-based Playwright setup in <code>modules/mosaic/playground-e2e-tests/</code></li>
 <li>Functional, accessibility, and responsive design testing in CI</li>
-<li>ESLint, Prettier, and TypeScript checking</li>
 <li>HTML + JSON reporters for CI/CD integration</li>
 <li>Best for: End-to-end user flows, automated regression detection</li>
 </ul>
-<p><strong>Setup</strong>: <code>just playground install</code> then <code>just playground test</code></p>
-<p><strong>Key Commands</strong>:</p>
-<ul>
-<li><code>just playground test</code> - Run all tests</li>
-<li><code>just playground test-ui</code> - Interactive test runner</li>
-<li><code>just playground test-debug</code> - Debug mode with browser DevTools</li>
-<li><code>just playground type-check</code> - TypeScript validation</li>
-<li><code>just playground lint-and-format</code> - Code quality checks</li>
-</ul>
 <p>For single component interactions, prefer Rust tests. Playwright is for complete user flows.</p>
-<div class="mdbook-alerts mdbook-alerts-note">
-<p class="mdbook-alerts-title">
-  <span class="mdbook-alerts-icon"></span>
-  note
-</p>
-<p>We are still evaluating Playwright integration for broader testing use cases.</p>
-</div>
 <p>Unit tests are the foundation of our testing strategy.
 They test individual components in isolation,
 ensuring that each part of the codebase behaves as expected.
@@ -308,7 +291,7 @@ This helps to ensure that the code is testable and meets the requirements.</p>
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../fundamentals/onboarding.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../fundamentals/review-guidelines.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -322,7 +305,7 @@ This helps to ensure that the code is testable and meets the requirements.</p>
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../fundamentals/onboarding.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../fundamentals/review-guidelines.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

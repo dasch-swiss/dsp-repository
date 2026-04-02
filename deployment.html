@@ -248,32 +248,54 @@
 <h3 id="checks-and-tests"><a class="header" href="#checks-and-tests">Checks and Tests</a></h3>
 <p>Every push and pull request runs:</p>
 <ul>
-<li><strong>check.yml</strong> — Formatting (<code>rustfmt</code>) and linting (<code>clippy</code>)</li>
+<li><strong>check.yml</strong> — Formatting (<code>rustfmt</code>, <code>leptosfmt</code>) and linting (<code>clippy</code>)</li>
 <li><strong>test.yml</strong> — Runs the full test suite</li>
 </ul>
-<h3 id="mosaic-demo"><a class="header" href="#mosaic-demo">Mosaic Demo</a></h3>
-<p>The Mosaic component library demo has two deployment paths:</p>
+<h3 id="accessibility-testing"><a class="header" href="#accessibility-testing">Accessibility Testing</a></h3>
+<p>Defined in <code>a11y-dpe.yml</code>.</p>
+<p>Runs on PRs and pushes to <code>main</code> that touch DPE UI code (<code>modules/dpe/web/</code>, <code>modules/dpe/style/</code>, <code>modules/dpe/public/</code>). Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
+<h3 id="fuzz-testing"><a class="header" href="#fuzz-testing">Fuzz Testing</a></h3>
+<p>Defined in <code>fuzz.yml</code>.</p>
+<p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, automatically creates a GitHub issue with reproduction instructions.</p>
+<h3 id="mosaic-playground"><a class="header" href="#mosaic-playground">Mosaic Playground</a></h3>
+<p>The Mosaic component library playground has two deployment paths:</p>
 <h4 id="pr-preview-cloud-run"><a class="header" href="#pr-preview-cloud-run">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-pull-request.yml</code>.</p>
-<p>When a pull request modifies files under <code>modules/mosaic/</code>, a preview of the
-Mosaic demo is automatically deployed to Google Cloud Run. The preview URL is
-posted as a comment on the PR and updated on each push.</p>
+<p>When a pull request modifies files under <code>modules/mosaic/</code>, a preview of the Mosaic playground is automatically deployed to Google Cloud Run. The preview URL is posted as a comment on the PR and updated on each push.</p>
 <ul>
 <li><strong>Trigger:</strong> PRs that touch <code>modules/mosaic/**</code> (same-repo only, not forks)</li>
 <li><strong>Service:</strong> Ephemeral Cloud Run service per PR</li>
-<li><strong>Cleanup:</strong> The Cloud Run service and container image are deleted when the PR
-is closed or merged</li>
+<li><strong>Cleanup:</strong> The Cloud Run service and container image are deleted when the PR is closed or merged</li>
 </ul>
 <p>Authentication uses Workload Identity Federation (keyless, OIDC-based).</p>
-<p>Required secrets: <code>GCP_WORKLOAD_IDENTITY_PROVIDER</code>, <code>GCP_SERVICE_ACCOUNT</code>,
-<code>GCP_REGION</code>, <code>GCP_ARTIFACT_REGISTRY</code>.</p>
 <h4 id="production-docker-hub--jenkins"><a class="header" href="#production-docker-hub--jenkins">Production (Docker Hub + Jenkins)</a></h4>
-<p>Defined in <code>docker-publish.yml</code>.</p>
-<p>When changes to <code>modules/mosaic/</code> are merged to <code>main</code>, the demo image is built,
-pushed to Docker Hub, and a Jenkins webhook triggers the production deployment.</p>
+<p>Defined in <code>mosaic-docker-publish.yml</code>.</p>
+<p>When changes to <code>modules/mosaic/</code> are merged to <code>main</code>, the playground image is built, pushed to Docker Hub, and a Jenkins webhook triggers the production deployment.</p>
+<h3 id="dpe"><a class="header" href="#dpe">DPE</a></h3>
+<h4 id="pr-preview-cloud-run-1"><a class="header" href="#pr-preview-cloud-run-1">PR Preview (Cloud Run)</a></h4>
+<p>Defined in <code>cloud-run-dpe-pull-request.yml</code>.</p>
+<p>When a pull request modifies files under <code>modules/dpe/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
+<h4 id="continuous-deployment-docker-hub--jenkins"><a class="header" href="#continuous-deployment-docker-hub--jenkins">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
+<p>Defined in <code>dpe-docker-publish.yml</code>.</p>
+<p>On every push to <code>main</code>:</p>
+<ol>
+<li>Builds site assets with <code>cargo-leptos</code></li>
+<li>Builds a static musl-linked binary</li>
+<li>Pushes the Docker image to Docker Hub (<code>daschswiss/dpe:{tag}</code>)</li>
+<li>Triggers a Jenkins webhook for DEV deployment</li>
+</ol>
+<h4 id="release-publishing"><a class="header" href="#release-publishing">Release Publishing</a></h4>
+<p>Defined in <code>dpe-release-publish.yml</code>.</p>
+<p>When a GitHub Release is published (tag starting with <code>v</code>), builds and pushes a release-tagged Docker image.</p>
+<h3 id="release-please"><a class="header" href="#release-please">Release Please</a></h3>
+<p>Defined in <code>release-please.yml</code>.</p>
+<p>On every push to <code>main</code>, <a href="https://github.com/googleapis/release-please">Release Please</a> reads conventional commit messages and creates or updates a release PR with auto-generated changelog. Merging the release PR creates a GitHub Release.</p>
+<p>Configuration lives in <code>.github/release-please/config.json</code> and <code>.github/release-please/manifest.json</code>.</p>
 <h3 id="documentation-github-pages"><a class="header" href="#documentation-github-pages">Documentation (GitHub Pages)</a></h3>
-<p>Defined in <code>gh-pages.yml</code>. The mdBook documentation is built and deployed to
-GitHub Pages on pushes to <code>main</code>.</p>
+<p>Defined in <code>gh-pages.yml</code>. The mdBook documentation is built and deployed to GitHub Pages on pushes to <code>main</code>.</p>
+<h3 id="claude-code"><a class="header" href="#claude-code">Claude Code</a></h3>
+<p>Defined in <code>claude.yml</code>.</p>
+<p>Responds to <code>@claude</code> mentions in PR comments and issue comments. Supports code review (<code>@claude review</code>) and general assistance. Runs with limited permissions (contents: read, pull-requests: write).</p>
 
                     </main>
 

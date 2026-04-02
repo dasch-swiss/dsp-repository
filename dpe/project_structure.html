@@ -247,7 +247,7 @@
 <pre><code>modules/dpe/
 ├── core/             dpe-core          Pure domain (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
-├── app/              dpe-web           Leptos SSR + Datastar fragments
+├── web/              dpe-web           Leptos SSR + Datastar fragments
 ├── server/           dpe-server        Axum binary (composition root)
 ├── web-e2e-tests/                      Playwright E2E tests
 ├── public/                             Static assets
@@ -274,7 +274,7 @@
 <h3 id="dpe-api-oai-api-oai"><a class="header" href="#dpe-api-oai-api-oai"><code>dpe-api-oai</code> (api-oai/)</a></h3>
 <p>OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord).</p>
 <p>Depends on <code>dpe-core</code> for domain types — no Leptos or web framework dependency.</p>
-<h3 id="dpe-web-app"><a class="header" href="#dpe-web-app"><code>dpe-web</code> (app/)</a></h3>
+<h3 id="dpe-web-web"><a class="header" href="#dpe-web-web"><code>dpe-web</code> (web/)</a></h3>
 <p>Leptos SSR web layer. Contains:</p>
 <ul>
 <li><strong>Pages</strong>: <code>home</code>, <code>about</code>, <code>project</code>, <code>projects</code> (with filters and pagination)</li>

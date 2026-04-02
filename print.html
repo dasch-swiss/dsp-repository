@@ -248,15 +248,15 @@
 <p>The DaSCH Service Platform (DSP) consists of two main components:</p>
 <ul>
 <li><strong>DSP VRE</strong>: The DSP Virtual Research Environment (VRE),
-where resdearchers can work on their data during the lifetime of the project.
+where researchers can work on their data during the lifetime of the project.
 It consists of the DSP-APP, DSP-API and DSP-TOOLS.<br />
 The DSP VRE is developed in various other git repositories.</li>
 <li><strong>DSP Repository</strong>: The DSP Repository is the long-term archive for research data.
 It consists of the DSP Archive and the Discovery and Presentation Environment (DPE).<br />
 The DSP Repository is developed in this monorepo.</li>
 </ul>
-<p>Additionally, the monorepo contains the DSP Design System and DaSCH's website.</p>
-<!-- TODO: Add architecture diagram here -->
+<p>Additionally, the monorepo contains the Mosaic component library (design system).</p>
+<p>For system architecture details, see <a href="./dpe/architecture.html">DPE Architecture</a> and <a href="./dpe/project_structure.html">Project Structure</a>.</p>
 <p>This documentation provides an overview of the project structure.
 It covers the different components of the system architecture,
 the design system we use for the development,
@@ -350,7 +350,7 @@ including onboarding information, etc.</p>
 Each section corresponds to a Markdown file in the <code>src</code> directory.</p>
 <p>To configure the documentation (e.g. adding plugins), modify the <code>book.toml</code> file.</p>
 <h2 id="deployment"><a class="header" href="#deployment">Deployment</a></h2>
-<p>This documentation is not yet deployed. The deployment process will be defined in the future.</p>
+<p>This documentation is deployed to GitHub Pages automatically on every push to <code>main</code> via the <code>gh-pages.yml</code> workflow.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -420,33 +420,111 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 </style>
 <h1 id="workflows-and-conventions"><a class="header" href="#workflows-and-conventions">Workflows and Conventions</a></h1>
 <h2 id="entry-points"><a class="header" href="#entry-points">Entry Points</a></h2>
-<p>The first entry point of this repository is the README file,
-which should give anyone an indication of where to find any information they need.</p>
-<p>For any interaction or coding-related workflow, the justfile is the primary source of truth.
-The justfile contains all the commands and workflows that are used in this repository, along with their descriptions.</p>
+<p>The first entry point of this repository is the README file, which should give anyone an indication of where to find any information they need.</p>
+<p>For any interaction or coding-related workflow, the justfile is the primary source of truth. Run <code>just</code> without arguments to see all available commands with descriptions.</p>
 <h2 id="key-development-commands"><a class="header" href="#key-development-commands">Key Development Commands</a></h2>
-<p>The justfile provides self-documenting commands. Key workflows include:</p>
-<ul>
-<li><code>just check</code> - Run formatting and linting checks</li>
-<li><code>just build</code> - Build all targets</li>
-<li><code>just test</code> - Run all tests</li>
-<li><code>just run</code> - Run main server</li>
-<li><code>just watch</code> - Watch for changes and run tests</li>
-<li><code>just run-watch-playground</code> - Run design system playground with hot reload</li>
-<li><code>just playground install</code> - Install playground dependencies</li>
-<li><code>just playground test</code> - Run design system tests</li>
-</ul>
-<p>Run <code>just</code> without arguments to see all available commands with descriptions.</p>
-<p>Any further information should be located in the documentation.</p>
-<h2 id="cicd"><a class="header" href="#cicd">CI/CD</a></h2>
-<p>GitHub Actions workflows run automatically on pushes and pull requests.
-See <a href="./deployment.html">Release, Deployment and Versioning</a> for details on the
-CI/CD pipelines, including PR preview deployments and production releases.</p>
+<div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>just check</code></td><td>Run formatting and linting checks</td></tr>
+<tr><td><code>just build</code></td><td>Build all targets</td></tr>
+<tr><td><code>just test</code></td><td>Run all tests</td></tr>
+<tr><td><code>just fmt</code></td><td>Format all Rust code (cargo fmt + leptosfmt)</td></tr>
+<tr><td><code>just run</code></td><td>Run server (release mode)</td></tr>
+<tr><td><code>just watch</code></td><td>Watch for changes and run tests</td></tr>
+<tr><td><code>just watch-dpe</code></td><td>Run DPE with hot reload</td></tr>
+<tr><td><code>just watch-mosaic-playground</code></td><td>Run Mosaic playground with hot reload</td></tr>
+<tr><td><code>just install-requirements</code></td><td>Install all development dependencies</td></tr>
+<tr><td><code>just install-e2e-requirements</code></td><td>Install Playwright browsers for E2E tests</td></tr>
+<tr><td><code>just docs-serve</code></td><td>Serve documentation locally at localhost:3000</td></tr>
+<tr><td><code>just validate-data</code></td><td>Validate all data files in the default data directory</td></tr>
+</tbody></table>
+</div>
 <h2 id="git-workflow"><a class="header" href="#git-workflow">Git Workflow</a></h2>
-<p>For this repository, we use a rebase workflow.
-This means that all changes should be made on a branch,
-and then rebased onto the main branch before being merged.</p>
-<p>This allows us to keep a clean commit history and avoid merge commits.</p>
+<p>We use a <strong>rebase workflow</strong>. All changes are made on a branch, then rebased onto main before being merged. This keeps a clean, linear commit history.</p>
+<ul>
+<li><strong>Rebase-merge</strong>: PRs are integrated using rebase-merge (not squash or merge commits). Every commit on a branch becomes a commit on main.</li>
+<li><strong>Clean commit history</strong>: Before merging, clean up the branch so that each commit represents one logical unit of change. Squash fixups, reword messages, and reorder commits so the history reads well on main.</li>
+</ul>
+<h2 id="commit-conventions"><a class="header" href="#commit-conventions">Commit Conventions</a></h2>
+<p>Follow <a href="https://www.conventionalcommits.org/">Conventional Commits</a>. Scopes match crate names: <code>dpe-server</code>, <code>dpe-core</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>mosaic-playground-macro</code>.</p>
+<h3 id="types"><a class="header" href="#types">Types</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Prefix</th><th>Meaning</th><th>Changelog</th><th>Version bump</th></tr></thead><tbody>
+<tr><td><code>feat:</code></td><td>New user-visible functionality</td><td>Features</td><td>minor</td></tr>
+<tr><td><code>fix:</code></td><td>Bug fix</td><td>Bug Fixes</td><td>patch</td></tr>
+<tr><td><code>perf:</code></td><td>Performance improvement</td><td>Performance</td><td>patch</td></tr>
+<tr><td><code>revert:</code></td><td>Revert a previous commit</td><td>Reverts</td><td>patch</td></tr>
+<tr><td><code>refactor:</code></td><td>Code restructuring</td><td>hidden</td><td>none</td></tr>
+<tr><td><code>test:</code></td><td>Tests</td><td>hidden</td><td>none</td></tr>
+<tr><td><code>ci:</code></td><td>CI/CD</td><td>hidden</td><td>none</td></tr>
+<tr><td><code>docs:</code></td><td>Documentation</td><td>hidden</td><td>none</td></tr>
+<tr><td><code>build:</code></td><td>Build system, deps</td><td>hidden</td><td>none</td></tr>
+<tr><td><code>style:</code></td><td>Formatting</td><td>hidden</td><td>none</td></tr>
+<tr><td><code>chore:</code></td><td>Maintenance</td><td>hidden</td><td>none</td></tr>
+</tbody></table>
+</div>
+<h3 id="commit-organization"><a class="header" href="#commit-organization">Commit Organization</a></h3>
+<p>Group commits by user-visible impact, not by implementation journey.</p>
+<ol>
+<li>Each <code>feat:</code> or <code>fix:</code> commit = one changelog entry visible to deployers</li>
+<li>Internal work (<code>build:</code>, <code>ci:</code>, <code>refactor:</code>, <code>docs:</code>, <code>chore:</code>, <code>test:</code>) is hidden from changelog — squash aggressively</li>
+<li>Ask: "would a developer deploying this care?" If yes → <code>feat:</code> or <code>fix:</code>. If no → hidden type.</li>
+<li>Debugging journeys (trial-and-error, reverts, iterative fixes) belong in the PR description, not the commit history</li>
+</ol>
+<h2 id="pull-request-workflow"><a class="header" href="#pull-request-workflow">Pull Request Workflow</a></h2>
+<h3 id="pr-template"><a class="header" href="#pr-template">PR Template</a></h3>
+<pre><code>Fixes LINEAR-ID, LINEAR-ID, ...
+
+## Motivation
+Why this work was needed. What problem it solves for users.
+
+## Summary
+1-3 bullet points of user-visible changes.
+
+## Key Changes
+### [Topic]
+- change details
+
+## Challenges and Decisions
+What was tried, what failed, and key architecture decisions.
+Structure as sub-sections when multiple challenges exist:
+
+### [Challenge title]
+**Problem:** description of the issue encountered
+**Tried:** approaches that didn't work and why
+**Solution:** what worked and why it's the right approach
+
+## Gotchas
+Things future developers should know. Each gotcha should be
+actionable — not just "this is hard" but "do X instead of Y".
+
+## Test Plan
+- [ ] verification steps
+</code></pre>
+<h3 id="why-this-format-matters"><a class="header" href="#why-this-format-matters">Why This Format Matters</a></h3>
+<p>The "Challenges and Decisions" section captures the debugging journey that would otherwise be lost when commits are squashed. Well-structured challenges become high-quality learnings automatically.</p>
+<h3 id="pr-creation-process"><a class="header" href="#pr-creation-process">PR Creation Process</a></h3>
+<ol>
+<li>Create as draft: <code>gh pr create --draft</code></li>
+<li>Assign to the requesting developer: <code>gh pr edit [PR_NUMBER] --add-assignee [USERNAME]</code></li>
+<li>Include a "Review Notes" section mentioning that separate commits should be checked for easier review</li>
+</ol>
+<h3 id="what-goes-where"><a class="header" href="#what-goes-where">What Goes Where</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Information</th><th>Put it in...</th></tr></thead><tbody>
+<tr><td>New feature / breaking change</td><td>Commit message (<code>feat:</code> / <code>feat!:</code>)</td></tr>
+<tr><td>Bug fix</td><td>Commit message (<code>fix:</code>)</td></tr>
+<tr><td>Build/CI/refactor details</td><td>Commit message (hidden type)</td></tr>
+<tr><td>Why the work was needed</td><td>PR Motivation section</td></tr>
+<tr><td>What was tried and failed</td><td>PR Challenges section</td></tr>
+<tr><td>Architecture decisions + rationale</td><td>PR Challenges section</td></tr>
+<tr><td>Things to watch out for</td><td>PR Gotchas section</td></tr>
+<tr><td>Structured, searchable knowledge</td><td>Learnings doc (dasch-specs)</td></tr>
+</tbody></table>
+</div>
+<h2 id="release-workflow"><a class="header" href="#release-workflow">Release Workflow</a></h2>
+<p>Releases are automated via <a href="https://github.com/googleapis/release-please">Release Please</a>. On every push to <code>main</code>, Release Please reads conventional commit messages and either creates or updates a release PR. Merging the release PR creates a GitHub Release with auto-generated release notes.</p>
+<h2 id="code-review"><a class="header" href="#code-review">Code Review</a></h2>
+<p>See <a href="./fundamentals/review-guidelines.html">Review Guidelines</a> for the review checklist.</p>
+<h2 id="cicd"><a class="header" href="#cicd">CI/CD</a></h2>
+<p>GitHub Actions workflows run automatically on pushes and pull requests. See <a href="./deployment.html">Release, Deployment and Versioning</a> for details on the CI/CD pipelines.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -516,11 +594,44 @@ and then rebased onto the main branch before being merged.</p>
 </style>
 <h1 id="project-structure-and-code-organization"><a class="header" href="#project-structure-and-code-organization">Project Structure and Code Organization</a></h1>
 <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
-<p>This repository contains the source code for the DSP Repository.
-It is structured as a Rust workspace, with multiple crates.</p>
-<p>All Rust crates are organized as subdirectories within the <code>modules/</code> directory.</p>
-<p>Additionally, any non-Rust code or assets are placed either in the <code>assets/</code> directory
-or as a separate module within the <code>modules/</code> directory.</p>
+<p>This repository is a Rust workspace structured as a monorepo. All Rust crates are organized as subdirectories within the <code>modules/</code> directory.</p>
+<pre><code class="language-txt">modules/
+├── dpe/                       # Discovery and Presentation Environment
+│   ├── core/                  # Pure domain types, repositories, data loading (crate: dpe-core)
+│   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
+│   ├── web/                   # Web layer: Leptos components, pages (crate: dpe-web)
+│   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
+│   ├── web-e2e-tests/         # Playwright E2E tests
+│   ├── public/                # Static assets
+│   ├── style/                 # CSS / Tailwind
+│   └── Dockerfile             # Production container image
+└── mosaic/                    # Mosaic component library (design system)
+    ├── tiles/                 # Reusable Leptos UI components (crate: mosaic-tiles)
+    ├── playground/            # Component playground application (crate: mosaic-playground)
+    ├── playground_macro/      # Proc macro for playground page generation (crate: mosaic-playground-macro)
+    └── playground-e2e-tests/  # Playwright E2E tests for the playground
+</code></pre>
+<h2 id="crate-and-folder-naming-convention"><a class="header" href="#crate-and-folder-naming-convention">Crate and Folder Naming Convention</a></h2>
+<p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part. Hyphens in crate names become underscores in folder names when needed for Rust compatibility (proc macro crates).</p>
+<div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
+<tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>Pure domain types and data access (zero framework deps)</td></tr>
+<tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> only)</td></tr>
+<tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Leptos SSR components, pages, <code>#[server]</code> functions</td></tr>
+<tr><td><code>dpe-server</code></td><td><code>dpe/server</code></td><td>Server binary — composes all routes</td></tr>
+<tr><td><code>mosaic-tiles</code></td><td><code>mosaic/tiles</code></td><td>Reusable UI component library</td></tr>
+<tr><td><code>mosaic-playground</code></td><td><code>mosaic/playground</code></td><td>Component showcase application</td></tr>
+<tr><td><code>mosaic-playground-macro</code></td><td><code>mosaic/playground_macro</code></td><td>Proc macro for playground page generation</td></tr>
+</tbody></table>
+</div>
+<h2 id="api-crate-pattern"><a class="header" href="#api-crate-pattern">API Crate Pattern</a></h2>
+<p>Each API is a separate crate under <code>modules/dpe/</code>:</p>
+<ul>
+<li><strong>Naming</strong>: <code>dpe-api-{name}</code> (e.g., <code>dpe-api-oai</code>)</li>
+<li><strong>Dependencies</strong>: <code>dpe-core</code> for domain types; never depends on other API crates or <code>dpe-web</code></li>
+<li><strong>Entry point</strong>: Exports a handler function (e.g., <code>pub async fn oai_handler(...)</code>)</li>
+<li><strong>Composition</strong>: <code>dpe-server</code> wires the handler into the Axum router</li>
+</ul>
+<p>For detailed crate responsibilities and the dependency graph, see <a href="./dpe/project_structure.html">DPE Project Structure</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -594,32 +705,54 @@ or as a separate module within the <code>modules/</code> directory.</p>
 <h3 id="checks-and-tests"><a class="header" href="#checks-and-tests">Checks and Tests</a></h3>
 <p>Every push and pull request runs:</p>
 <ul>
-<li><strong>check.yml</strong> — Formatting (<code>rustfmt</code>) and linting (<code>clippy</code>)</li>
+<li><strong>check.yml</strong> — Formatting (<code>rustfmt</code>, <code>leptosfmt</code>) and linting (<code>clippy</code>)</li>
 <li><strong>test.yml</strong> — Runs the full test suite</li>
 </ul>
-<h3 id="mosaic-demo"><a class="header" href="#mosaic-demo">Mosaic Demo</a></h3>
-<p>The Mosaic component library demo has two deployment paths:</p>
+<h3 id="accessibility-testing"><a class="header" href="#accessibility-testing">Accessibility Testing</a></h3>
+<p>Defined in <code>a11y-dpe.yml</code>.</p>
+<p>Runs on PRs and pushes to <code>main</code> that touch DPE UI code (<code>modules/dpe/web/</code>, <code>modules/dpe/style/</code>, <code>modules/dpe/public/</code>). Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
+<h3 id="fuzz-testing"><a class="header" href="#fuzz-testing">Fuzz Testing</a></h3>
+<p>Defined in <code>fuzz.yml</code>.</p>
+<p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, automatically creates a GitHub issue with reproduction instructions.</p>
+<h3 id="mosaic-playground"><a class="header" href="#mosaic-playground">Mosaic Playground</a></h3>
+<p>The Mosaic component library playground has two deployment paths:</p>
 <h4 id="pr-preview-cloud-run"><a class="header" href="#pr-preview-cloud-run">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-pull-request.yml</code>.</p>
-<p>When a pull request modifies files under <code>modules/mosaic/</code>, a preview of the
-Mosaic demo is automatically deployed to Google Cloud Run. The preview URL is
-posted as a comment on the PR and updated on each push.</p>
+<p>When a pull request modifies files under <code>modules/mosaic/</code>, a preview of the Mosaic playground is automatically deployed to Google Cloud Run. The preview URL is posted as a comment on the PR and updated on each push.</p>
 <ul>
 <li><strong>Trigger:</strong> PRs that touch <code>modules/mosaic/**</code> (same-repo only, not forks)</li>
 <li><strong>Service:</strong> Ephemeral Cloud Run service per PR</li>
-<li><strong>Cleanup:</strong> The Cloud Run service and container image are deleted when the PR
-is closed or merged</li>
+<li><strong>Cleanup:</strong> The Cloud Run service and container image are deleted when the PR is closed or merged</li>
 </ul>
 <p>Authentication uses Workload Identity Federation (keyless, OIDC-based).</p>
-<p>Required secrets: <code>GCP_WORKLOAD_IDENTITY_PROVIDER</code>, <code>GCP_SERVICE_ACCOUNT</code>,
-<code>GCP_REGION</code>, <code>GCP_ARTIFACT_REGISTRY</code>.</p>
 <h4 id="production-docker-hub--jenkins"><a class="header" href="#production-docker-hub--jenkins">Production (Docker Hub + Jenkins)</a></h4>
-<p>Defined in <code>docker-publish.yml</code>.</p>
-<p>When changes to <code>modules/mosaic/</code> are merged to <code>main</code>, the demo image is built,
-pushed to Docker Hub, and a Jenkins webhook triggers the production deployment.</p>
+<p>Defined in <code>mosaic-docker-publish.yml</code>.</p>
+<p>When changes to <code>modules/mosaic/</code> are merged to <code>main</code>, the playground image is built, pushed to Docker Hub, and a Jenkins webhook triggers the production deployment.</p>
+<h3 id="dpe"><a class="header" href="#dpe">DPE</a></h3>
+<h4 id="pr-preview-cloud-run-1"><a class="header" href="#pr-preview-cloud-run-1">PR Preview (Cloud Run)</a></h4>
+<p>Defined in <code>cloud-run-dpe-pull-request.yml</code>.</p>
+<p>When a pull request modifies files under <code>modules/dpe/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
+<h4 id="continuous-deployment-docker-hub--jenkins"><a class="header" href="#continuous-deployment-docker-hub--jenkins">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
+<p>Defined in <code>dpe-docker-publish.yml</code>.</p>
+<p>On every push to <code>main</code>:</p>
+<ol>
+<li>Builds site assets with <code>cargo-leptos</code></li>
+<li>Builds a static musl-linked binary</li>
+<li>Pushes the Docker image to Docker Hub (<code>daschswiss/dpe:{tag}</code>)</li>
+<li>Triggers a Jenkins webhook for DEV deployment</li>
+</ol>
+<h4 id="release-publishing"><a class="header" href="#release-publishing">Release Publishing</a></h4>
+<p>Defined in <code>dpe-release-publish.yml</code>.</p>
+<p>When a GitHub Release is published (tag starting with <code>v</code>), builds and pushes a release-tagged Docker image.</p>
+<h3 id="release-please"><a class="header" href="#release-please">Release Please</a></h3>
+<p>Defined in <code>release-please.yml</code>.</p>
+<p>On every push to <code>main</code>, <a href="https://github.com/googleapis/release-please">Release Please</a> reads conventional commit messages and creates or updates a release PR with auto-generated changelog. Merging the release PR creates a GitHub Release.</p>
+<p>Configuration lives in <code>.github/release-please/config.json</code> and <code>.github/release-please/manifest.json</code>.</p>
 <h3 id="documentation-github-pages"><a class="header" href="#documentation-github-pages">Documentation (GitHub Pages)</a></h3>
-<p>Defined in <code>gh-pages.yml</code>. The mdBook documentation is built and deployed to
-GitHub Pages on pushes to <code>main</code>.</p>
+<p>Defined in <code>gh-pages.yml</code>. The mdBook documentation is built and deployed to GitHub Pages on pushes to <code>main</code>.</p>
+<h3 id="claude-code"><a class="header" href="#claude-code">Claude Code</a></h3>
+<p>Defined in <code>claude.yml</code>.</p>
+<p>Responds to <code>@claude</code> mentions in PR comments and issue comments. Supports code review (<code>@claude review</code>) and general assistance. Runs with limited permissions (contents: read, pull-requests: write).</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -766,11 +899,18 @@ GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
        &amp;&amp; (window.location.href = evt.detail.el.getAttribute('href'))
      "&gt;
 </code></pre>
-<p>Key conventions:</p>
+<h2 id="datastar-attribute-conventions"><a class="header" href="#datastar-attribute-conventions">Datastar Attribute Conventions</a></h2>
 <ul>
-<li><code>_</code> prefix on signals (e.g., <code>_tab_loading</code>) excludes them from server payloads</li>
-<li><code>retry: 'never'</code> on <code>@get()</code> calls where navigation fallback is preferred</li>
-<li>Every <code>data-on:click__prevent</code> link has a valid <code>href</code> for graceful degradation</li>
+<li><strong>Signal naming</strong>: Use <code>_</code> prefix for client-only signals (e.g., <code>_tab_loading</code>). The underscore excludes the signal from server payloads.</li>
+<li><strong>No <code>__debounce</code> on <code>__prevent</code> anchors</strong>: Do NOT combine <code>__prevent</code> with <code>__debounce</code> or <code>__throttle</code> on anchor elements — known Datastar timing issue.</li>
+<li><strong><code>retry: 'never'</code></strong>: Use on <code>@get()</code> calls where fallback to full navigation is preferred over retrying.</li>
+<li><strong>Graceful degradation</strong>: Every Datastar-enhanced <code>&lt;a&gt;</code> must have a valid <code>href</code> for no-JS fallback.</li>
+</ul>
+<h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
+<ul>
+<li><a href="dpe/./project_structure.html">Project Structure</a> — Crate responsibilities and dependency graph</li>
+<li><a href="dpe/./testing-strategy.html">Testing Strategy</a> — Testing pyramid and CI pipeline</li>
+<li><a href="dpe/./operations.html">Operations</a> — Docker, environment variables, deployment</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
@@ -844,7 +984,7 @@ GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
 <pre><code>modules/dpe/
 ├── core/             dpe-core          Pure domain (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
-├── app/              dpe-web           Leptos SSR + Datastar fragments
+├── web/              dpe-web           Leptos SSR + Datastar fragments
 ├── server/           dpe-server        Axum binary (composition root)
 ├── web-e2e-tests/                      Playwright E2E tests
 ├── public/                             Static assets
@@ -871,7 +1011,7 @@ GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
 <h3 id="dpe-api-oai-api-oai"><a class="header" href="#dpe-api-oai-api-oai"><code>dpe-api-oai</code> (api-oai/)</a></h3>
 <p>OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord).</p>
 <p>Depends on <code>dpe-core</code> for domain types — no Leptos or web framework dependency.</p>
-<h3 id="dpe-web-app"><a class="header" href="#dpe-web-app"><code>dpe-web</code> (app/)</a></h3>
+<h3 id="dpe-web-web"><a class="header" href="#dpe-web-web"><code>dpe-web</code> (web/)</a></h3>
 <p>Leptos SSR web layer. Contains:</p>
 <ul>
 <li><strong>Pages</strong>: <code>home</code>, <code>about</code>, <code>project</code>, <code>projects</code> (with filters and pagination)</li>
@@ -1022,6 +1162,17 @@ Parallel job group 3 (~5 min):
   axe-core accessibility scans
   Lighthouse CI performance budgets
 </code></pre>
+<h2 id="testing-conventions"><a class="header" href="#testing-conventions">Testing Conventions</a></h2>
+<p><strong>Test naming</strong>: Use descriptive names following the <code>test_{what}_{condition}_{expected}</code> pattern. For example: <code>test_parse_project_missing_title_returns_error</code>.</p>
+<p><strong>Test locations</strong>:</p>
+<ul>
+<li>Unit tests: In-crate <code>#[cfg(test)]</code> modules or adjacent <code>_tests.rs</code> files</li>
+<li>Snapshot files: <code>.snap</code> files committed to git in <code>snapshots/</code> directories</li>
+<li>E2E tests: <code>web-e2e-tests/</code> for DPE, <code>playground-e2e-tests/</code> for Mosaic</li>
+<li>Fuzz corpus: Persisted in the repository under <code>fuzz/corpus/</code></li>
+</ul>
+<p><strong>Test file naming</strong>: <code>{feature}_tests.rs</code> for Rust, <code>{feature}.spec.ts</code> for Playwright.</p>
+<p><strong>Snapshot tests</strong>: Use the <code>insta</code> crate. Use <code>with_settings!</code> for scrubbing dynamic values (timestamps, IDs). CI runs with <code>INSTA_UPDATE=new</code> so unexpected changes produce <code>.snap.new</code> files for review.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -1333,25 +1484,50 @@ and identify opportunities for further improvements.</p>
 
 </style>
 <h1 id="tech-stack"><a class="header" href="#tech-stack">Tech Stack</a></h1>
-<h2 id="core-technologies"><a class="header" href="#core-technologies">Core Technologies</a></h2>
-<ul>
-<li><strong>Rust</strong> - Primary development language (Edition 2021, Toolchain 1.86.0)</li>
-<li><strong>Axum</strong> - HTTP web framework with WebSocket support</li>
-<li><strong>Leptos</strong> - Reactive UI framework for Rust</li>
-<li><strong>Tailwind CSS v4</strong> - Utility-first CSS framework</li>
-<li><strong>Database TBD</strong> - Currently using static JSON files</li>
-</ul>
-<h2 id="development--testing"><a class="header" href="#development--testing">Development &amp; Testing</a></h2>
-<ul>
-<li><strong>Cargo test</strong> - Rust test runner</li>
-<li><strong>Playwright</strong> - End-to-end testing</li>
-<li><strong>Leptosfmt</strong> - Leptos code formatter</li>
-</ul>
+<h2 id="core"><a class="header" href="#core">Core</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><strong>Rust</strong> (Edition 2021)</td><td>Primary development language</td></tr>
+<tr><td><strong>Axum</strong></td><td>HTTP web framework</td></tr>
+<tr><td><strong>Leptos</strong></td><td>Reactive UI framework (SSR for DPE, islands for Mosaic)</td></tr>
+<tr><td><strong>Datastar</strong></td><td>SSE-based interactivity for DPE (~14KB JS, no WASM)</td></tr>
+<tr><td><strong>Tailwind CSS v4</strong></td><td>Utility-first CSS framework</td></tr>
+<tr><td><strong>DaisyUI</strong></td><td>Tailwind component plugin</td></tr>
+<tr><td><strong>Tokio</strong></td><td>Async runtime</td></tr>
+<tr><td><strong>figment</strong></td><td>Layered configuration (defaults → TOML → env vars)</td></tr>
+</tbody></table>
+</div>
+<h2 id="data--persistence"><a class="header" href="#data--persistence">Data &amp; Persistence</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><strong>serde / serde_json</strong></td><td>Serialization and deserialization</td></tr>
+<tr><td><strong>Static JSON files</strong></td><td>Current data storage (database TBD)</td></tr>
+</tbody></table>
+</div>
+<h2 id="testing--quality"><a class="header" href="#testing--quality">Testing &amp; Quality</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><strong>cargo test / nextest</strong></td><td>Rust test runner</td></tr>
+<tr><td><strong>insta</strong></td><td>Snapshot testing for SSR output</td></tr>
+<tr><td><strong>Playwright</strong></td><td>End-to-end browser tests</td></tr>
+<tr><td><strong>axe-core</strong></td><td>Accessibility scanning (WCAG 2.1 AA)</td></tr>
+<tr><td><strong>cargo-fuzz</strong></td><td>Fuzz testing (nightly CI)</td></tr>
+</tbody></table>
+</div>
+<h2 id="build--development"><a class="header" href="#build--development">Build &amp; Development</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><strong>cargo-leptos</strong></td><td>Leptos build tool (handles Tailwind, WASM, site assets)</td></tr>
+<tr><td><strong>just</strong></td><td>Command runner for development workflows</td></tr>
+<tr><td><strong>leptosfmt</strong></td><td>Leptos-aware code formatter</td></tr>
+<tr><td><strong>Biome</strong></td><td>Linter/formatter for E2E test TypeScript</td></tr>
+</tbody></table>
+</div>
+<h2 id="documentation--observability"><a class="header" href="#documentation--observability">Documentation &amp; Observability</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><strong>mdBook</strong> + mdbook-alerts</td><td>Project documentation</td></tr>
+<tr><td><strong>Fathom Analytics</strong></td><td>Privacy-friendly web analytics (GDPR-compliant, no cookies)</td></tr>
+<tr><td><strong>tracing</strong> + tracing-subscriber</td><td>Structured logging</td></tr>
+</tbody></table>
+</div>
 <h2 id="architecture-principles"><a class="header" href="#architecture-principles">Architecture Principles</a></h2>
-<p>We keep the design evolutionary, starting from the simplest possible solution and iterating on it.
-At first, providing data from static JSON files, or working with static content, is sufficient.
-Following clean architecture principles, swapping out the persistence layer is easy.</p>
-<h2 id="implementation-notes"><a class="header" href="#implementation-notes">Implementation Notes</a></h2>
+<p>We keep the design evolutionary, starting from the simplest possible solution and iterating on it. At first, providing data from static JSON files is sufficient. Following clean architecture principles, swapping out the persistence layer is easy.</p>
 <p>TypeScript is used exclusively for testing and development tooling, not for production runtime code. The core application remains purely Rust-based.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
@@ -1431,36 +1607,19 @@ end-to-end tests are written either in Rust or in JavaScript using Playwright.</
 <p>The design system playground includes comprehensive testing infrastructure:</p>
 <p><strong>Interactive Testing (MCP)</strong>:</p>
 <ul>
-<li>Start playground server: <code>just run-watch-playground</code></li>
+<li>Start playground server: <code>just watch-mosaic-playground</code></li>
 <li>Use Claude Code with Playwright MCP commands for visual verification</li>
 <li>Commands whitelisted in <code>.claude/settings.json</code></li>
 <li>Best for: Component development, design verification, manual testing</li>
 </ul>
 <p><strong>Automated Testing (CI/CD)</strong>:</p>
 <ul>
-<li>TypeScript-based Playwright setup with tooling</li>
+<li>TypeScript-based Playwright setup in <code>modules/mosaic/playground-e2e-tests/</code></li>
 <li>Functional, accessibility, and responsive design testing in CI</li>
-<li>ESLint, Prettier, and TypeScript checking</li>
 <li>HTML + JSON reporters for CI/CD integration</li>
 <li>Best for: End-to-end user flows, automated regression detection</li>
 </ul>
-<p><strong>Setup</strong>: <code>just playground install</code> then <code>just playground test</code></p>
-<p><strong>Key Commands</strong>:</p>
-<ul>
-<li><code>just playground test</code> - Run all tests</li>
-<li><code>just playground test-ui</code> - Interactive test runner</li>
-<li><code>just playground test-debug</code> - Debug mode with browser DevTools</li>
-<li><code>just playground type-check</code> - TypeScript validation</li>
-<li><code>just playground lint-and-format</code> - Code quality checks</li>
-</ul>
 <p>For single component interactions, prefer Rust tests. Playwright is for complete user flows.</p>
-<div class="mdbook-alerts mdbook-alerts-note">
-<p class="mdbook-alerts-title">
-  <span class="mdbook-alerts-icon"></span>
-  note
-</p>
-<p>We are still evaluating Playwright integration for broader testing use cases.</p>
-</div>
 <p>Unit tests are the foundation of our testing strategy.
 They test individual components in isolation,
 ensuring that each part of the codebase behaves as expected.
@@ -1544,6 +1703,131 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 }
 
 </style>
+<h1 id="code-review-guidelines"><a class="header" href="#code-review-guidelines">Code Review Guidelines</a></h1>
+<p>Review checklist for the DSP Repository. Organized by priority.</p>
+<h2 id="always-check"><a class="header" href="#always-check">Always Check</a></h2>
+<p><strong>Fragment Endpoints</strong></p>
+<ul>
+<li>New fragment endpoints follow resource-action nesting convention (see <a href="fundamentals/../dpe/architecture.html">DPE Architecture</a>)</li>
+<li>New Datastar interactions have <code>&lt;a href&gt;</code> fallback for graceful degradation</li>
+<li>ARIA semantics present on interactive components (<code>role</code>, <code>aria-selected</code>, <code>aria-controls</code>)</li>
+</ul>
+<p><strong>Testing</strong></p>
+<ul>
+<li>insta snapshots added/updated for changed SSR output</li>
+<li>E2E test covers the user-facing behavior</li>
+<li>axe-core scan passes on affected pages</li>
+<li>Unit tests for fragment handler edge cases (invalid tab, missing project, etc.)</li>
+</ul>
+<p><strong>Architecture</strong></p>
+<ul>
+<li>New API crates follow the <code>dpe-api-{name}</code> pattern with <code>dpe-core</code> as only domain dependency (see <a href="fundamentals/../repo_structure.html">Project Structure</a>)</li>
+<li><code>dpe-core</code> has no framework dependencies (no leptos, no axum)</li>
+<li>Validate command covers all data file types (DPE)</li>
+<li>E2E test directory naming: <code>web-e2e-tests/</code> for DPE, <code>playground-e2e-tests/</code> for Mosaic</li>
+</ul>
+<p><strong>CLI</strong></p>
+<ul>
+<li>CLI subcommands are documented in help text</li>
+</ul>
+<p><strong>Documentation</strong></p>
+<ul>
+<li>Documentation updated when patterns change (see <a href="fundamentals/../docs.html">About this Documentation</a>)</li>
+<li>New environment variables documented in <a href="fundamentals/../dpe/operations.html">DPE Operations</a></li>
+</ul>
+<p><strong>Commits</strong></p>
+<ul>
+<li>Commits follow conventional commits (correct prefix, scope matches crate name) — see <a href="fundamentals/../workflows.html">Workflows and Conventions</a></li>
+<li>One topic per commit — apply the "and" test</li>
+<li>Each commit builds and passes tests</li>
+</ul>
+<p><strong>Security</strong></p>
+<ul>
+<li>No secrets in config files, Cargo.toml, or git</li>
+<li>Path parameters validated before filesystem access</li>
+</ul>
+<h2 id="style"><a class="header" href="#style">Style</a></h2>
+<ul>
+<li>Follow existing Datastar attribute patterns (signal naming with <code>_</code> prefix) — see <a href="fundamentals/../dpe/architecture.html">DPE Architecture</a></li>
+<li>Fragment handlers in <code>fragments/</code> module, not inline in <code>main.rs</code></li>
+<li>Domain types belong in <code>dpe-core</code>, not in web or API crates</li>
+<li>API crate exposes a handler function (e.g., <code>pub async fn oai_handler(...)</code>) for composition in dpe-server</li>
+<li>Leptos components use <code>view!</code> macro consistently</li>
+<li>Test files follow naming convention: <code>{feature}_tests.rs</code> for Rust, <code>{feature}.spec.ts</code> for Playwright</li>
+</ul>
+<h2 id="skip"><a class="header" href="#skip">Skip</a></h2>
+<ul>
+<li>Snapshot <code>.snap</code> file contents — verify accepted, don't review formatting</li>
+<li>Formatting-only changes (<code>cargo fmt</code> / <code>leptosfmt</code> diffs)</li>
+<li><code>Cargo.lock</code> changes from dependency updates</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
 <h1 id="onboarding"><a class="header" href="#onboarding">Onboarding</a></h1>
 <h2 id="rust"><a class="header" href="#rust">Rust</a></h2>
 <p>The main technology we use is Rust.
@@ -1559,7 +1843,9 @@ though particularly the frontend work does not require deep knowledge of Rust.</
 It provides reactive primitives and a component model similar to modern JavaScript frameworks.</p>
 <p>Key features:</p>
 <ul>
-<li>Leptos must only be used with the <a href="https://book.leptos.dev/islands.html"><code>island</code> feature</a></li>
+<li>The <code>islands</code> Cargo feature is enabled workspace-wide (Leptos 0.8 build requirement)</li>
+<li>Only the Mosaic component library uses actual island components with client-side WASM hydration</li>
+<li>DPE uses SSR-only with <a href="https://data-star.dev/">Datastar</a> for interactivity — no client-side WASM</li>
 <li>The architecture follows the MPA paradigm, a "multi-page app"</li>
 <li>Server-side rendering</li>
 <li>Fine-grained reactivity</li>
@@ -1591,7 +1877,7 @@ In particular, we try to keep the language used in code aligned with the domain 
 <p>For the initial development, we work with static content or JSON files.</p>
 <h2 id="mosaic-component-library"><a class="header" href="#mosaic-component-library">Mosaic Component Library</a></h2>
 <p>The Mosaic component library provides reusable UI components built with Leptos and Tailwind CSS.</p>
-<p>Components are defined in <code>modules/mosaic/tiles/</code> and can be previewed in the playground application at <code>modules/mosaic/demo/</code>.</p>
+<p>Components are defined in <code>modules/mosaic/tiles/</code> and can be previewed in the playground application at <code>modules/mosaic/playground/</code>.</p>
 <p>To run the playground locally:</p>
 <pre><code class="language-bash">just watch-mosaic-playground
 </code></pre>

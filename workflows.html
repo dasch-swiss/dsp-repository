@@ -244,33 +244,111 @@
 </style>
 <h1 id="workflows-and-conventions"><a class="header" href="#workflows-and-conventions">Workflows and Conventions</a></h1>
 <h2 id="entry-points"><a class="header" href="#entry-points">Entry Points</a></h2>
-<p>The first entry point of this repository is the README file,
-which should give anyone an indication of where to find any information they need.</p>
-<p>For any interaction or coding-related workflow, the justfile is the primary source of truth.
-The justfile contains all the commands and workflows that are used in this repository, along with their descriptions.</p>
+<p>The first entry point of this repository is the README file, which should give anyone an indication of where to find any information they need.</p>
+<p>For any interaction or coding-related workflow, the justfile is the primary source of truth. Run <code>just</code> without arguments to see all available commands with descriptions.</p>
 <h2 id="key-development-commands"><a class="header" href="#key-development-commands">Key Development Commands</a></h2>
-<p>The justfile provides self-documenting commands. Key workflows include:</p>
-<ul>
-<li><code>just check</code> - Run formatting and linting checks</li>
-<li><code>just build</code> - Build all targets</li>
-<li><code>just test</code> - Run all tests</li>
-<li><code>just run</code> - Run main server</li>
-<li><code>just watch</code> - Watch for changes and run tests</li>
-<li><code>just run-watch-playground</code> - Run design system playground with hot reload</li>
-<li><code>just playground install</code> - Install playground dependencies</li>
-<li><code>just playground test</code> - Run design system tests</li>
-</ul>
-<p>Run <code>just</code> without arguments to see all available commands with descriptions.</p>
-<p>Any further information should be located in the documentation.</p>
-<h2 id="cicd"><a class="header" href="#cicd">CI/CD</a></h2>
-<p>GitHub Actions workflows run automatically on pushes and pull requests.
-See <a href="./deployment.html">Release, Deployment and Versioning</a> for details on the
-CI/CD pipelines, including PR preview deployments and production releases.</p>
+<div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>just check</code></td><td>Run formatting and linting checks</td></tr>
+<tr><td><code>just build</code></td><td>Build all targets</td></tr>
+<tr><td><code>just test</code></td><td>Run all tests</td></tr>
+<tr><td><code>just fmt</code></td><td>Format all Rust code (cargo fmt + leptosfmt)</td></tr>
+<tr><td><code>just run</code></td><td>Run server (release mode)</td></tr>
+<tr><td><code>just watch</code></td><td>Watch for changes and run tests</td></tr>
+<tr><td><code>just watch-dpe</code></td><td>Run DPE with hot reload</td></tr>
+<tr><td><code>just watch-mosaic-playground</code></td><td>Run Mosaic playground with hot reload</td></tr>
+<tr><td><code>just install-requirements</code></td><td>Install all development dependencies</td></tr>
+<tr><td><code>just install-e2e-requirements</code></td><td>Install Playwright browsers for E2E tests</td></tr>
+<tr><td><code>just docs-serve</code></td><td>Serve documentation locally at localhost:3000</td></tr>
+<tr><td><code>just validate-data</code></td><td>Validate all data files in the default data directory</td></tr>
+</tbody></table>
+</div>
 <h2 id="git-workflow"><a class="header" href="#git-workflow">Git Workflow</a></h2>
-<p>For this repository, we use a rebase workflow.
-This means that all changes should be made on a branch,
-and then rebased onto the main branch before being merged.</p>
-<p>This allows us to keep a clean commit history and avoid merge commits.</p>
+<p>We use a <strong>rebase workflow</strong>. All changes are made on a branch, then rebased onto main before being merged. This keeps a clean, linear commit history.</p>
+<ul>
+<li><strong>Rebase-merge</strong>: PRs are integrated using rebase-merge (not squash or merge commits). Every commit on a branch becomes a commit on main.</li>
+<li><strong>Clean commit history</strong>: Before merging, clean up the branch so that each commit represents one logical unit of change. Squash fixups, reword messages, and reorder commits so the history reads well on main.</li>
+</ul>
+<h2 id="commit-conventions"><a class="header" href="#commit-conventions">Commit Conventions</a></h2>
+<p>Follow <a href="https://www.conventionalcommits.org/">Conventional Commits</a>. Scopes match crate names: <code>dpe-server</code>, <code>dpe-core</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>mosaic-playground-macro</code>.</p>
+<h3 id="types"><a class="header" href="#types">Types</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Prefix</th><th>Meaning</th><th>Changelog</th><th>Version bump</th></tr></thead><tbody>
+<tr><td><code>feat:</code></td><td>New user-visible functionality</td><td>Features</td><td>minor</td></tr>
+<tr><td><code>fix:</code></td><td>Bug fix</td><td>Bug Fixes</td><td>patch</td></tr>
+<tr><td><code>perf:</code></td><td>Performance improvement</td><td>Performance</td><td>patch</td></tr>
+<tr><td><code>revert:</code></td><td>Revert a previous commit</td><td>Reverts</td><td>patch</td></tr>
+<tr><td><code>refactor:</code></td><td>Code restructuring</td><td>hidden</td><td>none</td></tr>
+<tr><td><code>test:</code></td><td>Tests</td><td>hidden</td><td>none</td></tr>
+<tr><td><code>ci:</code></td><td>CI/CD</td><td>hidden</td><td>none</td></tr>
+<tr><td><code>docs:</code></td><td>Documentation</td><td>hidden</td><td>none</td></tr>
+<tr><td><code>build:</code></td><td>Build system, deps</td><td>hidden</td><td>none</td></tr>
+<tr><td><code>style:</code></td><td>Formatting</td><td>hidden</td><td>none</td></tr>
+<tr><td><code>chore:</code></td><td>Maintenance</td><td>hidden</td><td>none</td></tr>
+</tbody></table>
+</div>
+<h3 id="commit-organization"><a class="header" href="#commit-organization">Commit Organization</a></h3>
+<p>Group commits by user-visible impact, not by implementation journey.</p>
+<ol>
+<li>Each <code>feat:</code> or <code>fix:</code> commit = one changelog entry visible to deployers</li>
+<li>Internal work (<code>build:</code>, <code>ci:</code>, <code>refactor:</code>, <code>docs:</code>, <code>chore:</code>, <code>test:</code>) is hidden from changelog — squash aggressively</li>
+<li>Ask: "would a developer deploying this care?" If yes → <code>feat:</code> or <code>fix:</code>. If no → hidden type.</li>
+<li>Debugging journeys (trial-and-error, reverts, iterative fixes) belong in the PR description, not the commit history</li>
+</ol>
+<h2 id="pull-request-workflow"><a class="header" href="#pull-request-workflow">Pull Request Workflow</a></h2>
+<h3 id="pr-template"><a class="header" href="#pr-template">PR Template</a></h3>
+<pre><code>Fixes LINEAR-ID, LINEAR-ID, ...
+
+## Motivation
+Why this work was needed. What problem it solves for users.
+
+## Summary
+1-3 bullet points of user-visible changes.
+
+## Key Changes
+### [Topic]
+- change details
+
+## Challenges and Decisions
+What was tried, what failed, and key architecture decisions.
+Structure as sub-sections when multiple challenges exist:
+
+### [Challenge title]
+**Problem:** description of the issue encountered
+**Tried:** approaches that didn't work and why
+**Solution:** what worked and why it's the right approach
+
+## Gotchas
+Things future developers should know. Each gotcha should be
+actionable — not just "this is hard" but "do X instead of Y".
+
+## Test Plan
+- [ ] verification steps
+</code></pre>
+<h3 id="why-this-format-matters"><a class="header" href="#why-this-format-matters">Why This Format Matters</a></h3>
+<p>The "Challenges and Decisions" section captures the debugging journey that would otherwise be lost when commits are squashed. Well-structured challenges become high-quality learnings automatically.</p>
+<h3 id="pr-creation-process"><a class="header" href="#pr-creation-process">PR Creation Process</a></h3>
+<ol>
+<li>Create as draft: <code>gh pr create --draft</code></li>
+<li>Assign to the requesting developer: <code>gh pr edit [PR_NUMBER] --add-assignee [USERNAME]</code></li>
+<li>Include a "Review Notes" section mentioning that separate commits should be checked for easier review</li>
+</ol>
+<h3 id="what-goes-where"><a class="header" href="#what-goes-where">What Goes Where</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Information</th><th>Put it in...</th></tr></thead><tbody>
+<tr><td>New feature / breaking change</td><td>Commit message (<code>feat:</code> / <code>feat!:</code>)</td></tr>
+<tr><td>Bug fix</td><td>Commit message (<code>fix:</code>)</td></tr>
+<tr><td>Build/CI/refactor details</td><td>Commit message (hidden type)</td></tr>
+<tr><td>Why the work was needed</td><td>PR Motivation section</td></tr>
+<tr><td>What was tried and failed</td><td>PR Challenges section</td></tr>
+<tr><td>Architecture decisions + rationale</td><td>PR Challenges section</td></tr>
+<tr><td>Things to watch out for</td><td>PR Gotchas section</td></tr>
+<tr><td>Structured, searchable knowledge</td><td>Learnings doc (dasch-specs)</td></tr>
+</tbody></table>
+</div>
+<h2 id="release-workflow"><a class="header" href="#release-workflow">Release Workflow</a></h2>
+<p>Releases are automated via <a href="https://github.com/googleapis/release-please">Release Please</a>. On every push to <code>main</code>, Release Please reads conventional commit messages and either creates or updates a release PR. Merging the release PR creates a GitHub Release with auto-generated release notes.</p>
+<h2 id="code-review"><a class="header" href="#code-review">Code Review</a></h2>
+<p>See <a href="./fundamentals/review-guidelines.html">Review Guidelines</a> for the review checklist.</p>
+<h2 id="cicd"><a class="header" href="#cicd">CI/CD</a></h2>
+<p>GitHub Actions workflows run automatically on pushes and pull requests. See <a href="./deployment.html">Release, Deployment and Versioning</a> for details on the CI/CD pipelines.</p>
 
                     </main>
 

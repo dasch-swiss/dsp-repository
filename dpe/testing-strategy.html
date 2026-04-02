@@ -303,6 +303,17 @@ Parallel job group 3 (~5 min):
   axe-core accessibility scans
   Lighthouse CI performance budgets
 </code></pre>
+<h2 id="testing-conventions"><a class="header" href="#testing-conventions">Testing Conventions</a></h2>
+<p><strong>Test naming</strong>: Use descriptive names following the <code>test_{what}_{condition}_{expected}</code> pattern. For example: <code>test_parse_project_missing_title_returns_error</code>.</p>
+<p><strong>Test locations</strong>:</p>
+<ul>
+<li>Unit tests: In-crate <code>#[cfg(test)]</code> modules or adjacent <code>_tests.rs</code> files</li>
+<li>Snapshot files: <code>.snap</code> files committed to git in <code>snapshots/</code> directories</li>
+<li>E2E tests: <code>web-e2e-tests/</code> for DPE, <code>playground-e2e-tests/</code> for Mosaic</li>
+<li>Fuzz corpus: Persisted in the repository under <code>fuzz/corpus/</code></li>
+</ul>
+<p><strong>Test file naming</strong>: <code>{feature}_tests.rs</code> for Rust, <code>{feature}.spec.ts</code> for Playwright.</p>
+<p><strong>Snapshot tests</strong>: Use the <code>insta</code> crate. Use <code>with_settings!</code> for scrubbing dynamic values (timestamps, IDs). CI runs with <code>INSTA_UPDATE=new</code> so unexpected changes produce <code>.snap.new</code> files for review.</p>
 
                     </main>
 

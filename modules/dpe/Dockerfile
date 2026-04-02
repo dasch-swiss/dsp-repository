@@ -1,81 +1,17 @@
-# Chef base image — includes cargo-chef and Rust toolchain
-FROM lukemathwalker/cargo-chef:latest-rust-1.92.0-bookworm AS chef
-WORKDIR /app
+# Packaging-only Dockerfile — the Rust build happens in GH Actions.
+# Expects pre-built artifacts in the build context:
+#   dpe-server  (static musl binary)
+#   site/       (JS, CSS, static assets)
+#   data/       (JSON data files)
 
-# Planner — compute dependency recipe (changes only when Cargo.toml/Cargo.lock change)
-FROM chef AS planner
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
-
-# Builder — cook dependencies (cached), then build source
-FROM chef AS builder
-
-# Install cargo-binstall (pinned version with integrity check)
-RUN BINSTALL_VERSION="1.17.9" && \
-    wget -q "https://github.com/cargo-bins/cargo-binstall/releases/download/v${BINSTALL_VERSION}/cargo-binstall-x86_64-unknown-linux-musl.tgz" && \
-    echo "bdea3fd820b118576316bf69c8240f454857287717809e6ecef010faace901ff  cargo-binstall-x86_64-unknown-linux-musl.tgz" | sha256sum -c - && \
-    tar -xzf cargo-binstall-x86_64-unknown-linux-musl.tgz -C /usr/local/cargo/bin && \
-    rm cargo-binstall-x86_64-unknown-linux-musl.tgz
-
-# Install build dependencies (clang for linking, musl-tools for static builds)
-RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends clang musl-tools
-
-# Install cargo-leptos
-RUN cargo binstall cargo-leptos -y
-
-# Add the WASM target (needed by cargo-leptos for the lib crate stub)
-RUN rustup target add wasm32-unknown-unknown
-
-# Add musl target for static binary
-RUN rustup target add x86_64-unknown-linux-musl
-
-# Install Node.js and pnpm for Tailwind CSS / DaisyUI
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    npm install -g pnpm
-
-# Cook dependencies (cached as long as Cargo.toml/Cargo.lock don't change)
-COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
-RUN cargo chef cook --release --target wasm32-unknown-unknown -p dpe-web --recipe-path recipe.json
-RUN rustup target add x86_64-unknown-linux-musl && \
-    cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
-
-# Copy full source and build
-COPY . .
-
-# Install npm dependencies
-WORKDIR /app/modules/dpe
-RUN CI=true pnpm install --frozen-lockfile
-
-# Build site assets (CSS, JS) with cargo-leptos (uses default host target + WASM)
-WORKDIR /app
-RUN cargo leptos build --project dpe --release -vv
-
-# Rebuild the server binary as a static musl binary (cargo caches most of the compilation)
-# Re-verify musl target is present (cargo-leptos may change the active toolchain)
-RUN rustup target add x86_64-unknown-linux-musl 2>/dev/null; \
-    cargo build -p dpe-server --release --target x86_64-unknown-linux-musl
-
-# Runtime Stage — distroless/static (no glibc, no shell — fully static musl binary)
-FROM gcr.io/distroless/static-debian12:nonroot AS runtime
+FROM gcr.io/distroless/static-debian12:nonroot
 
 WORKDIR /app
 
-# Copy the statically-linked server binary
-COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/dpe-server /app/dpe-server
+COPY --chmod=755 dpe-server /app/dpe-server
+COPY site /app/site
+COPY data /app/server/data
 
-# Copy the site directory (contains JS, CSS, and static assets — no WASM)
-COPY --from=builder /app/modules/dpe/target/site /app/site
-
-# Copy the data files from the builder stage
-COPY --from=builder /app/modules/dpe/server/data /app/server/data
-
-# Copy CA certificates for outbound HTTPS (if ever needed)
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-
-# Set environment variables for production
 ENV RUST_LOG="info"
 ENV LEPTOS_OUTPUT_NAME="dpe"
 ENV LEPTOS_SITE_ROOT="site"
@@ -84,10 +20,8 @@ ENV LEPTOS_SITE_ADDR="0.0.0.0:8080"
 ENV LEPTOS_ENV="PROD"
 ENV DPE_DATA_DIR="/app/server/data"
 
-# Expose the port
 EXPOSE 8080
 
-# Run the server (distroless :nonroot runs as uid 65534 by default)
 ENTRYPOINT ["./dpe-server"]
 CMD ["serve"]
 

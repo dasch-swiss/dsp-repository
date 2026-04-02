@@ -22,11 +22,10 @@ env:
 
 jobs:
   # --------------------------------------------------------------------------
-  # Deploy a preview environment for the DPE on Cloud Run.
-  # Only runs for PRs from the same repository (not forks).
+  # Build DPE outside Docker with Swatinem/rust-cache for fast incremental builds.
   # --------------------------------------------------------------------------
-  deploy-preview:
-    name: Build and deploy DPE preview
+  build:
+    name: Build DPE
     if: >-
       github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository
@@ -35,6 +34,65 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           submodules: true
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install system dependencies
+        run: sudo apt-get update -y && sudo apt-get install -y --no-install-recommends musl-tools clang
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
+      - name: Install cargo-leptos
+        run: cargo binstall cargo-leptos -y --force
+
+      - name: Add build targets
+        run: rustup target add wasm32-unknown-unknown x86_64-unknown-linux-musl
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+
+      - name: Install pnpm and dependencies
+        run: |
+          npm install -g pnpm
+          cd modules/dpe && CI=true pnpm install --frozen-lockfile
+
+      - name: Build site assets
+        run: cargo leptos build --project dpe --release -vv
+
+      - name: Build static musl binary
+        run: cargo build -p dpe-server --release --target x86_64-unknown-linux-musl
+
+      - name: Stage artifacts
+        run: |
+          mkdir -p staging
+          cp target/x86_64-unknown-linux-musl/release/dpe-server staging/
+          cp -r modules/dpe/target/site staging/
+          cp -r modules/dpe/server/data staging/
+          cp modules/dpe/Dockerfile staging/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dpe-build
+          path: staging/
+          retention-days: 1
+
+  # --------------------------------------------------------------------------
+  # Package pre-built artifacts into a Docker image and deploy to Cloud Run.
+  # --------------------------------------------------------------------------
+  deploy-preview:
+    name: Deploy DPE preview
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dpe-build
+          path: staging/
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -54,12 +112,10 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: modules/dpe/Dockerfile
+          context: staging/
+          file: staging/Dockerfile
           push: true
           tags: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/dpe:${{ env.IMAGE_TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Deploy to Cloud Run
         id: deploy
@@ -104,8 +160,6 @@ jobs:
 
   # --------------------------------------------------------------------------
   # Clean up Cloud Run service when the PR is closed or merged.
-  # The `paths` filter does not apply to the `closed` event type, so we check
-  # for the existence of the Cloud Run service before attempting deletion.
   # --------------------------------------------------------------------------
   cleanup-preview:
     name: Clean up DPE preview

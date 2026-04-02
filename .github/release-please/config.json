@@ -22,13 +22,6 @@
     { "type": "ci", "section": "CI", "hidden": true }
   ],
   "extra-files": [
-    { "type": "toml", "path": "Cargo.toml", "jsonpath": "$.workspace.package.version" },
-    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'dpe-server')].version" },
-    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'dpe-web')].version" },
-    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'dpe-core')].version" },
-    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'dpe-api-oai')].version" },
-    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'mosaic-tiles')].version" },
-    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'mosaic-playground')].version" },
-    { "type": "toml", "path": "Cargo.lock", "jsonpath": "$.package[?(@.name == 'mosaic-playground-macro')].version" }
+    { "type": "toml", "path": "Cargo.toml", "jsonpath": "$.workspace.package.version" }
   ]
 }

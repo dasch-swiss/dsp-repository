@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Architecture - DSP-Repository Developer Documentation</title>
+        <title>Security - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -12,34 +12,34 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="../favicon.svg">
-        <link rel="shortcut icon" href="../favicon.png">
-        <link rel="stylesheet" href="../css/variables.css">
-        <link rel="stylesheet" href="../css/general.css">
-        <link rel="stylesheet" href="../css/chrome.css">
-        <link rel="stylesheet" href="../css/print.css" media="print">
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="../fonts/fonts.css">
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "../";
+            const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex.js";
+            window.path_to_searchindex_js = "searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc.js"></script>
+        <script src="toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -106,7 +106,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -141,7 +141,7 @@
                     <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
 
                     <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
 
@@ -242,108 +242,90 @@
 }
 
 </style>
-<h1 id="dpe-architecture"><a class="header" href="#dpe-architecture">DPE Architecture</a></h1>
-<p>The Discovery and Presentation Environment (DPE) serves research project metadata as a web application.</p>
-<h2 id="crate-structure"><a class="header" href="#crate-structure">Crate Structure</a></h2>
-<pre><code>dpe-core          Pure domain types, repositories, data loading
-                  Dependencies: serde, serde_json only
-                       │
-          ┌────────────┼────────────┐
-          │            │            │
-     dpe-api-oai   dpe-web     (future APIs)
-     OAI-PMH 2.0  Leptos SSR
-     + axum        + Datastar
-          │            │
-          └────────────┘
-                 │
-           dpe-server
-           Route composition
-           (binary: dpe)
-</code></pre>
+<h1 id="security"><a class="header" href="#security">Security</a></h1>
+<h2 id="why-security-scanning-matters"><a class="header" href="#why-security-scanning-matters">Why Security Scanning Matters</a></h2>
+<p>Software depends on a deep stack of third-party components: base OS images, system
+libraries, language runtimes, and application dependencies. Vulnerabilities are
+regularly discovered in these components — the <a href="https://www.cve.org/">CVE database</a>
+publishes thousands each year. A single unpatched dependency in a Docker image can
+become an entry point for attackers in production.</p>
+<p>Manual tracking of vulnerabilities across all dependencies is not practical.
+Automated scanning integrates into the development workflow so that new
+vulnerabilities are surfaced early — ideally before code reaches production.</p>
+<h2 id="container-image-scanning-with-docker-scout"><a class="header" href="#container-image-scanning-with-docker-scout">Container Image Scanning with Docker Scout</a></h2>
+<p>We use <a href="https://docs.docker.com/scout/">Docker Scout</a> to scan our Docker images for
+known vulnerabilities (CVEs). Scout analyzes the Software Bill of Materials (SBOM) of
+each image — the full inventory of OS packages, libraries, and application
+dependencies — and matches them against vulnerability databases.</p>
+<h3 id="what-gets-scanned"><a class="header" href="#what-gets-scanned">What Gets Scanned</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Image</th><th>Workflow</th><th>Trigger</th></tr></thead><tbody>
+<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>modules/dpe/**</code> or <code>Cargo.lock</code></td></tr>
+<tr><td>Mosaic Playground (<code>daschswiss/mosaic-playground</code>)</td><td><code>scout-mosaic-playground.yml</code></td><td>PRs touching <code>modules/mosaic/**</code> or <code>Cargo.lock</code></td></tr>
+</tbody></table>
+</div>
+<h3 id="how-it-works"><a class="header" href="#how-it-works">How It Works</a></h3>
+<p>Each Scout workflow:</p>
+<ol>
+<li>
+<p><strong>Builds the Docker image locally</strong> — the image is loaded into the runner's Docker
+daemon (<code>load: true</code>) but never pushed to a registry. This means Scout scans
+exactly what would be deployed, without exposing unreviewed images.</p>
+</li>
+<li>
+<p><strong>Runs a CVE analysis</strong> — Docker Scout compares the image's SBOM against known
+vulnerability databases, filtering for <strong>critical</strong> and <strong>high</strong> severity issues.</p>
+</li>
+<li>
+<p><strong>Posts a PR comment</strong> — a summary of findings is posted directly on the pull
+request, giving developers immediate visibility without leaving their review
+workflow.</p>
+</li>
+<li>
+<p><strong>Uploads a SARIF report</strong> — results are uploaded to the
+<a href="https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/sarif-support-for-code-scanning">GitHub Security tab</a>
+in SARIF format (Static Analysis Results Interchange Format), the industry
+standard for security tool output. This integrates with GitHub's code scanning
+alerts.</p>
+</li>
+</ol>
+<h3 id="what-to-do-with-results"><a class="header" href="#what-to-do-with-results">What To Do With Results</a></h3>
+<p>Scout results are currently <strong>informational</strong> — they do not block merging. When a
+scan reports vulnerabilities:</p>
 <ul>
-<li><strong>dpe-core</strong>: Framework-free domain layer. All types, repository traits, Fs implementations, and data loading.</li>
-<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint. Depends only on dpe-core — no Leptos.</li>
-<li><strong>dpe-web</strong>: Leptos SSR components, pages, and <code>#[server]</code> wrappers. Re-exports dpe-core types for backward compatibility.</li>
-<li><strong>dpe-server</strong>: Thin composition root. Wires Leptos routes (dpe-web) and API handlers (dpe-api-oai) into a single Axum server.</li>
+<li><strong>Critical/High in base image</strong> — check if a newer base image version is available
+that patches the issue. For DPE (distroless), these are rare. For Mosaic
+(Debian-based), update the base image tag.</li>
+<li><strong>Critical/High in dependencies</strong> — check if a dependency update resolves the issue.
+Run <code>cargo update</code> and re-test.</li>
+<li><strong>False positives</strong> — some CVEs may not be exploitable in our context. Document the
+rationale if choosing to accept the risk.</li>
 </ul>
-<h2 id="hypermedia-driven-architecture"><a class="header" href="#hypermedia-driven-architecture">Hypermedia-Driven Architecture</a></h2>
-<p>The DPE uses a <strong>hypermedia-driven architecture</strong> where the server is the single source of truth for UI state. Interactivity is provided by <a href="https://data-star.dev/">Datastar</a> (~14KB JS) instead of client-side frameworks or WASM.</p>
-<p><strong>Why Datastar over Leptos islands:</strong></p>
+<h3 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h3>
 <ul>
-<li>No WASM compilation step (faster builds)</li>
-<li>Smaller client-side footprint (~14KB vs ~200KB+ WASM)</li>
-<li>Server controls all state (HATEOAS)</li>
-<li>Graceful degradation — works as plain HTML links without JavaScript</li>
-<li>Simpler mental model — HTML attributes, not reactive signals</li>
+<li>Docker Scout is enabled for the <code>daschswiss</code> Docker Hub organization</li>
+<li>Repository secrets <code>DOCKER_USER</code> and <code>DOCKER_HUB_TOKEN</code> (shared with publish
+workflows)</li>
+<li>GitHub Advanced Security or a public repository (for SARIF upload)</li>
 </ul>
-<h2 id="rendering-model"><a class="header" href="#rendering-model">Rendering Model</a></h2>
-<p>Pages are rendered server-side by <strong>Leptos SSR</strong>. Dynamic content updates (tab switching, search autocomplete) are handled by <strong>Datastar SSE fragments</strong>.</p>
-<pre><code>Initial page load:
-  Browser → GET /projects/ABC1 → Leptos SSR → Full HTML page
-
-Tab switch (with JS):
-  Browser → GET /projects/ABC1/tab/publications (SSE)
-         ← PatchElements (#project-tabs replacement)
-         ← ExecuteScript (history.replaceState for URL)
-
-Tab switch (without JS):
-  Browser → GET /projects/ABC1?tab=publications → Full page reload
-</code></pre>
-<h2 id="fragment-route-convention"><a class="header" href="#fragment-route-convention">Fragment Route Convention</a></h2>
-<p>Fragment endpoints are pure Axum handlers (not Leptos routes) that render Leptos components to HTML strings and deliver them as Datastar SSE events.</p>
-<p><strong>Route pattern: resource-action nesting</strong></p>
-<pre><code>GET /projects/{id}              → Full page (Leptos SSR)
-GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
-</code></pre>
-<p>Different path depths in Axum's radix trie mean no conflict and no header-based discrimination.</p>
-<h2 id="hateoas-tab-pattern"><a class="header" href="#hateoas-tab-pattern">HATEOAS Tab Pattern</a></h2>
-<p>The server returns the <strong>complete tab component</strong> (tab bar + panel) in each SSE response. This means:</p>
+<h3 id="future-enhancements"><a class="header" href="#future-enhancements">Future Enhancements</a></h3>
 <ul>
-<li>Server controls which tab is active (<code>aria-selected</code>)</li>
-<li>Server controls which tabs are visible (e.g., hide Publications if none exist)</li>
-<li>Server pushes the bookmarkable URL via <code>ExecuteScript</code> + <code>history.replaceState</code></li>
-</ul>
-<p>The client never needs to track tab state — the server-rendered HTML IS the state.</p>
-<h2 id="datastar-attribute-patterns"><a class="header" href="#datastar-attribute-patterns">Datastar Attribute Patterns</a></h2>
-<pre><code class="language-html">&lt;!-- Tab link with Datastar enhancement --&gt;
-&lt;a href="/projects/ABC1?tab=publications"
-   role="tab" aria-selected="false"
-   data-on:click__prevent="@get('/projects/ABC1/tab/publications', {retry: 'never'})"
-   data-indicator:_tab_loading&gt;
-  Publications
-&lt;/a&gt;
-
-&lt;!-- SSE failure fallback on container --&gt;
-&lt;div id="project-tabs"
-     data-on:datastar-fetch="
-       (evt.detail.type === 'error' || evt.detail.type === 'retries-failed')
-       &amp;&amp; evt.detail.el.closest('#project-tabs')
-       &amp;&amp; (window.location.href = evt.detail.el.getAttribute('href'))
-     "&gt;
-</code></pre>
-<h2 id="datastar-attribute-conventions"><a class="header" href="#datastar-attribute-conventions">Datastar Attribute Conventions</a></h2>
-<ul>
-<li><strong>Signal naming</strong>: Use <code>_</code> prefix for client-only signals (e.g., <code>_tab_loading</code>). The underscore excludes the signal from server payloads.</li>
-<li><strong>No <code>__debounce</code> on <code>__prevent</code> anchors</strong>: Do NOT combine <code>__prevent</code> with <code>__debounce</code> or <code>__throttle</code> on anchor elements — known Datastar timing issue.</li>
-<li><strong><code>retry: 'never'</code></strong>: Use on <code>@get()</code> calls where fallback to full navigation is preferred over retrying.</li>
-<li><strong>Graceful degradation</strong>: Every Datastar-enhanced <code>&lt;a&gt;</code> must have a valid <code>href</code> for no-JS fallback.</li>
-</ul>
-<h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
-<ul>
-<li><a href="./project_structure.html">Project Structure</a> — Crate responsibilities and dependency graph</li>
-<li><a href="./testing-strategy.html">Testing Strategy</a> — Testing pyramid and CI pipeline</li>
-<li><a href="./operations.html">Operations</a> — Docker, environment variables, deployment</li>
+<li><strong>Production comparison</strong> — using Docker Scout's <code>compare</code> command to show only
+<em>new</em> vulnerabilities introduced by a PR (requires configuring Docker Scout
+environments on Docker Hub)</li>
+<li><strong>Main-branch scanning</strong> — continuous monitoring of production images</li>
+<li><strong>Blocking on critical CVEs</strong> — failing the PR check when critical vulnerabilities
+are detected</li>
 </ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../security.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="deployment.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../dpe/project_structure.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="dpe/architecture.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -353,11 +335,11 @@ GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../security.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="deployment.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../dpe/project_structure.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="dpe/architecture.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -372,13 +354,13 @@ GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
         </script>
 
 
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
 
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
 

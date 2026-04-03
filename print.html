@@ -707,6 +707,7 @@ actionable — not just "this is hard" but "do X instead of Y".
 <ul>
 <li><strong>check.yml</strong> — Formatting (<code>rustfmt</code>, <code>leptosfmt</code>) and linting (<code>clippy</code>)</li>
 <li><strong>test.yml</strong> — Runs the full test suite</li>
+<li><strong>scout-dpe.yml</strong> / <strong>scout-mosaic-playground.yml</strong> — Docker image vulnerability scanning (see <a href="./security.html">Security</a>)</li>
 </ul>
 <h3 id="accessibility-testing"><a class="header" href="#accessibility-testing">Accessibility Testing</a></h3>
 <p>Defined in <code>a11y-dpe.yml</code>.</p>
@@ -714,10 +715,18 @@ actionable — not just "this is hard" but "do X instead of Y".
 <h3 id="fuzz-testing"><a class="header" href="#fuzz-testing">Fuzz Testing</a></h3>
 <p>Defined in <code>fuzz.yml</code>.</p>
 <p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, automatically creates a GitHub issue with reproduction instructions.</p>
+<h3 id="reusable-actions"><a class="header" href="#reusable-actions">Reusable Actions</a></h3>
+<p>Common CI steps are extracted into composite actions in <code>.github/actions/</code>:</p>
+<div class="table-wrapper"><table><thead><tr><th>Action</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>build-dpe</code></td><td>Compile DPE (Rust musl binary + Leptos site assets) and stage artifacts</td></tr>
+<tr><td><code>docker-publish</code></td><td>Set up Buildx, log in to Docker Hub, build and push an image</td></tr>
+<tr><td><code>docker-scout</code></td><td>Run Docker Scout CVE scan and upload SARIF results</td></tr>
+</tbody></table>
+</div>
 <h3 id="mosaic-playground"><a class="header" href="#mosaic-playground">Mosaic Playground</a></h3>
 <p>The Mosaic component library playground has two deployment paths:</p>
 <h4 id="pr-preview-cloud-run"><a class="header" href="#pr-preview-cloud-run">PR Preview (Cloud Run)</a></h4>
-<p>Defined in <code>cloud-run-pull-request.yml</code>.</p>
+<p>Defined in <code>cloud-run-mosaic-pull-request.yml</code>.</p>
 <p>When a pull request modifies files under <code>modules/mosaic/</code>, a preview of the Mosaic playground is automatically deployed to Google Cloud Run. The preview URL is posted as a comment on the PR and updated on each push.</p>
 <ul>
 <li><strong>Trigger:</strong> PRs that touch <code>modules/mosaic/**</code> (same-repo only, not forks)</li>
@@ -753,6 +762,147 @@ actionable — not just "this is hard" but "do X instead of Y".
 <h3 id="claude-code"><a class="header" href="#claude-code">Claude Code</a></h3>
 <p>Defined in <code>claude.yml</code>.</p>
 <p>Responds to <code>@claude</code> mentions in PR comments and issue comments. Supports code review (<code>@claude review</code>) and general assistance. Runs with limited permissions (contents: read, pull-requests: write).</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="security"><a class="header" href="#security">Security</a></h1>
+<h2 id="why-security-scanning-matters"><a class="header" href="#why-security-scanning-matters">Why Security Scanning Matters</a></h2>
+<p>Software depends on a deep stack of third-party components: base OS images, system
+libraries, language runtimes, and application dependencies. Vulnerabilities are
+regularly discovered in these components — the <a href="https://www.cve.org/">CVE database</a>
+publishes thousands each year. A single unpatched dependency in a Docker image can
+become an entry point for attackers in production.</p>
+<p>Manual tracking of vulnerabilities across all dependencies is not practical.
+Automated scanning integrates into the development workflow so that new
+vulnerabilities are surfaced early — ideally before code reaches production.</p>
+<h2 id="container-image-scanning-with-docker-scout"><a class="header" href="#container-image-scanning-with-docker-scout">Container Image Scanning with Docker Scout</a></h2>
+<p>We use <a href="https://docs.docker.com/scout/">Docker Scout</a> to scan our Docker images for
+known vulnerabilities (CVEs). Scout analyzes the Software Bill of Materials (SBOM) of
+each image — the full inventory of OS packages, libraries, and application
+dependencies — and matches them against vulnerability databases.</p>
+<h3 id="what-gets-scanned"><a class="header" href="#what-gets-scanned">What Gets Scanned</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Image</th><th>Workflow</th><th>Trigger</th></tr></thead><tbody>
+<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>modules/dpe/**</code> or <code>Cargo.lock</code></td></tr>
+<tr><td>Mosaic Playground (<code>daschswiss/mosaic-playground</code>)</td><td><code>scout-mosaic-playground.yml</code></td><td>PRs touching <code>modules/mosaic/**</code> or <code>Cargo.lock</code></td></tr>
+</tbody></table>
+</div>
+<h3 id="how-it-works"><a class="header" href="#how-it-works">How It Works</a></h3>
+<p>Each Scout workflow:</p>
+<ol>
+<li>
+<p><strong>Builds the Docker image locally</strong> — the image is loaded into the runner's Docker
+daemon (<code>load: true</code>) but never pushed to a registry. This means Scout scans
+exactly what would be deployed, without exposing unreviewed images.</p>
+</li>
+<li>
+<p><strong>Runs a CVE analysis</strong> — Docker Scout compares the image's SBOM against known
+vulnerability databases, filtering for <strong>critical</strong> and <strong>high</strong> severity issues.</p>
+</li>
+<li>
+<p><strong>Posts a PR comment</strong> — a summary of findings is posted directly on the pull
+request, giving developers immediate visibility without leaving their review
+workflow.</p>
+</li>
+<li>
+<p><strong>Uploads a SARIF report</strong> — results are uploaded to the
+<a href="https://docs.github.com/en/code-security/code-scanning/integrating-with-code-scanning/sarif-support-for-code-scanning">GitHub Security tab</a>
+in SARIF format (Static Analysis Results Interchange Format), the industry
+standard for security tool output. This integrates with GitHub's code scanning
+alerts.</p>
+</li>
+</ol>
+<h3 id="what-to-do-with-results"><a class="header" href="#what-to-do-with-results">What To Do With Results</a></h3>
+<p>Scout results are currently <strong>informational</strong> — they do not block merging. When a
+scan reports vulnerabilities:</p>
+<ul>
+<li><strong>Critical/High in base image</strong> — check if a newer base image version is available
+that patches the issue. For DPE (distroless), these are rare. For Mosaic
+(Debian-based), update the base image tag.</li>
+<li><strong>Critical/High in dependencies</strong> — check if a dependency update resolves the issue.
+Run <code>cargo update</code> and re-test.</li>
+<li><strong>False positives</strong> — some CVEs may not be exploitable in our context. Document the
+rationale if choosing to accept the risk.</li>
+</ul>
+<h3 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h3>
+<ul>
+<li>Docker Scout is enabled for the <code>daschswiss</code> Docker Hub organization</li>
+<li>Repository secrets <code>DOCKER_USER</code> and <code>DOCKER_HUB_TOKEN</code> (shared with publish
+workflows)</li>
+<li>GitHub Advanced Security or a public repository (for SARIF upload)</li>
+</ul>
+<h3 id="future-enhancements"><a class="header" href="#future-enhancements">Future Enhancements</a></h3>
+<ul>
+<li><strong>Production comparison</strong> — using Docker Scout's <code>compare</code> command to show only
+<em>new</em> vulnerabilities introduced by a PR (requires configuring Docker Scout
+environments on Docker Hub)</li>
+<li><strong>Main-branch scanning</strong> — continuous monitoring of production images</li>
+<li><strong>Blocking on critical CVEs</strong> — failing the PR check when critical vulnerabilities
+are detected</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;

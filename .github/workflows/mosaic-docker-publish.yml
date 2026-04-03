@@ -15,31 +15,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  compute-tag:
-    name: Compute image tag
+  publish:
+    name: Build and publish mosaic-playground
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@v4
         with:
+          submodules: true
           fetch-depth: 0
 
       - name: Compute image tag
         id: tag
         run: echo "tag=$(git describe --tags --match 'v*' | sed 's/^v//')" >> "$GITHUB_OUTPUT"
 
-  publish:
-    name: Build and publish mosaic-playground
-    needs: compute-tag
-    uses: ./.github/workflows/docker-publish.yml
-    with:
-      dockerfile: modules/mosaic/playground/Dockerfile
-      image-name: daschswiss/mosaic-playground
-      image-tag: ${{ needs.compute-tag.outputs.tag }}
-    secrets:
-      DOCKER_USER: ${{ secrets.DOCKER_USER }}
-      DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - uses: ./.github/actions/docker-publish
+        with:
+          context: .
+          dockerfile: modules/mosaic/playground/Dockerfile
+          tags: daschswiss/mosaic-playground:${{ steps.tag.outputs.tag }}
+          docker-user: ${{ secrets.DOCKER_USER }}
+          docker-hub-token: ${{ secrets.DOCKER_HUB_TOKEN }}
 
   trigger-prod-deployment:
     name: Trigger deployment to PROD

@@ -10,6 +10,7 @@ Every push and pull request runs:
 
 - **check.yml** — Formatting (`rustfmt`, `leptosfmt`) and linting (`clippy`)
 - **test.yml** — Runs the full test suite
+- **scout-dpe.yml** / **scout-mosaic-playground.yml** — Docker image vulnerability scanning (see [Security](./security.md))
 
 ### Accessibility Testing
 
@@ -23,13 +24,23 @@ Defined in `fuzz.yml`.
 
 Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes `tab_validation` and `query_params` targets for 10 minutes each using `cargo-fuzz` on nightly Rust. Corpus is cached between runs. On crash, automatically creates a GitHub issue with reproduction instructions.
 
+### Reusable Actions
+
+Common CI steps are extracted into composite actions in `.github/actions/`:
+
+| Action | Purpose |
+|--------|---------|
+| `build-dpe` | Compile DPE (Rust musl binary + Leptos site assets) and stage artifacts |
+| `docker-publish` | Set up Buildx, log in to Docker Hub, build and push an image |
+| `docker-scout` | Run Docker Scout CVE scan and upload SARIF results |
+
 ### Mosaic Playground
 
 The Mosaic component library playground has two deployment paths:
 
 #### PR Preview (Cloud Run)
 
-Defined in `cloud-run-pull-request.yml`.
+Defined in `cloud-run-mosaic-pull-request.yml`.
 
 When a pull request modifies files under `modules/mosaic/`, a preview of the Mosaic playground is automatically deployed to Google Cloud Run. The preview URL is posted as a comment on the PR and updated on each push.
 

@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     name: check
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Install nightly
@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     name: check / rustdoc / nightly
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Install nightly
@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     name: check / hack / ubuntu / stable / features
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Install stable
@@ -84,8 +84,8 @@ jobs:
     runs-on: ubuntu-latest
     name: check / biome / e2e
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
       - name: Lint DPE E2E tests
@@ -97,7 +97,7 @@ jobs:
     runs-on: ubuntu-latest
     name: check / docs / stable
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Setup mdBook

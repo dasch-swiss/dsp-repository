@@ -1,0 +1,52 @@
+name: Build DPE
+description: Compile DPE (Rust musl binary + Leptos site assets) and stage to staging/
+
+runs:
+  using: composite
+  steps:
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - uses: Swatinem/rust-cache@v2
+
+    - name: Install system dependencies
+      shell: bash
+      run: sudo apt-get update -y && sudo apt-get install -y --no-install-recommends musl-tools clang
+
+    - name: Install cargo-binstall
+      uses: cargo-bins/cargo-binstall@main
+
+    - name: Install cargo-leptos
+      shell: bash
+      run: cargo binstall cargo-leptos -y --force
+
+    - name: Add build targets
+      shell: bash
+      run: rustup target add wasm32-unknown-unknown x86_64-unknown-linux-musl
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+
+    - name: Install pnpm and dependencies
+      shell: bash
+      run: |
+        npm install -g pnpm
+        cd modules/dpe && CI=true pnpm install --frozen-lockfile
+
+    - name: Build site assets
+      shell: bash
+      run: cargo leptos build --project dpe --release -vv
+
+    - name: Build static musl binary
+      shell: bash
+      run: cargo build -p dpe-server --release --target x86_64-unknown-linux-musl
+
+    - name: Stage artifacts
+      shell: bash
+      run: |
+        mkdir -p staging
+        cp target/x86_64-unknown-linux-musl/release/dpe-server staging/
+        cp -r modules/dpe/target/site staging/
+        cp -r modules/dpe/server/data staging/
+        cp modules/dpe/Dockerfile staging/

@@ -15,6 +15,13 @@ Agent reference card for the **work phase**. All authoritative detail lives in `
 - **Test naming**: `test_{what}_{condition}_{expected}` (e.g., `test_parse_project_missing_title_returns_error`)
 - **Test locations**: `#[cfg(test)]` modules or adjacent `_tests.rs` files for unit tests; `web-e2e-tests/` for DPE E2E; `playground-e2e-tests/` for Mosaic E2E
 
+## Observability Conventions
+
+- Use `#[tracing::instrument]` for new handler and service functions
+- Use `otel.kind = "internal"` on handler-level spans (middleware provides the server span)
+- Metric attributes must be bounded — validate against known sets, normalize dynamic values. High-cardinality data goes to structured logs only, never to metric attributes
+- Vendored JS files go in `modules/dpe/public/vendor/` — update `vendor/README.md` when adding or updating
+
 ## Commit Conventions
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/). Scopes match crate names.

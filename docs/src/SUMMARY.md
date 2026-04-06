@@ -20,6 +20,7 @@
 - [Architecture](./dpe/architecture.md)
 - [Project Structure](./dpe/project_structure.md)
 - [Testing Strategy](./dpe/testing-strategy.md)
+- [Observability](./dpe/observability.md)
 - [Operations](./dpe/operations.md)
 
 ---

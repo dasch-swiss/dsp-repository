@@ -5,6 +5,7 @@
 ```
 modules/dpe/
 ├── core/             dpe-core          Pure domain (serde only)
+├── telemetry/        dpe-telemetry     Telemetry types and validation (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Leptos SSR + Datastar fragments
 ├── server/           dpe-server        Axum binary (composition root)
@@ -16,11 +17,13 @@ modules/dpe/
 ## Dependency Graph
 
 ```
-dpe-core          ← pure domain, no framework deps
+dpe-core              ← pure domain, no framework deps
   ↑
-  ├── dpe-api-oai ← OAI-PMH endpoint
-  ├── dpe-web     ← Leptos SSR pages + components
-  └── dpe-server  ← composition root, Datastar fragment handlers
+  ├── dpe-api-oai     ← OAI-PMH endpoint
+  ├── dpe-web         ← Leptos SSR pages + components
+  └── dpe-server      ← composition root, Datastar fragment handlers
+       ↑
+       dpe-telemetry  ← telemetry types and validation (serde only)
 ```
 
 ## Crate Responsibilities
@@ -52,14 +55,26 @@ Leptos SSR web layer. Contains:
 - **Domain re-exports**: `domain/mod.rs` re-exports `dpe-core` types for a single import path
 - **Server functions**: `#[server]` wrappers around `dpe-core` functions
 
+### `dpe-telemetry` (telemetry/)
+
+Telemetry types and validation logic. Extracted as a library crate so fuzz targets can test the real code. Contains:
+
+- **Beacon types**: `BeaconPayload`, `Signal`, `WebVitalSignal`, `ErrorSignal`, etc. (serde deserialization for browser beacons)
+- **Origin validation**: `is_allowed_origin()` — validates dasch.swiss subdomains
+- **URL normalization**: `normalize_page_url()` — cardinality-safe page URL mapping
+- **Traceparent validation**: `is_valid_traceparent()` — W3C traceparent format validation
+
+Dependencies: `serde` only.
+
 ### `dpe-server` (server/)
 
 Composition root and Axum binary. Contains:
 
-- **Route wiring**: Leptos SSR routes, OAI-PMH handler, Datastar fragment endpoints, `/healthz`
+- **Route wiring**: Leptos SSR routes, OAI-PMH handler, Datastar fragment endpoints, `/healthz`, `/telemetry/collect`
 - **Fragment handlers**: `fragments.rs` — pure Axum handlers that render Leptos components to HTML and return Datastar SSE events
+- **Telemetry collector**: `telemetry_collector.rs` — converts browser beacons to OTel metrics and structured logs (uses types from `dpe-telemetry`)
 - **Configuration**: `config.rs` — figment-based layered config (defaults → `dpe.toml` → `DPE_*` env vars)
-- **Logging**: `tracing-subscriber` with env-filter and JSON support
+- **Logging**: OTel-aware subscriber via `init-tracing-opentelemetry`
 
 ## Key Patterns
 

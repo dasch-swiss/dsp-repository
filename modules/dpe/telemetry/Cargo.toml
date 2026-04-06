@@ -1,0 +1,12 @@
+[package]
+name = "dpe-telemetry"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+serde = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+serde_json = { workspace = true }

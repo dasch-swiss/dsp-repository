@@ -21,6 +21,10 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 - [ ] Each commit builds and passes tests
 - [ ] No secrets in config files or git
 - [ ] Path parameters validated before filesystem access
+- [ ] New `#[instrument]` spans use `otel.kind = "internal"`, not `"server"`
+- [ ] New OTel metric attributes are bounded — no free-form strings, no per-request unique values
+- [ ] Vendored JS changes reflected in `modules/dpe/public/vendor/README.md`
+- [ ] New routes added to `KNOWN_ROUTES` in `dpe-telemetry/src/page_url.rs` for page_url normalization
 
 ## Style
 

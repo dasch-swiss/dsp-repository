@@ -115,6 +115,15 @@ cd modules/dpe/web-e2e-tests && npx playwright test
 
 In dev mode, Leptos wraps output in `<!--hot-reload|...|-->` comments. These break Datastar morphing. Always pass fragment HTML through `strip_hot_reload_comments()`.
 
+## Observability
+
+DPE uses OpenTelemetry for distributed tracing, metrics, and structured logging. See `docs/src/dpe/observability.md` for the full developer guide.
+
+- **OTel middleware**: `OtelAxumLayer` creates `SPAN_KIND_SERVER` spans for HTTP requests. Use `otel.kind = "internal"` on handler-level `#[instrument]` spans.
+- **Telemetry collector**: `POST /telemetry/collect` is placed after OTel layers (untraced). It converts browser beacons into OTel metrics and structured logs. Types and validation live in `dpe-telemetry` crate; the collector in `dpe-server` handles OTel conversion.
+- **Vendored JS**: Client-side dependencies live in `modules/dpe/public/vendor/`, tracked by `vendor/README.md`. No `package.json` or Node.js build step.
+- **Traceparent**: The server renders `<meta name="traceparent">` in the HTML shell for client-side trace correlation.
+
 ## Best Practices for AI Agents
 
 1. **Read existing code first** before making changes to understand patterns

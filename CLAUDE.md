@@ -42,6 +42,7 @@ All authoritative documentation lives in `docs/src/`. Key pages:
 | Project Structure | `docs/src/dpe/project_structure.md` |
 | Repo Structure & Crate Naming | `docs/src/repo_structure.md` |
 | Testing Strategy | `docs/src/dpe/testing-strategy.md` |
+| Observability | `docs/src/dpe/observability.md` |
 | Operations (Docker, env vars) | `docs/src/dpe/operations.md` |
 | Workflows & Commits | `docs/src/workflows.md` |
 | Tech Stack | `docs/src/fundamentals/tech_stack.md` |
@@ -68,7 +69,7 @@ Before considering ANY change as "done":
   Run `just check` and `just test`.
   This includes formatting and linting — no need to run these earlier.
 - **Check if documentation needs updating** —
-  Consider `docs/src/` and CLAUDE files.
+  Consider `docs/src/`, `CLAUDE.md`, `CONVENTIONS.md`, and `REVIEW.md`.
   Update documentation to reflect the changes.
 - **Ask before committing** —
   Never run git add or commit without explicit permission.

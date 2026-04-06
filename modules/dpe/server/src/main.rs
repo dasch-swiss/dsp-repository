@@ -5,6 +5,8 @@ use clap::{Parser, Subcommand};
 
 mod config;
 mod fragments;
+mod telemetry_collector;
+mod traceparent;
 
 #[derive(Parser)]
 #[command(name = "dpe", about = "DaSCH Discovery and Presentation Environment")]
@@ -54,15 +56,15 @@ async fn serve() -> ExitCode {
     use dpe_web::*;
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
-    use tower_http::trace::TraceLayer;
+    use init_tracing_opentelemetry::TracingConfig;
 
-    // Initialize structured logging via RUST_LOG env var
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info,tower_http=debug".into()),
-        )
-        .init();
+    // Initialize OpenTelemetry tracing subscriber.
+    // Reads OTEL_* env vars automatically. Falls back to no-op export when
+    // OTEL_EXPORTER_OTLP_ENDPOINT is not set (safe for local development).
+    // Log level is controlled via RUST_LOG.
+    let _otel_guard = TracingConfig::production()
+        .init_subscriber()
+        .expect("failed to initialize OpenTelemetry tracing");
 
     // Load DPE-specific configuration (defaults → dpe.toml → DPE_* env vars)
     let dpe_config = config::DpeConfig::load().expect("failed to load DPE configuration");
@@ -87,12 +89,12 @@ async fn serve() -> ExitCode {
     let routes = generate_route_list(App);
     let fathom_site_id = dpe_config.fathom_site_id.clone();
 
+    use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
+
     let app = Router::new()
-        // Health check — lightweight probe for Traefik/load balancers
-        .route("/healthz", get(|| async { StatusCode::OK }))
-        // OAI-PMH 2.0 endpoint (from dpe-api-oai crate)
+        // --- Traced routes ---
+        // Routes declared BEFORE .layer() calls are wrapped by those layers.
         .route("/oai", get(dpe_api_oai::oai_handler))
-        // Datastar SSE fragment endpoints
         .route(
             "/projects/{id}/tab/{tab}",
             get(fragments::tab_fragment_handler),
@@ -101,13 +103,42 @@ async fn serve() -> ExitCode {
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();
             let fathom_site_id = fathom_site_id.clone();
-            move || shell(leptos_options.clone(), fathom_site_id.clone())
+            move || {
+                let traceparent = traceparent::extract_traceparent();
+                shell(leptos_options.clone(), fathom_site_id.clone(), traceparent)
+            }
         })
         .fallback(leptos_axum::file_and_error_handler({
             let fathom_site_id = fathom_site_id.clone();
-            move |options| shell(options, fathom_site_id.clone())
+            move |options| shell(options, fathom_site_id.clone(), None)
         }))
-        .layer(TraceLayer::new_for_http())
+        // --- OTel layers ---
+        // Axum layers wrap in reverse declaration order:
+        // - OtelInResponseLayer (declared first) runs INNER — injects traceparent into response headers
+        // - OtelAxumLayer (declared second) runs OUTER — creates the server span from the request
+        .layer(OtelInResponseLayer)
+        .layer(OtelAxumLayer::default())
+        // --- Untraced routes ---
+        // Routes declared AFTER .layer() calls are NOT wrapped by those layers.
+        .route("/healthz", get(|| async { StatusCode::OK }))
+        .route(
+            "/telemetry/collect",
+            axum::routing::post(telemetry_collector::collect_handler).layer({
+                use tower_governor::governor::GovernorConfigBuilder;
+                use tower_governor::key_extractor::SmartIpKeyExtractor;
+                use tower_governor::GovernorLayer;
+
+                let governor_conf = GovernorConfigBuilder::default()
+                    .per_second(1)
+                    .burst_size(10)
+                    .key_extractor(SmartIpKeyExtractor)
+                    .finish()
+                    .expect("GovernorConfig should build with valid defaults");
+                GovernorLayer {
+                    config: std::sync::Arc::new(governor_conf),
+                }
+            }),
+        )
         .with_state(leptos_options);
 
     tracing::info!("listening on http://{}", &addr);
@@ -115,10 +146,44 @@ async fn serve() -> ExitCode {
         .await
         .unwrap_or_else(|e| panic!("failed to bind to {addr}: {e}"));
     axum::serve(listener, app.into_make_service())
+        .with_graceful_shutdown(shutdown_signal())
         .await
         .expect("server exited with error");
 
+    // Flush OTel data on shutdown. The guard's Drop performs synchronous I/O
+    // (flushing spans via OTLP). Run via spawn_blocking to avoid deadlocking
+    // the Tokio runtime.
+    tokio::task::spawn_blocking(move || drop(_otel_guard))
+        .await
+        .ok();
+
     ExitCode::SUCCESS
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("failed to install SIGTERM handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+
+    tracing::info!("shutdown signal received, flushing telemetry");
 }
 
 fn validate(data_dir: PathBuf) -> ExitCode {

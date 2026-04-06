@@ -12,13 +12,18 @@ pub mod pages;
 use components::{Footer, Header};
 use pages::{AboutPage, ProjectPage, ProjectsPage};
 
-pub fn shell(options: LeptosOptions, fathom_site_id: Option<String>) -> impl IntoView {
+pub fn shell(
+    options: LeptosOptions,
+    fathom_site_id: Option<String>,
+    traceparent: Option<String>,
+) -> impl IntoView {
     view! {
         <!DOCTYPE html>
         <html lang="en">
             <head>
                 <meta charset="utf-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
+                {traceparent.map(|tp| view! { <meta name="traceparent" content=tp /> })}
                 // Google Fonts: Lora (display) and Lato (body) for design token typography
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
@@ -43,12 +48,8 @@ pub fn shell(options: LeptosOptions, fathom_site_id: Option<String>) -> impl Int
             </head>
             <body class="font-body">
                 <App />
-                <script
-                    type="module"
-                    src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
-                    integrity="sha384-l31DqEvDq6UMs2jK/XNO8hHjWNkHvwcU4xr3h2Sq+w0zH0lvnL4WYwpPUXiKa1Z7"
-                    crossorigin="anonymous"
-                ></script>
+                <script type="module" src="/vendor/datastar.js"></script>
+                <script type="module" src="/telemetry.js"></script>
             </body>
         </html>
     }

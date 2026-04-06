@@ -35,10 +35,21 @@ pub struct TabParams {
 /// Returns a Datastar SSE stream with:
 /// 1. PatchElements — replaces #project-tabs (full tab bar + panel)
 /// 2. ExecuteScript — updates browser URL via history.replaceState
+#[tracing::instrument(
+    skip_all,
+    fields(
+        otel.kind = "internal",
+        otel.name = "SSE tab_fragment",
+        shortcode = tracing::field::Empty,
+        tab = tracing::field::Empty,
+    )
+)]
 pub async fn tab_fragment_handler(
     Path(params): Path<TabParams>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, impl IntoResponse> {
     let TabParams { id, tab } = params;
+    tracing::Span::current().record("shortcode", id.as_str());
+    tracing::Span::current().record("tab", tab.as_str());
 
     // Validate shortcode format (alphanumeric only — prevents XSS in ExecuteScript)
     if !is_valid_shortcode(&id) {
@@ -222,6 +233,13 @@ pub struct SearchSignals {
 /// Returns search results as a Datastar PatchElements event targeting
 /// `#search-results`. Called by the `data-on:input__debounce` on the
 /// search input.
+#[tracing::instrument(
+    skip_all,
+    fields(
+        otel.kind = "internal",
+        otel.name = "SSE search_fragment",
+    )
+)]
 pub async fn search_fragment_handler(
     ReadSignals(signals): ReadSignals<SearchSignals>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, StatusCode> {

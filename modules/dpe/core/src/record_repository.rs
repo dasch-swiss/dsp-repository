@@ -30,10 +30,12 @@ impl FsRecordRepository {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl RecordRepository for FsRecordRepository {
+    #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn get_all(&self) -> &[Record] {
         super::record_cache::all_records()
     }
 
+    #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn get_by_id(&self, ark_suffix: &str) -> Option<&Record> {
         super::record_cache::all_records()
             .iter()

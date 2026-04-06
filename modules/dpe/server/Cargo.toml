@@ -8,6 +8,7 @@ publish = false
 clap = { version = "4", features = ["derive"] }
 ureq = "3"
 dpe-core = { path = "../core" }
+dpe-telemetry = { path = "../telemetry" }
 dpe-api-oai = { path = "../api-oai" }
 dpe-web = { path = "../web", default-features = false, features = ["ssr"] }
 leptos = { workspace = true, features = [ "ssr", "islands" ]}
@@ -19,12 +20,20 @@ figment = { version = "0.10", features = ["env", "toml"] }
 mosaic-tiles = { path = "../../mosaic/tiles", default-features = false, features = ["icon"] }
 tokio.workspace = true
 tracing.workspace = true
-tracing-subscriber = { workspace = true, features = ["env-filter", "json"] }
+axum-tracing-opentelemetry.workspace = true
+init-tracing-opentelemetry.workspace = true
+tracing-opentelemetry-instrumentation-sdk.workspace = true
+opentelemetry.workspace = true
+opentelemetry_sdk.workspace = true
+opentelemetry-otlp.workspace = true
+tracing-opentelemetry.workspace = true
 futures = "0.3"
 tower.workspace = true
 tower-http.workspace = true
+tower_governor.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+url.workspace = true
 urlencoding = "2.1"
 
 [dev-dependencies]

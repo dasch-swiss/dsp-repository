@@ -26,10 +26,12 @@ impl FsProjectRepository {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl ProjectRepository for FsProjectRepository {
+    #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn get_all(&self) -> &[Project] {
         super::project_cache::all_projects()
     }
 
+    #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn get_by_shortcode(&self, shortcode: &str) -> Option<&Project> {
         super::project_cache::project_by_shortcode(shortcode)
     }

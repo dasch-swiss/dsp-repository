@@ -16,6 +16,9 @@ serde_urlencoded = "0.7"
 [dependencies.dpe-core]
 path = "../../core"
 
+[dependencies.dpe-telemetry]
+path = "../../telemetry"
+
 # Prevent this from interfering with workspaces
 [workspace]
 members = ["."]
@@ -28,4 +31,19 @@ doc = false
 [[bin]]
 name = "query_params"
 path = "fuzz_targets/query_params.rs"
+doc = false
+
+[[bin]]
+name = "beacon_payload"
+path = "fuzz_targets/beacon_payload.rs"
+doc = false
+
+[[bin]]
+name = "traceparent_validation"
+path = "fuzz_targets/traceparent_validation.rs"
+doc = false
+
+[[bin]]
+name = "origin_validation"
+path = "fuzz_targets/origin_validation.rs"
 doc = false

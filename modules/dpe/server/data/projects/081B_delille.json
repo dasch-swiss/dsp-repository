@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Delille",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,16 +36,8 @@
         "XML"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "en",
+        "fr"
     ],
     "keywords": [
         {

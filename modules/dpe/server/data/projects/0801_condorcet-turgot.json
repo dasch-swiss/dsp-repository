@@ -7,7 +7,7 @@
         "https://app.dasch.swiss/project/yTerZGyxjZVqFMNNKXCDPF",
         "https://bernoulli-euler.dhlab.unibas.ch/"
     ],
-    "howToCite": "Briefwechsel von Euler mit Condorcet und Turgot (Condorcet-Turgot), Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
+    "howToCite": "Gilain, Ch. (ed.). Briefwechsel von Leonhard Euler mit Condorcet und Turgot (Condorcet-Turgot), Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
     "accessRights": {
         "accessRights": "Full Open Access"
     },
@@ -20,7 +20,7 @@
             },
             "copyrightHolder": "Briefwechsel von Euler mit Condorcet und Turgot",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -57,14 +57,9 @@
             "number": "166072",
             "name": "Project funding",
             "url": "https://data.snf.ch/grants/grant/166072"
-        },
-        {
-            "funders": [
-                "organization-006"
-            ]
         }
     ],
-    "name": "Briefwechsel von Euler mit Condorcet und Turgot",
+    "name": "Briefwechsel von Leonhard Euler mit Condorcet und Turgot",
     "shortDescription": "Edition of the French-language correspondence between Leonhard Euler, the Marquis de Condorcet, and the statesman Turgot.",
     "description": {
         "en": "This sub-project of BEOL presents the correspondence between Leonhard Euler, the Marquis de Condorcet, and Anne Robert Jacques Turgot. Condorcet, a mathematician and secretary of the Académie royale des Sciences, and Turgot, an economist and French statesman, were both prominent figures of the French Enlightenment. The edition provides access to their exchange with Euler on mathematical and scientific topics, written in French.",
@@ -75,15 +70,10 @@
     "endDate": "MISSING",
     "typeOfData": [
         "Image",
-        "Text",
-        "XML"
+        "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "fr"
     ],
     "keywords": [
         {

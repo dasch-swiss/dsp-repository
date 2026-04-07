@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "DaSCH – Swiss National Data and Service Center for the Humanities",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -40,21 +40,9 @@
         "Video"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "de",
+        "en",
+        "fr"
     ],
     "keywords": [
         {
@@ -130,5 +118,8 @@
         {
             "en": "DaSCH"
         }
+    ],
+    "contactPoint": [
+        "organization-033"
     ]
 }

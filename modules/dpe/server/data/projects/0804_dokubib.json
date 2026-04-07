@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Bilddatenbank Bibliothek St. Moritz",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -38,11 +38,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        }
+        "de"
     ],
     "keywords": [
         {
@@ -110,5 +106,8 @@
     "abstract": {
         "en": "Bilddatenbank makes accessible the collection of historic photographs and other graphical representation of St. Moritz Dokumentationsbibliothek"
     },
-    "funding": "No funding"
+    "funding": "No funding",
+    "contactPoint": [
+        "organization-009"
+    ]
 }

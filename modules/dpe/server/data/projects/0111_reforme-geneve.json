@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Côté chaire, côté rue, La Réforme à Genève (1517-1617)",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -38,11 +38,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "fr"
     ],
     "keywords": [
         {

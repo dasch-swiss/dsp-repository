@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Prototyping Workflows for Digital Editions",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -39,11 +39,7 @@
         "XML"
     ],
     "dataLanguage": [
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "fr"
     ],
     "keywords": [
         {

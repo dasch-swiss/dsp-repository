@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Der späte Nietzsche. Digitale Manuskriptedition",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         },
         {
@@ -38,7 +38,7 @@
             },
             "copyrightHolder": "Der späte Nietzsche. Digitale Manuskriptedition",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -48,11 +48,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        }
+        "de"
     ],
     "keywords": [
         {

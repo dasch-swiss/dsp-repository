@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "The International Olympic Committee members (1894-1972). A transnational elite prosopography",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,11 +36,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "fr"
     ],
     "keywords": [
         {

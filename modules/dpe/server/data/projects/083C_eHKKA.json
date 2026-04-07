@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Historische-Kritische Gottfried Keller Ausgabe (HKKA)",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -38,9 +38,7 @@
         "XML"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch"
-        }
+        "de"
     ],
     "keywords": [
         {

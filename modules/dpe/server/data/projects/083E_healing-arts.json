@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Healing Arts. Representations and Practices of Medical Knowledge in Art and Literature (9th-12th centuries)",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,16 +37,8 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        }
+        "de",
+        "en"
     ],
     "keywords": [
         {

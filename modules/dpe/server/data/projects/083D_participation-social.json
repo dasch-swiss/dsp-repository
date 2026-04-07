@@ -16,7 +16,7 @@
     ],
     "howToCite": "Obrist B, Dillip A, Mayumana I, Rutishauser M, Simon V (2022). Participation in Social Health Protection: An Anthropological Case Study in Tanzania [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/083D.",
     "accessRights": {
-        "accessRights": "Embargoed Access"
+        "accessRights": "Metadata only Access"
     },
     "legalInfo": [
         {
@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Participation in Social Health Protection: An Anthropological Case Study in Tanzania",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,14 +36,8 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "en": "Swahili"
-        }
+        "en",
+        "sw"
     ],
     "keywords": [
         {

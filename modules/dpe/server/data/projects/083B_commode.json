@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Canonicity, Obscenity, and the Making of Modern Chaucer (COMMode): An Investigation of the Transmission and Audiences of The Canterbury Tales from 1700 to 2020",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         },
         {
@@ -39,7 +39,7 @@
             },
             "copyrightHolder": "Canonicity, Obscenity, and the Making of Modern Chaucer (COMMode): An Investigation of the Transmission and Audiences of The Canterbury Tales from 1700 to 2020",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -48,11 +48,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        }
+        "en"
     ],
     "keywords": [
         {
@@ -167,5 +163,11 @@
         {
             "en": "COMMode"
         }
-    ]
+    ],
+    "contactPoint": [
+        "person-260"
+    ],
+    "abstract": {
+        "en": "This dataset provides basic bibliographic information for the key primary texts used for the COMMode project. These texts range from fifteenth-century manuscripts to twenty-first-century ebooks, and include various types of Chaucerian publications, such as print editions, children’s adaptations, Chaucer-inspired ballads, modernizations, and anthologies."
+    }
 }

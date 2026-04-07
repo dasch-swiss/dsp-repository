@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Fotoarchiv Kunsthalle Basel",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,16 +37,8 @@
         "XML"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        }
+        "de",
+        "en"
     ],
     "keywords": [
         {

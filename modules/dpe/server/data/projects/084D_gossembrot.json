@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Lesen als soziale Negotiation - Rekonstruktion der Bibliothek von Sigmund Gossembrot (1417–1493)",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,10 +36,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German"
-        }
+        "de"
     ],
     "keywords": [
         {

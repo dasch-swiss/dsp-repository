@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "(digitale) Historisch-Kritische Gesamtausgabe der Werke und Briefe von Jeremias Gotthelf, HKG und dHKG",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -38,11 +38,7 @@
         "XML"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        }
+        "de"
     ],
     "keywords": [
         {

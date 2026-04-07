@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Religious speech embarrassed, radio debates and controversies around gender: Switzerland and France, 2006-2016",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,11 +36,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "fr"
     ],
     "keywords": [
         {

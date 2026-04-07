@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Promoting Knowledge. The Origins of the Science System and the Making of Professional Structures in European States, 1700-1870",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,11 +36,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "fr"
     ],
     "keywords": [
         {

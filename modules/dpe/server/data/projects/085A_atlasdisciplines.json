@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Interactive Historical Atlas of the Disciplines",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -39,41 +39,13 @@
         "XML"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        },
-        {
-            "de": "Griechisch",
-            "en": "Greek",
-            "fr": "grec"
-        },
-        {
-            "de": "Italienisch",
-            "en": "Italian",
-            "fr": "italien"
-        },
-        {
-            "de": "Lateinisch",
-            "en": "Latin",
-            "fr": "latin"
-        },
-        {
-            "de": "Spanisch",
-            "en": "Spanish",
-            "fr": "espagnol"
-        }
+        "de",
+        "en",
+        "fr",
+        "el",
+        "it",
+        "la",
+        "es"
     ],
     "keywords": [
         {

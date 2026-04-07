@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Martial Culture in Late Medieval Towns",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -39,15 +39,9 @@
         "Video"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch"
-        },
-        {
-            "en": "English"
-        },
-        {
-            "fr": "Français"
-        }
+        "de",
+        "en",
+        "fr"
     ],
     "keywords": [
         {

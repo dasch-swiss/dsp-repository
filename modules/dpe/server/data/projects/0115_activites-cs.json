@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Contribution à une histoire de la culture cinématographique en Suisse : étude des activités de la Cinémathèque suisse entre 1951 et 1981",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,10 +37,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "en": "French",
-            "fr": "français"
-        }
+        "fr"
     ],
     "keywords": [
         {

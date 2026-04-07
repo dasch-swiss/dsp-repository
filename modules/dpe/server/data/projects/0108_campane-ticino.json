@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Le campane del Canton Ticino. Studio di un patrimonio materiale e immateriale",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -40,12 +40,7 @@
         "Video"
     ],
     "dataLanguage": [
-        {
-            "en": "Italian"
-        },
-        {
-            "it": "italiano"
-        }
+        "it"
     ],
     "keywords": [
         {
@@ -163,5 +158,9 @@
         {
             "en": "The bells of Canton Ticino. Study of a tangible and intangible heritage"
         }
-    ]
+    ],
+    "abstract": {
+        "it": "Piattaforma informatica del progetto \"Le campane del Canton Ticino: studio di un patrimonio materiale e immateriale\"",
+        "en": "Database of the project \"The bells of Canton Ticino: study of a tangible and intangible heritage\""
+    }
 }

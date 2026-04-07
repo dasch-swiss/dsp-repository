@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Postkarten Russland",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,15 +36,9 @@
         "Image"
     ],
     "dataLanguage": [
-        {
-            "en": "French"
-        },
-        {
-            "en": "German"
-        },
-        {
-            "en": "Russian"
-        }
+        "fr",
+        "de",
+        "ru"
     ],
     "keywords": [
         {

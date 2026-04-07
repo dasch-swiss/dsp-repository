@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Historische Lernprozesse erforschen – Research of Learning Processes in History (RicH)",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,11 +36,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        }
+        "de"
     ],
     "keywords": [
         {

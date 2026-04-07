@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Familia Sabaudie : officiers, serviteurs et réseaux des Hôtels de la Maison de Savoie (XIIIe-XVe siècles)",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,9 +36,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "fr": "Français"
-        }
+        "fr"
     ],
     "keywords": [
         {

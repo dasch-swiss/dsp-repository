@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Fagottini and tenoroons: small-sized bassoons from the 18th and 19th centuries",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -39,11 +39,7 @@
         "Video"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        }
+        "en"
     ],
     "keywords": [
         {

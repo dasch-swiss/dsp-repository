@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "The Churches of Rome in the Middle Ages, 1050-1300. Liturgical Furnishing and Architecture (Corpus Cosmatorum II)",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -39,21 +39,9 @@
         "Video"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Italienisch",
-            "en": "Italian",
-            "fr": "italien"
-        }
+        "de",
+        "en",
+        "it"
     ],
     "keywords": [
         {

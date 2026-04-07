@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Rome in the Early Middle Ages: Arts and Culture",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,11 +37,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Italienisch",
-            "en": "Italian",
-            "fr": "italien"
-        }
+        "it"
     ],
     "keywords": [
         {

@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Annotating Media of Bruno Manser",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -39,19 +39,9 @@
         "Video"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "en": "Penan"
-        }
+        "de",
+        "en",
+        "pez"
     ],
     "keywords": [
         {
@@ -146,5 +136,8 @@
         {
             "en": "Annotating Bruno Manser's Diaries"
         }
+    ],
+    "contactPoint": [
+        "organization-055"
     ]
 }

@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "University of Basel Kings’ Valley Project",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,16 +37,8 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        }
+        "de",
+        "en"
     ],
     "keywords": [
         {

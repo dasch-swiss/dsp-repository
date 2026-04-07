@@ -209,13 +209,10 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
         }
     }
 
-    // Language - from data_language (use English value as-is since we don't
-    // have ISO codes in the data)
+    // Language - from data_language (BCP 47 codes)
     if let Some(ref languages) = project.data_language {
         if let Some(first_lang) = languages.first() {
-            if let Some(lang_value) = get_multilingual_value(first_lang) {
-                record.language = Some(lang_value);
-            }
+            record.language = Some(first_lang.clone());
         }
     }
 

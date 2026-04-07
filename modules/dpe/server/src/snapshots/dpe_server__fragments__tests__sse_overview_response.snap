@@ -1,5 +1,6 @@
 ---
 source: modules/dpe/server/src/fragments.rs
+assertion_line: 741
 expression: body_str.as_ref()
 ---
 event: datastar-patch-elements

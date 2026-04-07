@@ -70,11 +70,7 @@ pub fn incunabula_project() -> Project {
         data_management_plan: Some("not accessible".to_string()),
         data_publication_year: None,
         type_of_data: Some(vec!["Image".to_string()]),
-        data_language: Some(vec![{
-            let mut map = std::collections::HashMap::new();
-            map.insert("en".to_string(), "German".to_string());
-            map
-        }]),
+        data_language: Some(vec!["de".to_string()]),
         clusters: vec![],
         collections: vec![],
         collection_ids: vec![],

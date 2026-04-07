@@ -97,12 +97,10 @@ pub fn project_to_dublin_core(project: &Project) -> DublinCoreRecord {
     }
     record.identifiers.push(make_oai_identifier(&project.shortcode));
 
-    // dc:language
+    // dc:language (BCP 47 codes)
     if let Some(ref languages) = project.data_language {
-        for lang_map in languages {
-            if let Some(lang) = get_multilingual_value(lang_map) {
-                record.languages.push(lang);
-            }
+        for lang in languages {
+            record.languages.push(lang.clone());
         }
     }
 

@@ -9,6 +9,37 @@ pub fn lang_value(map: &HashMap<String, String>) -> Option<&String> {
         .or_else(|| map.values().next())
 }
 
+/// Maps a BCP 47 language code to a human-readable English display name.
+pub fn language_display_name(code: &str) -> &str {
+    match code {
+        "ar" => "Arabic",
+        "cop" => "Coptic",
+        "cu" => "Old Church Slavonic",
+        "de" => "German",
+        "el" => "Greek",
+        "en" => "English",
+        "es" => "Spanish",
+        "ewo" => "Ewondo",
+        "fr" => "French",
+        "gez" => "Ge'ez (Ethiopic)",
+        "got" => "Gothic",
+        "grc" => "Ancient Greek",
+        "hy" => "Armenian",
+        "it" => "Italian",
+        "ka" => "Georgian",
+        "la" => "Latin",
+        "pez" => "Penan",
+        "pt" => "Portuguese",
+        "rm" => "Romansh",
+        "ru" => "Russian",
+        "sw" => "Swahili",
+        "syr" => "Syriac",
+        "tr" => "Turkish",
+        "x-cpa" => "Christian Palestinian Aramaic",
+        _ => code,
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::OnceLock;
 

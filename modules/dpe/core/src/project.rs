@@ -65,7 +65,7 @@ pub struct ProjectRaw {
     #[serde(rename = "typeOfData", default)]
     pub type_of_data: Option<Vec<String>>,
     #[serde(rename = "dataLanguage", default)]
-    pub data_language: Option<Vec<std::collections::HashMap<String, String>>>,
+    pub data_language: Option<Vec<String>>,
     #[serde(default)]
     #[allow(dead_code)]
     pub clusters: Option<Vec<String>>,
@@ -160,7 +160,7 @@ pub struct Project {
     pub data_management_plan: Option<String>,
     pub data_publication_year: Option<String>,
     pub type_of_data: Option<Vec<String>>,
-    pub data_language: Option<Vec<std::collections::HashMap<String, String>>>,
+    pub data_language: Option<Vec<String>>,
     pub clusters: Vec<ClusterRef>,
     pub collections: Vec<CollectionRef>,
     /// Raw collection IDs from JSON, used to resolve `collections` on demand.

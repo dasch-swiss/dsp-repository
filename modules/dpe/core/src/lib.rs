@@ -35,7 +35,7 @@ pub use project_repository::ProjectRepository;
 pub use project::Publication;
 pub use record::{record_datestamp, Pid as RecordPid, Record, RecordLegalInfo, RecordLicense, ARK_PATH_PREFIX};
 pub use record_repository::RecordRepository;
-pub use utils::lang_value;
+pub use utils::{lang_value, language_display_name};
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use contributors::{load_organization, load_person};

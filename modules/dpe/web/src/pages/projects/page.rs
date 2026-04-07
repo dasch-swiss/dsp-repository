@@ -56,13 +56,13 @@ pub fn ProjectsPage() -> impl IntoView {
                     .and_then(|r| r.ok())
                     .unwrap_or_default()
                     .into_iter()
-                    .map(|l| {
-                        let checked = data_language.contains(&l);
+                    .map(|(code, display)| {
+                        let checked = data_language.contains(&code);
                         let href = format!(
                             "/projects{}",
-                            cq.with_data_language_toggled(&l).to_query_string(),
+                            cq.with_data_language_toggled(&code).to_query_string(),
                         );
-                        (l, checked, href)
+                        (display, checked, href)
                     })
                     .collect::<Vec<_>>();
                 let data_language_items_mobile = data_language_items.clone();

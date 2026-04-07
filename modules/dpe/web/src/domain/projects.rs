@@ -19,23 +19,27 @@ pub async fn list_type_of_data() -> Result<Vec<String>, ServerFnError> {
 }
 
 #[server]
-pub async fn list_data_languages() -> Result<Vec<String>, ServerFnError> {
+pub async fn list_data_languages() -> Result<Vec<(String, String)>, ServerFnError> {
     use std::collections::HashSet;
 
-    use dpe_core::{all_projects, lang_value};
+    use dpe_core::{all_projects, language_display_name};
 
-    let mut languages: HashSet<String> = HashSet::new();
+    let mut codes: HashSet<String> = HashSet::new();
     for project in all_projects() {
         if let Some(langs) = &project.data_language {
-            for lang_map in langs {
-                if let Some(val) = lang_value(lang_map) {
-                    languages.insert(val.clone());
-                }
+            for lang in langs {
+                codes.insert(lang.clone());
             }
         }
     }
-    let mut result: Vec<String> = languages.into_iter().collect();
-    result.sort();
+    let mut result: Vec<(String, String)> = codes
+        .into_iter()
+        .map(|code| {
+            let display = language_display_name(&code).to_string();
+            (code, display)
+        })
+        .collect();
+    result.sort_by(|a, b| a.1.cmp(&b.1));
     Ok(result)
 }
 
@@ -70,7 +74,7 @@ pub async fn list_projects(
 
 #[cfg(feature = "ssr")]
 pub fn filter_and_paginate(projects: &[Project], query: &super::project::ProjectQuery, page_size: Option<i32>) -> Page {
-    use dpe_core::{AccessRightsType, ProjectStatus, lang_value};
+    use dpe_core::{AccessRightsType, ProjectStatus};
 
     let items_per_page = page_size.unwrap_or(9).clamp(1, 100) as usize;
     let search_lower = query.search().to_lowercase();
@@ -118,9 +122,7 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
                     .data_language
                     .as_ref()
                     .map(|langs| {
-                        langs.iter().any(|lang_map| {
-                            lang_value(lang_map).map(|v| data_language_filter.contains(v)).unwrap_or(false)
-                        })
+                        langs.iter().any(|lang| data_language_filter.contains(lang))
                     })
                     .unwrap_or(false)
             };
@@ -180,14 +182,7 @@ mod tests {
         access_rights: AccessRightsType,
     ) -> Project {
         let data_language = data_language.map(|langs| {
-            langs
-                .into_iter()
-                .map(|l| {
-                    let mut m = HashMap::new();
-                    m.insert("en".to_string(), l.to_string());
-                    m
-                })
-                .collect()
+            langs.into_iter().map(|l| l.to_string()).collect()
         });
         Project {
             id: shortcode.to_string(),
@@ -377,11 +372,11 @@ mod tests {
     #[test]
     fn data_language_filter_matches() {
         let projects = vec![
-            make_project("A", "A", ProjectStatus::Ongoing, None, Some(vec!["English"]), AccessRightsType::FullOpenAccess),
-            make_project("B", "B", ProjectStatus::Ongoing, None, Some(vec!["French"]), AccessRightsType::FullOpenAccess),
+            make_project("A", "A", ProjectStatus::Ongoing, None, Some(vec!["en"]), AccessRightsType::FullOpenAccess),
+            make_project("B", "B", ProjectStatus::Ongoing, None, Some(vec!["fr"]), AccessRightsType::FullOpenAccess),
         ];
         let query = ProjectQuery {
-            data_language: Some("English".to_string()),
+            data_language: Some("en".to_string()),
             ..Default::default()
         };
         let page = filter_and_paginate(&projects, &query, None);

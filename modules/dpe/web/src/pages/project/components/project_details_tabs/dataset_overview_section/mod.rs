@@ -9,7 +9,7 @@ mod type_of_data_section;
 use leptos::prelude::*;
 use mosaic_tiles::card::{Card, CardBody, CardVariant};
 
-use crate::domain::{lang_value, Project};
+use crate::domain::Project;
 use coverage_section::CoverageSection;
 use data_language_section::DataLanguageSection;
 use disciplines_section::DisciplinesSection;
@@ -27,7 +27,7 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
         .as_deref()
         .unwrap_or_default()
         .iter()
-        .filter_map(|map| lang_value(map).cloned())
+        .map(|code| dpe_core::language_display_name(code).to_string())
         .collect();
 
     let cluster_items: Vec<(String, String, String)> = proj

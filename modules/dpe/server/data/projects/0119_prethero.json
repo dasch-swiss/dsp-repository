@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Premiers théâtres romands",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -38,11 +38,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "fr"
     ],
     "keywords": [
         {

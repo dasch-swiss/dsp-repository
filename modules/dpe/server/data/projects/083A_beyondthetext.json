@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Beyond the Text. New Funerary Compositions from the Graeco-Roman Period: Textualities and Archaeology in Thebes",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -38,21 +38,9 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "de",
+        "en",
+        "fr"
     ],
     "keywords": [
         {
@@ -251,5 +239,8 @@
         {
             "de": "Jenseits des Textes. Neue funeräre Texte aus der griechisch-römischen Zeit: Textualitäten und Archäologie in Theben"
         }
+    ],
+    "contactPoint": [
+        "person-255"
     ]
 }

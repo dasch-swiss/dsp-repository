@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Canon of solar eclipses from 2501 BCE to 1000 CE",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,11 +37,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        }
+        "en"
     ],
     "keywords": [
         {

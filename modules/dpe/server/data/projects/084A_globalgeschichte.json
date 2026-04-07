@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Globalgeschichtliche Perspektiven im Schweizer Geschichtsunterricht",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,11 +37,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        }
+        "de"
     ],
     "keywords": [
         {

@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Cinéma et (neuro)psychiatrie en Suisse : autour de la collection Waldau (1920-1990)",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,9 +37,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "fr": "Français"
-        }
+        "fr"
     ],
     "keywords": [
         {

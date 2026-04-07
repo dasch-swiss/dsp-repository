@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Vitae Sanctae Wiboradae — Lebensbeschreibungen der heiligen Wiborada von St. Gallen, herausgegeben, übersetzt und mit einer Einleitung und Anmerkungen versehen von Walter Berschin",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -38,16 +38,8 @@
         "XML"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Latein",
-            "en": "Latin",
-            "fr": "latin"
-        }
+        "de",
+        "la"
     ],
     "keywords": [
         {

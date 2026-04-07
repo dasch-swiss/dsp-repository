@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Drawings of gods: A Multicultural and Interdisciplinary Approach of Children’s Representations of Supernatural Agents",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -38,11 +38,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "fr"
     ],
     "keywords": [
         {

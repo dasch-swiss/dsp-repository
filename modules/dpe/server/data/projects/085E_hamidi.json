@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Tall al-Hamidiya Online",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -38,11 +38,7 @@
         "Video"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        }
+        "en"
     ],
     "keywords": [
         {

@@ -7,7 +7,7 @@
         "https://app.dasch.swiss/project/yTerZGyxjZVqFMNNKXCDPF",
         "https://bernoulli-euler.dhlab.unibas.ch/"
     ],
-    "howToCite": "Jacob Bernoulli's Scientific Notebook (Meditationes), Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
+    "howToCite": "Mattmüller, M. (ed.). Jacob Bernoulli's Scientific Notebook (Meditationes), Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
     "accessRights": {
         "accessRights": "Full Open Access"
     },
@@ -20,7 +20,7 @@
             },
             "copyrightHolder": "Jacob Bernoulli's Scientific Notebook (Meditationes)",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -52,11 +52,6 @@
             "number": "166072",
             "name": "Project funding",
             "url": "https://data.snf.ch/grants/grant/166072"
-        },
-        {
-            "funders": [
-                "organization-006"
-            ]
         }
     ],
     "name": "Jacob Bernoulli's Scientific Notebook (Meditationes)",
@@ -70,25 +65,12 @@
     "endDate": "MISSING",
     "typeOfData": [
         "Image",
-        "Text",
-        "XML"
+        "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Latein",
-            "en": "Latin",
-            "fr": "latin"
-        }
+        "en",
+        "de",
+        "la"
     ],
     "keywords": [
         {

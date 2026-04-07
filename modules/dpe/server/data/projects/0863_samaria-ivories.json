@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "The Electronic Catalogue of the Samaria Ivory Artifacts and Related Material",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,9 +37,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "en": "English"
-        }
+        "en"
     ],
     "keywords": [
         {

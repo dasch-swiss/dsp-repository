@@ -20,7 +20,7 @@
             },
             "copyrightHolder": "Online Edition of Jacob Bernoulli's Reisebüchlein",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -88,20 +88,11 @@
     "endDate": "2024-01-31",
     "typeOfData": [
         "Image",
-        "Text",
-        "XML"
+        "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Latein",
-            "en": "Latin",
-            "fr": "latin"
-        }
+        "de",
+        "la"
     ],
     "keywords": [
         {

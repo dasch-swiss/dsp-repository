@@ -29,7 +29,7 @@
             },
             "copyrightHolder": "Life Histories of Theban Tombs",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -40,21 +40,9 @@
         "Video"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "de",
+        "en",
+        "fr"
     ],
     "keywords": [
         {
@@ -666,5 +654,8 @@
         {
             "en": "LHTT"
         }
-    ]
+    ],
+    "abstract": {
+        "en": "AU1000 – AU1080 from Debris Hill (above K555); All Data from AU6000; All Data from K85; All Data from TT95"
+    }
 }

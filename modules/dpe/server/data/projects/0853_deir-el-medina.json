@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Hieroglyphic Palaeography of the Ptolemaic Temple at Deir el-Medina",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,15 +37,9 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "en": "English"
-        },
-        {
-            "en": "French"
-        },
-        {
-            "en": "German"
-        }
+        "en",
+        "fr",
+        "de"
     ],
     "keywords": [
         {

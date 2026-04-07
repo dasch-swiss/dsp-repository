@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Portraits of Unbelonging: Photography, the Ottoman State, and the making of Armenian emigrants 1896-1908",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,17 +37,9 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "en": "Armenian"
-        },
-        {
-            "en": "Turkish"
-        }
+        "en",
+        "hy",
+        "tr"
     ],
     "keywords": [
         {

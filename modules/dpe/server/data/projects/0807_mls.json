@@ -29,7 +29,7 @@
             },
             "copyrightHolder": "Musiklexikon der Schweiz",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -42,26 +42,10 @@
         "XML"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        },
-        {
-            "de": "Italienisch",
-            "en": "Italian",
-            "fr": "italien"
-        }
+        "de",
+        "en",
+        "fr",
+        "it"
     ],
     "keywords": [
         {

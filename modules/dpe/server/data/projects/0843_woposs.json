@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "WoPoss: A world of possibilities. Modal pathways over an extra-long period of time: the diachrony of modality in the Latin language",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,9 +36,7 @@
         "XML"
     ],
     "dataLanguage": [
-        {
-            "en": "Latin"
-        }
+        "la"
     ],
     "keywords": [
         {

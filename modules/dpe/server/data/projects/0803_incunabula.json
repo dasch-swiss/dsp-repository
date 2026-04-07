@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Die Bilderfolgen der Basler Frühdrucke: Spätmittelalterliche Didaxe als Bild-Text-Lektüre",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,14 +36,8 @@
         "Image"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German"
-        },
-        {
-            "de": "Latein",
-            "en": "Latin"
-        }
+        "de",
+        "la"
     ],
     "keywords": [
         {
@@ -157,5 +151,8 @@
         {
             "en": "Incunabula"
         }
+    ],
+    "contactPoint": [
+        "person-073"
     ]
 }

@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Locus Ludi database: The Kottabos in the Greek World",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,16 +37,8 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "en",
+        "fr"
     ],
     "keywords": [
         {

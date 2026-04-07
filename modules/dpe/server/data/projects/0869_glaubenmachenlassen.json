@@ -4,7 +4,7 @@
     "name": "GLAUBENMACHENLASSEN",
     "shortcode": "0869",
     "officialName": "GLAUBENMACHENLASSEN",
-    "status": "Ongoing",
+    "status": "Finished",
     "shortDescription": "GLAUBENMACHENLASSEN is a visual anthropological and film ethnographic dissertation exploring identity in a cinematographic laboratory. Research period: 2009-2022.",
     "description": {
         "de": "GLAUBENMACHENLASSEN ist ein visuell-anthropologisches und filmethnographisches Dissertationsprojekt, das Identität bzw. den Identifikationsprozess im Setting eines kinematographischen Labors erforscht. Anhand der Versuchsanordnung im kinematographischen Labor eine experimentelle Herangehensweise zum Gebrauch der digitalen Kinematographie als Forschungsinstrument in den Sozialwissenschaften des dritten Jahrtausends. Forschungszeitraum: 2009-2022. Forscher: Balz Andrea Alter, Universität Basel.",
@@ -17,18 +17,18 @@
     ],
     "howToCite": "Alter (2026). GLAUBENMACHENLASSEN [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0869.",
     "accessRights": {
-        "accessRights": "Full Open Access"
+        "accessRights": "Open Access with Restrictions"
     },
     "legalInfo": [
         {
             "license": {
                 "licenseIdentifier": "CC BY-NC-ND 4.0",
-                "licenseDate": "2026-03-26",
+                "licenseDate": "2026-04-26",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
             },
             "copyrightHolder": "GLAUBENMACHENLASSEN",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -40,26 +40,10 @@
         "Video"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Ewondo",
-            "en": "Ewondo",
-            "fr": "ewondo"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "de",
+        "en",
+        "ewo",
+        "fr"
     ],
     "keywords": [
         {
@@ -123,27 +107,25 @@
         {
             "contributor": "person-378",
             "contributorType": [
-                "Protagonist",
                 "Research Assistant",
                 "CO-Author of Filmic Images",
-                "Moi, un Afropéen Production/Main Protagonist 2009-2017"
+                "Moi, un Afropéen/Main Protagonist 2009-2017"
             ]
         },
         {
             "contributor": "person-377",
             "contributorType": [
                 "Principal Investigator",
-                "Author",
                 "Data Model Designer",
                 "Data Curator",
-                "Moi, un Afropéen Production/Director 2009-2017",
+                "Moi, un Afropéen/Director 2009-2017",
                 "GLAUBENMACHENLASSEN/Author 2017-2021"
             ]
         },
         {
             "contributor": "person-379",
             "contributorType": [
-                "Moi, un Afropéen Production/Film Editor 2017"
+                "Moi, un Afropéen/Film Editor 2017"
             ]
         },
         {
@@ -155,7 +137,13 @@
         {
             "contributor": "person-381",
             "contributorType": [
-                "Moi, un Afropéen Production/Sound Engineer 2009-2017"
+                "Moi, un Afropéen/Sound Engineer 2009-2017"
+            ]
+        },
+        {
+            "contributor": "person-398",
+            "contributorType": [
+                "Moi, un Afropéen/Director of Photography 2017"
             ]
         }
     ],

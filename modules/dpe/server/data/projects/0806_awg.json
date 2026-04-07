@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Anton Webern Gesamtausgabe",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -39,11 +39,7 @@
         "XML"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        }
+        "de"
     ],
     "keywords": [
         {

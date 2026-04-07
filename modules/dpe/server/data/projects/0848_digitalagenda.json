@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Education and the European Digital Agenda: Switzerland, Germany and Sweden after 1970",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,11 +37,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        }
+        "en"
     ],
     "keywords": [
         {
@@ -239,5 +235,8 @@
         {
             "en": "Digital Agenda"
         }
+    ],
+    "contactPoint": [
+        "person-291"
     ]
 }

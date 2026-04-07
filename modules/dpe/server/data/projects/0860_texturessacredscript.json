@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Textures of Sacred Scripture",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -38,9 +38,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "en": "English"
-        }
+        "en"
     ],
     "keywords": [
         {

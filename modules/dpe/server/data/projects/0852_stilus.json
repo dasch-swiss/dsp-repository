@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Mit Stilus, Volumen und Spiegel. Untersuchungen zur Verbreitung von Lesen und Schreiben bei Frauen aus dem römischen Reich anhand von Funden aus dem Grabkontext.",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,11 +37,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        }
+        "de"
     ],
     "keywords": [
         {

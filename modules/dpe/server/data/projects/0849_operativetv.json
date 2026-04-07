@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Operative TV: Audiovisual Closed-Circuits from the Military to the Classroom, 1930s-1990s",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,11 +37,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        }
+        "en"
     ],
     "keywords": [
         {

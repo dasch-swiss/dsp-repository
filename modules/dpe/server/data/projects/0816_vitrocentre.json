@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "vitrosearch: stained glass and glass art in Switzerland online",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,16 +37,8 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "de",
+        "fr"
     ],
     "keywords": [
         {

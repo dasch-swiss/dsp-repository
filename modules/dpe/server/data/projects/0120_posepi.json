@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Prendre une position épistémique dans l’interaction. Les marqueurs du savoir, du non-savoir et du doute en français",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,11 +36,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "fr"
     ],
     "keywords": [
         {

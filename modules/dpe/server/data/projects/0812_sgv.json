@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Empirische Kulturwissenschaft Schweiz (EKWS)",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -38,29 +38,11 @@
         "Video"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        },
-        {
-            "de": "Italienisch",
-            "en": "Italian",
-            "fr": "italien"
-        },
-        {
-            "en": "Romansh"
-        }
+        "de",
+        "en",
+        "fr",
+        "it",
+        "rm"
     ],
     "keywords": [
         {

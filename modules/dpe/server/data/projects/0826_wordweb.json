@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "WordWeb / IDEM: A new way of representing Intertextuality in Drama of the Early Modern Period",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -36,40 +36,14 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        },
-        {
-            "de": "Italienisch",
-            "en": "Italian",
-            "fr": "italien"
-        },
-        {
-            "de": "Latein",
-            "en": "Latin",
-            "fr": "latin"
-        },
-        {
-            "en": "Classical Greek"
-        },
-        {
-            "en": "Portuguese"
-        },
-        {
-            "en": "Spanish"
-        }
+        "de",
+        "en",
+        "fr",
+        "it",
+        "la",
+        "grc",
+        "pt",
+        "es"
     ],
     "keywords": [
         {

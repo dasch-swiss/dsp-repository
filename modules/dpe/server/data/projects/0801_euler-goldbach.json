@@ -7,7 +7,7 @@
         "https://app.dasch.swiss/project/yTerZGyxjZVqFMNNKXCDPF",
         "https://bernoulli-euler.dhlab.unibas.ch/"
     ],
-    "howToCite": "Briefwechsel von Leonhard Euler mit Christian Goldbach, Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
+    "howToCite": "Lemmermeyer, F. & Mattmüller, M. (eds). Briefwechsel von Leonhard Euler mit Christian Goldbach, Bernoulli-Euler Online (BEOL), 2019, DaSCH. https://ark.dasch.swiss/ark:/72163/1/0801",
     "accessRights": {
         "accessRights": "Full Open Access"
     },
@@ -20,7 +20,7 @@
             },
             "copyrightHolder": "Briefwechsel von Leonhard Euler mit Christian Goldbach",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -62,11 +62,6 @@
             "number": "166072",
             "name": "Project funding",
             "url": "https://data.snf.ch/grants/grant/166072"
-        },
-        {
-            "funders": [
-                "organization-006"
-            ]
         }
     ],
     "name": "Briefwechsel von Leonhard Euler mit Christian Goldbach",
@@ -80,30 +75,13 @@
     "endDate": "MISSING",
     "typeOfData": [
         "Image",
-        "Text",
-        "XML"
+        "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        },
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Latein",
-            "en": "Latin",
-            "fr": "latin"
-        }
+        "en",
+        "fr",
+        "de",
+        "la"
     ],
     "keywords": [
         {

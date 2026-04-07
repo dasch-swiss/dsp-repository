@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "Symbolism of light in Early Christian sacred buildings in the Swiss Alpine valleys",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,11 +37,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        }
+        "en"
     ],
     "keywords": [
         {

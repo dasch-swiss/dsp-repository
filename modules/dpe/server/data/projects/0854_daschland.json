@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "Alice in DaSCHland",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         },
         {
@@ -39,7 +39,7 @@
             },
             "copyrightHolder": "Alice in DaSCHland",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -52,26 +52,10 @@
         "XML"
     ],
     "dataLanguage": [
-        {
-            "de": "Deutsch",
-            "en": "German",
-            "fr": "allemand"
-        },
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        },
-        {
-            "de": "Italienisch",
-            "en": "Italian",
-            "fr": "italien"
-        }
+        "de",
+        "en",
+        "fr",
+        "it"
     ],
     "keywords": [
         {
@@ -199,5 +183,8 @@
             "name": "DaSCH",
             "url": "https://www.dasch.swiss/"
         }
-    ]
+    ],
+    "abstract": {
+        "en": "This dataset comprises the data structures, metadata, and character data used in the Alice in DaSCHland showcase project. It offers an exploratory environment where users interact with narrative data, data visualization elements, and metadata anomalies through Alice’s adventures."
+    }
 }

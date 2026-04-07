@@ -28,7 +28,7 @@
             },
             "copyrightHolder": "L’epistolario di Ugo Foscolo: catalogo",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -38,16 +38,8 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Italienisch",
-            "en": "Italian",
-            "fr": "italien"
-        }
+        "en",
+        "it"
     ],
     "keywords": [
         {

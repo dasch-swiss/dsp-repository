@@ -27,7 +27,7 @@
             },
             "copyrightHolder": "A Gender Perspective on Film Character and Stardom: Studying the Production of Film Representations in the Forties (Claude Autant-Lara Collection, Swiss Film Archive)",
             "authorship": [
-                "MISSING"
+                "CALCULATED"
             ]
         }
     ],
@@ -37,11 +37,7 @@
         "Text"
     ],
     "dataLanguage": [
-        {
-            "de": "Französisch",
-            "en": "French",
-            "fr": "français"
-        }
+        "fr"
     ],
     "keywords": [
         {

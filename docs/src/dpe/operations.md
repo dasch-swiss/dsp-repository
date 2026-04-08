@@ -61,11 +61,12 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | *(none)* | OTLP gRPC endpoint (e.g., `http://alloy:4317`). When unset, OTel falls back to no-op export. |
 | `OTEL_SERVICE_NAME` | No | *(none)* | Service name for OTel resource attributes (e.g., `dpe`) |
 | `OTEL_RESOURCE_ATTRIBUTES` | No | *(none)* | Comma-separated OTel resource attributes (e.g., `service.namespace=dpe,service.version=0.2.1,deployment.environment=prod`) |
+| `PYROSCOPE_ENDPOINT` | No | *(none)* | Pyroscope HTTP endpoint (e.g., `http://pyroscope:4040`). When unset, profiling is disabled. |
 | `LEPTOS_SITE_ADDR` | No | `0.0.0.0:8080` | Listen address and port |
 | `LEPTOS_SITE_ROOT` | No | `site` | Path to static site assets |
 | `LEPTOS_SITE_PKG_DIR` | No | `pkg` | JS/CSS package subdirectory |
 | `LEPTOS_OUTPUT_NAME` | No | `dpe` | CSS/JS output filename prefix |
-| `LEPTOS_ENV` | No | `PROD` | Leptos environment (DEV or PROD) |
+| `LEPTOS_ENV` | No | *(auto)* | Leptos environment (`DEV` or `PROD`). Set automatically by cargo-leptos: `watch` = `DEV`, `build --release` = `PROD`. Do not set manually. |
 
 ## Health Check
 
@@ -121,3 +122,13 @@ Privacy-friendly, GDPR-compliant analytics. No cookies, no personal data collect
 DPE exports traces, metrics, and structured logs via OTLP gRPC. In production, the OTLP endpoint points to Grafana Alloy, which forwards to Grafana Cloud (Tempo for traces, Mimir for metrics, Loki for logs).
 
 When `OTEL_EXPORTER_OTLP_ENDPOINT` is not set, the OTel SDK falls back to no-op export — the application runs normally without telemetry export. See `docs/src/dpe/observability.md` for the developer guide.
+
+### Continuous Profiling (Pyroscope)
+
+CPU profiling via Grafana Pyroscope. Samples at 100Hz and pushes profiles to the configured endpoint.
+
+**Configuration:** Set `PYROSCOPE_ENDPOINT` to the Pyroscope HTTP endpoint. When unset, no profiling agent runs and there is zero overhead.
+
+**What gets profiled:**
+- CPU time per function (sampling-based, 100 samples/second)
+- Flame graphs viewable in Grafana (Explore > Pyroscope)

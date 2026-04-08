@@ -76,9 +76,6 @@ end2end-dir = "../playground-e2e-tests"
 #  The browserlist query used for optimizing the CSS.
 browserquery = "defaults"
 
-# The environment Leptos will run in, usually either "DEV" or "PROD"
-env = "DEV"
-
 # Additional files to watch for changes (triggers rebuild)
 watch-additional-files = ["../tiles/src/components"]
 

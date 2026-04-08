@@ -125,7 +125,7 @@ docs-test:
 watch-mosaic-playground:
     #!/usr/bin/env sh
     cd modules/mosaic/playground
-    cargo leptos watch -- --watch ../tiles
+    cargo leptos watch
 
 # Build Docker image for mosaic playground
 [group('mosaic')]
@@ -144,7 +144,7 @@ run-docker-mosaic-playground:
 # Start the DPE with hot reload
 [group('dpe')]
 watch-dpe:
-    cargo leptos watch --project=dpe -- watch ../mosaic/tiles
+    cargo leptos watch --project=dpe -- serve
 
 # Build Docker image for DPE
 [group('dpe')]

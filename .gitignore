@@ -41,5 +41,10 @@ modules/design_system/playground/tests/.cache/
 modules/design_system/tailwind.css
 
 
+# Nix
+result
+result-*
+.direnv/
+
 # IDE related
 /.vscode

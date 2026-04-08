@@ -51,6 +51,8 @@ opentelemetry = { version = "0.31", features = ["metrics"] }
 opentelemetry_sdk = { version = "0.31", features = ["rt-tokio", "metrics", "logs"] }
 opentelemetry-otlp = { version = "0.31", features = ["grpc-tonic", "trace", "metrics", "logs"] }
 tracing-opentelemetry = "0.32"
+# Continuous profiling
+pyroscope = { version = "2.0.0", features = ["backend-pprof-rs"] }
 url = { version = "2", features = ["serde"] }
 uuid = { version = "1.23", features = ["v4", "v7", "js"] }
 wasm-bindgen = "=0.2.105"
@@ -91,10 +93,9 @@ reload-port = 4001
 end2end-cmd = "npx playwright test"
 end2end-dir = "modules/dpe/web-e2e-tests"
 browserquery = "defaults"
-watch = false
-env = "DEV"
 bin-features = []
 bin-default-features = false
 lib-features = []
 lib-default-features = false
 tailwind-input-file = "modules/dpe/style/main.css"
+watch-additional-files = ["modules/mosaic/tiles"]

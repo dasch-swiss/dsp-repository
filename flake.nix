@@ -58,7 +58,7 @@
             _ensure_tool() {
               local cmd="$1" pkg="$2" version="$3"
               if ! command -v "$cmd" &>/dev/null || \
-                 [ "$("$cmd" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')" != "$version" ]; then
+                 [ "$("$cmd" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)" != "$version" ]; then
                 echo "Installing $pkg@$version via cargo-binstall..."
                 cargo binstall -y "$pkg@$version" --quiet
               fi

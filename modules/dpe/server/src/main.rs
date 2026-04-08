@@ -63,8 +63,37 @@ async fn serve() -> ExitCode {
     // OTEL_EXPORTER_OTLP_ENDPOINT is not set (safe for local development).
     // Log level is controlled via RUST_LOG.
     let _otel_guard = TracingConfig::production()
+        .with_otel_tracer_name(env!("CARGO_PKG_NAME"))
         .init_subscriber()
         .expect("failed to initialize OpenTelemetry tracing");
+
+    // Start Pyroscope continuous profiling agent (CPU sampling).
+    // Only active when PYROSCOPE_ENDPOINT is set.
+    const PROFILING_SAMPLE_RATE: u32 = 100;
+
+    let _pyroscope_agent = if let Ok(endpoint) = std::env::var("PYROSCOPE_ENDPOINT") {
+        let backend = pyroscope::backend::pprof_backend(
+            pyroscope::backend::PprofConfig { sample_rate: PROFILING_SAMPLE_RATE },
+            pyroscope::backend::BackendConfig::default(),
+        );
+
+        let agent = pyroscope::pyroscope::PyroscopeAgentBuilder::new(
+            &endpoint,
+            env!("CARGO_PKG_NAME"),
+            PROFILING_SAMPLE_RATE,
+            "pyroscope-rs",  // matches pyroscope crate's PPROFRS_SPY_NAME
+            "2.0.0",         // pyroscope crate version (PPROFRS_SPY_VERSION is private)
+            backend,
+        )
+        .tags(vec![("service.namespace", "dpe")])
+        .build()
+        .expect("failed to build Pyroscope agent");
+
+        tracing::info!(endpoint = %endpoint, "Pyroscope profiling enabled");
+        Some(agent.start().expect("failed to start Pyroscope agent"))
+    } else {
+        None
+    };
 
     // Load DPE-specific configuration (defaults → dpe.toml → DPE_* env vars)
     let dpe_config = config::DpeConfig::load().expect("failed to load DPE configuration");
@@ -145,15 +174,22 @@ async fn serve() -> ExitCode {
     let listener = tokio::net::TcpListener::bind(&addr)
         .await
         .unwrap_or_else(|e| panic!("failed to bind to {addr}: {e}"));
-    axum::serve(listener, app.into_make_service())
+    axum::serve(listener, app.into_make_service_with_connect_info::<std::net::SocketAddr>())
         .with_graceful_shutdown(shutdown_signal())
         .await
         .expect("server exited with error");
 
-    // Flush OTel data on shutdown. The guard's Drop performs synchronous I/O
-    // (flushing spans via OTLP). Run via spawn_blocking to avoid deadlocking
-    // the Tokio runtime.
-    tokio::task::spawn_blocking(move || drop(_otel_guard))
+    // Stop Pyroscope agent and flush OTel data. Both perform blocking I/O
+    // (condvar waits, thread joins, HTTP uploads, OTLP flush). Run via
+    // spawn_blocking to avoid deadlocking the Tokio runtime.
+    tokio::task::spawn_blocking(move || {
+        if let Some(agent) = _pyroscope_agent {
+            if let Ok(ready) = agent.stop() {
+                ready.shutdown();
+            }
+        }
+        drop(_otel_guard);
+    })
         .await
         .ok();
 

@@ -17,12 +17,13 @@ Run the Grafana LGTM (Loki, Grafana, Tempo, Mimir) all-in-one container:
 
 ```bash
 # Terminal 1: Start local LGTM stack
-docker run --rm -p 3000:3000 -p 4317:4317 -p 4318:4318 grafana/otel-lgtm
+docker run --rm -p 3000:3000 -p 4317:4317 -p 4318:4318 -p 4040:4040 grafana/otel-lgtm
 
 # Terminal 2: Run DPE with OTel enabled
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
 OTEL_SERVICE_NAME=dpe \
 OTEL_RESOURCE_ATTRIBUTES="service.namespace=dpe,service.version=0.2.1,deployment.environment=dev" \
+PYROSCOPE_ENDPOINT=http://localhost:4040 \
 just watch-dpe
 
 # Terminal 3: Generate traffic
@@ -39,6 +40,7 @@ Open <http://localhost:3000> (no login required):
 - **Service map**: "dpe" service with Rust tech icon
 - **Loki** (Explore → Loki): structured JSON logs from the OTel subscriber
 - **Mimir** (Explore → Mimir): browser telemetry metrics (`browser.web_vital`, `browser.error`, etc.)
+- **Pyroscope** (Explore → Pyroscope): CPU flame graphs for `dpe-server`
 
 ## Adding Instrumentation
 

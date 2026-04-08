@@ -10,11 +10,19 @@ This repository is a Rust-based monorepo for the DaSCH Service Platform. It cont
 
 ### Prerequisites
 
-- **Rust**: Toolchain managed via `rustup`
+- **Rust**: Toolchain managed via `rustup` (or Nix flake)
 - **Just**: Command runner for development tasks
 - **pnpm**: Package manager for the DPE frontend
 
 ### First-Time Setup
+
+**Option A: Nix (recommended)**
+
+```bash
+nix develop  # or use direnv — automatic with .envrc
+```
+
+**Option B: Manual**
 
 ```bash
 just install-requirements

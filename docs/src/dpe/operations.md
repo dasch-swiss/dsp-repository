@@ -90,7 +90,7 @@ The DPE is lightweight — it serves static data with no database.
 
 ## Logging
 
-Structured logging via `init-tracing-opentelemetry` (OTel-aware tracing subscriber). In production, logs are JSON-formatted to stdout. Configure levels with `RUST_LOG`:
+Structured logging via `init-tracing-opentelemetry` (OTel-aware tracing subscriber). In production (`LEPTOS_ENV=PROD`), logs are JSON-formatted to stdout only. In local development (`LEPTOS_ENV=DEV`), logs are additionally exported via OTLP to Loki when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Configure levels with `RUST_LOG`:
 
 ```bash
 # Default (info level)

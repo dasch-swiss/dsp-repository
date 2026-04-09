@@ -57,6 +57,24 @@ async fn serve() -> ExitCode {
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
     use init_tracing_opentelemetry::TracingConfig;
+    use opentelemetry_sdk::logs::{SdkLoggerProvider, SdkLogger};
+    use tracing_subscriber::layer::SubscriberExt;
+
+    // Export logs via OTLP only when LEPTOS_ENV=DEV (local dev) and an OTLP
+    // endpoint is configured. Production (LEPTOS_ENV=PROD) logs to stdout only.
+    // Default to "DEV" when unset, matching leptos_config's own default.
+    let logger_provider: Option<SdkLoggerProvider> =
+        if std::env::var("LEPTOS_ENV").as_deref().unwrap_or("DEV") == "DEV"
+            && std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").is_ok()
+        {
+            let exporter = opentelemetry_otlp::LogExporter::builder()
+                .with_tonic()
+                .build()
+                .expect("failed to build OTLP log exporter");
+            Some(SdkLoggerProvider::builder().with_batch_exporter(exporter).build())
+        } else {
+            None
+        };
 
     // Initialize OpenTelemetry tracing subscriber.
     // Reads OTEL_* env vars automatically. Falls back to no-op export when
@@ -64,7 +82,12 @@ async fn serve() -> ExitCode {
     // Log level is controlled via RUST_LOG.
     let _otel_guard = TracingConfig::production()
         .with_otel_tracer_name(env!("CARGO_PKG_NAME"))
-        .init_subscriber()
+        .init_subscriber_ext(|registry| {
+            use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;
+            let otel_logs_layer: Option<OpenTelemetryTracingBridge<SdkLoggerProvider, SdkLogger>> =
+                logger_provider.as_ref().map(OpenTelemetryTracingBridge::new);
+            registry.with(otel_logs_layer)
+        })
         .expect("failed to initialize OpenTelemetry tracing");
 
     // Start Pyroscope continuous profiling agent (CPU sampling).
@@ -187,6 +210,12 @@ async fn serve() -> ExitCode {
             if let Ok(ready) = agent.stop() {
                 ready.shutdown();
             }
+        }
+        // Flush OTel logs before dropping the trace/metrics guard — log records
+        // may reference trace context that becomes invalid after guard drop.
+        if let Some(provider) = logger_provider {
+            let _ = provider.force_flush();
+            let _ = provider.shutdown();
         }
         drop(_otel_guard);
     })

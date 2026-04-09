@@ -38,7 +38,7 @@ Open <http://localhost:3000> (no login required):
 
 - **Tempo** (Explore → Tempo): traces for `/projects` and `/oai`, none for `/healthz`
 - **Service map**: "dpe" service with Rust tech icon
-- **Loki** (Explore → Loki): structured JSON logs from the OTel subscriber
+- **Loki** (Explore → Loki): OTel log records bridged from the `tracing` subscriber (severity, span context, structured fields)
 - **Mimir** (Explore → Mimir): browser telemetry metrics (`browser.web_vital`, `browser.error`, etc.)
 - **Pyroscope** (Explore → Pyroscope): CPU flame graphs for `dpe-server`
 
@@ -76,6 +76,7 @@ All signals are buffered and flushed via `navigator.sendBeacon` on `visibilitych
 
 ## Logging
 
-- **Production**: `TracingConfig::production()` outputs JSON-formatted logs to stdout (OTel-aware subscriber).
-- **Local development**: Set `RUST_LOG` to control log levels. Use `RUST_LOG=debug` for verbose output.
-- When `OTEL_EXPORTER_OTLP_ENDPOINT` is not set, the OTel SDK falls back to no-op export — no traces are sent, but structured logging still works.
+- **Production** (`LEPTOS_ENV=PROD`): JSON-formatted logs to stdout only. No OTel log export — traces and metrics are exported via OTLP, but logs stay on stdout.
+- **Local development** (`LEPTOS_ENV=DEV` with `OTEL_EXPORTER_OTLP_ENDPOINT` set): Logs go to both stdout and Loki via OTLP. An `OpenTelemetryTracingBridge` layer converts `tracing` events into OTel log records, which are batched and exported alongside traces and metrics. Query them in Grafana Explore → Loki.
+- Set `RUST_LOG` to control log levels. Use `RUST_LOG=debug` for verbose output.
+- When `OTEL_EXPORTER_OTLP_ENDPOINT` is not set, the OTel SDK falls back to no-op export — no traces, metrics, or logs are sent, but structured stdout logging still works.

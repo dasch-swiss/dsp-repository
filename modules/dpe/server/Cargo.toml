@@ -20,12 +20,14 @@ figment = { version = "0.10", features = ["env", "toml"] }
 mosaic-tiles = { path = "../../mosaic/tiles", default-features = false, features = ["icon"] }
 tokio.workspace = true
 tracing.workspace = true
+tracing-subscriber.workspace = true
 axum-tracing-opentelemetry.workspace = true
 init-tracing-opentelemetry.workspace = true
 tracing-opentelemetry-instrumentation-sdk.workspace = true
 opentelemetry.workspace = true
 opentelemetry_sdk.workspace = true
 opentelemetry-otlp.workspace = true
+opentelemetry-appender-tracing.workspace = true
 tracing-opentelemetry.workspace = true
 pyroscope.workspace = true
 futures = "0.3"

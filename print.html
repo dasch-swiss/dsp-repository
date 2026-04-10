@@ -601,6 +601,7 @@ actionable — not just "this is hard" but "do X instead of Y".
 │   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
 │   ├── web/                   # Web layer: Leptos components, pages (crate: dpe-web)
 │   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
+│   ├── telemetry/             # Telemetry types and validation (crate: dpe-telemetry)
 │   ├── web-e2e-tests/         # Playwright E2E tests
 │   ├── public/                # Static assets
 │   ├── style/                 # CSS / Tailwind
@@ -618,6 +619,7 @@ actionable — not just "this is hard" but "do X instead of Y".
 <tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> only)</td></tr>
 <tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Leptos SSR components, pages, <code>#[server]</code> functions</td></tr>
 <tr><td><code>dpe-server</code></td><td><code>dpe/server</code></td><td>Server binary — composes all routes</td></tr>
+<tr><td><code>dpe-telemetry</code></td><td><code>dpe/telemetry</code></td><td>Telemetry types, validation, and origin checking</td></tr>
 <tr><td><code>mosaic-tiles</code></td><td><code>mosaic/tiles</code></td><td>Reusable UI component library</td></tr>
 <tr><td><code>mosaic-playground</code></td><td><code>mosaic/playground</code></td><td>Component showcase application</td></tr>
 <tr><td><code>mosaic-playground-macro</code></td><td><code>mosaic/playground_macro</code></td><td>Proc macro for playground page generation</td></tr>
@@ -1133,6 +1135,7 @@ GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
 <h2 id="workspace-layout"><a class="header" href="#workspace-layout">Workspace Layout</a></h2>
 <pre><code>modules/dpe/
 ├── core/             dpe-core          Pure domain (serde only)
+├── telemetry/        dpe-telemetry     Telemetry types and validation (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Leptos SSR + Datastar fragments
 ├── server/           dpe-server        Axum binary (composition root)
@@ -1141,11 +1144,13 @@ GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
 └── style/                              Tailwind CSS
 </code></pre>
 <h2 id="dependency-graph"><a class="header" href="#dependency-graph">Dependency Graph</a></h2>
-<pre><code>dpe-core          ← pure domain, no framework deps
+<pre><code>dpe-core              ← pure domain, no framework deps
   ↑
-  ├── dpe-api-oai ← OAI-PMH endpoint
-  ├── dpe-web     ← Leptos SSR pages + components
-  └── dpe-server  ← composition root, Datastar fragment handlers
+  ├── dpe-api-oai     ← OAI-PMH endpoint
+  ├── dpe-web         ← Leptos SSR pages + components
+  └── dpe-server      ← composition root, Datastar fragment handlers
+       ↑
+       dpe-telemetry  ← telemetry types and validation (serde only)
 </code></pre>
 <h2 id="crate-responsibilities"><a class="header" href="#crate-responsibilities">Crate Responsibilities</a></h2>
 <h3 id="dpe-core-core"><a class="header" href="#dpe-core-core"><code>dpe-core</code> (core/)</a></h3>
@@ -1169,13 +1174,23 @@ GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
 <li><strong>Domain re-exports</strong>: <code>domain/mod.rs</code> re-exports <code>dpe-core</code> types for a single import path</li>
 <li><strong>Server functions</strong>: <code>#[server]</code> wrappers around <code>dpe-core</code> functions</li>
 </ul>
+<h3 id="dpe-telemetry-telemetry"><a class="header" href="#dpe-telemetry-telemetry"><code>dpe-telemetry</code> (telemetry/)</a></h3>
+<p>Telemetry types and validation logic. Extracted as a library crate so fuzz targets can test the real code. Contains:</p>
+<ul>
+<li><strong>Beacon types</strong>: <code>BeaconPayload</code>, <code>Signal</code>, <code>WebVitalSignal</code>, <code>ErrorSignal</code>, etc. (serde deserialization for browser beacons)</li>
+<li><strong>Origin validation</strong>: <code>is_allowed_origin()</code> — validates dasch.swiss subdomains</li>
+<li><strong>URL normalization</strong>: <code>normalize_page_url()</code> — cardinality-safe page URL mapping</li>
+<li><strong>Traceparent validation</strong>: <code>is_valid_traceparent()</code> — W3C traceparent format validation</li>
+</ul>
+<p>Dependencies: <code>serde</code> only.</p>
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
 <p>Composition root and Axum binary. Contains:</p>
 <ul>
-<li><strong>Route wiring</strong>: Leptos SSR routes, OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code></li>
+<li><strong>Route wiring</strong>: Leptos SSR routes, OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code>, <code>/telemetry/collect</code></li>
 <li><strong>Fragment handlers</strong>: <code>fragments.rs</code> — pure Axum handlers that render Leptos components to HTML and return Datastar SSE events</li>
+<li><strong>Telemetry collector</strong>: <code>telemetry_collector.rs</code> — converts browser beacons to OTel metrics and structured logs (uses types from <code>dpe-telemetry</code>)</li>
 <li><strong>Configuration</strong>: <code>config.rs</code> — figment-based layered config (defaults → <code>dpe.toml</code> → <code>DPE_*</code> env vars)</li>
-<li><strong>Logging</strong>: <code>tracing-subscriber</code> with env-filter and JSON support</li>
+<li><strong>Logging</strong>: OTel-aware subscriber via <code>init-tracing-opentelemetry</code></li>
 </ul>
 <h2 id="key-patterns"><a class="header" href="#key-patterns">Key Patterns</a></h2>
 <ul>
@@ -1390,6 +1405,144 @@ Parallel job group 3 (~5 min):
 }
 
 </style>
+<h1 id="dpe-observability"><a class="header" href="#dpe-observability">DPE Observability</a></h1>
+<p>Developer guide for working with DPE's observability instrumentation.</p>
+<h2 id="overview-1"><a class="header" href="#overview-1">Overview</a></h2>
+<p>DPE uses <a href="https://opentelemetry.io/">OpenTelemetry</a> for distributed tracing, metrics, and structured logging. The telemetry pipeline has two halves:</p>
+<ul>
+<li><strong>Server-side</strong>: OTel-native tracing via <code>axum-tracing-opentelemetry</code> middleware. Every HTTP request (except <code>/healthz</code>) produces W3C-compliant spans exported via OTLP.</li>
+<li><strong>Client-side</strong>: A lightweight JavaScript module (<code>telemetry.js</code>) captures Core Web Vitals, JS errors, Long Animation Frames, and navigation timing. Signals are sent via <code>navigator.sendBeacon</code> to a server-side collector (<code>POST /telemetry/collect</code>), which converts them into OTel metrics and structured logs flowing through the same OTLP pipeline.</li>
+</ul>
+<p>Trace correlation between server and client uses the W3C <code>traceparent</code> standard: the server renders a <code>&lt;meta name="traceparent"&gt;</code> tag in the HTML shell, and the client includes it in every beacon payload.</p>
+<h2 id="local-observability-stack"><a class="header" href="#local-observability-stack">Local Observability Stack</a></h2>
+<p>Run the Grafana LGTM (Loki, Grafana, Tempo, Mimir) all-in-one container:</p>
+<pre><code class="language-bash"># Terminal 1: Start local LGTM stack
+docker run --rm -p 3000:3000 -p 4317:4317 -p 4318:4318 -p 4040:4040 grafana/otel-lgtm
+
+# Terminal 2: Run DPE with OTel enabled
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
+OTEL_SERVICE_NAME=dpe \
+OTEL_RESOURCE_ATTRIBUTES="service.namespace=dpe,service.version=0.2.1,deployment.environment=dev" \
+PYROSCOPE_ENDPOINT=http://localhost:4040 \
+just watch-dpe
+
+# Terminal 3: Generate traffic
+curl http://localhost:4000/projects
+curl http://localhost:4000/oai?verb=Identify
+curl http://localhost:4000/healthz
+</code></pre>
+<h2 id="navigating-grafana-locally"><a class="header" href="#navigating-grafana-locally">Navigating Grafana Locally</a></h2>
+<p>Open <a href="http://localhost:3000">http://localhost:3000</a> (no login required):</p>
+<ul>
+<li><strong>Tempo</strong> (Explore → Tempo): traces for <code>/projects</code> and <code>/oai</code>, none for <code>/healthz</code></li>
+<li><strong>Service map</strong>: "dpe" service with Rust tech icon</li>
+<li><strong>Loki</strong> (Explore → Loki): OTel log records bridged from the <code>tracing</code> subscriber (severity, span context, structured fields)</li>
+<li><strong>Mimir</strong> (Explore → Mimir): browser telemetry metrics (<code>browser.web_vital</code>, <code>browser.error</code>, etc.)</li>
+<li><strong>Pyroscope</strong> (Explore → Pyroscope): CPU flame graphs for <code>dpe-server</code></li>
+</ul>
+<h2 id="adding-instrumentation"><a class="header" href="#adding-instrumentation">Adding Instrumentation</a></h2>
+<p>Use <code>#[tracing::instrument]</code> on new handler and service functions:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[tracing::instrument(
+    skip_all,
+    fields(
+        otel.kind = "internal",
+        otel.name = "descriptive name",
+    )
+)]
+pub async fn my_handler(/* ... */) -&gt; /* ... */ {
+    // ...
+}
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li>Use <code>otel.kind = "internal"</code> on handler-level spans — the OTel middleware (<code>OtelAxumLayer</code>) already creates the <code>SPAN_KIND_SERVER</code> span for the HTTP request.</li>
+<li>Do not create nested <code>"server"</code> spans — that confuses the trace waterfall.</li>
+</ul>
+<h2 id="client-telemetry"><a class="header" href="#client-telemetry">Client Telemetry</a></h2>
+<p>The <code>telemetry.js</code> module (served from <code>/telemetry.js</code>) captures:</p>
+<ul>
+<li><strong>Core Web Vitals</strong> (LCP, INP, CLS, TTFB, FCP) with attribution data</li>
+<li><strong>JavaScript errors</strong> and unhandled promise rejections</li>
+<li><strong>Datastar SSE errors</strong></li>
+<li><strong>Long Animation Frames</strong> (LoAF, ≥200ms threshold)</li>
+<li><strong>Navigation timing</strong> breakdown</li>
+</ul>
+<p>All signals are buffered and flushed via <code>navigator.sendBeacon</code> on <code>visibilitychange</code> (page hide). The server collector converts them to OTel metrics (bounded attributes only) and structured logs (high-cardinality attribution data).</p>
+<h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
+<ul>
+<li><strong>Production</strong> (<code>LEPTOS_ENV=PROD</code>): JSON-formatted logs to stdout only. No OTel log export — traces and metrics are exported via OTLP, but logs stay on stdout.</li>
+<li><strong>Local development</strong> (<code>LEPTOS_ENV=DEV</code> with <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> set): Logs go to both stdout and Loki via OTLP. An <code>OpenTelemetryTracingBridge</code> layer converts <code>tracing</code> events into OTel log records, which are batched and exported alongside traces and metrics. Query them in Grafana Explore → Loki.</li>
+<li>Set <code>RUST_LOG</code> to control log levels. Use <code>RUST_LOG=debug</code> for verbose output.</li>
+<li>When <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is not set, the OTel SDK falls back to no-op export — no traces, metrics, or logs are sent, but structured stdout logging still works.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
 <h1 id="dpe-operations-guide"><a class="header" href="#dpe-operations-guide">DPE Operations Guide</a></h1>
 <p>Operations documentation for the DPE infrastructure team.</p>
 <h2 id="docker-image"><a class="header" href="#docker-image">Docker Image</a></h2>
@@ -1437,11 +1590,15 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g., <code>dpe_server=info,tower_http=debug</code>)</td></tr>
 <tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>modules/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
 <tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret)</td></tr>
+<tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g., <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
+<tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g., <code>dpe</code>)</td></tr>
+<tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g., <code>service.namespace=dpe,service.version=0.2.1,deployment.environment=prod</code>)</td></tr>
+<tr><td><code>PYROSCOPE_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>Pyroscope HTTP endpoint (e.g., <code>http://pyroscope:4040</code>). When unset, profiling is disabled.</td></tr>
 <tr><td><code>LEPTOS_SITE_ADDR</code></td><td>No</td><td><code>0.0.0.0:8080</code></td><td>Listen address and port</td></tr>
 <tr><td><code>LEPTOS_SITE_ROOT</code></td><td>No</td><td><code>site</code></td><td>Path to static site assets</td></tr>
 <tr><td><code>LEPTOS_SITE_PKG_DIR</code></td><td>No</td><td><code>pkg</code></td><td>JS/CSS package subdirectory</td></tr>
 <tr><td><code>LEPTOS_OUTPUT_NAME</code></td><td>No</td><td><code>dpe</code></td><td>CSS/JS output filename prefix</td></tr>
-<tr><td><code>LEPTOS_ENV</code></td><td>No</td><td><code>PROD</code></td><td>Leptos environment (DEV or PROD)</td></tr>
+<tr><td><code>LEPTOS_ENV</code></td><td>No</td><td><em>(auto)</em></td><td>Leptos environment (<code>DEV</code> or <code>PROD</code>). Set automatically by cargo-leptos: <code>watch</code> = <code>DEV</code>, <code>build --release</code> = <code>PROD</code>. Do not set manually.</td></tr>
 </tbody></table>
 </div>
 <h2 id="health-check"><a class="header" href="#health-check">Health Check</a></h2>
@@ -1463,8 +1620,8 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 <li><strong>CPU</strong>: Minimal (SSR rendering is fast, data is cached in-memory)</li>
 <li><strong>Disk</strong>: Data files + static assets (~50 MB)</li>
 </ul>
-<h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
-<p>Structured logging via <code>tracing-subscriber</code>. Configure levels with <code>RUST_LOG</code>:</p>
+<h2 id="logging-1"><a class="header" href="#logging-1">Logging</a></h2>
+<p>Structured logging via <code>init-tracing-opentelemetry</code> (OTel-aware tracing subscriber). In production (<code>LEPTOS_ENV=PROD</code>), logs are JSON-formatted to stdout only. In local development (<code>LEPTOS_ENV=DEV</code>), logs are additionally exported via OTLP to Loki when <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is set. Configure levels with <code>RUST_LOG</code>:</p>
 <pre><code class="language-bash"># Default (info level)
 RUST_LOG=info
 
@@ -1484,6 +1641,17 @@ RUST_LOG=debug
 <li>Tab switches (detected automatically via <code>history.replaceState</code>)</li>
 </ul>
 <p><strong>Disable:</strong> Omit the <code>DPE_FATHOM_SITE_ID</code> environment variable — no tracking script is rendered.</p>
+<h3 id="opentelemetry"><a class="header" href="#opentelemetry">OpenTelemetry</a></h3>
+<p>DPE exports traces, metrics, and structured logs via OTLP gRPC. In production, the OTLP endpoint points to Grafana Alloy, which forwards to Grafana Cloud (Tempo for traces, Mimir for metrics, Loki for logs).</p>
+<p>When <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is not set, the OTel SDK falls back to no-op export — the application runs normally without telemetry export. See <code>docs/src/dpe/observability.md</code> for the developer guide.</p>
+<h3 id="continuous-profiling-pyroscope"><a class="header" href="#continuous-profiling-pyroscope">Continuous Profiling (Pyroscope)</a></h3>
+<p>CPU profiling via Grafana Pyroscope. Samples at 100Hz and pushes profiles to the configured endpoint.</p>
+<p><strong>Configuration:</strong> Set <code>PYROSCOPE_ENDPOINT</code> to the Pyroscope HTTP endpoint. When unset, no profiling agent runs and there is zero overhead.</p>
+<p><strong>What gets profiled:</strong></p>
+<ul>
+<li>CPU time per function (sampling-based, 100 samples/second)</li>
+<li>Flame graphs viewable in Grafana (Explore &gt; Pyroscope)</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;

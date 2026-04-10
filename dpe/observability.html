@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Project Structure - DSP-Repository Developer Documentation</title>
+        <title>Observability - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -242,84 +242,87 @@
 }
 
 </style>
-<h1 id="dpe-project-structure"><a class="header" href="#dpe-project-structure">DPE Project Structure</a></h1>
-<h2 id="workspace-layout"><a class="header" href="#workspace-layout">Workspace Layout</a></h2>
-<pre><code>modules/dpe/
-├── core/             dpe-core          Pure domain (serde only)
-├── telemetry/        dpe-telemetry     Telemetry types and validation (serde only)
-├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
-├── web/              dpe-web           Leptos SSR + Datastar fragments
-├── server/           dpe-server        Axum binary (composition root)
-├── web-e2e-tests/                      Playwright E2E tests
-├── public/                             Static assets
-└── style/                              Tailwind CSS
+<h1 id="dpe-observability"><a class="header" href="#dpe-observability">DPE Observability</a></h1>
+<p>Developer guide for working with DPE's observability instrumentation.</p>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>DPE uses <a href="https://opentelemetry.io/">OpenTelemetry</a> for distributed tracing, metrics, and structured logging. The telemetry pipeline has two halves:</p>
+<ul>
+<li><strong>Server-side</strong>: OTel-native tracing via <code>axum-tracing-opentelemetry</code> middleware. Every HTTP request (except <code>/healthz</code>) produces W3C-compliant spans exported via OTLP.</li>
+<li><strong>Client-side</strong>: A lightweight JavaScript module (<code>telemetry.js</code>) captures Core Web Vitals, JS errors, Long Animation Frames, and navigation timing. Signals are sent via <code>navigator.sendBeacon</code> to a server-side collector (<code>POST /telemetry/collect</code>), which converts them into OTel metrics and structured logs flowing through the same OTLP pipeline.</li>
+</ul>
+<p>Trace correlation between server and client uses the W3C <code>traceparent</code> standard: the server renders a <code>&lt;meta name="traceparent"&gt;</code> tag in the HTML shell, and the client includes it in every beacon payload.</p>
+<h2 id="local-observability-stack"><a class="header" href="#local-observability-stack">Local Observability Stack</a></h2>
+<p>Run the Grafana LGTM (Loki, Grafana, Tempo, Mimir) all-in-one container:</p>
+<pre><code class="language-bash"># Terminal 1: Start local LGTM stack
+docker run --rm -p 3000:3000 -p 4317:4317 -p 4318:4318 -p 4040:4040 grafana/otel-lgtm
+
+# Terminal 2: Run DPE with OTel enabled
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
+OTEL_SERVICE_NAME=dpe \
+OTEL_RESOURCE_ATTRIBUTES="service.namespace=dpe,service.version=0.2.1,deployment.environment=dev" \
+PYROSCOPE_ENDPOINT=http://localhost:4040 \
+just watch-dpe
+
+# Terminal 3: Generate traffic
+curl http://localhost:4000/projects
+curl http://localhost:4000/oai?verb=Identify
+curl http://localhost:4000/healthz
 </code></pre>
-<h2 id="dependency-graph"><a class="header" href="#dependency-graph">Dependency Graph</a></h2>
-<pre><code>dpe-core              ← pure domain, no framework deps
-  ↑
-  ├── dpe-api-oai     ← OAI-PMH endpoint
-  ├── dpe-web         ← Leptos SSR pages + components
-  └── dpe-server      ← composition root, Datastar fragment handlers
-       ↑
-       dpe-telemetry  ← telemetry types and validation (serde only)
-</code></pre>
-<h2 id="crate-responsibilities"><a class="header" href="#crate-responsibilities">Crate Responsibilities</a></h2>
-<h3 id="dpe-core-core"><a class="header" href="#dpe-core-core"><code>dpe-core</code> (core/)</a></h3>
-<p>Framework-free domain layer. Contains:</p>
+<h2 id="navigating-grafana-locally"><a class="header" href="#navigating-grafana-locally">Navigating Grafana Locally</a></h2>
+<p>Open <a href="http://localhost:3000">http://localhost:3000</a> (no login required):</p>
 <ul>
-<li><strong>Domain types</strong>: <code>Project</code>, <code>Record</code>, <code>Person</code>, <code>Organization</code>, <code>Attribution</code>, etc.</li>
-<li><strong>Repository traits</strong>: <code>ProjectRepository</code>, <code>RecordRepository</code></li>
-<li><strong>Fs implementations</strong>: <code>FsProjectRepository</code>, <code>FsRecordRepository</code> (backed by in-memory caches)</li>
-<li><strong>Data loading</strong>: Project and record caches (<code>OnceLock&lt;Vec&lt;T&gt;&gt;</code>) loaded from JSON on first access</li>
-<li><strong>Utilities</strong>: <code>lang_value()</code>, <code>get_data_dir()</code></li>
+<li><strong>Tempo</strong> (Explore → Tempo): traces for <code>/projects</code> and <code>/oai</code>, none for <code>/healthz</code></li>
+<li><strong>Service map</strong>: "dpe" service with Rust tech icon</li>
+<li><strong>Loki</strong> (Explore → Loki): OTel log records bridged from the <code>tracing</code> subscriber (severity, span context, structured fields)</li>
+<li><strong>Mimir</strong> (Explore → Mimir): browser telemetry metrics (<code>browser.web_vital</code>, <code>browser.error</code>, etc.)</li>
+<li><strong>Pyroscope</strong> (Explore → Pyroscope): CPU flame graphs for <code>dpe-server</code></li>
 </ul>
-<p>Dependencies: <code>serde</code>, <code>serde_json</code> only.</p>
-<h3 id="dpe-api-oai-api-oai"><a class="header" href="#dpe-api-oai-api-oai"><code>dpe-api-oai</code> (api-oai/)</a></h3>
-<p>OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord).</p>
-<p>Depends on <code>dpe-core</code> for domain types — no Leptos or web framework dependency.</p>
-<h3 id="dpe-web-web"><a class="header" href="#dpe-web-web"><code>dpe-web</code> (web/)</a></h3>
-<p>Leptos SSR web layer. Contains:</p>
+<h2 id="adding-instrumentation"><a class="header" href="#adding-instrumentation">Adding Instrumentation</a></h2>
+<p>Use <code>#[tracing::instrument]</code> on new handler and service functions:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[tracing::instrument(
+    skip_all,
+    fields(
+        otel.kind = "internal",
+        otel.name = "descriptive name",
+    )
+)]
+pub async fn my_handler(/* ... */) -&gt; /* ... */ {
+    // ...
+}
+<span class="boring">}</span></code></pre></pre>
 <ul>
-<li><strong>Pages</strong>: <code>home</code>, <code>about</code>, <code>project</code>, <code>projects</code> (with filters and pagination)</li>
-<li><strong>Components</strong>: navbar, footer, project cards, tab panels, search input</li>
-<li><strong>Domain re-exports</strong>: <code>domain/mod.rs</code> re-exports <code>dpe-core</code> types for a single import path</li>
-<li><strong>Server functions</strong>: <code>#[server]</code> wrappers around <code>dpe-core</code> functions</li>
+<li>Use <code>otel.kind = "internal"</code> on handler-level spans — the OTel middleware (<code>OtelAxumLayer</code>) already creates the <code>SPAN_KIND_SERVER</code> span for the HTTP request.</li>
+<li>Do not create nested <code>"server"</code> spans — that confuses the trace waterfall.</li>
 </ul>
-<h3 id="dpe-telemetry-telemetry"><a class="header" href="#dpe-telemetry-telemetry"><code>dpe-telemetry</code> (telemetry/)</a></h3>
-<p>Telemetry types and validation logic. Extracted as a library crate so fuzz targets can test the real code. Contains:</p>
+<h2 id="client-telemetry"><a class="header" href="#client-telemetry">Client Telemetry</a></h2>
+<p>The <code>telemetry.js</code> module (served from <code>/telemetry.js</code>) captures:</p>
 <ul>
-<li><strong>Beacon types</strong>: <code>BeaconPayload</code>, <code>Signal</code>, <code>WebVitalSignal</code>, <code>ErrorSignal</code>, etc. (serde deserialization for browser beacons)</li>
-<li><strong>Origin validation</strong>: <code>is_allowed_origin()</code> — validates dasch.swiss subdomains</li>
-<li><strong>URL normalization</strong>: <code>normalize_page_url()</code> — cardinality-safe page URL mapping</li>
-<li><strong>Traceparent validation</strong>: <code>is_valid_traceparent()</code> — W3C traceparent format validation</li>
+<li><strong>Core Web Vitals</strong> (LCP, INP, CLS, TTFB, FCP) with attribution data</li>
+<li><strong>JavaScript errors</strong> and unhandled promise rejections</li>
+<li><strong>Datastar SSE errors</strong></li>
+<li><strong>Long Animation Frames</strong> (LoAF, ≥200ms threshold)</li>
+<li><strong>Navigation timing</strong> breakdown</li>
 </ul>
-<p>Dependencies: <code>serde</code> only.</p>
-<h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
-<p>Composition root and Axum binary. Contains:</p>
+<p>All signals are buffered and flushed via <code>navigator.sendBeacon</code> on <code>visibilitychange</code> (page hide). The server collector converts them to OTel metrics (bounded attributes only) and structured logs (high-cardinality attribution data).</p>
+<h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
 <ul>
-<li><strong>Route wiring</strong>: Leptos SSR routes, OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code>, <code>/telemetry/collect</code></li>
-<li><strong>Fragment handlers</strong>: <code>fragments.rs</code> — pure Axum handlers that render Leptos components to HTML and return Datastar SSE events</li>
-<li><strong>Telemetry collector</strong>: <code>telemetry_collector.rs</code> — converts browser beacons to OTel metrics and structured logs (uses types from <code>dpe-telemetry</code>)</li>
-<li><strong>Configuration</strong>: <code>config.rs</code> — figment-based layered config (defaults → <code>dpe.toml</code> → <code>DPE_*</code> env vars)</li>
-<li><strong>Logging</strong>: OTel-aware subscriber via <code>init-tracing-opentelemetry</code></li>
-</ul>
-<h2 id="key-patterns"><a class="header" href="#key-patterns">Key Patterns</a></h2>
-<ul>
-<li><strong>Domain types in <code>dpe-core</code></strong>, not in web or API crates</li>
-<li><strong>API crates depend on <code>dpe-core</code> only</strong>, never on each other or on <code>dpe-web</code></li>
-<li><strong><code>dpe-server</code> contains no business logic</strong> — only route composition and fragment rendering</li>
-<li><strong>Fragment handlers</strong> use <code>Owner::new()</code> + <code>view! { ... }.to_html()</code> to render Leptos components from pure Axum handlers</li>
+<li><strong>Production</strong> (<code>LEPTOS_ENV=PROD</code>): JSON-formatted logs to stdout only. No OTel log export — traces and metrics are exported via OTLP, but logs stay on stdout.</li>
+<li><strong>Local development</strong> (<code>LEPTOS_ENV=DEV</code> with <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> set): Logs go to both stdout and Loki via OTLP. An <code>OpenTelemetryTracingBridge</code> layer converts <code>tracing</code> events into OTel log records, which are batched and exported alongside traces and metrics. Query them in Grafana Explore → Loki.</li>
+<li>Set <code>RUST_LOG</code> to control log levels. Use <code>RUST_LOG=debug</code> for verbose output.</li>
+<li>When <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is not set, the OTel SDK falls back to no-op export — no traces, metrics, or logs are sent, but structured stdout logging still works.</li>
 </ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../dpe/architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../dpe/testing-strategy.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../dpe/testing-strategy.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../dpe/operations.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -329,11 +332,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../dpe/architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../dpe/testing-strategy.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../dpe/testing-strategy.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../dpe/operations.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

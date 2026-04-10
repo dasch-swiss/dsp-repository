@@ -289,11 +289,15 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g., <code>dpe_server=info,tower_http=debug</code>)</td></tr>
 <tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>modules/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
 <tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret)</td></tr>
+<tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g., <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
+<tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g., <code>dpe</code>)</td></tr>
+<tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g., <code>service.namespace=dpe,service.version=0.2.1,deployment.environment=prod</code>)</td></tr>
+<tr><td><code>PYROSCOPE_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>Pyroscope HTTP endpoint (e.g., <code>http://pyroscope:4040</code>). When unset, profiling is disabled.</td></tr>
 <tr><td><code>LEPTOS_SITE_ADDR</code></td><td>No</td><td><code>0.0.0.0:8080</code></td><td>Listen address and port</td></tr>
 <tr><td><code>LEPTOS_SITE_ROOT</code></td><td>No</td><td><code>site</code></td><td>Path to static site assets</td></tr>
 <tr><td><code>LEPTOS_SITE_PKG_DIR</code></td><td>No</td><td><code>pkg</code></td><td>JS/CSS package subdirectory</td></tr>
 <tr><td><code>LEPTOS_OUTPUT_NAME</code></td><td>No</td><td><code>dpe</code></td><td>CSS/JS output filename prefix</td></tr>
-<tr><td><code>LEPTOS_ENV</code></td><td>No</td><td><code>PROD</code></td><td>Leptos environment (DEV or PROD)</td></tr>
+<tr><td><code>LEPTOS_ENV</code></td><td>No</td><td><em>(auto)</em></td><td>Leptos environment (<code>DEV</code> or <code>PROD</code>). Set automatically by cargo-leptos: <code>watch</code> = <code>DEV</code>, <code>build --release</code> = <code>PROD</code>. Do not set manually.</td></tr>
 </tbody></table>
 </div>
 <h2 id="health-check"><a class="header" href="#health-check">Health Check</a></h2>
@@ -316,7 +320,7 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 <li><strong>Disk</strong>: Data files + static assets (~50 MB)</li>
 </ul>
 <h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
-<p>Structured logging via <code>tracing-subscriber</code>. Configure levels with <code>RUST_LOG</code>:</p>
+<p>Structured logging via <code>init-tracing-opentelemetry</code> (OTel-aware tracing subscriber). In production (<code>LEPTOS_ENV=PROD</code>), logs are JSON-formatted to stdout only. In local development (<code>LEPTOS_ENV=DEV</code>), logs are additionally exported via OTLP to Loki when <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is set. Configure levels with <code>RUST_LOG</code>:</p>
 <pre><code class="language-bash"># Default (info level)
 RUST_LOG=info
 
@@ -336,12 +340,23 @@ RUST_LOG=debug
 <li>Tab switches (detected automatically via <code>history.replaceState</code>)</li>
 </ul>
 <p><strong>Disable:</strong> Omit the <code>DPE_FATHOM_SITE_ID</code> environment variable — no tracking script is rendered.</p>
+<h3 id="opentelemetry"><a class="header" href="#opentelemetry">OpenTelemetry</a></h3>
+<p>DPE exports traces, metrics, and structured logs via OTLP gRPC. In production, the OTLP endpoint points to Grafana Alloy, which forwards to Grafana Cloud (Tempo for traces, Mimir for metrics, Loki for logs).</p>
+<p>When <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is not set, the OTel SDK falls back to no-op export — the application runs normally without telemetry export. See <code>docs/src/dpe/observability.md</code> for the developer guide.</p>
+<h3 id="continuous-profiling-pyroscope"><a class="header" href="#continuous-profiling-pyroscope">Continuous Profiling (Pyroscope)</a></h3>
+<p>CPU profiling via Grafana Pyroscope. Samples at 100Hz and pushes profiles to the configured endpoint.</p>
+<p><strong>Configuration:</strong> Set <code>PYROSCOPE_ENDPOINT</code> to the Pyroscope HTTP endpoint. When unset, no profiling agent runs and there is zero overhead.</p>
+<p><strong>What gets profiled:</strong></p>
+<ul>
+<li>CPU time per function (sampling-based, 100 samples/second)</li>
+<li>Flame graphs viewable in Grafana (Explore &gt; Pyroscope)</li>
+</ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../dpe/testing-strategy.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../dpe/observability.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
@@ -355,7 +370,7 @@ RUST_LOG=debug
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../dpe/testing-strategy.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../dpe/observability.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 

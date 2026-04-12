@@ -24,6 +24,21 @@
           extensions = [ "rustfmt" ];
         };
 
+        # Wrapper that makes `cargo +nightly fmt` work without rustup.
+        # The justfile uses `cargo +nightly fmt` which is a rustup-only feature.
+        # This shim strips `+toolchain` args and delegates to the real cargo,
+        # while RUSTFMT env var ensures nightly rustfmt is used for formatting.
+        cargoWrapper = pkgs.writeShellScriptBin "cargo" ''
+          args=()
+          for arg in "$@"; do
+            case "$arg" in
+              +*) ;; # strip +toolchain args (e.g., +nightly)
+              *)  args+=("$arg") ;;
+            esac
+          done
+          exec "${rustStable}/bin/cargo" "''${args[@]}"
+        '';
+
         # macOS: unified Apple SDK provides all frameworks (Security, CoreFoundation, etc.)
         darwinDeps = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           pkgs.apple-sdk
@@ -32,8 +47,13 @@
 
       in {
         devShells.default = pkgs.mkShell {
+          # Use nightly rustfmt — .rustfmt.toml requires nightly features
+          # (group_imports, imports_granularity). cargo fmt respects this env var.
+          RUSTFMT = "${rustNightly}/bin/rustfmt";
+
           buildInputs = [
-            # Rust toolchains
+            # Rust: wrapper first on PATH so it shadows the raw cargo binary
+            cargoWrapper
             rustStable
             rustNightly
 
@@ -72,6 +92,12 @@
             _ensure_tool mdbook-alerts   mdbook-alerts     0.8.0
 
             unset -f _ensure_tool
+
+            # Install JS dependencies (DaisyUI, Tailwind) if missing
+            if [ ! -d modules/dpe/node_modules ]; then
+              echo "Installing JS dependencies in modules/dpe/ ..."
+              (cd modules/dpe && pnpm install --frozen-lockfile)
+            fi
           '';
         };
       }

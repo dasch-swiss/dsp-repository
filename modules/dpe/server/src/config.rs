@@ -25,6 +25,12 @@ pub struct DpeConfig {
     /// Fathom Analytics site ID. If set, the tracking script is injected into the HTML shell.
     /// Not a secret (visible in page source). Set via `DPE_FATHOM_SITE_ID`.
     pub fathom_site_id: Option<String>,
+
+    /// Whether to display placeholder values ("MISSING", "CALCULATED") in the UI.
+    /// When false (default/production), placeholders are hidden entirely.
+    /// When true (DEV/STAGE), they are shown styled in red for QA visibility.
+    /// Set via `DPE_SHOW_PLACEHOLDER_VALUES`.
+    pub show_placeholder_values: bool,
 }
 
 impl Default for DpeConfig {
@@ -32,6 +38,7 @@ impl Default for DpeConfig {
         Self {
             data_dir: PathBuf::from("modules/dpe/server/data"),
             fathom_site_id: None,
+            show_placeholder_values: false,
         }
     }
 }
@@ -59,6 +66,7 @@ mod tests {
         let config = DpeConfig::default();
         assert_eq!(config.data_dir, PathBuf::from("modules/dpe/server/data"));
         assert!(config.fathom_site_id.is_none());
+        assert!(!config.show_placeholder_values);
     }
 
     #[test]

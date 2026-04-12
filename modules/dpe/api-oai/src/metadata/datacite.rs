@@ -18,7 +18,7 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
     let mut record = DataCiteRecord::default();
 
     // Identifier (mandatory) - use PID or generate from shortcode
-    if project.pid != "MISSING" && !project.pid.is_empty() {
+    if !dpe_core::is_placeholder(&project.pid) && !project.pid.is_empty() {
         record.identifier = project.pid.clone();
         record.identifier_type = "ARK".to_string();
     } else {
@@ -61,8 +61,9 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
 
     // Titles (mandatory)
     // Use the longer of name/officialName as primary, shorter as AlternativeTitle
-    let name_valid = project.name != "MISSING" && !project.name.is_empty();
-    let official_valid = project.official_name != "MISSING" && !project.official_name.is_empty();
+    let name_valid = !dpe_core::is_placeholder(&project.name) && !project.name.is_empty();
+    let official_valid =
+        !dpe_core::is_placeholder(&project.official_name) && !project.official_name.is_empty();
 
     match (name_valid, official_valid) {
         (true, true) => {
@@ -221,12 +222,12 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
 
     // Rights - with SPDX identifier
     for legal in &project.legal_info {
-        let rights_uri = if legal.license.license_uri != "MISSING" {
+        let rights_uri = if !dpe_core::is_placeholder(&legal.license.license_uri) {
             Some(legal.license.license_uri.clone())
         } else {
             None
         };
-        let has_identifier = legal.license.license_identifier != "MISSING"
+        let has_identifier = !dpe_core::is_placeholder(&legal.license.license_identifier)
             && !legal.license.license_identifier.is_empty();
         record.rights_list.push(DataCiteRights {
             rights: if has_identifier {

@@ -12,7 +12,9 @@ pub fn project_to_dublin_core(project: &Project) -> DublinCoreRecord {
     let mut record = DublinCoreRecord::default();
 
     // dc:title - prefer officialName, fallback to name
-    let title = if project.official_name != "MISSING" && !project.official_name.is_empty() {
+    let title = if !dpe_core::is_placeholder(&project.official_name)
+        && !project.official_name.is_empty()
+    {
         &project.official_name
     } else {
         &project.name
@@ -84,7 +86,7 @@ pub fn project_to_dublin_core(project: &Project) -> DublinCoreRecord {
     record.publisher = PUBLISHER.to_string();
 
     // dc:date from startDate
-    if project.start_date != "MISSING" && !project.start_date.is_empty() {
+    if !dpe_core::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
         record.dates.push(project.start_date.clone());
     }
 
@@ -92,7 +94,7 @@ pub fn project_to_dublin_core(project: &Project) -> DublinCoreRecord {
     record.resource_type = "Project".to_string();
 
     // dc:identifier - use PID or shortcode
-    if project.pid != "MISSING" && !project.pid.is_empty() {
+    if !dpe_core::is_placeholder(&project.pid) && !project.pid.is_empty() {
         record.identifiers.push(project.pid.clone());
     }
     record.identifiers.push(make_oai_identifier(&project.shortcode));
@@ -133,7 +135,9 @@ pub fn project_to_dublin_core(project: &Project) -> DublinCoreRecord {
         .rights
         .push(access_rights_to_string(&project.access_rights.access_rights).to_string());
     for legal in &project.legal_info {
-        if legal.license.license_uri != "MISSING" && !legal.license.license_uri.is_empty() {
+        if !dpe_core::is_placeholder(&legal.license.license_uri)
+            && !legal.license.license_uri.is_empty()
+        {
             record.rights.push(legal.license.license_uri.clone());
         }
     }

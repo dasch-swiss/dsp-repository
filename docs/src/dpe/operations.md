@@ -58,6 +58,7 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 | `RUST_LOG` | No | `info` | Log level filter (e.g., `dpe_server=info,tower_http=debug`) |
 | `DPE_DATA_DIR` | No | `modules/dpe/server/data` | Path to project/record JSON data files. Legacy alias: `DATA_DIR` (checked if `DPE_DATA_DIR` is unset) |
 | `DPE_FATHOM_SITE_ID` | No | *(none)* | Fathom Analytics site ID (not a secret) |
+| `DPE_SHOW_PLACEHOLDER_VALUES` | No | `false` | Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | *(none)* | OTLP gRPC endpoint (e.g., `http://alloy:4317`). When unset, OTel falls back to no-op export. |
 | `OTEL_SERVICE_NAME` | No | *(none)* | Service name for OTel resource attributes (e.g., `dpe`) |
 | `OTEL_RESOURCE_ATTRIBUTES` | No | *(none)* | Comma-separated OTel resource attributes (e.g., `service.namespace=dpe,service.version=0.2.1,deployment.environment=prod`) |

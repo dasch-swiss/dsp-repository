@@ -40,7 +40,7 @@ pub fn parse_oai_identifier(identifier: &str) -> Option<String> {
 pub fn to_oai_record(project: &Project, metadata_prefix: &str) -> OaiRecord {
     let header = OaiRecordHeader {
         identifier: make_oai_identifier(&project.shortcode),
-        datestamp: if project.start_date != "MISSING" && !project.start_date.is_empty() {
+        datestamp: if !dpe_core::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
             project.start_date.clone()
         } else {
             "2015-01-01".to_string()
@@ -106,7 +106,7 @@ pub fn matches_date_filter_record(record: &Record, from: Option<&str>, until: Op
 
 /// Checks if a project matches the given date filter.
 pub fn matches_date_filter(project: &Project, from: Option<&str>, until: Option<&str>) -> bool {
-    let datestamp = if project.start_date != "MISSING" && !project.start_date.is_empty() {
+    let datestamp = if !dpe_core::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
         &project.start_date
     } else {
         "2015-01-01"

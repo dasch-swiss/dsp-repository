@@ -3,6 +3,7 @@ use mosaic_tiles::icon::{Icon, LinkExternal};
 
 use super::super::info_card::InfoCard;
 use super::super::organization_name::OrganizationName;
+use crate::components::PlaceholderValue;
 use crate::domain::Funding;
 
 #[component]
@@ -68,7 +69,11 @@ pub fn FundingSection(funding: Funding) -> impl IntoView {
                         .into_any()
                 }
                 Funding::Text(text) => {
-                    view! { <div class="text-base-content/70">{text}</div> }.into_any()
+                    if dpe_core::is_placeholder(&text) {
+                        view! { <PlaceholderValue value=text /> }.into_any()
+                    } else {
+                        view! { <div class="text-base-content/70">{text}</div> }.into_any()
+                    }
                 }
             }}
         </div>

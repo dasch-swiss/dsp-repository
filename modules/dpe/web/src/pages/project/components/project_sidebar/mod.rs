@@ -6,6 +6,7 @@ mod permalink;
 
 use leptos::prelude::*;
 
+use crate::components::{should_render_value, PlaceholderValue};
 use crate::domain::{Project, ProjectStatus};
 use access_rights_section::AccessRightsSection;
 use citation::Citation;
@@ -56,10 +57,26 @@ pub fn ProjectSidebar(proj: Project) -> impl IntoView {
                 <div>
                     <div class="dpe-subtitle">"Period"</div>
                     <div>
-                        {if proj.end_date == "MISSING" {
-                            proj.start_date.clone()
+                        {if dpe_core::is_placeholder(&proj.end_date) {
+                            if should_render_value(&proj.end_date) {
+                                // DEV/STAGE: show start date with placeholder in red
+                                view! {
+                                    <span>
+                                        {proj.start_date.clone()} " – "
+                                        <PlaceholderValue value=proj.end_date.clone() />
+                                    </span>
+                                }
+                                    .into_any()
+                            } else {
+                                // Production: show only start date
+                                view! { <span>{proj.start_date.clone()}</span> }
+                                    .into_any()
+                            }
                         } else {
-                            format!("{} – {}", proj.start_date, proj.end_date)
+                            view! {
+                                <span>{format!("{} – {}", proj.start_date, proj.end_date)}</span>
+                            }
+                                .into_any()
                         }}
                     </div>
                 </div>

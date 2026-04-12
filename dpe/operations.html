@@ -289,6 +289,7 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g., <code>dpe_server=info,tower_http=debug</code>)</td></tr>
 <tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>modules/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
 <tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret)</td></tr>
+<tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility.</td></tr>
 <tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g., <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
 <tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g., <code>dpe</code>)</td></tr>
 <tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g., <code>service.namespace=dpe,service.version=0.2.1,deployment.environment=prod</code>)</td></tr>

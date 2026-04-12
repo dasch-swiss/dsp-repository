@@ -131,6 +131,12 @@ async fn serve() -> ExitCode {
         dpe_config.data_dir.to_str().expect("data_dir path must be valid UTF-8"),
     );
 
+    // Set placeholder visibility flag for dpe-core
+    dpe_core::set_show_placeholder_values(dpe_config.show_placeholder_values);
+    if dpe_config.show_placeholder_values {
+        tracing::info!("Placeholder values (MISSING/CALCULATED) will be shown in the UI");
+    }
+
     // Load Leptos configuration from Cargo.toml metadata
     let conf = get_configuration(None)
         .expect("Leptos configuration missing — check Cargo.toml [package.metadata.leptos]");

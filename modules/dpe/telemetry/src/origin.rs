@@ -27,8 +27,8 @@ mod tests {
 
     #[test]
     fn subdomains_accepted() {
-        assert!(is_allowed_origin("dpe.dasch.swiss"));
-        assert!(is_allowed_origin("dpe.dev.dasch.swiss"));
+        assert!(is_allowed_origin("repository.dasch.swiss"));
+        assert!(is_allowed_origin("repository.dev.dasch.swiss"));
     }
 
     #[test]

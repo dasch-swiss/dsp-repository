@@ -304,7 +304,7 @@ mod tests {
                 Request::builder()
                     .method("POST")
                     .uri("/telemetry/collect")
-                    .header("origin", "https://dpe.dasch.swiss")
+                    .header("origin", "https://repository.dasch.swiss")
                     .body(Body::from(body))
                     .unwrap(),
             )
@@ -321,7 +321,7 @@ mod tests {
                 Request::builder()
                     .method("POST")
                     .uri("/telemetry/collect")
-                    .header("origin", "https://dpe.dasch.swiss")
+                    .header("origin", "https://repository.dasch.swiss")
                     .body(Body::from("not json"))
                     .unwrap(),
             )
@@ -338,7 +338,7 @@ mod tests {
                 Request::builder()
                     .method("POST")
                     .uri("/telemetry/collect")
-                    .header("origin", "https://dpe.dasch.swiss")
+                    .header("origin", "https://repository.dasch.swiss")
                     .body(Body::from(valid_beacon_json()))
                     .unwrap(),
             )
@@ -355,7 +355,7 @@ mod tests {
                 Request::builder()
                     .method("POST")
                     .uri("/telemetry/collect")
-                    .header("origin", "https://dpe.dasch.swiss")
+                    .header("origin", "https://repository.dasch.swiss")
                     .header("content-type", "text/plain")
                     .body(Body::from(valid_beacon_json()))
                     .unwrap(),
@@ -407,7 +407,7 @@ mod tests {
                 Request::builder()
                     .method("POST")
                     .uri("/telemetry/collect")
-                    .header("origin", "https://dpe.dev.dasch.swiss")
+                    .header("origin", "https://repository.dev.dasch.swiss")
                     .body(Body::from(valid_beacon_json()))
                     .unwrap(),
             )
@@ -504,8 +504,8 @@ mod tests {
     #[test]
     fn extract_host_parses_urls() {
         assert_eq!(
-            extract_host("https://dpe.dasch.swiss"),
-            Some("dpe.dasch.swiss".to_string())
+            extract_host("https://repository.dasch.swiss"),
+            Some("repository.dasch.swiss".to_string())
         );
         assert_eq!(
             extract_host("http://localhost:4000"),

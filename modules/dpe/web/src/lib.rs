@@ -40,7 +40,7 @@ pub fn shell(
                                 src="https://cdn.usefathom.com/script.js"
                                 data-site=site_id
                                 data-spa="auto"
-                                data-excluded-domains="localhost,dpe.dev.dasch.swiss,dpe.test.dasch.swiss,dpe.stage.dasch.swiss"
+                                data-excluded-domains="localhost,repository.dev.dasch.swiss,repository.test.dasch.swiss,repository.stage.dasch.swiss"
                                 defer
                             ></script>
                         }

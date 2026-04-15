@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/dasch-swiss/dsp-repository/compare/v0.3.0...v0.3.1) (2026-04-15)
+
+
+### Bug Fixes
+
+* **dpe:** update Fathom excluded domains from dpe to repository subdomain ([3eba4ba](https://github.com/dasch-swiss/dsp-repository/commit/3eba4ba088161c003c6c8bf1215a293fafd88eef))
+
 ## [0.3.0](https://github.com/dasch-swiss/dsp-repository/compare/v0.2.1...v0.3.0) (2026-04-12)
 
 

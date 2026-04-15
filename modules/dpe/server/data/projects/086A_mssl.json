@@ -1,0 +1,187 @@
+{
+    "id": "086A",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/086A",
+    "name": "Mapping the Scriptures in Western Sephardic Literature",
+    "shortcode": "086A",
+    "officialName": "Mapping the Scriptures in Western Sephardic Literature",
+    "status": "Finished",
+    "shortDescription": "The project Mapping the Scriptures in Western Sephardic Literature (MSSL) seeks to carry out an extensive study on the role and the use of the Bible for the Spanish and Portuguese Jews with a Christian background in newly founded communities of the so-called Western Sephardic Diaspora (1550-1800). A unique feature of these Iberian Jews with a Christian background was the central place occupied by the Bible in the educational, religious and cultural lives, far beyond what was common in the European Jewry of the Early Modern Age. For the first time in history, Jews extensively read and referred to their Bible in Spanish translation, opening a broader audience, engaging more frequently and differently with Christians. Although the importance of the vernacular (above all Spanish) Bible translations is always mentioned in scholarship, no comprehensive study has been realized of the considerable output and content of these translations. Also, no comprehensive study on the reception and use of the (Spanish) Bible translations in Western Sephardic literature has been realized, although editions and manuscripts are nowadays largely available in digital collections. A groundbreaking feature of the project is the incorporation of resources and instruments provided by the Digital Humanities.",
+    "description": {
+        "en": "The project Mapping the Scriptures in Western Sephardic Literature (MSSL) seeks to carry out an extensive study on the role and the use of the Bible for the Spanish and Portuguese Jews with a Christian background in newly founded communities of the so-called Western Sephardic Diaspora (1550-1800).\n\nA unique feature of these Iberian Jews with a Christian background was the central place occupied by the Bible in the educational, religious and cultural lives, far beyond what was common in the European Jewry of the Early Modern Age. For the first time in history, Jews extensively read and referred to their Bible in Spanish translation, opening a broader audience, engaging more frequently and differently with Christians. Although the importance of the vernacular (above all Spanish) Bible translations is always mentioned in scholarship, no comprehensive study has been realized of the considerable output and content of these translations. Also, no comprehensive study on the reception and use of the (Spanish) Bible translations in Western Sephardic literature has been realized, although editions and manuscripts are nowadays largely available in digital collections.\n\nA groundbreaking feature of the project is the incorporation of resources and instruments provided by the Digital Humanities. The project aims to \"map\" the role and presence of the Bible in the Western Sephardic Diaspora in two ways:\n1. An online open access textual database containing a big data corpus enabling types of distant reading, statistics and visualizations only possible with the help of Digital Humanities. This database is the result of the predoctoral research project in Digital Humanities carried out by our team member Soledad Castaño Santos, and it is available at the following link: (https://heurist.huma-num.fr/mssl_projectdatabase/web/9042).\n2. A series of in-depth studies on the Bible in the Spanish and Portuguese Sephardic literature, such as:\n   1. The presence and role of the Psalms for the fashioning of individual and collective Converso religiosity/religious identity.\n   2. The use of the Bible in Spanish and Portuguese preaching of the Western Sephardic Diaspora.\n   3. The use of the Bible in Spanish/Portuguese polemical anti-Christian or apologetic literature.\n   4. The presence and relevance of the Bible in both religious and secular Spanish and Portuguese literature produced in the Western Sephardic Diaspora.\n\nThe studies of the second part benefit from the insights into the use of the Bible gathered with the database made in 1, allowing for finding special \"hot spots\" of biblical quotations, frequently quoted passages (in translation), the versions of the Bible used (e.g. the Spanish Jewish translation, a Spanish protestant translation, the Vulgata) etc."
+    },
+    "startDate": "2022-02-01",
+    "endDate": "2026-01-31",
+    "url": [
+        "https://app.dasch.swiss/project/086A"
+    ],
+    "howToCite": "Harm den Boer et al.(2026). Mapping the Scriptures in Western Sephardic Literature Dataset. DaSCH. https://ark.dasch.swiss/ark:/72163/1/086A .",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY 4.0",
+                "licenseDate": "2026-04-30",
+                "licenseURI": "https://creativecommons.org/licenses/by/4.0"
+            },
+            "copyrightHolder": "Mapping the Scriptures in Western Sephardic Literature",
+            "authorship": [
+                "CALCULATED"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "XML"
+    ],
+    "dataLanguage": [
+        {
+            "de": "Englisch",
+            "en": "English",
+            "fr": "anglais"
+        },
+        {
+            "de": "Spanisch",
+            "en": "Spanish",
+            "fr": "espagnol"
+        }
+    ],
+    "keywords": [
+        {
+            "en": "Intellectual History"
+        },
+        {
+            "en": "Spanish Studies"
+        },
+        {
+            "en": "Portuguese Literature"
+        },
+        {
+            "en": "Jewish Studies"
+        },
+        {
+            "en": "Early Modern History"
+        },
+        {
+            "en": "Digital Humanities"
+        },
+        {
+            "en": "Cultural Analysis"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10102 Religious studies, Theology"
+        },
+        {
+            "en": "10502 Romance languages and literature"
+        },
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/62",
+            "text": "62 Science of Arts and Letters"
+        },
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/63",
+            "text": "63 Sociology"
+        },
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/6301",
+            "text": "6301 Cultural sociology"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "16th to 18th centuries"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/9408659/western-europe.html",
+            "text": "Western Europe"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2759794/amsterdam.html",
+            "text": "Amsterdam"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3177090/ferrara.html",
+            "text": "Ferrara"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "person-399",
+            "contributorType": [
+                "Project Leader",
+                "Data Collector",
+                "Data Curator"
+            ]
+        },
+        {
+            "contributor": "person-400",
+            "contributorType": [
+                "Data Collector",
+                "Data Curator",
+                "Supervisor",
+                "Project Member"
+            ]
+        },
+        {
+            "contributor": "person-401",
+            "contributorType": [
+                "Data Collector",
+                "Data Curator",
+                "Editor",
+                "Project Member"
+            ]
+        },
+        {
+            "contributor": "person-402",
+            "contributorType": [
+                "Project Member"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Collection of 6 bibles encoded in XML-TEI."
+    },
+    "contactPoint": [
+        "person-399"
+    ],
+    "publications": [
+        {
+            "text": "Publications and project data.",
+            "pid": {
+                "url": "https://data.snf.ch/grants/grant/204389"
+            }
+        },
+        {
+            "text": "Database of Sephardic Literature.",
+            "pid": {
+                "url": "https://heurist.huma-num.fr/mssl_projectdatabase/web/9042"
+            }
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "organization-002"
+            ],
+            "number": "204389",
+            "name": "Project Funding",
+            "url": "https://data.snf.ch/grants/grant/204389"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "MSSL"
+        }
+    ]
+}

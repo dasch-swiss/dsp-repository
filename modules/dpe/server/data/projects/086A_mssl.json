@@ -36,16 +36,8 @@
         "XML"
     ],
     "dataLanguage": [
-        {
-            "de": "Englisch",
-            "en": "English",
-            "fr": "anglais"
-        },
-        {
-            "de": "Spanisch",
-            "en": "Spanish",
-            "fr": "espagnol"
-        }
+        "en",
+        "es"
     ],
     "keywords": [
         {

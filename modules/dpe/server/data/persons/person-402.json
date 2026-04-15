@@ -1,0 +1,23 @@
+{
+    "id": "person-402",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://iberoromanistik.philhist.unibas.ch/de/personen/david-spirgi/",
+            "text": "https://iberoromanistik.philhist.unibas.ch/de/personen/david-spirgi/"
+        }
+    ],
+    "givenNames": [
+        "David"
+    ],
+    "familyNames": [
+        "Spirgi"
+    ],
+    "jobTitles": [
+        "Assistant Professor"
+    ],
+    "affiliations": [
+        "organization-149"
+    ],
+    "email": "david.spirgi@unibas.ch"
+}

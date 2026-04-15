@@ -1,0 +1,23 @@
+{
+    "id": "person-400",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-2557-4428",
+            "text": "ORCID URL: https://orcid.org/0000-0002-2557-4428"
+        }
+    ],
+    "givenNames": [
+        "Fernando José"
+    ],
+    "familyNames": [
+        "Pancorbo Murillo"
+    ],
+    "jobTitles": [
+        "Assistant Professor"
+    ],
+    "affiliations": [
+        "organization-149"
+    ],
+    "email": "fernandopancorbo1@gmail.com"
+}

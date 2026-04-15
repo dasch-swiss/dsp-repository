@@ -1,0 +1,23 @@
+{
+    "id": "person-399",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://iberoromanistik.philhist.unibas.ch/de/personen/harm-den-boer/",
+            "text": "https://iberoromanistik.philhist.unibas.ch/de/personen/harm-den-boer/"
+        }
+    ],
+    "givenNames": [
+        "Harm"
+    ],
+    "familyNames": [
+        "den Boer"
+    ],
+    "jobTitles": [
+        "Professor für Iberoromanische Literaturwissenschaft"
+    ],
+    "affiliations": [
+        "organization-149"
+    ],
+    "email": "harm.denboer@unibas.ch"
+}

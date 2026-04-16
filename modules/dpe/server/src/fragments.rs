@@ -349,6 +349,32 @@ fn strip_hot_reload_comments(html: &str) -> Cow<'_, str> {
     Cow::Owned(result)
 }
 
+pub async fn projects_json_handler() -> impl IntoResponse {
+    use dpe_core::project::ProjectRaw;
+    use dpe_core::project_repository::{FsProjectRepository, ProjectRepository};
+
+    let repo = FsProjectRepository::new();
+    let projects: Vec<ProjectRaw> = repo.get_all().iter().map(ProjectRaw::from).collect();
+    axum::Json(projects).into_response()
+}
+
+pub async fn project_json_handler(
+    Path(id): Path<String>,
+) -> impl IntoResponse {
+    use dpe_core::project::is_valid_shortcode;
+    use dpe_core::project_repository::{FsProjectRepository, ProjectRepository};
+
+    if !is_valid_shortcode(&id) {
+        return StatusCode::BAD_REQUEST.into_response();
+    }
+
+    let repo = FsProjectRepository::new();
+    match repo.get_by_shortcode(&id) {
+        Some(proj) => axum::Json(dpe_core::project::ProjectRaw::from(proj)).into_response(),
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

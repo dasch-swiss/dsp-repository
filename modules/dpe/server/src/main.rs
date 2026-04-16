@@ -153,11 +153,10 @@ async fn serve() -> ExitCode {
         // --- Traced routes ---
         // Routes declared BEFORE .layer() calls are wrapped by those layers.
         .route("/oai", get(dpe_api_oai::oai_handler))
-        .route(
-            "/projects/{id}/tab/{tab}",
-            get(fragments::tab_fragment_handler),
-        )
+        .route("/projects/{id}/tab/{tab}", get(fragments::tab_fragment_handler))
         .route("/projects/search", get(fragments::search_fragment_handler))
+        .route("/api/v1/projects", get(fragments::projects_json_handler))
+        .route("/api/v1/projects/{id}", get(fragments::project_json_handler))
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();
             let fathom_site_id = fathom_site_id.clone();

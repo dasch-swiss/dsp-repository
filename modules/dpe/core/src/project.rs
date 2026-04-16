@@ -30,41 +30,30 @@ fn parse_url_value(value: Option<Value>) -> (Option<AuthorityFileReference>, Opt
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProjectRaw {
     pub id: String,
     pub pid: String,
     pub name: String,
     pub shortcode: String,
-    #[serde(rename = "officialName")]
     pub official_name: String,
     pub status: ProjectStatus,
-    #[serde(rename = "shortDescription")]
     pub short_description: String,
     pub description: std::collections::HashMap<String, String>,
-    #[serde(rename = "startDate")]
     pub start_date: String,
-    #[serde(rename = "endDate")]
     pub end_date: String,
     /// Raw value — either a structured object or a legacy string array.
     #[serde(default)]
     pub url: Option<Value>,
     /// New-format secondary URL (absent in legacy files).
-    #[serde(rename = "secondaryURL", default)]
     pub secondary_url: Option<AuthorityFileReference>,
-    #[serde(rename = "howToCite")]
     pub how_to_cite: String,
-    #[serde(rename = "accessRights")]
     pub access_rights: AccessRights,
-    #[serde(rename = "legalInfo")]
     pub legal_info: Vec<LegalInfo>,
-    #[serde(rename = "dataManagementPlan", default)]
     pub data_management_plan: Option<String>,
-    #[serde(rename = "dataPublicationYear", default)]
     pub data_publication_year: Option<String>,
-    #[serde(rename = "typeOfData", default)]
     pub type_of_data: Option<Vec<String>>,
-    #[serde(rename = "dataLanguage", default)]
     pub data_language: Option<Vec<String>>,
     #[serde(default)]
     #[allow(dead_code)]
@@ -76,25 +65,19 @@ pub struct ProjectRaw {
     pub records: Option<Vec<String>>,
     pub keywords: Vec<std::collections::HashMap<String, String>>,
     pub disciplines: Vec<Discipline>,
-    #[serde(rename = "temporalCoverage")]
     pub temporal_coverage: Vec<TemporalCoverage>,
-    #[serde(rename = "spatialCoverage")]
     pub spatial_coverage: Vec<AuthorityFileReference>,
     pub attributions: Vec<Attribution>,
     #[serde(rename = "abstract", default)]
     pub abstract_text: Option<std::collections::HashMap<String, String>>,
-    #[serde(rename = "contactPoint", default)]
     pub contact_point: Option<Vec<String>>,
     #[serde(default)]
     pub publications: Option<Vec<Publication>>,
     pub funding: Funding,
-    #[serde(rename = "alternativeNames", default)]
     pub alternative_names: Option<Vec<std::collections::HashMap<String, String>>>,
-    #[serde(rename = "documentationMaterial", default)]
     pub documentation_material: Option<Vec<String>>,
     #[serde(default)]
     pub provenance: Option<String>,
-    #[serde(rename = "additionalMaterial", default)]
     pub additional_material: Option<Vec<String>>,
 }
 
@@ -224,6 +207,48 @@ impl From<ProjectRaw> for Project {
             documentation_material: raw.documentation_material,
             provenance: raw.provenance,
             additional_material: raw.additional_material,
+        }
+    }
+}
+
+impl From<&Project> for ProjectRaw {
+    fn from(p: &Project) -> Self {
+        ProjectRaw {
+            id: p.id.clone(),
+            pid: p.pid.clone(),
+            name: p.name.clone(),
+            shortcode: p.shortcode.clone(),
+            official_name: p.official_name.clone(),
+            status: p.status.clone(),
+            short_description: p.short_description.clone(),
+            description: p.description.clone(),
+            start_date: p.start_date.clone(),
+            end_date: p.end_date.clone(),
+            url: p.url.as_ref().and_then(|u| serde_json::to_value(u).ok()),
+            secondary_url: p.secondary_url.clone(),
+            how_to_cite: p.how_to_cite.clone(),
+            access_rights: p.access_rights.clone(),
+            legal_info: p.legal_info.clone(),
+            data_management_plan: p.data_management_plan.clone(),
+            data_publication_year: p.data_publication_year.clone(),
+            type_of_data: p.type_of_data.clone(),
+            data_language: p.data_language.clone(),
+            clusters: None,
+            collections: Some(p.collection_ids.clone()),
+            records: p.records.clone(),
+            keywords: p.keywords.clone(),
+            disciplines: p.disciplines.clone(),
+            temporal_coverage: p.temporal_coverage.clone(),
+            spatial_coverage: p.spatial_coverage.clone(),
+            attributions: p.attributions.clone(),
+            abstract_text: p.abstract_text.clone(),
+            contact_point: p.contact_point.clone(),
+            publications: p.publications.clone(),
+            funding: p.funding.clone(),
+            alternative_names: p.alternative_names.clone(),
+            documentation_material: p.documentation_material.clone(),
+            provenance: p.provenance.clone(),
+            additional_material: p.additional_material.clone(),
         }
     }
 }

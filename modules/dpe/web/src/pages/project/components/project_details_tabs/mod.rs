@@ -2,38 +2,28 @@ mod attributions_section;
 mod dataset_overview_section;
 mod publication_tab;
 
-use leptos::prelude::*;
-use leptos_router::hooks::use_query_map;
-use mosaic_tiles::icon::IconData;
-use mosaic_tiles::icon::{Document, Info, People};
-
-use crate::domain::{lang_value, Project, ResolvedContributor};
 use attributions_section::AttributionsSection;
-use dataset_overview_section::DatasetOverviewSection;
-use publication_tab::PublicationTab;
-
 // Re-export sub-components for use in fragment handlers
 pub use attributions_section::AttributionsSection as AttributionsSectionComponent;
+use dataset_overview_section::DatasetOverviewSection;
 pub use dataset_overview_section::DatasetOverviewSection as DatasetOverviewSectionComponent;
+use leptos::prelude::*;
+use leptos_router::hooks::use_query_map;
+use mosaic_tiles::icon::{Document, IconData, Info, People};
+use publication_tab::PublicationTab;
 pub use publication_tab::PublicationTab as PublicationTabComponent;
 
+use crate::domain::{lang_value, Project, ResolvedContributor};
 
 #[component]
-pub fn ProjectDetailsTabs(
-    proj: Project,
-    contributors: Vec<ResolvedContributor>,
-) -> impl IntoView {
+pub fn ProjectDetailsTabs(proj: Project, contributors: Vec<ResolvedContributor>) -> impl IntoView {
     let shortcode = proj.shortcode.clone();
     let abstract_en = proj.abstract_text.as_ref().and_then(|m| lang_value(m).cloned());
     let publications = proj.publications.clone();
-    let has_publications_tab =
-        abstract_en.is_some() || publications.as_ref().map(|p| !p.is_empty()).unwrap_or(false);
+    let has_publications_tab = abstract_en.is_some() || publications.as_ref().map(|p| !p.is_empty()).unwrap_or(false);
 
     let query = use_query_map();
-    let active_tab = query
-        .read()
-        .get("tab")
-        .unwrap_or_else(|| "overview".to_string());
+    let active_tab = query.read().get("tab").unwrap_or_else(|| "overview".to_string());
 
     view! {
         <div class="dpe-card flex-1 pt-4">

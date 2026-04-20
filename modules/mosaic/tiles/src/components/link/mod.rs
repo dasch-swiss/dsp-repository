@@ -33,13 +33,7 @@ pub fn Link(
     if let Some(variant) = button_variant {
         return view! {
             <a
-                href=move || {
-                    if is_disabled.get() {
-                        None
-                    } else {
-                        Some(href.clone())
-                    }
-                }
+                href=move || { if is_disabled.get() { None } else { Some(href.clone()) } }
                 class=variant.css_class()
                 target=target
                 rel=rel
@@ -59,13 +53,7 @@ pub fn Link(
 
     view! {
         <a
-            href=move || {
-                if is_disabled.get() {
-                    None
-                } else {
-                    Some(href.clone())
-                }
-            }
+            href=move || { if is_disabled.get() { None } else { Some(href.clone()) } }
             class=move || {
                 format!("link {}", if is_disabled.get() { "link-disabled" } else { "" })
             }

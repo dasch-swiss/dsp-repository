@@ -66,11 +66,12 @@ pub fn record_to_dublin_core(record: &Record) -> DublinCoreRecord {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::collections::HashMap;
 
     use dpe_core::record::Pid;
     use dpe_core::{RecordLegalInfo, RecordLicense};
+
+    use super::*;
 
     fn test_record() -> Record {
         Record {
@@ -79,7 +80,10 @@ mod tests {
             label: {
                 let mut m = HashMap::new();
                 m.insert("en".to_string(), "Survey Responses on Rural Land Use, 1920–1950".to_string());
-                m.insert("de".to_string(), "Umfrageantworten zur ländlichen Landnutzung, 1920–1950".to_string());
+                m.insert(
+                    "de".to_string(),
+                    "Umfrageantworten zur ländlichen Landnutzung, 1920–1950".to_string(),
+                );
                 m
             },
             access_rights: "Full Open Access".to_string(),
@@ -112,7 +116,9 @@ mod tests {
     #[test]
     fn identifier_is_pid() {
         let dc = record_to_dublin_core(&test_record());
-        assert!(dc.identifiers.contains(&"https://ark.dasch.swiss/ark:/72163/1/0001/record-0001".to_string()));
+        assert!(dc
+            .identifiers
+            .contains(&"https://ark.dasch.swiss/ark:/72163/1/0001/record-0001".to_string()));
     }
 
     #[test]
@@ -162,7 +168,9 @@ mod tests {
     #[test]
     fn rights_contains_license_label_and_uri() {
         let dc = record_to_dublin_core(&test_record());
-        assert!(dc.rights.contains(&"Creative Commons Attribution 4.0 International".to_string()));
+        assert!(dc
+            .rights
+            .contains(&"Creative Commons Attribution 4.0 International".to_string()));
         assert!(dc.rights.contains(&"https://creativecommons.org/licenses/by/4.0/".to_string()));
     }
 

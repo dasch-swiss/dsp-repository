@@ -32,9 +32,10 @@ pub fn handle_list_records(
 
 #[cfg(test)]
 mod tests {
+    use super::super::test_utils::{
+        first_0803_record, golden, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository,
+    };
     use super::*;
-
-    use super::super::test_utils::{first_0803_record, golden, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository};
 
     fn make_params(metadata_prefix: Option<&str>) -> OaiParams {
         OaiParams {

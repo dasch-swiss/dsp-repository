@@ -4,8 +4,8 @@ use crate::domain::organization::Organization;
 use crate::domain::person::Person as PersonData;
 use crate::domain::{get_organization, get_person};
 
-/// Fetches and renders a person by ID. Used where the caller only has an ID (e.g. legal info sidebar).
-/// For bulk contributor rendering, prefer `PersonView` with pre-resolved data.
+/// Fetches and renders a person by ID. Used where the caller only has an ID (e.g. legal info
+/// sidebar). For bulk contributor rendering, prefer `PersonView` with pre-resolved data.
 #[component]
 pub fn Person(person_id: String, roles: Option<String>, #[prop(default = false)] show_email: bool) -> impl IntoView {
     let person_resource = Resource::new(move || person_id.clone(), |id| async move { get_person(id).await });

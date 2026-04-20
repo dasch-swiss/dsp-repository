@@ -69,8 +69,8 @@ pub fn set_data_dir(path: &str) {
 
 /// Get the data directory path.
 ///
-/// Priority: OnceLock (set by main.rs) → DPE_DATA_DIR env var → DATA_DIR env var → development default.
-/// Falls back to setting the OnceLock from env/default on first call.
+/// Priority: OnceLock (set by main.rs) → DPE_DATA_DIR env var → DATA_DIR env var → development
+/// default. Falls back to setting the OnceLock from env/default on first call.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn get_data_dir() -> &'static str {
     DATA_DIR.get_or_init(|| {

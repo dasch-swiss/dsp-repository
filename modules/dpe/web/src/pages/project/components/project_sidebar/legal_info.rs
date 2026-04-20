@@ -2,11 +2,9 @@ use leptos::prelude::*;
 use mosaic_tiles::link::Link;
 
 use super::super::info_card::InfoCard;
-use super::super::person::AffiliationName;
-use super::super::person::Person;
+use super::super::person::{AffiliationName, Person};
 use crate::components::{should_render_value, PlaceholderValue};
-use crate::domain::LegalInfo as LegalInfoData;
-use crate::domain::{get_organization, get_person};
+use crate::domain::{get_organization, get_person, LegalInfo as LegalInfoData};
 
 #[component]
 fn EntityName(id: String) -> impl IntoView {

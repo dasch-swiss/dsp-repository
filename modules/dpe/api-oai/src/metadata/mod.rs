@@ -11,14 +11,12 @@ mod record_datacite;
 mod record_dublin_core;
 mod types;
 
-pub use types::{DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
-
 use datacite::project_to_datacite;
+use dpe_core::{record_datestamp, Project, Record, ARK_PATH_PREFIX};
 use dublin_core::project_to_dublin_core;
 use record_datacite::record_to_datacite;
 use record_dublin_core::record_to_dublin_core;
-
-use dpe_core::{record_datestamp, Project, Record, ARK_PATH_PREFIX};
+pub use types::{DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
 
 const OAI_IDENTIFIER_PREFIX: &str = "oai:meta.dasch.swiss:";
 
@@ -130,8 +128,8 @@ pub fn matches_date_filter(project: &Project, from: Option<&str>, until: Option<
 #[cfg(test)]
 mod tests {
     use super::helpers::{
-        extract_year, format_date_range, infer_subject_scheme, is_creator,
-        license_identifier_to_label, map_contributor_type,
+        extract_year, format_date_range, infer_subject_scheme, is_creator, license_identifier_to_label,
+        map_contributor_type,
     };
     use super::{make_oai_identifier, parse_oai_identifier};
 
@@ -174,14 +172,8 @@ mod tests {
 
     #[test]
     fn test_is_creator_multiple_types() {
-        assert!(is_creator(&[
-            "Researcher".to_string(),
-            "Project Leader".to_string()
-        ]));
-        assert!(!is_creator(&[
-            "Researcher".to_string(),
-            "Data Collector".to_string()
-        ]));
+        assert!(is_creator(&["Researcher".to_string(), "Project Leader".to_string()]));
+        assert!(!is_creator(&["Researcher".to_string(), "Data Collector".to_string()]));
     }
 
     #[test]
@@ -194,18 +186,12 @@ mod tests {
 
     #[test]
     fn test_format_date_range_start_only() {
-        assert_eq!(
-            format_date_range("2020-01-01", "MISSING"),
-            Some("2020-01-01".to_string())
-        );
+        assert_eq!(format_date_range("2020-01-01", "MISSING"), Some("2020-01-01".to_string()));
     }
 
     #[test]
     fn test_format_date_range_end_only() {
-        assert_eq!(
-            format_date_range("MISSING", "2023-12-31"),
-            Some("2023-12-31".to_string())
-        );
+        assert_eq!(format_date_range("MISSING", "2023-12-31"), Some("2023-12-31".to_string()));
     }
 
     #[test]

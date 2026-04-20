@@ -1,5 +1,4 @@
 use dpe_telemetry::traceparent::is_valid_traceparent;
-
 use opentelemetry::trace::TraceContextExt;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
@@ -10,12 +9,7 @@ pub fn extract_traceparent() -> Option<String> {
     let span_ref = ctx.span();
     let sc = span_ref.span_context();
     if sc.is_valid() {
-        let tp = format!(
-            "00-{}-{}-{:02x}",
-            sc.trace_id(),
-            sc.span_id(),
-            sc.trace_flags().to_u8(),
-        );
+        let tp = format!("00-{}-{}-{:02x}", sc.trace_id(), sc.span_id(), sc.trace_flags().to_u8(),);
         if is_valid_traceparent(&tp) {
             Some(tp)
         } else {

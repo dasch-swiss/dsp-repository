@@ -49,9 +49,8 @@ fn get_earliest_datestamp(repo: &dyn ProjectRepository) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use super::super::test_utils::{golden, incunabula_project, normalize, InMemoryProjectRepository};
+    use super::*;
 
     fn make_params() -> OaiParams {
         OaiParams {
@@ -75,7 +74,11 @@ mod tests {
         let xml = handle_identify(&params, &repo);
         assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
         assert!(xml.contains("Identify does not accept any arguments"), "got: {}", xml);
-        assert!(xml.contains("verb=\"Identify\""), "verb should be echoed in request element, got: {}", xml);
+        assert!(
+            xml.contains("verb=\"Identify\""),
+            "verb should be echoed in request element, got: {}",
+            xml
+        );
     }
 
     // ---- golden tests ----
@@ -106,7 +109,6 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_identify(&params, &repo);
         crate::handlers::test_utils::validate_against_schema(&xml);
-
     }
 
     #[test]
@@ -115,6 +117,5 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![]);
         let xml = handle_identify(&params, &repo);
         crate::handlers::test_utils::validate_against_schema(&xml);
-
     }
 }

@@ -29,16 +29,14 @@ install-e2e-requirements:
 # Run all fmt and clippy checks
 check:
     just --check --fmt --unstable
-    cargo +nightly fmt -p mosaic-tiles -p mosaic-playground-macro --check
-    leptosfmt --check modules/dpe
-    leptosfmt --check modules/mosaic/playground
+    cargo +nightly fmt --check --all
+    leptosfmt --check . -x target -x .direnv
     cargo clippy -- -D warnings
 
 # Format all rust code (cargo fmt for non-leptos crates, leptosfmt for leptos crates)
 fmt:
-    cargo +nightly fmt -p mosaic-tiles -p mosaic-playground-macro
-    leptosfmt modules/dpe
-    leptosfmt modules/mosaic/playground
+    cargo +nightly fmt --all
+    leptosfmt .
 
 # Fix justfile formatting. Warning: will change existing file. Please first use check.
 fix:

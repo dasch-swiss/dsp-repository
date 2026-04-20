@@ -5,24 +5,22 @@
 use std::borrow::Cow;
 use std::convert::Infallible;
 
-use dpe_web::domain::models::Page;
-use dpe_web::domain::{get_contributors, get_project, lang_value, list_projects, Project, ResolvedContributor};
-use dpe_web::pages::project::components::project_details_tabs::{
-    AttributionsSectionComponent, DatasetOverviewSectionComponent, PublicationTabComponent,
-    TabLink,
-};
 use axum::extract::Path;
+use axum::http::StatusCode;
 use axum::response::sse::{Event, Sse};
 use axum::response::IntoResponse;
 use datastar::axum::ReadSignals;
 use datastar::prelude::{ExecuteScript, PatchElements};
+use dpe_core::project::{is_valid_shortcode, VALID_TABS};
+use dpe_web::domain::models::Page;
+use dpe_web::domain::{get_contributors, get_project, lang_value, list_projects, Project, ResolvedContributor};
+use dpe_web::pages::project::components::project_details_tabs::{
+    AttributionsSectionComponent, DatasetOverviewSectionComponent, PublicationTabComponent, TabLink,
+};
 use futures::stream::{self, Stream};
-use axum::http::StatusCode;
 use leptos::prelude::*;
 use mosaic_tiles::icon::{Document, IconSearch, Info, People};
 use serde::Deserialize;
-
-use dpe_core::project::{VALID_TABS, is_valid_shortcode};
 
 #[derive(Deserialize)]
 pub struct TabParams {
@@ -93,20 +91,12 @@ pub async fn tab_fragment_handler(
     let html = strip_hot_reload_comments(&html);
 
     // Build SSE events
-    let patch = PatchElements::new(html)
-        .selector("#project-tabs")
-        .use_view_transition(true);
+    let patch = PatchElements::new(html).selector("#project-tabs").use_view_transition(true);
 
-    let url_update = ExecuteScript::new(format!(
-        "history.replaceState({{}}, '', '/projects/{}?tab={}')",
-        id, tab
-    ));
+    let url_update = ExecuteScript::new(format!("history.replaceState({{}}, '', '/projects/{}?tab={}')", id, tab));
 
     // Restore focus to the active tab after DOM patch (prevents focus loss to <body>)
-    let focus_tab = ExecuteScript::new(format!(
-        "document.getElementById('tab-{}')?.focus()",
-        tab
-    ));
+    let focus_tab = ExecuteScript::new(format!("document.getElementById('tab-{}')?.focus()", tab));
 
     let stream = stream::iter(vec![
         Ok::<_, Infallible>(patch.into()),
@@ -119,16 +109,8 @@ pub async fn tab_fragment_handler(
 
 /// Check whether the project has content for a publications tab.
 fn has_publications(project: &Project) -> bool {
-    let has_abstract = project
-        .abstract_text
-        .as_ref()
-        .and_then(|m| lang_value(m).cloned())
-        .is_some();
-    let has_pubs = project
-        .publications
-        .as_ref()
-        .map(|p| !p.is_empty())
-        .unwrap_or(false);
+    let has_abstract = project.abstract_text.as_ref().and_then(|m| lang_value(m).cloned()).is_some();
+    let has_pubs = project.publications.as_ref().map(|p| !p.is_empty()).unwrap_or(false);
     has_abstract || has_pubs
 }
 
@@ -220,7 +202,6 @@ fn render_project_tabs(
     })
 }
 
-
 // --- Search Fragment Handler ---
 
 #[derive(Deserialize)]
@@ -252,14 +233,14 @@ pub async fn search_fragment_handler(
         Page { items: vec![], nr_pages: 0, total_items: 0 }
     } else {
         list_projects(
-            None,                     // ongoing
-            None,                     // finished
-            Some(search.clone()),     // search
-            None,                     // page
-            Some(5),                  // page_size
-            None,                     // type_of_data
-            None,                     // data_language
-            None,                     // access_rights
+            None,                 // ongoing
+            None,                 // finished
+            Some(search.clone()), // search
+            None,                 // page
+            Some(5),              // page_size
+            None,                 // type_of_data
+            None,                 // data_language
+            None,                 // access_rights
         )
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
@@ -286,8 +267,7 @@ fn render_search_results(query: &str, results: &Page) -> String {
     let owner = Owner::new();
     owner.with(|| {
         if items.is_empty() {
-            view! { <p class="text-sm text-base-content/60 px-2 py-1">"No results"</p> }
-            .to_html()
+            view! { <p class="text-sm text-base-content/60 px-2 py-1">"No results"</p> }.to_html()
         } else {
             view! {
                 <ul role="listbox">
@@ -358,9 +338,7 @@ pub async fn projects_json_handler() -> impl IntoResponse {
     axum::Json(projects).into_response()
 }
 
-pub async fn project_json_handler(
-    Path(id): Path<String>,
-) -> impl IntoResponse {
+pub async fn project_json_handler(Path(id): Path<String>) -> impl IntoResponse {
     use dpe_core::project::is_valid_shortcode;
     use dpe_core::project_repository::{FsProjectRepository, ProjectRepository};
 
@@ -377,13 +355,14 @@ pub async fn project_json_handler(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use axum::body::Body;
     use axum::http::{Request, StatusCode as AxumStatusCode};
     use axum::routing::get;
     use axum::Router;
     use http_body_util::BodyExt;
     use tower::ServiceExt;
+
+    use super::*;
 
     // --- Unit tests: is_valid_shortcode ---
 
@@ -461,10 +440,7 @@ mod tests {
     #[test]
     fn has_publications_with_pubs_only() {
         let mut project = minimal_test_project();
-        project.publications = Some(vec![dpe_core::Publication {
-            text: "A paper".to_string(),
-            pid: None,
-        }]);
+        project.publications = Some(vec![dpe_core::Publication { text: "A paper".to_string(), pid: None }]);
         assert!(has_publications(&project));
     }
 
@@ -486,7 +462,7 @@ mod tests {
     #[test]
     fn render_overview_tab_contains_aria_roles() {
         let project = minimal_test_project();
-        let html = render_project_tabs(project, vec![],"overview", false);
+        let html = render_project_tabs(project, vec![], "overview", false);
         assert!(html.contains(r#"role="tablist""#), "missing tablist role");
         assert!(html.contains(r#"role="tab""#), "missing tab role");
         assert!(html.contains(r#"role="tabpanel""#), "missing tabpanel role");
@@ -495,7 +471,7 @@ mod tests {
     #[test]
     fn render_overview_tab_marks_overview_as_selected() {
         let project = minimal_test_project();
-        let html = render_project_tabs(project, vec![],"overview", false);
+        let html = render_project_tabs(project, vec![], "overview", false);
         assert!(
             html.contains(r#"id="tab-overview" aria-selected="true""#),
             "overview tab should be selected, got: {}",
@@ -506,7 +482,7 @@ mod tests {
     #[test]
     fn render_contributors_tab_marks_contributors_as_selected() {
         let project = minimal_test_project();
-        let html = render_project_tabs(project, vec![],"contributors", false);
+        let html = render_project_tabs(project, vec![], "contributors", false);
         assert!(
             html.contains(r#"id="tab-contributors" aria-selected="true""#),
             "contributors tab should be selected, got: {}",
@@ -521,7 +497,7 @@ mod tests {
     #[test]
     fn render_tabs_includes_tabpanel_labelledby() {
         let project = minimal_test_project();
-        let html = render_project_tabs(project, vec![],"overview", false);
+        let html = render_project_tabs(project, vec![], "overview", false);
         assert!(
             html.contains(r#"aria-labelledby="tab-overview""#),
             "tabpanel should reference active tab"
@@ -531,7 +507,7 @@ mod tests {
     #[test]
     fn render_tabs_hides_publications_when_none() {
         let project = minimal_test_project();
-        let html = render_project_tabs(project, vec![],"overview", false);
+        let html = render_project_tabs(project, vec![], "overview", false);
         // Should only have overview and contributors tabs, not publications
         assert!(
             !html.contains("tab-publications"),
@@ -542,7 +518,7 @@ mod tests {
     #[test]
     fn render_tabs_shows_publications_when_available() {
         let project = minimal_test_project();
-        let html = render_project_tabs(project, vec![],"overview", true);
+        let html = render_project_tabs(project, vec![], "overview", true);
         assert!(
             html.contains("tab-publications"),
             "publications tab should appear when has_publications_tab=true"
@@ -554,7 +530,7 @@ mod tests {
     #[test]
     fn snapshot_overview_tab_html() {
         let project = minimal_test_project();
-        let html = render_project_tabs(project, vec![],"overview", false);
+        let html = render_project_tabs(project, vec![], "overview", false);
         let html = strip_hot_reload_comments(&html);
         insta::with_settings!({
             filters => vec![
@@ -569,7 +545,7 @@ mod tests {
     #[test]
     fn snapshot_contributors_tab_html() {
         let project = minimal_test_project();
-        let html = render_project_tabs(project, vec![],"contributors", false);
+        let html = render_project_tabs(project, vec![], "contributors", false);
         let html = strip_hot_reload_comments(&html);
         insta::with_settings!({
             filters => vec![
@@ -588,12 +564,9 @@ mod tests {
         project.abstract_text = Some(abstract_map);
         project.publications = Some(vec![dpe_core::Publication {
             text: "Test Publication (2024)".to_string(),
-            pid: Some(dpe_core::project::Pid {
-                url: "https://example.org/pub".to_string(),
-                text: None,
-            }),
+            pid: Some(dpe_core::project::Pid { url: "https://example.org/pub".to_string(), text: None }),
         }]);
-        let html = render_project_tabs(project, vec![],"publications", true);
+        let html = render_project_tabs(project, vec![], "publications", true);
         let html = strip_hot_reload_comments(&html);
         insta::with_settings!({
             filters => vec![
@@ -619,10 +592,7 @@ mod tests {
 
     fn test_app() -> Router {
         init_test_data();
-        Router::new().route(
-            "/projects/{id}/tab/{tab}",
-            get(tab_fragment_handler),
-        )
+        Router::new().route("/projects/{id}/tab/{tab}", get(tab_fragment_handler))
     }
 
     #[tokio::test]

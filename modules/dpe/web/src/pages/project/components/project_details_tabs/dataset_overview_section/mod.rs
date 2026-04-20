@@ -6,17 +6,17 @@ mod link_list_section;
 mod publication_year;
 mod type_of_data_section;
 
-use leptos::prelude::*;
-use mosaic_tiles::card::{Card, CardBody, CardVariant};
-
-use crate::domain::Project;
 use coverage_section::CoverageSection;
 use data_language_section::DataLanguageSection;
 use disciplines_section::DisciplinesSection;
+use leptos::prelude::*;
 use link_card_section::LinkCardSection;
 use link_list_section::LinkListSection;
+use mosaic_tiles::card::{Card, CardBody, CardVariant};
 use publication_year::PublicationYear;
 use type_of_data_section::TypeOfDataSection;
+
+use crate::domain::Project;
 
 #[component]
 pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {

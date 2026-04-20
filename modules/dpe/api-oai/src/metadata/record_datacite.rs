@@ -3,10 +3,12 @@
 use dpe_core::Record;
 
 use super::helpers::{extract_year, get_multilingual_value, license_identifier_to_label};
-use super::types::{DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteRecord, DataCiteRelatedIdentifier, DataCiteRights, DataCiteTitle};
+use super::types::{
+    DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteRecord, DataCiteRelatedIdentifier, DataCiteRights,
+    DataCiteTitle,
+};
 
 const PUBLISHER: &str = "DaSCH";
-
 
 /// Maps typeOfData to a DataCite resourceTypeGeneral value.
 fn type_of_data_to_general(type_of_data: &str) -> String {
@@ -56,19 +58,32 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
     // Dates (recommended)
     let mut dates: Vec<DataCiteDate> = Vec::new();
     if !record.date_created.is_empty() {
-        dates.push(DataCiteDate { date: record.date_created.clone(), date_type: "Created".to_string() });
+        dates.push(DataCiteDate {
+            date: record.date_created.clone(),
+            date_type: "Created".to_string(),
+        });
     }
     if !record.date_modified.is_empty() {
-        dates.push(DataCiteDate { date: record.date_modified.clone(), date_type: "Updated".to_string() });
+        dates.push(DataCiteDate {
+            date: record.date_modified.clone(),
+            date_type: "Updated".to_string(),
+        });
     }
     if !record.date_published.is_empty() {
-        dates.push(DataCiteDate { date: record.date_published.clone(), date_type: "Available".to_string() });
+        dates.push(DataCiteDate {
+            date: record.date_published.clone(),
+            date_type: "Available".to_string(),
+        });
     }
 
     // Descriptions (recommended)
     let mut descriptions: Vec<DataCiteDescription> = Vec::new();
     if let Some(desc) = get_multilingual_value(&record.description) {
-        descriptions.push(DataCiteDescription { description: desc, description_type: "Abstract".to_string(), lang: None });
+        descriptions.push(DataCiteDescription {
+            description: desc,
+            description_type: "Abstract".to_string(),
+            lang: None,
+        });
     }
     // Size encoded as TechnicalInfo (DataCiteRecord has no dedicated sizes field)
     if !record.size.is_empty() {
@@ -88,8 +103,16 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
         } else {
             record.access_rights.clone()
         },
-        rights_uri: if !license.license_uri.is_empty() { Some(license.license_uri.clone()) } else { None },
-        rights_identifier: if has_identifier { Some(license.license_identifier.clone()) } else { None },
+        rights_uri: if !license.license_uri.is_empty() {
+            Some(license.license_uri.clone())
+        } else {
+            None
+        },
+        rights_identifier: if has_identifier {
+            Some(license.license_identifier.clone())
+        } else {
+            None
+        },
         rights_identifier_scheme: if has_identifier { Some("SPDX".to_string()) } else { None },
     }];
 
@@ -119,11 +142,12 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::collections::HashMap;
 
     use dpe_core::record::Pid;
     use dpe_core::{RecordLegalInfo, RecordLicense};
+
+    use super::*;
 
     fn test_record() -> Record {
         Record {
@@ -132,7 +156,10 @@ mod tests {
             label: {
                 let mut m = HashMap::new();
                 m.insert("en".to_string(), "Survey Responses on Rural Land Use, 1920–1950".to_string());
-                m.insert("de".to_string(), "Umfrageantworten zur ländlichen Landnutzung, 1920–1950".to_string());
+                m.insert(
+                    "de".to_string(),
+                    "Umfrageantworten zur ländlichen Landnutzung, 1920–1950".to_string(),
+                );
                 m
             },
             access_rights: "Full Open Access".to_string(),
@@ -262,5 +289,4 @@ mod tests {
         assert_eq!(ri.related_identifier_type, "URL");
         assert_eq!(ri.relation_type, "IsPartOf");
     }
-
 }

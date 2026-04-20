@@ -40,8 +40,9 @@ mod tests {
     }
 
     mod properties {
-        use super::*;
         use proptest::prelude::*;
+
+        use super::*;
 
         proptest! {
             #[test]

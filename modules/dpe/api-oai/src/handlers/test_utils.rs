@@ -1,13 +1,11 @@
 #![cfg(test)]
 
-use dpe_core::{
-    models::AuthorityFileReference,
-    project::{
-        AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo,
-        License, Project, ProjectStatus, TemporalCoverage,
-    },
-    ProjectRepository, Record, RecordRepository,
+use dpe_core::models::AuthorityFileReference;
+use dpe_core::project::{
+    AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, Project,
+    ProjectStatus, TemporalCoverage,
 };
+use dpe_core::{ProjectRepository, Record, RecordRepository};
 
 /// In-memory repository for testing.
 pub struct InMemoryProjectRepository {
@@ -101,7 +99,10 @@ pub fn incunabula_project() -> Project {
         }],
         abstract_text: Some({
             let mut map = std::collections::HashMap::new();
-            map.insert("en".to_string(), "An interdisciplinary research project on image sequences of Basel's early prints.".to_string());
+            map.insert(
+                "en".to_string(),
+                "An interdisciplinary research project on image sequences of Basel's early prints.".to_string(),
+            );
             map
         }),
         contact_point: None,
@@ -151,9 +152,7 @@ impl RecordRepository for InMemoryRecordRepository {
     }
 
     fn get_by_id(&self, ark_suffix: &str) -> Option<&Record> {
-        self.records
-            .iter()
-            .find(|r| r.pid.ark_suffix() == ark_suffix)
+        self.records.iter().find(|r| r.pid.ark_suffix() == ark_suffix)
     }
 }
 
@@ -168,8 +167,7 @@ pub fn normalize(xml: &str) -> String {
 /// Loads a golden file, creating it if absent (first-run mode).
 /// Compares and stores the normalized form (without responseDate).
 pub fn golden(name: &str, actual: &str) -> String {
-    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("src/oai/handlers/testdata/golden");
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/oai/handlers/testdata/golden");
     std::fs::create_dir_all(&dir).expect("create golden dir");
     let path = dir.join(name);
     let normalized = normalize(actual);
@@ -182,8 +180,7 @@ pub fn golden(name: &str, actual: &str) -> String {
 }
 
 pub fn validate_against_schema(xml: &str) {
-    let xsd_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("src/handlers/testdata/schemas/validate.xsd");
+    let xsd_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/testdata/schemas/validate.xsd");
 
     let mut tmp = tempfile::NamedTempFile::new().expect("create temp file");
     std::io::Write::write_all(&mut tmp, xml.as_bytes()).expect("write temp file");

@@ -9,9 +9,7 @@ pub fn is_valid_traceparent(tp: &str) -> bool {
         && bytes[35] == b'-'
         && bytes[52] == b'-'
         && tp.starts_with("00-")
-        && tp
-            .bytes()
-            .all(|b| b.is_ascii_digit() || matches!(b, b'a'..=b'f') || b == b'-')
+        && tp.bytes().all(|b| b.is_ascii_digit() || matches!(b, b'a'..=b'f') || b == b'-')
         && &tp[3..35] != "00000000000000000000000000000000"
         && &tp[36..52] != "0000000000000000"
 }
@@ -28,26 +26,18 @@ mod tests {
 
     #[test]
     fn valid_traceparent() {
-        assert!(is_valid_traceparent(
-            "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
-        ));
-        assert!(is_valid_traceparent(
-            "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"
-        ));
+        assert!(is_valid_traceparent("00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"));
+        assert!(is_valid_traceparent("00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"));
     }
 
     #[test]
     fn rejects_zero_trace_id() {
-        assert!(!is_valid_traceparent(
-            "00-00000000000000000000000000000000-00f067aa0ba902b7-01"
-        ));
+        assert!(!is_valid_traceparent("00-00000000000000000000000000000000-00f067aa0ba902b7-01"));
     }
 
     #[test]
     fn rejects_zero_span_id() {
-        assert!(!is_valid_traceparent(
-            "00-4bf92f3577b34da6a3ce929d0e0e4736-0000000000000000-01"
-        ));
+        assert!(!is_valid_traceparent("00-4bf92f3577b34da6a3ce929d0e0e4736-0000000000000000-01"));
     }
 
     #[test]
@@ -58,23 +48,17 @@ mod tests {
 
     #[test]
     fn rejects_uppercase_hex() {
-        assert!(!is_valid_traceparent(
-            "00-4BF92F3577B34DA6A3CE929D0E0E4736-00F067AA0BA902B7-01"
-        ));
+        assert!(!is_valid_traceparent("00-4BF92F3577B34DA6A3CE929D0E0E4736-00F067AA0BA902B7-01"));
     }
 
     #[test]
     fn rejects_non_hex_characters() {
-        assert!(!is_valid_traceparent(
-            "00-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz-00f067aa0ba902b7-01"
-        ));
+        assert!(!is_valid_traceparent("00-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz-00f067aa0ba902b7-01"));
     }
 
     #[test]
     fn rejects_wrong_version() {
-        assert!(!is_valid_traceparent(
-            "01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
-        ));
+        assert!(!is_valid_traceparent("01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"));
     }
 
     #[test]
@@ -97,14 +81,14 @@ mod tests {
     // --- Property-based tests ---
 
     mod properties {
-        use super::*;
         use proptest::prelude::*;
+
+        use super::*;
 
         fn valid_traceparent_strategy() -> impl Strategy<Value = String> {
             ("[0-9a-f]{32}", "[0-9a-f]{16}", "[0-9a-f]{2}")
                 .prop_filter("non-zero trace and span IDs", |(trace, span, _)| {
-                    trace != "00000000000000000000000000000000"
-                        && span != "0000000000000000"
+                    trace != "00000000000000000000000000000000" && span != "0000000000000000"
                 })
                 .prop_map(|(trace, span, flags)| format!("00-{trace}-{span}-{flags}"))
         }

@@ -115,7 +115,11 @@ impl ProjectQuery {
             finished: self.finished,
             search: self.search.clone(),
             page: Some(1),
-            type_of_data: if selected.is_empty() { None } else { Some(selected.join(",")) },
+            type_of_data: if selected.is_empty() {
+                None
+            } else {
+                Some(selected.join(","))
+            },
             data_language: self.data_language.clone(),
             access_rights: self.access_rights.clone(),
             dialog: self.dialog,
@@ -136,7 +140,11 @@ impl ProjectQuery {
             search: self.search.clone(),
             page: Some(1),
             type_of_data: self.type_of_data.clone(),
-            data_language: if selected.is_empty() { None } else { Some(selected.join(",")) },
+            data_language: if selected.is_empty() {
+                None
+            } else {
+                Some(selected.join(","))
+            },
             access_rights: self.access_rights.clone(),
             dialog: self.dialog,
         }
@@ -157,7 +165,11 @@ impl ProjectQuery {
             page: Some(1),
             type_of_data: self.type_of_data.clone(),
             data_language: self.data_language.clone(),
-            access_rights: if selected.is_empty() { None } else { Some(selected.join(",")) },
+            access_rights: if selected.is_empty() {
+                None
+            } else {
+                Some(selected.join(","))
+            },
             dialog: self.dialog,
         }
     }

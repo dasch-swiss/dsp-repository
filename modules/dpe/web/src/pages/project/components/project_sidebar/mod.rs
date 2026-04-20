@@ -4,15 +4,15 @@ mod funding_section;
 mod legal_info;
 mod permalink;
 
-use leptos::prelude::*;
-
-use crate::components::{should_render_value, PlaceholderValue};
-use crate::domain::{Project, ProjectStatus};
 use access_rights_section::AccessRightsSection;
 use citation::Citation;
 use funding_section::FundingSection;
 use legal_info::{ContactSection, LegalInfo};
+use leptos::prelude::*;
 use permalink::Permalink;
+
+use crate::components::{should_render_value, PlaceholderValue};
+use crate::domain::{Project, ProjectStatus};
 
 #[component]
 pub fn ProjectSidebar(proj: Project) -> impl IntoView {

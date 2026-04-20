@@ -1,7 +1,8 @@
+use std::io::Cursor;
+
 use chrono::Utc;
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
-use std::io::Cursor;
 
 use super::error::OaiError;
 use super::metadata::{DataCiteRecord, DublinCoreRecord, OaiRecord};
@@ -18,8 +19,7 @@ const DATACITE_NS: &str = "http://datacite.org/schema/kernel-4";
 const OAI_DATACITE_NS: &str = "http://schema.datacite.org/oai/oai-1.1/";
 const XSI_NS: &str = "http://www.w3.org/2001/XMLSchema-instance";
 
-const OAI_PMH_SCHEMA_LOC: &str =
-    "http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd";
+const OAI_PMH_SCHEMA_LOC: &str = "http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd";
 const OAI_DC_SCHEMA_LOC: &str =
     "http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd";
 const OAI_DATACITE_SCHEMA_LOC: &str =
@@ -47,7 +47,9 @@ impl OaiXmlBuilder {
         writer.write_event(Event::Start(root)).expect("Failed to write root element");
 
         let response_date = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
-        writer.write_event(Event::Start(BytesStart::new("responseDate"))).expect("write");
+        writer
+            .write_event(Event::Start(BytesStart::new("responseDate")))
+            .expect("write");
         writer.write_event(Event::Text(BytesText::new(&response_date))).expect("write");
         writer.write_event(Event::End(BytesEnd::new("responseDate"))).expect("write");
 

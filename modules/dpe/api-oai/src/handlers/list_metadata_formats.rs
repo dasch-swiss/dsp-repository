@@ -10,11 +10,7 @@ use crate::xml::OaiXmlBuilder;
 /// Handles the ListMetadataFormats verb.
 pub fn handle_list_metadata_formats(params: &OaiParams, repo: &dyn ProjectRepository) -> String {
     // ListMetadataFormats accepts only identifier as optional argument
-    if params.from.is_some()
-        || params.until.is_some()
-        || params.set.is_some()
-        || params.resumption_token.is_some()
-    {
+    if params.from.is_some() || params.until.is_some() || params.set.is_some() || params.resumption_token.is_some() {
         return build_error_response(
             OaiError::BadArgument("Unexpected argument for ListMetadataFormats".to_string()),
             Some("ListMetadataFormats"),
@@ -45,9 +41,8 @@ pub fn handle_list_metadata_formats(params: &OaiParams, repo: &dyn ProjectReposi
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use super::super::test_utils::{golden, incunabula_project, normalize, InMemoryProjectRepository};
+    use super::*;
 
     fn make_params(identifier: Option<&str>) -> OaiParams {
         OaiParams {

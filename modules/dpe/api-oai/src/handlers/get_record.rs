@@ -90,12 +90,12 @@ fn build_response(identifier: &str, prefix: &str, entity: OaiEntity) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use dpe_core::Record;
 
     use super::super::test_utils::{
         golden, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository,
     };
-    use dpe_core::Record;
+    use super::*;
 
     fn first_0803_record() -> Record {
         let json = include_str!("../../../server/data/records/0803-records.json");

@@ -63,7 +63,9 @@ fn parse_pid(s: &str) -> Result<Pid, String> {
     let ark_pos = s.find(ARK_PATH_PREFIX).ok_or_else(|| format!("pid missing ARK prefix: {s}"))?;
     let host = s[..ark_pos].trim_end_matches('/').to_string();
     let after_prefix = &s[ark_pos + ARK_PATH_PREFIX.len()..];
-    let slash = after_prefix.find('/').ok_or_else(|| format!("pid missing record_id segment: {s}"))?;
+    let slash = after_prefix
+        .find('/')
+        .ok_or_else(|| format!("pid missing record_id segment: {s}"))?;
     let shortcode = after_prefix[..slash].to_string();
     let record_id = after_prefix[slash + 1..].to_string();
     if shortcode.is_empty() {
@@ -160,12 +162,18 @@ mod tests {
         let record = first_0803_record();
 
         assert_eq!(record.id, "http://rdfh.ch/0803/lklK7rVuVOmpBZYWrF8o-g");
-        assert_eq!(record.pid, Pid {
-            host: "https://ark.dasch.swiss".to_string(),
-            shortcode: "0803".to_string(),
-            record_id: "lklK7rVuVOmpBZYWrF8o=gh".to_string(),
-        });
-        assert_eq!(record.label, HashMap::from([("en".to_string(), "Seitenbezeichnung : o2r".to_string())]));
+        assert_eq!(
+            record.pid,
+            Pid {
+                host: "https://ark.dasch.swiss".to_string(),
+                shortcode: "0803".to_string(),
+                record_id: "lklK7rVuVOmpBZYWrF8o=gh".to_string(),
+            }
+        );
+        assert_eq!(
+            record.label,
+            HashMap::from([("en".to_string(), "Seitenbezeichnung : o2r".to_string())])
+        );
         assert_eq!(record.access_rights, "Full Open Access");
         assert_eq!(record.legal_info.license.license_identifier, "public domain");
         assert_eq!(record.legal_info.license.license_date, "2023-01-01");

@@ -1,20 +1,17 @@
+use std::sync::LazyLock;
+
 use axum::body::Bytes;
 use axum::http::{HeaderMap, StatusCode};
-use dpe_telemetry::beacon::{
-    BeaconPayload, Signal, VALID_ERROR_KINDS, VALID_RATINGS, VALID_VITAL_NAMES,
-};
+use dpe_telemetry::beacon::{BeaconPayload, Signal, VALID_ERROR_KINDS, VALID_RATINGS, VALID_VITAL_NAMES};
 use dpe_telemetry::origin::is_allowed_origin;
 use dpe_telemetry::page_url::normalize_page_url;
 use dpe_telemetry::traceparent::validated_traceparent;
 use opentelemetry::{global, KeyValue};
-use std::sync::LazyLock;
 use url::Url;
 
 /// Extract the host from an Origin or Referer URL.
 fn extract_host(value: &str) -> Option<String> {
-    Url::parse(value)
-        .ok()
-        .and_then(|u| u.host_str().map(String::from))
+    Url::parse(value).ok().and_then(|u| u.host_str().map(String::from))
 }
 
 // --- OTel metrics ---
@@ -139,11 +136,14 @@ fn process_signal(signal: &Signal) {
             let page_url = normalize_page_url(&v.page_url);
             let trace_parent = validated_traceparent(&v.traceparent);
 
-            BROWSER_METRICS.web_vital.record(v.value, &[
-                KeyValue::new("vital.name", vital_name.to_string()),
-                KeyValue::new("vital.rating", rating.to_string()),
-                KeyValue::new("page.url", page_url),
-            ]);
+            BROWSER_METRICS.web_vital.record(
+                v.value,
+                &[
+                    KeyValue::new("vital.name", vital_name.to_string()),
+                    KeyValue::new("vital.rating", rating.to_string()),
+                    KeyValue::new("page.url", page_url),
+                ],
+            );
 
             tracing::info!(
                 vital_name,
@@ -180,10 +180,13 @@ fn process_signal(signal: &Signal) {
             let page_url = normalize_page_url(&e.page_url);
             let trace_parent = validated_traceparent(&e.traceparent);
 
-            BROWSER_METRICS.error_count.add(1, &[
-                KeyValue::new("error.kind", error_kind.to_string()),
-                KeyValue::new("page.url", page_url),
-            ]);
+            BROWSER_METRICS.error_count.add(
+                1,
+                &[
+                    KeyValue::new("error.kind", error_kind.to_string()),
+                    KeyValue::new("page.url", page_url),
+                ],
+            );
 
             let truncated_message: String = e.message.chars().take(256).collect();
             tracing::warn!(
@@ -204,9 +207,7 @@ fn process_signal(signal: &Signal) {
 
             let attrs = [KeyValue::new("page.url", page_url)];
             BROWSER_METRICS.loaf_duration.record(loaf.duration, &attrs);
-            BROWSER_METRICS
-                .loaf_blocking
-                .record(loaf.blocking_duration, &attrs);
+            BROWSER_METRICS.loaf_blocking.record(loaf.blocking_duration, &attrs);
 
             tracing::info!(
                 duration = loaf.duration,
@@ -234,15 +235,12 @@ fn process_signal(signal: &Signal) {
             ];
             let page_url_kv = KeyValue::new("page.url", page_url);
             for (phase, value) in phases {
-                BROWSER_METRICS.navigation_timing.record(value, &[
-                    KeyValue::new("nav.phase", phase),
-                    page_url_kv.clone(),
-                ]);
+                BROWSER_METRICS
+                    .navigation_timing
+                    .record(value, &[KeyValue::new("nav.phase", phase), page_url_kv.clone()]);
             }
 
-            BROWSER_METRICS
-                .page_transfer_size
-                .record(nav.transfer_size, &[page_url_kv]);
+            BROWSER_METRICS.page_transfer_size.record(nav.transfer_size, &[page_url_kv]);
 
             let trace_parent = validated_traceparent(&nav.traceparent);
             tracing::info!(
@@ -263,13 +261,14 @@ fn process_signal(signal: &Signal) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use axum::body::Body;
     use axum::http::Request;
     use axum::routing::post;
     use axum::Router;
     use dpe_telemetry::beacon::{ErrorSignal, WebVitalSignal};
     use tower::ServiceExt;
+
+    use super::*;
 
     fn test_app() -> Router {
         Router::new().route("/telemetry/collect", post(collect_handler))
@@ -507,11 +506,7 @@ mod tests {
             extract_host("https://repository.dasch.swiss"),
             Some("repository.dasch.swiss".to_string())
         );
-        assert_eq!(
-            extract_host("http://localhost:4000"),
-            Some("localhost".to_string())
-        );
+        assert_eq!(extract_host("http://localhost:4000"), Some("localhost".to_string()));
         assert_eq!(extract_host("not-a-url"), None);
     }
-
 }

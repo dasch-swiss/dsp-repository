@@ -33,9 +33,7 @@ pub fn access_rights_to_string(ar: &AccessRightsType) -> &'static str {
 pub fn is_creator(contributor_types: &[String]) -> bool {
     contributor_types.iter().any(|t| {
         let lower = t.to_lowercase();
-        lower == "project leader"
-            || lower == "principal investigator (pi)"
-            || lower == "author"
+        lower == "project leader" || lower == "principal investigator (pi)" || lower == "author"
     })
 }
 
@@ -76,23 +74,11 @@ pub fn format_date_range(start: &str, end: &str) -> Option<String> {
 pub fn license_identifier_to_label(identifier: &str) -> String {
     match identifier {
         "CC-BY-4.0" => "Creative Commons Attribution 4.0 International".to_string(),
-        "CC-BY-SA-4.0" => {
-            "Creative Commons Attribution-ShareAlike 4.0 International".to_string()
-        }
-        "CC-BY-NC-4.0" => {
-            "Creative Commons Attribution-NonCommercial 4.0 International".to_string()
-        }
-        "CC-BY-NC-SA-4.0" => {
-            "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International"
-                .to_string()
-        }
-        "CC-BY-ND-4.0" => {
-            "Creative Commons Attribution-NoDerivatives 4.0 International".to_string()
-        }
-        "CC-BY-NC-ND-4.0" => {
-            "Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International"
-                .to_string()
-        }
+        "CC-BY-SA-4.0" => "Creative Commons Attribution-ShareAlike 4.0 International".to_string(),
+        "CC-BY-NC-4.0" => "Creative Commons Attribution-NonCommercial 4.0 International".to_string(),
+        "CC-BY-NC-SA-4.0" => "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International".to_string(),
+        "CC-BY-ND-4.0" => "Creative Commons Attribution-NoDerivatives 4.0 International".to_string(),
+        "CC-BY-NC-ND-4.0" => "Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International".to_string(),
         "CC0-1.0" => "Creative Commons Public Domain Dedication".to_string(),
         _ => identifier.to_string(),
     }
@@ -103,10 +89,7 @@ pub fn infer_subject_scheme(url: &str) -> (Option<String>, Option<String>) {
     if url.contains("skos.um.es") || url.contains("zbw.eu/stw") {
         (Some("STW Thesaurus for Economics".to_string()), Some(url.to_string()))
     } else if url.contains("d-nb.info/gnd") {
-        (
-            Some("GND".to_string()),
-            Some("https://d-nb.info/gnd/".to_string()),
-        )
+        (Some("GND".to_string()), Some("https://d-nb.info/gnd/".to_string()))
     } else if url.contains("loc.gov") {
         (
             Some("LCSH".to_string()),

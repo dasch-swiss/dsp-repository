@@ -15,27 +15,23 @@ mod list_metadata_formats;
 mod list_records;
 mod list_sets;
 
-use axum::{
-    extract::Query,
-    http::{header, StatusCode},
-    response::IntoResponse,
-};
-use serde::Deserialize;
-
+use axum::extract::Query;
+use axum::http::{header, StatusCode};
+use axum::response::IntoResponse;
 use dpe_core::{FsProjectRepository, FsRecordRepository, ProjectRepository, RecordRepository};
-
-use super::error::OaiError;
-use super::xml::OaiXmlBuilder;
-use crate::metadata::{
-    matches_date_filter, matches_date_filter_record, to_oai_record, to_oai_record_from_record, OaiRecord,
-};
-
 use get_record::handle_get_record;
 use identify::handle_identify;
 use list_identifiers::handle_list_identifiers;
 use list_metadata_formats::handle_list_metadata_formats;
 use list_records::handle_list_records;
 use list_sets::handle_list_sets;
+use serde::Deserialize;
+
+use super::error::OaiError;
+use super::xml::OaiXmlBuilder;
+use crate::metadata::{
+    matches_date_filter, matches_date_filter_record, to_oai_record, to_oai_record_from_record, OaiRecord,
+};
 
 /// Query parameters for OAI-PMH requests.
 #[derive(Debug, Deserialize)]

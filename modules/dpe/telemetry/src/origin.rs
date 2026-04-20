@@ -17,8 +17,9 @@ pub fn is_allowed_origin(host: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use proptest::prelude::*;
+
+    use super::*;
 
     #[test]
     fn exact_dasch_swiss_accepted() {

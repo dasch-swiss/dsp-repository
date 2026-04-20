@@ -12,9 +12,7 @@ pub fn project_to_dublin_core(project: &Project) -> DublinCoreRecord {
     let mut record = DublinCoreRecord::default();
 
     // dc:title - prefer officialName, fallback to name
-    let title = if !dpe_core::is_placeholder(&project.official_name)
-        && !project.official_name.is_empty()
-    {
+    let title = if !dpe_core::is_placeholder(&project.official_name) && !project.official_name.is_empty() {
         &project.official_name
     } else {
         &project.name
@@ -135,9 +133,7 @@ pub fn project_to_dublin_core(project: &Project) -> DublinCoreRecord {
         .rights
         .push(access_rights_to_string(&project.access_rights.access_rights).to_string());
     for legal in &project.legal_info {
-        if !dpe_core::is_placeholder(&legal.license.license_uri)
-            && !legal.license.license_uri.is_empty()
-        {
+        if !dpe_core::is_placeholder(&legal.license.license_uri) && !legal.license.license_uri.is_empty() {
             record.rights.push(legal.license.license_uri.clone());
         }
     }

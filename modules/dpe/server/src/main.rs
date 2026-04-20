@@ -54,27 +54,26 @@ async fn serve() -> ExitCode {
     use axum::routing::get;
     use axum::Router;
     use dpe_web::*;
+    use init_tracing_opentelemetry::TracingConfig;
     use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
-    use init_tracing_opentelemetry::TracingConfig;
-    use opentelemetry_sdk::logs::{SdkLoggerProvider, SdkLogger};
+    use opentelemetry_sdk::logs::{SdkLogger, SdkLoggerProvider};
     use tracing_subscriber::layer::SubscriberExt;
 
     // Export logs via OTLP only when LEPTOS_ENV=DEV (local dev) and an OTLP
     // endpoint is configured. Production (LEPTOS_ENV=PROD) logs to stdout only.
     // Default to "DEV" when unset, matching leptos_config's own default.
-    let logger_provider: Option<SdkLoggerProvider> =
-        if std::env::var("LEPTOS_ENV").as_deref().unwrap_or("DEV") == "DEV"
-            && std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").is_ok()
-        {
-            let exporter = opentelemetry_otlp::LogExporter::builder()
-                .with_tonic()
-                .build()
-                .expect("failed to build OTLP log exporter");
-            Some(SdkLoggerProvider::builder().with_batch_exporter(exporter).build())
-        } else {
-            None
-        };
+    let logger_provider: Option<SdkLoggerProvider> = if std::env::var("LEPTOS_ENV").as_deref().unwrap_or("DEV") == "DEV"
+        && std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").is_ok()
+    {
+        let exporter = opentelemetry_otlp::LogExporter::builder()
+            .with_tonic()
+            .build()
+            .expect("failed to build OTLP log exporter");
+        Some(SdkLoggerProvider::builder().with_batch_exporter(exporter).build())
+    } else {
+        None
+    };
 
     // Initialize OpenTelemetry tracing subscriber.
     // Reads OTEL_* env vars automatically. Falls back to no-op export when
@@ -104,8 +103,8 @@ async fn serve() -> ExitCode {
             &endpoint,
             env!("CARGO_PKG_NAME"),
             PROFILING_SAMPLE_RATE,
-            "pyroscope-rs",  // matches pyroscope crate's PPROFRS_SPY_NAME
-            "2.0.0",         // pyroscope crate version (PPROFRS_SPY_VERSION is private)
+            "pyroscope-rs", // matches pyroscope crate's PPROFRS_SPY_NAME
+            "2.0.0",        // pyroscope crate version (PPROFRS_SPY_VERSION is private)
             backend,
         )
         .tags(vec![("service.namespace", "dpe")])
@@ -127,9 +126,7 @@ async fn serve() -> ExitCode {
     }
 
     // Set data directory for dpe-core (thread-safe OnceLock, no env mutation)
-    dpe_core::set_data_dir(
-        dpe_config.data_dir.to_str().expect("data_dir path must be valid UTF-8"),
-    );
+    dpe_core::set_data_dir(dpe_config.data_dir.to_str().expect("data_dir path must be valid UTF-8"));
 
     // Set placeholder visibility flag for dpe-core
     dpe_core::set_show_placeholder_values(dpe_config.show_placeholder_values);
@@ -138,8 +135,8 @@ async fn serve() -> ExitCode {
     }
 
     // Load Leptos configuration from Cargo.toml metadata
-    let conf = get_configuration(None)
-        .expect("Leptos configuration missing — check Cargo.toml [package.metadata.leptos]");
+    let conf =
+        get_configuration(None).expect("Leptos configuration missing — check Cargo.toml [package.metadata.leptos]");
     let addr = conf.leptos_options.site_addr;
     let leptos_options = conf.leptos_options;
 
@@ -191,9 +188,7 @@ async fn serve() -> ExitCode {
                     .key_extractor(SmartIpKeyExtractor)
                     .finish()
                     .expect("GovernorConfig should build with valid defaults");
-                GovernorLayer {
-                    config: std::sync::Arc::new(governor_conf),
-                }
+                GovernorLayer { config: std::sync::Arc::new(governor_conf) }
             }),
         )
         .with_state(leptos_options);
@@ -224,17 +219,15 @@ async fn serve() -> ExitCode {
         }
         drop(_otel_guard);
     })
-        .await
-        .ok();
+    .await
+    .ok();
 
     ExitCode::SUCCESS
 }
 
 async fn shutdown_signal() {
     let ctrl_c = async {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
+        tokio::signal::ctrl_c().await.expect("failed to install Ctrl+C handler");
     };
 
     #[cfg(unix)]
@@ -378,7 +371,9 @@ fn validate(data_dir: PathBuf) -> ExitCode {
     // Cross-reference checks: verify contributor IDs resolve to known persons or organizations
     for id in &contributor_ids {
         if !known_person_ids.contains(id) && !known_org_ids.contains(id) {
-            errors.push(format!("broken reference: contributor '{id}' not found in persons/ or organizations/"));
+            errors.push(format!(
+                "broken reference: contributor '{id}' not found in persons/ or organizations/"
+            ));
         }
     }
 

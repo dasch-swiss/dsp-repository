@@ -12,11 +12,7 @@ pub mod pages;
 use components::{Footer, Header};
 use pages::{AboutPage, ProjectPage, ProjectsPage};
 
-pub fn shell(
-    options: LeptosOptions,
-    fathom_site_id: Option<String>,
-    traceparent: Option<String>,
-) -> impl IntoView {
+pub fn shell(options: LeptosOptions, fathom_site_id: Option<String>, traceparent: Option<String>) -> impl IntoView {
     view! {
         <!DOCTYPE html>
         <html lang="en">

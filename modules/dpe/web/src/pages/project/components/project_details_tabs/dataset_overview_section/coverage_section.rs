@@ -17,10 +17,7 @@ pub fn CoverageSection(
         })
         .collect();
 
-    let spatial_coverage: Vec<_> = spatial_coverage
-        .into_iter()
-        .filter(|s| should_render_value(&s.url))
-        .collect();
+    let spatial_coverage: Vec<_> = spatial_coverage.into_iter().filter(|s| should_render_value(&s.url)).collect();
 
     view! {
         {(!temporal_coverage.is_empty())

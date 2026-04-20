@@ -55,8 +55,9 @@ pub async fn list_projects(
     data_language: Option<String>,
     access_rights: Option<String>,
 ) -> Result<Page, ServerFnError> {
-    use super::project::ProjectQuery;
     use dpe_core::all_projects;
+
+    use super::project::ProjectQuery;
 
     let query = ProjectQuery {
         ongoing,
@@ -121,9 +122,7 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
                 project
                     .data_language
                     .as_ref()
-                    .map(|langs| {
-                        langs.iter().any(|lang| data_language_filter.contains(lang))
-                    })
+                    .map(|langs| langs.iter().any(|lang| data_language_filter.contains(lang)))
                     .unwrap_or(false)
             };
 
@@ -145,10 +144,7 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
         .collect();
 
     // Pre-compute lowercase sort keys to avoid O(n log n) String allocations in the comparator.
-    let mut keyed: Vec<(String, &Project)> = filtered_projects
-        .iter()
-        .map(|p| (p.name.to_lowercase(), *p))
-        .collect();
+    let mut keyed: Vec<(String, &Project)> = filtered_projects.iter().map(|p| (p.name.to_lowercase(), *p)).collect();
     keyed.sort_by(|a, b| a.0.cmp(&b.0));
     let filtered_projects: Vec<&Project> = keyed.into_iter().map(|(_, p)| p).collect();
 
@@ -181,9 +177,7 @@ mod tests {
         data_language: Option<Vec<&str>>,
         access_rights: AccessRightsType,
     ) -> Project {
-        let data_language = data_language.map(|langs| {
-            langs.into_iter().map(|l| l.to_string()).collect()
-        });
+        let data_language = data_language.map(|langs| langs.into_iter().map(|l| l.to_string()).collect());
         Project {
             id: shortcode.to_string(),
             pid: format!("pid-{shortcode}"),
@@ -308,8 +302,22 @@ mod tests {
     #[test]
     fn search_matches_shortcode() {
         let projects = vec![
-            make_project("Project One", "SC01", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
-            make_project("Project Two", "SC02", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
+            make_project(
+                "Project One",
+                "SC01",
+                ProjectStatus::Ongoing,
+                None,
+                None,
+                AccessRightsType::FullOpenAccess,
+            ),
+            make_project(
+                "Project Two",
+                "SC02",
+                ProjectStatus::Ongoing,
+                None,
+                None,
+                AccessRightsType::FullOpenAccess,
+            ),
         ];
         let query = ProjectQuery { search: Some("sc01".to_string()), ..Default::default() };
         let page = filter_and_paginate(&projects, &query, None);
@@ -342,8 +350,22 @@ mod tests {
     #[test]
     fn type_of_data_filter_matches() {
         let projects = vec![
-            make_project("A", "A", ProjectStatus::Ongoing, Some(vec!["Text"]), None, AccessRightsType::FullOpenAccess),
-            make_project("B", "B", ProjectStatus::Ongoing, Some(vec!["Image"]), None, AccessRightsType::FullOpenAccess),
+            make_project(
+                "A",
+                "A",
+                ProjectStatus::Ongoing,
+                Some(vec!["Text"]),
+                None,
+                AccessRightsType::FullOpenAccess,
+            ),
+            make_project(
+                "B",
+                "B",
+                ProjectStatus::Ongoing,
+                Some(vec!["Image"]),
+                None,
+                AccessRightsType::FullOpenAccess,
+            ),
             make_project("C", "C", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
         ];
         let query = ProjectQuery { type_of_data: Some("Text".to_string()), ..Default::default() };
@@ -355,8 +377,22 @@ mod tests {
     #[test]
     fn type_of_data_filter_multi_value() {
         let projects = vec![
-            make_project("A", "A", ProjectStatus::Ongoing, Some(vec!["Text"]), None, AccessRightsType::FullOpenAccess),
-            make_project("B", "B", ProjectStatus::Ongoing, Some(vec!["Image"]), None, AccessRightsType::FullOpenAccess),
+            make_project(
+                "A",
+                "A",
+                ProjectStatus::Ongoing,
+                Some(vec!["Text"]),
+                None,
+                AccessRightsType::FullOpenAccess,
+            ),
+            make_project(
+                "B",
+                "B",
+                ProjectStatus::Ongoing,
+                Some(vec!["Image"]),
+                None,
+                AccessRightsType::FullOpenAccess,
+            ),
             make_project("C", "C", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
         ];
         let query = ProjectQuery {
@@ -372,13 +408,24 @@ mod tests {
     #[test]
     fn data_language_filter_matches() {
         let projects = vec![
-            make_project("A", "A", ProjectStatus::Ongoing, None, Some(vec!["en"]), AccessRightsType::FullOpenAccess),
-            make_project("B", "B", ProjectStatus::Ongoing, None, Some(vec!["fr"]), AccessRightsType::FullOpenAccess),
+            make_project(
+                "A",
+                "A",
+                ProjectStatus::Ongoing,
+                None,
+                Some(vec!["en"]),
+                AccessRightsType::FullOpenAccess,
+            ),
+            make_project(
+                "B",
+                "B",
+                ProjectStatus::Ongoing,
+                None,
+                Some(vec!["fr"]),
+                AccessRightsType::FullOpenAccess,
+            ),
         ];
-        let query = ProjectQuery {
-            data_language: Some("en".to_string()),
-            ..Default::default()
-        };
+        let query = ProjectQuery { data_language: Some("en".to_string()), ..Default::default() };
         let page = filter_and_paginate(&projects, &query, None);
         assert_eq!(page.total_items, 1);
         assert_eq!(page.items[0].name, "A");
@@ -390,7 +437,14 @@ mod tests {
     fn access_rights_filter_matches() {
         let projects = vec![
             make_project("A", "A", ProjectStatus::Ongoing, None, None, AccessRightsType::FullOpenAccess),
-            make_project("B", "B", ProjectStatus::Ongoing, None, None, AccessRightsType::OpenAccessWithRestrictions),
+            make_project(
+                "B",
+                "B",
+                ProjectStatus::Ongoing,
+                None,
+                None,
+                AccessRightsType::OpenAccessWithRestrictions,
+            ),
         ];
         let query = ProjectQuery {
             access_rights: Some("Full Open Access".to_string()),
@@ -530,7 +584,7 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
     use std::fs;
     use std::path::PathBuf;
 
-    use dpe_core::{CollectionRef, all_projects, get_data_dir};
+    use dpe_core::{all_projects, get_data_dir, CollectionRef};
 
     // Look up the base project from the in-memory cache — no disk scan needed.
     let Some(base) = all_projects().iter().find(|p| p.shortcode == shortcode) else {

@@ -5,12 +5,7 @@ pub const VALID_VITAL_NAMES: &[&str] = &["LCP", "INP", "CLS", "TTFB", "FCP"];
 /// Valid vital ratings (bounded set).
 pub const VALID_RATINGS: &[&str] = &["good", "needs-improvement", "poor"];
 /// Valid error kinds (bounded set).
-pub const VALID_ERROR_KINDS: &[&str] = &[
-    "js_error",
-    "promise_rejection",
-    "resource_error",
-    "datastar_sse",
-];
+pub const VALID_ERROR_KINDS: &[&str] = &["js_error", "promise_rejection", "resource_error", "datastar_sse"];
 
 /// Top-level beacon payload sent by the browser telemetry module.
 #[derive(Deserialize)]
@@ -267,8 +262,9 @@ mod tests {
     }
 
     mod properties {
-        use super::*;
         use proptest::prelude::*;
+
+        use super::*;
 
         proptest! {
             #[test]

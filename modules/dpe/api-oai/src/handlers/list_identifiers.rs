@@ -23,11 +23,7 @@ pub fn handle_list_identifiers(
 
     builder.start_element("ListIdentifiers");
     for record in &records {
-        builder.write_record_header(
-            &record.header.identifier,
-            &record.header.datestamp,
-            &record.header.set_specs,
-        );
+        builder.write_record_header(&record.header.identifier, &record.header.datestamp, &record.header.set_specs);
     }
     builder.end_element("ListIdentifiers");
 
@@ -36,9 +32,10 @@ pub fn handle_list_identifiers(
 
 #[cfg(test)]
 mod tests {
+    use super::super::test_utils::{
+        first_0803_record, golden, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository,
+    };
     use super::*;
-
-    use super::super::test_utils::{first_0803_record, golden, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository};
 
     fn make_params(metadata_prefix: Option<&str>) -> OaiParams {
         OaiParams {

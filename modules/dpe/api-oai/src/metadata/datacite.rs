@@ -3,13 +3,12 @@
 use dpe_core::{Discipline, Funding, Project, TemporalCoverage};
 
 use super::helpers::{
-    access_rights_to_string, extract_year, format_date_range, get_multilingual_value,
-    infer_subject_scheme, is_creator, license_identifier_to_label, map_contributor_type,
+    access_rights_to_string, extract_year, format_date_range, get_multilingual_value, infer_subject_scheme, is_creator,
+    license_identifier_to_label, map_contributor_type,
 };
 use super::types::{
-    DataCiteContributor, DataCiteCreator, DataCiteDate, DataCiteDescription,
-    DataCiteFundingReference, DataCiteGeoLocation, DataCiteRecord, DataCiteRights,
-    DataCiteSubject, DataCiteTitle,
+    DataCiteContributor, DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteFundingReference,
+    DataCiteGeoLocation, DataCiteRecord, DataCiteRights, DataCiteSubject, DataCiteTitle,
 };
 
 const PUBLISHER: &str = "DaSCH";
@@ -62,8 +61,7 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
     // Titles (mandatory)
     // Use the longer of name/officialName as primary, shorter as AlternativeTitle
     let name_valid = !dpe_core::is_placeholder(&project.name) && !project.name.is_empty();
-    let official_valid =
-        !dpe_core::is_placeholder(&project.official_name) && !project.official_name.is_empty();
+    let official_valid = !dpe_core::is_placeholder(&project.official_name) && !project.official_name.is_empty();
 
     match (name_valid, official_valid) {
         (true, true) => {
@@ -72,11 +70,9 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
             } else {
                 (&project.name, &project.official_name)
             };
-            record.titles.push(DataCiteTitle {
-                title: primary.clone(),
-                title_type: None,
-                lang: None,
-            });
+            record
+                .titles
+                .push(DataCiteTitle { title: primary.clone(), title_type: None, lang: None });
             if primary != alternative {
                 record.titles.push(DataCiteTitle {
                     title: alternative.clone(),
@@ -93,11 +89,9 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
             });
         }
         _ => {
-            record.titles.push(DataCiteTitle {
-                title: project.name.clone(),
-                title_type: None,
-                lang: None,
-            });
+            record
+                .titles
+                .push(DataCiteTitle { title: project.name.clone(), title_type: None, lang: None });
         }
     }
 
@@ -190,10 +184,9 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
 
     // Dates - use startDate/endDate range as dateType="Collected"
     if let Some(date_range) = format_date_range(&project.start_date, &project.end_date) {
-        record.dates.push(DataCiteDate {
-            date: date_range,
-            date_type: "Collected".to_string(),
-        });
+        record
+            .dates
+            .push(DataCiteDate { date: date_range, date_type: "Collected".to_string() });
     }
 
     // Dates - temporal coverage as dateType="Coverage"
@@ -203,10 +196,9 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
             TemporalCoverage::Text(text_map) => get_multilingual_value(text_map),
         };
         if let Some(text) = coverage_text {
-            record.dates.push(DataCiteDate {
-                date: text,
-                date_type: "Coverage".to_string(),
-            });
+            record
+                .dates
+                .push(DataCiteDate { date: text, date_type: "Coverage".to_string() });
         }
     }
 
@@ -241,20 +233,16 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
             } else {
                 None
             },
-            rights_identifier_scheme: if has_identifier {
-                Some("SPDX".to_string())
-            } else {
-                None
-            },
+            rights_identifier_scheme: if has_identifier { Some("SPDX".to_string()) } else { None },
         });
     }
 
     // GeoLocations from spatial_coverage
     for sc in &project.spatial_coverage {
         if let Some(ref text) = sc.text {
-            record.geo_locations.push(DataCiteGeoLocation {
-                geo_location_place: text.clone(),
-            });
+            record
+                .geo_locations
+                .push(DataCiteGeoLocation { geo_location_place: text.clone() });
         }
     }
 

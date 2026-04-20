@@ -68,3 +68,19 @@ jobs:
           curl -f -u "${JENKINS_BASIC_AUTH_USER}:${JENKINS_BASIC_AUTH_PASS}" \
                -X POST "${JENKINS_UPDATE_RELEASE_WEBHOOK}" \
                -d "Service=dpe&Version=${IMAGE_TAG}"
+
+  trigger-prod-deployment:
+    name: Trigger deployment to PROD
+    runs-on: ubuntu-latest
+    needs: publish
+    steps:
+      - name: Trigger deployment to PROD
+        env:
+          IMAGE_TAG: ${{ needs.publish.outputs.tag }}
+          JENKINS_BASIC_AUTH_USER: ${{ secrets.JENKINS_BASIC_AUTH_USER }}
+          JENKINS_BASIC_AUTH_PASS: ${{ secrets.JENKINS_BASIC_AUTH_PASS }}
+          JENKINS_UPDATE_RELEASE_WEBHOOK: ${{ secrets.JENKINS_UPDATE_DPE_PROD_WEBHOOK }}
+        run: |
+          curl -f -u "${JENKINS_BASIC_AUTH_USER}:${JENKINS_BASIC_AUTH_PASS}" \
+               -X POST "${JENKINS_UPDATE_RELEASE_WEBHOOK}" \
+               -d "Service=dpe&Version=${IMAGE_TAG}"

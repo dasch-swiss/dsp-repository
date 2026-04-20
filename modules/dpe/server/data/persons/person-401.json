@@ -1,0 +1,23 @@
+{
+    "id": "person-401",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-7456-4595",
+            "text": "ORCID URL: https://orcid.org/0000-0001-7456-4595"
+        }
+    ],
+    "givenNames": [
+        "Soledad"
+    ],
+    "familyNames": [
+        "Castaño Santos"
+    ],
+    "jobTitles": [
+        "Assistant Professor"
+    ],
+    "affiliations": [
+        "organization-149"
+    ],
+    "email": "soledad.castano@uv.es"
+}

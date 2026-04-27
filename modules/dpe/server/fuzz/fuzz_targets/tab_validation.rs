@@ -26,7 +26,7 @@ fuzz_target!(|data: &[u8]| {
     // Exercise combined validation path (as the handler would)
     if is_valid_shortcode(shortcode) && VALID_TABS.contains(&tab) {
         // Valid input — exercise URL construction (as replaceState does)
-        let url = format!("/projects/{}?tab={}", shortcode, tab);
-        assert!(url.starts_with("/projects/"));
+        let url = format!("/dpe/projects/{}?tab={}", shortcode, tab);
+        assert!(url.starts_with("/dpe/projects/"));
     }
 });

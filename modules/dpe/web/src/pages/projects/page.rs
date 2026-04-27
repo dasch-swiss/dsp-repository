@@ -22,8 +22,8 @@ pub fn ProjectsPage() -> impl IntoView {
     let cq = current_query.clone();
 
     let dialog_open = current_query.dialog.unwrap_or(false);
-    let open_dialog_href = format!("/projects{}", current_query.clone().with_dialog(true).to_query_string());
-    let close_dialog_href = format!("/projects{}", current_query.clone().with_dialog(false).to_query_string());
+    let open_dialog_href = format!("/dpe/projects{}", current_query.clone().with_dialog(true).to_query_string());
+    let close_dialog_href = format!("/dpe/projects{}", current_query.clone().with_dialog(false).to_query_string());
 
     view! {
         <Suspense>
@@ -44,7 +44,7 @@ pub fn ProjectsPage() -> impl IntoView {
                     .map(|t| {
                         let checked = type_of_data.contains(&t);
                         let href = format!(
-                            "/projects{}",
+                            "/dpe/projects{}",
                             cq.with_type_of_data_toggled(&t).to_query_string(),
                         );
                         (t, checked, href)
@@ -59,7 +59,7 @@ pub fn ProjectsPage() -> impl IntoView {
                     .map(|(code, display)| {
                         let checked = data_language.contains(&code);
                         let href = format!(
-                            "/projects{}",
+                            "/dpe/projects{}",
                             cq.with_data_language_toggled(&code).to_query_string(),
                         );
                         (display, checked, href)

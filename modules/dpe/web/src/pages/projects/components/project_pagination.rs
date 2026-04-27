@@ -14,7 +14,7 @@ pub fn ProjectPagination(nr_pages: i32, query: ProjectQuery) -> impl IntoView {
     let is_last_page = current_page >= nr_pages;
 
     // Helper closure to build page URLs
-    let build_page_url = |page: i32| format!("/projects{}", query.clone().with_page(page).to_query_string());
+    let build_page_url = |page: i32| format!("/dpe/projects{}", query.clone().with_page(page).to_query_string());
 
     // Pre-compute navigation URLs
     let prev_url = build_page_url(current_page - 1);

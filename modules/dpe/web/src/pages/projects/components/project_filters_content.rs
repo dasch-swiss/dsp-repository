@@ -24,7 +24,7 @@ pub fn ProjectFiltersContent(
             <h4 class="dpe-title">"Filters"</h4>
             {if any_filter_active {
                 view! {
-                    <a href="/projects" class="text-xs text-primary hover:underline">
+                    <a href="/dpe/projects" class="text-xs text-primary hover:underline">
                         "Clear all"
                     </a>
                 }

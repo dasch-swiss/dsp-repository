@@ -6,10 +6,10 @@ const BASE_URL = "http://localhost:4000";
 
 // Every distinct page type in DPE.
 const pages = [
-  { name: "Home", path: "/" },
-  { name: "Projects listing", path: "/projects" },
-  { name: "Project detail", path: "/projects/0803" },
-  { name: "About", path: "/about" },
+  { name: "Home", path: "/dpe/" },
+  { name: "Projects listing", path: "/dpe/projects" },
+  { name: "Project detail", path: "/dpe/projects/0803" },
+  { name: "About", path: "/dpe/about" },
 ];
 
 test.describe("DPE accessibility — WCAG 2.1 Level AA", () => {

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const BASE_URL = "http://localhost:4000";
+const BASE_URL = "http://localhost:4000/dpe";
 
 // Use a project shortcode known to have publications (incunabula)
 const PROJECT_SHORTCODE = "0803";
@@ -139,7 +139,9 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
       hasText: "Contributors",
     });
     const href = await contributorsTab.getAttribute("href");
-    expect(href).toContain(`/projects/${PROJECT_SHORTCODE}?tab=contributors`);
+    expect(href).toContain(
+      `/dpe/projects/${PROJECT_SHORTCODE}?tab=contributors`,
+    );
 
     // Click navigates via full page load (graceful degradation)
     await contributorsTab.click();

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const BASE_URL = "http://localhost:4000";
 const PROJECT_SHORTCODE = "0803";
-const PROJECT_URL = `${BASE_URL}/projects/${PROJECT_SHORTCODE}`;
+const PROJECT_URL = `${BASE_URL}/dpe/projects/${PROJECT_SHORTCODE}`;
 
 test.describe("Visual regression — tab states", () => {
   test("overview tab matches baseline screenshot", async ({ page }) => {

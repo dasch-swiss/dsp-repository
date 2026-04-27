@@ -93,7 +93,7 @@ pub async fn tab_fragment_handler(
     // Build SSE events
     let patch = PatchElements::new(html).selector("#project-tabs").use_view_transition(true);
 
-    let url_update = ExecuteScript::new(format!("history.replaceState({{}}, '', '/projects/{}?tab={}')", id, tab));
+    let url_update = ExecuteScript::new(format!("history.replaceState({{}}, '', '/dpe/projects/{}?tab={}')", id, tab));
 
     // Restore focus to the active tab after DOM patch (prevents focus loss to <body>)
     let focus_tab = ExecuteScript::new(format!("document.getElementById('tab-{}')?.focus()", tab));
@@ -280,7 +280,7 @@ fn render_search_results(query: &str, results: &Page) -> String {
                             view! {
                                 <li role="option">
                                     <a
-                                        href=format!("/projects/{}", shortcode)
+                                        href=format!("/dpe/projects/{}", shortcode)
                                         class="block px-4 py-3 hover:bg-base-200 transition-colors text-sm"
                                     >
                                         <div class="font-medium text-base-content">{name}</div>
@@ -295,7 +295,7 @@ fn render_search_results(query: &str, results: &Page) -> String {
                 </ul>
                 <div class="border-t border-base-300 mt-1 pt-1">
                     <a
-                        href=format!("/projects?search={}", encoded_query)
+                        href=format!("/dpe/projects?search={}", encoded_query)
                         class="flex items-center gap-2 px-2 py-1 hover:bg-base-200 rounded text-sm text-base-content/70"
                     >
                         <mosaic_tiles::icon::Icon icon=IconSearch class="w-4 h-4" />
@@ -592,7 +592,7 @@ mod tests {
 
     fn test_app() -> Router {
         init_test_data();
-        Router::new().route("/projects/{id}/tab/{tab}", get(tab_fragment_handler))
+        Router::new().route("/dpe/projects/{id}/tab/{tab}", get(tab_fragment_handler))
     }
 
     #[tokio::test]
@@ -601,7 +601,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/projects/0803/tab/nonexistent")
+                    .uri("/dpe/projects/0803/tab/nonexistent")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -616,7 +616,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/projects/../etc/tab/overview")
+                    .uri("/dpe/projects/../etc/tab/overview")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -631,7 +631,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/projects/9999/tab/overview")
+                    .uri("/dpe/projects/9999/tab/overview")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -646,7 +646,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/projects/0803/tab/overview")
+                    .uri("/dpe/projects/0803/tab/overview")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -682,7 +682,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/projects/0803/tab/contributors")
+                    .uri("/dpe/projects/0803/tab/contributors")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -700,7 +700,7 @@ mod tests {
             &body_str[..body_str.len().min(2000)]
         );
         assert!(
-            body_str.contains("/projects/0803?tab=contributors"),
+            body_str.contains("/dpe/projects/0803?tab=contributors"),
             "replaceState URL should match request"
         );
     }
@@ -711,7 +711,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/projects/0803/tab/overview")
+                    .uri("/dpe/projects/0803/tab/overview")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -736,7 +736,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/projects/0803/tab/overview")
+                    .uri("/dpe/projects/0803/tab/overview")
                     .body(Body::empty())
                     .unwrap(),
             )

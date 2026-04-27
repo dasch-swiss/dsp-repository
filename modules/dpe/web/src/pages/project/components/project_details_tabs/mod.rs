@@ -109,7 +109,7 @@ pub fn TabLink(
 
     view! {
         <a
-            href=format!("/projects/{}?tab={}", shortcode, value)
+            href=format!("/dpe/projects/{}?tab={}", shortcode, value)
             rel="external"
             role="tab"
             id=format!("tab-{value}")
@@ -117,7 +117,7 @@ pub fn TabLink(
             aria-controls="tab-panel"
             tabindex=if is_active { "0" } else { "-1" }
             data-on:click__prevent=format!(
-                "@get('/projects/{}/tab/{}', {{retry: 'never'}})",
+                "@get('/dpe/projects/{}/tab/{}', {{retry: 'never'}})",
                 shortcode,
                 value,
             )

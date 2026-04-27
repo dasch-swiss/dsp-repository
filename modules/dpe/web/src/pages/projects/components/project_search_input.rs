@@ -49,7 +49,7 @@ if (idx >= 0 && items[idx]) {\
 #[component]
 pub fn ProjectSearchInput() -> impl IntoView {
     view! {
-        <form method="get" action="/projects">
+        <form method="get" action="/dpe/projects">
             <div class="relative flex-1" data-signals="{_focused: false}">
                 <label class="input w-full">
                     <Icon icon=IconSearch class="w-4 h-4 opacity-50 shrink-0" />
@@ -64,7 +64,7 @@ pub fn ProjectSearchInput() -> impl IntoView {
                         aria-expanded="false"
                         data-attr:aria-expanded="$_focused && $search.length > 0 ? 'true' : 'false'"
                         data-bind:search
-                        data-on:input__debounce.300ms="@get('/projects/search')"
+                        data-on:input__debounce.300ms="@get('/dpe/projects/search')"
                         data-on:focus="$_focused = true"
                         data-on:blur__debounce.200ms="$_focused = false"
                         onkeydown=SEARCH_KEYBOARD_NAV

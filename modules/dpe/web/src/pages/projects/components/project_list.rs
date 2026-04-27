@@ -51,7 +51,7 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                                                 <h3 class="mb-4">
                                                     "No projects found matching your criteria"
                                                 </h3>
-                                                <Link href="/projects" as_button=ButtonVariant::Ghost>
+                                                <Link href="/dpe/projects" as_button=ButtonVariant::Ghost>
                                                     "Clear your filters"
                                                 </Link>
                                             </div>
@@ -81,7 +81,7 @@ pub fn ProjectList(query: Memo<Result<ProjectQuery, leptos_router::params::Param
                                                             content=project.short_description.clone()
                                                             status=project.status.clone()
                                                             access_rights=project.access_rights.access_rights.clone()
-                                                            btn_target=format!("/projects/{}", project.shortcode)
+                                                            btn_target=format!("/dpe/projects/{}", project.shortcode)
                                                             shortcode=project.shortcode.clone()
                                                             keywords=keywords
                                                         />

@@ -82,7 +82,7 @@ impl ProjectQuery {
             .iter()
             .map(|&v| {
                 let checked = self.access_rights().contains(&v.to_string());
-                let href = format!("/projects{}", self.with_access_rights_toggled(v).to_query_string());
+                let href = format!("/dpe/projects{}", self.with_access_rights_toggled(v).to_query_string());
                 (v.to_string(), checked, href)
             })
             .collect()
@@ -96,7 +96,7 @@ impl ProjectQuery {
         ]
         .iter()
         .map(|(param, label, checked)| {
-            let href = format!("/projects{}", self.with_status_toggled(param).to_query_string());
+            let href = format!("/dpe/projects{}", self.with_status_toggled(param).to_query_string());
             (label.to_string(), *checked, href)
         })
         .collect()

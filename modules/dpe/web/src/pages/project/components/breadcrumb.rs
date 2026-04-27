@@ -11,7 +11,7 @@ pub fn Breadcrumb(project_name: String) -> impl IntoView {
 
     view! {
         <TilesBreadcrumb>
-            <BreadcrumbItem href="/projects">"Projects"</BreadcrumbItem>
+            <BreadcrumbItem href="/dpe/projects">"Projects"</BreadcrumbItem>
             <BreadcrumbItem>{project_name_truncated}</BreadcrumbItem>
         </TilesBreadcrumb>
     }

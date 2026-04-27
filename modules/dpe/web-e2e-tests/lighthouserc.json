@@ -4,8 +4,8 @@
     "collect": {
       "url": [
         "http://localhost:4000/",
-        "http://localhost:4000/projects",
-        "http://localhost:4000/projects/0803"
+        "http://localhost:4000/dpe/projects",
+        "http://localhost:4000/dpe/projects/0803"
       ],
       "numberOfRuns": 3,
       "settings": {

@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { formatViolations } from "./axe-helpers";
 
-const BASE_URL = "http://localhost:4000";
+const BASE_URL = "http://localhost:4000/dpe";
 const PROJECT_SHORTCODE = "0803";
 const PROJECT_URL = `${BASE_URL}/projects/${PROJECT_SHORTCODE}`;
 

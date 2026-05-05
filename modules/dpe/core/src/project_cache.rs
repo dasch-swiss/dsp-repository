@@ -25,10 +25,10 @@ pub fn project_by_shortcode(shortcode: &str) -> Option<&'static Project> {
         all_projects()
             .iter()
             .enumerate()
-            .map(|(i, p)| (p.shortcode.clone(), i))
+            .map(|(i, p)| (p.shortcode.to_uppercase(), i))
             .collect()
     });
-    index.get(shortcode).map(|&i| &all_projects()[i])
+    index.get(&shortcode.to_uppercase()).map(|&i| &all_projects()[i])
 }
 
 fn load_all_projects() -> Vec<Project> {

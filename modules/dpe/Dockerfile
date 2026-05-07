@@ -24,6 +24,13 @@ ENV LEPTOS_SITE_PKG_DIR="pkg"
 ENV LEPTOS_SITE_ADDR="0.0.0.0:8080"
 ENV LEPTOS_ENV="PROD"
 ENV DPE_DATA_DIR="/app/server/data"
+# Enable jemalloc heap profiling. The `_RJEM_` prefix is tikv-jemallocator's
+# convention for avoiding conflicts with system jemalloc. `lg_prof_sample:19`
+# samples one allocation per ~512 KiB (≈1–2% overhead). The pyroscope heap
+# backend reads these dumps; without `prof:true,prof_active:true` set at
+# process launch, heap profiling is silently disabled and CPU profiling
+# continues unaffected.
+ENV _RJEM_MALLOC_CONF="prof:true,prof_active:true,lg_prof_sample:19"
 
 EXPOSE 8080
 

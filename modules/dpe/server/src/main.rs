@@ -8,6 +8,17 @@ mod fragments;
 mod telemetry_collector;
 mod traceparent;
 
+// Use jemalloc as the global allocator on Linux so the pyroscope jemalloc
+// backend can produce heap profiles. Heap profiling itself is gated at runtime
+// on `_RJEM_MALLOC_CONF` (prof:true) — without that env var, jemalloc still
+// runs but in non-profiling mode (no overhead beyond the allocator swap).
+//
+// macOS keeps the system allocator: jemalloc on macOS adds friction without
+// benefit since heap profiling is a Linux/prod concern.
+#[cfg(target_os = "linux")]
+#[global_allocator]
+static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
 #[derive(Parser)]
 #[command(name = "dpe", about = "DaSCH Discovery and Presentation Environment")]
 struct Cli {
@@ -123,6 +134,52 @@ async fn serve() -> ExitCode {
         None
     };
 
+    // Start Pyroscope heap profiling agent (jemalloc allocation sampling).
+    // Requires the global allocator to be jemalloc (Linux only) AND the
+    // process to have been launched with `_RJEM_MALLOC_CONF=prof:true,...`.
+    // Failure to start (e.g. malloc_conf not set) is logged but non-fatal —
+    // CPU profiling remains active. The agent's `stop()` returns a stoppable
+    // handle, but we keep ownership directly because the type is the
+    // running variant; the shutdown path calls `.stop()` like the CPU agent.
+    let _pyroscope_heap_agent = if let Ok(endpoint) = std::env::var("PYROSCOPE_ENDPOINT") {
+        let backend = pyroscope::backend::jemalloc::jemalloc_backend();
+        let build_result = pyroscope::pyroscope::PyroscopeAgentBuilder::new(
+            &endpoint,
+            concat!(env!("CARGO_PKG_NAME"), ".heap"),
+            PROFILING_SAMPLE_RATE,
+            "pyroscope-rs",
+            "2.0.0",
+            backend,
+        )
+        .tags(vec![("service.namespace", "dpe"), ("profile_kind", "heap")])
+        .build();
+
+        match build_result {
+            Ok(agent) => match agent.start() {
+                Ok(running) => {
+                    tracing::info!(endpoint = %endpoint, "Pyroscope heap profiling enabled");
+                    Some(running)
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        error = %e,
+                        "Pyroscope heap agent failed to start — heap profiles disabled"
+                    );
+                    None
+                }
+            },
+            Err(e) => {
+                tracing::info!(
+                    reason = %e,
+                    "Heap profiling disabled (set _RJEM_MALLOC_CONF=prof:true,prof_active:true,lg_prof_sample:19 to enable)"
+                );
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     // Load DPE-specific configuration (defaults → dpe.toml → DPE_* env vars)
     let dpe_config = config::DpeConfig::load().expect("failed to load DPE configuration");
     tracing::info!(data_dir = %dpe_config.data_dir.display(), "DPE configuration loaded");
@@ -213,6 +270,11 @@ async fn serve() -> ExitCode {
     // spawn_blocking to avoid deadlocking the Tokio runtime.
     tokio::task::spawn_blocking(move || {
         if let Some(agent) = _pyroscope_agent {
+            if let Ok(ready) = agent.stop() {
+                ready.shutdown();
+            }
+        }
+        if let Some(agent) = _pyroscope_heap_agent {
             if let Ok(ready) = agent.stop() {
                 ready.shutdown();
             }

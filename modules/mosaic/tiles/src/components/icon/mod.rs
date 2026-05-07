@@ -80,9 +80,22 @@ pub fn Icon(
     #[prop(optional, into)]
     class: MaybeProp<String>,
 ) -> impl IntoView {
+    // Read the class once at component creation rather than from inside a
+    // `move ||` closure. All 101 call sites in this repo pass either no
+    // `class` or a static string literal — none feed in a reactive signal —
+    // so the wrapping closure only added a reactive subscription that turned
+    // every `<Icon>` into a node visited by `<Suspense>::dry_resolve`. Under
+    // streaming SSR that walk could fire after the owning scope had already
+    // been disposed, hitting the recurring `tokio-rt-worker` panic at
+    // `reactive_graph-0.2.11/src/traits.rs:394:39`. The actual panic surface
+    // for DPE was eliminated by removing the `<Suspense>` boundaries on the
+    // projects routes; this is a defensive cleanup that removes the
+    // closure regardless of where Icon is rendered (e.g. mosaic-playground
+    // islands).
+    let class_str = format!("icon {}", class.get_untracked().unwrap_or_default());
     view! {
         <svg
-            class=move || format!("icon {}", class.get().unwrap_or_default())
+            class=class_str
             xmlns="http://www.w3.org/2000/svg"
             viewBox=icon.view_box
             fill="currentColor"

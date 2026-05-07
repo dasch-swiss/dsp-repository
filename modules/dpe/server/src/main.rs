@@ -402,19 +402,21 @@ fn validate(data_dir: PathBuf) -> ExitCode {
 }
 
 /// Install a panic hook that emits panics as structured `tracing::error!`
-/// events (in addition to the default stderr behaviour), so production panics
-/// are captured by the same OTel pipeline as the rest of the logs. Field names
-/// follow the OTel semconv for exceptions (`exception.message`,
-/// `exception.stacktrace`, `exception.r#type`, `thread.name`) so panic events
-/// share Grafana Sift / Loki query surface with `RecordException` events
-/// emitted by instrumented spans.
+/// events, so production panics are captured by the same OTel pipeline as
+/// the rest of the logs. Field names follow the OTel semconv for exceptions
+/// (`exception.message`, `exception.stacktrace`, `exception.r#type`,
+/// `thread.name`) so panic events share Grafana Sift / Loki query surface
+/// with `RecordException` events emitted by instrumented spans.
+///
+/// The default stderr hook is only invoked as a fallback when the structured
+/// emission itself panics (e.g. OTel exporter in a degraded state). Under
+/// normal operation each panic produces exactly one log line — no duplicate
+/// stderr backtrace.
 fn install_tracing_panic_hook() {
     let default_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
-        // Best-effort structured emission. If the subscriber itself panics
-        // (e.g. OTel exporter buffer full), swallow the second panic so the
-        // default stderr hook below still runs.
-        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        // Best-effort structured emission.
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let message = info.payload_as_str().unwrap_or("<non-string panic payload>");
             let thread = std::thread::current();
             let thread_name = thread.name().unwrap_or("<unnamed>");
@@ -444,9 +446,11 @@ fn install_tracing_panic_hook() {
             }
         }));
 
-        // Always call the default hook so panics keep appearing on stderr too,
-        // even if the structured emission above was suppressed.
-        default_hook(info);
+        // Fall back to the default stderr hook only if the structured emission
+        // itself panicked, so the panic is never silently swallowed.
+        if result.is_err() {
+            default_hook(info);
+        }
     }));
 }
 

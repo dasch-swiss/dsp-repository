@@ -4,43 +4,32 @@ use mosaic_tiles::link::Link;
 use super::super::info_card::InfoCard;
 use super::super::person::{AffiliationName, Person};
 use crate::components::{should_render_value, PlaceholderValue};
-use crate::domain::{get_organization, get_person, LegalInfo as LegalInfoData};
+use crate::domain::LegalInfo as LegalInfoData;
 
+// See `crate::pages::project::components` module docs for why this is a sync
+// lookup with a wasm32 stub.
+
+/// Renders an entity name (person or organization) from the in-process caches.
+#[cfg(not(target_arch = "wasm32"))]
 #[component]
 fn EntityName(id: String) -> impl IntoView {
     if id.starts_with("person-") || id.contains("-person-") {
-        let fallback = id.clone();
-        let resource = Resource::new(move || id.clone(), |id| async move { get_person(id).await });
-        view! {
-            <Suspense>
-                {move || {
-                    let name = resource
-                        .get()
-                        .and_then(|r| r.ok())
-                        .flatten()
-                        .map(|p| {
-                            format!("{} {}", p.given_names.join(" "), p.family_names.join(" "))
-                        });
-                    name.unwrap_or_else(|| fallback.clone())
-                }}
-            </Suspense>
-        }
-        .into_any()
+        let name = dpe_core::load_person(&id)
+            .map(|p| format!("{} {}", p.given_names.join(" "), p.family_names.join(" ")))
+            .unwrap_or_else(|| id.clone());
+        view! { <span>{name}</span> }.into_any()
     } else if id.starts_with("organization-") || id.contains("-organization-") {
-        let fallback = id.clone();
-        let resource = Resource::new(move || id.clone(), |id| async move { get_organization(id).await });
-        view! {
-            <Suspense>
-                {move || {
-                    let name = resource.get().and_then(|r| r.ok()).flatten().map(|o| o.name);
-                    name.unwrap_or_else(|| fallback.clone())
-                }}
-            </Suspense>
-        }
-        .into_any()
+        let name = dpe_core::load_organization(&id).map(|o| o.name).unwrap_or_else(|| id.clone());
+        view! { <span>{name}</span> }.into_any()
     } else {
         view! { <span>{id}</span> }.into_any()
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[component]
+fn EntityName(id: String) -> impl IntoView {
+    let _ = id;
 }
 
 #[component]

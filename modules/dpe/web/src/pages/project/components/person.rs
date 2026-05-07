@@ -2,41 +2,40 @@ use leptos::prelude::*;
 
 use crate::domain::organization::Organization;
 use crate::domain::person::Person as PersonData;
-use crate::domain::{get_organization, get_person};
 
-/// Fetches and renders a person by ID. Used where the caller only has an ID (e.g. legal info
+// See `super` module docs for why this is a sync lookup with a wasm32 stub.
+
+/// Renders a person by ID. Used where the caller only has an ID (e.g. legal info
 /// sidebar). For bulk contributor rendering, prefer `PersonView` with pre-resolved data.
+#[cfg(not(target_arch = "wasm32"))]
 #[component]
 pub fn Person(person_id: String, roles: Option<String>, #[prop(default = false)] show_email: bool) -> impl IntoView {
-    let person_resource = Resource::new(move || person_id.clone(), |id| async move { get_person(id).await });
-
-    view! {
-        <Suspense>
-            {move || {
-                let person_opt = person_resource.get().and_then(|result| result.ok()).flatten();
-                match person_opt {
-                    Some(person) => {
-                        let affiliation_ids = person.affiliations.clone();
-                        view! {
-                            <PersonViewWithAffiliationIds
-                                person=person
-                                affiliation_ids=affiliation_ids
-                                roles=roles.clone()
-                                show_email=show_email
-                            />
-                        }
-                            .into_any()
-                    }
-                    None => {
-                        view! { <div class="italic text-base-content/70">"Person not found"</div> }
-                            .into_any()
-                    }
-                }
-            }}
-        </Suspense>
+    match dpe_core::load_person(&person_id) {
+        Some(person) => {
+            let affiliation_ids = person.affiliations.clone();
+            view! {
+                <PersonViewWithAffiliationIds
+                    person=person
+                    affiliation_ids=affiliation_ids
+                    roles=roles
+                    show_email=show_email
+                />
+            }
+            .into_any()
+        }
+        None => view! { <div class="italic text-base-content/70">"Person not found"</div> }.into_any(),
     }
 }
 
+#[cfg(target_arch = "wasm32")]
+#[component]
+pub fn Person(person_id: String, roles: Option<String>, #[prop(default = false)] show_email: bool) -> impl IntoView {
+    let _ = (person_id, roles, show_email);
+}
+
+// Only instantiated by the non-wasm `Person` above. Gated to silence
+// dead-code warnings in the wasm32 build.
+#[cfg(not(target_arch = "wasm32"))]
 #[component]
 fn PersonViewWithAffiliationIds(
     person: PersonData,
@@ -46,8 +45,8 @@ fn PersonViewWithAffiliationIds(
 ) -> impl IntoView {
     let full_name = format!("{} {}", person.given_names.join(" "), person.family_names.join(" "),);
     let orcid_url = person.same_as.iter().find(|r| r.type_ == "ORCID").map(|r| r.url.clone());
-    let job_titles = person.job_titles.clone();
-    let email = person.email.clone();
+    let job_titles = person.job_titles;
+    let email = if show_email { person.email } else { None };
 
     view! {
         <div class="font-medium">
@@ -106,18 +105,16 @@ fn PersonViewWithAffiliationIds(
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[component]
 pub fn AffiliationName(org_id: String) -> impl IntoView {
-    let org_resource = Resource::new(move || org_id.clone(), |id| async move { get_organization(id).await });
+    dpe_core::load_organization(&org_id).map(|o| view! { <div class="text-gray-600">{o.name}</div> })
+}
 
-    view! {
-        <Suspense>
-            {move || {
-                let name = org_resource.get().and_then(|r| r.ok()).flatten().map(|o| o.name);
-                name.map(|n| view! { <div class="text-gray-600">{n}</div> })
-            }}
-        </Suspense>
-    }
+#[cfg(target_arch = "wasm32")]
+#[component]
+pub fn AffiliationName(org_id: String) -> impl IntoView {
+    let _ = org_id;
 }
 
 /// Renders a person's name (with ORCID link if available), job titles, and affiliations.
@@ -131,8 +128,8 @@ pub fn PersonView(
 ) -> impl IntoView {
     let full_name = format!("{} {}", person.given_names.join(" "), person.family_names.join(" "),);
     let orcid_url = person.same_as.iter().find(|r| r.type_ == "ORCID").map(|r| r.url.clone());
-    let job_titles = person.job_titles.clone();
-    let email = person.email.clone();
+    let job_titles = person.job_titles;
+    let email = if show_email { person.email } else { None };
 
     view! {
         <div class="font-medium">

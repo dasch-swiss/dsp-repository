@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.2](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.1...v0.5.2) (2026-05-07)
+
+
+### Bug Fixes
+
+* **dpe-server:** only call default panic hook on structured-emission failure ([f8d5127](https://github.com/dasch-swiss/dsp-repository/commit/f8d5127d6cdee89679141ac672333d78cc22e096))
+* **dpe:** match project shortcodes case-insensitively in get_project ([1f485e9](https://github.com/dasch-swiss/dsp-repository/commit/1f485e9fc69203fbf92c16608ddaa6a2c031488b))
+
+
+### Build System
+
+* **deps:** bump rand from 0.8.5 to 0.8.6 ([019cfbe](https://github.com/dasch-swiss/dsp-repository/commit/019cfbeb1c58d3e40b82ee8e750d80d0bba9567a))
+* **deps:** bump rustls-webpki from 0.103.10 to 0.103.13 ([e55f80a](https://github.com/dasch-swiss/dsp-repository/commit/e55f80ab734cd4ed9bc01e454d18664a3ba3a15b))
+
 ## [0.5.1](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.0...v0.5.1) (2026-05-07)
 
 

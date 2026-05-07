@@ -1,10 +1,18 @@
+// Sync, in-memory contributor resolver.
+//
+// Previously a `#[server]` async fn used by `Resource::new(..)` in
+// `ProjectLoader`; the resulting reactive node panicked under streaming SSR
+// in `<Suspense>::dry_resolve`. The body was always synchronous (just hashmap
+// lookups against `dpe_core::contributors`), so we expose it as a plain
+// `pub fn` gated on non-wasm and call it directly from the page component
+// and the SSE fragment handler.
+
 pub use dpe_core::contributors::ResolvedContributor;
+#[cfg(not(target_arch = "wasm32"))]
 use dpe_core::project::Attribution;
 
-#[leptos::server]
-pub async fn get_contributors(
-    attributions: Vec<Attribution>,
-) -> Result<Vec<ResolvedContributor>, leptos::server_fn::error::ServerFnError> {
+#[cfg(not(target_arch = "wasm32"))]
+pub fn get_contributors(attributions: Vec<Attribution>) -> Vec<ResolvedContributor> {
     use dpe_core::contributors::{load_organization, load_person};
 
     let mut result = Vec::with_capacity(attributions.len());
@@ -31,5 +39,5 @@ pub async fn get_contributors(
             }
         }
     }
-    Ok(result)
+    result
 }

@@ -1,8 +1,23 @@
-use dpe_core::{Page, Project};
-use leptos::prelude::*;
+// Project-list domain helpers.
+//
+// These were previously `#[server]` async fns (Leptos server functions). DPE
+// has no WASM client, so the server-fn indirection just exposed reactive
+// `Resource::new(..)` panic surfaces in `<Suspense>::dry_resolve` under
+// streaming SSR. The bodies are pure synchronous reads of the in-memory
+// project cache (`dpe_core::all_projects`), so we expose them as plain `pub fn`
+// gated on non-wasm — matching the cfg of `dpe_core::all_projects` itself —
+// and call them directly from page components and fragment handlers.
+//
+// `dpe-web` is still compiled for `wasm32-unknown-unknown` by cargo-leptos
+// (lib-package), but DPE renders SSR-only and the wasm output never executes;
+// gating on non-wasm avoids dragging the disk-backed cache into the wasm
+// build.
 
-#[server]
-pub async fn list_type_of_data() -> Result<Vec<String>, ServerFnError> {
+#[cfg(not(target_arch = "wasm32"))]
+use dpe_core::{Page, Project};
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn list_type_of_data() -> Vec<String> {
     use std::collections::HashSet;
 
     use dpe_core::all_projects;
@@ -15,11 +30,11 @@ pub async fn list_type_of_data() -> Result<Vec<String>, ServerFnError> {
     }
     let mut result: Vec<String> = types.into_iter().collect();
     result.sort();
-    Ok(result)
+    result
 }
 
-#[server]
-pub async fn list_data_languages() -> Result<Vec<(String, String)>, ServerFnError> {
+#[cfg(not(target_arch = "wasm32"))]
+pub fn list_data_languages() -> Vec<(String, String)> {
     use std::collections::HashSet;
 
     use dpe_core::{all_projects, language_display_name};
@@ -40,12 +55,12 @@ pub async fn list_data_languages() -> Result<Vec<(String, String)>, ServerFnErro
         })
         .collect();
     result.sort_by(|a, b| a.1.cmp(&b.1));
-    Ok(result)
+    result
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[allow(clippy::too_many_arguments)]
-#[server]
-pub async fn list_projects(
+pub fn list_projects(
     ongoing: Option<bool>,
     finished: Option<bool>,
     search: Option<String>,
@@ -54,7 +69,7 @@ pub async fn list_projects(
     type_of_data: Option<String>,
     data_language: Option<String>,
     access_rights: Option<String>,
-) -> Result<Page, ServerFnError> {
+) -> Page {
     use dpe_core::all_projects;
 
     use super::project::ProjectQuery;
@@ -70,7 +85,7 @@ pub async fn list_projects(
         dialog: None,
     };
 
-    Ok(filter_and_paginate(all_projects(), &query, page_size))
+    filter_and_paginate(all_projects(), &query, page_size)
 }
 
 // Gated on non-wasm targets to match `dpe_core::all_projects` (the only
@@ -584,8 +599,8 @@ mod tests {
     }
 }
 
-#[server]
-pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnError> {
+#[cfg(not(target_arch = "wasm32"))]
+pub fn get_project(shortcode: &str) -> Option<Project> {
     use std::fs;
     use std::path::PathBuf;
 
@@ -593,9 +608,7 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
 
     // Look up the base project from the in-memory cache — case-insensitive,
     // so e.g. /dpe/projects/080c resolves to the project stored as 080C.
-    let Some(base) = dpe_core::project_cache::project_by_shortcode(&shortcode) else {
-        return Ok(None);
-    };
+    let base = dpe_core::project_cache::project_by_shortcode(shortcode)?;
     let mut project = base.clone();
     let canonical_shortcode = project.shortcode.clone();
 
@@ -623,5 +636,5 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
         })
         .collect();
 
-    Ok(Some(project))
+    Some(project)
 }

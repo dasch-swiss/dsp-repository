@@ -60,10 +60,7 @@ pub async fn tab_fragment_handler(
     }
 
     // Load project data
-    let project = get_project(id.clone())
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .ok_or(StatusCode::NOT_FOUND)?;
+    let project = get_project(&id).ok_or(StatusCode::NOT_FOUND)?;
 
     // If publications tab requested but project has no publications, return 404
     let has_publications_tab = has_publications(&project);
@@ -73,13 +70,7 @@ pub async fn tab_fragment_handler(
 
     // Load contributors if needed
     let contributors = if tab == "contributors" {
-        match get_contributors(project.attributions.clone()).await {
-            Ok(c) => c,
-            Err(e) => {
-                tracing::warn!(shortcode = %id, error = %e, "failed to load contributors");
-                vec![]
-            }
-        }
+        get_contributors(project.attributions.clone())
     } else {
         vec![]
     };
@@ -242,8 +233,6 @@ pub async fn search_fragment_handler(
             None,                 // data_language
             None,                 // access_rights
         )
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     };
 
     let html = render_search_results(&search, &results);

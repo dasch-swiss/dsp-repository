@@ -589,18 +589,22 @@ pub async fn get_project(shortcode: String) -> Result<Option<Project>, ServerFnE
     use std::fs;
     use std::path::PathBuf;
 
-    use dpe_core::{all_projects, get_data_dir, CollectionRef};
+    use dpe_core::{get_data_dir, CollectionRef};
 
-    // Look up the base project from the in-memory cache — no disk scan needed.
-    let Some(base) = all_projects().iter().find(|p| p.shortcode == shortcode) else {
+    // Look up the base project from the in-memory cache — case-insensitive,
+    // so e.g. /dpe/projects/080c resolves to the project stored as 080C.
+    let Some(base) = dpe_core::project_cache::project_by_shortcode(&shortcode) else {
         return Ok(None);
     };
     let mut project = base.clone();
+    let canonical_shortcode = project.shortcode.clone();
 
-    // Resolve clusters from the in-memory cache (reverse lookup).
+    // Resolve clusters from the in-memory cache (reverse lookup). Compare
+    // case-insensitively so cluster files referencing a different case still
+    // resolve to the same project.
     project.clusters = dpe_core::cluster_cache::all_clusters()
         .iter()
-        .filter(|raw| raw.projects.iter().any(|p| p == &shortcode))
+        .filter(|raw| raw.projects.iter().any(|p| p.eq_ignore_ascii_case(&canonical_shortcode)))
         .map(|raw| raw.clone().into_ref())
         .collect();
 

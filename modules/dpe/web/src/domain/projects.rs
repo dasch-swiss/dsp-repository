@@ -73,7 +73,12 @@ pub async fn list_projects(
     Ok(filter_and_paginate(all_projects(), &query, page_size))
 }
 
-#[cfg(feature = "ssr")]
+// Gated on non-wasm targets to match `dpe_core::all_projects` (the only
+// realistic source of the `&[Project]` argument); the previous narrower
+// `#[cfg(feature = "ssr")]` gate kept the function from compiling under
+// `cargo hack --features default`, even though the body only touches plain
+// `dpe_core` types and has nothing SSR-specific.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn filter_and_paginate(projects: &[Project], query: &super::project::ProjectQuery, page_size: Option<i32>) -> Page {
     use dpe_core::{AccessRightsType, ProjectStatus};
 

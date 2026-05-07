@@ -26,7 +26,8 @@ impl ProjectQuery {
         self.finished.unwrap_or(false)
     }
 
-    #[cfg(feature = "ssr")]
+    // Unconditional (the body has nothing SSR-specific) — sibling accessors
+    // like `type_of_data`, `data_language`, `access_rights` are also ungated.
     pub fn search(&self) -> String {
         self.search.clone().unwrap_or_default()
     }

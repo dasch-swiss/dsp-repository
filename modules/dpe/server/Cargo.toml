@@ -39,6 +39,11 @@ serde_json.workspace = true
 url.workspace = true
 urlencoding = "2.1"
 
+# Linux-only: swap the global allocator to jemalloc so the pyroscope jemalloc
+# backend can produce heap profiles. macOS dev keeps the system allocator.
+[target.'cfg(target_os = "linux")'.dependencies]
+tikv-jemallocator.workspace = true
+
 [dev-dependencies]
 insta.workspace = true
 tower = { workspace = true, features = ["util"] }

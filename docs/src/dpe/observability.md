@@ -40,7 +40,7 @@ Open <http://localhost:3000> (no login required):
 - **Service map**: "dpe" service with Rust tech icon
 - **Loki** (Explore → Loki): OTel log records bridged from the `tracing` subscriber (severity, span context, structured fields)
 - **Mimir** (Explore → Mimir): browser telemetry metrics (`browser.web_vital`, `browser.error`, etc.)
-- **Pyroscope** (Explore → Pyroscope): CPU flame graphs for `dpe-server`
+- **Pyroscope** (Explore → Pyroscope): CPU flame graphs for `dpe-server`. Heap profiles (service `dpe-server.heap`) are produced only on Linux when launched with `_RJEM_MALLOC_CONF=prof:true,prof_active:true,lg_prof_sample:19`
 
 ## Adding Instrumentation
 

@@ -63,6 +63,7 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 | `OTEL_SERVICE_NAME` | No | *(none)* | Service name for OTel resource attributes (e.g., `dpe`) |
 | `OTEL_RESOURCE_ATTRIBUTES` | No | *(none)* | Comma-separated OTel resource attributes (e.g., `service.namespace=dpe,service.version=0.2.1,deployment.environment=prod`) |
 | `PYROSCOPE_ENDPOINT` | No | *(none)* | Pyroscope HTTP endpoint (e.g., `http://pyroscope:4040`). When unset, profiling is disabled. |
+| `_RJEM_MALLOC_CONF` | No | *(none locally; preset in Docker)* | jemalloc runtime config. Production image sets `prof:true,prof_active:true,lg_prof_sample:19` to enable heap profile sampling. Must be set at process launch — `setenv` from inside the binary has no effect. |
 | `LEPTOS_SITE_ADDR` | No | `0.0.0.0:8080` | Listen address and port |
 | `LEPTOS_SITE_ROOT` | No | `site` | Path to static site assets |
 | `LEPTOS_SITE_PKG_DIR` | No | `pkg` | JS/CSS package subdirectory |
@@ -126,10 +127,17 @@ When `OTEL_EXPORTER_OTLP_ENDPOINT` is not set, the OTel SDK falls back to no-op 
 
 ### Continuous Profiling (Pyroscope)
 
-CPU profiling via Grafana Pyroscope. Samples at 100Hz and pushes profiles to the configured endpoint.
+CPU and heap profiling via Grafana Pyroscope. Two agents push to the same endpoint with different `service.name` values:
 
-**Configuration:** Set `PYROSCOPE_ENDPOINT` to the Pyroscope HTTP endpoint. When unset, no profiling agent runs and there is zero overhead.
+- **CPU** (`dpe-server`): pprof-rs sampling at 100 Hz
+- **Heap** (`dpe-server.heap`): jemalloc allocation sampling at ~512 KiB granularity
+
+**Configuration:**
+
+- Set `PYROSCOPE_ENDPOINT` to enable profiling. When unset, neither agent runs and there is zero overhead.
+- The production Docker image swaps the global allocator to jemalloc (Linux only) and sets `_RJEM_MALLOC_CONF=prof:true,prof_active:true,lg_prof_sample:19` so the heap agent can start. Without `prof:true` set at process launch, the heap agent logs a notice and continues (CPU profiling is unaffected). macOS dev keeps the system allocator; the heap agent will simply not start there.
 
 **What gets profiled:**
 - CPU time per function (sampling-based, 100 samples/second)
+- Heap allocations sampled by jemalloc (~1 sample per 512 KiB allocated, ~1–2% overhead)
 - Flame graphs viewable in Grafana (Explore > Pyroscope)

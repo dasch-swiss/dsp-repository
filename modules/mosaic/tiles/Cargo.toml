@@ -43,5 +43,5 @@ popover = ["button"]
 tabs = []
 
 [build-dependencies]
-reqwest = { version = "0.13.1", features = ["blocking"] }
+reqwest = { version = "0.13.3", features = ["blocking"] }
 sha256 = "1.6.0"

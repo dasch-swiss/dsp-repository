@@ -191,14 +191,14 @@ fn process_signal(signal: &Signal) {
             let truncated_message: String = e.message.chars().take(256).collect();
             tracing::warn!(
                 kind = error_kind,
-                message = %truncated_message,
                 page_url,
                 trace_parent = ?trace_parent,
                 page_load_id = %e.page_load_id,
                 filename = ?e.filename,
                 lineno = ?e.lineno,
                 colno = ?e.colno,
-                "browser error"
+                "browser error: {}",
+                truncated_message
             );
         }
         Signal::LongAnimationFrame(loaf) => {

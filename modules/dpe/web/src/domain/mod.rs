@@ -7,7 +7,9 @@ pub mod project;
 pub mod projects;
 
 // Re-export all core domain types for backward compatibility
-// Re-export server functions and ProjectQuery from local modules
+// Re-export sync helpers (formerly `#[server]` server functions, now plain
+// `pub fn` gated on non-wasm) and ProjectQuery from local modules.
+#[cfg(not(target_arch = "wasm32"))]
 pub use contributors::get_contributors;
 pub use dpe_core::project::Publication;
 // Re-export record::Pid (ARK-based) as the default Pid — it's the more commonly used one.
@@ -25,4 +27,5 @@ pub use dpe_core::{
 #[cfg(feature = "ssr")]
 pub use dpe_core::{FsProjectRepository, FsRecordRepository};
 pub use project::ProjectQuery;
+#[cfg(not(target_arch = "wasm32"))]
 pub use projects::{get_project, list_data_languages, list_projects, list_type_of_data};

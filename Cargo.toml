@@ -14,7 +14,7 @@ resolver = "3"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace.package]
-version = "0.5.0"
+version = "0.5.1"
 edition = "2021"
 homepage = "https://github.com/dasch-swiss/dsp-repository"
 repository = "https://github.com/dasch-swiss/dsp-repository"

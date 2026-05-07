@@ -3,8 +3,6 @@
 
 // Leptos-specific modules
 pub mod contributors;
-pub mod organizations;
-pub mod persons;
 pub mod project;
 pub mod projects;
 
@@ -26,7 +24,5 @@ pub use dpe_core::{
 };
 #[cfg(feature = "ssr")]
 pub use dpe_core::{FsProjectRepository, FsRecordRepository};
-pub use organizations::get_organization;
-pub use persons::get_person;
 pub use project::ProjectQuery;
 pub use projects::{get_project, list_data_languages, list_projects, list_type_of_data};

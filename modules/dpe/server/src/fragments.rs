@@ -758,6 +758,106 @@ mod tests {
         });
     }
 
+    // --- Snapshot tests: ProjectSidebar (covers LegalInfo, ContactSection,
+    //     FundingSection, EntityName, OrganizationName, Person, AffiliationName) ---
+
+    fn render_project_sidebar(project: Project) -> String {
+        use dpe_web::pages::project::components::project_sidebar::ProjectSidebar;
+        let owner = Owner::new();
+        owner.with(|| view! { <ProjectSidebar proj=project /> }.to_html())
+    }
+
+    /// Snapshot the sidebar for a real project (0803) — exercises `Person`
+    /// (resolves `person-073` via `dpe_core::load_person`), `OrganizationName`
+    /// (resolves `organization-002` from the funding section), and the
+    /// `AffiliationName` chain rendered for the contact's affiliations.
+    #[test]
+    fn snapshot_project_sidebar_real_project() {
+        init_test_data();
+        let project = dpe_core::project_cache::project_by_shortcode("0803")
+            .expect("project 0803 missing in test data")
+            .clone();
+        let html = render_project_sidebar(project);
+        let html = strip_hot_reload_comments(&html);
+        insta::with_settings!({
+            filters => vec![
+                (r"data-hk=\S+", "[DATA-HK]"),
+            ],
+        }, {
+            insta::assert_snapshot!("project_sidebar_real_project", html.as_ref());
+        });
+    }
+
+    /// Snapshot the sidebar for a project whose `copyright_holder` and
+    /// `authorship` are populated with real person/organization IDs — this is
+    /// the path that exercises `EntityName`'s person and organization branches
+    /// (otherwise unreachable from production data, where those fields hold
+    /// free-text or `"CALCULATED"` placeholders).
+    #[test]
+    fn snapshot_project_sidebar_with_entity_ids() {
+        use dpe_web::domain::{AccessRights, AccessRightsType, Funding, ProjectStatus};
+
+        init_test_data();
+        let project = Project {
+            id: "test-entity-ids".to_string(),
+            pid: "https://ark.dasch.swiss/ark:/72163/1/0001".to_string(),
+            name: "Entity-id sidebar fixture".to_string(),
+            shortcode: "0001".to_string(),
+            official_name: "Entity-id sidebar fixture".to_string(),
+            status: ProjectStatus::Ongoing,
+            short_description: "Fixture exercising EntityName person/org branches".to_string(),
+            description: std::collections::HashMap::new(),
+            start_date: "2020-01-01".to_string(),
+            end_date: "2025-12-31".to_string(),
+            url: None,
+            secondary_url: None,
+            how_to_cite: "Fixture (2024)".to_string(),
+            access_rights: AccessRights {
+                access_rights: AccessRightsType::FullOpenAccess,
+                embargo_date: None,
+            },
+            legal_info: vec![dpe_core::LegalInfo {
+                license: dpe_core::License {
+                    license_identifier: "CC BY 4.0".to_string(),
+                    license_uri: "https://creativecommons.org/licenses/by/4.0/".to_string(),
+                    license_date: "2024-01-01".to_string(),
+                },
+                copyright_holder: "person-073".to_string(),
+                authorship: vec!["person-073".to_string(), "organization-002".to_string()],
+            }],
+            data_management_plan: None,
+            data_publication_year: None,
+            type_of_data: None,
+            data_language: None,
+            clusters: vec![],
+            collections: vec![],
+            collection_ids: vec![],
+            records: None,
+            keywords: vec![],
+            disciplines: vec![],
+            temporal_coverage: vec![],
+            spatial_coverage: vec![],
+            attributions: vec![],
+            abstract_text: None,
+            contact_point: Some(vec!["person-073".to_string(), "organization-002".to_string()]),
+            publications: None,
+            funding: Funding::Grants(vec![]),
+            alternative_names: None,
+            documentation_material: None,
+            provenance: None,
+            additional_material: None,
+        };
+        let html = render_project_sidebar(project);
+        let html = strip_hot_reload_comments(&html);
+        insta::with_settings!({
+            filters => vec![
+                (r"data-hk=\S+", "[DATA-HK]"),
+            ],
+        }, {
+            insta::assert_snapshot!("project_sidebar_with_entity_ids", html.as_ref());
+        });
+    }
+
     // --- Test helpers ---
 
     /// Create a minimal Project for unit tests that don't need real data.

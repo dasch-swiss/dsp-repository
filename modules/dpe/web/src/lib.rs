@@ -74,6 +74,10 @@ pub fn App() -> impl IntoView {
                                 path=StaticSegment("")
                                 view=|| view! { <Redirect path="/dpe/projects" /> }
                             />
+                            <Route
+                                path=path!("dpe")
+                                view=|| view! { <Redirect path="/dpe/projects" /> }
+                            />
                             <Route path=path!("dpe/projects") view=ProjectsPage />
                             <Route path=path!("dpe/about") view=AboutPage />
                             <Route path=path!("dpe/projects/:id") view=ProjectPage />

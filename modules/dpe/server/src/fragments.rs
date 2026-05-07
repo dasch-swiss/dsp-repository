@@ -706,6 +706,23 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn handler_lowercase_shortcode_for_uppercase_project_returns_ok() {
+        // Project 080C exists in the test data with an uppercase 'C'.
+        // Requesting it with a lowercase 'c' should still resolve.
+        let app = test_app();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/dpe/projects/080c/tab/overview")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), AxumStatusCode::OK);
+    }
+
+    #[tokio::test]
     async fn handler_sse_html_contains_aria_attributes() {
         let app = test_app();
         let response = app

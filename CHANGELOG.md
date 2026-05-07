@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.0...v0.5.1) (2026-05-07)
+
+
+### Bug Fixes
+
+* **dpe:** produce useful panic backtraces in production ([07cf69c](https://github.com/dasch-swiss/dsp-repository/commit/07cf69c2320784f1083e57f87e73069823d1c53b))
+
 ## [0.5.0](https://github.com/dasch-swiss/dsp-repository/compare/v0.4.0...v0.5.0) (2026-05-07)
 
 

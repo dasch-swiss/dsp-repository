@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.5.1](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.0...v0.5.1) (2026-05-07)
+
+
+### Bug Fixes
+
+* **dpe:** produce useful panic backtraces in production ([07cf69c](https://github.com/dasch-swiss/dsp-repository/commit/07cf69c2320784f1083e57f87e73069823d1c53b))
+
+## [0.5.0](https://github.com/dasch-swiss/dsp-repository/compare/v0.4.0...v0.5.0) (2026-05-07)
+
+
+### Features
+
+* **dpe-server:** route panics through tracing for structured Grafana logs ([c712106](https://github.com/dasch-swiss/dsp-repository/commit/c712106a0aad9000b89a1004afc921f8582e875e))
+
+
+### Bug Fixes
+
+* **dpe-web:** redirect /dpe to /dpe/projects ([6bd3e77](https://github.com/dasch-swiss/dsp-repository/commit/6bd3e7784f43f4451543faa74ef950bcdffe4ce5))
+* **dpe-web:** resolve sidebar entities synchronously to stop SSR disposal panics ([f78ee42](https://github.com/dasch-swiss/dsp-repository/commit/f78ee427901edfced8a504ab81547c2d11ebd020))
+* Make project lookup by shortcode case-insensitive (quick fix) (DEV-6224) ([12beea8](https://github.com/dasch-swiss/dsp-repository/commit/12beea823f38ab29c838dab27bf955111a15d6ae))
+
+## [0.4.0](https://github.com/dasch-swiss/dsp-repository/compare/v0.3.1...v0.4.0) (2026-05-04)
+
+
+### Features
+
+* **dpe-server:** add MSSL (086A) project metadata ([d535812](https://github.com/dasch-swiss/dsp-repository/commit/d5358124e965f5f2d83e4f0c8747164b85a478d4))
+* Project JSON API (DEV-6224) ([2ae503a](https://github.com/dasch-swiss/dsp-repository/commit/2ae503a2251690c099f6d98aabd4e3bdcb49a009))
+
+
+### Bug Fixes
+
+* **dpe-server:** add dsp-app data link to nietzsche-me (DEV-6293) ([76ba783](https://github.com/dasch-swiss/dsp-repository/commit/76ba7839d6c9066e1aede92a8681a80d9a9fa083))
+* **dpe-server:** add MSSL (086A) project image (DEV-6279) ([#200](https://github.com/dasch-swiss/dsp-repository/issues/200)) ([68b6450](https://github.com/dasch-swiss/dsp-repository/commit/68b6450010a0be44e3c9963f92bf3de6f803602c))
+* **dpe-server:** normalize MSSL howToCite formatting and spelling ([046e9d1](https://github.com/dasch-swiss/dsp-repository/commit/046e9d134c7e4f140c36219a19065837141fa6ca))
+* **dpe-server:** restore source spellings on MSSL (086A) ([aab86fc](https://github.com/dasch-swiss/dsp-repository/commit/aab86fcf3e6ddec6e3d2a81dccbdd01ef6053d36))
+* **dpe-server:** use BCP 47 codes for MSSL dataLanguage ([9c9492f](https://github.com/dasch-swiss/dsp-repository/commit/9c9492fe1b7f65eed00056663b61183fd93d25cd))
+
 ## [0.3.1](https://github.com/dasch-swiss/dsp-repository/compare/v0.3.0...v0.3.1) (2026-04-15)
 
 

@@ -97,7 +97,7 @@ pub fn ProjectsPage() -> impl IntoView {
                                     </div>
                                 </CardBody>
                             </Card>
-                            <ProjectList query=query />
+                            <ProjectList query=cq.clone() />
                         </div>
                     </div>
                 }

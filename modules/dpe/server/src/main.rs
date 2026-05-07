@@ -60,6 +60,12 @@ async fn serve() -> ExitCode {
     use opentelemetry_sdk::logs::{SdkLogger, SdkLoggerProvider};
     use tracing_subscriber::layer::SubscriberExt;
 
+    // Route panics through tracing so they appear as structured Grafana logs
+    // alongside normal traces (with location, thread, backtrace). Installed
+    // before OTel init so a panic during init is also captured (it falls
+    // back to the default stderr hook until a subscriber is registered).
+    install_tracing_panic_hook();
+
     // Export logs via OTLP only when LEPTOS_ENV=DEV (local dev) and an OTLP
     // endpoint is configured. Production (LEPTOS_ENV=PROD) logs to stdout only.
     // Default to "DEV" when unset, matching leptos_config's own default.
@@ -393,6 +399,59 @@ fn validate(data_dir: PathBuf) -> ExitCode {
         }
         ExitCode::FAILURE
     }
+}
+
+/// Install a panic hook that emits panics as structured `tracing::error!`
+/// events, so production panics are captured by the same OTel pipeline as
+/// the rest of the logs. Field names follow the OTel semconv for exceptions
+/// (`exception.message`, `exception.stacktrace`, `exception.r#type`,
+/// `thread.name`) so panic events share Grafana Sift / Loki query surface
+/// with `RecordException` events emitted by instrumented spans.
+///
+/// The default stderr hook is only invoked as a fallback when the structured
+/// emission itself panics (e.g. OTel exporter in a degraded state). Under
+/// normal operation each panic produces exactly one log line — no duplicate
+/// stderr backtrace.
+fn install_tracing_panic_hook() {
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        // Best-effort structured emission.
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let message = info.payload_as_str().unwrap_or("<non-string panic payload>");
+            let thread = std::thread::current();
+            let thread_name = thread.name().unwrap_or("<unnamed>");
+            // `Backtrace::capture` respects `RUST_BACKTRACE` / `RUST_LIB_BACKTRACE`.
+            // Operators can opt in with `RUST_BACKTRACE=1` at incident time.
+            let backtrace = std::backtrace::Backtrace::capture().to_string();
+
+            if let Some(loc) = info.location() {
+                tracing::error!(
+                    exception.r#type = "panic",
+                    exception.message = %message,
+                    exception.stacktrace = %backtrace,
+                    thread.name = %thread_name,
+                    code.filepath = %loc.file(),
+                    code.lineno = loc.line(),
+                    code.column = loc.column(),
+                    "thread panicked"
+                );
+            } else {
+                tracing::error!(
+                    exception.r#type = "panic",
+                    exception.message = %message,
+                    exception.stacktrace = %backtrace,
+                    thread.name = %thread_name,
+                    "thread panicked"
+                );
+            }
+        }));
+
+        // Fall back to the default stderr hook only if the structured emission
+        // itself panicked, so the panic is never silently swallowed.
+        if result.is_err() {
+            default_hook(info);
+        }
+    }));
 }
 
 fn healthcheck(url: &str) -> ExitCode {

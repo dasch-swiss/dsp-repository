@@ -13,6 +13,11 @@ COPY site /app/site
 COPY data /app/server/data
 
 ENV RUST_LOG="info"
+# Enable backtrace capture for the structured panic hook in dpe-server.
+# Without this, `Backtrace::capture()` returns `BacktraceStatus::Disabled`
+# and panic logs lose the call site — paired with `debug = "line-tables-only"`
+# in the release profile so symbols and file:line make it into the backtrace.
+ENV RUST_BACKTRACE="1"
 ENV LEPTOS_OUTPUT_NAME="dpe"
 ENV LEPTOS_SITE_ROOT="site"
 ENV LEPTOS_SITE_PKG_DIR="pkg"

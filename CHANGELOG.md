@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.0](https://github.com/dasch-swiss/dsp-repository/compare/v0.4.0...v0.5.0) (2026-05-07)
+
+
+### Features
+
+* **dpe-server:** route panics through tracing for structured Grafana logs ([c712106](https://github.com/dasch-swiss/dsp-repository/commit/c712106a0aad9000b89a1004afc921f8582e875e))
+
+
+### Bug Fixes
+
+* **dpe-web:** redirect /dpe to /dpe/projects ([6bd3e77](https://github.com/dasch-swiss/dsp-repository/commit/6bd3e7784f43f4451543faa74ef950bcdffe4ce5))
+* **dpe-web:** resolve sidebar entities synchronously to stop SSR disposal panics ([f78ee42](https://github.com/dasch-swiss/dsp-repository/commit/f78ee427901edfced8a504ab81547c2d11ebd020))
+* Make project lookup by shortcode case-insensitive (quick fix) (DEV-6224) ([12beea8](https://github.com/dasch-swiss/dsp-repository/commit/12beea823f38ab29c838dab27bf955111a15d6ae))
+
 ## [0.4.0](https://github.com/dasch-swiss/dsp-repository/compare/v0.3.1...v0.4.0) (2026-05-04)
 
 

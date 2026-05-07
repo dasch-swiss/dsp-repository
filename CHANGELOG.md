@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.3](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.2...v0.5.3) (2026-05-07)
+
+
+### Bug Fixes
+
+* **dpe-server:** avoid duplicate `message` key in browser-error logs ([48be1eb](https://github.com/dasch-swiss/dsp-repository/commit/48be1ebc71f824b71467832c2e3d7c649e120ef9))
+* **dpe-web:** resolve remaining domain calls synchronously to stop SSR disposal panics ([09a1fc3](https://github.com/dasch-swiss/dsp-repository/commit/09a1fc39894b7a5ae3a8305a7c4555812ad394f2))
+* **mosaic-tiles:** read Icon class once at component creation ([00496b7](https://github.com/dasch-swiss/dsp-repository/commit/00496b7584e344a793a17073a05027028879492f))
+
 ## [0.5.2](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.1...v0.5.2) (2026-05-07)
 
 

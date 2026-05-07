@@ -1,35 +1,19 @@
 use leptos::prelude::*;
 
-use crate::domain::get_organization;
+// See `super` module docs for why this is a sync lookup with a wasm32 stub.
 
+/// Renders an organization name from the in-process org cache.
+#[cfg(not(target_arch = "wasm32"))]
 #[component]
 pub fn OrganizationName(organization_id: String) -> impl IntoView {
-    let organization_resource =
-        Resource::new(move || organization_id.clone(), |id| async move { get_organization(id).await });
-
-    view! {
-        <Suspense fallback=move || {
-            view! { <span>"Loading..."</span> }
-        }>
-            {move || {
-                let organization_opt = organization_resource
-                    .get()
-                    .and_then(|result| result.ok())
-                    .flatten();
-                match organization_opt {
-                    Some(org) => {
-                        view! { <span class="font-semibold">{org.name.clone()}</span> }.into_any()
-                    }
-                    None => {
-                        view! {
-                            <span class="italic text-base-content/70">
-                                "Organization not found"
-                            </span>
-                        }
-                            .into_any()
-                    }
-                }
-            }}
-        </Suspense>
+    match dpe_core::load_organization(&organization_id) {
+        Some(org) => view! { <span class="font-semibold">{org.name}</span> }.into_any(),
+        None => view! { <span class="italic text-base-content/70">"Organization not found"</span> }.into_any(),
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[component]
+pub fn OrganizationName(organization_id: String) -> impl IntoView {
+    let _ = organization_id;
 }

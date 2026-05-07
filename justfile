@@ -32,6 +32,9 @@ check:
     cargo +nightly fmt --check --all
     leptosfmt --check . -x target -x .direnv
     cargo clippy -- -D warnings
+    # cargo-leptos compiles dpe-web for wasm32 (lib-package). Catch wasm-only
+    # build breaks here so they don't only surface in publish/cloud-run jobs.
+    cargo check --target wasm32-unknown-unknown -p dpe-web --no-default-features
 
 # Format all rust code (cargo fmt for non-leptos crates, leptosfmt for leptos crates)
 fmt:

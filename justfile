@@ -142,9 +142,28 @@ run-docker-mosaic-playground:
 # DPE targets
 ###################
 
+# Verify daisyui is installed in modules/dpe/node_modules — Tailwind needs it at build time
+[private]
+_check-dpe-node-modules:
+    @test -d modules/dpe/node_modules/daisyui || { echo >&2 "error: modules/dpe/node_modules/daisyui not found — run 'just install-requirements' or 'pnpm -C modules/dpe install'"; exit 1; }
+
 # Start the DPE with hot reload
 [group('dpe')]
-watch-dpe:
+watch-dpe: _check-dpe-node-modules
+    cargo leptos watch --project=dpe -- serve
+
+# Start the Grafana LGTM (Loki, Grafana, Tempo, Mimir) all-in-one container for local observability
+[group('dpe')]
+lgtm-up:
+    docker run --rm -p 3000:3000 -p 4317:4317 -p 4318:4318 -p 4040:4040 grafana/otel-lgtm
+
+# Start the DPE with hot reload, exporting traces/metrics/logs to a local LGTM stack (run `just lgtm-up` in another terminal first)
+[group('dpe')]
+watch-dpe-otel: _check-dpe-node-modules
+    OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
+    OTEL_SERVICE_NAME=dpe \
+    OTEL_RESOURCE_ATTRIBUTES="service.namespace=dpe,service.version={{ CARGO_VERSION }},deployment.environment=dev" \
+    PYROSCOPE_ENDPOINT=http://localhost:4040 \
     cargo leptos watch --project=dpe -- serve
 
 # Build Docker image for DPE

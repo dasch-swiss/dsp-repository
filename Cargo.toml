@@ -56,9 +56,16 @@ tracing-opentelemetry = "0.32"
 # Continuous profiling
 pyroscope = { version = "2.0.0", features = ["backend-pprof-rs", "backend-jemalloc"] }
 # jemalloc with profiling enabled (used as global allocator on Linux for heap profiles).
-# `_RJEM_MALLOC_CONF=prof:true,prof_active:true,lg_prof_sample:19` must be set at process
-# launch for the pyroscope jemalloc backend to start; otherwise heap profiling is skipped.
-tikv-jemallocator = { version = "0.6", features = ["profiling"] }
+# `unprefixed_malloc_on_supported_platforms` exports jemalloc's symbols as plain
+# `malloc`/`free` (no `je_` prefix), so jemalloc replaces the system allocator
+# entirely instead of coexisting with it. This avoids the dual-allocator
+# awkwardness that segfaults at init on musl-static. The malloc config is
+# embedded in the binary as a `malloc_conf` symbol in dpe-server's main.rs;
+# no `MALLOC_CONF` env var is needed at process launch.
+tikv-jemallocator = { version = "0.6", features = [
+    "profiling",
+    "unprefixed_malloc_on_supported_platforms",
+] }
 url = { version = "2", features = ["serde"] }
 uuid = { version = "1.23", features = ["v4", "v7", "js"] }
 wasm-bindgen = "=0.2.105"

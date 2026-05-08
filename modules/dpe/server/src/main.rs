@@ -9,15 +9,26 @@ mod telemetry_collector;
 mod traceparent;
 
 // Use jemalloc as the global allocator on Linux so the pyroscope jemalloc
-// backend can produce heap profiles. Heap profiling itself is gated at runtime
-// on `_RJEM_MALLOC_CONF` (prof:true) — without that env var, jemalloc still
-// runs but in non-profiling mode (no overhead beyond the allocator swap).
+// backend can produce heap profiles. macOS keeps the system allocator —
+// heap profiling is a Linux/prod concern.
 //
-// macOS keeps the system allocator: jemalloc on macOS adds friction without
-// benefit since heap profiling is a Linux/prod concern.
+// The `unprefixed_malloc_on_supported_platforms` feature on tikv-jemallocator
+// makes jemalloc replace libc's `malloc`/`free` symbols entirely, instead of
+// coexisting under a `je_` prefix. This avoids the dual-allocator init that
+// segfaults on musl-static.
 #[cfg(target_os = "linux")]
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
+// Embed the jemalloc profiling configuration as a symbol in the binary so it
+// is consulted during jemalloc's init regardless of the launch environment.
+// With `unprefixed_malloc_on_supported_platforms`, jemalloc reads `malloc_conf`
+// (not `_rjem_malloc_conf`). `lg_prof_sample:19` ≈ 1 sample per 512 KiB
+// allocated, ~1–2% overhead.
+#[cfg(target_os = "linux")]
+#[allow(non_upper_case_globals)]
+#[unsafe(no_mangle)]
+pub static malloc_conf: &[u8] = b"prof:true,prof_active:true,lg_prof_sample:19\0";
 
 #[derive(Parser)]
 #[command(name = "dpe", about = "DaSCH Discovery and Presentation Environment")]

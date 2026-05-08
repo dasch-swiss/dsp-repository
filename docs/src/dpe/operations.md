@@ -63,7 +63,6 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 | `OTEL_SERVICE_NAME` | No | *(none)* | Service name for OTel resource attributes (e.g., `dpe`) |
 | `OTEL_RESOURCE_ATTRIBUTES` | No | *(none)* | Comma-separated OTel resource attributes (e.g., `service.namespace=dpe,service.version=0.2.1,deployment.environment=prod`) |
 | `PYROSCOPE_ENDPOINT` | No | *(none)* | Pyroscope HTTP endpoint (e.g., `http://pyroscope:4040`). When unset, profiling is disabled. |
-| `_RJEM_MALLOC_CONF` | No | *(none locally; preset in Docker)* | jemalloc runtime config. Production image sets `prof:true,prof_active:true,lg_prof_sample:19` to enable heap profile sampling. Must be set at process launch — `setenv` from inside the binary has no effect. |
 | `LEPTOS_SITE_ADDR` | No | `0.0.0.0:8080` | Listen address and port |
 | `LEPTOS_SITE_ROOT` | No | `site` | Path to static site assets |
 | `LEPTOS_SITE_PKG_DIR` | No | `pkg` | JS/CSS package subdirectory |
@@ -135,7 +134,8 @@ CPU and heap profiling via Grafana Pyroscope. Two agents push to the same endpoi
 **Configuration:**
 
 - Set `PYROSCOPE_ENDPOINT` to enable profiling. When unset, neither agent runs and there is zero overhead.
-- The production Docker image swaps the global allocator to jemalloc (Linux only) and sets `_RJEM_MALLOC_CONF=prof:true,prof_active:true,lg_prof_sample:19` so the heap agent can start. Without `prof:true` set at process launch, the heap agent logs a notice and continues (CPU profiling is unaffected). macOS dev keeps the system allocator; the heap agent will simply not start there.
+- On Linux, the global allocator is swapped to jemalloc, with `tikv-jemallocator`'s `unprefixed_malloc_on_supported_platforms` feature so jemalloc replaces libc's `malloc`/`free` instead of coexisting under a `je_` prefix (this avoids dual-allocator init issues on musl-static). The heap-profile config (`prof:true,prof_active:true,lg_prof_sample:19`) is embedded in the binary as a `malloc_conf` symbol in `modules/dpe/server/src/main.rs` — consulted at jemalloc init regardless of launch environment, no env var required.
+- macOS dev keeps the system allocator; the heap agent will simply not start there.
 
 **What gets profiled:**
 - CPU time per function (sampling-based, 100 samples/second)

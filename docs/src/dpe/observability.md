@@ -13,24 +13,22 @@ Trace correlation between server and client uses the W3C `traceparent` standard:
 
 ## Local Observability Stack
 
-Run the Grafana LGTM (Loki, Grafana, Tempo, Mimir) all-in-one container:
+Run the Grafana LGTM (Loki, Grafana, Tempo, Mimir) all-in-one container alongside DPE:
 
 ```bash
 # Terminal 1: Start local LGTM stack
-docker run --rm -p 3000:3000 -p 4317:4317 -p 4318:4318 -p 4040:4040 grafana/otel-lgtm
+just lgtm-up
 
-# Terminal 2: Run DPE with OTel enabled
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
-OTEL_SERVICE_NAME=dpe \
-OTEL_RESOURCE_ATTRIBUTES="service.namespace=dpe,service.version=0.2.1,deployment.environment=dev" \
-PYROSCOPE_ENDPOINT=http://localhost:4040 \
-just watch-dpe
+# Terminal 2: Run DPE with OTel enabled (exports to localhost:4317)
+just watch-dpe-otel
 
 # Terminal 3: Generate traffic
 curl http://localhost:4000/projects
 curl http://localhost:4000/oai?verb=Identify
 curl http://localhost:4000/healthz
 ```
+
+`watch-dpe-otel` sets `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES`, and `PYROSCOPE_ENDPOINT` for you. Run `just --list` to see the underlying commands.
 
 ## Navigating Grafana Locally
 

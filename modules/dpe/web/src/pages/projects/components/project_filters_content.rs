@@ -38,7 +38,7 @@ pub fn ProjectFiltersContent(
                 <FilterCheckboxGroup
                     title="Access Rights".to_string()
                     items=access_rights_items
-                    info_href="https://dasch.swiss/knowledge-hub/fundamentals-copyright-licenses"
+                    info_href="https://dasch.swiss/knowledge-hub/fundamentals-access-rights"
                     info_tooltip="Access rights define how openly the data can be accessed. Learn more here."
                 />
             </div>

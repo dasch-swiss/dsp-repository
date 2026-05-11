@@ -1415,22 +1415,19 @@ Parallel job group 3 (~5 min):
 </ul>
 <p>Trace correlation between server and client uses the W3C <code>traceparent</code> standard: the server renders a <code>&lt;meta name="traceparent"&gt;</code> tag in the HTML shell, and the client includes it in every beacon payload.</p>
 <h2 id="local-observability-stack"><a class="header" href="#local-observability-stack">Local Observability Stack</a></h2>
-<p>Run the Grafana LGTM (Loki, Grafana, Tempo, Mimir) all-in-one container:</p>
+<p>Run the Grafana LGTM (Loki, Grafana, Tempo, Mimir) all-in-one container alongside DPE:</p>
 <pre><code class="language-bash"># Terminal 1: Start local LGTM stack
-docker run --rm -p 3000:3000 -p 4317:4317 -p 4318:4318 -p 4040:4040 grafana/otel-lgtm
+just lgtm-up
 
-# Terminal 2: Run DPE with OTel enabled
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
-OTEL_SERVICE_NAME=dpe \
-OTEL_RESOURCE_ATTRIBUTES="service.namespace=dpe,service.version=0.2.1,deployment.environment=dev" \
-PYROSCOPE_ENDPOINT=http://localhost:4040 \
-just watch-dpe
+# Terminal 2: Run DPE with OTel enabled (exports to localhost:4317)
+just watch-dpe-otel
 
 # Terminal 3: Generate traffic
 curl http://localhost:4000/projects
 curl http://localhost:4000/oai?verb=Identify
 curl http://localhost:4000/healthz
 </code></pre>
+<p><code>watch-dpe-otel</code> sets <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>, <code>OTEL_SERVICE_NAME</code>, <code>OTEL_RESOURCE_ATTRIBUTES</code>, and <code>PYROSCOPE_ENDPOINT</code> for you. Run <code>just --list</code> to see the underlying commands.</p>
 <h2 id="navigating-grafana-locally"><a class="header" href="#navigating-grafana-locally">Navigating Grafana Locally</a></h2>
 <p>Open <a href="http://localhost:3000">http://localhost:3000</a> (no login required):</p>
 <ul>

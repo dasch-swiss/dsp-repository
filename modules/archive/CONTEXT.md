@@ -1,6 +1,6 @@
-# Archival Format
+# Archive
 
-The bit-level long-term preservation contract for DSP. Defines what is stored in the archive, in what shape, and with what guarantees of readability decades from now. Distinct from the DPE / OAI-PMH publication layer, which projects the archive into a presentation format.
+The ubiquitous language of the Archive context. Defines what DSP preserves, in what shape, and with what guarantees of readability decades from now. The bit-level long-term preservation contract lives here. Distinct from the DPE / OAI-PMH publication layer, which projects the Archive into a presentation format.
 
 Full design narrative: [`dao-discovery.md`](./dao-discovery.md). Standards extracts: [`standards/`](./standards/).
 
@@ -73,10 +73,10 @@ _Avoid_: DOI (DaSCH does not currently mint DOIs; if added, they would be additi
 ## Flagged ambiguities
 
 - **"Record"** is used in three different ways across the platform and must be disambiguated.
-  - In the archival-format context (this document and `dao-discovery.md`), Record is **not** a domain term. The archived units are **IntellectualEntities** and **Representations**.
+  - In the Archive context (this document and `dao-discovery.md`), Record is **not** a domain term. The archived units are **IntellectualEntities** and **Representations**.
   - In the DPE / `dpe-core` codebase, `Record` is currently a flat metadata projection used to serve OAI-PMH (`id`, `pid`, `label`, `accessRights`, `legalInfo`, `typeOfData`, …). It conflates IE-like and Representation-like things behind a single shape.
   - In OAI-PMH itself, "record" has a precise external meaning: a metadata blob in a specific metadata format, keyed by an OAI identifier and a datestamp.
-  - **Resolution: pending** — DPE may keep a `Record` projection name, but the archival-format context must not adopt the term. Cross-context translation happens at the read-side projector that feeds DPE.
+  - **Resolution: pending** — DPE may keep a `Record` projection name, but the Archive context must not adopt the term. Cross-context translation happens at the read-side projector that feeds DPE.
 
 - **"Version"** is overloaded.
   - DAO: Version is a read-side projection over events. There is no `dao:Version` class on the write side.

@@ -4,7 +4,20 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-This repository is a Rust-based monorepo for the DaSCH Service Platform. It contains the Discovery and Presentation Environment (DPE) — a server-side rendered web application built with Leptos and Axum — and the Mosaic component library (design system).
+This repository is a Rust-based monorepo for the DaSCH Service Platform. It currently contains the Discovery and Presentation Environment (DPE) — a server-side rendered web application built with Leptos and Axum — and the Mosaic component library (design system). The Archive bounded context is being designed in `modules/archive/` (specification, ontology, and decision log; implementation pending).
+
+## Domain Model
+
+`dsp-repository` implements one domain: **Trusted Repository (OAIS-based)** — the long-term preservation and trustworthy dissemination of research data. The domain decomposes into subdomains (OAIS functional entities plus DaSCH-specific concerns), each implemented by a bounded context.
+
+| Document | Purpose |
+|---|---|
+| `CONTEXT-MAP.md` (repo root) | The map of bounded contexts: who they are, how they integrate, what the boundary commitments are |
+| `UBIQUITOUS_LANGUAGE.md` (repo root) | Consolidated cross-context glossary — canonical terms with retired aliases |
+| `modules/<context>/CONTEXT.md` | Per-context language and internal structure. Currently: `modules/archive/CONTEXT.md` |
+| `modules/<context>/dao-discovery.md` (or equivalent) | Per-context design narrative and decision log. Currently: `modules/archive/dao-discovery.md` |
+
+**When working inside a single bounded context**, read its `CONTEXT.md` first. **When integrating across contexts** or when in doubt about cross-context terms, read `CONTEXT-MAP.md` and `UBIQUITOUS_LANGUAGE.md`.
 
 ## Setup
 

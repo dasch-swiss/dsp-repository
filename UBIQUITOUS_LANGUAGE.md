@@ -49,7 +49,7 @@ Three role-based labels distinguished by **purpose** in the preservation chain â
 
 | Term | Definition | Aliases to avoid |
 |---|---|---|
-| **Preservation File** | Long-term bit-level preservation; file bytes inside a `dao:Representation`. Authoritative; WORM. Content-addressed by hash. Owned by Archive context | Archival Master |
+| **Preservation File** | Long-term bit-level preservation; file bytes inside a `dao:Representation`. Authoritative; WORM. Content-addressed by hash. Owned by Archive context. **Not a separate DAO class** â€” described as blank-node properties on the Representation (`dao:hasFile`), addressed by `dao:filename` within the parent Rep Version | Archival Master, `dao:File` (no such class) |
 | **Service File** | Mezzanine baseline derived from Preservation File(s) under a derivation rule; regenerable; carries no preservation commitment. Owned by Access Area context | Service Master |
 | **Access File** | End-user delivery payload generated on demand from a Service File plus request parameters; ephemeral. Owned by the Access Area subdomain that serves the request | â€” |
 
@@ -64,7 +64,7 @@ Three role-based labels distinguished by **purpose** in the preservation chain â
 
 | Term | Definition | Aliases to avoid |
 |---|---|---|
-| **Internal IRI** | DaSCH-controlled HTTPS URI in the Archive namespace; stable within a system, **not** promised across system migrations | â€” |
+| **Internal IRI** | DaSCH-controlled identifier in URN form `urn:dsp:{type}:{uuid}` (e.g., `urn:dsp:ie:...`, `urn:dsp:rep:...`). Not dereferenceable; never leaves the system. Stable within a system; **not** promised across system migrations. Earlier HTTPS form (`https://archive.dasch.swiss/{type}/{uuid}`) is retired per decision 12 amendment (2026-05-15) | HTTPS URI form (retired); "internal URL" |
 | **ARK** | The single long-term-stable public identifier; minted per persistent-identity entity, not per Version. Resolved by the ARK Resolver context | DOI, Handle, PURL, permalink |
 
 ## Archive internal structure

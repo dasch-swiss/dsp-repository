@@ -50,7 +50,7 @@ _Avoid_: treating these as first-class DAO classes — they are deliberately not
 Three role-based labels for artifacts along the preservation-to-delivery chain. Roles are distinguished by **purpose** in the preservation chain, not by format, location, or source provenance. Originated in SIPI's IIIF Server vocabulary and adopted here as cross-context Published Language. **Replaces the earlier two-tier "Archival Master / Service Master" framing** (both terms retired).
 
 **Preservation File**
-Long-term bit-level preservation. The file bytes inside a `dao:Representation` — a Representation may contain multiple Preservation Files (e.g. a TIFF plus an XMP sidecar). Authoritative; WORM. Content-addressed by hash (`dao-discovery.md §3.6`).
+Long-term bit-level preservation. The file bytes inside a `dao:Representation` — a Representation may contain multiple Preservation Files (e.g. a TIFF plus an XMP sidecar). Authoritative; WORM. Content-addressed by hash (`dao-discovery.md §3.6`). **Not a separate DAO class** (decision 33): per-File information is rendered as blank-node-structured properties on the Representation via `dao:hasFile`; Files are addressed by `dao:filename` within the parent Representation Version's context.
 _Avoid_: "Archival Master" (retired); confusing with `dao:Representation` itself — the Representation is the *bundle* of Preservation Files plus Representation-level metadata, not a single file.
 _Owned by_: the Archive context.
 
@@ -66,7 +66,7 @@ _Owned by_: the delivery context that serves the request (IIIF Server, asset ser
 ### Identifier vocabulary
 
 **Internal IRI**
-A DaSCH-controlled HTTPS URI in the Archive namespace (`https://archive.dasch.swiss/...`). Stable within a system; **not** promised across system migrations. Two forms: persistent-identity (`.../ie/{uuid}`, no version suffix) on the write side, and Version-suffixed (`.../ie/{uuid}/v{n}`) as a read-store contract.
+A DaSCH-controlled identifier for an entity inside the Archive bounded context. **Persistent-identity form** uses the URN scheme `urn:dsp:{type}:{uuid}` (e.g., `urn:dsp:ie:01234567-89ab-...`, `urn:dsp:rep:...`, `urn:dsp:project:...`, `urn:dsp:agent:...`, `urn:dsp:agreement:...`, `urn:dsp:deposition:...`, `urn:dsp:preservation-action:...`). **Not dereferenceable**; exists purely for cross-event references inside the system. Stable within a system; **not** promised across system migrations. Earlier HTTPS form (`https://archive.dasch.swiss/{type}/{uuid}`) is retired (decision 12 amendment, 2026-05-15). **Read-side URLs** served by Access Area subdomains for browsers (e.g., `https://dpe.dasch.swiss/ie/{uuid}/v{n}`) remain HTTPS and *are* dereferenceable; they are not internal IRIs but a read-store contract for external clients.
 
 **ARK**
 The single long-term-stable public identifier. Issued by the **ARK Resolver**, which is its own bounded context with its own event store. Minted per persistent-identity entity (IE, Representation, Project), not per Version — a Version is denoted by an ARK suffix.

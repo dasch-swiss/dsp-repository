@@ -27,14 +27,13 @@ Both are in scope. They are independent — packaging can change without changin
 The Repository topology DAO must fit into:
 
 - **RDU-Tooling** (Producer-side, local) — prepares data into Submission packages.
-- **Archive** (OAIS Archive Component) — ingest, validation, audit, holds **Archival Masters**. **Working assumption: self-built (per decision 17, revised).** Storage architecture: OCFL on filesystem as source of truth; SQLite as read-side cache (§3.7).
-- **Access Area** — holds **Service Masters** (access copies optimized per consumer). Single source for all read paths. Push-from-Archive vs. pull-from-Archive is undecided.
-- **Read paths**: DPE (default Discovery and Presentation), CPE (Configurable Presentation, project-specific), asset server (downloads), IIIF server (image tile serving and Manifests).
+- **Archive** (OAIS Archive Component; covers OAIS Ingest, Archival Storage, and the supporting functional entities Preservation Planning, Data Management, Administration) — ingest, validation, audit; holds the preservation-grade record (`dao:Representation`s, each containing one or more **Preservation Files**). **Working assumption: self-built (per decision 17, revised).** Storage architecture: OCFL on filesystem as source of truth; SQLite as read-side cache (§3.7). Deployed as two services within the same bounded context: an **Ingest Area** (producer-facing; async upload + validation gate against DAO SHACL and `DepositAgreement`; emits `DepositionAccepted` only on validation success — the OAIS *Ingest* entity) and the rest of the Archive (event log, OCFL, public APIs — the OAIS *Archival Storage* entity). Split is operational (bandwidth, failure isolation, "as long as it takes" processing for large Depositions); both speak DAO directly.
+- **Access Area** (OAIS *Access* entity) — produces DIPs for Consumers. Materializes **Service Files** (and Service Projections for non-file consumers) per subdomain; serves **Access Files** on demand. Subscribes to Archive events; push-from-Archive (resolved 2026-05-13, §9.3). Subdomains: **IIIF** (SIPI), **HTML / Web Discovery** (DPE), **Custom Presentation** (CPE), **Asset / Download**, **SPARQL**. Each subdomain corresponds to one OAIS DIP shape.
 
 Two committed architectural patterns shape DAO's design space:
 
-- **Domain Driven Design** — bounded contexts, ubiquitous language, aggregates. **DAO is the ubiquitous language of the Archive context.** The Producer/Ingest context (RDU-Tooling, VRE export) and the Access context (Access Area, DPE/CPE/asset/IIIF) have their own internal vocabularies. **DAO terms appear at boundaries** (submissions arriving at the Archive, projection events leaving the Archive) — the lingua franca of context seams, not the universal language. (Anti-corruption layer not required under the self-built working assumption.)
-- **Event Sourcing** — events are the source of truth in the Archive; Service Masters and access projections are derived (replayable) views.
+- **Domain Driven Design** — bounded contexts, ubiquitous language, aggregates. **DAO is the ubiquitous language of the Archive context.** The Producer-side contexts (RDU-Tooling, VRE) and the Access Area context (with its subdomains listed above) have their own internal vocabularies. **DAO terms appear at boundaries** (submissions arriving at the Archive, projection events leaving the Archive) — the lingua franca of context seams, not the universal language. (Anti-corruption layer not required under the self-built working assumption.) **Subdomain ≠ bounded context**: a subdomain is a problem-side slice; a bounded context is a solution-side language boundary. The Access Area's subdomains are implemented in separate codebases (`modules/dpe/`, future SIPI, etc.) but share the Access Area's parent ubiquitous language plus subdomain-specific extensions.
+- **Event Sourcing** — events are the source of truth in the Archive; **Service Files and Service Projections** in the Access Area are derived (replayable) views.
 
 **Project metadata format is decided**: RDF/Turtle with SHACL validation. DAO is one such ontology (the canonical archival one). The Archive treats project-level supplementary metadata as black-box storage.
 
@@ -42,11 +41,11 @@ Two committed architectural patterns shape DAO's design space:
 
 ### Scope clarification: DAO governs the Archive, not the Access Area
 
-DAO is the schema of what is **preserved in the Archive** (Archival Masters and their descriptive/preservation metadata). It is **not** the schema of Service Masters in the Access Area, nor of presentation views in DPE/CPE.
+DAO is the schema of what is **preserved in the Archive** (`dao:Representation`s, the **Preservation Files** they contain, and their descriptive/preservation metadata). It is **not** the schema of **Service Files / Service Projections** in the Access Area, nor of presentation views produced by Access Area subdomains (HTML/Web Discovery, Custom Presentation, IIIF Manifests, etc.).
 
-- **Archival Masters** (Representations in DAO terms) conform to DAO. Versioned. WORM. Source of truth.
-- **Service Masters** are derived projections of Representations, shaped for specific consumers (pyramidal TIFF for IIIF, search indexes for DPE, denormalized RDF for SPARQL endpoints, etc.). They are **regenerable from Representations + transformation rule**. They do not carry their own versioning identity in DAO.
-- **DPE/CPE views** are presentation, not preservation. Project-specific presentation customizations live outside DAO (CPE configuration, not archival content).
+- **`dao:Representation`s** (containing one or more Preservation Files) conform to DAO. Versioned. WORM. Source of truth.
+- **Service Files / Service Projections** are derived projections of Representation Versions, shaped for specific Access Area subdomains (pyramidal TIFF for IIIF, search indexes for HTML/Web Discovery, denormalised RDF for SPARQL, etc.). They are **regenerable from Preservation Files + derivation rule**. They do not carry their own versioning identity in DAO.
+- **Presentation views** produced by HTML/Web Discovery (DPE), Custom Presentation (CPE), and other Access Area subdomains are presentation, not preservation. Subdomain-specific customisations live outside DAO.
 
 ---
 
@@ -83,7 +82,7 @@ CQRS separates the canonical record (write side) from materialized views for que
 There are **three first-class versioned entities**:
 
 - **IntellectualEntity** (IE) — described content with descriptive identity. RDF data conforming to DAO. Has a stable internal IRI. Versions over time. PREMIS-aligned term: "a coherent set of content reasonably described as a unit." Replaces what we initially called "Resource" (which conflicted with `knora-base:Resource` and other senses).
-- **Representation** (Rep) — the **Archival Master**: a preservation-grade set of files (PREMIS allows multi-file Representations) plus Representation-level metadata (license, authorship, copyright, technical metadata such as filename, MIME type, originalFilename, originalMimeType). Has a stable internal IRI. Versions over time. Many-to-many with IntellectualEntities across Versions. Service Masters are derived from Representations and are not themselves Representations in DAO terms. Replaces what we initially called "Asset" (which had a different meaning in the VRE).
+- **Representation** (Rep) — the preservation-grade bundle: a set of one or more **Preservation Files** (PREMIS allows multi-file Representations) plus Representation-level metadata (license, authorship, copyright, technical metadata such as filename, MIME type, originalFilename, originalMimeType). Has a stable internal IRI. Versions over time. Many-to-many with IntellectualEntities across Versions. **Service Files** (Access Area mezzanines) are derived from Preservation Files and are not themselves Representations in DAO terms. Replaces what we initially called "Asset" (which had a different meaning in the VRE); the informal label "Archival Master" is retired in favour of the three-tier role vocabulary (decision 30).
 - **Ontology** — schema. Single archival ontology only (see §4).
 
 ### 2.2 Internal identifiers
@@ -199,11 +198,11 @@ An IE Version pins **specific Representation Versions** (model (a) from the inte
 
 The pinning is expressed in the **publish event payload**: an `IntellectualEntityVersionPublished` event carries references to specific predecessor `RepresentationVersionCreated` events (or to "Representation X as of event E"). The pin is a fact in the event log. The read side materializes this as queryable `:references` triples on Version nodes for SPARQL convenience.
 
-### 3.3 Service Masters are not versioned
+### 3.3 Service Files and Service Projections are not versioned
 
-Service Masters in the Access Area are **derived projections of Representation Versions**, not first-class versioned entities. When a Representation Version is created (i.e., on `RepresentationVersionCreated` event consumption), its Service Masters are (re-)derived. When derivation rules change (e.g., DaSCH adopts a new IIIF profile), Service Masters are re-derived from the unchanged events. Service Masters carry no ARK and no version number of their own — their identity is "the current derivation of Representation X v_n under derivation rule Y."
+Service Files (and other Service-tier projections, e.g. search indexes, SPARQL graph denormalisations) in the Access Area are **derived projections of Representation Versions**, not first-class versioned entities. When a Representation Version is created (i.e., on `RepresentationVersionCreated` event consumption), its Service-tier projections are (re-)derived. When derivation rules change (e.g., DaSCH adopts a new IIIF profile), they are re-derived from the unchanged events. Service Files carry no ARK and no version number of their own — their identity is "the current derivation of Representation X v_n under derivation rule Y."
 
-This aligns with Event Sourcing: Service Masters are projections, regenerable by replay.
+This aligns with Event Sourcing: Service-tier projections are derived, regenerable by replay. (Previous wording used "Service Master" — retired in favour of the three-tier role vocabulary; see `CONTEXT.md` → Preservation chain roles.)
 
 ### 3.4 Versioning lives on the read side, not in DAO
 
@@ -312,7 +311,7 @@ The bytes for the listed files live in the content store, addressed by their has
 
 **Working assumption:** self-built Archive Component (per decision 17, revised). DaSCH owns the storage implementation directly; no anti-corruption layer needed; DAO is the storage model.
 
-**Scale check.** DaSCH targets 50-100 projects/year. Estimated tens of thousands of events per year, TB-scale content storage. This is small data — a single-machine architecture is right-sized. Heavy event-store / message-broker technology (Kafka, EventStoreDB) is operational overkill at this volume.
+**Scale check (re-baselined 2026-05-13/15).** DaSCH targets 50-100 projects/year, ~2 Depositions/week, **~200K events/week** steady-state. Deposit-burst-driven: a single Deposition may carry 10K to ~500K events (per decision 31). Approximately ~10M events/year, TB-scale content storage. Still small enough for a single-machine architecture, provided OCFL Object granularity is chosen carefully (per-aggregate rather than time-bucketed). Heavy event-store / message-broker technology (Kafka, EventStoreDB) remains operational overkill at this volume.
 
 **Architecture: OCFL on filesystem as source of truth, SQLite as rebuildable read-side cache.**
 
@@ -320,32 +319,39 @@ The bytes for the listed files live in the content store, addressed by their has
 /archive-root/
 ├── ocfl-storage-root/                         # SOURCE OF TRUTH
 │   ├── ie/{uuid}/...                          # OCFL Object per IE (RDF metadata, versioned)
-│   ├── rep/{uuid}/...                         # OCFL Object per Representation (bitstreams + RDF, versioned)
+│   ├── rep/{uuid}/...                         # OCFL Object per Representation (Preservation Files + RDF, versioned)
 │   ├── projects/{uuid}/...                    # OCFL Object per Project
-│   ├── depositions/{uuid}/...                 # OCFL Object per Deposition
-│   └── events/{yyyy-Www}/...                  # OCFL Object per weekly event-log bucket
+│   ├── depositions/{uuid}/...                 # OCFL Object per Deposition  (producer-induced; bundles the events emitted during ingest)
+│   └── preservation-actions/{uuid}/...        # OCFL Object per PreservationAction (archive-induced; bundles the events emitted during the action)
 └── cache/
-    └── archive.sqlite                         # rebuildable read-side cache
+    ├── archive.sqlite                         # rebuildable read-side cache
+    └── event-index/                           # append-only chronological event index (rebuildable from OCFL)
+        └── {yyyy-mm}.ndjson                   # one line per event: {event_uuid, timestamp, aggregate_kind, aggregate_uuid}
 ```
 
-**OCFL on filesystem is the durable canonical state for everything**: bitstreams, RDF metadata, and the event log itself. Self-describing, hash-verified, navigable without DaSCH software (a future archivist with only the OCFL spec can recover everything). Inspired by Fedora 6's principle that the on-disk layout is the source of truth and all databases are derived caches.
+**OCFL on filesystem is the durable canonical state for everything**: bitstreams (Preservation Files), RDF metadata, and the event log itself. Self-describing, hash-verified, navigable without DaSCH software (a future archivist with only the OCFL spec can recover everything). Inspired by Fedora 6's principle that the on-disk layout is the source of truth and all databases are derived caches.
 
-**Event-log artifacts go into OCFL too.** Each event is a JSON-LD or Turtle document, batched into **weekly OCFL Objects** (`events/2026-W17/`). At DaSCH's scale (~tens of events per week on a busy week), weekly buckets are a comfortable granularity; can be revisited if write volume changes.
+**Event-log artifacts are bundled with their causally-meaningful aggregate.** Every event belongs to either a `Deposition` (producer-induced) or a `PreservationAction` (archive-induced); the corresponding OCFL Object holds both the aggregate's descriptive metadata and the events it emitted, as a single coherent unit. **Granularity changed from weekly time-buckets to per-aggregate Objects** in 2026-05-15 (revises decision 23): at 200K events/week with deposit bursts up to 500K, weekly time-bucket Objects became unbounded and filesystem-painful, while per-aggregate Objects are causally meaningful, naturally bounded, and align with PreservationAction-as-aggregate (decision 26).
+
+**Event-index is the chronological reverse-lookup.** A subscriber tailing the Events SSE feed needs chronological access; events themselves live inside per-aggregate Objects. The `event-index/` directory holds an append-only NDJSON per month: one line per event with `{event_uuid, timestamp, aggregate_kind, aggregate_uuid}`. The SSE handler reads the index in order, dereferences each event from its containing OCFL Object, and emits. The index is **rebuildable** by scanning all OCFL Objects (cost: O(events); reasonable as a one-time recovery step).
 
 **SQLite cache holds the read-side projection.** Materialized Version nodes, indexed views ("all IEs in Project X", "current Version of IE Y", "all events for Representation Z in chronological order"). One SQLite file per archive instance. Embedded, transactional, no server. Rebuildable from OCFL by replaying events.
 
-**No separate event-store technology.** Events are files in OCFL. Read-side projector reads them and updates SQLite. ARK Resolver (separate bounded context) consumes its own subset of events similarly. Polling cadence at this scale is trivial.
+**No separate event-store technology.** Events are files inside per-aggregate OCFL Objects. Read-side projector consumes the event-index and updates SQLite. ARK Resolver (separate bounded context) consumes its own subset of events via the public SSE feed (see §3.7.1).
 
-**Write path:**
+**Write path (for a Deposition):**
 
-1. Command arrives at the Archive service.
-2. Validation runs (schema, uniqueness, authorization, etc.).
-3. Event written to OCFL event-log bucket (append to weekly Object).
-4. fsync.
-5. SQLite updated transactionally.
-6. Acknowledge success to Command issuer.
+1. Command (e.g. `SubmitDeposition`) arrives at the Archive (Ingest Area).
+2. Validation runs (SHACL against DAO, `DepositAgreement` enforcement, fixity, authorisation).
+3. On validation success: the Deposition aggregate is committed as a new OCFL Object under `depositions/{uuid}/`, containing the `DepositionAccepted` event and all per-entity events (`IntellectualEntityVersionPublished`, `RepresentationVersionCreated`, etc.) it emitted, plus the Deposition's descriptive metadata.
+4. New entries appended to `event-index/{yyyy-mm}.ndjson` for each event in the commit.
+5. fsync.
+6. SQLite updated transactionally.
+7. Acknowledge success to Command issuer.
 
-**Recovery:** if the process crashes between steps 4 and 5 (or SQLite is lost entirely), restart scans OCFL for events with timestamps after SQLite's last-applied event and replays them into SQLite. OCFL is the source of truth; SQLite catches up. Standard pattern.
+**Write path for a PreservationAction** is analogous: aggregate Object committed under `preservation-actions/{uuid}/`, event-index extended, SQLite updated.
+
+**Recovery:** if the process crashes between steps 5 and 6 (or SQLite is lost entirely), restart scans the event-index for entries after SQLite's last-applied event and replays them. If the event-index itself is lost, it is rebuilt by walking all OCFL Objects under `depositions/` and `preservation-actions/`. OCFL is the source of truth; SQLite and the event-index are caches.
 
 **Sanctioned exception to OCFL immutability — Redaction.** A `Redacted` event (§5.1) is the **only** operation that may mutate or zero existing bytes in OCFL. The mutation is recorded as a new OCFL Object version with the offending bytes removed, never as in-place overwrite of an earlier OCFL version-directory contents. The `Redacted` event in the event log carries the legal basis and authorizing Agent; the OCFL Object's version-log carries the corresponding pointer. Every other operation in §5.1 is additive only. This exception exists because GDPR Art. 17 and equivalent legal obligations can compel erasure that immutable preservation cannot otherwise satisfy; it is bounded narrowly to redaction events and never extended to routine operation.
 
@@ -356,6 +362,56 @@ The bytes for the listed files live in the content store, addressed by their has
 - **No infrastructure to scale or operate.** No Postgres, no Elasticsearch, no Kafka, no S3, no message broker.
 - **Aligned with DaSCH's stated values:** architectural simplicity, long-term maintainability, escape from infrastructure-heavy designs.
 - **Deferred decisions remain open.** If scale demands change, SQLite can be replaced by Postgres without changing OCFL or events. If geographic replication is required, OCFL replicates as filesystem-level mirroring. The architecture starts small and stays simple.
+
+### 3.7.1 Public APIs of the Archive
+
+The Archive exposes **three public APIs** at its bounded-context boundary (decision 31). Subscribers and Producers reach the Archive only through these; OCFL is internal and never directly exposed.
+
+#### Commands API
+
+- **Shape:** HTTP. RPC-style or per-command endpoints; exact URL design deferred to implementation. Commands are intents to change state (`SubmitDeposition`, `MintArk` if intra-Archive, `RunFixityCheck`, `MigrateRepresentationFormat`, `Tombstone`, `Redact`, etc.).
+- **Synchronicity:** Validation is synchronous; the API returns 4xx immediately on failure. Commit may be asynchronous for large Depositions: the API returns 202 Accepted with an opaque `ticket-id` and a status URL the Producer can poll. Small commands (e.g. `MintArk`) may return 200/201 synchronously when commit is fast.
+- **Idempotency:** Commands carry a client-supplied `Idempotency-Key` header; the Archive deduplicates retries within a configurable retention window.
+- **Auth:** mTLS or bearer-token; per-Producer credentials tied to a `DepositAgreement`. Anonymous Commands are not accepted.
+- **Errors:** structured JSON error responses with stable `error_code` strings (`VALIDATION_FAILED`, `AGREEMENT_VIOLATION`, `IDEMPOTENCY_CONFLICT`, etc.).
+- **Versioning:** URL path or `Accept` header carries an API version (`v1`). Backward-incompatible changes bump the version; the Archive may run multiple versions concurrently during transitions.
+
+#### Events SSE feed
+
+- **Shape:** `GET /api/v1/events` with `Accept: text/event-stream`. Standard W3C Server-Sent Events.
+- **Resumability:** `Last-Event-ID` request header. If absent, the subscriber receives the live tail starting from "now". If present and well-formed, the subscriber receives all events with `event_id > Last-Event-ID`, in chronological order, then transitions seamlessly to the live tail.
+- **From genesis:** `Last-Event-ID: 0` (or the equivalent sentinel) is a valid resume point. The Archive serves the entire historical event stream from the event-index, then catches up to live. No separate "bulk" endpoint in the initial implementation (per the ship-and-measure principle, §9.5).
+- **Delivery semantics:** at-least-once; subscribers must be idempotent on event consumption. Per-entity ordering is guaranteed (events for the same aggregate are emitted in commit order); cross-entity total order is not guaranteed.
+- **Heartbeats:** SSE comment lines (`: heartbeat`) every ~30s to keep HTTP/proxy connections alive.
+- **Filtering:** **none server-side.** Subscribers receive the full firehose and filter client-side (decision 31).
+- **Auth:** mTLS or bearer-token. Subscribers are registered (the Archive knows which subscribers exist for observability and rate-limit purposes); subscription itself is open to any registered subscriber.
+- **Backpressure:** slow subscribers fall behind on `Last-Event-ID`; on resume, they receive historical events from the index. No backpressure signal from Archive to subscriber. If a subscriber falls catastrophically behind, the operator's recourse is to switch to the (γ) or (δ) bootstrap strategy (§3.7.2).
+
+#### Binary retrieval API
+
+- **Shape:** `GET /api/v1/bitstreams/{multihash}`. Content-addressed; the multihash uniquely identifies the bytes.
+- **Range requests:** HTTP 206 Partial Content supported, for clients that want to stream large files.
+- **Caching:** content is immutable (the multihash binds bytes to identity), so the response carries long `Cache-Control` lifetimes and an `ETag` of the multihash itself. Access Area subscribers cache aggressively at derivation time.
+- **Auth:** mTLS or bearer-token; same auth as the SSE feed. (Access decisions are made by the Access Area subdomain at user-request time, not at this layer — the Archive only authenticates that the caller is an authorised subscriber.)
+- **Errors:** 404 if the multihash is unknown; 410 Gone if the bytes were intentionally redacted (the `Redacted` event in the relevant Representation history explains why).
+
+### 3.7.2 Subscriber bootstrap (cold replay)
+
+Three bootstrap strategies are supported, by use case (decision 32):
+
+**(α) Subscriber-side snapshots — for routine restarts.** Each subscriber periodically writes its derived state to a snapshot, with the `event_id` of the last applied event embedded. Snapshot cadence is the subscriber's choice (every N events, every M minutes, or after every Deposition commit). On restart, the subscriber:
+
+1. Restores its state from the latest snapshot.
+2. Opens the Archive SSE with `Last-Event-ID = snapshot.last_event_id`.
+3. Receives all events since the snapshot, then transitions to live tail.
+
+**(γ) Subscriber-to-subscriber replication — for spinning up duplicates.** When a second instance of an existing subscriber kind is brought up (HA, scaling, geographical replication), it copies state from an existing peer rather than replaying from Archive. The existing peer exposes an internal "snapshot export" endpoint. After the copy, the new instance tails Archive's SSE from `Last-Event-ID = peer.last_event_id`. Only works between subscribers running the *same* derivation logic version.
+
+**(δ) Full SSE replay from genesis — for brand-new subscriber kinds.** When deploying a subscriber kind that has never run before (e.g. a new SPARQL projector with new derivation logic), the subscriber opens the SSE with `Last-Event-ID = 0` and consumes the entire historical event stream. Slow but bounded; expected to be a rare one-time event. A bulk-replay mode (returning events in batches rather than as a paced SSE stream) is a deferred optimisation per §9.5 — added only when measurement under real load shows that paced SSE replay is intolerable.
+
+**Snapshot durability and recovery for (α).** Snapshots are the subscriber's own responsibility, not Archive's. Lost snapshots fall back to (δ). Subscribers should keep at least two recent snapshots to survive corruption of the most recent one.
+
+**No Archive-side snapshot mechanism.** The Archive does not maintain or serve subscriber-shaped snapshots — that would require the Archive to know each subscriber's derivation logic, which it must not.
 
 ### 3.8 Fixity checks
 
@@ -459,7 +515,7 @@ DAO models the **write side**: persistent identities and events. Version nodes b
 | Class | Purpose |
 |---|---|
 | `dao:IntellectualEntity` | Persistent identity of an IE. The URI events refer to. No Version-related properties on the write side. |
-| `dao:Representation` | Persistent identity of a Representation (Archival Master). The URI events refer to. |
+| `dao:Representation` | Persistent identity of a Representation (the preservation-grade bundle containing Preservation Files). The URI events refer to. |
 | `dao:Project` | Producer/owner context. Identity persists; metadata changes are recorded as events. Not Version-modelled even on the read side (no use case for cited historical Project state). |
 | `dao:Agent` | Person, organization, or software acting as creator/contributor/maintainer. May carry external identifiers (ORCID, ROR). |
 | `dao:Event` | The event-sourcing primitive. Subclasses for the working vocabulary in §5.1. The event log is the source of truth. |
@@ -490,7 +546,7 @@ These came up but were deferred. New items added after folding in updated archit
 **From folding in updated architectural context:**
 
 4. **Access Area manifestation: push vs. pull.** Push (Archive emits events, Access Area projects) fits Event Sourcing naturally and was the implicit model for our event vocabulary. Pull (Access Area queries Archive on demand) is simpler operationally but harder to reason about for projections.
-5. **Access Area events in DAO scope?** If push: do Access Area events (`ServiceMasterDerived`, `ServiceMasterInvalidated`, `ProjectionRebuilt`) belong in DAO's event vocabulary, or in a separate Access-context vocabulary? Lean: separate, because Service Masters are not in DAO's archival scope.
+5. **Access Area events in DAO scope?** If push: do Access Area events (`ServiceFileDerived`, `ServiceFileInvalidated`, `ProjectionRebuilt`) belong in DAO's event vocabulary, or in a separate Access-context vocabulary? **Resolved 2026-05-15**: separate, because Service Files / Service Projections are not in DAO's archival scope (decision 32). Each subscriber subdomain owns its own internal event vocabulary if it event-sources internally; these events live in an `access:` namespace and are not part of Archive's published SSE feed.
 6. **DPE/CPE presentation hints in DAO?** Should DAO carry presentation hints (e.g., "render this IE as a recipe card", "highlight property X")? Lean: **no** — presentation is not preservation. CPE configuration lives outside the archive.
 7. **IIIF Manifests in DAO?** IIIF has its own information model (Manifest, Canvas, Annotation). Lean: DAO stores enough technical metadata on Representations that the IIIF server can compute Manifests at request time. Manifests are not stored in the archive.
 8. **CoreTrustSeal evidence linkage.** Several DAO choices (immutable event log, fixity events, format migration provenance, no in-place migration) double as CoreTrustSeal audit evidence. Should be cross-referenced explicitly per requirement.
@@ -530,16 +586,20 @@ The numbering is the order decisions were made, not document order.
 | 19 | ARK is the single long-term stability commitment | ARKs are minted **per persistent-identity entity** (IE, Representation, Project, etc.), not per Version. A specific Version is denoted by suffix (`/v{n}` or VRE-era timestamp). ARK string remains stable; suffix selects the Version. DPE handles Version display by querying the read store. Internal IRIs and read-side URLs are not promised to outlive a system migration; only ARKs are | — |
 | 20 | Bitstream storage | Bitstreams stored outside event log in a content-addressable store. Events carry hash references (multihash format, SHA-256 default) plus PREMIS-style file-level technical metadata in payload. Storage URIs are not in event payloads; the content store owns "given a hash, return bytes". **Deviation from PREMIS, documented (per decision 27):** PREMIS models `Representation → File → Bitstream` as three `Object` subclasses; DAO collapses `File` and `Bitstream` into facts in event payloads + content-addressed bytes. Reasoning: event sourcing makes `File`-as-class redundant; content addressing makes `Bitstream` identity = hash. Reversible — file-facts can be projected into read-side `File` nodes if needed. See §3.6 | — / deviation logged 2026-05-12 |
 | 21 | Storage architecture | OCFL on filesystem as source of truth for everything: bitstreams, RDF metadata, event-log artifacts. SQLite as rebuildable read-side cache. No separate event-store technology. Write path: validate command → write event to OCFL → fsync → update SQLite. Recovery: scan OCFL on startup for events not yet in SQLite, replay | — |
-| 22 | Right-sized for DaSCH scale | Architecture deliberately right-sized for 50-100 projects/year (~tens of events/week). Single-machine, two storage things (filesystem + SQLite file). No infrastructure to scale or operate. Replaceable with heavier infrastructure later if scale demands change, without changing OCFL or events | — |
-| 23 | Event log granularity | Weekly OCFL Object per event-log bucket (`events/{yyyy-Www}/`). Revisable if write volume changes | — |
+| 22 | Right-sized for DaSCH scale | Architecture deliberately right-sized for 50-100 projects/year. Single-machine, two storage things (filesystem + SQLite file). No infrastructure to scale or operate. Replaceable with heavier infrastructure later if scale demands change, without changing OCFL or events. **Amended 2026-05-15:** baseline re-calibrated from "~tens of events/week" to **~200K events/week steady-state, deposit-burst-driven, with single Depositions reaching ~500K events at the extreme** (per decision 31). Still right-sized for single-machine, but the "trivial polling cadence" claim has been removed — push via SSE has replaced polling (decision 31). | — / amended 2026-05-15 |
+| 23 | Event log granularity | **Amended 2026-05-15:** the original weekly time-bucket granularity (`events/{yyyy-Www}/`) has been replaced by **per-aggregate OCFL Objects** (`depositions/{uuid}/` and `preservation-actions/{uuid}/`), each bundling its aggregate's events together with the aggregate's descriptive metadata. A complementary append-only chronological event-index (`cache/event-index/{yyyy-mm}.ndjson`) provides reverse-lookup for SSE replay. Reason for the change: at re-baselined scale (~200K events/week with deposit bursts up to ~500K), weekly time-buckets became unbounded and filesystem-painful; per-aggregate Objects are causally meaningful (decision 26) and naturally bounded by the aggregate. See §3.7. | — / amended 2026-05-15 |
 | 24 | Events carry full snapshots | Even though OCFL stores per-version IE/Representation state, events carry full metadata snapshots (not just references). Redundancy is intentional: preserves replay-from-events-alone capability for disaster recovery | — |
 | 25 | Fixity event vocabulary | One `FixityChecked` event with `outcome` ∈ {`pass`, `fail`, `missing`}. Failures and missings trigger preservation-action workflows (workflows are policy, parked separately) | — |
 | 26 | `dao:PreservationAction` as a first-class concept | DaSCH-internal preservation actions (format migration, system-ontology migration, fixity-driven re-encoding, bulk metadata correction) are modeled as `dao:PreservationAction`, **separate from `dao:Deposition`**. Rationale: different actor (Archive-as-system-agent vs. Producer); different authorization regime (internal preservation policy vs. `DepositAgreement`); CoreTrustSeal audit-trail separation of producer-induced vs. archive-induced changes (CTS R09/R12); cleaner event vocabulary (`PreservationActionExecuted` parallels `DepositionAccepted`). Aligned with `PREMIS DD §1.4` (Event entity); `OAIS §4.1.3 / §5.1` (Preservation Planning) | 2026-05-11 |
 | 27 | OAIS + PREMIS alignment as default | Every DAO design choice is aligned with OAIS (CCSDS 650.0-M-3, Dec 2024) and PREMIS 3.0, **or** carries a documented deviation with reason in the decision log or an ADR. Standards extracts checked in under [`standards/`](./standards/) with citation conventions (`OAIS §<n.n.n>`, `PREMIS DD §<n.n>`). The alignment is **conceptual**: DAO uses its own URIs in the `dao:` namespace and may diverge in property names and structure where DaSCH-specific needs justify it, but the underlying concepts must be traceable back to OAIS/PREMIS or explicitly justified | 2026-05-11 |
 | 28 | Tombstoning vs. redaction | Two distinct events. `Tombstoned` = **logical retraction** (bytes/metadata preserved in OCFL; read-side hides the Version; ARK returns tombstone landing page). `Redacted` = **surgical content-level erasure** producing a new redacted Version of the IE/Representation; the pre-redaction Version is `Tombstoned` and its OCFL bytes are over-written/zeroed — the **single sanctioned exception to OCFL immutability**. `Redacted` records who authorized the redaction and under what legal basis (e.g. GDPR Art. 17), not what was removed. Outright deletion is **not** a DAO event — it is a board-level exception in a separate governance log. Aligned with `PREMIS DD §1.4` Event entity (custom `Redaction` subtype) and `OAIS §3.3.5` (deactivation permitted; deletion not in normal operation). See §5.1 and §3.7 | 2026-05-12 |
-| — | DAO scope | DAO governs the Archive (Archival Masters), not the Access Area (Service Masters are derived projections) or DPE/CPE (presentation, not preservation) | folded in |
-| — | Service Master versioning | Service Masters are derived projections, not versioned entities; regenerable by replay from Representation + derivation rule | folded in |
-| — | Representation = Archival Master | The Representation class refers to the Archival Master; Service Masters are derivatives outside DAO's identity model | folded in |
+| 29 | Domain framing | The whole `dsp-repository` codebase implements **one domain**: Trusted Repository (OAIS-based). Decomposes into subdomains: Ingest, Archival Storage, Preservation Planning, Data Management, Administration, Access (all OAIS functional entities); Identification (DaSCH-specific, long-term citation via ARK); Producer-side preparation (DaSCH-specific). VRE is external to the domain (a Producer in OAIS terms). See `CONTEXT-MAP.md` → Domain | 2026-05-15 |
+| 30 | Three-tier preservation chain role vocabulary | The two-tier "Archival Master / Service Master" framing is **retired**. Replaced by a three-tier role taxonomy distinguished by **purpose in the preservation chain**, not by format, location, or source provenance: **Preservation File** (long-term bit-level preservation; lives inside `dao:Representation`; owned by Archive context); **Service File** (mezzanine derivation under a derivation rule; owned by Access Area context); **Access File** (end-user delivery payload generated on demand; owned by the Access Area subdomain that serves the request). Originated in SIPI's IIIF Server vocabulary; promoted to cross-context Published Language. See `CONTEXT.md` → Preservation chain roles | 2026-05-15 |
+| 31 | Archive deployment topology and public interfaces | The Archive bounded context is one logical unit deployed as **two services**: an **Ingest Area** (producer-facing async upload + SHACL/`DepositAgreement` validation gate; emits `DepositionAccepted` only on validation success; OAIS *Ingest* entity) and the rest of the Archive (event log, OCFL, public APIs; OAIS *Archival Storage* entity, with future Preservation Planning / Data Management / Administration entities). Both speak DAO directly; no anti-corruption layer between them. The Archive exposes **three public APIs**: Commands (HTTP), Events SSE (`text/event-stream`, resumable via `Last-Event-ID`, **full firehose** with no server-side filtering — subscribers filter client-side), Binary retrieval (`GET /bitstreams/{multihash}`, HTTP 206 Range supported). **OCFL is exclusive to the Archive boundary**; no other context reaches into the OCFL store. Deposition size is **producer-set** (Path A); realistic upper bound ~500K events for an extreme single submission; per-Deposition OCFL Objects are the proposed granularity. See §1a, §9.3 | 2026-05-15 |
+| 32 | Access Area as federated subscribers; cold-replay strategy | Access Area is **one bounded context with N independent subscriber services** (one per DIP-shape subdomain: IIIF, HTML/Web Discovery, Custom Presentation, Asset/Download, SPARQL). Each subscriber maintains its own SSE cursor against Archive, its own storage tuned to its consumer's pattern, its own derivation logic. **Cold-replay strategy by use case**: (α) subscriber-side snapshots for routine restarts; (γ) subscriber-to-subscriber replication for spinning up duplicates of an existing subscriber kind; (δ) full SSE replay from genesis for the rare deploy of a brand-new subscriber kind. Archive serves historical events via the same SSE endpoint as live tail; a bulk-replay optimisation is **deferred** until measurement shows it is needed (see §9.5: ship and measure before optimising) | 2026-05-15 |
+| — | DAO scope (folded in) | DAO governs the Archive (`dao:Representation`s containing Preservation Files), not the Access Area (Service Files and Service Projections are derived) or Access Area subdomain presentation views (DPE/CPE/IIIF, etc., are presentation, not preservation) | folded in (terminology updated 2026-05-15) |
+| — | Service-tier versioning (folded in) | Service Files / Service Projections are derived projections, not versioned entities; regenerable by replay from Representation + derivation rule | folded in (terminology updated 2026-05-15) |
+| — | Representation = preservation-grade bundle (folded in) | The `dao:Representation` class refers to the preservation-grade bundle (one or more Preservation Files plus Representation-level metadata); Service-tier projections are derivatives outside DAO's identity model | folded in (terminology updated 2026-05-15) |
 
 ---
 
@@ -578,7 +638,7 @@ This document is the durable state of the design conversation. When resuming, re
 
 ### 9.3 In-flight thread — Archive deployment topology and public APIs
 
-This thread was open when the session was paused. **Inputs from Ivan are confirmed; the doc has NOT yet been updated to reflect them.** Pick up here:
+This thread was opened in 2026-05-13 and resolved over 2026-05-14 / 2026-05-15. All confirmed inputs and the Q1 / Q2 questions are now answered. The doc has been updated to reflect them in §1a, §3.3, the decision log (decisions 29 / 30 / 31 / 32), and `CONTEXT.md`. What remains is documentation cleanup; the design itself is settled.
 
 **Confirmed inputs (Ivan, 2026-05-13):**
 
@@ -587,30 +647,24 @@ This thread was open when the session was paused. **Inputs from Ivan are confirm
 3. **OCFL is exclusive to the Archive.** No other component reaches into OCFL directly.
 4. The Archive exposes three **public APIs**:
    - **Commands API** — for RDU-Tooling and the preservation-action runner (write side).
-   - **Events SSE feed** — `text/event-stream`, resumable via `Last-Event-ID`, at-least-once delivery, per-entity ordering, heartbeats for proxy traversal. Subscribers: Access Area, ARK Resolver, future projectors.
-   - **Binary-retrieval API** — `GET /bitstreams/{multihash}` returning bytes (HTTP 206 Range supported). Used by Access Area at Service Master derivation time; cached locally so user read paths never round-trip to the Archive.
+   - **Events SSE feed** — `text/event-stream`, resumable via `Last-Event-ID`, at-least-once delivery, per-entity ordering, heartbeats for proxy traversal. Subscribers: Access Area (one subscriber per subdomain — resolved 2026-05-15, decision 32), ARK Resolver, future projectors. **Full firehose**: every subscriber receives the full event stream and filters client-side; Archive carries no subscriber-facing filter grammar (resolved 2026-05-15, decision 31).
+   - **Binary-retrieval API** — `GET /bitstreams/{multihash}` returning bytes (HTTP 206 Range supported). Used by Access Area subdomains at Service File derivation time; cached locally so user read paths never round-trip to the Archive.
 5. **Scale recalibration:** ~2 deposits/week, but a single deposit may carry tens of thousands of IEs/Representations. Working estimate: **~200,000 events/week ≈ 2.3 events/s steady-state**, deposit-burst-driven. This invalidates the "tens of events/week" framing in §3.7 and decisions 22 / 23.
 
-**Pending question from Ivan (not yet answered):**
+**Q1 — resolved 2026-05-14 (decision 31).** Worst-case single-Deposition size is **producer-set** (Path A): there is no Archive-enforced ceiling. Realistic upper bound is ~500K events for an extreme single submission (e.g. a fully-digitised monastic library). Multiple Depositions over a project's lifecycle correspond to **iterative deposit** as the project keeps working in VRE and periodically submits — not chunking of a single large submission.
 
-> Q1 — What's a plausible worst-case single-deposit size? Tens of thousands is average; does any plausible deposit reach ~100K events (e.g. a 100K-page manuscript corpus with one IE per page)? Or is "tens of thousands" the realistic ceiling?
+**Q2 — resolved 2026-05-15 (decision 32).** Cold-replay is handled by combining three approaches by use case: **(α)** subscriber-side snapshots for routine restarts; **(γ)** subscriber-to-subscriber replication for spinning up duplicates of an existing subscriber kind; **(δ)** full SSE replay from genesis for the rare deploy of a brand-new subscriber kind. Archive serves historical events via the same SSE endpoint; a bulk-replay optimisation is deferred per the **ship and measure** principle (§9.5).
 
-The answer shapes whether per-Deposition OCFL Objects are bounded enough or whether very large deposits need sub-bucketing.
+**Doc-cleanup queue — all done 2026-05-15:**
 
-**Second question held back, ask after Q1 is answered:**
-
-> Q2 — Cold-replay strategy: a new subscriber facing ~10M events of history after a year of operation cannot tolerably project from genesis on every fresh deployment. Confirm the snapshot-plus-tail bootstrap (the Archive periodically writes projection snapshots that subscribers can fetch as a starting point, then tail the SSE feed from that event-id forward), or propose an alternative.
-
-**Doc updates queued (to land after Q1 + Q2 are resolved):**
-
-1. §1a — explicit deployment topology (Archive and Access Area separate; Archive owns OCFL exclusively; Archive exposes the three public APIs above).
-2. New §3.7.1 (Public APIs of the Archive) — Commands, Events SSE, Binary retrieval. Auth, versioning, backpressure, error semantics.
-3. Revise §3.7 — OCFL Object granularity changes from **weekly time-bucket** to **per-Deposition / per-PreservationAction Object** plus a complementary append-only chronological index keyed by event UUID and timestamp. Rationale: at 200K events/week, weekly OCFL Objects become filesystem-painful; aggregate-keyed Objects are causally meaningful and bounded.
-4. Revise decision 22 — re-baseline scale (200K events/week steady, deposit-burst-driven, 10K+ events per deposit common; still right-sized for single-machine but with a much smaller comfort margin than originally written; "trivial polling cadence" claim removed since polling is being replaced by SSE).
-5. Revise decision 23 — event-log granularity changes from weekly time-buckets to per-aggregate Objects.
-6. New decision 29 — Archive deployment topology and public interfaces (push via SSE; OCFL Archive-exclusive; three public APIs; subscribers cannot reach OCFL directly).
-7. New §3.7.2 (Subscriber bootstrap) — snapshot + tail strategy for cold replay; snapshot cadence TBD pending Q2.
-8. `CONTEXT.md` — note that Access Area, ARK Resolver, and any other subscriber accesses the Archive only via its three public APIs; OCFL is internal to the Archive boundary.
+1. ~~§1a — explicit deployment topology~~ **Done.**
+2. ~~New §3.7.1 (Public APIs of the Archive)~~ **Done.**
+3. ~~Revise §3.7 — OCFL Object granularity from weekly time-bucket to per-aggregate Objects~~ **Done.**
+4. ~~Revise decision 22 — re-baseline scale~~ **Done** (amendment note added inline).
+5. ~~Revise decision 23 — per-aggregate granularity~~ **Done** (amendment note added inline).
+6. ~~New decision for Archive deployment topology~~ **Done** (decisions 31 and 32).
+7. ~~New §3.7.2 (Subscriber bootstrap)~~ **Done.**
+8. ~~`CONTEXT.md` — boundary commitment note~~ **Done.**
 
 ### 9.4 Remaining open questions (priority order suggested for future sessions)
 
@@ -627,10 +681,13 @@ These are the items still parked in §7 that warrant the next several interview 
 9. **Q2 Event ordering (per-entity vs global)** — per-entity is the working assumption; document explicitly.
 10. **Q6 / Q7 DPE/CPE presentation hints and IIIF Manifests in DAO** — both lean "no"; document the no and move on.
 11. **Q8 CoreTrustSeal evidence linkage** — annotation pass across the doc once the design stabilizes. Add a `CTS:` callout next to each decision that produces audit evidence.
+12. **Fedora 6 OCFL patterns (research thread, not a design question).** Fedora 6 was the first major repository platform to commit to OCFL as the on-disk source of truth, with all databases treated as derived caches. §3.7 already cites this as the inspiration for decision 21. Open: what did Fedora 6 learn about OCFL Object granularity, multi-version management, large-Object handling, read-cache rebuild times, migration paths from Fedora 4/5 Akubra storage, and operational pain points? Useful input for revising decisions 21–23 and for the per-aggregate-Object proposal in §9.3.
+13. **Fedora LDP (Linked Data Platform) lessons (research thread, not a design question).** Fedora 4/5 modelled their REST API on W3C LDP: containers, direct/indirect containers, RDF resources, pairtree containment. Open: what worked and what hurt? Specifically: (a) lessons for the Archive's Commands API shape; (b) lessons for how the Access Area exposes its read store to DPE/CPE/IIIF; (c) whether containment-as-LDP would over-constrain DAO's persistent-identity model. Cross-reference with PCDM (Portland Common Data Model), which Fedora-using institutions layered on top of LDP.
 
 ### 9.5 Process notes
 
 - Standards PDFs live in [`standards/`](./standards/) as both `.pdf` and `.md` (verbatim text extracts via `pdftotext -layout`). The `.md` extracts are grep-able and exist specifically to make in-doc citation cheap.
 - `CONTEXT.md` is the working glossary; treat it as authoritative for terminology that has stabilized. The discovery doc is the working *design narrative*; treat it as authoritative for decisions and their rationale.
 - No ADRs have been written yet. The build-vs-buy revision (decision 17) and the OCFL-on-filesystem choice (decisions 21–23) are the strongest ADR candidates and should be written before implementation begins.
+- **Ship and measure before optimising.** Decisions that affect operational performance (event volumes, replay strategies, storage size, derivation costs) ship in their simplest form first, run against real load, and are then optimised based on observed behaviour. The architecture is designed to allow this — full SSE firehose can become filtered, per-Deposition OCFL Objects can be sub-bucketed, derivation can move from eager to lazy. None of those refinements is pre-built. If a question of the form "should we optimise X now?" comes up, the default answer is *not until we have measured X under real load*.
 

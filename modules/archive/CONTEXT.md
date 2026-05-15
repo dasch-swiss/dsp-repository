@@ -15,8 +15,8 @@ The PREMIS-aligned term for "a coherent set of content reasonably described as a
 _Avoid_: Record, Object, Item, Resource.
 
 **Representation**
-PREMIS-aligned. The **Archival Master**: a preservation-grade set of files plus Representation-level metadata (license, authorship, copyright, technical metadata). Has a stable persistent-identity URI (`https://archive.dasch.swiss/rep/{uuid}`) and one ARK. Versions over time. Many-to-many with IEs across Versions. Replaces the earlier working term **Asset** (which had a different VRE meaning).
-_Avoid_: File, Blob, Attachment, FileValue, Asset, Archival Information Package (AIP belongs in OAIS-vocabulary discussions only; the Representation is *what is preserved*, not the OAIS package shape).
+PREMIS-aligned. The preservation-grade bundle: a set of one or more **Preservation Files** plus Representation-level metadata (license, authorship, copyright, technical metadata). Has a stable persistent-identity URI (`https://archive.dasch.swiss/rep/{uuid}`) and one ARK. Versions over time. Many-to-many with IEs across Versions. Replaces the earlier working term **Asset** (which had a different VRE meaning); the older informal label **Archival Master** is also retired in favour of the three-tier role vocabulary (see Preservation chain roles below).
+_Avoid_: File, Blob, Attachment, FileValue, Asset, Archival Master, Archival Information Package (AIP belongs in OAIS-vocabulary discussions only; the Representation is *what is preserved*, not the OAIS package shape).
 
 **Project**
 A research project archived in DSP, identified by a 4-character shortcode (e.g. `0803`) and addressed by a project-level ARK. Carries project-level metadata (title, funding, attributions, legal info, temporal coverage, disciplines). Producer/owner context for IEs and Representations.
@@ -45,11 +45,23 @@ The event-sourcing primitive. The event log is the source of truth on the write 
 Versions are **read-side projections**, not DAO write-side classes. A specific Version is "the n-th `IntellectualEntityVersionPublished` event for this IE." The read store materializes Version nodes from the event log. Cited as `.../v{n}` (e.g. `.../ie/{uuid}/v3`).
 _Avoid_: treating these as first-class DAO classes — they are deliberately not.
 
-**Archival Master**
-The Representation. The preservation-grade Master of record. WORM.
+### Preservation chain roles (shared vocabulary across contexts)
 
-**Service Master**
-A *derived projection* of one or more Representations, shaped for a specific consumer (pyramidal TIFF for IIIF, search index for DPE, denormalized RDF for SPARQL). Not in DAO. Regenerable by replay from a Representation Version + derivation rule. Has no ARK and no Version of its own.
+Three role-based labels for artifacts along the preservation-to-delivery chain. Roles are distinguished by **purpose** in the preservation chain, not by format, location, or source provenance. Originated in SIPI's IIIF Server vocabulary and adopted here as cross-context Published Language. **Replaces the earlier two-tier "Archival Master / Service Master" framing** (both terms retired).
+
+**Preservation File**
+Long-term bit-level preservation. The file bytes inside a `dao:Representation` — a Representation may contain multiple Preservation Files (e.g. a TIFF plus an XMP sidecar). Authoritative; WORM. Content-addressed by hash (`dao-discovery.md §3.6`).
+_Avoid_: "Archival Master" (retired); confusing with `dao:Representation` itself — the Representation is the *bundle* of Preservation Files plus Representation-level metadata, not a single file.
+_Owned by_: the Archive context.
+
+**Service File**
+Mezzanine baseline derived from Preservation File(s) under a derivation rule. Sized and shaped for downstream delivery contexts (e.g. pyramidal TIFF for IIIF). Regenerable from the Preservation File + derivation rule; carries no preservation commitment; no ARK; no Version.
+_Avoid_: "Service Master" (retired — "Master" implied an authority Service Files do not have).
+_Owned by_: the Access Area context.
+
+**Access File**
+End-user delivery payload, generated on demand from a Service File plus request parameters (IIIF region/size/rotation/quality/format; downloaded bytes; rendered page; etc.). Ephemeral; not stored, not preserved.
+_Owned by_: the delivery context that serves the request (IIIF Server, asset server, DPE, …).
 
 ### Identifier vocabulary
 
@@ -59,6 +71,18 @@ A DaSCH-controlled HTTPS URI in the Archive namespace (`https://archive.dasch.sw
 **ARK**
 The single long-term-stable public identifier. Issued by the **ARK Resolver**, which is its own bounded context with its own event store. Minted per persistent-identity entity (IE, Representation, Project), not per Version — a Version is denoted by an ARK suffix.
 _Avoid_: DOI (DaSCH does not currently mint DOIs; if added, they would be additional, not a substitute), Handle, PURL, "permalink."
+
+### Internal structure of the Archive context
+
+The Archive is one bounded context but is deployed as two services. Both speak DAO directly; no anti-corruption layer between them.
+
+**Ingest Area**
+Producer-facing deployment. Receives SIPs uploaded from RDU-Tooling, runs validation (SHACL against DAO; `DepositAgreement` enforcement; format and fixity checks). Async by design — large Depositions can take "as long as they take." Only on validation success does it trigger the `DepositionAccepted` event in the rest of the Archive. Separated for bandwidth, failure isolation, and producer-facing operational independence. See `dao-discovery.md §1a`.
+_Avoid_: confusing with OAIS *Ingest* (the functional entity, broader concept) or with `dao:Deposition` (the durable record of a successfully committed Submission); the Ingest Area is the *service that runs the gate*, not the gate's output.
+
+### Boundary commitment
+
+**OCFL is internal to the Archive context.** Access Area subscribers, the ARK Resolver, and any other subscriber reach the Archive **only** through its three public APIs: the Commands API (write side), the Events SSE feed (read side, full firehose), and the Binary retrieval API (`GET /bitstreams/{multihash}`). No external context — and no other deployment — touches the OCFL store directly. The event-index, SQLite cache, and Object layout under `ocfl-storage-root/` are implementation details of the Archive, not part of any cross-context contract. See `dao-discovery.md §3.7.1` and decisions 31 / 32.
 
 ## Relationships
 
@@ -86,7 +110,7 @@ _Avoid_: DOI (DaSCH does not currently mint DOIs; if added, they would be additi
 - **"AIP / SIP / DIP"** belong to OAIS vocabulary. They describe **package shapes at boundaries**, not durable entities.
   - At the Producer→Archive boundary a **SIP** arrives; the durable artifact recording its arrival is a `dao:Deposition`.
   - The **AIP** corresponds to "what is preserved" — i.e. the union of `dao:IntellectualEntity` + its pinned `dao:Representation` Versions + descriptive metadata + provenance events. DAO does not have an `AIP` class; the AIP is *constituted* from the write-side entities.
-  - **DIP** is constructed by the Access Area on demand from Service Masters. Not a DAO concern.
+  - **DIP** is constructed by an Access Area subdomain on demand from Service Files and Service Projections. Not a DAO concern.
 
 ## Example dialogue
 

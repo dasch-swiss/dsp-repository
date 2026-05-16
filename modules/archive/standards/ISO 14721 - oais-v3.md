@@ -2,6 +2,7 @@
 source: oais-v3.pdf
 title: Reference Model for an Open Archival Information System (OAIS)
 identifier: CCSDS 650.0-M-3 (Magenta Book)
+iso equivalent: ISO 14721
 issued: 2024-12
 publisher: Consultative Committee for Space Data Systems (CCSDS)
 extraction-tool: pdftotext -layout (poppler-utils 25.10.0)
@@ -7633,4 +7634,3 @@ CCSDS 650.0-M-3                            Page F-1                            D
 
 
 CCSDS 650.0-M-3                             Page F-2                             December 2024
-

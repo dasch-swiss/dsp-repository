@@ -1,22 +1,22 @@
 {
     "id": "0863",
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0863",
-    "name": "The Electronic Catalogue of the Samaria Ivory Artifacts and Related Material",
+    "name": "The Electronic Catalogue of the Samaria Ivory Carvings",
     "shortcode": "0863",
-    "officialName": "The Electronic Catalogue of the Samaria Ivory Artifacts and Related Material",
+    "officialName": "The Electronic Catalogue of the Samaria Ivory Carvings",
     "status": "Finished",
     "shortDescription": "\"Samaria Ivories\" provides access to a catalogue with color photographs of the entire assemblage of ivory carvings and related material that once decorated luxurious furniture of the Israelite elite.",
     "description": {
-        "en": "\"The Electronic Catalogue of the Samaria Ivory Artifacts and Related Material\" offers the first complete publication of the ivory carvings and related inlays and overlays that were excavated between 1908 and 1935 at Samaria, the capital of the kingdom of Israel in the 9th-8th centuries BCE. The catalogue accompanies a description, analysis, and reassessment of this material published in book form. The over 12,500 mostly very fragmentary items once decorated luxurious furniture, perhaps also other prestige goods. They constitute not only a substantial portion of the arts known from Iron Age Israel, but also the largest assemblage of elaborate Levantine ivory carvings of the Iron Age unearthed in the Levant itself rather than Assyrian cities, where the vast majority of this body of material came to light. Thus, the Samaria Ivories are significant for both the cultural history of ancient Israel and the study of Levantine ivory carvings of the Iron Age."
+        "en": "\"The Electronic Catalogue of the Samaria Ivory Carvings\" offers the first complete publication of the ivory carvings and related inlays and overlays that were excavated between 1908 and 1935 at Samaria, the capital of the kingdom of Israel in the 9th-8th centuries BCE. The catalogue accompanies a description, analysis, and reassessment of this material published in book form. The over 12,500 mostly very fragmentary items once decorated luxurious furniture, perhaps also other prestige goods. They constitute not only a substantial portion of the arts known from Iron Age Israel, but also the largest assemblage of elaborate Levantine ivory carvings of the Iron Age unearthed in the Levant itself rather than Assyrian cities, where the vast majority of this body of material came to light. Thus, the Samaria Ivories are significant for both the cultural history of ancient Israel and the study of Levantine ivory carvings of the Iron Age."
     },
     "startDate": "2002-04-01",
     "endDate": "2025-06-30",
     "url": [
         "MISSING"
     ],
-    "howToCite": "Suter (2026). The Electronic Catalogue of the Samaria Ivory Artifacts and Related Material (Samaria Ivories) [Database]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0863.",
+    "howToCite": "Suter (2026). The Electronic Catalogue of the Samaria Ivory Carvings (Samaria Ivories) [Database]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/0863.",
     "accessRights": {
-        "accessRights": "Full Open Access"
+        "accessRights": "Embargoed Access"
     },
     "legalInfo": [
         {
@@ -25,7 +25,7 @@
                 "licenseDate": "2026-01-01",
                 "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
             },
-            "copyrightHolder": "The Electronic Catalogue of the Samaria Ivory Artifacts and Related Material",
+            "copyrightHolder": "The Electronic Catalogue of the Samaria Ivory Carvings",
             "authorship": [
                 "CALCULATED"
             ]

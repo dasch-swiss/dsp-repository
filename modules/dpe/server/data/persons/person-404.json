@@ -1,0 +1,23 @@
+{
+    "id": "person-404",
+    "givenNames": [
+        "Ursula"
+    ],
+    "familyNames": [
+        "Kluwick"
+    ],
+    "jobTitles": [
+        "Professor"
+    ],
+    "affiliations": [
+        "organization-151"
+    ],
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-7769-6307",
+            "text": "ORCID"
+        }
+    ],
+    "email": "ukluwick@uni-bremen.de"
+}

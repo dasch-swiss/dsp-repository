@@ -1,0 +1,23 @@
+{
+    "id": "person-405",
+    "givenNames": [
+        "Guðrun"
+    ],
+    "familyNames": [
+        "í Jákupsstovu"
+    ],
+    "jobTitles": [
+        "Assistant Professor"
+    ],
+    "affiliations": [
+        "organization-152"
+    ],
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.setur.fo/en/the-university/staff/gudrun-i-jakupsstovu",
+            "text": "University of the Faroe Islands"
+        }
+    ],
+    "email": "gudrunj@setur.fo"
+}

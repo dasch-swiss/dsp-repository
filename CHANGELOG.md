@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.4](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.3...v0.5.4) (2026-05-19)
+
+
+### Bug Fixes
+
+* **dpe-web:** point access rights filter info link to new dasch.swiss page (DEV-6223) ([acb660f](https://github.com/dasch-swiss/dsp-repository/commit/acb660fa421255005317c8e4d8d05604a0e3ae55))
+
 ## [0.5.3](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.2...v0.5.3) (2026-05-07)
 
 

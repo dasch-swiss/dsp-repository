@@ -1,0 +1,23 @@
+{
+    "id": "person-403",
+    "givenNames": [
+        "Virginia"
+    ],
+    "familyNames": [
+        "Richter"
+    ],
+    "jobTitles": [
+        "Rector of University Bern"
+    ],
+    "affiliations": [
+        "organization-150"
+    ],
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://boris-portal.unibe.ch/entities/person/a2477dea-d52e-478b-ac9d-400e7eb8a0f4",
+            "text": "BORIS Portal"
+        }
+    ],
+    "email": "virginia.richter@unibe.ch"
+}

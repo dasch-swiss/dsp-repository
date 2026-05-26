@@ -40,20 +40,48 @@ fn bundle_css(input: PathBuf, mut output: &File) {
 }
 
 fn download_file(download_url: &str, file_path: &PathBuf) {
-    File::create(file_path).expect("Error creating file");
-
-    let mut file = File::options().append(true).open(file_path).expect("Error opening file");
+    const MAX_ATTEMPTS: u32 = 3;
 
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(3600))
         .build()
         .expect("Error building client");
 
-    let response = client.get(download_url).send().expect("Error getting response");
+    let mut last_error: String = String::from("no attempts made");
 
-    let content = response.bytes().expect("Error getting bytes from response");
+    for attempt in 1..=MAX_ATTEMPTS {
+        let result = client
+            .get(download_url)
+            .send()
+            .map_err(|e| format!("request failed: {e}"))
+            .and_then(|response| {
+                let status = response.status();
+                if !status.is_success() {
+                    return Err(format!("HTTP {status} for {download_url}"));
+                }
+                response.bytes().map_err(|e| format!("reading body failed: {e}"))
+            });
 
-    file.write_all(&content).expect("Error writing to file");
+        match result {
+            Ok(content) => {
+                let mut file = File::create(file_path).expect("Error creating file");
+                file.write_all(&content).expect("Error writing to file");
+                return;
+            }
+            Err(e) => {
+                last_error = e;
+                println!(
+                    "cargo:warning=Download attempt {attempt}/{MAX_ATTEMPTS} for {download_url} failed: {last_error}"
+                );
+            }
+        }
+
+        if attempt < MAX_ATTEMPTS {
+            std::thread::sleep(std::time::Duration::from_secs(2u64.pow(attempt - 1)));
+        }
+    }
+
+    panic!("Failed to download {download_url} after {MAX_ATTEMPTS} attempts. Last error: {last_error}");
 }
 
 fn run_tailwind(tailwind_path: Option<&Path>, bundle_path: &PathBuf, singlestage_path: &PathBuf) -> Result<(), ()> {

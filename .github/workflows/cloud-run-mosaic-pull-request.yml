@@ -27,9 +27,12 @@ jobs:
   # --------------------------------------------------------------------------
   deploy-preview:
     name: Build and deploy preview
+    # Dependabot PRs are skipped because GitHub does not pass repository secrets
+    # to workflows triggered by `dependabot[bot]`, so GCP auth would fail.
     if: >-
       github.event.action != 'closed' &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -109,7 +112,8 @@ jobs:
   # --------------------------------------------------------------------------
   cleanup-preview:
     name: Clean up preview
-    if: github.event.action == 'closed'
+    # Dependabot PRs never deploy a preview, so there is nothing to clean up.
+    if: github.event.action == 'closed' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Authenticate to Google Cloud

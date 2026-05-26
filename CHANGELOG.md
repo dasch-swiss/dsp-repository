@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.5](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.4...v0.5.5) (2026-05-26)
+
+
+### Bug Fixes
+
+* **dpe-server:** correct metadata JSON API path from v1 to v2 ([1843908](https://github.com/dasch-swiss/dsp-repository/commit/1843908972abf7846b1b2949ccafce367cc619a9))
+* **mosaic/playground:** upgrade base packages in runtime image to patch CVEs ([e5db763](https://github.com/dasch-swiss/dsp-repository/commit/e5db76335b7fab6a5e271e183350a1b087e3d41b))
+* **mosaic/tiles:** harden tailwind download with status check and retries ([2cf1099](https://github.com/dasch-swiss/dsp-repository/commit/2cf10999b6c6349f013fb68517e24674131c58f3))
+
+
+### Build System
+
+* **deps:** bump rand from 0.9.2 to 0.9.4 ([f0818e8](https://github.com/dasch-swiss/dsp-repository/commit/f0818e8c9cfc9ec9732a632dc7c8c03e1c865ddb))
+* **deps:** bump the backend-dependencies group across 1 directory with 10 updates ([0592939](https://github.com/dasch-swiss/dsp-repository/commit/0592939bc2e5cc0cf53a189511613d350cb8833e))
+
 ## [0.5.4](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.3...v0.5.4) (2026-05-19)
 
 

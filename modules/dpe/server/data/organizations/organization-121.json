@@ -1,12 +1,11 @@
 {
     "id": "organization-121",
-    "name": "Science IT (S3IT), University of Zurich",
-    "url": "https://www.zi.uzh.ch/en/teaching-and-research/science-it/experts.html",
+    "name": "Institute of Romance Studies, University of Zurich",
+    "url": "https://www.rose.uzh.ch/en.html",
     "address": {
-        "street": "Winterthurerstrasse 190",
-        "postalCode": "8057",
-        "locality": "Zurich",
+        "street": "Zürichbergstrasse 8",
+        "postalCode": "8032",
+        "locality": "Zürich",
         "country": "Switzerland"
-    },
-    "email": "contact@s3it.uzh.ch"
+    }
 }

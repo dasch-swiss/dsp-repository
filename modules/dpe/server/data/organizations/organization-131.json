@@ -1,5 +1,12 @@
 {
     "id": "organization-131",
-    "name": "Stipendienfonds Fritz und Paul Sarasin",
-    "url": "MISSING"
+    "name": "Universität Basel, Deutsches Seminar",
+    "url": "https://germanistik.philhist.unibas.ch",
+    "address": {
+        "street": "Nadelberg 4",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+    },
+    "email": "germa-dslw@unibas.ch"
 }

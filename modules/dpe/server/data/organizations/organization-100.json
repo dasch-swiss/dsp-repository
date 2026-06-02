@@ -1,12 +1,11 @@
 {
     "id": "organization-100",
-    "name": "Università della Svizzera italiana USI",
-    "url": "https://www.usi.ch/",
+    "name": "Université de Fribourg",
+    "url": "https://www.unifr.ch",
     "address": {
-        "street": "Accademia di Architettura, Villa Argentina, Largo Bernasconi 2",
-        "postalCode": "6850",
-        "locality": "Mendrisio",
+        "street": "Av. de l'Europe 20",
+        "postalCode": "1700",
+        "locality": "Fribourg",
         "country": "Switzerland"
-    },
-    "email": "info.arc@usi.ch"
+    }
 }

@@ -1,11 +1,11 @@
 {
     "id": "organization-127",
-    "name": "Stiftung Vinetum",
-    "url": "http://www.vinetum.ch",
+    "name": "Schweizerische Akademie der Geistes- und Sozialwissenschaften",
+    "url": "http://www.sagw.ch",
     "address": {
-        "street": "Stiftung Vinetum\r Sydebusweg 9",
-        "postalCode": "CH-2502",
-        "locality": "Biel",
+        "street": "Schweizerische Akademie der Geistes- und Sozialwissenschaften\rGeneralsekretariat\rHaus der Akademien\rLaupenstrasse 7",
+        "postalCode": "CH-3001",
+        "locality": "Bern",
         "country": "Switzerland"
     }
 }

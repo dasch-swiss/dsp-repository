@@ -1,11 +1,12 @@
 {
     "id": "organization-085",
-    "name": "Deutsches Seminar, Universität Zürich",
+    "name": "Stiftung für eine Historisch-Kritische Gottfried Keller-Ausgabe",
     "url": "MISSING",
     "address": {
-        "street": "Schönberggasse 9",
-        "postalCode": "8001",
+        "street": "c/o Pestalozzi Rechtsanwälte, Löwenstrasse 1",
+        "postalCode": "8000",
         "locality": "Zürich",
         "country": "Switzerland"
-    }
+    },
+    "email": "dom.muller@bluewin.ch"
 }

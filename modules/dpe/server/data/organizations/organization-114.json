@@ -1,11 +1,12 @@
 {
     "id": "organization-114",
-    "name": "University of Basel, Theologische Fakultät",
-    "url": "https://theologie.unibas.ch/de/",
+    "name": "Shelby White and Leon Levy",
+    "url": "https://whitelevy.fas.harvard.edu/",
     "address": {
-        "street": "Nadelberg 10",
-        "postalCode": "4051",
-        "locality": "Basel",
-        "country": "Switzerland"
-    }
+        "street": "The Shelby White and Leon Levy Program for Archaeological Publications, Harvard University, The Harvard Museum of the Ancient Near East, 6 Divinity Ave #102",
+        "postalCode": "02138",
+        "locality": "Cambridge, MA",
+        "country": "United States"
+    },
+    "email": "whitelev@fas.harvard.edu"
 }

@@ -27,5 +27,11 @@
       "WebFetch(domain:leptos.dev)"
     ],
     "deny": []
+  },
+  "enabledPlugins": {
+    "linear@claude-plugins-official": true,
+    "eng@dasch-claude-plugins": true,
+    "my-eng@subotic-claude-plugins": true,
+    "sentry@claude-plugins-official": true
   }
 }

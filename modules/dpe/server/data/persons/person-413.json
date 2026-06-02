@@ -1,0 +1,23 @@
+{
+    "id": "person-413",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-3960-2861",
+            "text": "ORCID URL: https://orcid.org/0000-0003-3960-2861"
+        }
+    ],
+    "givenNames": [
+        "Marie"
+    ],
+    "familyNames": [
+        "Migeon"
+    ],
+    "jobTitles": [
+        "PhD researcher"
+    ],
+    "affiliations": [
+        "organization-140"
+    ],
+    "email": "marie.migeon@unibas.ch"
+}

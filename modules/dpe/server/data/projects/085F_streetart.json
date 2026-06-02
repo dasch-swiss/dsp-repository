@@ -12,9 +12,10 @@
     "startDate": "2020-10-01",
     "endDate": "2025-08-25",
     "dataPublicationYear": "2026",
-    "url": [
-        "https://dgw.philhist.unibas.ch/de/doktorat/mitglieder/doktorierende/migeon-marie/"
-    ],
+    "secondaryUrl": {
+        "type": "URL",
+        "url": "https://dgw.philhist.unibas.ch/de/doktorat/mitglieder/doktorierende/migeon-marie/"
+    },
     "howToCite": "Marie Migeon (2026). Street art in Belfast and Bogota: Murals, graffiti and posters, 2022-2024. [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085F.",
     "accessRights": {
         "accessRights": "Full Open Access"

@@ -1,5 +1,12 @@
 {
     "id": "organization-129",
-    "name": "Akademie der Bildenden Künste, Wien",
-    "url": "https://www.akbild.ac.at/en/home?set_language=en"
+    "name": "Universität Basel, Deutsches Seminar",
+    "url": "https://germanistik.philhist.unibas.ch",
+    "address": {
+        "street": "Nadelberg 4",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+    },
+    "email": "germa-dslw@unibas.ch"
 }

@@ -1,5 +1,11 @@
 {
     "id": "organization-127",
-    "name": "Österreichische Nationalbibliothek",
-    "url": "https://www.onb.ac.at"
+    "name": "Stiftung Vinetum",
+    "url": "http://www.vinetum.ch",
+    "address": {
+        "street": "Stiftung Vinetum\r Sydebusweg 9",
+        "postalCode": "CH-2502",
+        "locality": "Biel",
+        "country": "Switzerland"
+    }
 }

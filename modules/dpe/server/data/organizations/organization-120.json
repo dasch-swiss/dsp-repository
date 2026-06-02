@@ -1,12 +1,11 @@
 {
     "id": "organization-120",
-    "name": "Exist Solutions",
-    "url": "https://www.existsolutions.com",
+    "name": "Institute of Romance Studies, University of Zurich",
+    "url": "https://www.rose.uzh.ch/en.html",
     "address": {
-        "street": "Kielganstrasse 4a",
-        "postalCode": "10783",
-        "locality": "Berlin",
-        "country": "Germany"
-    },
-    "email": "info@existsolutions.com"
+        "street": "Zürichbergstrasse 8",
+        "postalCode": "8032",
+        "locality": "Zürich",
+        "country": "Switzerland"
+    }
 }

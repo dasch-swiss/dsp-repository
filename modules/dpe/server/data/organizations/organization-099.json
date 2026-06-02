@@ -1,12 +1,11 @@
 {
     "id": "organization-099",
-    "name": "Herrmann Germann GmbH",
-    "url": "https://herrmanngermann.ch",
+    "name": "Université de Fribourg",
+    "url": "https://www.unifr.ch",
     "address": {
-        "street": "Hardturmstrasse 68",
-        "postalCode": "8005",
-        "locality": "Zürich",
+        "street": "Av. de l'Europe 20",
+        "postalCode": "1700",
+        "locality": "Fribourg",
         "country": "Switzerland"
-    },
-    "email": "xy@herrmanngermann.ch"
+    }
 }

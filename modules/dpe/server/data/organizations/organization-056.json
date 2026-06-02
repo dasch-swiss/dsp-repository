@@ -1,12 +1,11 @@
 {
     "id": "organization-056",
-    "name": "Vitrocentre Romont",
-    "url": "https://vitrocentre.ch",
+    "name": "University of Basel, Department of Ancient Civilisations",
+    "url": "http://www.unibas.ch",
     "address": {
-        "street": "Rue du Château 108 b, Case postale 225",
-        "postalCode": "1680",
-        "locality": "Romont",
+        "street": "Petersgraben 51",
+        "postalCode": "4051",
+        "locality": "Basel",
         "country": "Switzerland"
-    },
-    "email": "info@vitrocentre.ch"
+    }
 }

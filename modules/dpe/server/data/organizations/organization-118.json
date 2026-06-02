@@ -1,12 +1,5 @@
 {
     "id": "organization-118",
-    "name": "Heidelberg University, Historisches Seminar, Mittellatein",
-    "url": "https://www.uni-heidelberg.de/en",
-    "address": {
-        "street": "Grabengasse 3-5",
-        "postalCode": "69117",
-        "locality": "Heidelberg",
-        "country": "Germany"
-    },
-    "email": "kv0@ix.urz.uni-heidelberg.de"
+    "name": "Università degli Studi del Piemonte Orientale",
+    "url": "https://uniupo.it/en"
 }

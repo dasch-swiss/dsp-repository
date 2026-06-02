@@ -1,10 +1,10 @@
 {
     "id": "organization-034",
-    "name": "Universität Basel, Departement Geschichte",
-    "url": "MISSING",
+    "name": "Photo Archive of the Cultural Anthropology Switzerland (CAS)",
+    "url": "https://www.ekws.ch/de/archiv",
     "address": {
-        "street": "",
-        "postalCode": "",
+        "street": "Spalenvorstadt 2",
+        "postalCode": "4051",
         "locality": "Basel",
         "country": "Switzerland"
     }

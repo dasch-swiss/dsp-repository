@@ -1,12 +1,12 @@
 {
     "id": "organization-013",
-    "name": "Paul Sacher Stiftung",
-    "url": "https://paul-sacher-stiftung.ch",
+    "name": "Ernst von Siemens Musikstiftung",
+    "url": "https://www.evs-musikstiftung.ch",
     "address": {
-        "street": "Münsterplatz 4",
-        "postalCode": "CH-4051",
-        "locality": "Basel",
+        "street": "Landis + Gyr-Strasse 1",
+        "postalCode": "CH-6300",
+        "locality": "Zug",
         "country": "Switzerland"
     },
-    "email": "office-pss@unibas.ch"
+    "email": "rossnagl@evs-musikstiftung.ch"
 }

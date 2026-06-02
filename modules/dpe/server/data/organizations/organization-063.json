@@ -1,11 +1,12 @@
 {
     "id": "organization-063",
-    "name": "University of Zurich",
-    "url": "http://www.uzh.ch",
+    "name": "Basler Münsterbauhütte",
+    "url": "http://www.baslermuenster.ch/bauwerk/muensterbauhuette",
     "address": {
-        "street": "Rämistrasse 71",
-        "postalCode": "8006",
-        "locality": "Zürich",
+        "street": "Basler Münster, Münsterplatz, 9",
+        "postalCode": "4051",
+        "locality": "Basel",
         "country": "Switzerland"
-    }
+    },
+    "email": "info@muensterbauhuette.ch"
 }

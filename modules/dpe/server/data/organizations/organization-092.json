@@ -1,11 +1,12 @@
 {
     "id": "organization-092",
-    "name": "Université de Genève, Départemet de langue et de littérature allemandes, Faculté des Lettres",
-    "url": "MISSING",
+    "name": "Herrmann Germann GmbH",
+    "url": "https://herrmanngermann.ch",
     "address": {
-        "street": "24 rue du Général-Dufour",
-        "postalCode": "1211",
-        "locality": "Genève 4",
+        "street": "Hardturmstrasse 68",
+        "postalCode": "8005",
+        "locality": "Zürich",
         "country": "Switzerland"
-    }
+    },
+    "email": "xy@herrmanngermann.ch"
 }

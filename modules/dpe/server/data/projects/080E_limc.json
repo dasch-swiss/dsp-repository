@@ -120,7 +120,7 @@
     ],
     "attributions": [
         {
-            "contributor": "organization-032",
+            "contributor": "organization-031",
             "contributorType": [
                 "publisher"
             ]
@@ -140,19 +140,19 @@
     "funding": [
         {
             "funders": [
-                "organization-027"
+                "organization-026"
             ]
         },
         {
             "funders": [
-                "organization-028"
+                "organization-027"
             ],
             "name": "Program Support Education",
             "url": "https://www.snf.org/en/grants/grantees/u/university-of-basel/department-of-ancient-civilisations-program-support/"
         },
         {
             "funders": [
-                "organization-029"
+                "organization-028"
             ],
             "number": "2015-2371/1.2",
             "name": "Gesuch im Bereich Bildung und Wissenschaft",
@@ -160,7 +160,7 @@
         },
         {
             "funders": [
-                "organization-030"
+                "organization-029"
             ],
             "number": "14/17-18",
             "name": "Ceramica Stiftung",
@@ -168,7 +168,7 @@
         },
         {
             "funders": [
-                "organization-031"
+                "organization-030"
             ],
             "number": "19-109",
             "name": "Gesuch im Bereich Kultur",

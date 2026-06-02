@@ -1,11 +1,11 @@
 {
     "id": "organization-061",
-    "name": "ETH Zürich",
-    "url": "http://www.ethz.ch",
+    "name": "Free University of Brussels",
+    "url": "http://www.ulb.be",
     "address": {
-        "street": "Rämistrasse 101",
-        "postalCode": "8092",
-        "locality": "Zürich",
-        "country": "Switzerland"
+        "street": "Université Libre de Bruxelles, Avenue Franklin Roosevelt, 50",
+        "postalCode": "1050",
+        "locality": "Brussels",
+        "country": "Belgium"
     }
 }

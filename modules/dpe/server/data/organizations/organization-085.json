@@ -1,12 +1,11 @@
 {
     "id": "organization-085",
-    "name": "Université de Neuchâtel, Faculté des lettres et sciences humaines",
-    "url": "http://www.unine.ch/geographie/home.html",
+    "name": "Deutsches Seminar, Universität Zürich",
+    "url": "MISSING",
     "address": {
-        "street": "Espace Tilo-Frey 1",
-        "postalCode": "2000",
-        "locality": "Neuchâtel",
+        "street": "Schönberggasse 9",
+        "postalCode": "8001",
+        "locality": "Zürich",
         "country": "Switzerland"
-    },
-    "email": "Secretariat.Geographie@unine.ch"
+    }
 }

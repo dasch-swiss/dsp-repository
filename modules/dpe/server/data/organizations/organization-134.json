@@ -1,11 +1,11 @@
 {
     "id": "organization-134",
-    "name": "Forschungsstelle Jeremias Gotthelf",
-    "url": "http://www.gotthelf.unibe.ch",
+    "name": "University of Rome",
+    "url": "MISSING",
     "address": {
-        "street": "Universität Bern\r Forschungsstelle Jeremias Gotthelf\r Muesmattstrasse 45",
-        "postalCode": "CH-3012",
-        "locality": "Bern",
-        "country": "Switzerland"
+        "street": "",
+        "postalCode": "",
+        "locality": "Sapienza",
+        "country": "Italy"
     }
 }

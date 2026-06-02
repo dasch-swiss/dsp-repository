@@ -1,11 +1,6 @@
 {
     "id": "organization-075",
-    "name": "Universität Zürich, Institut für Erziehungswissenschaft",
-    "url": "https://www.ife.uzh.ch/",
-    "address": {
-        "street": "Freiestrasse 36",
-        "postalCode": "8032",
-        "locality": "Zürich",
-        "country": "Switzerland"
-    }
+    "name": "intercom Verlag",
+    "url": "http://www.intercomverlag.ch",
+    "email": "info@intercomverlag.ch"
 }

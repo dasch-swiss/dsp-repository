@@ -1,12 +1,11 @@
 {
     "id": "organization-069",
-    "name": "Tanta University",
-    "url": "http://www.tanta.edu.eg",
+    "name": "NOMIS Foundation",
+    "url": "https://nomisfoundation.ch/",
     "address": {
-        "street": "Al-Geish Street",
-        "postalCode": "",
-        "locality": "Tanta",
-        "country": "Egypt"
-    },
-    "email": "tanta_unv@unv.tanta.edu.eg"
+        "street": "Claridenstrasse 26",
+        "postalCode": "8002",
+        "locality": "Zurich",
+        "country": "Switzerland"
+    }
 }

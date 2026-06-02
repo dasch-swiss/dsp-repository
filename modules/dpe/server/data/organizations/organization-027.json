@@ -1,11 +1,12 @@
 {
     "id": "organization-027",
-    "name": "swissuniversities",
-    "url": "https://www.swissuniversities.ch/",
+    "name": "Stavros Niarchos Foundation",
+    "url": "https://www.snf.org/en",
     "address": {
-        "street": "Effingerstrasse 15, Postfach",
-        "postalCode": "3001",
-        "locality": "Bern",
-        "country": "Switzerland"
-    }
+        "street": "14, Avenue de Grande Bretagne, \"Le George V\" 4eme étage",
+        "postalCode": "98000",
+        "locality": "Monte Carlo",
+        "country": "Monaco"
+    },
+    "email": "info@snf.org"
 }

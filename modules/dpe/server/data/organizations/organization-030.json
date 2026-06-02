@@ -1,11 +1,12 @@
 {
     "id": "organization-030",
-    "name": "Ceramica Stiftung",
-    "url": "https://ceramica-ch.ch/",
+    "name": "Sophie und Karl Binding Stiftung",
+    "url": "https://www.binding-stiftung.ch/",
     "address": {
-        "street": "St. Jakobs-Strasse 7",
-        "postalCode": "4002",
+        "street": "Rennweg 50",
+        "postalCode": "4020",
         "locality": "Basel",
         "country": "Switzerland"
-    }
+    },
+    "email": "contact@binding-stiftung.ch"
 }

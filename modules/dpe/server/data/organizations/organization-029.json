@@ -1,11 +1,11 @@
 {
     "id": "organization-029",
-    "name": "Ernst Göhner Stiftung",
-    "url": "http://www.ernst-goehner-stiftung.ch/index.php/de",
+    "name": "Ceramica Stiftung",
+    "url": "https://ceramica-ch.ch/",
     "address": {
-        "street": "Artherstrasse 19",
-        "postalCode": "6300",
-        "locality": "Zug",
+        "street": "St. Jakobs-Strasse 7",
+        "postalCode": "4002",
+        "locality": "Basel",
         "country": "Switzerland"
     }
 }

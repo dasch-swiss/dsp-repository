@@ -1,12 +1,12 @@
 {
     "id": "organization-032",
-    "name": "Classical Archaeology, University of Basel",
-    "url": "https://klassarch.philhist.unibas.ch/de/home/",
+    "name": "DaSCH - Swiss National Data and Service Center for the Humanities",
+    "url": "https://www.dasch.swiss/",
     "address": {
-        "street": "Petersgraben 51",
-        "postalCode": "4051",
-        "locality": "Basel",
+        "street": "Gewerbestrasse 24",
+        "postalCode": "4123",
+        "locality": "Allschwil",
         "country": "Switzerland"
     },
-    "email": "martin-a.guggisberg@unibas.ch"
+    "email": "info@dasch.swiss"
 }

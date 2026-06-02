@@ -1,12 +1,5 @@
 {
     "id": "organization-119",
-    "name": "Universitäts- und Stadtbibliothek Köln",
-    "url": "https://ub.uni-koeln.de/",
-    "address": {
-        "street": "Universitätsstrasse 33",
-        "postalCode": "50931",
-        "locality": "Köln",
-        "country": "Germany"
-    },
-    "email": "sammlung@ub.uni-koeln.de"
+    "name": "Akademie der Bildenden Künste, Wien",
+    "url": "https://www.akbild.ac.at/en/home?set_language=en"
 }

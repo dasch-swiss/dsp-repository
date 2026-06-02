@@ -1,12 +1,12 @@
 {
     "id": "organization-090",
-    "name": "Stiftung für eine Historisch-Kritische Gottfried Keller-Ausgabe",
-    "url": "MISSING",
+    "name": "Universität Basel, Kunsthistorisches Seminar",
+    "url": "https://kunstgeschichte.philhist.unibas.ch/de/",
     "address": {
-        "street": "c/o Pestalozzi Rechtsanwälte, Löwenstrasse 1",
-        "postalCode": "8000",
-        "locality": "Zürich",
+        "street": "St. Alban-Graben 8/10",
+        "postalCode": "4051",
+        "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "dom.muller@bluewin.ch"
+    "email": "daniela.steinebrunner@unibas.ch"
 }

@@ -1,11 +1,12 @@
 {
     "id": "organization-035",
-    "name": "Photo Archive of the Cultural Anthropology Switzerland (CAS)",
-    "url": "https://www.ekws.ch/de/archiv",
+    "name": "Digital Humanities Lab (DHLab), University of Basel",
+    "url": "https://dhlab.philhist.unibas.ch/",
     "address": {
-        "street": "Spalenvorstadt 2",
+        "street": "Spalenberg 65",
         "postalCode": "4051",
         "locality": "Basel",
         "country": "Switzerland"
-    }
+    },
+    "email": "sekretariat-dhlab@unibas.ch"
 }

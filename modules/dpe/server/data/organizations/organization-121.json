@@ -1,12 +1,12 @@
 {
     "id": "organization-121",
-    "name": "Stiftsbibliothek St.Gallen",
-    "url": "https://www.stiftsbibliothek.ch",
+    "name": "Science IT (S3IT), University of Zurich",
+    "url": "https://www.zi.uzh.ch/en/teaching-and-research/science-it/experts.html",
     "address": {
-        "street": "Klosterhof 6d",
-        "postalCode": "9000",
-        "locality": "St. Gallen",
+        "street": "Winterthurerstrasse 190",
+        "postalCode": "8057",
+        "locality": "Zurich",
         "country": "Switzerland"
     },
-    "email": "stibi@stibi.ch"
+    "email": "contact@s3it.uzh.ch"
 }

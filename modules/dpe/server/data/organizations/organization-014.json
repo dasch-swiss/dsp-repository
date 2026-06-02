@@ -1,12 +1,12 @@
 {
     "id": "organization-014",
-    "name": "Ernst von Siemens Musikstiftung",
-    "url": "https://www.evs-musikstiftung.ch",
+    "name": "Kuratorium Musiklexikon der Schweiz (SAGW)",
+    "url": "MISSING",
     "address": {
-        "street": "Landis + Gyr-Strasse 1",
-        "postalCode": "CH-6300",
-        "locality": "Zug",
+        "street": "Hubacherweg 15",
+        "postalCode": "3097",
+        "locality": "Liebefeld",
         "country": "Switzerland"
     },
-    "email": "rossnagl@evs-musikstiftung.ch"
+    "email": "minder@liebefeld.ch"
 }

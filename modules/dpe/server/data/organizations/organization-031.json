@@ -1,12 +1,12 @@
 {
     "id": "organization-031",
-    "name": "Sophie und Karl Binding Stiftung",
-    "url": "https://www.binding-stiftung.ch/",
+    "name": "Classical Archaeology, University of Basel",
+    "url": "https://klassarch.philhist.unibas.ch/de/home/",
     "address": {
-        "street": "Rennweg 50",
-        "postalCode": "4020",
+        "street": "Petersgraben 51",
+        "postalCode": "4051",
         "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "contact@binding-stiftung.ch"
+    "email": "martin-a.guggisberg@unibas.ch"
 }

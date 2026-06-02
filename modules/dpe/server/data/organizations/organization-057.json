@@ -1,12 +1,12 @@
 {
     "id": "organization-057",
-    "name": "Vitromusée Romont",
-    "url": "https://vitromusee.ch",
+    "name": "Institute of Evolutionary Medicine (IEM)",
+    "url": "http://www.iem.uzh.ch",
     "address": {
-        "street": "Rue du Château 108 b, Case postale 115",
-        "postalCode": "1680",
-        "locality": "Romont",
+        "street": "Universität Zürich, Winterthurerstrasse 190",
+        "postalCode": "8057",
+        "locality": "Zürich",
         "country": "Switzerland"
     },
-    "email": "info@vitromusee.ch"
+    "email": "info@iem.uzh.ch"
 }

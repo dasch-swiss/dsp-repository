@@ -151,7 +151,7 @@
             ]
         },
         {
-            "contributor": "organization-134",
+            "contributor": "organization-124",
             "contributorType": [
                 "Research Group",
                 "Data Creator"
@@ -178,11 +178,11 @@
     "funding": [
         {
             "funders": [
-                "organization-114",
-                "organization-136",
-                "organization-137",
+                "organization-107",
+                "organization-126",
+                "organization-124",
                 "organization-002",
-                "organization-029"
+                "organization-028"
             ]
         }
     ]

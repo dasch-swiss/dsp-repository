@@ -1,12 +1,11 @@
 {
     "id": "organization-033",
-    "name": "DaSCH - Swiss National Data and Service Center for the Humanities",
-    "url": "https://www.dasch.swiss/",
+    "name": "Universität Basel, Departement Geschichte",
+    "url": "MISSING",
     "address": {
-        "street": "Gewerbestrasse 24",
-        "postalCode": "4123",
-        "locality": "Allschwil",
+        "street": "",
+        "postalCode": "",
+        "locality": "Basel",
         "country": "Switzerland"
-    },
-    "email": "info@dasch.swiss"
+    }
 }

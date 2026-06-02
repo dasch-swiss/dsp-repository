@@ -1,5 +1,12 @@
 {
     "id": "organization-128",
-    "name": "Università degli Studi del Piemonte Orientale",
-    "url": "https://uniupo.it/en"
+    "name": "University of Basel",
+    "url": "https://www.unibas.ch/en.html",
+    "address": {
+        "street": "Petersplatz 1",
+        "postalCode": "4001",
+        "locality": "Basel",
+        "country": "Switzerland",
+        "additional": "P.O. Box"
+    }
 }

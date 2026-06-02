@@ -116,7 +116,7 @@
             ]
         },
         {
-            "contributor": "organization-055",
+            "contributor": "organization-052",
             "contributorType": [
                 "Editor"
             ]
@@ -128,7 +128,7 @@
     "funding": [
         {
             "funders": [
-                "organization-055"
+                "organization-052"
             ]
         }
     ],
@@ -138,6 +138,6 @@
         }
     ],
     "contactPoint": [
-        "organization-055"
+        "organization-052"
     ]
 }

@@ -1,11 +1,12 @@
 {
     "id": "organization-091",
-    "name": "Deutsches Seminar, Universität Zürich",
-    "url": "MISSING",
+    "name": "Text&Bytes GmbH",
+    "url": "https://www.textandbytes.com/",
     "address": {
-        "street": "Schönberggasse 9",
-        "postalCode": "8001",
-        "locality": "Zürich",
+        "street": "Heckenweg 42",
+        "postalCode": "3007",
+        "locality": "Bern",
         "country": "Switzerland"
-    }
+    },
+    "email": "info@textandbytes.com"
 }

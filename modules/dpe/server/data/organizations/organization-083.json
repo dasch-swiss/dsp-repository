@@ -1,5 +1,11 @@
 {
     "id": "organization-083",
-    "name": "Haus der Kulturen der Welt",
-    "url": "MISSING"
+    "name": "Research Foundation – Flanders (FWO)",
+    "url": "https://www.fwo.be",
+    "address": {
+        "street": "HOEK 38, Leuvenseweg 38",
+        "postalCode": "1000",
+        "locality": "Brussel",
+        "country": "Belgium"
+    }
 }

@@ -1,12 +1,5 @@
 {
     "id": "organization-133",
-    "name": "Zentralbibliothek Zürich",
-    "url": "https://www.zb.uzh.ch/en",
-    "address": {
-        "street": "Zähringerplatz 6",
-        "postalCode": "8001",
-        "locality": "Zürich",
-        "country": "Switzerland"
-    },
-    "email": "zb@zb.uzh.ch"
+    "name": "University of Aarhus",
+    "url": "MISSING"
 }

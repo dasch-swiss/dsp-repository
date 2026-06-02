@@ -1,5 +1,12 @@
 {
     "id": "organization-053",
-    "name": "Jacqueline Spengler Stiftung c/o Christoph Merian Stiftung (CMS)",
-    "url": "https://dachstiftung-cms.ch/stiftungen/jacqueline-spengler-stiftung-2"
+    "name": "Vitrocentre Romont",
+    "url": "https://vitrocentre.ch",
+    "address": {
+        "street": "Rue du Château 108 b, Case postale 225",
+        "postalCode": "1680",
+        "locality": "Romont",
+        "country": "Switzerland"
+    },
+    "email": "info@vitrocentre.ch"
 }

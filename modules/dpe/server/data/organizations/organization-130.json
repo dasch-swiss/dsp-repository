@@ -1,11 +1,12 @@
 {
     "id": "organization-130",
-    "name": "Institute of Romance Studies, University of Zurich",
-    "url": "https://www.rose.uzh.ch/en.html",
+    "name": "E 3600 scientific artworks",
+    "url": "https://e3600scientificartworks.wordpress.com/",
     "address": {
-        "street": "Zürichbergstrasse 8",
-        "postalCode": "8032",
-        "locality": "Zürich",
+        "street": "Birkenstrasse 38",
+        "postalCode": "4055",
+        "locality": "Basel",
         "country": "Switzerland"
-    }
+    },
+    "email": "e3600scientificartworks@gmail.com"
 }

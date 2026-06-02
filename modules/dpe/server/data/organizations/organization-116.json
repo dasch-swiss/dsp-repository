@@ -1,11 +1,5 @@
 {
     "id": "organization-116",
-    "name": "Universität Basel, Departement Altertumswissenschaften – Ägyptologie",
-    "url": "http://www.unibas.ch",
-    "address": {
-        "street": "Petersplatz, 1",
-        "postalCode": "4001",
-        "locality": "Basel",
-        "country": "Switzerland"
-    }
+    "name": "Schweizerische Landesmuseum, Sammlungszentrum",
+    "url": "https://www.sammlungszentrum.ch"
 }

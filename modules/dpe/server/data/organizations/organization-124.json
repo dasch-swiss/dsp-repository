@@ -1,5 +1,11 @@
 {
     "id": "organization-124",
-    "name": "Swiss National Data and Service Center for the Humanities (DaSCH)",
-    "url": "MISSING"
+    "name": "Forschungsstelle Jeremias Gotthelf",
+    "url": "http://www.gotthelf.unibe.ch",
+    "address": {
+        "street": "Universität Bern\r Forschungsstelle Jeremias Gotthelf\r Muesmattstrasse 45",
+        "postalCode": "CH-3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+    }
 }

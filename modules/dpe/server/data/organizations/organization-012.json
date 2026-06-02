@@ -1,12 +1,12 @@
 {
     "id": "organization-012",
-    "name": "Musikwissenschaftliches Seminar der Universität Basel",
-    "url": "https://mws.unibas.ch/",
+    "name": "Paul Sacher Stiftung",
+    "url": "https://paul-sacher-stiftung.ch",
     "address": {
-        "street": "Petersgraben 27/29",
+        "street": "Münsterplatz 4",
         "postalCode": "CH-4051",
         "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "sekretariat-mws@unibas.ch"
+    "email": "office-pss@unibas.ch"
 }

@@ -1,5 +1,12 @@
 {
     "id": "organization-054",
-    "name": "Private anonymous donor",
-    "url": "MISSING"
+    "name": "Vitromusée Romont",
+    "url": "https://vitromusee.ch",
+    "address": {
+        "street": "Rue du Château 108 b, Case postale 115",
+        "postalCode": "1680",
+        "locality": "Romont",
+        "country": "Switzerland"
+    },
+    "email": "info@vitromusee.ch"
 }

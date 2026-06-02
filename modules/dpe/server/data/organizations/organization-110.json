@@ -1,5 +1,12 @@
 {
     "id": "organization-110",
-    "name": "Radboud University",
-    "url": "https://www.ru.nl/en"
+    "name": "Universitäts- und Stadtbibliothek Köln",
+    "url": "https://ub.uni-koeln.de/",
+    "address": {
+        "street": "Universitätsstrasse 33",
+        "postalCode": "50931",
+        "locality": "Köln",
+        "country": "Germany"
+    },
+    "email": "sammlung@ub.uni-koeln.de"
 }

@@ -1,11 +1,11 @@
 {
     "id": "organization-136",
-    "name": "Schweizerische Akademie der Geistes- und Sozialwissenschaften",
-    "url": "http://www.sagw.ch",
+    "name": "Universität Bremen",
+    "url": "https://www.uni-bremen.de/",
     "address": {
-        "street": "Schweizerische Akademie der Geistes- und Sozialwissenschaften\rGeneralsekretariat\rHaus der Akademien\rLaupenstrasse 7",
-        "postalCode": "CH-3001",
-        "locality": "Bern",
-        "country": "Switzerland"
+        "street": "Bibliothekstrasse 1",
+        "postalCode": "28359",
+        "locality": "Bremen",
+        "country": "Germany"
     }
 }

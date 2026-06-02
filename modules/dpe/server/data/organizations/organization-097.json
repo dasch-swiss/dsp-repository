@@ -1,12 +1,12 @@
 {
     "id": "organization-097",
-    "name": "Universität Basel, Kunsthistorisches Seminar",
-    "url": "https://kunstgeschichte.philhist.unibas.ch/de/",
+    "name": "Pädagogische Hochschule Zürich - PHZH",
+    "url": "https://phzh.ch/ueber-die-phzh/organisation/prorektorat-forschung-und-entwicklung/abteilung-bildungswissenschaftliche-forschung/zentrum-bildung-und-digitaler-wandel/",
     "address": {
-        "street": "St. Alban-Graben 8/10",
-        "postalCode": "4051",
-        "locality": "Basel",
+        "street": "Lagerstrasse 2",
+        "postalCode": "8090",
+        "locality": "Zurich",
         "country": "Switzerland"
     },
-    "email": "daniela.steinebrunner@unibas.ch"
+    "email": "zbdw@phzh.ch"
 }

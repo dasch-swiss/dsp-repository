@@ -1,5 +1,11 @@
 {
     "id": "organization-026",
-    "name": "Beisheim Stiftung",
-    "url": "MISSING"
+    "name": "swissuniversities",
+    "url": "https://www.swissuniversities.ch/",
+    "address": {
+        "street": "Effingerstrasse 15, Postfach",
+        "postalCode": "3001",
+        "locality": "Bern",
+        "country": "Switzerland"
+    }
 }

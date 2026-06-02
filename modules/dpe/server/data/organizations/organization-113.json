@@ -1,12 +1,12 @@
 {
     "id": "organization-113",
-    "name": "Stiftsbibliothek St.Gallen",
-    "url": "https://www.stiftsbibliothek.ch",
+    "name": "Exist Solutions",
+    "url": "https://www.existsolutions.com",
     "address": {
-        "street": "Klosterhof 6d",
-        "postalCode": "9000",
-        "locality": "St. Gallen",
-        "country": "Switzerland"
+        "street": "Kielganstrasse 4a",
+        "postalCode": "10783",
+        "locality": "Berlin",
+        "country": "Germany"
     },
-    "email": "stibi@stibi.ch"
+    "email": "info@existsolutions.com"
 }

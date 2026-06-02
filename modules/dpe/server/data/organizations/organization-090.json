@@ -1,12 +1,11 @@
 {
     "id": "organization-090",
-    "name": "The University of Dar es Salaam",
+    "name": "Kilombero Valley Health and Livelihood Promotion",
     "url": "MISSING",
     "address": {
-        "street": "University Rd",
-        "postalCode": "14113",
-        "locality": "Dar es Salaam",
-        "country": "Tanzania",
-        "additional": "PO Box 35091"
+        "street": "",
+        "postalCode": "",
+        "locality": "Ifakara",
+        "country": "Tanzania"
     }
 }

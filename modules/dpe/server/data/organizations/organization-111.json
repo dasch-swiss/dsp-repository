@@ -1,12 +1,12 @@
 {
     "id": "organization-111",
-    "name": "Universitäts- und Stadtbibliothek Köln",
-    "url": "https://ub.uni-koeln.de/",
+    "name": "Heidelberg University, Historisches Seminar, Mittellatein",
+    "url": "https://www.uni-heidelberg.de/en",
     "address": {
-        "street": "Universitätsstrasse 33",
-        "postalCode": "50931",
-        "locality": "Köln",
+        "street": "Grabengasse 3-5",
+        "postalCode": "69117",
+        "locality": "Heidelberg",
         "country": "Germany"
     },
-    "email": "sammlung@ub.uni-koeln.de"
+    "email": "kv0@ix.urz.uni-heidelberg.de"
 }

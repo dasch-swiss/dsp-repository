@@ -1,12 +1,12 @@
 {
     "id": "organization-131",
-    "name": "Universität Basel, Deutsches Seminar",
-    "url": "https://germanistik.philhist.unibas.ch",
+    "name": "University of Basel",
+    "url": "https://www.unibas.ch/en.html",
     "address": {
-        "street": "Nadelberg 4",
-        "postalCode": "4051",
+        "street": "Petersplatz 1",
+        "postalCode": "4001",
         "locality": "Basel",
-        "country": "Switzerland"
-    },
-    "email": "germa-dslw@unibas.ch"
+        "country": "Switzerland",
+        "additional": "P.O. Box"
+    }
 }

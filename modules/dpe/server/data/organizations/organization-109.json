@@ -1,5 +1,11 @@
 {
     "id": "organization-109",
-    "name": "University of Bern, Institute of Archaeological Sciences, Mediterranean Archaeology",
-    "url": "MISSING"
+    "name": "Universität Bern",
+    "url": "https://www.unibe.ch/index_eng.html",
+    "address": {
+        "street": "Langgassstrasse 51",
+        "postalCode": "3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+    }
 }

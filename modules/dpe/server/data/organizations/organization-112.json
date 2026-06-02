@@ -1,12 +1,12 @@
 {
     "id": "organization-112",
-    "name": "Exist Solutions",
-    "url": "https://www.existsolutions.com",
+    "name": "Universitäts- und Stadtbibliothek Köln",
+    "url": "https://ub.uni-koeln.de/",
     "address": {
-        "street": "Kielganstrasse 4a",
-        "postalCode": "10783",
-        "locality": "Berlin",
+        "street": "Universitätsstrasse 33",
+        "postalCode": "50931",
+        "locality": "Köln",
         "country": "Germany"
     },
-    "email": "info@existsolutions.com"
+    "email": "sammlung@ub.uni-koeln.de"
 }

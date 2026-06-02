@@ -1,11 +1,11 @@
 {
     "id": "organization-138",
-    "name": "Universität Bremen",
-    "url": "https://www.uni-bremen.de/",
+    "name": "Iberoromanistik Department, Universität Basel",
+    "url": "MISSING",
     "address": {
-        "street": "Bibliothekstrasse 1",
-        "postalCode": "28359",
-        "locality": "Bremen",
-        "country": "Germany"
+        "street": "Maiengasse 51",
+        "postalCode": "4056",
+        "locality": "Basel",
+        "country": "Switzerland"
     }
 }

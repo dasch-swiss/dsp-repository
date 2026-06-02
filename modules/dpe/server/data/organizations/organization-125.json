@@ -1,11 +1,12 @@
 {
     "id": "organization-125",
-    "name": "Forschungsstelle Jeremias Gotthelf",
-    "url": "http://www.gotthelf.unibe.ch",
+    "name": "Zentralbibliothek Zürich",
+    "url": "https://www.zb.uzh.ch/en",
     "address": {
-        "street": "Universität Bern\r Forschungsstelle Jeremias Gotthelf\r Muesmattstrasse 45",
-        "postalCode": "CH-3012",
-        "locality": "Bern",
+        "street": "Zähringerplatz 6",
+        "postalCode": "8001",
+        "locality": "Zürich",
         "country": "Switzerland"
-    }
+    },
+    "email": "zb@zb.uzh.ch"
 }

@@ -1,12 +1,12 @@
 {
     "id": "organization-091",
-    "name": "Universität Basel, Kunsthistorisches Seminar",
-    "url": "https://kunstgeschichte.philhist.unibas.ch/de/",
+    "name": "The University of Dar es Salaam",
+    "url": "MISSING",
     "address": {
-        "street": "St. Alban-Graben 8/10",
-        "postalCode": "4051",
-        "locality": "Basel",
-        "country": "Switzerland"
-    },
-    "email": "daniela.steinebrunner@unibas.ch"
+        "street": "University Rd",
+        "postalCode": "14113",
+        "locality": "Dar es Salaam",
+        "country": "Tanzania",
+        "additional": "PO Box 35091"
+    }
 }

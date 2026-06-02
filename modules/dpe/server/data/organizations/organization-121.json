@@ -1,11 +1,5 @@
 {
     "id": "organization-121",
-    "name": "Institute of Romance Studies, University of Zurich",
-    "url": "https://www.rose.uzh.ch/en.html",
-    "address": {
-        "street": "Zürichbergstrasse 8",
-        "postalCode": "8032",
-        "locality": "Zürich",
-        "country": "Switzerland"
-    }
+    "name": "Akademie der Bildenden Künste, Wien",
+    "url": "https://www.akbild.ac.at/en/home?set_language=en"
 }

@@ -1,11 +1,11 @@
 {
     "id": "organization-139",
-    "name": "University of the Faroe Islands",
-    "url": "https://www.setur.fo/",
+    "name": "Universität Bremen",
+    "url": "https://www.uni-bremen.de/",
     "address": {
-        "street": "J. C. Svabos gøta 14",
-        "postalCode": "100",
-        "locality": "Tórshavn",
-        "country": "Faroe Islands"
+        "street": "Bibliothekstrasse 1",
+        "postalCode": "28359",
+        "locality": "Bremen",
+        "country": "Germany"
     }
 }

@@ -1,10 +1,10 @@
 {
     "id": "organization-128",
-    "name": "Jeremias Gotthelf-Stiftung",
-    "url": "MISSING",
+    "name": "Schweizerische Akademie der Geistes- und Sozialwissenschaften",
+    "url": "http://www.sagw.ch",
     "address": {
-        "street": "Jeremias Gotthelf-Stiftung\r Universität Bern\r Hochschulstrasse 6",
-        "postalCode": "CH-3012",
+        "street": "Schweizerische Akademie der Geistes- und Sozialwissenschaften\rGeneralsekretariat\rHaus der Akademien\rLaupenstrasse 7",
+        "postalCode": "CH-3001",
         "locality": "Bern",
         "country": "Switzerland"
     }

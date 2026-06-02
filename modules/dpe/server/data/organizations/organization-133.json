@@ -1,5 +1,12 @@
 {
     "id": "organization-133",
-    "name": "Stipendienfonds Fritz und Paul Sarasin",
-    "url": "MISSING"
+    "name": "E 3600 scientific artworks",
+    "url": "https://e3600scientificartworks.wordpress.com/",
+    "address": {
+        "street": "Birkenstrasse 38",
+        "postalCode": "4055",
+        "locality": "Basel",
+        "country": "Switzerland"
+    },
+    "email": "e3600scientificartworks@gmail.com"
 }

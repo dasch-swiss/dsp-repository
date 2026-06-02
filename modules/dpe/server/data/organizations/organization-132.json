@@ -1,12 +1,12 @@
 {
     "id": "organization-132",
-    "name": "E 3600 scientific artworks",
-    "url": "https://e3600scientificartworks.wordpress.com/",
+    "name": "Universität Basel, Deutsches Seminar",
+    "url": "https://germanistik.philhist.unibas.ch",
     "address": {
-        "street": "Birkenstrasse 38",
-        "postalCode": "4055",
+        "street": "Nadelberg 4",
+        "postalCode": "4051",
         "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "e3600scientificartworks@gmail.com"
+    "email": "germa-dslw@unibas.ch"
 }

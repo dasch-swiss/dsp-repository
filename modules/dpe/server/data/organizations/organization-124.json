@@ -1,12 +1,11 @@
 {
     "id": "organization-124",
-    "name": "Zentralbibliothek Zürich",
-    "url": "https://www.zb.uzh.ch/en",
+    "name": "Center Digital Editions & Edition Analytics, University of Zurich",
+    "url": "https://www.zde.uzh.ch/en.html",
     "address": {
-        "street": "Zähringerplatz 6",
-        "postalCode": "8001",
+        "street": "Strickhofstrasse 39",
+        "postalCode": "8057",
         "locality": "Zürich",
         "country": "Switzerland"
-    },
-    "email": "zb@zb.uzh.ch"
+    }
 }

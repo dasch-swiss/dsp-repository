@@ -1,12 +1,12 @@
 {
     "id": "organization-092",
-    "name": "Text&Bytes GmbH",
-    "url": "https://www.textandbytes.com/",
+    "name": "Universität Basel, Kunsthistorisches Seminar",
+    "url": "https://kunstgeschichte.philhist.unibas.ch/de/",
     "address": {
-        "street": "Heckenweg 42",
-        "postalCode": "3007",
-        "locality": "Bern",
+        "street": "St. Alban-Graben 8/10",
+        "postalCode": "4051",
+        "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "info@textandbytes.com"
+    "email": "daniela.steinebrunner@unibas.ch"
 }

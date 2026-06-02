@@ -1,12 +1,11 @@
 {
     "id": "organization-130",
-    "name": "University of Basel",
-    "url": "https://www.unibas.ch/en.html",
+    "name": "Stiftung Vinetum",
+    "url": "http://www.vinetum.ch",
     "address": {
-        "street": "Petersplatz 1",
-        "postalCode": "4001",
-        "locality": "Basel",
-        "country": "Switzerland",
-        "additional": "P.O. Box"
+        "street": "Stiftung Vinetum\r Sydebusweg 9",
+        "postalCode": "CH-2502",
+        "locality": "Biel",
+        "country": "Switzerland"
     }
 }

@@ -1,11 +1,11 @@
 {
     "id": "organization-137",
-    "name": "University of the Faroe Islands",
-    "url": "https://www.setur.fo/",
+    "name": "Iberoromanistik Department, Universität Basel",
+    "url": "MISSING",
     "address": {
-        "street": "J. C. Svabos gøta 14",
-        "postalCode": "100",
-        "locality": "Tórshavn",
-        "country": "Faroe Islands"
+        "street": "Maiengasse 51",
+        "postalCode": "4056",
+        "locality": "Basel",
+        "country": "Switzerland"
     }
 }

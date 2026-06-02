@@ -1,12 +1,11 @@
 {
-    "id": "organization-139",
-    "name": "University of Basel, Vice President's Office for Research, Career Advancement",
-    "url": "MISSING",
+    "id": "organization-152",
+    "name": "University of the Faroe Islands",
+    "url": "https://www.setur.fo/",
     "address": {
-        "street": "Petersgraben 35",
-        "postalCode": "4001",
-        "locality": "Basel",
-        "country": "Switzerland",
-        "additional": "Postfach"
+        "street": "J. C. Svabos gøta 14",
+        "postalCode": "100",
+        "locality": "Tórshavn",
+        "country": "Faroe Islands"
     }
 }

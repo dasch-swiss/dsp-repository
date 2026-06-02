@@ -1,12 +1,12 @@
 {
     "id": "organization-092",
-    "name": "Herrmann Germann GmbH",
-    "url": "https://herrmanngermann.ch",
+    "name": "Text&Bytes GmbH",
+    "url": "https://www.textandbytes.com/",
     "address": {
-        "street": "Hardturmstrasse 68",
-        "postalCode": "8005",
-        "locality": "Zürich",
+        "street": "Heckenweg 42",
+        "postalCode": "3007",
+        "locality": "Bern",
         "country": "Switzerland"
     },
-    "email": "xy@herrmanngermann.ch"
+    "email": "info@textandbytes.com"
 }

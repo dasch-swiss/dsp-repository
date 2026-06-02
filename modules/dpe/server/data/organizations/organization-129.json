@@ -1,12 +1,11 @@
 {
     "id": "organization-129",
-    "name": "Universität Basel, Deutsches Seminar",
-    "url": "https://germanistik.philhist.unibas.ch",
+    "name": "Stiftung Vinetum",
+    "url": "http://www.vinetum.ch",
     "address": {
-        "street": "Nadelberg 4",
-        "postalCode": "4051",
-        "locality": "Basel",
+        "street": "Stiftung Vinetum\r Sydebusweg 9",
+        "postalCode": "CH-2502",
+        "locality": "Biel",
         "country": "Switzerland"
-    },
-    "email": "germa-dslw@unibas.ch"
+    }
 }

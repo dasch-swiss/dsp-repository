@@ -1,12 +1,11 @@
 {
-    "id": "organization-138",
-    "name": "Universität Basel, Graduate School of Social Sciences (G3S)",
-    "url": "https://dgw.philhist.unibas.ch/de/doktorat/",
+    "id": "organization-139",
+    "name": "Universität Bremen",
+    "url": "https://www.uni-bremen.de/",
     "address": {
-        "street": "Petersplatz 14 / Hebelstrasse 3",
-        "postalCode": "4051",
-        "locality": "Basel",
-        "country": "Switzerland"
-    },
-    "email": "g3s@unibas.ch"
+        "street": "Bibliothekstrasse 1",
+        "postalCode": "28359",
+        "locality": "Bremen",
+        "country": "Germany"
+    }
 }

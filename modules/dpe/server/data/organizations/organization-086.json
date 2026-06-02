@@ -1,11 +1,11 @@
 {
     "id": "organization-086",
-    "name": "Université de Genève, Départemet de langue et de littérature allemandes, Faculté des Lettres",
+    "name": "Deutsches Seminar, Universität Zürich",
     "url": "MISSING",
     "address": {
-        "street": "24 rue du Général-Dufour",
-        "postalCode": "1211",
-        "locality": "Genève 4",
+        "street": "Schönberggasse 9",
+        "postalCode": "8001",
+        "locality": "Zürich",
         "country": "Switzerland"
     }
 }

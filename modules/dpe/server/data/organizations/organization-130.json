@@ -1,12 +1,12 @@
 {
     "id": "organization-130",
-    "name": "E 3600 scientific artworks",
-    "url": "https://e3600scientificartworks.wordpress.com/",
+    "name": "University of Basel",
+    "url": "https://www.unibas.ch/en.html",
     "address": {
-        "street": "Birkenstrasse 38",
-        "postalCode": "4055",
+        "street": "Petersplatz 1",
+        "postalCode": "4001",
         "locality": "Basel",
-        "country": "Switzerland"
-    },
-    "email": "e3600scientificartworks@gmail.com"
+        "country": "Switzerland",
+        "additional": "P.O. Box"
+    }
 }

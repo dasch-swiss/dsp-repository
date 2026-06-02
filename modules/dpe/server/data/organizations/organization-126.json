@@ -1,11 +1,5 @@
 {
     "id": "organization-126",
-    "name": "Schweizerische Akademie der Geistes- und Sozialwissenschaften",
-    "url": "http://www.sagw.ch",
-    "address": {
-        "street": "Schweizerische Akademie der Geistes- und Sozialwissenschaften\rGeneralsekretariat\rHaus der Akademien\rLaupenstrasse 7",
-        "postalCode": "CH-3001",
-        "locality": "Bern",
-        "country": "Switzerland"
-    }
+    "name": "Wissenschaftlicher Beirat der Historisch-kritischen Gesamtausgabe Jeremias Gotthelf",
+    "url": "http://www.gotthelf.unibe.ch/ueber_uns/wissenschaftlicher_beirat"
 }

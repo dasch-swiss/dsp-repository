@@ -1,12 +1,12 @@
 {
     "id": "organization-113",
-    "name": "Shelby White and Leon Levy",
-    "url": "https://whitelevy.fas.harvard.edu/",
+    "name": "Stiftsbibliothek St.Gallen",
+    "url": "https://www.stiftsbibliothek.ch",
     "address": {
-        "street": "The Shelby White and Leon Levy Program for Archaeological Publications, Harvard University, The Harvard Museum of the Ancient Near East, 6 Divinity Ave #102",
-        "postalCode": "02138",
-        "locality": "Cambridge, MA",
-        "country": "United States"
+        "street": "Klosterhof 6d",
+        "postalCode": "9000",
+        "locality": "St. Gallen",
+        "country": "Switzerland"
     },
-    "email": "whitelev@fas.harvard.edu"
+    "email": "stibi@stibi.ch"
 }

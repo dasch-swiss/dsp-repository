@@ -1,5 +1,11 @@
 {
     "id": "organization-115",
-    "name": "Kunsthistorisches Institut Universität Zürich",
-    "url": "https://www.khist.uzh.ch"
+    "name": "University of Basel, Theologische Fakultät",
+    "url": "https://theologie.unibas.ch/de/",
+    "address": {
+        "street": "Nadelberg 10",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
+    }
 }

@@ -1,10 +1,10 @@
 {
     "id": "organization-088",
-    "name": "Institute of Anthropology, University of Basel",
-    "url": "MISSING",
+    "name": "Institute of Social Anthropology, University of Basel",
+    "url": "https://ethnologie.philhist.unibas.ch",
     "address": {
-        "street": "",
-        "postalCode": "",
+        "street": "Münsterplatz 19",
+        "postalCode": "4051",
         "locality": "Basel",
         "country": "Switzerland"
     }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.6](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.5...v0.5.6) (2026-06-03)
+
+
+### Bug Fixes
+
+* **data:** repair malformed JSON in person-412 (Barbara Piatti) ([9618799](https://github.com/dasch-swiss/dsp-repository/commit/961879945af5044db70d031a9627043cf090f1cd))
+
 ## [0.5.5](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.4...v0.5.5) (2026-05-26)
 
 

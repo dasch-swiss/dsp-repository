@@ -48,3 +48,6 @@ result-*
 
 # IDE related
 /.vscode
+
+# In-memory repository caches
+modules/dpe/server/data/records/*-records.json

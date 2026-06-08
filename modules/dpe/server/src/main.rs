@@ -140,6 +140,8 @@ async fn serve() -> ExitCode {
         tracing::info!("Placeholder values (MISSING/CALCULATED) will be shown in the UI");
     }
 
+    tokio::task::spawn_blocking(dpe_core::record_cache::all_records);
+
     // Load Leptos configuration from Cargo.toml metadata
     let conf =
         get_configuration(None).expect("Leptos configuration missing — check Cargo.toml [package.metadata.leptos]");

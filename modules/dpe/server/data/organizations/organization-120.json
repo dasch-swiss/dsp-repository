@@ -1,12 +1,5 @@
 {
     "id": "organization-120",
-    "name": "Exist Solutions",
-    "url": "https://www.existsolutions.com",
-    "address": {
-        "street": "Kielganstrasse 4a",
-        "postalCode": "10783",
-        "locality": "Berlin",
-        "country": "Germany"
-    },
-    "email": "info@existsolutions.com"
+    "name": "Università degli Studi del Piemonte Orientale",
+    "url": "https://uniupo.it/en"
 }

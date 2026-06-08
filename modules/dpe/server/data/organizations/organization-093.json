@@ -1,11 +1,12 @@
 {
     "id": "organization-093",
-    "name": "Institute of Anthropology, University of Basel",
-    "url": "MISSING",
+    "name": "Text&Bytes GmbH",
+    "url": "https://www.textandbytes.com/",
     "address": {
-        "street": "",
-        "postalCode": "",
-        "locality": "Basel",
+        "street": "Heckenweg 42",
+        "postalCode": "3007",
+        "locality": "Bern",
         "country": "Switzerland"
-    }
+    },
+    "email": "info@textandbytes.com"
 }

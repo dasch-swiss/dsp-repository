@@ -1,5 +1,12 @@
 {
     "id": "organization-112",
-    "name": "SNSF-Infrastructure-USI",
-    "url": "MISSING"
+    "name": "Universitäts- und Stadtbibliothek Köln",
+    "url": "https://ub.uni-koeln.de/",
+    "address": {
+        "street": "Universitätsstrasse 33",
+        "postalCode": "50931",
+        "locality": "Köln",
+        "country": "Germany"
+    },
+    "email": "sammlung@ub.uni-koeln.de"
 }

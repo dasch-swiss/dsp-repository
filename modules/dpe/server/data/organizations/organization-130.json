@@ -1,11 +1,11 @@
 {
     "id": "organization-130",
-    "name": "Institute of Romance Studies, University of Zurich",
-    "url": "https://www.rose.uzh.ch/en.html",
+    "name": "Stiftung Vinetum",
+    "url": "http://www.vinetum.ch",
     "address": {
-        "street": "Zürichbergstrasse 8",
-        "postalCode": "8032",
-        "locality": "Zürich",
+        "street": "Stiftung Vinetum\r Sydebusweg 9",
+        "postalCode": "CH-2502",
+        "locality": "Biel",
         "country": "Switzerland"
     }
 }

@@ -128,20 +128,20 @@
             ]
         },
         {
-            "contributor": "organization-056",
+            "contributor": "organization-053",
             "contributorType": [
                 "Publisher"
             ]
         },
         {
-            "contributor": "organization-098",
+            "contributor": "organization-093",
             "contributorType": [
                 "Creator",
                 "Maintainer"
             ]
         },
         {
-            "contributor": "organization-099",
+            "contributor": "organization-094",
             "contributorType": [
                 "Creator",
                 "Maintainer"
@@ -153,7 +153,7 @@
         "en": "The data set contains the annotated edition of Ulrich Daniel Metzger's manuscript including the paint recipes therein, a glossary, an index of Metzger's travel stages, a catalogue raisonné, an index of persons and places, research texts, other written sources by and on Metzger as well as information on the project (project partners, contact, imprint)."
     },
     "contactPoint": [
-        "organization-056"
+        "organization-053"
     ],
     "publications": [
         {

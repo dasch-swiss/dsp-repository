@@ -1,11 +1,12 @@
 {
     "id": "organization-092",
-    "name": "Université de Genève, Départemet de langue et de littérature allemandes, Faculté des Lettres",
-    "url": "MISSING",
+    "name": "Universität Basel, Kunsthistorisches Seminar",
+    "url": "https://kunstgeschichte.philhist.unibas.ch/de/",
     "address": {
-        "street": "24 rue du Général-Dufour",
-        "postalCode": "1211",
-        "locality": "Genève 4",
+        "street": "St. Alban-Graben 8/10",
+        "postalCode": "4051",
+        "locality": "Basel",
         "country": "Switzerland"
-    }
+    },
+    "email": "daniela.steinebrunner@unibas.ch"
 }

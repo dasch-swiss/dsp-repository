@@ -1,5 +1,11 @@
 {
     "id": "organization-129",
-    "name": "Akademie der Bildenden Künste, Wien",
-    "url": "https://www.akbild.ac.at/en/home?set_language=en"
+    "name": "Jeremias Gotthelf-Stiftung",
+    "url": "MISSING",
+    "address": {
+        "street": "Jeremias Gotthelf-Stiftung\r Universität Bern\r Hochschulstrasse 6",
+        "postalCode": "CH-3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+    }
 }

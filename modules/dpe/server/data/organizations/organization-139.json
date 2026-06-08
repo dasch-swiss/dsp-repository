@@ -1,11 +1,11 @@
 {
     "id": "organization-139",
-    "name": "University of Bern",
-    "url": "https://www.unibe.ch/index_eng.html",
+    "name": "Universität Bremen",
+    "url": "https://www.uni-bremen.de/",
     "address": {
-        "street": "Hochschulstrasse 6",
-        "postalCode": "3012",
-        "locality": "Bern",
-        "country": "Switzerland"
+        "street": "Bibliothekstrasse 1",
+        "postalCode": "28359",
+        "locality": "Bremen",
+        "country": "Germany"
     }
 }

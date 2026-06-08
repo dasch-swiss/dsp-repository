@@ -1,11 +1,11 @@
 {
     "id": "organization-086",
-    "name": "Integrative Prehistory and Archaeological Science (IPAS)",
-    "url": "https://ipna.duw.unibas.ch",
+    "name": "Deutsches Seminar, Universität Zürich",
+    "url": "https://www.ds.uzh.ch",
     "address": {
-        "street": "Spalenring 145",
-        "postalCode": "4055",
-        "locality": "Basel",
+        "street": "Schönberggasse 9",
+        "postalCode": "8001",
+        "locality": "Zürich",
         "country": "Switzerland"
     }
 }

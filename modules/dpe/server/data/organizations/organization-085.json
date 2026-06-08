@@ -1,12 +1,12 @@
 {
     "id": "organization-085",
-    "name": "Université de Neuchâtel, Faculté des lettres et sciences humaines",
-    "url": "http://www.unine.ch/geographie/home.html",
+    "name": "Stiftung für eine Historisch-Kritische Gottfried Keller-Ausgabe",
+    "url": "MISSING",
     "address": {
-        "street": "Espace Tilo-Frey 1",
-        "postalCode": "2000",
-        "locality": "Neuchâtel",
+        "street": "c/o Pestalozzi Rechtsanwälte, Löwenstrasse 1",
+        "postalCode": "8000",
+        "locality": "Zürich",
         "country": "Switzerland"
     },
-    "email": "Secretariat.Geographie@unine.ch"
+    "email": "dom.muller@bluewin.ch"
 }

@@ -1,11 +1,11 @@
 {
     "id": "organization-066",
-    "name": "Cairo University",
-    "url": "http://www.cu.edu.eg",
+    "name": "Gertrud Mayer Stiftung Basel",
+    "url": "MISSING",
     "address": {
-        "street": "1, Gamaa Street",
-        "postalCode": "12613",
-        "locality": "Giza",
-        "country": "Egypt"
+        "street": "Dufourstrasse 25",
+        "postalCode": "4052",
+        "locality": "Basel",
+        "country": "Switzerland"
     }
 }

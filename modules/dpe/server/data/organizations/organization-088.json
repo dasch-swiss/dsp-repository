@@ -1,11 +1,11 @@
 {
     "id": "organization-088",
-    "name": "Research Foundation – Flanders (FWO)",
-    "url": "https://www.fwo.be",
+    "name": "Institute of Social Anthropology, University of Basel",
+    "url": "https://ethnologie.philhist.unibas.ch",
     "address": {
-        "street": "HOEK 38, Leuvenseweg 38",
-        "postalCode": "1000",
-        "locality": "Brussel",
-        "country": "Belgium"
+        "street": "Münsterplatz 19",
+        "postalCode": "4051",
+        "locality": "Basel",
+        "country": "Switzerland"
     }
 }

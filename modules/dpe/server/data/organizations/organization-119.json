@@ -1,12 +1,5 @@
 {
     "id": "organization-119",
-    "name": "Universitäts- und Stadtbibliothek Köln",
-    "url": "https://ub.uni-koeln.de/",
-    "address": {
-        "street": "Universitätsstrasse 33",
-        "postalCode": "50931",
-        "locality": "Köln",
-        "country": "Germany"
-    },
-    "email": "sammlung@ub.uni-koeln.de"
+    "name": "Österreichische Nationalbibliothek",
+    "url": "https://www.onb.ac.at"
 }

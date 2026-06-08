@@ -1,12 +1,12 @@
 {
     "id": "organization-015",
-    "name": "Kuratorium Musiklexikon der Schweiz (SAGW)",
-    "url": "MISSING",
+    "name": "Schweizerische Musikforschende Gesellschaft",
+    "url": "https://www.smg-ssm.ch/smg-ssm/",
     "address": {
-        "street": "Hubacherweg 15",
-        "postalCode": "3097",
-        "locality": "Liebefeld",
+        "street": "Mittelstr. 43",
+        "postalCode": "3012",
+        "locality": "Bern",
         "country": "Switzerland"
     },
-    "email": "minder@liebefeld.ch"
+    "email": "info@sma-ssm.ch"
 }

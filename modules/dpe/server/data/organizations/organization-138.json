@@ -1,11 +1,11 @@
 {
     "id": "organization-138",
-    "name": "Stiftung Vinetum",
-    "url": "http://www.vinetum.ch",
+    "name": "Iberoromanistik Department, Universität Basel",
+    "url": "MISSING",
     "address": {
-        "street": "Stiftung Vinetum\r Sydebusweg 9",
-        "postalCode": "CH-2502",
-        "locality": "Biel",
+        "street": "Maiengasse 51",
+        "postalCode": "4056",
+        "locality": "Basel",
         "country": "Switzerland"
     }
 }

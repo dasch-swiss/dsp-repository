@@ -1,12 +1,11 @@
 {
     "id": "organization-009",
-    "name": "Dokumentationsbibliothek St. Moritz",
-    "url": "http://www.biblio-stmoritz.ch",
+    "name": "Gemeinde St. Moritz",
+    "url": "MISSING",
     "address": {
-        "street": "Plazza da Scoula 14",
+        "street": "",
         "postalCode": "7500",
         "locality": "St. Moritz",
         "country": "Switzerland"
-    },
-    "email": "doku@biblio-stmoritz.ch"
+    }
 }

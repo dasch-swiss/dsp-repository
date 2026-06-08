@@ -1,12 +1,12 @@
 {
     "id": "organization-133",
-    "name": "Zentralbibliothek Zürich",
-    "url": "https://www.zb.uzh.ch/en",
+    "name": "E 3600 scientific artworks",
+    "url": "https://e3600scientificartworks.wordpress.com/",
     "address": {
-        "street": "Zähringerplatz 6",
-        "postalCode": "8001",
-        "locality": "Zürich",
+        "street": "Birkenstrasse 38",
+        "postalCode": "4055",
+        "locality": "Basel",
         "country": "Switzerland"
     },
-    "email": "zb@zb.uzh.ch"
+    "email": "e3600scientificartworks@gmail.com"
 }

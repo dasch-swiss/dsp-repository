@@ -1,12 +1,12 @@
 {
     "id": "organization-099",
-    "name": "Herrmann Germann GmbH",
-    "url": "https://herrmanngermann.ch",
+    "name": "Pädagogische Hochschule Zürich - PHZH",
+    "url": "https://phzh.ch/ueber-die-phzh/organisation/prorektorat-forschung-und-entwicklung/abteilung-bildungswissenschaftliche-forschung/zentrum-bildung-und-digitaler-wandel/",
     "address": {
-        "street": "Hardturmstrasse 68",
-        "postalCode": "8005",
-        "locality": "Zürich",
+        "street": "Lagerstrasse 2",
+        "postalCode": "8090",
+        "locality": "Zurich",
         "country": "Switzerland"
     },
-    "email": "xy@herrmanngermann.ch"
+    "email": "zbdw@phzh.ch"
 }

@@ -1,5 +1,11 @@
 {
     "id": "organization-126",
-    "name": "Schweizerische Landesmuseum, Sammlungszentrum",
-    "url": "https://www.sammlungszentrum.ch"
+    "name": "Forschungsstelle Jeremias Gotthelf",
+    "url": "http://www.gotthelf.unibe.ch",
+    "address": {
+        "street": "Universität Bern\r Forschungsstelle Jeremias Gotthelf\r Muesmattstrasse 45",
+        "postalCode": "CH-3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+    }
 }

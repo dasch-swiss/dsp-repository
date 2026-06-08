@@ -1,12 +1,12 @@
 {
     "id": "organization-096",
-    "name": "The University of Dar es Salaam",
-    "url": "MISSING",
+    "name": "Schola Cantorum Basiliensis FHNW",
+    "url": "https://www.fhnw.ch/de/forschung-und-dienstleistungen/musik/schola-cantorum-basiliensis",
     "address": {
-        "street": "University Rd",
-        "postalCode": "14113",
-        "locality": "Dar es Salaam",
-        "country": "Tanzania",
-        "additional": "PO Box 35091"
-    }
+        "street": "Leonhardsstrasse 6, Postfach",
+        "postalCode": "4009",
+        "locality": "Basel",
+        "country": "Switzerland"
+    },
+    "email": "forschung.scb.hsm@fhnw.ch"
 }

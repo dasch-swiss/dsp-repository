@@ -1,0 +1,154 @@
+{
+    "id": "085F",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085F",
+    "name": "Street art in Belfast and Bogota: Murals, graffiti and posters",
+    "shortcode": "085F",
+    "officialName": "Women on the Wall: Interactions between Visual and Political Representations of Women in Conflict and Peace Processes in Belfast and Bogotá",
+    "status": "Finished",
+    "shortDescription": "PhD project about the interactions between visual and political representations of women in contexts of peace processes, focussing on murals in the cities of Belfast and Bogotá",
+    "description": {
+        "en": "This PhD project looked at the interactions between visual and political representations of women in contexts of peace processes. To do so, it especially focused on murals in the cities of Belfast and Bogotá, looking at the way they represent women and at the way these representations are interpreted by politically active women. The images of murals were gathered between October 2022 and June 2024 in both cities, providing a snapshot of the walls at that specific time."
+    },
+    "startDate": "2020-10-01",
+    "endDate": "2025-08-25",
+    "dataPublicationYear": "2026",
+    "secondaryUrl": {
+        "type": "URL",
+        "url": "https://dgw.philhist.unibas.ch/de/doktorat/mitglieder/doktorierende/migeon-marie/"
+    },
+    "howToCite": "Marie Migeon (2026). Street art in Belfast and Bogota: Murals, graffiti and posters, 2022-2024. [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085F.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2026-07-01",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "Marie Migeon",
+            "authorship": [
+                "CALCULATED"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image"
+    ],
+    "dataLanguage": [
+        "en"
+    ],
+    "keywords": [
+        {
+            "en": "Street art"
+        },
+        {
+            "en": "Graffiti"
+        },
+        {
+            "en": "Mural"
+        },
+        {
+            "en": "Posters"
+        },
+        {
+            "en": "Peace Processes"
+        },
+        {
+            "en": "Colombia"
+        },
+        {
+            "en": "Northern Ireland"
+        },
+        {
+            "en": "War"
+        },
+        {
+            "en": "Women"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10300 Art studies"
+        },
+        {
+            "en": "10404 Visual arts and Art history"
+        },
+        {
+            "en": "10202 Political science"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "1990s"
+        },
+        {
+            "en": "2000s"
+        },
+        {
+            "en": "2010s"
+        },
+        {
+            "en": "2020s"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/9609540/bogota-d-c.html",
+            "text": "Bogotá D.C."
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3333223/city-of-belfast.html",
+            "text": "City of Belfast"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "person-413",
+            "contributorType": [
+                "Project Leader"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "This dataset contains hundreds of photographs of street art in the cities of Bogotá and Belfast, gathered between 2022 and 2024. The pieces were painted between the 1990s and the 2020s."
+    },
+    "contactPoint": [
+        "person-413"
+    ],
+    "publications": [
+        {
+            "text": "Migeon, Marie. 2024. “Peace and Conflict in Public Space: Gendered Murals Shaping Belfast.” Geopolitics 29(5): 1604–1634.",
+            "pid": {
+                "url": "https://doi.org/10.1080/14650045.2024.2321164"
+            }
+        },
+        {
+            "text": "Migeon, Marie and Birte Vogel. 2024. “Graffiti and street art in peacebuilding.” In: Stacey L. Connaughton and Stefanie Pukallus (eds). The Routledge Handbook of Conflict and Peace Communication. Abingdon: Routledge, pp. 346–356."
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "organization-141"
+            ],
+            "name": "Start-Up Scholarship, Graduate School of Social Sciences, Universität Basel"
+        },
+        {
+            "funders": [
+                "organization-142"
+            ],
+            "name": "Mobility Grant"
+        },
+        {
+            "funders": [
+                "organization-142"
+            ],
+            "name": "Research Fund of the University of Basel for Excellent Junior Researchers"
+        }
+    ]
+}

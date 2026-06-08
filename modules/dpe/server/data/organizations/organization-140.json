@@ -1,12 +1,11 @@
 {
     "id": "organization-140",
-    "name": "University of Basel",
-    "url": "https://www.unibas.ch/en.html",
+    "name": "University of the Faroe Islands",
+    "url": "https://www.setur.fo/",
     "address": {
-        "street": "Petersplatz 1",
-        "postalCode": "4001",
-        "locality": "Basel",
-        "country": "Switzerland",
-        "additional": "P.O. Box"
+        "street": "J. C. Svabos gøta 14",
+        "postalCode": "100",
+        "locality": "Tórshavn",
+        "country": "Faroe Islands"
     }
 }

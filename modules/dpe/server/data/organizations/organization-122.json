@@ -1,12 +1,11 @@
 {
     "id": "organization-122",
-    "name": "Shelby White and Leon Levy",
-    "url": "https://whitelevy.fas.harvard.edu/",
+    "name": "Institute of Romance Studies, University of Zurich",
+    "url": "https://www.rose.uzh.ch/en.html",
     "address": {
-        "street": "The Shelby White and Leon Levy Program for Archaeological Publications, Harvard University, The Harvard Museum of the Ancient Near East, 6 Divinity Ave #102",
-        "postalCode": "02138",
-        "locality": "Cambridge, MA",
-        "country": "United States"
-    },
-    "email": "whitelev@fas.harvard.edu"
+        "street": "Zürichbergstrasse 8",
+        "postalCode": "8032",
+        "locality": "Zürich",
+        "country": "Switzerland"
+    }
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.7](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.6...v0.5.7) (2026-06-08)
+
+
+### Bug Fixes
+
+* do not render project URL buttons for placeholder values ([1099585](https://github.com/dasch-swiss/dsp-repository/commit/10995851c998790c74e1951da1d9054aabb2c218))
+
 ## [0.5.6](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.5...v0.5.6) (2026-06-03)
 
 

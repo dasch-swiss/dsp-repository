@@ -30,17 +30,6 @@
             "authorship": [
                 "CALCULATED"
             ]
-        },
-        {
-            "license": {
-                "licenseIdentifier": "CC BY-NC-SA 4.0",
-                "licenseDate": "2025-01-28",
-                "licenseURI": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
-            },
-            "copyrightHolder": "Canonicity, Obscenity, and the Making of Modern Chaucer (COMMode): An Investigation of the Transmission and Audiences of The Canterbury Tales from 1700 to 2020",
-            "authorship": [
-                "CALCULATED"
-            ]
         }
     ],
     "dataManagementPlan": "not accessible",
@@ -100,30 +89,6 @@
         }
     ],
     "attributions": [
-        {
-            "contributor": "person-260",
-            "contributorType": [
-                "Applicant"
-            ]
-        },
-        {
-            "contributor": "person-261",
-            "contributorType": [
-                "Employee"
-            ]
-        },
-        {
-            "contributor": "person-262",
-            "contributorType": [
-                "Employee"
-            ]
-        },
-        {
-            "contributor": "person-263",
-            "contributorType": [
-                "Employee"
-            ]
-        },
         {
             "contributor": "person-260",
             "contributorType": [

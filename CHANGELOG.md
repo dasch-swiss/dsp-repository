@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.7...v0.6.0) (2026-06-10)
+
+
+### Features
+
+* In-memory records in a HashMap, default record cache (DEV-6525) ([f5c1359](https://github.com/dasch-swiss/dsp-repository/commit/f5c1359ffa1d85b9da57b560931c01a2e2f7bd64))
+
+
+### Bug Fixes
+
+* **dpe-server:** remove duplicated attributions and legalInfo on 0854 and 083B ([9ba056f](https://github.com/dasch-swiss/dsp-repository/commit/9ba056f77385f321556d7d372a7d38bdf2492960))
+
 ## [0.5.7](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.6...v0.5.7) (2026-06-08)
 
 

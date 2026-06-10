@@ -32,7 +32,7 @@ impl ProjectRepository for InMemoryProjectRepository {
 pub fn incunabula_project() -> Project {
     Project {
         id: "0803".to_string(),
-        pid: "MISSING".to_string(),
+        pid: "https://ark.dasch.swiss/ark:/72163/1/0803".to_string(),
         name: "Die Bilderfolgen der Basler Frühdrucke: Spätmittelalterliche Didaxe als Bild-Text-Lektüre".to_string(),
         shortcode: "0803".to_string(),
         official_name: "MISSING".to_string(),

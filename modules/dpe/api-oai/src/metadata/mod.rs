@@ -25,6 +25,15 @@ pub fn make_oai_identifier(shortcode: &str) -> String {
     format!("{}{}{}", OAI_IDENTIFIER_PREFIX, ARK_PATH_PREFIX, shortcode)
 }
 
+/// Creates an OAI identifier from a project PID URL.
+///
+/// Extracts the ARK path from the PID URL (e.g. `https://ark.dasch.swiss/ark:/72163/1/0801d`)
+/// and wraps it in the OAI identifier prefix.
+fn make_oai_identifier_from_pid(pid: &str) -> Option<String> {
+    let pos = pid.find(ARK_PATH_PREFIX)?;
+    Some(format!("{}{}", OAI_IDENTIFIER_PREFIX, &pid[pos..]))
+}
+
 /// Parses an OAI identifier and extracts the ARK suffix.
 pub fn parse_oai_identifier(identifier: &str) -> Option<String> {
     if !identifier.starts_with(OAI_IDENTIFIER_PREFIX) {
@@ -36,8 +45,13 @@ pub fn parse_oai_identifier(identifier: &str) -> Option<String> {
 
 /// Creates an OAI record from a project for the given metadata prefix.
 pub fn to_oai_record(project: &Project, metadata_prefix: &str) -> OaiRecord {
+    let identifier = if !dpe_core::is_placeholder(&project.pid) && !project.pid.is_empty() {
+        make_oai_identifier_from_pid(&project.pid).unwrap_or_else(|| make_oai_identifier(&project.shortcode))
+    } else {
+        make_oai_identifier(&project.shortcode)
+    };
     let header = OaiRecordHeader {
-        identifier: make_oai_identifier(&project.shortcode),
+        identifier,
         datestamp: if !dpe_core::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
             project.start_date.clone()
         } else {

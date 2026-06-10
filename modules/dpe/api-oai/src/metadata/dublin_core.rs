@@ -3,7 +3,6 @@
 use dpe_core::{Discipline, Project, TemporalCoverage};
 
 use super::helpers::{access_rights_to_string, get_multilingual_value, is_creator};
-use super::make_oai_identifier;
 use super::types::DublinCoreRecord;
 
 const PUBLISHER: &str = "DaSCH";
@@ -91,11 +90,14 @@ pub fn project_to_dublin_core(project: &Project) -> DublinCoreRecord {
     // dc:type
     record.resource_type = "Project".to_string();
 
-    // dc:identifier - use PID or shortcode
+    // dc:identifier - canonical ARK URL from pid, or derived from shortcode as fallback
     if !dpe_core::is_placeholder(&project.pid) && !project.pid.is_empty() {
         record.identifiers.push(project.pid.clone());
+    } else {
+        record
+            .identifiers
+            .push(format!("https://ark.dasch.swiss/ark:/72163/1/{}", project.shortcode));
     }
-    record.identifiers.push(make_oai_identifier(&project.shortcode));
 
     // dc:language (BCP 47 codes)
     if let Some(ref languages) = project.data_language {

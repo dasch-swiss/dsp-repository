@@ -30,17 +30,6 @@
             "authorship": [
                 "CALCULATED"
             ]
-        },
-        {
-            "license": {
-                "licenseIdentifier": "CC BY 4.0",
-                "licenseDate": "2025-02-01",
-                "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
-            },
-            "copyrightHolder": "Alice in DaSCHland",
-            "authorship": [
-                "CALCULATED"
-            ]
         }
     ],
     "dataManagementPlan": "not accessible",
@@ -147,18 +136,6 @@
         }
     ],
     "attributions": [
-        {
-            "contributor": "person-336",
-            "contributorType": [
-                "Contributor"
-            ]
-        },
-        {
-            "contributor": "person-337",
-            "contributorType": [
-                "Contributor"
-            ]
-        },
         {
             "contributor": "person-336",
             "contributorType": [

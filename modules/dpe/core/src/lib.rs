@@ -21,6 +21,8 @@ pub mod record_repository;
 pub mod utils;
 
 // Re-exports for convenience
+#[cfg(not(target_arch = "wasm32"))]
+pub use cluster::ClusterRaw;
 pub use cluster::ClusterRef;
 pub use collection::CollectionRef;
 pub use contributors::ResolvedContributor;

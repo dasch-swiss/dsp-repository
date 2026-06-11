@@ -5,7 +5,7 @@ use dpe_core::project::{
     AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, Project,
     ProjectStatus, TemporalCoverage,
 };
-use dpe_core::{ProjectRepository, Record, RecordRepository};
+use dpe_core::{ClusterRaw, ProjectRepository, Record, RecordRepository};
 
 /// In-memory repository for testing.
 pub struct InMemoryProjectRepository {
@@ -121,6 +121,21 @@ pub fn incunabula_project() -> Project {
         documentation_material: None,
         provenance: None,
         additional_material: None,
+    }
+}
+
+/// Builds a cluster fixture (`cluster-001`, "EKWS") containing the given member
+/// project shortcodes. Use for cluster-set tests so they don't depend on the
+/// process-global cluster cache.
+pub fn cluster_fixture(id: &str, name: &str, projects: &[&str]) -> ClusterRaw {
+    let mut description = std::collections::HashMap::new();
+    description.insert("en".to_string(), format!("{name} description"));
+    ClusterRaw {
+        id: id.to_string(),
+        name: name.to_string(),
+        description,
+        pid: None,
+        projects: projects.iter().map(|p| p.to_string()).collect(),
     }
 }
 

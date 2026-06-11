@@ -22,6 +22,7 @@
 - [Testing Strategy](./dpe/testing-strategy.md)
 - [Observability](./dpe/observability.md)
 - [Operations](./dpe/operations.md)
+- [OAI-PMH Endpoint](./dpe/oai-pmh.md)
 
 ---
 

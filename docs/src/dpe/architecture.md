@@ -22,7 +22,7 @@ dpe-core          Pure domain types, repositories, data loading
 ```
 
 - **dpe-core**: Framework-free domain layer. All types, repository traits, Fs implementations, and data loading.
-- **dpe-api-oai**: OAI-PMH 2.0 endpoint. Depends only on dpe-core — no Leptos.
+- **dpe-api-oai**: OAI-PMH 2.0 endpoint (see [OAI-PMH Endpoint](./oai-pmh.md)). Depends only on dpe-core — no Leptos.
 - **dpe-web**: Leptos SSR components, pages, and `#[server]` wrappers. Re-exports dpe-core types for backward compatibility.
 - **dpe-server**: Thin composition root. Wires Leptos routes (dpe-web) and API handlers (dpe-api-oai) into a single Axum server.
 

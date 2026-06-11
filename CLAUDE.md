@@ -52,6 +52,7 @@ All authoritative documentation lives in `docs/src/`. Key pages:
 | Testing Strategy | `docs/src/dpe/testing-strategy.md` |
 | Observability | `docs/src/dpe/observability.md` |
 | Operations (Docker, env vars) | `docs/src/dpe/operations.md` |
+| OAI-PMH Endpoint Usage | `docs/src/dpe/oai-pmh.md` |
 | Workflows & Commits | `docs/src/workflows.md` |
 | Tech Stack | `docs/src/fundamentals/tech_stack.md` |
 | Review Guidelines | `docs/src/fundamentals/review-guidelines.md` |

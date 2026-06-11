@@ -10,5 +10,13 @@
       <setSpec>entityType:ResearchProject</setSpec>
       <setName>Research Projects</setName>
     </set>
+    <set>
+      <setSpec>project:0803</setSpec>
+      <setName>Die Bilderfolgen der Basler Frühdrucke: Spätmittelalterliche Didaxe als Bild-Text-Lektüre</setName>
+    </set>
+    <set>
+      <setSpec>cluster:cluster-001</setSpec>
+      <setName>EKWS</setName>
+    </set>
   </ListSets>
 </OAI-PMH>

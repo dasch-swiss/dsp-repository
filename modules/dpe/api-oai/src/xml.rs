@@ -158,7 +158,10 @@ impl OaiXmlBuilder {
     }
 
     /// Writes the ListSets response content.
-    pub fn write_list_sets(&mut self) {
+    ///
+    /// Emits the static `entityType:*` sets followed by the dynamic project and
+    /// cluster sets passed as `(setSpec, setName)` pairs.
+    pub fn write_list_sets(&mut self, project_sets: &[(String, String)], cluster_sets: &[(String, String)]) {
         self.start_element("ListSets");
 
         self.start_element("set");
@@ -170,6 +173,20 @@ impl OaiXmlBuilder {
         self.write_element("setSpec", "entityType:ResearchProject");
         self.write_element("setName", "Research Projects");
         self.end_element("set");
+
+        for (set_spec, set_name) in project_sets {
+            self.start_element("set");
+            self.write_element("setSpec", set_spec);
+            self.write_element("setName", set_name);
+            self.end_element("set");
+        }
+
+        for (set_spec, set_name) in cluster_sets {
+            self.start_element("set");
+            self.write_element("setSpec", set_spec);
+            self.write_element("setName", set_name);
+            self.end_element("set");
+        }
 
         self.end_element("ListSets");
     }

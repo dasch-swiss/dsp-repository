@@ -42,7 +42,7 @@ Dependencies: `serde`, `serde_json` only.
 
 ### `dpe-api-oai` (api-oai/)
 
-OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord).
+OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord). Usage is documented in [OAI-PMH Endpoint](./oai-pmh.md).
 
 Depends on `dpe-core` for domain types — no Leptos or web framework dependency.
 

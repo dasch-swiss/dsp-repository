@@ -24,7 +24,7 @@ just watch-dpe-otel
 
 # Terminal 3: Generate traffic
 curl http://localhost:4000/projects
-curl http://localhost:4000/oai?verb=Identify
+curl http://localhost:4000/dpe/oai?verb=Identify
 curl http://localhost:4000/healthz
 ```
 
@@ -34,7 +34,7 @@ curl http://localhost:4000/healthz
 
 Open <http://localhost:3000> (no login required):
 
-- **Tempo** (Explore → Tempo): traces for `/projects` and `/oai`, none for `/healthz`
+- **Tempo** (Explore → Tempo): traces for `/projects` and `/dpe/oai`, none for `/healthz`
 - **Service map**: "dpe" service with Rust tech icon
 - **Loki** (Explore → Loki): OTel log records bridged from the `tracing` subscriber (severity, span context, structured fields)
 - **Mimir** (Explore → Mimir): browser telemetry metrics (`browser.web_vital`, `browser.error`, etc.)

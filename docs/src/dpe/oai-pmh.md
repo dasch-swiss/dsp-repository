@@ -66,6 +66,8 @@ With an `identifier` argument, the supported formats for that item are returned.
 curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListSets"
 ```
 
+Abbreviated example response — the full response also contains one `project:{shortcode}` set per project and one `cluster:{id}` set per cluster:
+
 ```xml
 <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...>
   <request verb="ListSets">https://meta.dasch.swiss/oai</request>
@@ -78,9 +80,20 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListSets"
       <setSpec>entityType:ResearchProject</setSpec>
       <setName>Research Projects</setName>
     </set>
+    <set>
+      <setSpec>project:0803</setSpec>
+      <setName>Die Bilderfolgen der Basler Frühdrucke</setName>
+    </set>
+    <set>
+      <setSpec>cluster:cluster-003</setSpec>
+      <setName>Bernoulli-Euler Online (BEOL)</setName>
+    </set>
+    <!-- further project: and cluster: sets omitted -->
   </ListSets>
 </OAI-PMH>
 ```
+
+The response is a single un-paginated list and always includes the static `entityType:*` sets, so it is never empty.
 
 ## Metadata Formats
 
@@ -104,15 +117,23 @@ These differ from the resolvable ARK URLs (`https://ark.dasch.swiss/ark:/72163/1
 
 ## Sets
 
-Sets group items by entity type. Selective harvesting uses the `set` argument on `ListIdentifiers` and `ListRecords`.
+Selective harvesting uses the `set` argument on `ListIdentifiers` and `ListRecords`. Two kinds of sets exist: static **entity-type** sets and dynamic **project**/**cluster** sets.
 
-| `setSpec` | Contents | Status |
-|-----------|----------|--------|
-| `entityType:ResearchProject` | Research project metadata entries | Harvestable |
+| `setSpec` | Contents | Notes |
+|-----------|----------|-------|
+| `entityType:ResearchProject` | All research project metadata entries | Advertised by `ListSets` |
 | `entityType:ProjectCluster` | Project clusters | Advertised but currently empty — always returns `noRecordsMatch` |
-| `entityType:Record` | Record-level metadata entries | Accepted as a filter and stamped on record headers, but not advertised by `ListSets`; subject to change |
+| `entityType:Record` | All record-level metadata entries | Accepted as a filter and stamped on record headers, but not advertised by `ListSets`; subject to change |
+| `project:{shortcode}` | The Records belonging to one research project | One set per project, `setName` = project name. Shortcode matching is case-insensitive. |
+| `cluster:{id}` | All entities under one project cluster: the cluster's research project metadata entries **plus** all of those projects' Records | One set per cluster, `setName` = cluster name. The `{id}` is the stable cluster id (e.g. `cluster-003`). |
 
-An unknown `set` value is not rejected — it matches nothing and returns `noRecordsMatch`, the same response as an empty repository.
+The hierarchy is **Cluster → Projects → Records**, and the two dynamic set kinds deliberately differ in breadth: `project:{shortcode}` is a record-harvesting scope (it does *not* include the project's own metadata entry), while `cluster:{id}` is the discovery container for a whole cluster and therefore also surfaces the project metadata entries a harvester needs to navigate. To fetch a single project's *metadata entry*, use `entityType:ResearchProject` or the project's `cluster:{id}` set.
+
+A project belongs to a cluster if the cluster's member list contains the project's shortcode (case-insensitive); records inherit their parent project's cluster membership.
+
+**Set membership on headers.** Every item header lists its full set membership, so membership can be determined from an item alone: record headers carry `entityType:Record`, their `project:{shortcode}`, and a `cluster:{id}` for each cluster of the parent project; project headers carry `entityType:ResearchProject`, their own `project:{shortcode}`, and their `cluster:{id}` sets.
+
+**Set validation.** An unrecognised `set` value — bad prefix, empty value, or a `project:`/`cluster:` value matching no known project or cluster — is rejected with `badArgument`. A recognised set that matches zero items (e.g. a known project with no records yet, possibly after date filtering) returns `noRecordsMatch`.
 
 ## Harvesting
 
@@ -126,6 +147,16 @@ Selective harvest of research projects only:
 
 ```bash
 curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&metadataPrefix=oai_datacite&set=entityType:ResearchProject"
+```
+
+Selective harvest of one project's records, or of everything under one cluster:
+
+```bash
+# All records of project 0803
+curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&metadataPrefix=oai_dc&set=project:0803"
+
+# All project entries and records under cluster cluster-003
+curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&metadataPrefix=oai_dc&set=cluster:cluster-003"
 ```
 
 Headers only (no metadata payloads):
@@ -157,6 +188,8 @@ Abbreviated example response:
         <identifier>oai:meta.dasch.swiss:ark:/72163/1/0803</identifier>
         <datestamp>2008-06-01</datestamp>
         <setSpec>entityType:ResearchProject</setSpec>
+        <setSpec>project:0803</setSpec>
+        <!-- plus a cluster:{id} setSpec for each cluster the project belongs to -->
       </header>
       <metadata>
         <oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/" ...>
@@ -198,11 +231,11 @@ Errors are returned as OAI `<error>` elements with HTTP status `200`:
 | Code | Returned when |
 |------|---------------|
 | `badVerb` | The `verb` argument is missing or not one of the six verbs. The `<request>` element omits the verb attribute in this case. |
-| `badArgument` | An argument is missing, repeated, or not allowed for the verb (e.g. `set` on `GetRecord`). |
+| `badArgument` | An argument is missing, repeated, or not allowed for the verb (e.g. `set` on `GetRecord`); also returned for an unrecognised `set` value (bad prefix, empty value, or unknown project/cluster). |
 | `badResumptionToken` | A `resumptionToken` argument is supplied (resumption tokens are not supported). |
 | `cannotDisseminateFormat` | `metadataPrefix` is not `oai_dc` or `oai_datacite`. |
 | `idDoesNotExist` | The `identifier` does not resolve — including malformed identifiers (wrong prefix, bare shortcode), which are not reported as `badArgument`. |
-| `noRecordsMatch` | A list request matches nothing: empty result, unknown `set` value, or a `from`/`until` window with no matches. An empty list is never returned. |
+| `noRecordsMatch` | A list request matches nothing: empty result, a recognised `set` with no items, or a `from`/`until` window with no matches. An empty list is never returned. |
 
 ## Known Limitations
 

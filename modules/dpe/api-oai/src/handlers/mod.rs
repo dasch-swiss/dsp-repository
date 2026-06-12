@@ -19,7 +19,8 @@ use axum::extract::Query;
 use axum::http::{header, StatusCode};
 use axum::response::IntoResponse;
 use dpe_core::{
-    cluster_cache, ClusterRaw, FsProjectRepository, FsRecordRepository, ProjectRepository, RecordRepository,
+    cluster_cache, CachedContributorLookup, ClusterRaw, ContributorLookup, FsProjectRepository, FsRecordRepository,
+    ProjectRepository, RecordRepository,
 };
 use get_record::handle_get_record;
 use identify::handle_identify;
@@ -57,14 +58,15 @@ pub async fn oai_handler(Query(params): Query<OaiParams>) -> impl IntoResponse {
     let repo = FsProjectRepository::new();
     let record_repo = FsRecordRepository::new();
     let clusters = cluster_cache::all_clusters();
+    let lookup = CachedContributorLookup;
 
     let xml = match params.verb.as_deref() {
         Some("Identify") => handle_identify(&params, &repo),
         Some("ListMetadataFormats") => handle_list_metadata_formats(&params, &repo),
         Some("ListSets") => handle_list_sets(&params, &repo, clusters),
-        Some("ListIdentifiers") => handle_list_identifiers(&params, &repo, &record_repo, clusters),
-        Some("ListRecords") => handle_list_records(&params, &repo, &record_repo, clusters),
-        Some("GetRecord") => handle_get_record(&params, &repo, &record_repo, clusters),
+        Some("ListIdentifiers") => handle_list_identifiers(&params, &repo, &record_repo, clusters, &lookup),
+        Some("ListRecords") => handle_list_records(&params, &repo, &record_repo, clusters, &lookup),
+        Some("GetRecord") => handle_get_record(&params, &repo, &record_repo, clusters, &lookup),
         Some(_) => build_error_response(OaiError::BadVerb, None),
         None => build_error_response(OaiError::BadVerb, None),
     };
@@ -140,6 +142,7 @@ pub fn validate_list_params<'a>(
     repo: &dyn ProjectRepository,
     record_repo: &dyn RecordRepository,
     clusters: &[ClusterRaw],
+    lookup: &dyn ContributorLookup,
 ) -> Result<(&'a str, Vec<OaiRecord>), OaiError> {
     // metadataPrefix is required. Validated BEFORE the set, so a request that is
     // missing/invalid in both reports the prefix error (precedence preserved).
@@ -170,7 +173,7 @@ pub fn validate_list_params<'a>(
     let until = params.until.as_deref();
 
     let oai_records = match syntax {
-        SetSyntax::All => collect_entities(repo, record_repo, prefix, clusters, from, until, true, true),
+        SetSyntax::All => collect_entities(repo, record_repo, prefix, clusters, lookup, from, until, true, true),
         SetSyntax::EntityType {
             projects: include_projects,
             records: include_records,
@@ -182,6 +185,7 @@ pub fn validate_list_params<'a>(
             record_repo,
             prefix,
             clusters,
+            lookup,
             from,
             until,
             include_projects,
@@ -206,7 +210,7 @@ pub fn validate_list_params<'a>(
             let Some(member_shortcodes) = cluster_cache::projects_for_cluster_in(clusters, &id) else {
                 return Err(OaiError::BadArgument(format!("unknown cluster set: cluster:{id}")));
             };
-            collect_cluster(repo, record_repo, prefix, clusters, from, until, member_shortcodes)
+            collect_cluster(repo, record_repo, prefix, clusters, lookup, from, until, member_shortcodes)
         }
     };
 
@@ -224,6 +228,7 @@ fn collect_entities(
     record_repo: &dyn RecordRepository,
     prefix: &str,
     clusters: &[ClusterRaw],
+    lookup: &dyn ContributorLookup,
     from: Option<&str>,
     until: Option<&str>,
     include_projects: bool,
@@ -233,7 +238,7 @@ fn collect_entities(
         repo.get_all()
             .iter()
             .filter(|p| matches_date_filter(p, from, until))
-            .map(|p| to_oai_record(p, prefix, clusters))
+            .map(|p| to_oai_record(p, prefix, clusters, lookup))
             .collect()
     } else {
         Vec::new()
@@ -256,11 +261,13 @@ fn collect_entities(
 /// cluster member (and which exist in the repository) plus all their records.
 /// Project entries are deduplicated by shortcode and records by ARK suffix, so a
 /// shortcode listed more than once does not produce duplicate items (REQ-2.5).
+#[allow(clippy::too_many_arguments)]
 fn collect_cluster(
     repo: &dyn ProjectRepository,
     record_repo: &dyn RecordRepository,
     prefix: &str,
     clusters: &[ClusterRaw],
+    lookup: &dyn ContributorLookup,
     from: Option<&str>,
     until: Option<&str>,
     member_shortcodes: &[String],
@@ -284,7 +291,7 @@ fn collect_cluster(
                 true
             }
         })
-        .map(|p| to_oai_record(p, prefix, clusters))
+        .map(|p| to_oai_record(p, prefix, clusters, lookup))
         .collect();
 
     // Records of member projects, deduplicated by ARK suffix.

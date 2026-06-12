@@ -1,11 +1,99 @@
 #![cfg(test)]
 
+use std::collections::HashMap;
+
 use dpe_core::models::AuthorityFileReference;
 use dpe_core::project::{
     AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, Project,
     ProjectStatus, TemporalCoverage,
 };
-use dpe_core::{ClusterRaw, ProjectRepository, Record, RecordRepository};
+use dpe_core::{ClusterRaw, ContributorLookup, Organization, Person, ProjectRepository, Record, RecordRepository};
+
+/// In-memory contributor lookup for testing.
+#[derive(Default)]
+pub struct InMemoryContributorLookup {
+    persons: HashMap<String, Person>,
+    organizations: HashMap<String, Organization>,
+}
+
+impl InMemoryContributorLookup {
+    pub fn empty() -> Self {
+        Self::default()
+    }
+
+    pub fn with_person(mut self, person: Person) -> Self {
+        self.persons.insert(person.id.clone(), person);
+        self
+    }
+
+    pub fn with_organization(mut self, org: Organization) -> Self {
+        self.organizations.insert(org.id.clone(), org);
+        self
+    }
+}
+
+impl ContributorLookup for InMemoryContributorLookup {
+    fn person(&self, id: &str) -> Option<Person> {
+        self.persons.get(id).cloned()
+    }
+
+    fn organization(&self, id: &str) -> Option<Organization> {
+        self.organizations.get(id).cloned()
+    }
+}
+
+/// Builds a person fixture matching the incunabula project attribution `0803-person-000`.
+pub fn incunabula_person() -> Person {
+    Person {
+        id: "0803-person-000".to_string(),
+        given_names: vec!["Heinrich".to_string()],
+        family_names: vec!["Holzmann".to_string()],
+        job_titles: vec!["Professor".to_string()],
+        affiliations: vec!["0803-organization-000".to_string()],
+        same_as: vec![AuthorityFileReference {
+            type_: "ORCID".to_string(),
+            url: "https://orcid.org/0000-0002-1825-0097".to_string(),
+            text: None,
+        }],
+        email: None,
+    }
+}
+
+/// Builds a person fixture matching the incunabula project-leader attribution
+/// `0803-person-001`.
+pub fn incunabula_project_leader() -> Person {
+    Person {
+        id: "0803-person-001".to_string(),
+        given_names: vec!["Susanne".to_string()],
+        family_names: vec!["Vogel".to_string()],
+        job_titles: vec![],
+        affiliations: vec![],
+        same_as: vec![],
+        email: None,
+    }
+}
+
+/// Builds an organization fixture matching the incunabula affiliation and funder
+/// `0803-organization-000`.
+pub fn incunabula_organization() -> Organization {
+    Organization {
+        id: "0803-organization-000".to_string(),
+        name: "Universität Basel".to_string(),
+        same_as: vec![],
+        url: "https://www.unibas.ch/".to_string(),
+        address: None,
+        email: None,
+        alternative_name: None,
+    }
+}
+
+/// Contributor lookup pre-populated with the incunabula person and organization.
+pub fn incunabula_lookup() -> InMemoryContributorLookup {
+    InMemoryContributorLookup::empty()
+        .with_person(incunabula_person())
+        .with_person(incunabula_project_leader())
+        .with_organization(incunabula_organization())
+}
 
 /// In-memory repository for testing.
 pub struct InMemoryProjectRepository {
@@ -93,10 +181,20 @@ pub fn incunabula_project() -> Project {
             url: "https://www.geonames.org/2661604/basel.html".to_string(),
             text: Some("Basel".to_string()),
         }],
-        attributions: vec![Attribution {
-            contributor: "0803-person-000".to_string(),
-            contributor_type: vec!["Applicant".to_string()],
-        }],
+        attributions: vec![
+            Attribution {
+                contributor: "0803-person-000".to_string(),
+                contributor_type: vec!["Applicant".to_string()],
+            },
+            Attribution {
+                contributor: "0803-person-001".to_string(),
+                contributor_type: vec!["Project Leader".to_string()],
+            },
+            Attribution {
+                contributor: "0803-organization-000".to_string(),
+                contributor_type: vec!["Hosting Institution".to_string()],
+            },
+        ],
         abstract_text: Some({
             let mut map = std::collections::HashMap::new();
             map.insert(

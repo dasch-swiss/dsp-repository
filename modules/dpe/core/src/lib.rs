@@ -25,9 +25,9 @@ pub mod utils;
 pub use cluster::ClusterRaw;
 pub use cluster::ClusterRef;
 pub use collection::CollectionRef;
-pub use contributors::ResolvedContributor;
+pub use contributors::{is_organization_id, ContributorLookup, ResolvedContributor};
 #[cfg(not(target_arch = "wasm32"))]
-pub use contributors::{load_organization, load_person};
+pub use contributors::{load_organization, load_person, CachedContributorLookup};
 pub use models::{AuthorityFileReference, Page};
 pub use organization::Organization;
 pub use person::Person;

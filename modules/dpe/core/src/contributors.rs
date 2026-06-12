@@ -21,6 +21,37 @@ pub enum ResolvedContributor {
     },
 }
 
+/// Heuristic for distinguishing organization IDs (e.g. `organization-001`,
+/// `0803-organization-000`) from person IDs (e.g. `person-028`).
+pub fn is_organization_id(id: &str) -> bool {
+    id.starts_with("organization-") || id.contains("-organization-")
+}
+
+/// Lookup of persons and organizations by their internal ID.
+///
+/// Abstracted as a trait so consumers (e.g. OAI-PMH metadata transforms) can
+/// be tested without the disk-backed caches.
+pub trait ContributorLookup {
+    fn person(&self, id: &str) -> Option<Person>;
+    fn organization(&self, id: &str) -> Option<Organization>;
+}
+
+/// Production [`ContributorLookup`] backed by the in-process person and
+/// organization caches.
+#[cfg(not(target_arch = "wasm32"))]
+pub struct CachedContributorLookup;
+
+#[cfg(not(target_arch = "wasm32"))]
+impl ContributorLookup for CachedContributorLookup {
+    fn person(&self, id: &str) -> Option<Person> {
+        load_person(id)
+    }
+
+    fn organization(&self, id: &str) -> Option<Organization> {
+        load_organization(id)
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 pub fn load_person(id: &str) -> Option<Person> {
     super::person_cache::all_persons().get(id).cloned()

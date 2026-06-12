@@ -13,13 +13,13 @@ use dpe_core::project::Attribution;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn get_contributors(attributions: Vec<Attribution>) -> Vec<ResolvedContributor> {
-    use dpe_core::contributors::{load_organization, load_person};
+    use dpe_core::contributors::{is_organization_id, load_organization, load_person};
 
     let mut result = Vec::with_capacity(attributions.len());
     for attr in attributions {
         let roles = (!attr.contributor_type.is_empty()).then(|| attr.contributor_type.join(", "));
         let id = &attr.contributor;
-        if id.starts_with("organization-") || id.contains("-organization-") {
+        if is_organization_id(id) {
             match load_organization(id) {
                 Some(org) => result.push(ResolvedContributor::Organization { org, roles }),
                 None => result.push(ResolvedContributor::Unknown { id: id.clone(), roles }),

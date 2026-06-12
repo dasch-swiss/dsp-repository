@@ -261,14 +261,14 @@ just watch-dpe-otel
 
 # Terminal 3: Generate traffic
 curl http://localhost:4000/projects
-curl http://localhost:4000/oai?verb=Identify
+curl http://localhost:4000/dpe/oai?verb=Identify
 curl http://localhost:4000/healthz
 </code></pre>
 <p><code>watch-dpe-otel</code> sets <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>, <code>OTEL_SERVICE_NAME</code>, <code>OTEL_RESOURCE_ATTRIBUTES</code>, and <code>PYROSCOPE_ENDPOINT</code> for you. Run <code>just --list</code> to see the underlying commands.</p>
 <h2 id="navigating-grafana-locally"><a class="header" href="#navigating-grafana-locally">Navigating Grafana Locally</a></h2>
 <p>Open <a href="http://localhost:3000">http://localhost:3000</a> (no login required):</p>
 <ul>
-<li><strong>Tempo</strong> (Explore → Tempo): traces for <code>/projects</code> and <code>/oai</code>, none for <code>/healthz</code></li>
+<li><strong>Tempo</strong> (Explore → Tempo): traces for <code>/projects</code> and <code>/dpe/oai</code>, none for <code>/healthz</code></li>
 <li><strong>Service map</strong>: "dpe" service with Rust tech icon</li>
 <li><strong>Loki</strong> (Explore → Loki): OTel log records bridged from the <code>tracing</code> subscriber (severity, span context, structured fields)</li>
 <li><strong>Mimir</strong> (Explore → Mimir): browser telemetry metrics (<code>browser.web_vital</code>, <code>browser.error</code>, etc.)</li>

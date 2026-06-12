@@ -1,0 +1,486 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>OAI-PMH Endpoint - DSP-Repository Developer Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="oai-pmh-endpoint"><a class="header" href="#oai-pmh-endpoint">OAI-PMH Endpoint</a></h1>
+<p>Usage guide for the DPE <a href="https://www.openarchives.org/OAI/openarchivesprotocol.html">OAI-PMH 2.0</a> data provider, which exposes DaSCH research project and record metadata for harvesting. The implementation lives in the <code>dpe-api-oai</code> crate (see <a href="./project_structure.html">Project Structure</a>).</p>
+<h2 id="endpoint"><a class="header" href="#endpoint">Endpoint</a></h2>
+<ul>
+<li><strong>Path</strong>: <code>GET /dpe/oai</code> — GET only; POST requests are not supported</li>
+<li><strong>Response</strong>: always <code>200 OK</code> with <code>Content-Type: text/xml; charset=utf-8</code>. Protocol errors are reported as OAI <code>&lt;error&gt;</code> elements inside the XML body, not as HTTP error codes.</li>
+<li><strong>Protocol version</strong>: 2.0</li>
+</ul>
+<div class="table-wrapper"><table><thead><tr><th>Environment</th><th>Base URL</th></tr></thead><tbody>
+<tr><td>Local development (<code>just watch-dpe</code>)</td><td><code>http://localhost:4000/dpe/oai</code></td></tr>
+<tr><td>DEV</td><td><code>https://api.dev.dasch.swiss/dpe/oai</code></td></tr>
+<tr><td>Production</td><td>Not yet deployed; see <a href="#known-limitations">Known Limitations</a> regarding the advertised <code>baseURL</code></td></tr>
+</tbody></table>
+</div>
+<h2 id="verbs"><a class="header" href="#verbs">Verbs</a></h2>
+<p>All six OAI-PMH 2.0 verbs are implemented:</p>
+<div class="table-wrapper"><table><thead><tr><th>Verb</th><th>Required arguments</th><th>Optional arguments</th></tr></thead><tbody>
+<tr><td><code>Identify</code></td><td>—</td><td>—</td></tr>
+<tr><td><code>ListMetadataFormats</code></td><td>—</td><td><code>identifier</code></td></tr>
+<tr><td><code>ListSets</code></td><td>—</td><td>—</td></tr>
+<tr><td><code>ListIdentifiers</code></td><td><code>metadataPrefix</code></td><td><code>from</code>, <code>until</code>, <code>set</code></td></tr>
+<tr><td><code>ListRecords</code></td><td><code>metadataPrefix</code></td><td><code>from</code>, <code>until</code>, <code>set</code></td></tr>
+<tr><td><code>GetRecord</code></td><td><code>identifier</code>, <code>metadataPrefix</code></td><td>—</td></tr>
+</tbody></table>
+</div>
+<p>Arguments outside these lists are rejected with <code>badArgument</code>, with two exceptions that are silently ignored: <code>set</code> on <code>ListSets</code> and <code>metadataPrefix</code> on <code>ListMetadataFormats</code>. A <code>resumptionToken</code> is rejected with <code>badResumptionToken</code> on every verb — see <a href="#known-limitations">Known Limitations</a>.</p>
+<h3 id="identify"><a class="header" href="#identify">Identify</a></h3>
+<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=Identify"
+</code></pre>
+<p>Abbreviated example response (values vary by environment):</p>
+<pre><code class="language-xml">&lt;OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...&gt;
+  &lt;request verb="Identify"&gt;https://meta.dasch.swiss/oai&lt;/request&gt;
+  &lt;Identify&gt;
+    &lt;repositoryName&gt;DaSCH Service Platform Repository&lt;/repositoryName&gt;
+    &lt;baseURL&gt;https://meta.dasch.swiss/oai&lt;/baseURL&gt;
+    &lt;protocolVersion&gt;2.0&lt;/protocolVersion&gt;
+    &lt;adminEmail&gt;info@dasch.swiss&lt;/adminEmail&gt;
+    &lt;earliestDatestamp&gt;2008-06-01&lt;/earliestDatestamp&gt;
+    &lt;deletedRecord&gt;no&lt;/deletedRecord&gt;
+    &lt;granularity&gt;YYYY-MM-DD&lt;/granularity&gt;
+  &lt;/Identify&gt;
+&lt;/OAI-PMH&gt;
+</code></pre>
+<h3 id="listmetadataformats"><a class="header" href="#listmetadataformats">ListMetadataFormats</a></h3>
+<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListMetadataFormats"
+</code></pre>
+<p>With an <code>identifier</code> argument, the supported formats for that item are returned. Note: identifiers are currently validated against projects only — a record identifier that works with <code>GetRecord</code> returns <code>idDoesNotExist</code> here.</p>
+<h3 id="listsets"><a class="header" href="#listsets">ListSets</a></h3>
+<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListSets"
+</code></pre>
+<p>Abbreviated example response — the full response also contains one <code>project:{shortcode}</code> set per project and one <code>cluster:{id}</code> set per cluster:</p>
+<pre><code class="language-xml">&lt;OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...&gt;
+  &lt;request verb="ListSets"&gt;https://meta.dasch.swiss/oai&lt;/request&gt;
+  &lt;ListSets&gt;
+    &lt;set&gt;
+      &lt;setSpec&gt;entityType:ProjectCluster&lt;/setSpec&gt;
+      &lt;setName&gt;Project Clusters&lt;/setName&gt;
+    &lt;/set&gt;
+    &lt;set&gt;
+      &lt;setSpec&gt;entityType:ResearchProject&lt;/setSpec&gt;
+      &lt;setName&gt;Research Projects&lt;/setName&gt;
+    &lt;/set&gt;
+    &lt;set&gt;
+      &lt;setSpec&gt;project:0803&lt;/setSpec&gt;
+      &lt;setName&gt;Die Bilderfolgen der Basler Frühdrucke&lt;/setName&gt;
+    &lt;/set&gt;
+    &lt;set&gt;
+      &lt;setSpec&gt;cluster:cluster-003&lt;/setSpec&gt;
+      &lt;setName&gt;Bernoulli-Euler Online (BEOL)&lt;/setName&gt;
+    &lt;/set&gt;
+    &lt;!-- further project: and cluster: sets omitted --&gt;
+  &lt;/ListSets&gt;
+&lt;/OAI-PMH&gt;
+</code></pre>
+<p>The response is a single un-paginated list and always includes the static <code>entityType:*</code> sets, so it is never empty.</p>
+<h2 id="metadata-formats"><a class="header" href="#metadata-formats">Metadata Formats</a></h2>
+<div class="table-wrapper"><table><thead><tr><th><code>metadataPrefix</code></th><th>Schema</th><th>Namespace</th></tr></thead><tbody>
+<tr><td><code>oai_dc</code></td><td><code>http://www.openarchives.org/OAI/2.0/oai_dc.xsd</code></td><td><code>http://www.openarchives.org/OAI/2.0/oai_dc/</code></td></tr>
+<tr><td><code>oai_datacite</code></td><td><code>http://schema.datacite.org/oai/oai-1.1/oai.xsd</code></td><td><code>http://schema.datacite.org/oai/oai-1.1/</code></td></tr>
+</tbody></table>
+</div>
+<p>The <code>oai_datacite</code> payload contains DataCite kernel 4 metadata (<code>schemaVersion</code> 4.6, <code>datacentreSymbol</code> <code>DASCH.DSP</code>), following the DaSCH Metadata to DataCite mapping specification. <code>oai_dc</code> is the simpler Dublin Core representation; <code>oai_datacite</code> carries richer structured metadata (contributors, related identifiers, rights, geolocations, funding references).</p>
+<h2 id="identifiers"><a class="header" href="#identifiers">Identifiers</a></h2>
+<p>OAI identifiers are derived from DaSCH <a href="https://arks.org/">ARK</a> identifiers:</p>
+<div class="table-wrapper"><table><thead><tr><th>Item type</th><th>Pattern</th><th>Example</th></tr></thead><tbody>
+<tr><td>Research project</td><td><code>oai:meta.dasch.swiss:ark:/72163/1/{shortcode}</code></td><td><code>oai:meta.dasch.swiss:ark:/72163/1/0803</code></td></tr>
+<tr><td>Record</td><td><code>oai:meta.dasch.swiss:ark:/72163/1/{shortcode}/{record_id}</code></td><td><code>oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</code></td></tr>
+</tbody></table>
+</div>
+<p>These differ from the resolvable ARK URLs (<code>https://ark.dasch.swiss/ark:/72163/1/...</code>), which appear in the metadata payloads as <code>dc:identifier</code> / DataCite <code>identifier</code>.</p>
+<h2 id="sets"><a class="header" href="#sets">Sets</a></h2>
+<p>Selective harvesting uses the <code>set</code> argument on <code>ListIdentifiers</code> and <code>ListRecords</code>. Two kinds of sets exist: static <strong>entity-type</strong> sets and dynamic <strong>project</strong>/<strong>cluster</strong> sets.</p>
+<div class="table-wrapper"><table><thead><tr><th><code>setSpec</code></th><th>Contents</th><th>Notes</th></tr></thead><tbody>
+<tr><td><code>entityType:ResearchProject</code></td><td>All research project metadata entries</td><td>Advertised by <code>ListSets</code></td></tr>
+<tr><td><code>entityType:ProjectCluster</code></td><td>Project clusters</td><td>Advertised but currently empty — always returns <code>noRecordsMatch</code></td></tr>
+<tr><td><code>entityType:Record</code></td><td>All record-level metadata entries</td><td>Accepted as a filter and stamped on record headers, but not advertised by <code>ListSets</code>; subject to change</td></tr>
+<tr><td><code>project:{shortcode}</code></td><td>The Records belonging to one research project</td><td>One set per project, <code>setName</code> = project name. Shortcode matching is case-insensitive.</td></tr>
+<tr><td><code>cluster:{id}</code></td><td>All entities under one project cluster: the cluster's research project metadata entries <strong>plus</strong> all of those projects' Records</td><td>One set per cluster, <code>setName</code> = cluster name. The <code>{id}</code> is the stable cluster id (e.g. <code>cluster-003</code>).</td></tr>
+</tbody></table>
+</div>
+<p>The hierarchy is <strong>Cluster → Projects → Records</strong>, and the two dynamic set kinds deliberately differ in breadth: <code>project:{shortcode}</code> is a record-harvesting scope (it does <em>not</em> include the project's own metadata entry), while <code>cluster:{id}</code> is the discovery container for a whole cluster and therefore also surfaces the project metadata entries a harvester needs to navigate. To fetch a single project's <em>metadata entry</em>, use <code>entityType:ResearchProject</code> or the project's <code>cluster:{id}</code> set.</p>
+<p>A project belongs to a cluster if the cluster's member list contains the project's shortcode (case-insensitive); records inherit their parent project's cluster membership.</p>
+<p><strong>Set membership on headers.</strong> Every item header lists its full set membership, so membership can be determined from an item alone: record headers carry <code>entityType:Record</code>, their <code>project:{shortcode}</code>, and a <code>cluster:{id}</code> for each cluster of the parent project; project headers carry <code>entityType:ResearchProject</code>, their own <code>project:{shortcode}</code>, and their <code>cluster:{id}</code> sets.</p>
+<p><strong>Set validation.</strong> An unrecognised <code>set</code> value — bad prefix, empty value, or a <code>project:</code>/<code>cluster:</code> value matching no known project or cluster — is rejected with <code>badArgument</code>. A recognised set that matches zero items (e.g. a known project with no records yet, possibly after date filtering) returns <code>noRecordsMatch</code>.</p>
+<h2 id="harvesting"><a class="header" href="#harvesting">Harvesting</a></h2>
+<p>Full harvest of all items:</p>
+<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oai_dc"
+</code></pre>
+<p>Selective harvest of research projects only:</p>
+<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oai_datacite&amp;set=entityType:ResearchProject"
+</code></pre>
+<p>Selective harvest of one project's records, or of everything under one cluster:</p>
+<pre><code class="language-bash"># All records of project 0803
+curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oai_dc&amp;set=project:0803"
+
+# All project entries and records under cluster cluster-003
+curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oai_dc&amp;set=cluster:cluster-003"
+</code></pre>
+<p>Headers only (no metadata payloads):</p>
+<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&amp;metadataPrefix=oai_dc"
+</code></pre>
+<p>List responses are returned complete and unpaged — there is no <code>resumptionToken</code> element, and its absence means the response is complete, not truncated.</p>
+<h3 id="fetching-a-single-item"><a class="header" href="#fetching-a-single-item">Fetching a single item</a></h3>
+<pre><code class="language-bash"># A research project
+curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_dc&amp;identifier=oai:meta.dasch.swiss:ark:/72163/1/0803"
+
+# A record within a project
+curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_dc&amp;identifier=oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"
+</code></pre>
+<p>Abbreviated example response:</p>
+<pre><code class="language-xml">&lt;OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...&gt;
+  &lt;request verb="GetRecord" identifier="oai:meta.dasch.swiss:ark:/72163/1/0803" metadataPrefix="oai_dc"&gt;https://meta.dasch.swiss/oai&lt;/request&gt;
+  &lt;GetRecord&gt;
+    &lt;record&gt;
+      &lt;header&gt;
+        &lt;identifier&gt;oai:meta.dasch.swiss:ark:/72163/1/0803&lt;/identifier&gt;
+        &lt;datestamp&gt;2008-06-01&lt;/datestamp&gt;
+        &lt;setSpec&gt;entityType:ResearchProject&lt;/setSpec&gt;
+        &lt;setSpec&gt;project:0803&lt;/setSpec&gt;
+        &lt;!-- plus a cluster:{id} setSpec for each cluster the project belongs to --&gt;
+      &lt;/header&gt;
+      &lt;metadata&gt;
+        &lt;oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/" ...&gt;
+          &lt;dc:title&gt;Die Bilderfolgen der Basler Frühdrucke&lt;/dc:title&gt;
+          &lt;dc:publisher&gt;DaSCH&lt;/dc:publisher&gt;
+          &lt;dc:date&gt;2008-06-01&lt;/dc:date&gt;
+          &lt;dc:type&gt;Project&lt;/dc:type&gt;
+          &lt;dc:identifier&gt;https://ark.dasch.swiss/ark:/72163/1/0803&lt;/dc:identifier&gt;
+          &lt;!-- further Dublin Core elements omitted --&gt;
+        &lt;/oai_dc:dc&gt;
+      &lt;/metadata&gt;
+    &lt;/record&gt;
+  &lt;/GetRecord&gt;
+&lt;/OAI-PMH&gt;
+</code></pre>
+<h2 id="datestamps-and-date-filtering"><a class="header" href="#datestamps-and-date-filtering">Datestamps and Date Filtering</a></h2>
+<p><code>ListIdentifiers</code> and <code>ListRecords</code> accept <code>from</code> and <code>until</code> arguments. Both bounds are inclusive. Before relying on them, understand what the datestamps mean:</p>
+<ul>
+<li><strong>Project datestamp</strong>: the project's research <em>start date</em> (fallback <code>2015-01-01</code>) — not the date the metadata was created or last modified.</li>
+<li><strong>Record datestamp</strong>: the record's <code>dateModified</code>, falling back to <code>datePublished</code>, then <code>dateCreated</code>, then <code>2015-01-01</code>. Record datestamps may carry a full timestamp (e.g. <code>2012-06-19T14:33:33Z</code>) even though <code>Identify</code> advertises <code>YYYY-MM-DD</code> granularity.</li>
+</ul>
+<p>Filtering compares <code>from</code>/<code>until</code> against datestamps as plain strings (lexicographic comparison):</p>
+<ul>
+<li>Use <code>YYYY-MM-DD</code> values. Other formats are not rejected with an error but compare incorrectly.</li>
+<li>Because record datestamps may include a time component, <code>until=2012-06-19</code> excludes a record stamped <code>2012-06-19T14:33:33Z</code>. To include a full day, filter with <code>until</code> set to the following day.</li>
+</ul>
+<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&amp;metadataPrefix=oai_dc&amp;from=2010-01-01&amp;until=2020-12-31"
+</code></pre>
+<p><strong>Incremental harvesting is not reliable with these semantics.</strong> Project datestamps reflect research start dates, so new or updated project metadata does not surface through <code>from</code>-based incremental harvests, and deletions are not tracked (<code>deletedRecord: no</code>). Harvesters should periodically re-harvest the full repository instead of relying on date-based increments.</p>
+<h2 id="errors"><a class="header" href="#errors">Errors</a></h2>
+<p>Errors are returned as OAI <code>&lt;error&gt;</code> elements with HTTP status <code>200</code>:</p>
+<div class="table-wrapper"><table><thead><tr><th>Code</th><th>Returned when</th></tr></thead><tbody>
+<tr><td><code>badVerb</code></td><td>The <code>verb</code> argument is missing or not one of the six verbs. The <code>&lt;request&gt;</code> element omits the verb attribute in this case.</td></tr>
+<tr><td><code>badArgument</code></td><td>An argument is missing, repeated, or not allowed for the verb (e.g. <code>set</code> on <code>GetRecord</code>); also returned for an unrecognised <code>set</code> value (bad prefix, empty value, or unknown project/cluster).</td></tr>
+<tr><td><code>badResumptionToken</code></td><td>A <code>resumptionToken</code> argument is supplied (resumption tokens are not supported).</td></tr>
+<tr><td><code>cannotDisseminateFormat</code></td><td><code>metadataPrefix</code> is not <code>oai_dc</code> or <code>oai_datacite</code>.</td></tr>
+<tr><td><code>idDoesNotExist</code></td><td>The <code>identifier</code> does not resolve — including malformed identifiers (wrong prefix, bare shortcode), which are not reported as <code>badArgument</code>.</td></tr>
+<tr><td><code>noRecordsMatch</code></td><td>A list request matches nothing: empty result, a recognised <code>set</code> with no items, or a <code>from</code>/<code>until</code> window with no matches. An empty list is never returned.</td></tr>
+</tbody></table>
+</div>
+<h2 id="known-limitations"><a class="header" href="#known-limitations">Known Limitations</a></h2>
+<ul>
+<li><strong>No resumption tokens.</strong> List responses are complete and unpaged; any <code>resumptionToken</code> argument yields <code>badResumptionToken</code>.</li>
+<li><strong>Advertised <code>baseURL</code> differs from the actual endpoint.</strong> <code>Identify</code> reports <code>https://meta.dasch.swiss/oai</code>, while the endpoint is mounted at <code>/dpe/oai</code>. Automated OAI validators and harvest managers that compare the <code>baseURL</code> against the request URL will flag this.</li>
+<li><strong>No deleted-record tracking</strong> (<code>deletedRecord: no</code>). Items that disappear are not announced; see the re-harvesting recommendation above.</li>
+<li><strong>GET only.</strong> OAI-PMH 2.0 also requires POST; harvesters that default to POST will not get an OAI response.</li>
+<li><strong><code>ListMetadataFormats</code> with a record identifier</strong> returns <code>idDoesNotExist</code>, even for records that <code>GetRecord</code> resolves.</li>
+<li><strong><code>entityType:ProjectCluster</code></strong> is advertised by <code>ListSets</code> but contains no items yet.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../dpe/operations.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../fundamentals/processes.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../dpe/operations.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../fundamentals/processes.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

@@ -1,13 +1,14 @@
 //! Transformation of Research Projects into Dublin Core metadata.
 
-use dpe_core::{Discipline, Project, TemporalCoverage};
+use dpe_core::{ContributorLookup, Discipline, Project, TemporalCoverage};
 
 use super::helpers::{access_rights_to_string, get_multilingual_value, is_creator};
+use super::resolve::resolve_agent;
 use super::types::DublinCoreRecord;
 
 const PUBLISHER: &str = "DaSCH";
 
-pub fn project_to_dublin_core(project: &Project) -> DublinCoreRecord {
+pub fn project_to_dublin_core(project: &Project, lookup: &dyn ContributorLookup) -> DublinCoreRecord {
     let mut record = DublinCoreRecord::default();
 
     // dc:title - prefer officialName, fallback to name
@@ -65,17 +66,18 @@ pub fn project_to_dublin_core(project: &Project) -> DublinCoreRecord {
         }
     }
 
-    // dc:creator from attributions (principal investigators and project leaders)
+    // dc:creator from attributions (principal investigators and project leaders),
+    // resolved to display names
     for attr in &project.attributions {
         if is_creator(&attr.contributor_type) {
-            record.creators.push(attr.contributor.clone());
+            record.creators.push(resolve_agent(&attr.contributor, lookup).name);
         }
     }
 
-    // dc:contributor from other attributions
+    // dc:contributor from other attributions, resolved to display names
     for attr in &project.attributions {
         if !is_creator(&attr.contributor_type) {
-            record.contributors.push(attr.contributor.clone());
+            record.contributors.push(resolve_agent(&attr.contributor, lookup).name);
         }
     }
 

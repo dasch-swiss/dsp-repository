@@ -9,15 +9,16 @@ mod dublin_core;
 mod helpers;
 mod record_datacite;
 mod record_dublin_core;
+mod resolve;
 mod types;
 
 use datacite::project_to_datacite;
 use dpe_core::cluster_cache::clusters_for_shortcode_in;
-use dpe_core::{record_datestamp, ClusterRaw, Project, Record, ARK_PATH_PREFIX};
+use dpe_core::{record_datestamp, ClusterRaw, ContributorLookup, Project, Record, ARK_PATH_PREFIX};
 use dublin_core::project_to_dublin_core;
 use record_datacite::record_to_datacite;
 use record_dublin_core::record_to_dublin_core;
-pub use types::{DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
+pub use types::{DataCiteNameIdentifier, DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
 
 const OAI_IDENTIFIER_PREFIX: &str = "oai:meta.dasch.swiss:";
 
@@ -56,7 +57,12 @@ fn membership_set_specs(entity_type: &str, shortcode: &str, clusters: &[ClusterR
 }
 
 /// Creates an OAI record from a project for the given metadata prefix.
-pub fn to_oai_record(project: &Project, metadata_prefix: &str, clusters: &[ClusterRaw]) -> OaiRecord {
+pub fn to_oai_record(
+    project: &Project,
+    metadata_prefix: &str,
+    clusters: &[ClusterRaw],
+    lookup: &dyn ContributorLookup,
+) -> OaiRecord {
     let identifier = if !dpe_core::is_placeholder(&project.pid) && !project.pid.is_empty() {
         make_oai_identifier_from_pid(&project.pid).unwrap_or_else(|| make_oai_identifier(&project.shortcode))
     } else {
@@ -73,13 +79,13 @@ pub fn to_oai_record(project: &Project, metadata_prefix: &str, clusters: &[Clust
     };
 
     let dublin_core = if metadata_prefix == "oai_dc" {
-        Some(project_to_dublin_core(project))
+        Some(project_to_dublin_core(project, lookup))
     } else {
         None
     };
 
     let datacite = if metadata_prefix == "oai_datacite" {
-        Some(project_to_datacite(project))
+        Some(project_to_datacite(project, lookup))
     } else {
         None
     };

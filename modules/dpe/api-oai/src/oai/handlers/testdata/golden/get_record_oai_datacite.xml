@@ -18,7 +18,9 @@
               <identifier identifierType="ARK">https://ark.dasch.swiss/ark:/72163/1/0803</identifier>
               <creators>
                 <creator>
-                  <creatorName nameType="Organizational">DaSCH</creatorName>
+                  <creatorName nameType="Personal">Vogel, Susanne</creatorName>
+                  <givenName>Susanne</givenName>
+                  <familyName>Vogel</familyName>
                 </creator>
               </creators>
               <titles>
@@ -34,7 +36,14 @@
               </subjects>
               <contributors>
                 <contributor contributorType="Other">
-                  <contributorName nameType="Personal">0803-person-000</contributorName>
+                  <contributorName nameType="Personal">Holzmann, Heinrich</contributorName>
+                  <givenName>Heinrich</givenName>
+                  <familyName>Holzmann</familyName>
+                  <nameIdentifier nameIdentifierScheme="ORCID" schemeURI="https://orcid.org">https://orcid.org/0000-0002-1825-0097</nameIdentifier>
+                  <affiliation>Universität Basel</affiliation>
+                </contributor>
+                <contributor contributorType="HostingInstitution">
+                  <contributorName nameType="Organizational">Universität Basel</contributorName>
                 </contributor>
               </contributors>
               <descriptions>
@@ -56,7 +65,7 @@
               </geoLocations>
               <fundingReferences>
                 <fundingReference>
-                  <funderName>0803-organization-000</funderName>
+                  <funderName>Universität Basel</funderName>
                   <awardNumber awardURI="https://data.snf.ch/grants/grant/120378">120378</awardNumber>
                   <awardTitle>Project funding</awardTitle>
                 </fundingReference>

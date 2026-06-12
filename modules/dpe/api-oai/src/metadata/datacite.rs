@@ -1,11 +1,12 @@
 //! Transformation of Research Projects into DataCite 4.6 metadata.
 
-use dpe_core::{Discipline, Funding, Project, TemporalCoverage};
+use dpe_core::{ContributorLookup, Discipline, Funding, Project, TemporalCoverage};
 
 use super::helpers::{
     access_rights_to_string, extract_year, format_date_range, get_multilingual_value, infer_subject_scheme, is_creator,
     license_identifier_to_label, map_contributor_type,
 };
+use super::resolve::resolve_agent;
 use super::types::{
     DataCiteContributor, DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteFundingReference,
     DataCiteGeoLocation, DataCiteRecord, DataCiteRights, DataCiteSubject, DataCiteTitle,
@@ -13,7 +14,7 @@ use super::types::{
 
 const PUBLISHER: &str = "DaSCH";
 
-pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
+pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) -> DataCiteRecord {
     let mut record = DataCiteRecord::default();
 
     // Identifier (mandatory) - use PID or generate from shortcode
@@ -28,9 +29,14 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
     // Creators (mandatory) - principal investigators and project leaders
     for attr in &project.attributions {
         if is_creator(&attr.contributor_type) {
+            let agent = resolve_agent(&attr.contributor, lookup);
             record.creators.push(DataCiteCreator {
-                name: attr.contributor.clone(),
-                name_type: Some("Personal".to_string()),
+                name: agent.name,
+                name_type: Some(agent.name_type.to_string()),
+                given_name: agent.given_name,
+                family_name: agent.family_name,
+                name_identifiers: agent.name_identifiers,
+                affiliations: agent.affiliations,
             });
         }
     }
@@ -39,6 +45,7 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
         record.creators.push(DataCiteCreator {
             name: "DaSCH".to_string(),
             name_type: Some("Organizational".to_string()),
+            ..Default::default()
         });
     }
 
@@ -50,10 +57,15 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
                 .first()
                 .map(|t| map_contributor_type(t))
                 .unwrap_or("Other");
+            let agent = resolve_agent(&attr.contributor, lookup);
             record.contributors.push(DataCiteContributor {
-                name: attr.contributor.clone(),
-                name_type: Some("Personal".to_string()),
+                name: agent.name,
+                name_type: Some(agent.name_type.to_string()),
                 contributor_type: datacite_type.to_string(),
+                given_name: agent.given_name,
+                family_name: agent.family_name,
+                name_identifiers: agent.name_identifiers,
+                affiliations: agent.affiliations,
             });
         }
     }
@@ -246,14 +258,12 @@ pub fn project_to_datacite(project: &Project) -> DataCiteRecord {
         }
     }
 
-    // FundingReferences from grants
-    // Note: funder names are currently internal IDs (e.g., "0801-organization-000"),
-    // not human-readable names. This is a data quality issue to resolve upstream.
+    // FundingReferences from grants; funder IDs resolved to organization names
     if let Funding::Grants(ref grants) = project.funding {
         for grant in grants {
             for funder in &grant.funders {
                 record.funding_references.push(DataCiteFundingReference {
-                    funder_name: funder.clone(),
+                    funder_name: resolve_agent(funder, lookup).name,
                     award_number: grant.number.clone(),
                     award_title: grant.name.clone(),
                     award_uri: grant.url.clone(),

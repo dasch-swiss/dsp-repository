@@ -49,7 +49,7 @@ pub fn incunabula_person() -> Person {
         given_names: vec!["Heinrich".to_string()],
         family_names: vec!["Holzmann".to_string()],
         job_titles: vec!["Professor".to_string()],
-        affiliations: vec!["0803-organization-000".to_string()],
+        affiliations: vec!["organization-000".to_string()],
         same_as: vec![AuthorityFileReference {
             type_: "ORCID".to_string(),
             url: "https://orcid.org/0000-0002-1825-0097".to_string(),
@@ -74,10 +74,10 @@ pub fn incunabula_project_leader() -> Person {
 }
 
 /// Builds an organization fixture matching the incunabula affiliation and funder
-/// `0803-organization-000`.
+/// `organization-000`.
 pub fn incunabula_organization() -> Organization {
     Organization {
-        id: "0803-organization-000".to_string(),
+        id: "organization-000".to_string(),
         name: "Universität Basel".to_string(),
         same_as: vec![],
         url: "https://www.unibas.ch/".to_string(),
@@ -191,7 +191,7 @@ pub fn incunabula_project() -> Project {
                 contributor_type: vec!["Project Leader".to_string()],
             },
             Attribution {
-                contributor: "0803-organization-000".to_string(),
+                contributor: "organization-000".to_string(),
                 contributor_type: vec!["Hosting Institution".to_string()],
             },
         ],
@@ -206,7 +206,7 @@ pub fn incunabula_project() -> Project {
         contact_point: None,
         publications: None,
         funding: Funding::Grants(vec![Grant {
-            funders: vec!["0803-organization-000".to_string()],
+            funders: vec!["organization-000".to_string()],
             number: Some("120378".to_string()),
             name: Some("Project funding".to_string()),
             url: Some("https://data.snf.ch/grants/grant/120378".to_string()),

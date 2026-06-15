@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.7.0](https://github.com/dasch-swiss/dsp-repository/compare/v0.6.0...v0.7.0) (2026-06-15)
+
+
+### Features
+
+* **dpe-api-oai:** Resolve contributor information in OAI-PMH output (DEV-6575) ([c1b9ed2](https://github.com/dasch-swiss/dsp-repository/commit/c1b9ed22936666261939ef5a6a6a695c148bb5a6))
+* **oai:** add project and cluster set filters ([dba4f48](https://github.com/dasch-swiss/dsp-repository/commit/dba4f48ba96cbef2d92be00fe18ecbcfb1fbcef3))
+
+
+### Bug Fixes
+
+* Move remaining 0803 roles from job titles to attributions (DEV-6620) ([f61b9eb](https://github.com/dasch-swiss/dsp-repository/commit/f61b9ebbae03159807f0a912ff0f3f1cbaafb48b))
+* Reduce possibility of discrepant ARKs (DEV-6603) ([12ac7bd](https://github.com/dasch-swiss/dsp-repository/commit/12ac7bd961af966081b3cc4b943c961ffe54d117))
+* Represent project leader as attribution, not job title (DEV-6620) ([2c49749](https://github.com/dasch-swiss/dsp-repository/commit/2c49749883964391b2a080a6e30bd51a60308943))
+
+
+### Documentation
+
+* add OAI-PMH endpoint usage page ([0889cd0](https://github.com/dasch-swiss/dsp-repository/commit/0889cd0bc3296b3999920a92e844a5c1a8436e7c))
+* document project and cluster OAI set filters (DEV-6526) ([0310fdc](https://github.com/dasch-swiss/dsp-repository/commit/0310fdc5eeb59d906f775686e479091b53da49ce))
+* fix stale /oai paths in observability guide ([227aa39](https://github.com/dasch-swiss/dsp-repository/commit/227aa39fefb07fb69c193afbaa0bb6bc4fe2241c))
+
+
+### Refactoring
+
+* **dpe-core:** drop dead prefixed-organization-id heuristic ([fad0557](https://github.com/dasch-swiss/dsp-repository/commit/fad0557cacef093344694e5289cea947d01b2d97))
+* extract cluster reverse-lookup into dpe-core helpers ([1be7b6e](https://github.com/dasch-swiss/dsp-repository/commit/1be7b6ef4f72705c2bb5f03b617f4d0fe6a89c81))
+
 ## [0.6.0](https://github.com/dasch-swiss/dsp-repository/compare/v0.5.7...v0.6.0) (2026-06-10)
 
 

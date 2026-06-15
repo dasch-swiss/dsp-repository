@@ -27,12 +27,17 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
         .legal_info
         .authorship
         .iter()
-        .map(|name| DataCiteCreator { name: name.clone(), name_type: Some("Personal".to_string()) })
+        .map(|name| DataCiteCreator {
+            name: name.clone(),
+            name_type: Some("Personal".to_string()),
+            ..Default::default()
+        })
         .collect();
     if creators.is_empty() {
         creators.push(DataCiteCreator {
             name: PUBLISHER.to_string(),
             name_type: Some("Organizational".to_string()),
+            ..Default::default()
         });
     }
 

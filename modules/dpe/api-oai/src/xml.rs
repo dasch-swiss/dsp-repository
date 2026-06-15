@@ -5,7 +5,7 @@ use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::Writer;
 
 use super::error::OaiError;
-use super::metadata::{DataCiteRecord, DublinCoreRecord, OaiRecord};
+use super::metadata::{DataCiteNameIdentifier, DataCiteRecord, DublinCoreRecord, OaiRecord};
 
 pub const BASE_URL: &str = "https://meta.dasch.swiss/oai";
 
@@ -158,7 +158,10 @@ impl OaiXmlBuilder {
     }
 
     /// Writes the ListSets response content.
-    pub fn write_list_sets(&mut self) {
+    ///
+    /// Emits the static `entityType:*` sets followed by the dynamic project and
+    /// cluster sets passed as `(setSpec, setName)` pairs.
+    pub fn write_list_sets(&mut self, project_sets: &[(String, String)], cluster_sets: &[(String, String)]) {
         self.start_element("ListSets");
 
         self.start_element("set");
@@ -170,6 +173,20 @@ impl OaiXmlBuilder {
         self.write_element("setSpec", "entityType:ResearchProject");
         self.write_element("setName", "Research Projects");
         self.end_element("set");
+
+        for (set_spec, set_name) in project_sets {
+            self.start_element("set");
+            self.write_element("setSpec", set_spec);
+            self.write_element("setName", set_name);
+            self.end_element("set");
+        }
+
+        for (set_spec, set_name) in cluster_sets {
+            self.start_element("set");
+            self.write_element("setSpec", set_spec);
+            self.write_element("setName", set_name);
+            self.end_element("set");
+        }
 
         self.end_element("ListSets");
     }
@@ -240,6 +257,33 @@ impl OaiXmlBuilder {
         self.end_element("metadata");
     }
 
+    /// Writes the name detail elements shared by creator and contributor:
+    /// givenName, familyName, nameIdentifier*, affiliation* (DataCite kernel-4 order).
+    fn write_name_details(
+        &mut self,
+        given_name: Option<&str>,
+        family_name: Option<&str>,
+        name_identifiers: &[DataCiteNameIdentifier],
+        affiliations: &[String],
+    ) {
+        if let Some(given) = given_name {
+            self.write_element("givenName", given);
+        }
+        if let Some(family) = family_name {
+            self.write_element("familyName", family);
+        }
+        for ni in name_identifiers {
+            let mut attrs = vec![("nameIdentifierScheme", ni.scheme.as_str())];
+            if let Some(ref scheme_uri) = ni.scheme_uri {
+                attrs.push(("schemeURI", scheme_uri.as_str()));
+            }
+            self.write_element_with_attrs("nameIdentifier", &attrs, &ni.identifier);
+        }
+        for affiliation in affiliations {
+            self.write_element("affiliation", affiliation);
+        }
+    }
+
     /// Writes DataCite 4.6 metadata.
     pub fn write_datacite_metadata(&mut self, datacite: &DataCiteRecord) {
         self.start_element("metadata");
@@ -276,6 +320,12 @@ impl OaiXmlBuilder {
                 attrs.push(("nameType", name_type.as_str()));
             }
             self.write_element_with_attrs("creatorName", &attrs, &creator.name);
+            self.write_name_details(
+                creator.given_name.as_deref(),
+                creator.family_name.as_deref(),
+                &creator.name_identifiers,
+                &creator.affiliations,
+            );
             self.end_element("creator");
         }
         self.end_element("creators");
@@ -338,6 +388,12 @@ impl OaiXmlBuilder {
                     attrs.push(("nameType", name_type.as_str()));
                 }
                 self.write_element_with_attrs("contributorName", &attrs, &contributor.name);
+                self.write_name_details(
+                    contributor.given_name.as_deref(),
+                    contributor.family_name.as_deref(),
+                    &contributor.name_identifiers,
+                    &contributor.affiliations,
+                );
                 self.end_element("contributor");
             }
             self.end_element("contributors");

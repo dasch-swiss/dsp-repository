@@ -9,14 +9,16 @@ mod dublin_core;
 mod helpers;
 mod record_datacite;
 mod record_dublin_core;
+mod resolve;
 mod types;
 
 use datacite::project_to_datacite;
-use dpe_core::{record_datestamp, Project, Record, ARK_PATH_PREFIX};
+use dpe_core::cluster_cache::clusters_for_shortcode_in;
+use dpe_core::{record_datestamp, ClusterRaw, ContributorLookup, Project, Record, ARK_PATH_PREFIX};
 use dublin_core::project_to_dublin_core;
 use record_datacite::record_to_datacite;
 use record_dublin_core::record_to_dublin_core;
-pub use types::{DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
+pub use types::{DataCiteNameIdentifier, DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
 
 const OAI_IDENTIFIER_PREFIX: &str = "oai:meta.dasch.swiss:";
 
@@ -43,8 +45,24 @@ pub fn parse_oai_identifier(identifier: &str) -> Option<String> {
     ark_part.strip_prefix(ARK_PATH_PREFIX).map(|s| s.to_string())
 }
 
+/// Builds the set specs for a project shortcode: its `project:{shortcode}` set and
+/// one `cluster:{id}` set per cluster the project belongs to (resolved from the
+/// given cluster slice). The caller prepends the entity-type set spec.
+fn membership_set_specs(entity_type: &str, shortcode: &str, clusters: &[ClusterRaw]) -> Vec<String> {
+    let mut specs = vec![entity_type.to_string(), format!("project:{shortcode}")];
+    for cluster in clusters_for_shortcode_in(clusters, shortcode) {
+        specs.push(format!("cluster:{}", cluster.id));
+    }
+    specs
+}
+
 /// Creates an OAI record from a project for the given metadata prefix.
-pub fn to_oai_record(project: &Project, metadata_prefix: &str) -> OaiRecord {
+pub fn to_oai_record(
+    project: &Project,
+    metadata_prefix: &str,
+    clusters: &[ClusterRaw],
+    lookup: &dyn ContributorLookup,
+) -> OaiRecord {
     let identifier = if !dpe_core::is_placeholder(&project.pid) && !project.pid.is_empty() {
         make_oai_identifier_from_pid(&project.pid).unwrap_or_else(|| make_oai_identifier(&project.shortcode))
     } else {
@@ -57,17 +75,17 @@ pub fn to_oai_record(project: &Project, metadata_prefix: &str) -> OaiRecord {
         } else {
             "2015-01-01".to_string()
         },
-        set_specs: vec!["entityType:ResearchProject".to_string()],
+        set_specs: membership_set_specs("entityType:ResearchProject", &project.shortcode, clusters),
     };
 
     let dublin_core = if metadata_prefix == "oai_dc" {
-        Some(project_to_dublin_core(project))
+        Some(project_to_dublin_core(project, lookup))
     } else {
         None
     };
 
     let datacite = if metadata_prefix == "oai_datacite" {
-        Some(project_to_datacite(project))
+        Some(project_to_datacite(project, lookup))
     } else {
         None
     };
@@ -76,13 +94,13 @@ pub fn to_oai_record(project: &Project, metadata_prefix: &str) -> OaiRecord {
 }
 
 /// Creates an OAI record from a Record for the given metadata prefix.
-pub fn to_oai_record_from_record(record: &Record, metadata_prefix: &str) -> OaiRecord {
+pub fn to_oai_record_from_record(record: &Record, metadata_prefix: &str, clusters: &[ClusterRaw]) -> OaiRecord {
     let suffix_owned = record.pid.ark_suffix();
     let suffix = &suffix_owned;
     let header = OaiRecordHeader {
         identifier: make_oai_identifier(suffix),
         datestamp: record_datestamp(record),
-        set_specs: vec!["entityType:Record".to_string()],
+        set_specs: membership_set_specs("entityType:Record", &record.pid.shortcode, clusters),
     };
 
     let dublin_core = if metadata_prefix == "oai_dc" {

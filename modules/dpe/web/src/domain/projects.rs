@@ -615,11 +615,7 @@ pub fn get_project(shortcode: &str) -> Option<Project> {
     // Resolve clusters from the in-memory cache (reverse lookup). Compare
     // case-insensitively so cluster files referencing a different case still
     // resolve to the same project.
-    project.clusters = dpe_core::cluster_cache::all_clusters()
-        .iter()
-        .filter(|raw| raw.projects.iter().any(|p| p.eq_ignore_ascii_case(&canonical_shortcode)))
-        .map(|raw| raw.clone().into_ref())
-        .collect();
+    project.clusters = dpe_core::cluster_cache::clusters_for_shortcode(&canonical_shortcode);
 
     // Resolve collection IDs stored on the cached project.
     let data_path = PathBuf::from(get_data_dir());

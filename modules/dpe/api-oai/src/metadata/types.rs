@@ -44,6 +44,10 @@ pub struct DataCiteRecord {
 pub struct DataCiteCreator {
     pub name: String,
     pub name_type: Option<String>,
+    pub given_name: Option<String>,
+    pub family_name: Option<String>,
+    pub name_identifiers: Vec<DataCiteNameIdentifier>,
+    pub affiliations: Vec<String>,
 }
 
 #[derive(Debug, Default)]
@@ -51,6 +55,18 @@ pub struct DataCiteContributor {
     pub name: String,
     pub name_type: Option<String>,
     pub contributor_type: String,
+    pub given_name: Option<String>,
+    pub family_name: Option<String>,
+    pub name_identifiers: Vec<DataCiteNameIdentifier>,
+    pub affiliations: Vec<String>,
+}
+
+/// A nameIdentifier element (e.g. ORCID or GND) for a creator or contributor.
+#[derive(Debug, Default)]
+pub struct DataCiteNameIdentifier {
+    pub identifier: String,
+    pub scheme: String,
+    pub scheme_uri: Option<String>,
 }
 
 #[derive(Debug, Default)]

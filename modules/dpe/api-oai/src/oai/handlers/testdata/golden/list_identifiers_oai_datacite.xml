@@ -6,6 +6,7 @@
       <identifier>oai:meta.dasch.swiss:ark:/72163/1/0803</identifier>
       <datestamp>2008-06-01</datestamp>
       <setSpec>entityType:ResearchProject</setSpec>
+      <setSpec>project:0803</setSpec>
     </header>
   </ListIdentifiers>
 </OAI-PMH>

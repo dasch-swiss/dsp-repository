@@ -81,25 +81,29 @@
         {
             "contributor": "person-072",
             "contributorType": [
-                "Co-applicant"
+                "Co-applicant",
+                "Project Leader"
             ]
         },
         {
             "contributor": "person-073",
             "contributorType": [
-                "Co-applicant"
+                "Co-applicant",
+                "Project Leader"
             ]
         },
         {
             "contributor": "person-074",
             "contributorType": [
-                "Employee"
+                "Employee",
+                "Data Collector"
             ]
         },
         {
             "contributor": "person-075",
             "contributorType": [
-                "Employee"
+                "Employee",
+                "Data Collector"
             ]
         }
     ],

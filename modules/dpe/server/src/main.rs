@@ -340,6 +340,19 @@ fn validate(data_dir: PathBuf) -> ExitCode {
                 match fs::read_to_string(&path) {
                     Ok(json) => match serde_json::from_str::<dpe_core::Person>(&json) {
                         Ok(p) => {
+                            // Guard against project roles drifting into jobTitles.
+                            // A role belongs in a project's attributions
+                            // (contributorType), not in a person's jobTitles, or
+                            // it becomes invisible to the OAI-PMH creator logic.
+                            for title in &p.job_titles {
+                                if dpe_core::is_role_job_title(title) {
+                                    errors.push(format!(
+                                        "{filename}: jobTitle '{title}' on {} is a project role; \
+                                         move it to the project's attributions (contributorType)",
+                                        p.id
+                                    ));
+                                }
+                            }
                             known_person_ids.insert(p.id.clone());
                             person_count += 1;
                         }

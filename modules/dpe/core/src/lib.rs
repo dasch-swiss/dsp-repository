@@ -30,7 +30,7 @@ pub use contributors::{is_organization_id, ContributorLookup, ResolvedContributo
 pub use contributors::{load_organization, load_person, CachedContributorLookup};
 pub use models::{AuthorityFileReference, Page};
 pub use organization::Organization;
-pub use person::Person;
+pub use person::{is_role_job_title, Person, JOB_TITLE_ROLE_WORDS};
 pub use project::{
     AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, Project, ProjectRaw,
     ProjectStatus, Publication, TemporalCoverage, ACCESS_RIGHTS_VALUES,

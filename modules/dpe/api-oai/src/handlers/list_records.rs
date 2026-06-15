@@ -216,7 +216,13 @@ mod tests {
         params.set = Some("cluster:cluster-001".to_string());
         let clusters = vec![cluster_fixture("cluster-001", "EKWS", &["0803"])];
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
-        let xml = handle_list_records(&params, &repo, &InMemoryRecordRepository::empty(), &clusters, &incunabula_lookup());
+        let xml = handle_list_records(
+            &params,
+            &repo,
+            &InMemoryRecordRepository::empty(),
+            &clusters,
+            &incunabula_lookup(),
+        );
         assert!(
             xml.contains("<identifier>oai:meta.dasch.swiss:ark:/72163/1/0803</identifier>"),
             "project entry should be present even with no records, got: {}",
@@ -232,7 +238,13 @@ mod tests {
         params.set = Some("cluster:cluster-001".to_string());
         let clusters = vec![cluster_fixture("cluster-001", "EKWS", &["9999"])];
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
-        let xml = handle_list_records(&params, &repo, &InMemoryRecordRepository::empty(), &clusters, &incunabula_lookup());
+        let xml = handle_list_records(
+            &params,
+            &repo,
+            &InMemoryRecordRepository::empty(),
+            &clusters,
+            &incunabula_lookup(),
+        );
         assert!(xml.contains("<error code=\"noRecordsMatch\">"), "got: {}", xml);
     }
 

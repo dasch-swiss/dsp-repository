@@ -21,10 +21,10 @@ pub enum ResolvedContributor {
     },
 }
 
-/// Heuristic for distinguishing organization IDs (e.g. `organization-001`,
-/// `0803-organization-000`) from person IDs (e.g. `person-028`).
+/// Heuristic for distinguishing organization IDs (e.g. `organization-001`)
+/// from person IDs (e.g. `person-028`).
 pub fn is_organization_id(id: &str) -> bool {
-    id.starts_with("organization-") || id.contains("-organization-")
+    id.starts_with("organization-")
 }
 
 /// Lookup of persons and organizations by their internal ID.
@@ -60,4 +60,20 @@ pub fn load_person(id: &str) -> Option<Person> {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn load_organization(id: &str) -> Option<Organization> {
     super::organization_cache::all_organizations().get(id).cloned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_organization_id;
+
+    #[test]
+    fn organization_ids_are_recognised() {
+        assert!(is_organization_id("organization-000"));
+        assert!(is_organization_id("organization-142"));
+    }
+
+    #[test]
+    fn person_ids_are_not_organizations() {
+        assert!(!is_organization_id("person-028"));
+    }
 }

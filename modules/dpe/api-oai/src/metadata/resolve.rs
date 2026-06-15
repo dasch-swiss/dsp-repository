@@ -1,5 +1,5 @@
 //! Resolution of internal contributor IDs (e.g. `person-028`,
-//! `0803-organization-000`) to person and organization details for
+//! `organization-001`) to person and organization details for
 //! metadata output.
 
 use dpe_core::{is_organization_id, ContributorLookup, Person};
@@ -204,9 +204,9 @@ mod tests {
 
     #[test]
     fn resolves_organization_contributor() {
-        let lookup = InMemoryContributorLookup::empty()
-            .with_organization(organization("0803-organization-000", "Universität Basel"));
-        let agent = resolve_agent("0803-organization-000", &lookup);
+        let lookup =
+            InMemoryContributorLookup::empty().with_organization(organization("organization-000", "Universität Basel"));
+        let agent = resolve_agent("organization-000", &lookup);
         assert_eq!(agent.name, "Universität Basel");
         assert_eq!(agent.name_type, "Organizational");
         assert_eq!(agent.given_name, None);
@@ -226,8 +226,8 @@ mod tests {
     #[test]
     fn unresolvable_organization_id_falls_back_to_raw_id() {
         let lookup = InMemoryContributorLookup::empty();
-        let agent = resolve_agent("0803-organization-000", &lookup);
-        assert_eq!(agent.name, "0803-organization-000");
+        let agent = resolve_agent("organization-000", &lookup);
+        assert_eq!(agent.name, "organization-000");
         assert_eq!(agent.name_type, "Organizational");
     }
 

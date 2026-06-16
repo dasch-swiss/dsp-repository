@@ -112,12 +112,12 @@ mod tests {
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
         let xml = handle_list_identifiers(&params, &repo, &record_repo, &[], &incunabula_lookup());
         assert!(
-            xml.contains("oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
+            xml.contains("oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
             "record identifier should be present, got: {}",
             xml
         );
         assert!(
-            !xml.contains("<identifier>oai:meta.dasch.swiss:ark:/72163/1/0803</identifier>"),
+            !xml.contains("<identifier>oai:dasch.swiss:ark:/72163/1/0803</identifier>"),
             "project entry should be absent (records only), got: {}",
             xml
         );
@@ -133,12 +133,12 @@ mod tests {
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
         let xml = handle_list_identifiers(&params, &repo, &record_repo, &clusters, &incunabula_lookup());
         assert!(
-            xml.contains("<identifier>oai:meta.dasch.swiss:ark:/72163/1/0803</identifier>"),
+            xml.contains("<identifier>oai:dasch.swiss:ark:/72163/1/0803</identifier>"),
             "project entry should be present, got: {}",
             xml
         );
         assert!(
-            xml.contains("oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
+            xml.contains("oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
             "member record should be present, got: {}",
             xml
         );
@@ -162,12 +162,12 @@ mod tests {
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
         let xml = handle_list_identifiers(&params, &repo, &record_repo, &[], &incunabula_lookup());
         assert!(
-            xml.contains("oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
+            xml.contains("oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
             "record identifier should be present, got: {}",
             xml
         );
         assert!(
-            !xml.contains("oai:meta.dasch.swiss:ark:/72163/1/0803\""),
+            !xml.contains("oai:dasch.swiss:ark:/72163/1/0803\""),
             "project identifier should be absent, got: {}",
             xml
         );

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
-  <request verb="Identify">https://meta.dasch.swiss/oai</request>
+  <request verb="Identify">https://repository.dasch.swiss/dpe/oai</request>
   <Identify>
     <repositoryName>DaSCH Service Platform Repository</repositoryName>
-    <baseURL>https://meta.dasch.swiss/oai</baseURL>
+    <baseURL>https://repository.dasch.swiss/dpe/oai</baseURL>
     <protocolVersion>2.0</protocolVersion>
     <adminEmail>info@dasch.swiss</adminEmail>
     <earliestDatestamp>2015-01-01</earliestDatestamp>

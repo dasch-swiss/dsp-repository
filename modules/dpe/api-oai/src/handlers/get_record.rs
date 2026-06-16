@@ -154,7 +154,7 @@ mod tests {
 
     #[test]
     fn missing_metadata_prefix_returns_bad_argument() {
-        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), None);
+        let params = make_params(Some("oai:dasch.swiss:ark:/72163/1/0803"), None);
         let xml = handle_get_record(
             &params,
             &repo_with_incunabula(),
@@ -168,7 +168,7 @@ mod tests {
 
     #[test]
     fn unsupported_metadata_prefix_returns_cannot_disseminate() {
-        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("marc21"));
+        let params = make_params(Some("oai:dasch.swiss:ark:/72163/1/0803"), Some("marc21"));
         let xml = handle_get_record(
             &params,
             &repo_with_incunabula(),
@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn unknown_id_not_in_either_repo_returns_id_does_not_exist() {
-        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/9999"), Some("oai_dc"));
+        let params = make_params(Some("oai:dasch.swiss:ark:/72163/1/9999"), Some("oai_dc"));
         let xml = handle_get_record(
             &params,
             &repo_with_incunabula(),
@@ -194,7 +194,7 @@ mod tests {
 
     #[test]
     fn unexpected_argument_returns_bad_argument() {
-        let mut params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("oai_dc"));
+        let mut params = make_params(Some("oai:dasch.swiss:ark:/72163/1/0803"), Some("oai_dc"));
         params.set = Some("entityType:ResearchProject".to_string());
         let xml = handle_get_record(
             &params,
@@ -210,7 +210,7 @@ mod tests {
 
     #[test]
     fn golden_oai_dc_response() {
-        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("oai_dc"));
+        let params = make_params(Some("oai:dasch.swiss:ark:/72163/1/0803"), Some("oai_dc"));
         let xml = handle_get_record(
             &params,
             &repo_with_incunabula(),
@@ -224,7 +224,7 @@ mod tests {
 
     #[test]
     fn golden_oai_datacite_response() {
-        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("oai_datacite"));
+        let params = make_params(Some("oai:dasch.swiss:ark:/72163/1/0803"), Some("oai_datacite"));
         let xml = handle_get_record(
             &params,
             &repo_with_incunabula(),
@@ -241,7 +241,7 @@ mod tests {
     #[test]
     fn record_golden_oai_dc_response() {
         let params = make_params(
-            Some("oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
+            Some("oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
             Some("oai_dc"),
         );
         let xml = handle_get_record(
@@ -258,7 +258,7 @@ mod tests {
     #[test]
     fn record_golden_oai_datacite_response() {
         let params = make_params(
-            Some("oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
+            Some("oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
             Some("oai_datacite"),
         );
         let xml = handle_get_record(
@@ -276,7 +276,7 @@ mod tests {
 
     #[test]
     fn get_record_oai_dc_response_is_valid_oai_pmh() {
-        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("oai_dc"));
+        let params = make_params(Some("oai:dasch.swiss:ark:/72163/1/0803"), Some("oai_dc"));
         let xml = handle_get_record(
             &params,
             &repo_with_incunabula(),
@@ -289,7 +289,7 @@ mod tests {
 
     #[test]
     fn get_record_oai_datacite_response_is_valid_oai_pmh() {
-        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/0803"), Some("oai_datacite"));
+        let params = make_params(Some("oai:dasch.swiss:ark:/72163/1/0803"), Some("oai_datacite"));
         let xml = handle_get_record(
             &params,
             &repo_with_incunabula(),
@@ -303,7 +303,7 @@ mod tests {
     #[test]
     fn record_get_record_oai_dc_response_is_valid_oai_pmh() {
         let params = make_params(
-            Some("oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
+            Some("oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
             Some("oai_dc"),
         );
         let xml = handle_get_record(
@@ -319,7 +319,7 @@ mod tests {
     #[test]
     fn record_get_record_oai_datacite_response_is_valid_oai_pmh() {
         let params = make_params(
-            Some("oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
+            Some("oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
             Some("oai_datacite"),
         );
         let xml = handle_get_record(

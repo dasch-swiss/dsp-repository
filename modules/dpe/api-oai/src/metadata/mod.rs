@@ -20,7 +20,10 @@ use record_datacite::record_to_datacite;
 use record_dublin_core::record_to_dublin_core;
 pub use types::{DataCiteNameIdentifier, DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
 
-const OAI_IDENTIFIER_PREFIX: &str = "oai:meta.dasch.swiss:";
+// Namespace identifier for OAI record identifiers (OAI identifier format:
+// `oai:<namespace-identifier>:<local-identifier>`). This is a persistent, host-independent
+// identifier authority and is deliberately distinct from the access `baseURL`.
+const OAI_IDENTIFIER_PREFIX: &str = "oai:dasch.swiss:";
 
 /// Creates an OAI identifier from a project shortcode.
 pub fn make_oai_identifier(shortcode: &str) -> String {
@@ -168,12 +171,12 @@ mod tests {
     #[test]
     fn test_make_oai_identifier() {
         let id = make_oai_identifier("0801");
-        assert_eq!(id, "oai:meta.dasch.swiss:ark:/72163/1/0801");
+        assert_eq!(id, "oai:dasch.swiss:ark:/72163/1/0801");
     }
 
     #[test]
     fn test_parse_oai_identifier() {
-        let shortcode = parse_oai_identifier("oai:meta.dasch.swiss:ark:/72163/1/0801");
+        let shortcode = parse_oai_identifier("oai:dasch.swiss:ark:/72163/1/0801");
         assert_eq!(shortcode, Some("0801".to_string()));
     }
 

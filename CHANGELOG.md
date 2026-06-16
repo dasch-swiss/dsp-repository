@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.1](https://github.com/dasch-swiss/dsp-repository/compare/v0.7.0...v0.7.1) (2026-06-16)
+
+
+### Bug Fixes
+
+* **dpe-api-oai:** Make OAI-PMH baseURL configurable; correct identifier namespace ([#256](https://github.com/dasch-swiss/dsp-repository/issues/256)) ([319a3a6](https://github.com/dasch-swiss/dsp-repository/commit/319a3a6382066dc270d809a5f4bf73d24e22f83b))
+* **dpe-core:** correct inverted temporal/spatial coverage in project data ([#252](https://github.com/dasch-swiss/dsp-repository/issues/252)) ([b5b6a86](https://github.com/dasch-swiss/dsp-repository/commit/b5b6a86faabb03bf6bb1675b59a4babb2f9baf59))
+* let Kodus emit branch-protection so assess.py can override it ([b93a07f](https://github.com/dasch-swiss/dsp-repository/commit/b93a07f70cc58d6094f87943f1a7126f95708c03))
+* Move project roles out of person job titles; add validate guard (DEV-6626, DEV-6630) ([#253](https://github.com/dasch-swiss/dsp-repository/issues/253)) ([3abcdc4](https://github.com/dasch-swiss/dsp-repository/commit/3abcdc436a0299b7d395953e898f25459ece3bce))
+
 ## [0.7.0](https://github.com/dasch-swiss/dsp-repository/compare/v0.6.0...v0.7.0) (2026-06-15)
 
 

@@ -69,7 +69,7 @@ mod tests {
 
     #[test]
     fn unknown_identifier_returns_id_does_not_exist() {
-        let params = make_params(Some("oai:meta.dasch.swiss:ark:/72163/1/9999"));
+        let params = make_params(Some("oai:dasch.swiss:ark:/72163/1/9999"));
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_list_metadata_formats(&params, &repo);
         assert!(xml.contains("<error code=\"idDoesNotExist\">"), "got: {}", xml);

@@ -7,8 +7,6 @@ use quick_xml::Writer;
 use super::error::OaiError;
 use super::metadata::{DataCiteNameIdentifier, DataCiteRecord, DublinCoreRecord, OaiRecord};
 
-pub const BASE_URL: &str = "https://meta.dasch.swiss/oai";
-
 /// Earliest datestamp (fallback)
 pub const EARLIEST_DATESTAMP: &str = "2015-01-01";
 
@@ -99,14 +97,14 @@ impl OaiXmlBuilder {
             request.push_attribute((*key, *value));
         }
         self.write(Event::Start(request));
-        self.write(Event::Text(BytesText::new(BASE_URL)));
+        self.write(Event::Text(BytesText::new(crate::base_url())));
         self.end_element("request");
     }
 
     /// Writes the request element for badVerb error responses (no verb attribute).
     pub fn write_error_request(&mut self) {
         self.start_element("request");
-        self.write(Event::Text(BytesText::new(BASE_URL)));
+        self.write(Event::Text(BytesText::new(crate::base_url())));
         self.end_element("request");
     }
 
@@ -115,7 +113,7 @@ impl OaiXmlBuilder {
         let mut request = BytesStart::new("request");
         request.push_attribute(("verb", verb));
         self.write(Event::Start(request));
-        self.write(Event::Text(BytesText::new(BASE_URL)));
+        self.write(Event::Text(BytesText::new(crate::base_url())));
         self.end_element("request");
     }
 
@@ -129,7 +127,7 @@ impl OaiXmlBuilder {
     pub fn write_identify(&mut self, earliest_datestamp: &str) {
         self.start_element("Identify");
         self.write_element("repositoryName", "DaSCH Service Platform Repository");
-        self.write_element("baseURL", BASE_URL);
+        self.write_element("baseURL", crate::base_url());
         self.write_element("protocolVersion", "2.0");
         self.write_element("adminEmail", "info@dasch.swiss");
         self.write_element("earliestDatestamp", earliest_datestamp);

@@ -90,6 +90,7 @@
             _ensure_tool mdbook          mdbook            0.4.52
             _ensure_tool leptosfmt       leptosfmt         0.1.33
             _ensure_tool mdbook-alerts   mdbook-alerts     0.8.0
+            _ensure_tool mdbook-mermaid  mdbook-mermaid    0.16.2   # 0.17+ requires mdbook 0.5
 
             unset -f _ensure_tool
 

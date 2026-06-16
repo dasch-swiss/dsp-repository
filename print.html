@@ -1589,6 +1589,7 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>modules/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
 <tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret)</td></tr>
 <tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility.</td></tr>
+<tr><td><code>DPE_OAI_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td><td>Public base URL emitted as the OAI-PMH <code>baseURL</code> and echoed in <code>&lt;request&gt;</code> elements. Set per environment to match the public endpoint (e.g. <code>https://api.dev.dasch.swiss/dpe/oai</code> on DEV, <code>http://localhost:4000/dpe/oai</code> locally). See <a href="dpe/./oai-pmh.html">OAI-PMH</a>.</td></tr>
 <tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g., <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
 <tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g., <code>dpe</code>)</td></tr>
 <tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g., <code>service.namespace=dpe,service.version=0.2.1,deployment.environment=prod</code>)</td></tr>
@@ -1729,9 +1730,10 @@ RUST_LOG=debug
 <div class="table-wrapper"><table><thead><tr><th>Environment</th><th>Base URL</th></tr></thead><tbody>
 <tr><td>Local development (<code>just watch-dpe</code>)</td><td><code>http://localhost:4000/dpe/oai</code></td></tr>
 <tr><td>DEV</td><td><code>https://api.dev.dasch.swiss/dpe/oai</code></td></tr>
-<tr><td>Production</td><td>Not yet deployed; see <a href="dpe/oai-pmh.html#known-limitations">Known Limitations</a> regarding the advertised <code>baseURL</code></td></tr>
+<tr><td>Production</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td></tr>
 </tbody></table>
 </div>
+<p>The <code>baseURL</code> advertised by <code>Identify</code> (and echoed in every <code>&lt;request&gt;</code> element) is configured per environment via the <code>DPE_OAI_BASE_URL</code> environment variable, so it matches the URL harvesters actually use (see <a href="dpe/./operations.html">operations</a>). If unset it defaults to the production endpoint above.</p>
 <h2 id="verbs"><a class="header" href="#verbs">Verbs</a></h2>
 <p>All six OAI-PMH 2.0 verbs are implemented:</p>
 <div class="table-wrapper"><table><thead><tr><th>Verb</th><th>Required arguments</th><th>Optional arguments</th></tr></thead><tbody>
@@ -1749,10 +1751,10 @@ RUST_LOG=debug
 </code></pre>
 <p>Abbreviated example response (values vary by environment):</p>
 <pre><code class="language-xml">&lt;OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...&gt;
-  &lt;request verb="Identify"&gt;https://meta.dasch.swiss/oai&lt;/request&gt;
+  &lt;request verb="Identify"&gt;https://repository.dasch.swiss/dpe/oai&lt;/request&gt;
   &lt;Identify&gt;
     &lt;repositoryName&gt;DaSCH Service Platform Repository&lt;/repositoryName&gt;
-    &lt;baseURL&gt;https://meta.dasch.swiss/oai&lt;/baseURL&gt;
+    &lt;baseURL&gt;https://repository.dasch.swiss/dpe/oai&lt;/baseURL&gt;
     &lt;protocolVersion&gt;2.0&lt;/protocolVersion&gt;
     &lt;adminEmail&gt;info@dasch.swiss&lt;/adminEmail&gt;
     &lt;earliestDatestamp&gt;2008-06-01&lt;/earliestDatestamp&gt;
@@ -1770,7 +1772,7 @@ RUST_LOG=debug
 </code></pre>
 <p>Abbreviated example response — the full response also contains one <code>project:{shortcode}</code> set per project and one <code>cluster:{id}</code> set per cluster:</p>
 <pre><code class="language-xml">&lt;OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...&gt;
-  &lt;request verb="ListSets"&gt;https://meta.dasch.swiss/oai&lt;/request&gt;
+  &lt;request verb="ListSets"&gt;https://repository.dasch.swiss/dpe/oai&lt;/request&gt;
   &lt;ListSets&gt;
     &lt;set&gt;
       &lt;setSpec&gt;entityType:ProjectCluster&lt;/setSpec&gt;
@@ -1803,8 +1805,8 @@ RUST_LOG=debug
 <h2 id="identifiers"><a class="header" href="#identifiers">Identifiers</a></h2>
 <p>OAI identifiers are derived from DaSCH <a href="https://arks.org/">ARK</a> identifiers:</p>
 <div class="table-wrapper"><table><thead><tr><th>Item type</th><th>Pattern</th><th>Example</th></tr></thead><tbody>
-<tr><td>Research project</td><td><code>oai:meta.dasch.swiss:ark:/72163/1/{shortcode}</code></td><td><code>oai:meta.dasch.swiss:ark:/72163/1/0803</code></td></tr>
-<tr><td>Record</td><td><code>oai:meta.dasch.swiss:ark:/72163/1/{shortcode}/{record_id}</code></td><td><code>oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</code></td></tr>
+<tr><td>Research project</td><td><code>oai:dasch.swiss:ark:/72163/1/{shortcode}</code></td><td><code>oai:dasch.swiss:ark:/72163/1/0803</code></td></tr>
+<tr><td>Record</td><td><code>oai:dasch.swiss:ark:/72163/1/{shortcode}/{record_id}</code></td><td><code>oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</code></td></tr>
 </tbody></table>
 </div>
 <p>These differ from the resolvable ARK URLs (<code>https://ark.dasch.swiss/ark:/72163/1/...</code>), which appear in the metadata payloads as <code>dc:identifier</code> / DataCite <code>identifier</code>.</p>
@@ -1842,18 +1844,18 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oa
 <p>List responses are returned complete and unpaged — there is no <code>resumptionToken</code> element, and its absence means the response is complete, not truncated.</p>
 <h3 id="fetching-a-single-item"><a class="header" href="#fetching-a-single-item">Fetching a single item</a></h3>
 <pre><code class="language-bash"># A research project
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_dc&amp;identifier=oai:meta.dasch.swiss:ark:/72163/1/0803"
+curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_dc&amp;identifier=oai:dasch.swiss:ark:/72163/1/0803"
 
 # A record within a project
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_dc&amp;identifier=oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"
+curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_dc&amp;identifier=oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"
 </code></pre>
 <p>Abbreviated example response:</p>
 <pre><code class="language-xml">&lt;OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...&gt;
-  &lt;request verb="GetRecord" identifier="oai:meta.dasch.swiss:ark:/72163/1/0803" metadataPrefix="oai_dc"&gt;https://meta.dasch.swiss/oai&lt;/request&gt;
+  &lt;request verb="GetRecord" identifier="oai:dasch.swiss:ark:/72163/1/0803" metadataPrefix="oai_dc"&gt;https://repository.dasch.swiss/dpe/oai&lt;/request&gt;
   &lt;GetRecord&gt;
     &lt;record&gt;
       &lt;header&gt;
-        &lt;identifier&gt;oai:meta.dasch.swiss:ark:/72163/1/0803&lt;/identifier&gt;
+        &lt;identifier&gt;oai:dasch.swiss:ark:/72163/1/0803&lt;/identifier&gt;
         &lt;datestamp&gt;2008-06-01&lt;/datestamp&gt;
         &lt;setSpec&gt;entityType:ResearchProject&lt;/setSpec&gt;
         &lt;setSpec&gt;project:0803&lt;/setSpec&gt;
@@ -1901,7 +1903,7 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 <h2 id="known-limitations"><a class="header" href="#known-limitations">Known Limitations</a></h2>
 <ul>
 <li><strong>No resumption tokens.</strong> List responses are complete and unpaged; any <code>resumptionToken</code> argument yields <code>badResumptionToken</code>.</li>
-<li><strong>Advertised <code>baseURL</code> differs from the actual endpoint.</strong> <code>Identify</code> reports <code>https://meta.dasch.swiss/oai</code>, while the endpoint is mounted at <code>/dpe/oai</code>. Automated OAI validators and harvest managers that compare the <code>baseURL</code> against the request URL will flag this.</li>
+<li><strong><code>baseURL</code> is a fixed configured value.</strong> It is set per environment via <code>DPE_OAI_BASE_URL</code> rather than derived from each incoming request. Deploying behind a hostname that does not match the configured value will make the advertised <code>baseURL</code> disagree with the request URL, which OAI validators flag — keep the env var in sync with the public endpoint.</li>
 <li><strong>No deleted-record tracking</strong> (<code>deletedRecord: no</code>). Items that disappear are not announced; see the re-harvesting recommendation above.</li>
 <li><strong>GET only.</strong> OAI-PMH 2.0 also requires POST; harvesters that default to POST will not get an OAI response.</li>
 <li><strong><code>ListMetadataFormats</code> with a record identifier</strong> returns <code>idDoesNotExist</code>, even for records that <code>GetRecord</code> resolves.</li>

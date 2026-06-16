@@ -1566,6 +1566,7 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <li>JSON schema validity for all data file types (projects, persons, organizations, records, clusters, collections)</li>
 <li>Cross-references between projects, persons, and organizations</li>
 <li>Orphaned files that are not referenced by any parent entity</li>
+<li>Project roles misplaced in a person's <code>jobTitles</code> (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's <code>attributions</code> (<code>contributorType</code>), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is <code>JOB_TITLE_ROLE_WORDS</code> in <code>dpe-core</code>.</li>
 </ul>
 <p><strong>Exit codes:</strong></p>
 <ul>

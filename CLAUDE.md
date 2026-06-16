@@ -47,6 +47,7 @@ All authoritative documentation lives in `docs/src/`. Key pages:
 | Topic | Location |
 |-------|----------|
 | Architecture | `docs/src/dpe/architecture.md` |
+| Metadata Model (v2) | `docs/src/dpe/metadata-model.md` |
 | Project Structure | `docs/src/dpe/project_structure.md` |
 | Repo Structure & Crate Naming | `docs/src/repo_structure.md` |
 | Testing Strategy | `docs/src/dpe/testing-strategy.md` |

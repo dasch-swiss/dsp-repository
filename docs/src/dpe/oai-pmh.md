@@ -12,7 +12,9 @@ Usage guide for the DPE [OAI-PMH 2.0](https://www.openarchives.org/OAI/openarchi
 |-------------|----------|
 | Local development (`just watch-dpe`) | `http://localhost:4000/dpe/oai` |
 | DEV | `https://api.dev.dasch.swiss/dpe/oai` |
-| Production | Not yet deployed; see [Known Limitations](#known-limitations) regarding the advertised `baseURL` |
+| Production | `https://repository.dasch.swiss/dpe/oai` |
+
+The `baseURL` advertised by `Identify` (and echoed in every `<request>` element) is configured per environment via the `DPE_OAI_BASE_URL` environment variable, so it matches the URL harvesters actually use (see [operations](./operations.md)). If unset it defaults to the production endpoint above.
 
 ## Verbs
 
@@ -39,10 +41,10 @@ Abbreviated example response (values vary by environment):
 
 ```xml
 <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...>
-  <request verb="Identify">https://meta.dasch.swiss/oai</request>
+  <request verb="Identify">https://repository.dasch.swiss/dpe/oai</request>
   <Identify>
     <repositoryName>DaSCH Service Platform Repository</repositoryName>
-    <baseURL>https://meta.dasch.swiss/oai</baseURL>
+    <baseURL>https://repository.dasch.swiss/dpe/oai</baseURL>
     <protocolVersion>2.0</protocolVersion>
     <adminEmail>info@dasch.swiss</adminEmail>
     <earliestDatestamp>2008-06-01</earliestDatestamp>
@@ -70,7 +72,7 @@ Abbreviated example response — the full response also contains one `project:{s
 
 ```xml
 <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...>
-  <request verb="ListSets">https://meta.dasch.swiss/oai</request>
+  <request verb="ListSets">https://repository.dasch.swiss/dpe/oai</request>
   <ListSets>
     <set>
       <setSpec>entityType:ProjectCluster</setSpec>
@@ -110,8 +112,8 @@ OAI identifiers are derived from DaSCH [ARK](https://arks.org/) identifiers:
 
 | Item type | Pattern | Example |
 |-----------|---------|---------|
-| Research project | `oai:meta.dasch.swiss:ark:/72163/1/{shortcode}` | `oai:meta.dasch.swiss:ark:/72163/1/0803` |
-| Record | `oai:meta.dasch.swiss:ark:/72163/1/{shortcode}/{record_id}` | `oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh` |
+| Research project | `oai:dasch.swiss:ark:/72163/1/{shortcode}` | `oai:dasch.swiss:ark:/72163/1/0803` |
+| Record | `oai:dasch.swiss:ark:/72163/1/{shortcode}/{record_id}` | `oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh` |
 
 These differ from the resolvable ARK URLs (`https://ark.dasch.swiss/ark:/72163/1/...`), which appear in the metadata payloads as `dc:identifier` / DataCite `identifier`.
 
@@ -171,21 +173,21 @@ List responses are returned complete and unpaged — there is no `resumptionToke
 
 ```bash
 # A research project
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:meta.dasch.swiss:ark:/72163/1/0803"
+curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:dasch.swiss:ark:/72163/1/0803"
 
 # A record within a project
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:meta.dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"
+curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"
 ```
 
 Abbreviated example response:
 
 ```xml
 <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...>
-  <request verb="GetRecord" identifier="oai:meta.dasch.swiss:ark:/72163/1/0803" metadataPrefix="oai_dc">https://meta.dasch.swiss/oai</request>
+  <request verb="GetRecord" identifier="oai:dasch.swiss:ark:/72163/1/0803" metadataPrefix="oai_dc">https://repository.dasch.swiss/dpe/oai</request>
   <GetRecord>
     <record>
       <header>
-        <identifier>oai:meta.dasch.swiss:ark:/72163/1/0803</identifier>
+        <identifier>oai:dasch.swiss:ark:/72163/1/0803</identifier>
         <datestamp>2008-06-01</datestamp>
         <setSpec>entityType:ResearchProject</setSpec>
         <setSpec>project:0803</setSpec>
@@ -240,7 +242,7 @@ Errors are returned as OAI `<error>` elements with HTTP status `200`:
 ## Known Limitations
 
 - **No resumption tokens.** List responses are complete and unpaged; any `resumptionToken` argument yields `badResumptionToken`.
-- **Advertised `baseURL` differs from the actual endpoint.** `Identify` reports `https://meta.dasch.swiss/oai`, while the endpoint is mounted at `/dpe/oai`. Automated OAI validators and harvest managers that compare the `baseURL` against the request URL will flag this.
+- **`baseURL` is a fixed configured value.** It is set per environment via `DPE_OAI_BASE_URL` rather than derived from each incoming request. Deploying behind a hostname that does not match the configured value will make the advertised `baseURL` disagree with the request URL, which OAI validators flag — keep the env var in sync with the public endpoint.
 - **No deleted-record tracking** (`deletedRecord: no`). Items that disappear are not announced; see the re-harvesting recommendation above.
 - **GET only.** OAI-PMH 2.0 also requires POST; harvesters that default to POST will not get an OAI response.
 - **`ListMetadataFormats` with a record identifier** returns `idDoesNotExist`, even for records that `GetRecord` resolves.

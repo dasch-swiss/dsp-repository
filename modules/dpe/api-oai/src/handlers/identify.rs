@@ -81,6 +81,25 @@ mod tests {
         );
     }
 
+    // ---- base URL ----
+
+    #[test]
+    fn identify_emits_configured_base_url_in_both_request_and_base_url() {
+        // The base URL resolves from the process-global / DPE_OAI_BASE_URL / default
+        // (here the default). It must appear in BOTH the <request> text and <baseURL>,
+        // and must no longer be the obsolete meta.dasch.swiss host.
+        let params = make_params();
+        let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
+        let xml = handle_identify(&params, &repo);
+        let base = crate::base_url();
+        assert!(xml.contains(&format!("<baseURL>{base}</baseURL>")), "got: {xml}");
+        assert!(
+            xml.contains(&format!("\">{base}</request>")),
+            "request text must be the base URL, got: {xml}"
+        );
+        assert!(!xml.contains("meta.dasch.swiss"), "obsolete host must be gone, got: {xml}");
+    }
+
     // ---- golden tests ----
 
     #[test]

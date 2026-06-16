@@ -31,6 +31,12 @@ pub struct DpeConfig {
     /// When true (DEV/STAGE), they are shown styled in red for QA visibility.
     /// Set via `DPE_SHOW_PLACEHOLDER_VALUES`.
     pub show_placeholder_values: bool,
+
+    /// Public base URL at which the OAI-PMH endpoint is reachable. Emitted as the
+    /// OAI-PMH `baseURL` and echoed in every `<request>` element, so it must match the
+    /// URL harvesters actually use (e.g. `https://repository.dasch.swiss/dpe/oai` in
+    /// production, `https://api.dev.dasch.swiss/dpe/oai` on DEV). Set via `DPE_OAI_BASE_URL`.
+    pub oai_base_url: String,
 }
 
 impl Default for DpeConfig {
@@ -39,6 +45,7 @@ impl Default for DpeConfig {
             data_dir: PathBuf::from("modules/dpe/server/data"),
             fathom_site_id: None,
             show_placeholder_values: false,
+            oai_base_url: "https://repository.dasch.swiss/dpe/oai".to_string(),
         }
     }
 }
@@ -67,6 +74,7 @@ mod tests {
         assert_eq!(config.data_dir, PathBuf::from("modules/dpe/server/data"));
         assert!(config.fathom_site_id.is_none());
         assert!(!config.show_placeholder_values);
+        assert_eq!(config.oai_base_url, "https://repository.dasch.swiss/dpe/oai");
     }
 
     #[test]

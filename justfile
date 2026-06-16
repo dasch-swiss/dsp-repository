@@ -102,12 +102,17 @@ watch:
 docs-install-requirements:
     cargo install mdbook
 
+# Generate mdbook-mermaid runtime assets (gitignored). Idempotent; offline.
 [group('docs')]
-docs-build:
+docs-mermaid-assets:
+    mdbook-mermaid install docs
+
+[group('docs')]
+docs-build: docs-mermaid-assets
     mdbook build docs
 
 [group('docs')]
-docs-serve:
+docs-serve: docs-mermaid-assets
     mdbook serve docs
 
 [group('docs')]

@@ -28,12 +28,12 @@ pub fn access_rights_to_string(ar: &AccessRightsType) -> &'static str {
     }
 }
 
-/// Checks whether an attribution represents a creator (principal investigator
-/// or project leader) using case-insensitive matching.
+/// Checks whether an attribution represents a creator (principal investigator,
+/// project leader, author, or creator) using case-insensitive matching.
 pub fn is_creator(contributor_types: &[String]) -> bool {
     contributor_types.iter().any(|t| {
         let lower = t.to_lowercase();
-        lower == "project leader" || lower == "principal investigator (pi)" || lower == "author"
+        lower == "project leader" || lower == "principal investigator (pi)" || lower == "author" || lower == "creator"
     })
 }
 

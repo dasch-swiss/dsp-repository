@@ -198,8 +198,11 @@ mod tests {
         assert!(is_creator(&["principal investigator (pi)".to_string()]));
         assert!(is_creator(&["Author".to_string()]));
         assert!(is_creator(&["author".to_string()]));
+        assert!(is_creator(&["Creator".to_string()]));
+        assert!(is_creator(&["creator".to_string()]));
         assert!(!is_creator(&["Researcher".to_string()]));
         assert!(!is_creator(&["Data Collector".to_string()]));
+        assert!(!is_creator(&["Contributor".to_string()]));
     }
 
     #[test]

@@ -31,6 +31,7 @@ dpe validate ./data
 - JSON schema validity for all data file types (projects, persons, organizations, records, clusters, collections)
 - Cross-references between projects, persons, and organizations
 - Orphaned files that are not referenced by any parent entity
+- Project roles misplaced in a person's `jobTitles` (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's `attributions` (`contributorType`), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is `JOB_TITLE_ROLE_WORDS` in `dpe-core`.
 
 **Exit codes:**
 - `0` — all data files are valid

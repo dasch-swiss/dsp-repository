@@ -1,0 +1,1001 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Metadata Model (v2) - DSP-Repository Developer Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="metadata-model-v2"><a class="header" href="#metadata-model-v2">Metadata Model (v2)</a></h1>
+<p>This is the metadata model that the DPE serves. It describes DaSCH research
+projects and their context as a hierarchy of entities. The model originated in
+the now-retired <code>dsp-meta</code> repository, where it was designed as the successor to
+the earlier v1 model. The metadata has since been migrated to this repository
+and converted to v2; the model is implemented as Rust types in the <code>dpe-core</code>
+crate (<code>modules/dpe/core/src/</code>) and the data lives under
+<code>modules/dpe/server/data/</code>.</p>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p><strong>Conceptual model vs. implementation.</strong>
+This page documents the <em>conceptual</em> v2 model — the full design as it was
+worked out. The implementation in <code>dpe-core</code> is a pragmatic subset: some
+entities and fields are not (yet) implemented, and a few differ in shape from
+the design. Each section carries an <strong>As implemented</strong> callout describing the
+current state. Treat the conceptual tables as the design intent and the
+callouts as the source of truth for what the code does today.</p>
+</div>
+<p>The enhancements over v1 are designed to better accommodate the inherent
+complexity of humanities projects, while still supporting simpler project
+structures. The two main additions are:</p>
+<ul>
+<li>a hierarchical level <em>above</em> the research project — the <strong>project cluster</strong> —
+which represents overarching initiatives that span multiple projects over
+long periods;</li>
+<li><strong>collections</strong>, which allow more precise referencing and grouping of parts of
+the data, including cross-project and nested groupings. Collections replace
+the v1 <em>dataset</em> concept.</li>
+</ul>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p>For each property, two cardinalities may be given:</p>
+<ul>
+<li>the <strong>archival cardinality</strong>, which applies once the entity is
+finished/finalized for archival;</li>
+<li>the <strong>in-progress (WIP) cardinality</strong>, which applies while the entity is
+still in progress.</li>
+</ul>
+<p>If only one cardinality is given, it applies to both stages.</p>
+</div>
+<h2 id="licensing"><a class="header" href="#licensing">Licensing</a></h2>
+<p>All metadata is considered public domain. By signing the deposit agreement,
+projects consent to that. This is unlike the <em>domain</em> metadata which is part of
+the project's data and can be licensed as the project wishes.</p>
+<p>Whenever metadata is served to a client, it is served with legal information.
+Legal information on metadata, as everywhere else, consists of the license, the
+copyright holder and the authorship. For metadata the license is always "public
+domain", the copyright holder is always "DaSCH" and the authorship is always the
+project and DaSCH.</p>
+<p>Metadata is always publicly available, even if the corresponding project,
+collection or record is not. This ensures the metadata stays findable and
+reusable even if the data itself is not. The only exception is the status
+"embargoed", during which the metadata is <em>only</em> available on the project level.</p>
+<h2 id="model-overview"><a class="header" href="#model-overview">Model Overview</a></h2>
+<p>The metadata model is a hierarchical structure of metadata elements.</p>
+<pre class="mermaid">flowchart TD
+    projectCluster[Project Cluster]
+    project[Research Project]
+    record[Record]
+    collection[Collection]
+
+    projectCluster --&gt;|0-n| project
+    projectCluster --&gt;|0-n| collection
+
+    project --&gt;|0-n| collection
+    project --&gt;|1-n| record
+    collection --&gt; |0-n| record
+    collection --&gt; |0-n| collection
+</pre>
+<ul>
+<li>A <strong>Project Cluster</strong> collects research projects (or nested project clusters).
+It is typically institutional in nature, not directly tied to a specific
+funding grant, and may be long-lived. Examples are EKWS/CAS, BEOL or LHTT.</li>
+<li>A <strong>Research Project</strong> is the main entity of the model. It corresponds to a
+<code>project</code> in the DSP. It is typically tied to a specific funding grant and
+hence has a limited lifetime of ~3–5 years; multiple funding rounds and a
+longer lifetime are possible. A research project is part of 0–n project
+clusters and contains both collections and records. All records in the project
+are listed in the project's <code>records</code> array, regardless of collection
+membership.</li>
+<li>A <strong>Collection</strong> is a flexible grouping of records that can span multiple
+projects or be nested within other collections. Collections enable
+cross-project organization and support subsetting and specialized access
+patterns. They may contain both individual records and nested collections.</li>
+<li>A <strong>Record</strong> is a single entry within a project — the smallest unit that can
+meaningfully have an identifier. It maps to a <code>knora-base:Resource</code> (DSP-API)
+or an <code>Asset</code> (SIPI/Ingest) in the DSP. For DSP resources, the metadata of the
+record is the existence of the resource itself plus information such as label,
+access rights and provenance; the core data are the values on that resource.
+For assets, the metadata is the existence of the asset and its access rights;
+the core data is the binary content. A record is part of exactly 1 research
+project and may be part of 0–n collections.</li>
+</ul>
+<p>Additionally, <strong>Person</strong> and <strong>Organization</strong> are entities independent of the
+project hierarchy, related to various entities within it (e.g. as contacts,
+contributors or funders).</p>
+<h2 id="entity-types"><a class="header" href="#entity-types">Entity Types</a></h2>
+<h3 id="project-cluster"><a class="header" href="#project-cluster">Project Cluster</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th></tr></thead><tbody>
+<tr><td><code>id</code></td><td>internal_id</td><td>1</td></tr>
+<tr><td><code>pid</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>name</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>projects</code></td><td>internal_id[]</td><td>0-n</td></tr>
+<tr><td><code>projectClusters</code></td><td>internal_id[]</td><td>0-n</td></tr>
+<tr><td><code>collections</code></td><td>internal_id[]</td><td>0-n</td></tr>
+<tr><td><code>description</code></td><td>lang_string</td><td>0-1</td></tr>
+<tr><td><code>url</code></td><td>url</td><td>0-1</td></tr>
+<tr><td><code>howToCite</code></td><td>string</td><td>0-1</td></tr>
+<tr><td><code>alternativeNames</code></td><td>lang_string[]</td><td>0-n</td></tr>
+<tr><td><code>contactPoint</code></td><td>internal_id[]</td><td>0-n</td></tr>
+<tr><td><code>documentationMaterial</code></td><td>url[]</td><td>0-n</td></tr>
+</tbody></table>
+</div>
+<ul>
+<li><code>id</code>: A unique internal identifier; not exposed to the user and not persistent.</li>
+<li><code>pid</code>: A unique persistent identifier (currently an ARK URL).</li>
+<li><code>name</code>: The name of the project cluster.</li>
+<li><code>projects</code>: Identifiers of the projects in the cluster.</li>
+<li><code>projectClusters</code>: Identifiers of nested project clusters.</li>
+<li><code>description</code>: The description of the cluster.</li>
+<li><code>url</code>: The URL to the web presence of the cluster.</li>
+<li><code>howToCite</code>: How to cite the cluster. If not provided, the standard form
+<code>&lt;name&gt; (&lt;year&gt;). [Project Cluster]. DaSCH. &lt;ARK&gt;</code> is used.</li>
+<li><code>alternativeNames</code>: Alternative names of the cluster.</li>
+<li><code>contactPoint</code>: Persons or organizations responsible for the cluster.</li>
+<li><code>documentationMaterial</code>: URLs pointing to documentation material.</li>
+</ul>
+<p>Most fields are optional, to keep the entity flexible. There is no difference in
+cardinality between the archival and in-progress stages.</p>
+<div class="mdbook-alerts mdbook-alerts-warning">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  warning
+</p>
+<p><strong>As implemented</strong> (<code>cluster.rs</code>): a cluster only has <code>id</code>, <code>name</code>,
+<code>description</code> (a <code>lang_string</code>) and <code>projects</code>; <code>pid</code> is parsed but optional.
+The fields <code>projectClusters</code> (nested clusters), <code>collections</code>, <code>url</code>,
+<code>howToCite</code>, <code>alternativeNames</code>, <code>contactPoint</code> and <code>documentationMaterial</code>
+are <strong>not implemented</strong>. Within a project, a cluster is exposed as a
+lightweight reference (<code>id</code>, <code>name</code>, flattened <code>description</code>). There are
+currently 5 cluster files.</p>
+</div>
+<h3 id="project"><a class="header" href="#project">Project</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th><th>WIP Card.</th></tr></thead><tbody>
+<tr><td><code>id</code></td><td>internal_id</td><td>1</td><td>1</td></tr>
+<tr><td><code>pid</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>shortcode</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>officialName</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>status</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>name</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>shortDescription</code></td><td>string</td><td>1</td><td>0-1</td></tr>
+<tr><td><code>description</code></td><td>lang_string</td><td>1</td><td>1</td></tr>
+<tr><td><code>startDate</code></td><td>date</td><td>1</td><td>0-1</td></tr>
+<tr><td><code>endDate</code></td><td>date</td><td>1</td><td>0-1</td></tr>
+<tr><td><code>dataPublicationYear</code></td><td>date</td><td>1</td><td>0-1</td></tr>
+<tr><td><code>url</code></td><td>url</td><td>1-2</td><td>0-2</td></tr>
+<tr><td><code>howToCite</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>accessRights</code></td><td>accessRights</td><td>1</td><td>1</td></tr>
+<tr><td><code>legalInfo</code></td><td>legalInfo[]</td><td>1-n</td><td>0-n</td></tr>
+<tr><td><code>dataManagementPlan</code></td><td>string / url</td><td>1</td><td>1</td></tr>
+<tr><td><code>typeOfData</code></td><td>string[]</td><td>1-n</td><td>0-n</td></tr>
+<tr><td><code>dataLanguage</code></td><td>lang_string[]</td><td>1-n</td><td>0-n</td></tr>
+<tr><td><code>collections</code></td><td>internal_id[]</td><td>0-n</td><td>0-n</td></tr>
+<tr><td><code>records</code></td><td>internal_id[]</td><td>0-n</td><td>0-n</td></tr>
+<tr><td><code>keywords</code></td><td>lang_string[]</td><td>1-n</td><td>0-n</td></tr>
+<tr><td><code>disciplines</code></td><td>lang_string / authorityFileReference[]</td><td>1-n</td><td>0-n</td></tr>
+<tr><td><code>temporalCoverage</code></td><td>lang_string / authorityFileReference[]</td><td>1-n</td><td>0-n</td></tr>
+<tr><td><code>spatialCoverage</code></td><td>authorityFileReference[]</td><td>1-n</td><td>0-n</td></tr>
+<tr><td><code>attributions</code></td><td>attribution[]</td><td>1-n</td><td>0-n</td></tr>
+<tr><td><code>abstract</code></td><td>lang_string</td><td>0-1</td><td>0-1</td></tr>
+<tr><td><code>contactPoint</code></td><td>internal_id[]</td><td>0-n</td><td>0-n</td></tr>
+<tr><td><code>publications</code></td><td>publication[]</td><td>0-n</td><td>0-n</td></tr>
+<tr><td><code>funding</code></td><td>string / grant[]</td><td>1-n</td><td>0-n</td></tr>
+<tr><td><code>alternativeNames</code></td><td>lang_string[]</td><td>0-n</td><td>0-n</td></tr>
+<tr><td><code>documentationMaterial</code></td><td>url[]</td><td>0-n</td><td>0-n</td></tr>
+<tr><td><code>provenance</code></td><td>string</td><td>0-1</td><td>0-1</td></tr>
+<tr><td><code>additionalMaterial</code></td><td>url[]</td><td>0-n</td><td>0-n</td></tr>
+</tbody></table>
+</div>
+<ul>
+<li><code>id</code>: A unique internal identifier; not exposed to the user and not persistent.</li>
+<li><code>pid</code>: A unique persistent identifier (currently an ARK URL).</li>
+<li><code>shortcode</code>: The project's DSP shortcode, internal only. Four hexadecimal
+characters, upper case.</li>
+<li><code>officialName</code>: The official name of the project.</li>
+<li><code>status</code>: The status of the project — either "Ongoing" or "Finished".</li>
+<li><code>name</code>: The name of the project.</li>
+<li><code>shortDescription</code>: A short teaser. Maximum length: 200 characters.</li>
+<li><code>description</code>: The full description of the project.</li>
+<li><code>startDate</code>: The start date of the project.</li>
+<li><code>endDate</code>: The end date of the project.</li>
+<li><code>dataPublicationYear</code>: The year the data is published — normally the year the
+project finishes and the data moves to the archive. Under embargo, the year
+the embargo is lifted. Projects published while in the VRE may set a specific
+year.</li>
+<li><code>url</code>: The URL(s) to the web presence of the project. The first should point
+to where the data is available; the second, optional, may point to the project
+website.</li>
+<li><code>howToCite</code>: How to cite the project. If not provided, the standard form
+<code>&lt;contributors&gt; (&lt;year&gt;). &lt;project name&gt; [Database]. DaSCH. &lt;ARK&gt;</code> is used.</li>
+<li><code>accessRights</code>: The access rights of the project (see <a href="#access-rights">Access Rights</a>).
+Defines to what extent the project data is accessible in the DPE. If the
+project is embargoed, the metadata is only available on the project level.</li>
+<li><code>legalInfo</code>: Legal information about the project. Calculated from records;
+cannot be specified explicitly on the project.</li>
+<li><code>dataManagementPlan</code>: A data management plan (string or URL); use "not
+accessible" if not available.</li>
+<li><code>typeOfData</code>: The type(s) of data — "XML", "Text", "Image", "Video", "Audio".
+Computed from the records where available and optionally added manually.</li>
+<li><code>dataLanguage</code>: Languages contained in the project. Computed from the records
+where available and optionally added manually.</li>
+<li><code>collections</code>: Collection identifiers that optionally group project data.</li>
+<li><code>records</code>: Identifiers of all records that make up the project data. This is
+the canonical list of <em>all</em> records in the project.</li>
+<li><code>keywords</code>: Keywords describing the project.</li>
+<li><code>disciplines</code>: Disciplines the project relates to.</li>
+<li><code>temporalCoverage</code>: Epochs or time periods the project relates to.</li>
+<li><code>spatialCoverage</code>: References to spatial entities (places, regions, …).</li>
+<li><code>attributions</code>: Roles people/organizations have in the project. Entered
+manually, since there may be people without authorship (reviewers, organizers,
+…).</li>
+<li><code>abstract</code>: An abstract of the project.</li>
+<li><code>contactPoint</code>: Persons or organizations responsible for the project.</li>
+<li><code>publications</code>: Publications related to the project.</li>
+<li><code>funding</code>: Either a string ("No funding") or a list of grants.</li>
+<li><code>alternativeNames</code>: Alternative names of the project.</li>
+<li><code>documentationMaterial</code>: URLs pointing to documentation material.</li>
+<li><code>provenance</code>: The history of the project, if applicable.</li>
+<li><code>additionalMaterial</code>: Additional URLs related to the project.</li>
+</ul>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p>All records of a project are referenced in its <code>records</code> array, regardless of
+collection membership — this is the canonical list.</p>
+</div>
+<div class="mdbook-alerts mdbook-alerts-warning">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  warning
+</p>
+<p><strong>As implemented</strong> (<code>project.rs</code>): the project is the most complete entity.
+Notable differences from the conceptual table:</p>
+<ul>
+<li><code>url</code> is parsed into a single primary <code>url</code> plus a separate <code>secondaryUrl</code>,
+both <a href="#authority-file-reference">authority file references</a>. The legacy
+string-array form (<code>["&lt;data url&gt;", "&lt;website url&gt;"]</code>) is still accepted: the
+first element becomes <code>url</code>, the second <code>secondaryUrl</code>. Placeholder strings
+(<code>"MISSING"</code>, <code>"CALCULATED"</code>) are filtered out so they never render as live
+links.</li>
+<li><code>clusters</code> and <code>collections</code> are stored as ID lists and resolved to
+lightweight references on demand.</li>
+<li>Many fields are optional in the code regardless of the archival cardinality
+above (e.g. <code>dataManagementPlan</code>, <code>dataPublicationYear</code>, <code>typeOfData</code>,
+<code>dataLanguage</code>, <code>records</code>, <code>publications</code>, <code>provenance</code>, <code>additionalMaterial</code>).</li>
+</ul>
+</div>
+<h3 id="collection"><a class="header" href="#collection">Collection</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th><th>WIP Card.</th></tr></thead><tbody>
+<tr><td><code>id</code></td><td>internal_id</td><td>1</td><td>1</td></tr>
+<tr><td><code>pid</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>name</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>accessRights</code></td><td>accessRights</td><td>1</td><td>1</td></tr>
+<tr><td><code>legalInfo</code></td><td>legalInfo[]</td><td>1-n</td><td>1-n</td></tr>
+<tr><td><code>howToCite</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>description</code></td><td>lang_string</td><td>0-1</td><td>0-1</td></tr>
+<tr><td><code>typeOfData</code></td><td>string[]</td><td>1-n</td><td>0-n</td></tr>
+<tr><td><code>dateCreated</code></td><td>date</td><td>1</td><td>0-1</td></tr>
+<tr><td><code>dateModified</code></td><td>date</td><td>0-1</td><td>0-1</td></tr>
+<tr><td><code>records</code></td><td>internal_id[]</td><td>0-n</td><td>0-n</td></tr>
+<tr><td><code>collections</code></td><td>internal_id[]</td><td>0-n</td><td>0-n</td></tr>
+<tr><td><code>languages</code></td><td>lang_string[]</td><td>1-n</td><td>0-n</td></tr>
+<tr><td><code>additionalMaterial</code></td><td>url[]</td><td>0-n</td><td>0-n</td></tr>
+<tr><td><code>provenance</code></td><td>string</td><td>0-1</td><td>0-1</td></tr>
+<tr><td><code>keywords</code></td><td>lang_string[]</td><td>0-n</td><td>0-n</td></tr>
+<tr><td><code>documentationMaterial</code></td><td>url[]</td><td>0-n</td><td>0-n</td></tr>
+</tbody></table>
+</div>
+<ul>
+<li><code>id</code>: A unique internal identifier; not exposed to the user and not persistent.</li>
+<li><code>pid</code>: A unique persistent identifier (currently an ARK URL).</li>
+<li><code>name</code>: The name of the collection.</li>
+<li><code>accessRights</code>: The access rights of the collection (see <a href="#access-rights">Access Rights</a>).</li>
+<li><code>legalInfo</code>: Legal information about the collection. Calculated from
+records/sub-collections; may be added manually.</li>
+<li><code>howToCite</code>: How to cite the collection. If not provided, the standard form
+<code>&lt;contributors&gt; (&lt;year&gt;). &lt;collection name&gt; [Collection]. DaSCH. &lt;ARK&gt;</code> is used.</li>
+<li><code>description</code>: The description of the collection.</li>
+<li><code>typeOfData</code>: The type(s) of data — "XML", "Text", "Image", "Video", "Audio".</li>
+<li><code>dateCreated</code>: When the collection was created.</li>
+<li><code>dateModified</code>: When the collection was last modified.</li>
+<li><code>records</code>: Identifiers of the records in the collection.</li>
+<li><code>collections</code>: Identifiers of nested collections.</li>
+<li><code>languages</code>: Languages contained in the collection.</li>
+<li><code>additionalMaterial</code>: Additional URLs related to the collection.</li>
+<li><code>provenance</code>: The history of the collection, if applicable.</li>
+<li><code>keywords</code>: Keywords for search purposes.</li>
+<li><code>documentationMaterial</code>: URLs pointing to documentation material.</li>
+</ul>
+<div class="mdbook-alerts mdbook-alerts-warning">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  warning
+</p>
+<p><strong>As implemented</strong> (<code>collection.rs</code>): only a lightweight reference type exists
+(<code>id</code>, <code>name</code>, <code>description</code>). The full collection entity above is <strong>not
+implemented</strong>, and there are currently <strong>no collection data files</strong> — projects
+reference collections by ID, but no collections are populated. Collections
+remain part of the design but are unused in practice.</p>
+</div>
+<h3 id="record"><a class="header" href="#record">Record</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th><th>WIP Card.</th></tr></thead><tbody>
+<tr><td><code>id</code></td><td>internal_id</td><td>1</td><td>1</td></tr>
+<tr><td><code>pid</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>label</code></td><td>lang_string</td><td>1</td><td>1</td></tr>
+<tr><td><code>accessRights</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>legalInfo</code></td><td>legalInfo</td><td>1</td><td>1</td></tr>
+<tr><td><code>howToCite</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>publisher</code></td><td>string</td><td>1</td><td>1</td></tr>
+<tr><td><code>source</code></td><td>string</td><td>0-1</td><td>0-1</td></tr>
+<tr><td><code>description</code></td><td>lang_string</td><td>0-1</td><td>0-1</td></tr>
+<tr><td><code>dateCreated</code></td><td>date</td><td>0-1</td><td>0-1</td></tr>
+<tr><td><code>dateModified</code></td><td>date</td><td>0-1</td><td>0-1</td></tr>
+<tr><td><code>datePublished</code></td><td>date</td><td>0-1</td><td>0-1</td></tr>
+<tr><td><code>typeOfData</code></td><td>string</td><td>0-1</td><td>0-1</td></tr>
+<tr><td><code>size</code></td><td>string</td><td>0-1</td><td>0-1</td></tr>
+<tr><td><code>keywords</code></td><td>lang_string[]</td><td>0-n</td><td>0-n</td></tr>
+</tbody></table>
+</div>
+<ul>
+<li><code>id</code>: A unique identifier for the record.</li>
+<li><code>pid</code>: A unique persistent identifier (an ARK URL).</li>
+<li><code>label</code>: The label of the record. For assets, this may be the original file
+name. For IIIF URLs, it is useful for the case when the URL is no longer
+available. In the long run IIIF Manifests, rather than image URLs, would let
+labels be extracted from there.</li>
+<li><code>accessRights</code>: The access rights of the record. Defines to what extent the
+record data is accessible in the DPE.</li>
+<li><code>legalInfo</code>: Legal information about the record.</li>
+<li><code>howToCite</code>: How to cite the record. If not provided, the standard form
+<code>&lt;label&gt; (&lt;creation year&gt;). [Data Record]. DaSCH. &lt;ARK&gt;</code> is used.</li>
+<li><code>publisher</code>: The publisher of the record. Literal "DaSCH"; required for
+OpenAIRE compliance.</li>
+<li><code>source</code>: The provenance of the record. Recommended for
+<a href="https://guidelines.openaire.eu/en/latest/literature/field_source.html">OpenAIRE</a>:
+use only if the record is a digitization of a non-digital source, in which
+case it should identify the original source.</li>
+<li><code>description</code>: The description of the record. If the project does not want
+descriptions to be public domain and always open, it must not use this
+property but instead create a custom property.</li>
+<li><code>dateCreated</code>, <code>dateModified</code>: Creation and modification dates.</li>
+<li><code>datePublished</code>: When the record was made publicly available — normally when
+it moved to the archive, or when an embargo is lifted.</li>
+<li><code>typeOfData</code>: The type of data — "XML", "Text", "Image", "Video", "Audio".</li>
+<li><code>size</code>: The size of the record
+(<a href="https://openaire-guidelines-for-literature-repository-managers.readthedocs.io/en/v4.0.0/field_size.html#dci-size">OpenAIRE Size</a>).</li>
+<li><code>keywords</code>: Keywords for search purposes.</li>
+</ul>
+<div class="mdbook-alerts mdbook-alerts-warning">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  warning
+</p>
+<p><strong>As implemented</strong> (<code>record.rs</code>): records are implemented and the fields match
+the table closely. The <code>pid</code> is parsed into its ARK components (host,
+shortcode, record id). Note that record-level metadata — which the original
+design flagged as not yet feasible — <em>is</em> now implemented. Coverage is still
+partial: only a few projects currently have record files. Records are exposed
+through the <a href="./oai-pmh.html">OAI-PMH endpoint</a>.</p>
+</div>
+<h3 id="person"><a class="header" href="#person">Person</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th></tr></thead><tbody>
+<tr><td><code>id</code></td><td>internal_id</td><td>1</td></tr>
+<tr><td><code>pid</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>sameAs</code></td><td>authorityFileReference[]</td><td>0-n</td></tr>
+<tr><td><code>givenNames</code></td><td>string[]</td><td>1-n</td></tr>
+<tr><td><code>familyNames</code></td><td>string[]</td><td>1-n</td></tr>
+<tr><td><code>honoraryPrefix</code></td><td>string[]</td><td>0-n</td></tr>
+<tr><td><code>honorarySuffix</code></td><td>string[]</td><td>0-n</td></tr>
+<tr><td><code>affiliations</code></td><td>internal_id[]</td><td>0-n</td></tr>
+<tr><td><code>email</code></td><td>string</td><td>0-n</td></tr>
+<tr><td><code>address</code></td><td>address</td><td>0-1</td></tr>
+</tbody></table>
+</div>
+<p>Cardinality is the same for both stages.</p>
+<ul>
+<li><code>id</code>: A unique internal identifier; not exposed to the user and not persistent.</li>
+<li><code>pid</code>: A unique persistent identifier (currently an ARK URL).</li>
+<li><code>sameAs</code>: References to external authority files (ORCID, VIAF, GND, …).</li>
+<li><code>givenNames</code>: The given names of the person.</li>
+<li><code>familyNames</code>: The family names of the person.</li>
+<li><code>honoraryPrefix</code>: Honorary prefixes, e.g. "Prof. Dr.".</li>
+<li><code>honorarySuffix</code>: Honorary suffixes, e.g. "PhD", "MA".</li>
+<li><code>affiliations</code>: Organizations the person is affiliated with.</li>
+<li><code>email</code>: The email address of the person.</li>
+<li><code>address</code>: The postal address of the person — the address at their
+organization, not a personal address.</li>
+</ul>
+<div class="mdbook-alerts mdbook-alerts-warning">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  warning
+</p>
+<p><strong>As implemented</strong> (<code>person.rs</code>): the person has <code>id</code>, <code>givenNames</code>,
+<code>familyNames</code>, <code>jobTitles</code> (<code>string[]</code>), <code>affiliations</code>, <code>sameAs</code> and <code>email</code>.
+Differences from the conceptual table: there is <strong>no</strong> <code>pid</code>,
+<code>honoraryPrefix</code>, <code>honorarySuffix</code> or <code>address</code>, and there is an <strong>additional</strong>
+<code>jobTitles</code> field not in the original design. Note that project-contribution
+<em>roles</em> (e.g. "Project leader") belong in a project's <code>attributions</code>, not in
+<code>jobTitles</code> — a guard enforces this for an explicit list of role words.</p>
+</div>
+<h3 id="organization"><a class="header" href="#organization">Organization</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th></tr></thead><tbody>
+<tr><td><code>id</code></td><td>internal_id</td><td>1</td></tr>
+<tr><td><code>pid</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>sameAs</code></td><td>authorityFileReference[]</td><td>0-n</td></tr>
+<tr><td><code>name</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>url</code></td><td>url</td><td>1</td></tr>
+<tr><td><code>address</code></td><td>address</td><td>0-1</td></tr>
+<tr><td><code>email</code></td><td>string</td><td>0-1</td></tr>
+<tr><td><code>alternativeName</code></td><td>lang_string</td><td>0-1</td></tr>
+</tbody></table>
+</div>
+<p>Cardinality is the same for both stages.</p>
+<ul>
+<li><code>id</code>: A unique internal identifier; not exposed to the user and not persistent.</li>
+<li><code>pid</code>: A unique persistent identifier (currently an ARK URL).</li>
+<li><code>sameAs</code>: References to external authority files (e.g. <a href="https://ror.org/">ROR</a>).</li>
+<li><code>name</code>: The name of the organization.</li>
+<li><code>url</code>: The URL of the organization.</li>
+<li><code>address</code>: The address of the organization.</li>
+<li><code>email</code>: The email address of the organization.</li>
+<li><code>alternativeName</code>: Alternative names of the organization.</li>
+</ul>
+<div class="mdbook-alerts mdbook-alerts-warning">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  warning
+</p>
+<p><strong>As implemented</strong> (<code>organization.rs</code>): matches the table except there is
+<strong>no</strong> <code>pid</code>.</p>
+</div>
+<h2 id="value-types"><a class="header" href="#value-types">Value Types</a></h2>
+<h3 id="string-with-language-tag-lang_string"><a class="header" href="#string-with-language-tag-lang_string">String with Language Tag (<code>lang_string</code>)</a></h3>
+<p>An object with ISO language codes as keys and strings as values:</p>
+<pre><code class="language-json">{
+  "en": "Lorem ipsum in English.",
+  "de": "Lorem ipsum auf Deutsch."
+}
+</code></pre>
+<p>A single <code>lang_string</code> value can hold multiple translations.</p>
+<h3 id="authority-file-reference"><a class="header" href="#authority-file-reference">Authority File Reference</a></h3>
+<p>An object representing a reference to an external authority file.</p>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th></tr></thead><tbody>
+<tr><td><code>type</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>url</code></td><td>url</td><td>1</td></tr>
+<tr><td><code>text</code></td><td>string</td><td>0-1</td></tr>
+</tbody></table>
+</div>
+<ul>
+<li><code>type</code>: The type of the reference — e.g. 'Geonames', 'Pleiades', 'Skos',
+'Periodo', 'Chronontology', 'GND', 'VIAF', 'Grid', 'ORCID', 'Creative
+Commons', 'COAR'. Used to determine the semantics of the URL. The
+implementation also uses <code>'URL'</code> for plain links.</li>
+<li><code>url</code>: The URL itself.</li>
+<li><code>text</code>: A human-readable text for display.</li>
+</ul>
+<h3 id="pid"><a class="header" href="#pid">PID</a></h3>
+<p>A persistent identifier — may be an ARK or a DOI. Used e.g. on publications.</p>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th></tr></thead><tbody>
+<tr><td><code>url</code></td><td>url</td><td>1</td></tr>
+<tr><td><code>text</code></td><td>string</td><td>0-1</td></tr>
+</tbody></table>
+</div>
+<h3 id="publication"><a class="header" href="#publication">Publication</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th></tr></thead><tbody>
+<tr><td><code>text</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>pid</code></td><td>pid</td><td>0-1</td></tr>
+</tbody></table>
+</div>
+<ul>
+<li><code>text</code>: The text of the publication.</li>
+<li><code>pid</code>: A URL to the publication, e.g. a DOI, if available.</li>
+</ul>
+<h3 id="address"><a class="header" href="#address">Address</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th></tr></thead><tbody>
+<tr><td><code>street</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>postalCode</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>locality</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>country</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>canton</code></td><td>string</td><td>0-1</td></tr>
+<tr><td><code>additional</code></td><td>string</td><td>0-1</td></tr>
+</tbody></table>
+</div>
+<h3 id="grant"><a class="header" href="#grant">Grant</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th><th>Restrictions</th></tr></thead><tbody>
+<tr><td><code>funders</code></td><td>internal_id[]</td><td>1-n</td><td>Person or Organization IDs</td></tr>
+<tr><td><code>number</code></td><td>string</td><td>0-1</td><td></td></tr>
+<tr><td><code>name</code></td><td>string</td><td>0-1</td><td></td></tr>
+<tr><td><code>url</code></td><td>url</td><td>0-1</td><td></td></tr>
+</tbody></table>
+</div>
+<h3 id="legal-info"><a class="header" href="#legal-info">Legal Info</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th></tr></thead><tbody>
+<tr><td><code>license</code></td><td>license</td><td>1</td></tr>
+<tr><td><code>copyrightHolder</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>authorship</code></td><td>string[]</td><td>1-n</td></tr>
+</tbody></table>
+</div>
+<h3 id="license"><a class="header" href="#license">License</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th></tr></thead><tbody>
+<tr><td><code>licenseIdentifier</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>licenseDate</code></td><td>date</td><td>1</td></tr>
+<tr><td><code>licenseURI</code></td><td>url</td><td>1</td></tr>
+</tbody></table>
+</div>
+<h3 id="attribution"><a class="header" href="#attribution">Attribution</a></h3>
+<p>Modelled according to the
+<a href="https://guidelines.openaire.eu/en/latest/data/field_contributor.html">OpenAIRE guidelines</a>.</p>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th></tr></thead><tbody>
+<tr><td><code>contributor</code></td><td>internal_id</td><td>1</td></tr>
+<tr><td><code>contributorType</code></td><td>string[]</td><td>1-n</td></tr>
+</tbody></table>
+</div>
+<h3 id="access-rights"><a class="header" href="#access-rights">Access Rights</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th></tr></thead><tbody>
+<tr><td><code>accessRights</code></td><td>string</td><td>1</td></tr>
+<tr><td><code>embargoDate</code></td><td>date</td><td>0-1</td></tr>
+</tbody></table>
+</div>
+<ul>
+<li><code>accessRights</code>: One of "Full Open Access", "Open Access with Restrictions",
+"Embargoed Access", "Metadata only Access".</li>
+<li><code>embargoDate</code>: The date when the embargo ends.</li>
+</ul>
+<div class="mdbook-alerts mdbook-alerts-warning">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  warning
+</p>
+<p><strong>As implemented</strong>: <code>accessRights</code> is one of the four literals above (the
+conceptual design referred to a COAR authority-file reference). The value is
+wrapped in an object, e.g. <code>{ "accessRights": "Full Open Access" }</code>, with an
+optional <code>embargoDate</code>.</p>
+</div>
+<h3 id="internal-id"><a class="header" href="#internal-id">Internal ID</a></h3>
+<p>An internal ID (<code>internal_id</code>) is a unique identifier for an entity within the
+system. It is not intentionally exposed to the user and is presented as a string.</p>
+<h2 id="openaire-mapping"><a class="header" href="#openaire-mapping">OpenAIRE Mapping</a></h2>
+<p>The model includes a mapping to the OpenAIRE Guidelines for Data Archives, which
+are based on the DataCite Metadata Schema. Currently only projects are exposed as
+OpenAIRE datasets. For the endpoint that serves this, see the
+<a href="./oai-pmh.html">OAI-PMH Endpoint</a> page.</p>
+<p>The OpenAIRE Guidelines specify 18 fields, with cardinalities Mandatory (M),
+Recommended (R), Mandatory if Applicable (MA) and Optional (O):</p>
+<ol>
+<li>Identifier (M)</li>
+<li>Creator (M)</li>
+<li>Title (M)</li>
+<li>Publisher (M)</li>
+<li>PublicationYear (M)</li>
+<li>Subject (R)</li>
+<li>Contributor (MA/O)</li>
+<li>Date (M)</li>
+<li>Language (R)</li>
+<li>ResourceType (R)</li>
+<li>AlternateIdentifier (O)</li>
+<li>RelatedIdentifier (MA)</li>
+<li>Size (O)</li>
+<li>Format (O)</li>
+<li>Version (O)</li>
+<li>Rights (MA)</li>
+<li>Description (MA)</li>
+<li>GeoLocation (O)</li>
+</ol>
+<h3 id="project--openaire-dataset-mapping"><a class="header" href="#project--openaire-dataset-mapping">Project → OpenAIRE Dataset Mapping</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Project Field</th><th>OpenAIRE Field</th><th>Mapping Notes</th></tr></thead><tbody>
+<tr><td><code>pid</code></td><td><strong>Identifier (M)</strong></td><td>Direct mapping</td></tr>
+<tr><td><code>attributions</code> (creator roles)</td><td><strong>Creator (M)</strong></td><td>Which roles count as creators is project-specific</td></tr>
+<tr><td><code>name</code></td><td><strong>Title (M)</strong></td><td>Direct mapping</td></tr>
+<tr><td>Fixed "DaSCH"</td><td><strong>Publisher (M)</strong></td><td>Static value</td></tr>
+<tr><td>TBD date field</td><td><strong>PublicationYear (M)</strong></td><td><code>startDate</code> or <code>endDate</code> year — project-specific</td></tr>
+<tr><td><code>keywords</code></td><td><strong>Subject (R)</strong></td><td>Direct mapping</td></tr>
+<tr><td><code>attributions</code> (non-creator roles)</td><td><strong>Contributor (MA/O)</strong></td><td>Remaining attributions</td></tr>
+<tr><td><code>startDate</code>, <code>endDate</code></td><td><strong>Date (M)</strong></td><td>Multiple dates</td></tr>
+<tr><td>Computed from records</td><td><strong>Language (R)</strong></td><td>Aggregated from project records</td></tr>
+<tr><td>Fixed "Dataset"</td><td><strong>ResourceType (R)</strong></td><td>Static value for projects</td></tr>
+<tr><td><code>shortcode</code></td><td><strong>AlternateIdentifier (O)</strong></td><td>DSP shortcode as alternate ID</td></tr>
+<tr><td><code>collections</code> refs</td><td><strong>RelatedIdentifier (MA)</strong></td><td>Collection relationships</td></tr>
+<tr><td>Computed from records</td><td><strong>Size (O)</strong></td><td>Aggregated from project records</td></tr>
+<tr><td>Computed from records</td><td><strong>Format (O)</strong></td><td>Aggregated <code>typeOfData</code> from records</td></tr>
+<tr><td>Not applicable</td><td><strong>Version (O)</strong></td><td>Projects don't have versions</td></tr>
+<tr><td><code>legalInfo</code></td><td><strong>Rights (MA)</strong></td><td>Direct mapping</td></tr>
+<tr><td><code>description</code></td><td><strong>Description (MA)</strong></td><td>Direct mapping</td></tr>
+<tr><td><code>spatialCoverage</code></td><td><strong>GeoLocation (O)</strong></td><td>Direct mapping</td></tr>
+</tbody></table>
+</div>
+<p>Open questions in the design include which attribution roles map to Creator vs.
+Contributor, how PublicationYear should be derived per project, and whether
+collections should also be exposed as OpenAIRE datasets.</p>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<p>The following examples show the conceptual JSON shape. Real data files live under
+<code>modules/dpe/server/data/</code> and may differ in the ways noted in the <strong>As
+implemented</strong> callouts above (e.g. the legacy <code>url</code> array form).</p>
+<h3 id="project-cluster-1"><a class="header" href="#project-cluster-1">Project Cluster</a></h3>
+<pre><code class="language-json">{
+  "id": "cluster-0001",
+  "pid": "https://ark.dasch.swiss/ark:/72163/1/cluster-0001",
+  "name": "Project Cluster Name",
+  "projects": ["project-0001", "project-0002"],
+  "projectClusters": ["cluster-0002"],
+  "description": {
+    "en": "Project Cluster Description",
+    "de": "Projektcluster Beschreibung"
+  },
+  "url": "https://example.com/project-cluster",
+  "howToCite": "Project Cluster Name (2025). [Project Cluster]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/cluster-0001",
+  "alternativeNames": [{ "en": "Alternative Name", "de": "Alternativer Name" }],
+  "contactPoint": ["person-0001", "organization-0001"],
+  "documentationMaterial": ["https://example.com/documentation"]
+}
+</code></pre>
+<h3 id="project-1"><a class="header" href="#project-1">Project</a></h3>
+<pre><code class="language-json">{
+  "id": "project-0001",
+  "pid": "https://ark.dasch.swiss/ark:/72163/1/project-0001",
+  "shortcode": "1234",
+  "officialName": "Project Official Name",
+  "status": "Ongoing",
+  "name": "Project Name",
+  "shortDescription": "Short description of the project.",
+  "description": { "en": "Project Description", "de": "Projektbeschreibung" },
+  "startDate": "2023-01-01",
+  "endDate": "2028-01-01",
+  "url": { "type": "URL", "url": "https://data.dasch.swiss/projects/project-0001" },
+  "secondaryUrl": { "type": "URL", "url": "https://example.com/project-website" },
+  "howToCite": "Project Name (2025). [Project]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/project-0001",
+  "accessRights": { "accessRights": "Full Open Access" },
+  "legalInfo": [
+    {
+      "license": {
+        "licenseIdentifier": "CC BY 4.0",
+        "licenseDate": "2023-01-01",
+        "licenseURI": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "copyrightHolder": "DaSCH",
+      "authorship": ["Project XYZ"]
+    }
+  ],
+  "dataManagementPlan": "https://example.com/dmp",
+  "collections": ["collection-0001"],
+  "records": ["record-0001", "record-0002"],
+  "keywords": [{ "en": "Keyword 1", "de": "Stichwort 1" }],
+  "disciplines": [{ "en": "Discipline 1", "de": "Disziplin 1" }],
+  "temporalCoverage": [{ "en": "2006-2016", "de": "2006-2016" }],
+  "spatialCoverage": [
+    { "type": "Geonames", "url": "https://www.geonames.org/2658434/", "text": "Switzerland" }
+  ],
+  "attributions": [
+    { "contributor": "person-0001", "contributorType": ["Project leader", "Data curator"] }
+  ],
+  "abstract": { "en": "Project Abstract", "de": "Projektzusammenfassung" },
+  "contactPoint": ["person-0001", "organization-0001"],
+  "publications": [{ "text": "Publication Title", "pid": { "url": "https://doi.org/10.1234/5678" } }],
+  "funding": [
+    { "funders": ["organization-0001"], "number": "123456", "name": "Grant Name", "url": "https://example.com/grant" }
+  ],
+  "alternativeNames": [{ "en": "Alternative Name", "de": "Alternativer Name" }]
+}
+</code></pre>
+<h3 id="person-1"><a class="header" href="#person-1">Person</a></h3>
+<pre><code class="language-json">{
+  "id": "person-0001",
+  "givenNames": ["Jane"],
+  "familyNames": ["Doe"],
+  "jobTitles": ["Senior lecturer"],
+  "affiliations": ["organization-0001"],
+  "sameAs": [{ "type": "ORCID", "url": "https://orcid.org/0000-0000-0000-0000" }],
+  "email": "jane.doe@example.org"
+}
+</code></pre>
+<h3 id="organization-1"><a class="header" href="#organization-1">Organization</a></h3>
+<pre><code class="language-json">{
+  "id": "organization-0001",
+  "name": "Université de Lausanne",
+  "url": "https://www.unil.ch/",
+  "address": {
+    "street": "Unicentre",
+    "postalCode": "1015",
+    "locality": "Lausanne",
+    "country": "Switzerland"
+  }
+}
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../dpe/architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../dpe/project_structure.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../dpe/architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../dpe/project_structure.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

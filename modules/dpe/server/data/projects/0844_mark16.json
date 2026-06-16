@@ -105,62 +105,62 @@
     ],
     "spatialCoverage": [
         {
-            "type": "Chronontology",
+            "type": "Gazetteer",
             "url": "https://gazetteer.dainst.org/app/#!/show/2075626",
             "text": "Western Europe"
         },
         {
-            "type": "Chronontology",
+            "type": "Gazetteer",
             "url": "https://gazetteer.dainst.org/app/#!/show/2042602",
             "text": "Nordafrika"
         },
         {
-            "type": "Chronontology",
+            "type": "Gazetteer",
             "url": "https://gazetteer.dainst.org/app/#!/show/2070079",
             "text": "Ellada"
         },
         {
-            "type": "Chronontology",
+            "type": "Gazetteer",
             "url": "https://gazetteer.dainst.org/app/#!/show/2043735",
             "text": "Kleinasien"
         },
         {
-            "type": "Chronontology",
+            "type": "Gazetteer",
             "url": "https://gazetteer.dainst.org/app/#!/show/2359915",
             "text": "East Africa"
         },
         {
-            "type": "Chronontology",
+            "type": "Gazetteer",
             "url": "https://gazetteer.dainst.org/app/#!/show/2043054",
             "text": "India"
         },
         {
-            "type": "Chronontology",
+            "type": "Gazetteer",
             "url": "https://gazetteer.dainst.org/app/#!/show/2043065",
             "text": "Vorderasien"
         },
         {
-            "type": "Chronontology",
+            "type": "Gazetteer",
             "url": "https://gazetteer.dainst.org/app/#!/show/2043225",
             "text": "Arabien"
         },
         {
-            "type": "Chronontology",
+            "type": "Gazetteer",
             "url": "https://gazetteer.dainst.org/app/#!/show/2283256",
             "text": "Ägäis"
         },
         {
-            "type": "Chronontology",
+            "type": "Gazetteer",
             "url": "https://gazetteer.dainst.org/app/#!/show/2043307",
             "text": "Armenien"
         },
         {
-            "type": "Chronontology",
+            "type": "Gazetteer",
             "url": "https://gazetteer.dainst.org/app/#!/show/2070074",
             "text": "Southern Europe"
         },
         {
-            "type": "Chronontology",
+            "type": "Gazetteer",
             "url": "https://gazetteer.dainst.org/app/#!/show/2043344",
             "text": "Georgien"
         }

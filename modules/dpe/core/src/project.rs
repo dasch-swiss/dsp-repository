@@ -397,4 +397,80 @@ mod tests {
         assert!(primary.is_none());
         assert!(secondary.is_none());
     }
+
+    /// Classify an authority-file URL as a place gazetteer, a period gazetteer,
+    /// or neither, based on its host. Used to guard against temporal/spatial
+    /// coverage being swapped (a known data-migration defect, see DEV history).
+    fn url_kind(url: &str) -> &'static str {
+        let host = url
+            .trim_start_matches("https://")
+            .trim_start_matches("http://")
+            .split('/')
+            .next()
+            .unwrap_or("");
+        // Period (temporal) gazetteers.
+        if host.contains("chronontology.dainst.org") || host.contains("perio.do") || host.contains("n2t.net") {
+            "period"
+        }
+        // Place (spatial) gazetteers.
+        else if host.contains("pleiades.stoa.org")
+            || host.contains("geonames.org")
+            || host.contains("gazetteer.dainst.org")
+            || host.contains("vocab.getty.edu")
+        {
+            "place"
+        } else {
+            "unknown"
+        }
+    }
+
+    /// Guard against the temporal/spatial coverage inversion introduced during
+    /// the old-model migration: a place reference must never sit in
+    /// `temporalCoverage`, and a period reference must never sit in
+    /// `spatialCoverage`. Ambiguous URLs (free-form `URL` type) are ignored.
+    #[test]
+    fn coverage_fields_are_not_inverted() {
+        // Resolve the data dir relative to this crate, independent of the test
+        // process working directory.
+        let projects_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../server/data/projects");
+
+        let mut violations = Vec::new();
+        let entries = std::fs::read_dir(projects_dir).expect("projects data directory should be readable");
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+            let json = std::fs::read_to_string(&path).expect("project file should be readable");
+            let project = serde_json::from_str::<ProjectRaw>(&json)
+                .map(Project::from)
+                .unwrap_or_else(|e| panic!("failed to parse {filename}: {e}"));
+
+            for coverage in &project.temporal_coverage {
+                if let TemporalCoverage::Reference(reference) = coverage {
+                    if url_kind(&reference.url) == "place" {
+                        violations.push(format!(
+                            "{filename}: temporalCoverage holds a place reference (type={}, url={})",
+                            reference.type_, reference.url
+                        ));
+                    }
+                }
+            }
+            for reference in &project.spatial_coverage {
+                if url_kind(&reference.url) == "period" {
+                    violations.push(format!(
+                        "{filename}: spatialCoverage holds a period reference (type={}, url={})",
+                        reference.type_, reference.url
+                    ));
+                }
+            }
+        }
+
+        assert!(
+            violations.is_empty(),
+            "temporal/spatial coverage inversions found:\n{}",
+            violations.join("\n")
+        );
+    }
 }

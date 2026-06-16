@@ -80,6 +80,18 @@
     ],
     "temporalCoverage": [
         {
+            "type": "Periodo",
+            "url": "http://n2t.net/ark:/99152/p08m57hmxmp",
+            "text": "Classical World"
+        },
+        {
+            "type": "Periodo",
+            "url": "http://n2t.net/ark:/99152/p08m57h8zmq",
+            "text": "Medieval"
+        }
+    ],
+    "spatialCoverage": [
+        {
             "type": "Pleiades",
             "url": "https://pleiades.stoa.org/places/1052",
             "text": "Italia"
@@ -123,18 +135,6 @@
             "type": "Pleiades",
             "url": "https://pleiades.stoa.org/places/20487",
             "text": "Hibernia"
-        }
-    ],
-    "spatialCoverage": [
-        {
-            "type": "Periodo",
-            "url": "http://n2t.net/ark:/99152/p08m57hmxmp",
-            "text": "Classical World"
-        },
-        {
-            "type": "Periodo",
-            "url": "http://n2t.net/ark:/99152/p08m57h8zmq",
-            "text": "Medieval"
         }
     ],
     "attributions": [

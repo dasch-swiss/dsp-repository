@@ -17,6 +17,7 @@ install-requirements: install-e2e-requirements
     cargo binstall -y cargo-watch@8.5.3
     cargo binstall -y mdbook@0.4.52
     cargo binstall -y mdbook-alerts@0.8.0
+    cargo binstall -y mdbook-mermaid@0.16.2
     cargo binstall -y leptosfmt@0.1.33
     cargo binstall -y cargo-leptos@0.3.4
     cd modules/dpe && pnpm install
@@ -101,12 +102,17 @@ watch:
 docs-install-requirements:
     cargo install mdbook
 
+# Generate mdbook-mermaid runtime assets (gitignored). Idempotent; offline.
 [group('docs')]
-docs-build:
+docs-mermaid-assets:
+    mdbook-mermaid install docs
+
+[group('docs')]
+docs-build: docs-mermaid-assets
     mdbook build docs
 
 [group('docs')]
-docs-serve:
+docs-serve: docs-mermaid-assets
     mdbook serve docs
 
 [group('docs')]

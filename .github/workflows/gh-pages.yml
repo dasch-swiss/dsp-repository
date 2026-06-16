@@ -24,6 +24,10 @@ jobs:
           mdbook-version: "0.4.52"
       - name: Install mdBook-alerts
         run: cargo install mdbook-alerts
+      - name: Install mdBook-mermaid
+        run: cargo install mdbook-mermaid --version 0.16.2
+      - name: Generate mermaid assets
+        run: mdbook-mermaid install docs
       - name: Build Book
         run: mdbook build docs
       - name: Deploy

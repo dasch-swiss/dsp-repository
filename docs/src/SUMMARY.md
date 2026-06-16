@@ -18,6 +18,7 @@
 ## DPE
 
 - [Architecture](./dpe/architecture.md)
+- [Metadata Model (v2)](./dpe/metadata-model.md)
 - [Project Structure](./dpe/project_structure.md)
 - [Testing Strategy](./dpe/testing-strategy.md)
 - [Observability](./dpe/observability.md)

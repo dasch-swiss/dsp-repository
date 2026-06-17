@@ -5,8 +5,16 @@ use std::collections::HashMap;
 use dpe_core::AccessRightsType;
 
 /// Extracts a value from a multilingual HashMap, preferring English.
+///
+/// When `en` is absent the entry with the lexicographically smallest language
+/// code is chosen. This makes the result deterministic (a plain `values().next()`
+/// depends on `HashMap` iteration order) — important because the temporal-coverage
+/// enrichment lookup keys on this value at both collection and request time, so
+/// the two must agree.
 pub fn get_multilingual_value(map: &HashMap<String, String>) -> Option<String> {
-    map.get("en").or_else(|| map.values().next()).cloned()
+    map.get("en")
+        .or_else(|| map.iter().min_by(|(a, _), (b, _)| a.cmp(b)).map(|(_, v)| v))
+        .cloned()
 }
 
 /// Extracts the year from a date string (YYYY-MM-DD or YYYY).

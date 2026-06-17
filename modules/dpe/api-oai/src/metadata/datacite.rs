@@ -207,16 +207,15 @@ pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) ->
 
     // Dates - temporal coverage as dateType="Coverage"
     for tc in &project.temporal_coverage {
-        let coverage_text = match tc {
-            TemporalCoverage::Reference(ref_data) => ref_data.text.clone(),
-            TemporalCoverage::Text(text_map) => get_multilingual_value(text_map),
-        };
-        if let Some(text) = coverage_text {
-            record.dates.push(DataCiteDate {
-                date: text,
-                date_type: "Coverage".to_string(),
-                ..Default::default()
-            });
+        if let Some(date) = resolve_temporal_coverage(tc) {
+            // Dedupe: a project may list the same period more than once.
+            let duplicate = record
+                .dates
+                .iter()
+                .any(|d| d.date == date.date && d.date_information == date.date_information);
+            if !duplicate {
+                record.dates.push(date);
+            }
         }
     }
 
@@ -279,4 +278,171 @@ pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) ->
     }
 
     record
+}
+
+/// Resolve one `temporalCoverage` entry to a DataCite `Coverage` date, using the
+/// process-global ChronOntology and enrichment caches.
+fn resolve_temporal_coverage(tc: &TemporalCoverage) -> Option<DataCiteDate> {
+    resolve_temporal_coverage_with(
+        tc,
+        |url| dpe_core::chronontology_cache::timespan_for(url).map(String::from),
+        dpe_core::temporal_enrichment_cache::enriched_for,
+    )
+}
+
+/// Pure resolution of a `temporalCoverage` entry, with the two lookups injected so
+/// the fallback chain can be unit-tested without the process-global caches.
+///
+/// Resolution order:
+/// 1. A ChronOntology reference URL → its timespan range (`timespan`).
+/// 2. Otherwise (or on a cache miss) the offline enrichment table (`enrichment`), keyed by the same
+///    name the mapping computes here.
+/// 3. Otherwise a name-only date (`dateInformation` with an empty `date`), so the original
+///    information is never silently dropped.
+///
+/// Returns `None` only when there is neither a resolvable range nor any name to
+/// carry — a date with neither value nor information would be useless.
+fn resolve_temporal_coverage_with(
+    tc: &TemporalCoverage,
+    timespan: impl Fn(&str) -> Option<String>,
+    enrichment: impl Fn(&str) -> Option<dpe_core::temporal_enrichment_cache::EnrichedDate>,
+) -> Option<DataCiteDate> {
+    // The display name, used both as the enrichment key and as dateInformation.
+    let name = match tc {
+        TemporalCoverage::Reference(ref_data) => ref_data.text.clone(),
+        TemporalCoverage::Text(text_map) => get_multilingual_value(text_map),
+    };
+
+    // 1. ChronOntology URL → timespan.
+    if let TemporalCoverage::Reference(ref_data) = tc {
+        if !ref_data.url.is_empty() {
+            if let Some(range) = timespan(&ref_data.url) {
+                return Some(DataCiteDate {
+                    date: range,
+                    date_type: "Coverage".to_string(),
+                    date_information: name,
+                });
+            }
+        }
+    }
+
+    // 2. Enrichment table, keyed by the display name.
+    if let Some(ref key) = name {
+        if let Some(enriched) = enrichment(key) {
+            return Some(DataCiteDate {
+                date: enriched.date.unwrap_or_default(),
+                date_type: "Coverage".to_string(),
+                date_information: Some(enriched.original_name),
+            });
+        }
+    }
+
+    // 3. Name-only fallback (empty date body, dateInformation set).
+    name.map(|n| DataCiteDate {
+        date: String::new(),
+        date_type: "Coverage".to_string(),
+        date_information: Some(n),
+    })
+}
+
+#[cfg(test)]
+mod temporal_tests {
+    use std::collections::HashMap;
+
+    use dpe_core::temporal_enrichment_cache::EnrichedDate;
+    use dpe_core::AuthorityFileReference;
+
+    use super::*;
+
+    fn reference(url: &str, text: Option<&str>) -> TemporalCoverage {
+        TemporalCoverage::Reference(AuthorityFileReference {
+            type_: "Chronontology".to_string(),
+            url: url.to_string(),
+            text: text.map(str::to_string),
+        })
+    }
+
+    fn text(en: &str) -> TemporalCoverage {
+        let mut map = HashMap::new();
+        map.insert("en".to_string(), en.to_string());
+        TemporalCoverage::Text(map)
+    }
+
+    fn none_timespan(_: &str) -> Option<String> {
+        None
+    }
+
+    fn none_enrichment(_: &str) -> Option<EnrichedDate> {
+        None
+    }
+
+    #[test]
+    fn chronontology_url_resolves_to_range() {
+        let tc = reference("https://chronontology.dainst.org/period/0vGXxVln724L", Some("Trajanic"));
+        let date = resolve_temporal_coverage_with(&tc, |_| Some("0098/0117".to_string()), none_enrichment).unwrap();
+        assert_eq!(date.date, "0098/0117");
+        assert_eq!(date.date_type, "Coverage");
+        assert_eq!(date.date_information.as_deref(), Some("Trajanic"));
+    }
+
+    #[test]
+    fn free_text_resolves_via_enrichment() {
+        let tc = text("Early Christianity");
+        let enrich = |key: &str| {
+            (key == "Early Christianity").then(|| EnrichedDate {
+                date: Some("0030/0451".to_string()),
+                original_name: "Early Christianity".to_string(),
+                source: "llm".to_string(),
+            })
+        };
+        let date = resolve_temporal_coverage_with(&tc, none_timespan, enrich).unwrap();
+        assert_eq!(date.date, "0030/0451");
+        assert_eq!(date.date_information.as_deref(), Some("Early Christianity"));
+    }
+
+    #[test]
+    fn stale_url_falls_through_to_enrichment() {
+        // URL present but unknown to the cache; enrichment by name still resolves.
+        let tc = reference("https://chronontology.dainst.org/period/stale", Some("Late Middle Ages"));
+        let enrich = |_: &str| {
+            Some(EnrichedDate {
+                date: Some("1250/1500".to_string()),
+                original_name: "Late Middle Ages".to_string(),
+                source: "llm".to_string(),
+            })
+        };
+        let date = resolve_temporal_coverage_with(&tc, none_timespan, enrich).unwrap();
+        assert_eq!(date.date, "1250/1500");
+        assert_eq!(date.date_information.as_deref(), Some("Late Middle Ages"));
+    }
+
+    #[test]
+    fn unresolved_emits_name_only_empty_date() {
+        let tc = text("Mysterious Era");
+        let date = resolve_temporal_coverage_with(&tc, none_timespan, none_enrichment).unwrap();
+        assert_eq!(date.date, "");
+        assert_eq!(date.date_type, "Coverage");
+        assert_eq!(date.date_information.as_deref(), Some("Mysterious Era"));
+    }
+
+    #[test]
+    fn no_name_and_no_resolution_is_none() {
+        let tc = reference("", None);
+        assert!(resolve_temporal_coverage_with(&tc, none_timespan, none_enrichment).is_none());
+    }
+
+    #[test]
+    fn enrichment_without_range_emits_name_only() {
+        let tc = text("Vague Period");
+        let enrich = |_: &str| {
+            Some(EnrichedDate {
+                date: None,
+                original_name: "Vague Period".to_string(),
+                source: "llm".to_string(),
+            })
+        };
+        let date = resolve_temporal_coverage_with(&tc, none_timespan, enrich).unwrap();
+        assert_eq!(date.date, "");
+        assert_eq!(date.date_information.as_deref(), Some("Vague Period"));
+    }
 }

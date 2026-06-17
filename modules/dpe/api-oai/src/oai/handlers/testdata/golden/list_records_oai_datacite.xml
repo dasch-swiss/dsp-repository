@@ -52,7 +52,7 @@
               </descriptions>
               <dates>
                 <date dateType="Collected">2008-06-01/2012-08-31</date>
-                <date dateType="Coverage">Late Middle Ages</date>
+                <date dateType="Coverage" dateInformation="Late Middle Ages"></date>
               </dates>
               <language>de</language>
               <rightsList>

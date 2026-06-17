@@ -1,0 +1,21 @@
+# bacon config for the DPE dev loop (Leptos → Maud migration, DEV-6642). Used by `just dev`.
+#
+# NOTE: the `serve` job is fully useful only from Phase 2 — once dpe-server serves app.css via
+# ServeDir and the tower-livereload layer is wired. Until then, `just watch-dpe` (cargo-leptos)
+# remains the working dev loop, and this file is scaffolding.
+
+default_job = "serve"
+
+[jobs.check]
+command = ["cargo", "check", "--all-targets", "--color", "always"]
+need_stdout = false
+
+[jobs.serve]
+command = ["cargo", "run", "--bin", "dpe-server", "--", "serve"]
+need_stdout = true
+background = false
+on_change_strategy = "kill_then_restart"
+# Graceful SIGINT so the server releases its port before restart (replaces cargo-leptos's restart).
+kill = ["kill", "-s", "INT"]
+# Also watch the tiles crate so tile changes rebuild (replaces cargo-leptos's watch-additional-files).
+watch = ["modules/dpe", "modules/mosaic/tiles/src"]

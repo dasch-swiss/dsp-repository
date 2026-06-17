@@ -91,6 +91,9 @@
             _ensure_tool leptosfmt       leptosfmt         0.1.33
             _ensure_tool mdbook-alerts   mdbook-alerts     0.8.0
             _ensure_tool mdbook-mermaid  mdbook-mermaid    0.16.2   # 0.17+ requires mdbook 0.5
+            # Maud-era dev tooling (Leptos→Maud migration, DEV-6642)
+            _ensure_tool bacon           bacon             3.23.0   # dev loop: kill_then_restart server
+            _ensure_tool maudfmt         maudfmt           0.1.8    # Maud template formatting (replaces leptosfmt)
 
             unset -f _ensure_tool
 

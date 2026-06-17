@@ -28,6 +28,8 @@ axum = { version = "0.8.9", features = ["macros", "ws"] }
 insta = { version = "1.47", features = ["yaml", "filters"] }
 datastar = { version = "0.3", features = ["axum"] }
 console_error_panic_hook = "0.1.7"
+# Templating (Leptos → Maud migration, DEV-6642). `axum` feature gives `impl IntoResponse for Markup`.
+maud = { version = "0.27", features = ["axum"] }
 leptos = { version = "0.8.2", features = ["islands"] }
 leptos_meta = "0.8.2"
 leptos-use = "0.15"
@@ -38,6 +40,9 @@ tokio = { version = "1", features = ["full"] }
 tower = "0.5.3"
 tower_governor = "0.6"
 tower-http = { version = "0.6.11", features = ["trace", "fs", "cors"] }
+# Dev-only browser live-reload — injects only into text/html, never text/event-stream, so SSE
+# morphing is untouched (Datastar-safe). Wired behind a dev feature in dpe-server (Phase 2). DEV-6642.
+tower-livereload = "0.10"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 # OpenTelemetry

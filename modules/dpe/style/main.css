@@ -1,14 +1,26 @@
-@import 'tailwindcss';
+/*
+ * Unified Tailwind v4 entry (Leptos → Maud migration, DEV-6642).
+ *
+ * `source(none)` disables Tailwind's auto-detection; classes are collected ONLY from the explicit
+ * `@source` globs below, which must cover EVERY crate that emits Tailwind classes — dpe-web
+ * (pages/components), dpe-server (fragments.rs SSE markup), and mosaic-tiles. A missing glob
+ * silently drops classes (the documented token/scanner footgun). The Mosaic playground is a
+ * separate app with its own pipeline and is intentionally NOT scanned here.
+ *
+ * Tailwind scans `.rs` files as plain text, so this works against the existing Leptos `view!` code
+ * throughout the migration. Built by `just css` (standalone CLI); cargo-leptos also reads this file
+ * until the Phase 2 cutover. DaisyUI is removed — its btn/loading/tooltip and `base-*` usages are
+ * replaced by Mosaic components / plain Tailwind in Phase 3 (the daisy-ui-theme.css file is dropped
+ * with them).
+ */
+@import 'tailwindcss' source(none);
 @import '../../mosaic/tiles/src/components/theme_provider/tokens.css';
 
 @plugin "@tailwindcss/typography";
 
-@plugin "daisyui" {
-    themes: light --default;
-    exclude: button, badge, tab, breadcrumb, card, link;
-}
-
-@import './daisy-ui-theme.css';
+@source '../web/**/*.rs';
+@source '../server/**/*.rs';
+@source '../../mosaic/tiles/src/**/*.rs';
 
 @utility dpe-title {
     @apply font-semibold text-gray-700;

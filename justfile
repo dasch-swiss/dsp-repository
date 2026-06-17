@@ -5,6 +5,10 @@ GIT_TAG := `git describe --tags --exact-match 2>/dev/null || true`
 IMAGE_TAG := if GIT_TAG == "" { CARGO_VERSION + "-" + COMMIT_HASH } else { CARGO_VERSION }
 DOCKER_IMAGE := DOCKER_REPO + ":" + IMAGE_TAG
 
+# Pinned Tailwind v4 standalone CLI (DEV-6642) — bundles the official plugins (incl. typography), so the CSS build needs no Node/npm.
+
+TAILWIND_VERSION := "4.1.18"
+
 # List all recipes
 default:
     just --list --unsorted
@@ -20,6 +24,8 @@ install-requirements: install-e2e-requirements
     cargo binstall -y mdbook-mermaid@0.16.2
     cargo binstall -y leptosfmt@0.1.33
     cargo binstall -y cargo-leptos@0.3.4
+    cargo binstall -y bacon@3.23.0
+    cargo binstall -y maudfmt@0.1.8
     cd modules/dpe && pnpm install
 
 # Install Playwright browsers for E2E tests
@@ -152,6 +158,56 @@ run-docker-mosaic-playground:
 [private]
 _check-dpe-node-modules:
     @test -d modules/dpe/node_modules/daisyui || { echo >&2 "error: modules/dpe/node_modules/daisyui not found — run 'just install-requirements' or 'pnpm -C modules/dpe install'"; exit 1; }
+
+# Resolve the pinned Tailwind v4 standalone CLI (download + cache under target/, gitignored); echoes its path. Bundles plugins incl. typography → no Node/npm needed. (DEV-6642)
+[private]
+_tailwind-bin:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ver="{{ TAILWIND_VERSION }}"
+    case "$(uname -s)" in Darwin) os=macos ;; Linux) os=linux ;; *) echo "unsupported OS: $(uname -s)" >&2; exit 1 ;; esac
+    case "$(uname -m)" in arm64|aarch64) arch=arm64 ;; x86_64) arch=x64 ;; *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;; esac
+    bin="target/tailwind/tailwindcss-$ver-$os-$arch"
+    if [ ! -x "$bin" ]; then
+        mkdir -p target/tailwind
+        url="https://github.com/tailwindlabs/tailwindcss/releases/download/v$ver/tailwindcss-$os-$arch"
+        echo "fetching Tailwind standalone CLI: $url" >&2
+        curl -fsSL -o "$bin" "$url"
+        chmod +x "$bin"
+    fi
+    echo "$bin"
+
+# Build the unified DPE stylesheet → public/assets/app.css (dev, unhashed). main.css is the single entry; cargo-leptos also reads it until the Phase 2 cutover. (DEV-6642)
+[group('dpe')]
+css:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin="$(just -q _tailwind-bin)"
+    "$bin" -i modules/dpe/style/main.css -o modules/dpe/public/assets/app.css --minify
+
+# Build the release stylesheet with a content-hashed filename (app.<hash>.css); the server discovers it by scanning the asset dir at startup (wired in Phase 2). No build.rs / tracked-source edit, so `git diff --exit-code` stays clean. (DEV-6642)
+[group('dpe')]
+css-release:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin="$(just -q _tailwind-bin)"
+    out=modules/dpe/public/assets
+    "$bin" -i modules/dpe/style/main.css -o "$out/app.css" --minify
+    if command -v sha256sum >/dev/null 2>&1; then h=$(sha256sum "$out/app.css" | cut -c1-8); else h=$(shasum -a 256 "$out/app.css" | cut -c1-8); fi
+    rm -f "$out"/app.[0-9a-f]*.css
+    mv "$out/app.css" "$out/app.$h.css"
+    echo "built $out/app.$h.css"
+
+# Dev loop (DEV-6642): Tailwind --watch + bacon (kill_then_restart). NOTE: fully functional only from Phase 2; until then `just watch-dpe` (cargo-leptos) is the working dev loop.
+[group('dpe')]
+dev:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin="$(just -q _tailwind-bin)"
+    "$bin" -i modules/dpe/style/main.css -o modules/dpe/public/assets/app.css --watch &
+    tw=$!
+    trap 'kill $tw 2>/dev/null || true' EXIT
+    bacon serve
 
 # Start the DPE with hot reload
 [group('dpe')]

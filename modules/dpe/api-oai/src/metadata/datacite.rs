@@ -195,10 +195,14 @@ pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) ->
     }
 
     // Dates - use startDate/endDate range as dateType="Collected"
+    // (kept on format_date_range: project start/end are full ISO YYYY-MM-DD dates,
+    // so the year-only w3cdtf formatter used for Coverage would lose precision here.)
     if let Some(date_range) = format_date_range(&project.start_date, &project.end_date) {
-        record
-            .dates
-            .push(DataCiteDate { date: date_range, date_type: "Collected".to_string() });
+        record.dates.push(DataCiteDate {
+            date: date_range,
+            date_type: "Collected".to_string(),
+            ..Default::default()
+        });
     }
 
     // Dates - temporal coverage as dateType="Coverage"
@@ -208,9 +212,11 @@ pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) ->
             TemporalCoverage::Text(text_map) => get_multilingual_value(text_map),
         };
         if let Some(text) = coverage_text {
-            record
-                .dates
-                .push(DataCiteDate { date: text, date_type: "Coverage".to_string() });
+            record.dates.push(DataCiteDate {
+                date: text,
+                date_type: "Coverage".to_string(),
+                ..Default::default()
+            });
         }
     }
 

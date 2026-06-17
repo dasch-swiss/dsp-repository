@@ -95,6 +95,10 @@ pub struct DataCiteDescription {
 pub struct DataCiteDate {
     pub date: String,
     pub date_type: String,
+    /// Free-text clarification emitted as the `dateInformation` attribute, e.g. the
+    /// original period name when the structured `date` is a resolved range (or the
+    /// only information available when no range could be resolved).
+    pub date_information: Option<String>,
 }
 
 #[derive(Debug, Default)]

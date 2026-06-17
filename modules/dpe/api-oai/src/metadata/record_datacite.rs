@@ -66,18 +66,21 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
         dates.push(DataCiteDate {
             date: record.date_created.clone(),
             date_type: "Created".to_string(),
+            ..Default::default()
         });
     }
     if !record.date_modified.is_empty() {
         dates.push(DataCiteDate {
             date: record.date_modified.clone(),
             date_type: "Updated".to_string(),
+            ..Default::default()
         });
     }
     if !record.date_published.is_empty() {
         dates.push(DataCiteDate {
             date: record.date_published.clone(),
             date_type: "Available".to_string(),
+            ..Default::default()
         });
     }
 

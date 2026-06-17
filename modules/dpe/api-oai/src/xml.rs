@@ -414,7 +414,11 @@ impl OaiXmlBuilder {
         if !datacite.dates.is_empty() {
             self.start_element("dates");
             for date in &datacite.dates {
-                self.write_element_with_attrs("date", &[("dateType", &date.date_type)], &date.date);
+                let mut attrs = vec![("dateType", date.date_type.as_str())];
+                if let Some(ref info) = date.date_information {
+                    attrs.push(("dateInformation", info.as_str()));
+                }
+                self.write_element_with_attrs("date", &attrs, &date.date);
             }
             self.end_element("dates");
         }

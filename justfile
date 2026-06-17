@@ -9,6 +9,11 @@ DOCKER_IMAGE := DOCKER_REPO + ":" + IMAGE_TAG
 
 TAILWIND_VERSION := "4.1.18"
 
+# Pre-migration HTML oracle (DEV-6642): base-commit server in a separate worktree for structural curl/diff against the migrated server. Override with ORACLE_DIR / ORACLE_PORT.
+
+ORACLE_DIR := "../dpe-oracle"
+ORACLE_PORT := "4100"
+
 # List all recipes
 default:
     just --list --unsorted
@@ -208,6 +213,56 @@ dev:
     tw=$!
     trap 'kill $tw 2>/dev/null || true' EXIT
     bacon serve
+
+# Stand up the pre-migration HTML oracle: a worktree at the migration base commit with a native dpe-server build (no Node/Tailwind; structural comparison only). (DEV-6642)
+[group('dpe')]
+oracle-setup:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    base="$(git merge-base HEAD origin/main)"
+    dir="{{ ORACLE_DIR }}"
+    if [ -e "$dir/.git" ]; then
+        echo "oracle worktree already present at $dir" >&2
+    else
+        echo "creating oracle worktree at $dir (base ${base:0:12})" >&2
+        git worktree add --detach "$dir" "$base"
+    fi
+    echo "building base dpe-server (native, no Tailwind/Node)…" >&2
+    cargo build --release -p dpe-server --manifest-path "$dir/Cargo.toml"
+    echo "ready: $dir/target/release/dpe-server — serve it with 'just oracle-serve'" >&2
+
+# Run the oracle (base-commit) dpe-server on ORACLE_PORT for curl/diff comparison. (DEV-6642)
+[group('dpe')]
+oracle-serve:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    dir="{{ ORACLE_DIR }}"
+    test -x "$dir/target/release/dpe-server" || { echo "oracle binary missing — run 'just oracle-setup' first" >&2; exit 1; }
+    echo "serving pre-migration oracle on http://127.0.0.1:{{ ORACLE_PORT }}" >&2
+    cd "$dir"
+    LEPTOS_OUTPUT_NAME=dpe LEPTOS_SITE_ROOT=modules/dpe/target/site LEPTOS_SITE_PKG_DIR=pkg LEPTOS_SITE_ADDR=127.0.0.1:{{ ORACLE_PORT }} LEPTOS_ENV=PROD RUST_LOG=error ./target/release/dpe-server serve
+
+# Semantic HTML diff of one route: oracle (old) vs the migrated server on :4000. Usage: just oracle-diff /dpe/projects/0803 (DEV-6642)
+[group('dpe')]
+oracle-diff route:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    old="$(mktemp)"
+    new="$(mktemp)"
+    trap 'rm -f "$old" "$new"' EXIT
+    curl -fsS "http://127.0.0.1:{{ ORACLE_PORT }}{{ route }}" | python3 scripts/oracle_normalize.py > "$old"
+    curl -fsS "http://127.0.0.1:4000{{ route }}" | python3 scripts/oracle_normalize.py > "$new"
+    if diff -u --label "oracle {{ route }}" "$old" --label "migrated {{ route }}" "$new"; then
+        echo "✓ no semantic differences on {{ route }}" >&2
+    fi
+
+# Remove the oracle worktree. (DEV-6642)
+[group('dpe')]
+oracle-down:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    git worktree remove --force "{{ ORACLE_DIR }}" 2>/dev/null || rm -rf "{{ ORACLE_DIR }}"
+    echo "removed oracle worktree {{ ORACLE_DIR }}" >&2
 
 # Start the DPE with hot reload
 [group('dpe')]

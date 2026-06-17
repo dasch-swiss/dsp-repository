@@ -115,6 +115,10 @@ export default defineConfig({
   webServer: {
     command: `${serverBinary} serve`,
     port: 4000,
+    // Run from the workspace root so the server's relative data dir
+    // (modules/dpe/server/data, resolved in config.rs) resolves. Without this the
+    // project cache is empty and every page renders without its expected content.
+    cwd: path.resolve(__dirname, "../../.."),
     reuseExistingServer: !process.env.CI,
     env: {
       LEPTOS_OUTPUT_NAME: "dpe",

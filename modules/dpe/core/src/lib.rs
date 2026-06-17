@@ -1,3 +1,5 @@
+#[cfg(not(target_arch = "wasm32"))]
+pub mod chronontology_cache;
 pub mod cluster;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod cluster_cache;
@@ -19,6 +21,7 @@ pub mod record;
 pub mod record_cache;
 pub mod record_repository;
 pub mod utils;
+pub mod w3cdtf;
 
 // Re-exports for convenience
 #[cfg(not(target_arch = "wasm32"))]

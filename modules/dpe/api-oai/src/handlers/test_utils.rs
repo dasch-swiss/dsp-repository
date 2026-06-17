@@ -171,6 +171,10 @@ pub fn incunabula_project() -> Project {
             map.insert("en".to_string(), "10404 Visual arts and Art history".to_string());
             map
         })],
+        // Free-text coverage with no ChronOntology URL. With no enrichment table
+        // loaded (the default in tests), this falls back to a dateInformation-only
+        // date. The ChronOntology-resolved and enrichment-resolved paths are covered
+        // by pure unit tests on `resolve_temporal_coverage_with` in datacite.rs.
         temporal_coverage: vec![TemporalCoverage::Text({
             let mut map = std::collections::HashMap::new();
             map.insert("en".to_string(), "Late Middle Ages".to_string());

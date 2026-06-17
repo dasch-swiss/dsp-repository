@@ -20,6 +20,8 @@ pub mod record;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod record_cache;
 pub mod record_repository;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod temporal_enrichment_cache;
 pub mod utils;
 pub mod w3cdtf;
 

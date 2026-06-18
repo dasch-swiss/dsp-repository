@@ -1,22 +1,11 @@
 // Project-list domain helpers.
 //
-// These were previously `#[server]` async fns (Leptos server functions). DPE
-// has no WASM client, so the server-fn indirection just exposed reactive
-// `Resource::new(..)` panic surfaces in `<Suspense>::dry_resolve` under
-// streaming SSR. The bodies are pure synchronous reads of the in-memory
-// project cache (`dpe_core::all_projects`), so we expose them as plain `pub fn`
-// gated on non-wasm — matching the cfg of `dpe_core::all_projects` itself —
-// and call them directly from page components and fragment handlers.
-//
-// `dpe-web` is still compiled for `wasm32-unknown-unknown` by cargo-leptos
-// (lib-package), but DPE renders SSR-only and the wasm output never executes;
-// gating on non-wasm avoids dragging the disk-backed cache into the wasm
-// build.
+// Plain synchronous reads of the in-memory project cache
+// (`dpe_core::all_projects`), called directly from page handlers and the SSE
+// fragment handler.
 
-#[cfg(not(target_arch = "wasm32"))]
 use dpe_core::{Page, Project};
 
-#[cfg(not(target_arch = "wasm32"))]
 pub fn list_type_of_data() -> Vec<String> {
     use std::collections::HashSet;
 
@@ -33,7 +22,6 @@ pub fn list_type_of_data() -> Vec<String> {
     result
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 pub fn list_data_languages() -> Vec<(String, String)> {
     use std::collections::HashSet;
 
@@ -58,7 +46,6 @@ pub fn list_data_languages() -> Vec<(String, String)> {
     result
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 #[allow(clippy::too_many_arguments)]
 pub fn list_projects(
     ongoing: Option<bool>,
@@ -88,12 +75,6 @@ pub fn list_projects(
     filter_and_paginate(all_projects(), &query, page_size)
 }
 
-// Gated on non-wasm targets to match `dpe_core::all_projects` (the only
-// realistic source of the `&[Project]` argument); the previous narrower
-// `#[cfg(feature = "ssr")]` gate kept the function from compiling under
-// `cargo hack --features default`, even though the body only touches plain
-// `dpe_core` types and has nothing SSR-specific.
-#[cfg(not(target_arch = "wasm32"))]
 pub fn filter_and_paginate(projects: &[Project], query: &super::project::ProjectQuery, page_size: Option<i32>) -> Page {
     use dpe_core::{AccessRightsType, ProjectStatus};
 
@@ -180,7 +161,7 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
     Page { items, nr_pages, total_items }
 }
 
-#[cfg(all(test, feature = "ssr"))]
+#[cfg(test)]
 mod tests {
     use std::collections::HashMap;
 
@@ -599,7 +580,6 @@ mod tests {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 pub fn get_project(shortcode: &str) -> Option<Project> {
     use std::fs;
     use std::path::PathBuf;

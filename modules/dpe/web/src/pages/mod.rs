@@ -2,6 +2,6 @@ pub mod about;
 pub mod project;
 pub mod projects;
 
-pub use about::AboutPage;
-pub use project::ProjectPage;
-pub use projects::ProjectsPage;
+pub use about::about_page;
+pub use project::project_page;
+pub use projects::projects_page;

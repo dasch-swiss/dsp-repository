@@ -57,7 +57,6 @@ tracing-opentelemetry = "0.32"
 pyroscope = { version = "2.0.4", features = ["backend-pprof-rs"] }
 url = { version = "2", features = ["serde"] }
 uuid = { version = "1.23", features = ["v4", "v7", "js"] }
-cfg-if = "1.0.0"
 http = "1.4.1"
 thiserror = "2.0.12"
 quick-xml = "0.37"

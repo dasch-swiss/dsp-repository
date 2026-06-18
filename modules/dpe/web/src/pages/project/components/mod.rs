@@ -22,7 +22,6 @@
 
 pub mod breadcrumb;
 pub mod contributor;
-pub mod copy_button;
 pub mod description;
 pub mod info_card;
 pub mod organization_name;

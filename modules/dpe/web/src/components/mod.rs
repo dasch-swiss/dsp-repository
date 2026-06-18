@@ -1,5 +1,4 @@
 mod global;
-pub mod loading;
 pub mod placeholder_value;
 
 pub use global::footer::Footer;

@@ -1,23 +1,31 @@
-use leptos::prelude::*;
+use maud::{html, Markup};
 
-use super::project_filters_content::ProjectFiltersContent;
+use super::project_filters_content::project_filters_content;
 
-// Regular component for filters and search - uses simple links that reload the page
-#[component]
-pub fn ProjectFilters(
-    status_items: Vec<(String, bool, String)>,
-    type_of_data_items: Vec<(String, bool, String)>,
-    data_language_items: Vec<(String, bool, String)>,
-    access_rights_items: Vec<(String, bool, String)>,
-) -> impl IntoView {
-    view! {
-        <div class="dpe-card dpe-small w-full">
-            <ProjectFiltersContent
-                status_items=status_items
-                type_of_data_items=type_of_data_items
-                data_language_items=data_language_items
-                access_rights_items=access_rights_items
-            />
-        </div>
+/// Desktop filter sidebar: the filter panel wrapped in a card. Uses plain links
+/// that reload the page with the toggled filter query.
+pub fn project_filters(
+    status_items: &[(String, bool, String)],
+    type_of_data_items: &[(String, bool, String)],
+    data_language_items: &[(String, bool, String)],
+    access_rights_items: &[(String, bool, String)],
+) -> Markup {
+    html! {
+        div class="dpe-card dpe-small w-full" {
+            (project_filters_content(status_items, type_of_data_items, data_language_items, access_rights_items, false))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn wraps_filter_content_in_a_card() {
+        let empty: Vec<(String, bool, String)> = vec![];
+        let out = project_filters(&empty, &empty, &empty, &empty).into_string();
+        assert!(out.contains(r#"class="dpe-card dpe-small w-full""#), "{out}");
+        assert!(out.contains("Filters"), "{out}");
     }
 }

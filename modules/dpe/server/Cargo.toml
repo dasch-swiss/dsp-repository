@@ -11,8 +11,7 @@ dpe-core = { path = "../core" }
 dpe-telemetry = { path = "../telemetry" }
 dpe-api-oai = { path = "../api-oai" }
 dpe-web = { path = "../web" }
-leptos = { workspace = true, features = [ "ssr", "islands" ]}
-leptos_axum.workspace = true
+maud.workspace = true
 
 axum.workspace = true
 datastar.workspace = true

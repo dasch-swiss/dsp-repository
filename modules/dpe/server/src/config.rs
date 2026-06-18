@@ -18,9 +18,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DpeConfig {
     /// Directory containing project/record JSON data files.
-    /// Default: `modules/dpe/server/data` (for cargo-leptos dev mode).
+    /// Default: `modules/dpe/server/data` (resolved relative to the working
+    /// directory, which is the workspace root under `just dev` / the e2e runner).
     /// Production: set via `DPE_DATA_DIR` or `DATA_DIR` env var.
     pub data_dir: PathBuf,
+
+    /// Directory served as static assets by `ServeDir` (favicon, logo, vendored
+    /// JS, project images, and the compiled `app.css`). Default:
+    /// `modules/dpe/public`. Set via `DPE_PUBLIC_DIR`.
+    pub public_dir: PathBuf,
 
     /// Fathom Analytics site ID. If set, the tracking script is injected into the HTML shell.
     /// Not a secret (visible in page source). Set via `DPE_FATHOM_SITE_ID`.
@@ -43,6 +49,7 @@ impl Default for DpeConfig {
     fn default() -> Self {
         Self {
             data_dir: PathBuf::from("modules/dpe/server/data"),
+            public_dir: PathBuf::from("modules/dpe/public"),
             fathom_site_id: None,
             show_placeholder_values: false,
             oai_base_url: "https://repository.dasch.swiss/dpe/oai".to_string(),
@@ -72,6 +79,7 @@ mod tests {
     fn defaults_are_sensible() {
         let config = DpeConfig::default();
         assert_eq!(config.data_dir, PathBuf::from("modules/dpe/server/data"));
+        assert_eq!(config.public_dir, PathBuf::from("modules/dpe/public"));
         assert!(config.fathom_site_id.is_none());
         assert!(!config.show_placeholder_values);
         assert_eq!(config.oai_base_url, "https://repository.dasch.swiss/dpe/oai");

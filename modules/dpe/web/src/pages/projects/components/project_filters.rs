@@ -11,7 +11,7 @@ pub fn project_filters(
     access_rights_items: &[(String, bool, String)],
 ) -> Markup {
     html! {
-        div class="card card-bordered dpe-small p-4 space-y-4 text-gray-700 w-full" {
+        div class="card card-bordered overflow-visible dpe-small p-4 space-y-4 text-gray-700 w-full" {
             (project_filters_content(status_items, type_of_data_items, data_language_items, access_rights_items, false))
         }
     }
@@ -26,7 +26,7 @@ mod tests {
         let empty: Vec<(String, bool, String)> = vec![];
         let out = project_filters(&empty, &empty, &empty, &empty).into_string();
         assert!(
-            out.contains(r#"class="card card-bordered dpe-small p-4 space-y-4 text-gray-700 w-full""#),
+            out.contains(r#"class="card card-bordered overflow-visible dpe-small p-4 space-y-4 text-gray-700 w-full""#),
             "{out}"
         );
         assert!(out.contains("Filters"), "{out}");

@@ -19,7 +19,7 @@ use crate::components::{placeholder_value, should_render_value};
 /// timeline, funding, and the data-management plan link.
 pub fn project_sidebar(proj: &Project) -> Markup {
     html! {
-        div class="card card-bordered dpe-small p-4 space-y-4 text-gray-700 lg:w-96" {
+        div class="card card-bordered overflow-visible dpe-small p-4 space-y-4 text-gray-700 lg:w-96" {
             div class="space-y-4" {
                 h2 class="dpe-title" { "Cite this Project" }
 

@@ -4,7 +4,8 @@
 //! (free-text names, or periods without a timespan). An offline tool produces
 //! `temporal-coverage-enrichment.json`, a reviewed lookup table mapping a
 //! normalized name to a W3CDTF date range, the original name, and the source of
-//! the range (`chronontology` or `llm`). This module loads that table at runtime.
+//! the range (`chronontology`, `parsed`, `llm`, or `unresolved`). This module
+//! loads that table at runtime.
 //!
 //! The table is keyed by the same value the OAI mapping computes at request time
 //! (the preferred-language / deterministic multilingual value), so collection and
@@ -33,12 +34,14 @@ pub struct EnrichedDate {
     pub date: Option<String>,
     /// The original human-readable period name.
     pub original_name: String,
-    /// Provenance of the range: `"chronontology"` or `"llm"`.
+    /// Provenance of the range (`"chronontology"`, `"parsed"`, `"llm"`, or
+    /// `"unresolved"`). Retained for round-trip fidelity and debugging; the OAI
+    /// mapping does not read it.
     #[serde(default)]
     pub source: String,
 }
 
-fn all_enriched() -> &'static HashMap<String, EnrichedDate> {
+pub fn all_enriched() -> &'static HashMap<String, EnrichedDate> {
     ENRICHMENT.get_or_init(load_all_enriched)
 }
 

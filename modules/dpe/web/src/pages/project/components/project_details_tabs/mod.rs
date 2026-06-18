@@ -19,7 +19,7 @@ pub fn has_publications(project: &Project) -> bool {
 
 /// Render the `#project-tabs` morph-root element: the tablist plus the active
 /// tab's panel. This single function is the source of truth for the tab UI,
-/// used by both the full-page project view (wrapped in a `dpe-card` by
+/// used by both the full-page project view (wrapped in a Mosaic card by
 /// `project_details`) and the `/dpe/projects/{id}/tab/{tab}` SSE fragment, which
 /// outer-morphs `#project-tabs` with this output. Keeping one renderer prevents
 /// the two paths from drifting.

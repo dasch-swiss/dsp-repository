@@ -20,26 +20,20 @@ uuid.workspace = true
 hydrate = ["leptos/hydrate", "dep:console_error_panic_hook", "dep:wasm-bindgen"]
 ssr = ["leptos/ssr"]
 default = [
-  "accordion",
   "badge",
   "breadcrumb",
   "button",
-  "button_group",
   "card",
   "icon",
   "link",
-  "popover",
   "tabs",
 ]
-accordion = ["icon"]
 badge = []
 breadcrumb = []
 button = []
-button_group = ["button"]
 card = []
 icon = []
 link = ["button"]
-popover = ["button"]
 tabs = []
 
 [build-dependencies]

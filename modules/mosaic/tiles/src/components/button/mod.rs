@@ -1,9 +1,6 @@
 use leptos::either::Either;
 use leptos::prelude::*;
 
-#[cfg(feature = "popover")]
-use crate::popover::{PopoverContext, PopoverTriggerContext};
-
 #[derive(Debug, Clone, Default)]
 pub enum ButtonVariant {
     #[default]
@@ -56,18 +53,7 @@ pub fn Button(
     button_type: MaybeProp<ButtonType>,
     #[prop(optional)] children: Option<Children>,
     #[prop(optional)] variant: ButtonVariant,
-    /// ID of a popover element to control (native HTML popover API).
-    /// When inside a PopoverTrigger, this is automatically set from context.
-    #[prop(optional, into)]
-    popovertarget: MaybeProp<String>,
-    /// Action to perform on the popover: "toggle" | "show" | "hide"
-    #[prop(optional, into)]
-    popovertargetaction: MaybeProp<String>,
 ) -> impl IntoView {
-    // Check if we're inside a PopoverTrigger and get the popover ID from context
-    #[cfg(feature = "popover")]
-    let is_trigger = use_context::<PopoverTriggerContext>().is_some();
-
     view! {
         <button
             class=move || {
@@ -86,18 +72,6 @@ pub fn Button(
             disabled=move || disabled.get_untracked()
             prop:disabled=move || disabled.get()
             type=move || button_type.get().unwrap_or_default().to_string()
-            popovertarget=move || {
-                #[cfg(feature = "popover")]
-                {
-                    if is_trigger {
-                        if let Some(ref ctx) = use_context::<PopoverContext>() {
-                            return Some(ctx.id.get());
-                        }
-                    }
-                }
-                popovertarget.get()
-            }
-            popovertargetaction=move || popovertargetaction.get()
         >
             {if let Some(children) = children {
                 Either::Left(children())

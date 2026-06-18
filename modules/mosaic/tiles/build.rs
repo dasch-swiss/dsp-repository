@@ -129,18 +129,7 @@ fn main() {
     }
 
     // Build list of css files to include
-    let features: Vec<&str> = features!(
-        "accordion",
-        "badge",
-        "breadcrumb",
-        "button",
-        "button_group",
-        "card",
-        "icon",
-        "link",
-        "popover",
-        "tabs"
-    );
+    let features: Vec<&str> = features!("badge", "breadcrumb", "button", "card", "icon", "link", "tabs");
 
     // Start merging css for selected features
     let bundle = fs::OpenOptions::new()

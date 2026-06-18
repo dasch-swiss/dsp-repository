@@ -8,11 +8,6 @@ pub mod breadcrumb {
     pub use crate::components::breadcrumb::*;
 }
 
-#[cfg(feature = "button_group")]
-pub mod button_group {
-    pub use crate::components::button_group::*;
-}
-
 #[cfg(feature = "icon")]
 pub mod icon {
     pub use crate::components::icon::*;
@@ -21,11 +16,6 @@ pub mod icon {
 #[cfg(feature = "link")]
 pub mod link {
     pub use crate::components::link::*;
-}
-
-#[cfg(feature = "popover")]
-pub mod popover {
-    pub use crate::components::popover::*;
 }
 
 #[cfg(feature = "tabs")]

@@ -1,6 +1,3 @@
-#[cfg(feature = "accordion")]
-pub mod accordion;
-
 #[cfg(feature = "badge")]
 pub mod badge;
 
@@ -10,9 +7,6 @@ pub mod breadcrumb;
 #[cfg(feature = "button")]
 pub mod button;
 
-#[cfg(feature = "button_group")]
-pub mod button_group;
-
 #[cfg(feature = "card")]
 pub mod card;
 
@@ -21,9 +15,6 @@ pub mod icon;
 
 #[cfg(feature = "link")]
 pub mod link;
-
-#[cfg(feature = "popover")]
-pub mod popover;
 
 #[cfg(feature = "tabs")]
 pub mod tabs;

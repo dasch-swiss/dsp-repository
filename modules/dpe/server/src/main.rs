@@ -178,10 +178,10 @@ async fn serve() -> ExitCode {
     // back to the default stderr hook until a subscriber is registered).
     install_tracing_panic_hook();
 
-    // Export logs via OTLP only when LEPTOS_ENV=DEV (local dev) and an OTLP
-    // endpoint is configured. Production (LEPTOS_ENV=PROD) logs to stdout only.
-    // Default to "DEV" when unset, matching leptos_config's own default.
-    let logger_provider: Option<SdkLoggerProvider> = if std::env::var("LEPTOS_ENV").as_deref().unwrap_or("DEV") == "DEV"
+    // Export logs via OTLP only when DPE_ENV=DEV (local dev) and an OTLP
+    // endpoint is configured. Production (DPE_ENV=PROD) logs to stdout only.
+    // Default to "DEV" when unset.
+    let logger_provider: Option<SdkLoggerProvider> = if std::env::var("DPE_ENV").as_deref().unwrap_or("DEV") == "DEV"
         && std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").is_ok()
     {
         let exporter = opentelemetry_otlp::LogExporter::builder()
@@ -258,13 +258,11 @@ async fn serve() -> ExitCode {
 
     tokio::task::spawn_blocking(dpe_core::record_cache::all_records);
 
-    // Listen address: DPE_SITE_ADDR (or the legacy LEPTOS_SITE_ADDR, dropped in
-    // Phase 5) → default 127.0.0.1:4000 (the former Leptos site-addr default).
+    // Listen address: DPE_SITE_ADDR → default 127.0.0.1:4000.
     let addr: std::net::SocketAddr = std::env::var("DPE_SITE_ADDR")
-        .or_else(|_| std::env::var("LEPTOS_SITE_ADDR"))
         .unwrap_or_else(|_| "127.0.0.1:4000".to_string())
         .parse()
-        .expect("invalid site address (DPE_SITE_ADDR / LEPTOS_SITE_ADDR)");
+        .expect("invalid site address (DPE_SITE_ADDR)");
 
     let state = AppState {
         fathom_site_id: dpe_config.fathom_site_id.clone(),

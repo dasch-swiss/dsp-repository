@@ -14,7 +14,6 @@ use serde::{Deserialize, Serialize};
 /// DPE application configuration.
 ///
 /// Loaded from defaults → `dpe.toml` (optional) → `DPE_*` env vars.
-/// Leptos-specific options are loaded separately via `get_configuration(None)`.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DpeConfig {
     /// Directory containing project/record JSON data files.

@@ -1,6 +1,6 @@
-//! Hand-written HTML document shell, replacing `leptos_meta` + the Leptos
-//! `shell`/`App`. Composes the `dpe-web` page content with the global header,
-//! footer, `<head>`, and the vendored Datastar + telemetry scripts.
+//! Hand-written HTML document shell. Composes the `dpe-web` page content with
+//! the global header, footer, `<head>`, and the vendored Datastar + telemetry
+//! scripts.
 
 use maud::{html, Markup, DOCTYPE};
 

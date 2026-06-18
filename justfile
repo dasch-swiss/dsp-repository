@@ -145,12 +145,24 @@ docs-test:
 # Mosaic targets
 ###################
 
-# Start the mosaic playground and watch mosaic tiles
+# Build the playground stylesheet → playground/public/assets/app.css (gitignored). Standalone Tailwind CLI off the canonical tokens.css, same mechanism as `just css`. (DEV-6642)
+[group('mosaic')]
+css-mosaic:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin="$(just -q _tailwind-bin)"
+    "$bin" -i modules/mosaic/playground/style/main.css -o modules/mosaic/playground/public/assets/app.css --minify
+
+# Dev loop (DEV-6642): Tailwind --watch + cargo-watch rebuilding the plain Axum playground binary. Replaces `cargo leptos watch`. (DEV-6642)
 [group('mosaic')]
 watch-mosaic-playground:
-    #!/usr/bin/env sh
-    cd modules/mosaic/playground
-    cargo leptos watch
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin="$(just -q _tailwind-bin)"
+    "$bin" -i modules/mosaic/playground/style/main.css -o modules/mosaic/playground/public/assets/app.css --watch &
+    tw=$!
+    trap 'kill $tw 2>/dev/null || true' EXIT
+    MOSAIC_PUBLIC_DIR=modules/mosaic/playground/public cargo watch -x 'run -p mosaic-playground'
 
 # Build Docker image for mosaic playground
 [group('mosaic')]

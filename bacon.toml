@@ -1,8 +1,4 @@
-# bacon config for the DPE dev loop (Leptos → Maud migration, DEV-6642). Used by `just dev`.
-#
-# NOTE: the `serve` job is fully useful only from Phase 2 — once dpe-server serves app.css via
-# ServeDir and the tower-livereload layer is wired. Until then, `just watch-dpe` (cargo-leptos)
-# remains the working dev loop, and this file is scaffolding.
+# bacon config for the DPE dev loop. Used by `just dev` / `just dev-otel`.
 
 default_job = "serve"
 

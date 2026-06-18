@@ -27,8 +27,6 @@ install-requirements: install-e2e-requirements _check-pnpm
     cargo binstall -y mdbook@0.4.52
     cargo binstall -y mdbook-alerts@0.8.0
     cargo binstall -y mdbook-mermaid@0.16.2
-    cargo binstall -y leptosfmt@0.1.33
-    cargo binstall -y cargo-leptos@0.3.4
     cargo binstall -y bacon@3.23.0
     cargo binstall -y maudfmt@0.1.8
     cd modules/dpe && pnpm install
@@ -52,13 +50,11 @@ _check-pnpm: _check-node
 check:
     just --check --fmt --unstable
     cargo +nightly fmt --check --all
-    leptosfmt --check . -x target -x .direnv
     cargo clippy -- -D warnings
 
-# Format all rust code (cargo fmt for non-leptos crates, leptosfmt for leptos crates)
+# Format all rust code (cargo +nightly fmt also formats the `html!` Maud macros)
 fmt:
     cargo +nightly fmt --all
-    leptosfmt .
 
 # Fix justfile formatting. Warning: will change existing file. Please first use check.
 fix:
@@ -178,11 +174,6 @@ run-docker-mosaic-playground:
 # DPE targets
 ###################
 
-# Verify daisyui is installed in modules/dpe/node_modules — Tailwind needs it at build time
-[private]
-_check-dpe-node-modules:
-    @test -d modules/dpe/node_modules/daisyui || { echo >&2 "error: modules/dpe/node_modules/daisyui not found — run 'just install-requirements' or 'pnpm -C modules/dpe install'"; exit 1; }
-
 # Resolve the pinned Tailwind v4 standalone CLI (download + cache under target/, gitignored); echoes its path. Bundles plugins incl. typography → no Node/npm needed. (DEV-6642)
 [private]
 _tailwind-bin:
@@ -201,7 +192,7 @@ _tailwind-bin:
     fi
     echo "$bin"
 
-# Build the unified DPE stylesheet → public/assets/app.css (dev, unhashed). main.css is the single entry; cargo-leptos also reads it until the Phase 2 cutover. (DEV-6642)
+# Build the unified DPE stylesheet → public/assets/app.css (dev, unhashed). main.css is the single Tailwind entry. (DEV-6642)
 [group('dpe')]
 css:
     #!/usr/bin/env bash
@@ -222,7 +213,7 @@ css-release:
     mv "$out/app.css" "$out/app.$h.css"
     echo "built $out/app.$h.css"
 
-# Dev loop (DEV-6642): Tailwind --watch + bacon (kill_then_restart). NOTE: fully functional only from Phase 2; until then `just watch-dpe` (cargo-leptos) is the working dev loop.
+# Start the DPE with hot reload: Tailwind --watch + bacon (kill_then_restart) serving dpe-server.
 [group('dpe')]
 dev:
     #!/usr/bin/env bash
@@ -283,11 +274,6 @@ oracle-down:
     git worktree remove --force "{{ ORACLE_DIR }}" 2>/dev/null || rm -rf "{{ ORACLE_DIR }}"
     echo "removed oracle worktree {{ ORACLE_DIR }}" >&2
 
-# Start the DPE with hot reload
-[group('dpe')]
-watch-dpe: _check-dpe-node-modules
-    cargo leptos watch --project=dpe -- serve
-
 # Start the Grafana LGTM (Loki, Grafana, Tempo, Mimir) all-in-one container for local observability
 [group('dpe')]
 lgtm-up:
@@ -295,12 +281,18 @@ lgtm-up:
 
 # Start the DPE with hot reload, exporting traces/metrics/logs to a local LGTM stack (run `just lgtm-up` in another terminal first)
 [group('dpe')]
-watch-dpe-otel: _check-dpe-node-modules
+dev-otel:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin="$(just -q _tailwind-bin)"
+    "$bin" -i modules/dpe/style/main.css -o modules/dpe/public/assets/app.css --watch &
+    tw=$!
+    trap 'kill $tw 2>/dev/null || true' EXIT
     OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
     OTEL_SERVICE_NAME=dpe \
     OTEL_RESOURCE_ATTRIBUTES="service.namespace=dpe,service.version={{ CARGO_VERSION }},deployment.environment=dev" \
     PYROSCOPE_ENDPOINT=http://localhost:4040 \
-    cargo leptos watch --project=dpe -- serve
+    bacon serve
 
 # Build Docker image for DPE
 [group('dpe')]

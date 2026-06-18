@@ -1,5 +1,19 @@
 # Onboarding
 
+## Toolchain & setup
+
+Two supported paths:
+
+- **Nix** (recommended): `nix develop` (or direnv via `.envrc`). The flake provides the full toolchain, including Node and pnpm.
+- **Without Nix**: `just install-requirements` (rustup + `cargo binstall` + the e2e Node dependencies).
+
+**Node and pnpm must be on `PATH` for all shells (non-Nix path).** `just` runs recipes in `sh`, which does not load shell-function-based version managers. A *lazy* nvm setup (where `node`/`npm`/`pnpm` are shell functions) therefore leaves them invisible to `just`, and recipes such as `lint-e2e`, `test-a11y-dpe`, and the Playwright e2e tests fail with `env: node: No such file`. To fix:
+
+- expose your default Node bin on `PATH` at shell startup — eager-load it in your shell rc, or use a PATH-shim manager such as volta or asdf; and
+- run `corepack enable` to provide `pnpm` (nvm does not ship pnpm).
+
+Only Playwright genuinely requires Node; the Tailwind CSS build and the pre-migration HTML oracle are Node-free. CI provisions Node and pnpm explicitly, so this affects local non-Nix development only.
+
 ## Rust
 
 The main technology we use is Rust.

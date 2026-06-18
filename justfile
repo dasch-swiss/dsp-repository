@@ -19,7 +19,7 @@ default:
     just --list --unsorted
 
 # Install all requirements
-install-requirements: install-e2e-requirements
+install-requirements: install-e2e-requirements _check-pnpm
     #!/usr/bin/env sh
     rustup show
     brew install cargo-binstall
@@ -34,9 +34,19 @@ install-requirements: install-e2e-requirements
     cd modules/dpe && pnpm install
 
 # Install Playwright browsers for E2E tests
-install-e2e-requirements:
+install-e2e-requirements: _check-node
     cd modules/mosaic/playground-e2e-tests && npx playwright install
     cd modules/dpe/web-e2e-tests && npx playwright install
+
+# Verify Node is on PATH. just runs recipes in sh, which does NOT see shell-function version managers (e.g. lazy nvm) — only real binaries on PATH. (DEV-6642)
+[private]
+_check-node:
+    @command -v node >/dev/null 2>&1 || { echo >&2 "error: 'node' not on PATH. just runs recipes in sh, which can't see nvm's lazy shell functions — expose your default node bin on PATH for all shells (eager-load it in your shell rc, or use brew/volta/asdf). See docs/src/fundamentals/onboarding.md."; exit 1; }
+
+# Verify pnpm is on PATH. Provided by corepack (bundled with Node); nvm does not provide pnpm. (DEV-6642)
+[private]
+_check-pnpm: _check-node
+    @command -v pnpm >/dev/null 2>&1 || { echo >&2 "error: 'pnpm' not on PATH — run 'corepack enable' (bundled with Node), or install pnpm standalone. See docs/src/fundamentals/onboarding.md."; exit 1; }
 
 # Run all fmt and clippy checks
 check:
@@ -295,10 +305,10 @@ run-docker-dpe:
 
 # Run accessibility E2E tests for the DPE (requires running server on port 4000)
 [group('dpe')]
-test-a11y-dpe:
+test-a11y-dpe: _check-node
     cd modules/dpe/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium
 
 # Lint E2E test TypeScript with Biome
-lint-e2e:
+lint-e2e: _check-node
     cd modules/dpe/web-e2e-tests && npx @biomejs/biome check .
     cd modules/mosaic/playground-e2e-tests && npx @biomejs/biome check .

@@ -28,6 +28,7 @@ this.setAttribute('data-tip', 'Copy failed');
 pub fn copy_button(text: &str) -> Markup {
     html! {
         button class="btn btn-ghost px-1 py-0.5 text-xs tooltip tooltip-left flex-shrink-0"
+               aria-label="Copy"
                data-tip="Copy"
                data-copy-text=(text)
                onclick=(ON_CLICK) {
@@ -45,6 +46,7 @@ mod tests {
         let out = copy_button("https://example.org/permalink").into_string();
         assert!(out.contains(r#"data-copy-text="https://example.org/permalink""#), "{out}");
         assert!(out.contains(r#"data-tip="Copy""#), "{out}");
+        assert!(out.contains(r#"aria-label="Copy""#), "accessible name missing: {out}");
         assert!(out.contains("navigator.clipboard.writeText"), "onclick handler missing: {out}");
         assert!(out.contains(r#"class="icon w-4 h-4""#), "icon missing: {out}");
     }

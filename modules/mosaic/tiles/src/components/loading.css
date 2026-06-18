@@ -1,0 +1,39 @@
+@layer components {
+  /* Spinner tile. Markup: `<span class="loading loading-spinner loading-{size}">`.
+     `loading` is the base, `loading-spinner` selects the spinner style, and the
+     size modifier sets the dimensions. Replaces the former DaisyUI `loading`. */
+  .loading {
+    @apply inline-block align-middle;
+  }
+
+  .loading-spinner {
+    @apply rounded-full border-current border-r-transparent;
+    animation: mosaic-spin 0.6s linear infinite;
+  }
+
+  .loading-xs {
+    @apply size-4 border-2;
+  }
+
+  .loading-sm {
+    @apply size-5 border-2;
+  }
+
+  .loading-md {
+    @apply size-6 border-[3px];
+  }
+
+  .loading-lg {
+    @apply size-8 border-[3px];
+  }
+
+  .loading-xl {
+    @apply size-10 border-4;
+  }
+}
+
+@keyframes mosaic-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

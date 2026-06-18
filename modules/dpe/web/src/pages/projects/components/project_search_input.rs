@@ -9,7 +9,7 @@ var results = document.getElementById('search-results');\
 if (!results) return;\
 var items = results.querySelectorAll('a');\
 if (items.length === 0) return;\
-var active = results.querySelector('.bg-base-200');\
+var active = results.querySelector('.bg-neutral-100');\
 var idx = active ? Array.from(items).indexOf(active) : -1;\
 if (event.key === 'ArrowDown') {\
   event.preventDefault();\
@@ -28,12 +28,12 @@ if (event.key === 'ArrowDown') {\
   return;\
 }\
 items.forEach(function(el) {\
-  el.classList.remove('bg-base-200');\
-  el.classList.add('hover:bg-base-200');\
+  el.classList.remove('bg-neutral-100');\
+  el.classList.add('hover:bg-neutral-100');\
 });\
 if (idx >= 0 && items[idx]) {\
-  items[idx].classList.add('bg-base-200');\
-  items[idx].classList.remove('hover:bg-base-200');\
+  items[idx].classList.add('bg-neutral-100');\
+  items[idx].classList.remove('hover:bg-neutral-100');\
 }";
 
 /// Project search input with Datastar-driven autocomplete.
@@ -47,9 +47,9 @@ pub fn project_search_input() -> Markup {
     html! {
         form method="get" action="/dpe/projects" {
             div class="relative flex-1" data-signals="{_focused: false}" {
-                label class="input w-full" {
+                label class="flex w-full items-center gap-2 rounded-md border border-neutral-300 bg-white px-3 py-2 focus-within:border-primary-600 focus-within:ring-1 focus-within:ring-primary-600" {
                     (icon(IconSearch, "w-4 h-4 opacity-50 shrink-0"))
-                    input type="search" name="search" placeholder="Search projects..." class="grow"
+                    input type="search" name="search" placeholder="Search projects..." class="grow bg-transparent outline-none"
                           role="combobox" aria-autocomplete="list" aria-controls="search-results"
                           aria-expanded="false"
                           data-attr:aria-expanded="$_focused && $search.length > 0 ? 'true' : 'false'"
@@ -62,7 +62,7 @@ pub fn project_search_input() -> Markup {
 
                 div id="search-results" role="listbox" aria-label="Search results"
                     data-show="$_focused && $search.length > 0"
-                    class="absolute top-full left-0 right-0 mt-1 bg-base-100 border border-base-300 rounded-box shadow-lg z-[100] p-2" {}
+                    class="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg z-[100] p-2" {}
             }
         }
     }

@@ -51,7 +51,7 @@ pub fn person(person_id: &str, roles: Option<&str>, show_email: bool) -> Markup 
                 }
             }
         },
-        None => html! { div class="italic text-base-content/70" { "Person not found" } },
+        None => html! { div class="italic text-neutral-500" { "Person not found" } },
     }
 }
 

@@ -29,7 +29,7 @@ pub fn mobile_filters_button(
             div class="fixed right-0 top-0 bottom-0 w-full md:w-96 bg-white z-50 overflow-y-auto lg:hidden" {
                 div class="relative p-4" {
                     a href=(close_dialog_href)
-                      class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 cursor-pointer" {
+                      class="btn btn-ghost size-8 justify-center rounded-full p-0 absolute right-2 top-2 cursor-pointer" {
                         "✕"
                     }
                     (project_filters_content(

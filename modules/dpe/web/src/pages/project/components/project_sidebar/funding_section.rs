@@ -44,7 +44,7 @@ pub fn funding_section(funding: &Funding) -> Markup {
                     @if dpe_core::is_placeholder(text) {
                         (placeholder_value(text))
                     } @else {
-                        div class="text-base-content/70" { (text) }
+                        div class="text-neutral-500" { (text) }
                     }
                 }
             }

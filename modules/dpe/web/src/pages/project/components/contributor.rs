@@ -22,7 +22,7 @@ pub fn contributor(contributor: &ResolvedContributor) -> Markup {
             }
         },
         ResolvedContributor::Unknown { id, roles } => html! {
-            div class="italic text-base-content/70" { (format!("Contributor not found: {id}")) }
+            div class="italic text-neutral-500" { (format!("Contributor not found: {id}")) }
             @if let Some(r) = roles {
                 div class="text-gray-600" { (r) }
             }

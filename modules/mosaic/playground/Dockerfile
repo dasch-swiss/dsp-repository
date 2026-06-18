@@ -14,11 +14,18 @@ RUN cargo chef prepare --recipe-path recipe.json
 # Builder — cook dependencies (cached), build the stylesheet, then build the binary.
 FROM chef AS builder
 
-# Download the pinned Tailwind v4 standalone CLI (bundles the official plugins,
-# so no Node/npm is needed). Keep the version in sync with TAILWIND_VERSION in
-# the justfile.
-RUN curl -fsSL https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.18/tailwindcss-linux-x64 \
-    -o /usr/local/bin/tailwindcss \
+# Download the pinned Tailwind v4 standalone CLI for the build platform (bundles
+# the official plugins, so no Node/npm is needed). Keep the version in sync with
+# TAILWIND_VERSION in the justfile. TARGETARCH is provided automatically by
+# BuildKit (amd64 on the CI/Cloud Run x64 path, arm64 on Apple-Silicon).
+ARG TARGETARCH
+RUN case "$TARGETARCH" in \
+      amd64) tw_arch=x64 ;; \
+      arm64) tw_arch=arm64 ;; \
+      *) echo "unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL "https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.18/tailwindcss-linux-$tw_arch" \
+      -o /usr/local/bin/tailwindcss \
     && chmod +x /usr/local/bin/tailwindcss
 
 # Cook dependencies (cached as long as Cargo.toml/Cargo.lock don't change).

@@ -56,3 +56,10 @@ result-*
 
 # In-memory repository caches
 modules/dpe/server/data/records/*-records.json
+
+# Raw ChronOntology mirror produced by scripts/fetch-chronontology-periods.py.
+# Only the slimmed projection under modules/dpe/server/data/ is committed.
+/chronontology-periods.json
+
+# Python bytecode cache
+__pycache__/

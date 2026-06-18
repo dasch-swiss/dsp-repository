@@ -31,31 +31,16 @@ jobs:
 
       - name: Install stable Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
 
       - uses: Swatinem/rust-cache@v2
 
       - name: Install just
         uses: extractions/setup-just@v4
 
-      - name: Install cargo-leptos
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-leptos@0.3.4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Install JS dependencies
-        run: cd modules/dpe && pnpm install
 
       - name: Install web-e2e-tests dependencies
         run: cd modules/dpe/web-e2e-tests && npm install
@@ -63,16 +48,14 @@ jobs:
       - name: Install Playwright browsers
         run: cd modules/dpe/web-e2e-tests && npx playwright install chromium --with-deps
 
-      - name: Build dpe
+      - name: Build dpe-server and stylesheet
+        # `cargo build -p dpe-server --release` yields target/release/dpe-server
+        # directly (the [[bin]] name), which the Playwright webServer launches.
+        # `just css-release` builds the content-hashed app.css the release server
+        # discovers from modules/dpe/public/assets at startup.
         run: |
-          # cargo-leptos 0.3.4 expects binary at target/release/{package-name} but
-          # [[bin]] name = "dpe" produces target/release/dpe. Build with cargo-leptos
-          # (which handles Tailwind/site assets) and ignore the post-build copy failure,
-          # then create a compatibility symlink.
-          cargo leptos build --project=dpe --release || true
-          if [ -f target/release/dpe ] && [ ! -f target/release/dpe-server ]; then
-            ln -s dpe target/release/dpe-server
-          fi
+          cargo build -p dpe-server --release
+          just css-release
 
       - name: Run accessibility tests
         run: just test-a11y-dpe

@@ -3,8 +3,6 @@
 /// All clusters are loaded from disk once on first access and held in memory
 /// for the lifetime of the server process. This avoids rescanning the clusters
 /// directory on every `get_project()` call.
-///
-/// Note: This module is gated with `#[cfg(not(target_arch = "wasm32"))]` in lib.rs.
 use std::sync::OnceLock;
 
 use super::cluster::{ClusterRaw, ClusterRef};

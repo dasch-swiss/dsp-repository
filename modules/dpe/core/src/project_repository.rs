@@ -7,24 +7,20 @@ pub trait ProjectRepository {
 }
 
 /// Production implementation of [`ProjectRepository`] backed by the in-process cache.
-#[cfg(not(target_arch = "wasm32"))]
 pub struct FsProjectRepository;
 
-#[cfg(not(target_arch = "wasm32"))]
 impl Default for FsProjectRepository {
     fn default() -> Self {
         Self
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl FsProjectRepository {
     pub fn new() -> Self {
         Self
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl ProjectRepository for FsProjectRepository {
     #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn get_all(&self) -> &[Project] {

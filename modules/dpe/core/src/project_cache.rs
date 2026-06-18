@@ -3,8 +3,6 @@
 /// All projects are loaded from disk once on first access and held in memory
 /// for the lifetime of the server process. This avoids re-reading and
 /// re-deserializing every JSON file on every request.
-///
-/// Note: This module is already gated with `#[cfg(not(target_arch = "wasm32"))]` in lib.rs.
 use std::collections::HashMap;
 use std::sync::OnceLock;
 

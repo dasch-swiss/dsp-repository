@@ -7,7 +7,6 @@ pub struct ClusterRef {
     pub description: String,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 #[derive(Clone, Debug, Deserialize)]
 pub struct ClusterRaw {
     pub id: String,
@@ -19,7 +18,6 @@ pub struct ClusterRaw {
     pub projects: Vec<String>,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl ClusterRaw {
     pub fn into_ref(self) -> ClusterRef {
         let description = self

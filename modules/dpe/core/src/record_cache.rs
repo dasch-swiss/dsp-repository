@@ -2,8 +2,6 @@
 ///
 /// All records are loaded from disk once on first access and held in memory
 /// for the lifetime of the server process, mirroring the project cache pattern.
-///
-/// Note: This module is already gated with `#[cfg(not(target_arch = "wasm32"))]` in lib.rs.
 use std::collections::HashMap;
 use std::sync::OnceLock;
 use std::time::Instant;
@@ -11,7 +9,6 @@ use std::time::Instant;
 use super::record::Record;
 use super::utils::get_data_dir;
 
-#[cfg(not(target_arch = "wasm32"))]
 static BEARER: &str = "Bearer eyJ0eXAiO...";
 // update the bearer to download the records locally, if needed
 
@@ -28,18 +25,15 @@ fn records_dir() -> std::path::PathBuf {
     std::path::PathBuf::from(get_data_dir()).join("records")
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 fn records_path(shortcode: &str) -> std::path::PathBuf {
     records_dir().join(format!("{shortcode}-records.json"))
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 fn save_records(shortcode: &str, body: &str) -> std::io::Result<()> {
     std::fs::create_dir_all(records_dir())?;
     std::fs::write(records_path(shortcode), body)
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 fn fetch_records(shortcode: &str) -> Result<String, ureq::Error> {
     let agent: ureq::Agent = ureq::config::Config::builder().build().into();
     let mut response = agent
@@ -56,7 +50,6 @@ fn find_records(shortcode: &str, cache: &mut RecordCache) -> Vec<Record> {
         return records.clone();
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     match fetch_records(shortcode) {
         Err(e) => tracing::error!(shortcode, error = %e, "failed to fetch records"),
         Ok(body) => match serde_json::from_str::<Vec<Record>>(&body) {

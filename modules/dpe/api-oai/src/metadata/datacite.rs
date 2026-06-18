@@ -207,17 +207,11 @@ pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) ->
         });
     }
 
-    // Dates - temporal coverage as dateType="Coverage"
+    // Dates - temporal coverage as dateType="Coverage". A project may cover
+    // several distinct periods, each emitted as its own Coverage date.
     for tc in &project.temporal_coverage {
         if let Some(date) = resolve_temporal_coverage(tc) {
-            // Dedupe: a project may list the same period more than once.
-            let duplicate = record
-                .dates
-                .iter()
-                .any(|d| d.date == date.date && d.date_information == date.date_information);
-            if !duplicate {
-                record.dates.push(date);
-            }
+            record.dates.push(date);
         }
     }
 

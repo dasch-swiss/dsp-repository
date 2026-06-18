@@ -1,43 +1,17 @@
-/// Icon component for displaying SVG icons with consistent styling.
-///
-/// This component provides access to 7 carefully selected icons:
-/// - Navigation: ChevronUp, ChevronDown
-/// - UI: Search, ArrowUpRight
-/// - Social: LinkedIn, X (Twitter), GitHub
-/// - Other: Star
-///
-/// # Sizing
-///
-/// Icons automatically adapt to their context. Control size via:
-/// - Explicit Tailwind classes: `class="w-5 h-5"`
-/// - Parent context: Icons inherit sizing from parent elements
-/// - Default: Icons use their intrinsic SVG dimensions
-///
-/// # Tree-Shaking
-///
-/// Only icons actually used in your code are included in the WASM bundle.
-/// Unused icons are automatically eliminated at compile time.
-///
-/// # Examples
-///
-/// ```rust,no_run
-/// use leptos::prelude::*;
-/// use mosaic_tiles::icon::*;
-///
-/// // Default size
-/// view! { <Icon icon=IconSearch /> };
-///
-/// // Explicit size
-/// view! { <Icon icon=IconGitHub class="w-6 h-6 text-neutral-600" /> };
-///
-/// // Size inherits from parent
-/// view! {
-///     <button class="text-lg">
-///         <Icon icon=IconSearch class="inline mr-2" />
-///         "Search"
-///     </button>
-/// };
-/// ```
+//! Icon component for rendering SVG icons with consistent styling.
+//!
+//! Icons are sourced from the `icondata` crate, which tree-shakes unused icons
+//! at compile time. Sizing is controlled via Tailwind classes passed in `class`
+//! or inherited from the parent context.
+//!
+//! ```
+//! use mosaic_tiles::icon::{icon, IconSearch};
+//!
+//! let markup = icon(IconSearch, "w-5 h-5 text-neutral-600");
+//! ```
+
+use maud::{html, Markup, PreEscaped};
+
 pub use icondata::{
     AiAppstoreOutlined as AppStore, AiArrowLeftOutlined as IconArrowLeft, AiArrowRightOutlined as IconArrowRight,
     AiBarsOutlined as Bars, AiClockCircleOutlined as Clock, AiDownOutlined as IconChevronDown,
@@ -51,55 +25,39 @@ pub use icondata::{
     OcSidebarCollapseLg as Sidebar, OcThreeBarsSm as Hamburger, RiBookOpenDocumentLine as OpenDocument,
     SiGithub as IconGitHub, SiX as IconX,
 };
-use leptos::prelude::*;
 
-/// Icon component for rendering SVG icons with consistent styling.
+/// Render an SVG icon with the base `icon` class plus any `class` extras.
 ///
-/// # Props
-///
-/// * `icon` - The icon data (use IconChevronUp, IconSearch, etc.)
-/// * `class` - Optional CSS classes for custom styling
-///
-/// # Examples
-///
-/// ```rust,no_run
-/// use leptos::prelude::*;
-/// use mosaic_tiles::icon::*;
-///
-/// // Basic usage
-/// view! { <Icon icon=IconSearch /> };
-///
-/// // With size and color
-/// view! { <Icon icon=IconGitHub class="w-6 h-6 text-neutral-600 hover:text-neutral-900" /> };
-/// ```
-#[component]
-pub fn Icon(
-    /// The icon data (use IconChevronUp, IconSearch, etc.)
-    icon: IconData,
-    /// Optional CSS classes
-    #[prop(optional, into)]
-    class: MaybeProp<String>,
-) -> impl IntoView {
-    // Read the class once at component creation rather than from inside a
-    // `move ||` closure. All 101 call sites in this repo pass either no
-    // `class` or a static string literal — none feed in a reactive signal —
-    // so the wrapping closure only added a reactive subscription that turned
-    // every `<Icon>` into a node visited by `<Suspense>::dry_resolve`. Under
-    // streaming SSR that walk could fire after the owning scope had already
-    // been disposed, hitting the recurring `tokio-rt-worker` panic at
-    // `reactive_graph-0.2.11/src/traits.rs:394:39`. The actual panic surface
-    // for DPE was eliminated by removing the `<Suspense>` boundaries on the
-    // projects routes; this is a defensive cleanup that removes the
-    // closure regardless of where Icon is rendered (e.g. mosaic-playground
-    // islands).
-    let class_str = format!("icon {}", class.get_untracked().unwrap_or_default());
-    view! {
-        <svg
-            class=class_str
+/// The SVG inner markup comes from the trusted `icondata` crate, so it is
+/// emitted with `PreEscaped`. This is the only sanctioned `PreEscaped` site in
+/// the tiles library — never feed user-controlled content through it.
+pub fn icon(icon: IconData, class: &str) -> Markup {
+    html! {
+        svg class=(format!("icon {class}"))
             xmlns="http://www.w3.org/2000/svg"
-            viewBox=icon.view_box
-            fill="currentColor"
-            inner_html=icon.data
-        ></svg>
+            viewBox=[icon.view_box]
+            fill="currentColor" {
+            (PreEscaped(icon.data))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn renders_svg_with_base_and_extra_classes() {
+        let out = icon(IconSearch, "w-5 h-5").into_string();
+        assert!(out.starts_with("<svg"), "expected an <svg> root, got: {out}");
+        assert!(out.contains(r#"class="icon w-5 h-5""#), "missing composed class: {out}");
+        assert!(out.contains(r#"fill="currentColor""#));
+        assert!(out.contains("viewBox="), "missing viewBox attribute: {out}");
+    }
+
+    #[test]
+    fn empty_class_keeps_base_class() {
+        let out = icon(IconSearch, "").into_string();
+        assert!(out.contains(r#"class="icon ""#), "expected bare base class: {out}");
     }
 }

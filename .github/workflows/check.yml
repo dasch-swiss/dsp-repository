@@ -38,10 +38,6 @@ jobs:
           components: rustfmt, clippy
       - name: Install just
         uses: extractions/setup-just@v4
-      - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@main
-      - name: Install leptosfmt
-        run: cargo binstall -y leptosfmt
       - name: just check
         run: just check
 

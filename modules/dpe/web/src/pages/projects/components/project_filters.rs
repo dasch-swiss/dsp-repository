@@ -25,7 +25,10 @@ mod tests {
     fn wraps_filter_content_in_a_card() {
         let empty: Vec<(String, bool, String)> = vec![];
         let out = project_filters(&empty, &empty, &empty, &empty).into_string();
-        assert!(out.contains(r#"class="card card-bordered dpe-small p-4 space-y-4 text-gray-700 w-full""#), "{out}");
+        assert!(
+            out.contains(r#"class="card card-bordered dpe-small p-4 space-y-4 text-gray-700 w-full""#),
+            "{out}"
+        );
         assert!(out.contains("Filters"), "{out}");
     }
 }

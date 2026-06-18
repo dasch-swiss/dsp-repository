@@ -37,6 +37,9 @@ mod tests {
         assert!(out.contains(r#"id="project-tabs""#), "tabs morph root: {out}");
         assert!(out.contains("Cite this Project"), "sidebar: {out}");
         // The tabs card wrapper that the SSE fragment morphs within.
-        assert!(out.contains(r#"class="card card-bordered p-4 space-y-4 text-gray-700 flex-1 pt-4""#), "{out}");
+        assert!(
+            out.contains(r#"class="card card-bordered p-4 space-y-4 text-gray-700 flex-1 pt-4""#),
+            "{out}"
+        );
     }
 }

@@ -16,11 +16,11 @@ pub mod record_repository;
 pub mod utils;
 
 // Re-exports for convenience
-pub use cluster::ClusterRaw;
-pub use cluster::ClusterRef;
+pub use cluster::{ClusterRaw, ClusterRef};
 pub use collection::CollectionRef;
-pub use contributors::{is_organization_id, ContributorLookup, ResolvedContributor};
-pub use contributors::{load_organization, load_person, CachedContributorLookup};
+pub use contributors::{
+    is_organization_id, load_organization, load_person, CachedContributorLookup, ContributorLookup, ResolvedContributor,
+};
 pub use models::{AuthorityFileReference, Page};
 pub use organization::Organization;
 pub use person::{is_role_job_title, Person, JOB_TITLE_ROLE_WORDS};
@@ -29,10 +29,10 @@ pub use project::{
     ProjectStatus, Publication, TemporalCoverage, ACCESS_RIGHTS_VALUES,
 };
 pub use project_cache::all_projects;
-pub use project_repository::FsProjectRepository;
-pub use project_repository::ProjectRepository;
+pub use project_repository::{FsProjectRepository, ProjectRepository};
 pub use record::{record_datestamp, Pid as RecordPid, Record, RecordLegalInfo, RecordLicense, ARK_PATH_PREFIX};
-pub use record_repository::FsRecordRepository;
-pub use record_repository::RecordRepository;
-pub use utils::{get_data_dir, set_data_dir, set_show_placeholder_values, show_placeholder_values};
-pub use utils::{is_placeholder, lang_value, language_display_name};
+pub use record_repository::{FsRecordRepository, RecordRepository};
+pub use utils::{
+    get_data_dir, is_placeholder, lang_value, language_display_name, set_data_dir, set_show_placeholder_values,
+    show_placeholder_values,
+};

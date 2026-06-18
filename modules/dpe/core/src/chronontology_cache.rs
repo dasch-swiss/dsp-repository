@@ -43,7 +43,7 @@ struct BoundRaw {
 }
 
 /// Return a reference to the cached period-range map, loading it on first call.
-fn all_periods() -> &'static HashMap<String, W3cdtfRange> {
+pub fn all_periods() -> &'static HashMap<String, W3cdtfRange> {
     PERIODS.get_or_init(load_all_periods)
 }
 

@@ -1,5 +1,7 @@
 //! Transformation of Research Projects into DataCite 4.6 metadata.
 
+use std::collections::HashMap;
+
 use dpe_core::{ContributorLookup, Discipline, Funding, Project, TemporalCoverage};
 
 use super::helpers::{
@@ -283,18 +285,19 @@ pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) ->
 /// Resolve one `temporalCoverage` entry to a DataCite `Coverage` date, using the
 /// process-global ChronOntology and enrichment caches.
 fn resolve_temporal_coverage(tc: &TemporalCoverage) -> Option<DataCiteDate> {
-    resolve_temporal_coverage_with(
+    resolve_temporal_coverage_in(
         tc,
-        |url| dpe_core::chronontology_cache::timespan_for(url).map(String::from),
-        dpe_core::temporal_enrichment_cache::enriched_for,
+        dpe_core::chronontology_cache::all_periods(),
+        dpe_core::temporal_enrichment_cache::all_enriched(),
     )
 }
 
-/// Pure resolution of a `temporalCoverage` entry, with the two lookups injected so
-/// the fallback chain can be unit-tested without the process-global caches.
+/// Pure resolution of a `temporalCoverage` entry over the given lookup maps, so
+/// the fallback chain can be unit-tested without the process-global caches (the
+/// same `*_in` shape used by the cache modules themselves).
 ///
 /// Resolution order:
-/// 1. A ChronOntology reference URL → its timespan range (`timespan`).
+/// 1. A ChronOntology reference URL → its timespan range (`periods`).
 /// 2. Otherwise (or on a cache miss) the offline enrichment table (`enrichment`), keyed by the same
 ///    name the mapping computes here.
 /// 3. Otherwise a name-only date (`dateInformation` with an empty `date`), so the original
@@ -302,11 +305,13 @@ fn resolve_temporal_coverage(tc: &TemporalCoverage) -> Option<DataCiteDate> {
 ///
 /// Returns `None` only when there is neither a resolvable range nor any name to
 /// carry — a date with neither value nor information would be useless.
-fn resolve_temporal_coverage_with(
+fn resolve_temporal_coverage_in(
     tc: &TemporalCoverage,
-    timespan: impl Fn(&str) -> Option<String>,
-    enrichment: impl Fn(&str) -> Option<dpe_core::temporal_enrichment_cache::EnrichedDate>,
+    periods: &HashMap<String, dpe_core::w3cdtf::W3cdtfRange>,
+    enrichment: &HashMap<String, dpe_core::temporal_enrichment_cache::EnrichedDate>,
 ) -> Option<DataCiteDate> {
+    use dpe_core::{chronontology_cache, temporal_enrichment_cache};
+
     // The display name, used both as the enrichment key and as dateInformation.
     let name = match tc {
         TemporalCoverage::Reference(ref_data) => ref_data.text.clone(),
@@ -316,9 +321,9 @@ fn resolve_temporal_coverage_with(
     // 1. ChronOntology URL → timespan.
     if let TemporalCoverage::Reference(ref_data) = tc {
         if !ref_data.url.is_empty() {
-            if let Some(range) = timespan(&ref_data.url) {
+            if let Some(range) = chronontology_cache::timespan_for_in(periods, &ref_data.url) {
                 return Some(DataCiteDate {
-                    date: range,
+                    date: range.into(),
                     date_type: "Coverage".to_string(),
                     date_information: name,
                 });
@@ -328,7 +333,7 @@ fn resolve_temporal_coverage_with(
 
     // 2. Enrichment table, keyed by the display name.
     if let Some(ref key) = name {
-        if let Some(enriched) = enrichment(key) {
+        if let Some(enriched) = temporal_enrichment_cache::enriched_for_in(enrichment, key) {
             return Some(DataCiteDate {
                 date: enriched.date.unwrap_or_default(),
                 date_type: "Coverage".to_string(),
@@ -350,6 +355,7 @@ mod temporal_tests {
     use std::collections::HashMap;
 
     use dpe_core::temporal_enrichment_cache::EnrichedDate;
+    use dpe_core::w3cdtf::{to_w3cdtf_range, W3cdtfRange};
     use dpe_core::AuthorityFileReference;
 
     use super::*;
@@ -368,18 +374,34 @@ mod temporal_tests {
         TemporalCoverage::Text(map)
     }
 
-    fn none_timespan(_: &str) -> Option<String> {
-        None
+    /// A period cache keyed by bare id (as the real one is), so tests exercise the
+    /// real `/period/` URL-stripping in `timespan_for_in`.
+    fn periods() -> HashMap<String, W3cdtfRange> {
+        let mut map = HashMap::new();
+        map.insert("0vGXxVln724L".to_string(), to_w3cdtf_range(Some("98"), Some("117")).unwrap());
+        map
     }
 
-    fn none_enrichment(_: &str) -> Option<EnrichedDate> {
-        None
+    fn enrichment(entries: &[(&str, Option<&str>, &str)]) -> HashMap<String, EnrichedDate> {
+        entries
+            .iter()
+            .map(|(key, date, name)| {
+                (
+                    key.to_string(),
+                    EnrichedDate {
+                        date: date.map(str::to_string),
+                        original_name: name.to_string(),
+                        source: "llm".to_string(),
+                    },
+                )
+            })
+            .collect()
     }
 
     #[test]
     fn chronontology_url_resolves_to_range() {
         let tc = reference("https://chronontology.dainst.org/period/0vGXxVln724L", Some("Trajanic"));
-        let date = resolve_temporal_coverage_with(&tc, |_| Some("0098/0117".to_string()), none_enrichment).unwrap();
+        let date = resolve_temporal_coverage_in(&tc, &periods(), &HashMap::new()).unwrap();
         assert_eq!(date.date, "0098/0117");
         assert_eq!(date.date_type, "Coverage");
         assert_eq!(date.date_information.as_deref(), Some("Trajanic"));
@@ -388,30 +410,18 @@ mod temporal_tests {
     #[test]
     fn free_text_resolves_via_enrichment() {
         let tc = text("Early Christianity");
-        let enrich = |key: &str| {
-            (key == "Early Christianity").then(|| EnrichedDate {
-                date: Some("0030/0451".to_string()),
-                original_name: "Early Christianity".to_string(),
-                source: "llm".to_string(),
-            })
-        };
-        let date = resolve_temporal_coverage_with(&tc, none_timespan, enrich).unwrap();
+        let enrich = enrichment(&[("Early Christianity", Some("0030/0451"), "Early Christianity")]);
+        let date = resolve_temporal_coverage_in(&tc, &HashMap::new(), &enrich).unwrap();
         assert_eq!(date.date, "0030/0451");
         assert_eq!(date.date_information.as_deref(), Some("Early Christianity"));
     }
 
     #[test]
     fn stale_url_falls_through_to_enrichment() {
-        // URL present but unknown to the cache; enrichment by name still resolves.
+        // URL present but unknown to the period cache; enrichment by name resolves.
         let tc = reference("https://chronontology.dainst.org/period/stale", Some("Late Middle Ages"));
-        let enrich = |_: &str| {
-            Some(EnrichedDate {
-                date: Some("1250/1500".to_string()),
-                original_name: "Late Middle Ages".to_string(),
-                source: "llm".to_string(),
-            })
-        };
-        let date = resolve_temporal_coverage_with(&tc, none_timespan, enrich).unwrap();
+        let enrich = enrichment(&[("Late Middle Ages", Some("1250/1500"), "Late Middle Ages")]);
+        let date = resolve_temporal_coverage_in(&tc, &periods(), &enrich).unwrap();
         assert_eq!(date.date, "1250/1500");
         assert_eq!(date.date_information.as_deref(), Some("Late Middle Ages"));
     }
@@ -419,7 +429,7 @@ mod temporal_tests {
     #[test]
     fn unresolved_emits_name_only_empty_date() {
         let tc = text("Mysterious Era");
-        let date = resolve_temporal_coverage_with(&tc, none_timespan, none_enrichment).unwrap();
+        let date = resolve_temporal_coverage_in(&tc, &HashMap::new(), &HashMap::new()).unwrap();
         assert_eq!(date.date, "");
         assert_eq!(date.date_type, "Coverage");
         assert_eq!(date.date_information.as_deref(), Some("Mysterious Era"));
@@ -428,20 +438,14 @@ mod temporal_tests {
     #[test]
     fn no_name_and_no_resolution_is_none() {
         let tc = reference("", None);
-        assert!(resolve_temporal_coverage_with(&tc, none_timespan, none_enrichment).is_none());
+        assert!(resolve_temporal_coverage_in(&tc, &HashMap::new(), &HashMap::new()).is_none());
     }
 
     #[test]
     fn enrichment_without_range_emits_name_only() {
         let tc = text("Vague Period");
-        let enrich = |_: &str| {
-            Some(EnrichedDate {
-                date: None,
-                original_name: "Vague Period".to_string(),
-                source: "llm".to_string(),
-            })
-        };
-        let date = resolve_temporal_coverage_with(&tc, none_timespan, enrich).unwrap();
+        let enrich = enrichment(&[("Vague Period", None, "Vague Period")]);
+        let date = resolve_temporal_coverage_in(&tc, &HashMap::new(), &enrich).unwrap();
         assert_eq!(date.date, "");
         assert_eq!(date.date_information.as_deref(), Some("Vague Period"));
     }

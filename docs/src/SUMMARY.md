@@ -23,6 +23,7 @@
 - [Testing Strategy](./dpe/testing-strategy.md)
 - [Observability](./dpe/observability.md)
 - [Operations](./dpe/operations.md)
+- [JSON API](./dpe/json-api.md)
 - [OAI-PMH Endpoint](./dpe/oai-pmh.md)
 
 ---

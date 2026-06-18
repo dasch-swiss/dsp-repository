@@ -133,7 +133,7 @@ fn sidebar(active: &str) -> Markup {
                 div class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 mt-4 px-3" {
                     "Components"
                 }
-                @for (href, label) in COMPONENT_NAV {
+                @for &(href, label) in COMPONENT_NAV {
                     (nav_link(active, href, label))
                 }
             }

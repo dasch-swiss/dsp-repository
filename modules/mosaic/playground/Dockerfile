@@ -14,23 +14,26 @@ RUN cargo chef prepare --recipe-path recipe.json
 # Builder — cook dependencies (cached), build the stylesheet, then build the binary.
 FROM chef AS builder
 
+# Cook dependencies first (the slow, well-cached layer; busts only on
+# Cargo.toml/Cargo.lock changes) so a Tailwind version bump below doesn't
+# invalidate it.
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
 # Download the pinned Tailwind v4 standalone CLI for the build platform (bundles
-# the official plugins, so no Node/npm is needed). Keep the version in sync with
-# TAILWIND_VERSION in the justfile. TARGETARCH is provided automatically by
+# the official plugins, so no Node/npm is needed). TAILWIND_VERSION must match
+# the justfile's TAILWIND_VERSION. TARGETARCH is provided automatically by
 # BuildKit (amd64 on the CI/Cloud Run x64 path, arm64 on Apple-Silicon).
+ARG TAILWIND_VERSION=4.1.18
 ARG TARGETARCH
 RUN case "$TARGETARCH" in \
       amd64) tw_arch=x64 ;; \
       arm64) tw_arch=arm64 ;; \
       *) echo "unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
     esac; \
-    curl -fsSL "https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.18/tailwindcss-linux-$tw_arch" \
+    curl -fsSL "https://github.com/tailwindlabs/tailwindcss/releases/download/v${TAILWIND_VERSION}/tailwindcss-linux-$tw_arch" \
       -o /usr/local/bin/tailwindcss \
     && chmod +x /usr/local/bin/tailwindcss
-
-# Cook dependencies (cached as long as Cargo.toml/Cargo.lock don't change).
-COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
 
 # Copy the full source.
 COPY . .

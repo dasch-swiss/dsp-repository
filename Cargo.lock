@@ -958,7 +958,6 @@ dependencies = [
  "tokio",
  "tracing",
  "urlencoding",
- "wasm-bindgen",
 ]
 
 [[package]]

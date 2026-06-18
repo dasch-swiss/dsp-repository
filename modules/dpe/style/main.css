@@ -7,11 +7,9 @@
  * silently drops classes (the documented token/scanner footgun). The Mosaic playground is a
  * separate app with its own pipeline and is intentionally NOT scanned here.
  *
- * Tailwind scans `.rs` files as plain text, so this works against the existing Leptos `view!` code
- * throughout the migration. Built by `just css` (standalone CLI); cargo-leptos also reads this file
- * until the Phase 2 cutover. DaisyUI is removed — its btn/loading/tooltip and `base-*` usages are
- * replaced by Mosaic components / plain Tailwind in Phase 3 (the daisy-ui-theme.css file is dropped
- * with them).
+ * Tailwind scans `.rs` files as plain text. Built by `just css` (standalone CLI). DaisyUI has been
+ * removed: its btn/loading/tooltip/base-* usages are now served by the Mosaic component CSS imported
+ * below or by plain Tailwind utilities, so this is a single, self-contained, DaisyUI-free stylesheet.
  */
 @import 'tailwindcss' source(none);
 @import '../../mosaic/tiles/src/components/theme_provider/tokens.css';

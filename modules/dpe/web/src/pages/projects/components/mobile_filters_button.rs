@@ -52,7 +52,13 @@ mod tests {
     #[test]
     fn closed_renders_only_the_trigger() {
         let out = mobile_filters_button(
-            &empty(), &empty(), &empty(), &empty(), false, "/dpe/projects?dialog=true", "/dpe/projects",
+            &empty(),
+            &empty(),
+            &empty(),
+            &empty(),
+            false,
+            "/dpe/projects?dialog=true",
+            "/dpe/projects",
         )
         .into_string();
         assert!(out.contains(r#"href="/dpe/projects?dialog=true""#), "{out}");
@@ -64,7 +70,13 @@ mod tests {
     #[test]
     fn open_renders_backdrop_and_panel() {
         let out = mobile_filters_button(
-            &empty(), &empty(), &empty(), &empty(), true, "/dpe/projects?dialog=true", "/dpe/projects",
+            &empty(),
+            &empty(),
+            &empty(),
+            &empty(),
+            true,
+            "/dpe/projects?dialog=true",
+            "/dpe/projects",
         )
         .into_string();
         assert!(out.contains("fixed inset-0 bg-black/40"), "backdrop missing: {out}");

@@ -1,81 +1,81 @@
-use leptos::prelude::*;
-use mosaic_tiles::icon::{Icon, LinkExternal};
+use dpe_core::project::Funding;
+use maud::{html, Markup};
+use mosaic_tiles::icon::{icon, LinkExternal};
 
-use super::super::info_card::InfoCard;
-use super::super::organization_name::OrganizationName;
-use crate::components::PlaceholderValue;
-use crate::domain::Funding;
+use super::super::info_card::info_card;
+use super::super::organization_name::organization_name;
+use crate::components::placeholder_value;
 
-#[component]
-pub fn FundingSection(funding: Funding) -> impl IntoView {
-    view! {
-        <div>
-            {match funding {
+/// The funding block: a list of grant cards, or a free-text funding statement.
+pub fn funding_section(funding: &Funding) -> Markup {
+    html! {
+        div {
+            @match funding {
                 Funding::Grants(grants) => {
-                    let grants_clone = grants.clone();
-                    view! {
-                        <div class="space-y-2">
-                            <div class="dpe-subtitle">"Grants"</div>
-                            {grants_clone
-                                .into_iter()
-                                .map(|grant| {
-                                    view! {
-                                        <InfoCard>
-                                            <div>
-                                                {grant
-                                                    .funders
-                                                    .into_iter()
-                                                    .enumerate()
-                                                    .map(|(i, funder_id)| {
-                                                        view! {
-                                                            <span>
-                                                                {if i > 0 { ", " } else { "" }}
-                                                                <OrganizationName organization_id=funder_id />
-                                                            </span>
-                                                        }
-                                                    })
-                                                    .collect_view()}
-                                            </div>
-                                            {grant
-                                                .number
-                                                .map(|number| {
-                                                    view! { <div>"Grant: " {number}</div> }
-                                                })}
-                                            {grant
-                                                .name
-                                                .map(|name| {
-                                                    view! { <div>{name}</div> }
-                                                })}
-                                            {grant
-                                                .url
-                                                .map(|url| {
-                                                    view! {
-                                                        <a
-                                                            href=url
-                                                            class="text-primary items-center gap-1"
-                                                            target="_blank"
-                                                        >
-                                                            "More info"
-                                                            <Icon icon=LinkExternal class="w-3 h-3" />
-                                                        </a>
-                                                    }
-                                                })}
-                                        </InfoCard>
+                    div class="space-y-2" {
+                        div class="dpe-subtitle" { "Grants" }
+                        @for grant in grants {
+                            (info_card(html! {
+                                div {
+                                    @for (i, funder_id) in grant.funders.iter().enumerate() {
+                                        span {
+                                            @if i > 0 { ", " }
+                                            (organization_name(funder_id))
+                                        }
                                     }
-                                })
-                                .collect_view()}
-                        </div>
+                                }
+                                @if let Some(number) = &grant.number {
+                                    div { "Grant: " (number) }
+                                }
+                                @if let Some(name) = &grant.name {
+                                    div { (name) }
+                                }
+                                @if let Some(url) = &grant.url {
+                                    a href=(url) class="text-primary items-center gap-1" target="_blank" {
+                                        "More info"
+                                        (icon(LinkExternal, "w-3 h-3"))
+                                    }
+                                }
+                            }))
+                        }
                     }
-                        .into_any()
                 }
                 Funding::Text(text) => {
-                    if dpe_core::is_placeholder(&text) {
-                        view! { <PlaceholderValue value=text /> }.into_any()
-                    } else {
-                        view! { <div class="text-base-content/70">{text}</div> }.into_any()
+                    @if dpe_core::is_placeholder(text) {
+                        (placeholder_value(text))
+                    } @else {
+                        div class="text-base-content/70" { (text) }
                     }
                 }
-            }}
-        </div>
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use dpe_core::project::Grant;
+
+    use super::*;
+
+    #[test]
+    fn grants_render_number_name_and_link() {
+        let funding = Funding::Grants(vec![Grant {
+            funders: vec!["organization-001".to_string()],
+            number: Some("12345".to_string()),
+            name: Some("Big Grant".to_string()),
+            url: Some("https://example.org/grant".to_string()),
+        }]);
+        let out = funding_section(&funding).into_string();
+        assert!(out.contains("Grants"), "{out}");
+        assert!(out.contains("Grant: 12345"), "{out}");
+        assert!(out.contains("Big Grant"), "{out}");
+        assert!(out.contains(r#"href="https://example.org/grant""#), "{out}");
+    }
+
+    #[test]
+    fn free_text_funding_renders() {
+        let out = funding_section(&Funding::Text("Self-funded".to_string())).into_string();
+        assert!(out.contains("Self-funded"), "{out}");
     }
 }

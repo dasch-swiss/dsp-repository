@@ -47,8 +47,7 @@ mod tests {
 
     #[test]
     fn finished_embargoed_labels() {
-        let out =
-            project_card_indicators(ProjectStatus::Finished, AccessRightsType::EmbargoedAccess).into_string();
+        let out = project_card_indicators(ProjectStatus::Finished, AccessRightsType::EmbargoedAccess).into_string();
         assert!(out.contains(r#"data-tip="Finished""#), "{out}");
         assert!(out.contains(r#"data-tip="Embargoed Access""#), "{out}");
     }

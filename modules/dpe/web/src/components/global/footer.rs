@@ -100,7 +100,10 @@ mod tests {
         let out = footer().into_string();
         assert!(out.starts_with("<footer"), "{out}");
         assert!(out.contains(r#"href="https://dasch.swiss/legal-notice""#), "{out}");
-        assert!(out.contains(r#"href="https://dasch.swiss/downloads/AGB_DaSCH_4.0.pdf""#), "{out}");
+        assert!(
+            out.contains(r#"href="https://dasch.swiss/downloads/AGB_DaSCH_4.0.pdf""#),
+            "{out}"
+        );
         assert!(out.contains("Deposit Agreement"), "{out}");
     }
 

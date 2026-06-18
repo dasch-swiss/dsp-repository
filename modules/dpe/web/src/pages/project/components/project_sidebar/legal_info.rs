@@ -1,187 +1,115 @@
-use leptos::prelude::*;
-use mosaic_tiles::link::Link;
+use dpe_core::project::LegalInfo as LegalInfoData;
+use maud::{html, Markup};
+use mosaic_tiles::link::{link, LinkProps};
 
-use super::super::info_card::InfoCard;
-use super::super::person::{AffiliationName, Person};
-use crate::components::{should_render_value, PlaceholderValue};
-use crate::domain::LegalInfo as LegalInfoData;
+use super::super::info_card::info_card;
+use super::super::person::{affiliation_name, person};
+use crate::components::{placeholder_value, should_render_value};
 
-// See `crate::pages::project::components` module docs for why this is a sync
-// lookup with a wasm32 stub.
-
-/// Renders an entity name (person or organization) from the in-process caches.
-#[cfg(not(target_arch = "wasm32"))]
-#[component]
-fn EntityName(id: String) -> impl IntoView {
+/// Render an entity name (person or organization) from the in-process caches,
+/// by ID. Falls back to the raw ID when not found or not an entity reference.
+fn entity_name(id: &str) -> Markup {
     if id.starts_with("person-") || id.contains("-person-") {
-        let name = dpe_core::load_person(&id)
+        let name = dpe_core::load_person(id)
             .map(|p| format!("{} {}", p.given_names.join(" "), p.family_names.join(" ")))
-            .unwrap_or_else(|| id.clone());
-        view! { <span>{name}</span> }.into_any()
+            .unwrap_or_else(|| id.to_string());
+        html! { span { (name) } }
     } else if id.starts_with("organization-") || id.contains("-organization-") {
-        let name = dpe_core::load_organization(&id).map(|o| o.name).unwrap_or_else(|| id.clone());
-        view! { <span>{name}</span> }.into_any()
+        let name = dpe_core::load_organization(id)
+            .map(|o| o.name)
+            .unwrap_or_else(|| id.to_string());
+        html! { span { (name) } }
     } else {
-        view! { <span>{id}</span> }.into_any()
+        html! { span { (id) } }
     }
 }
 
-#[cfg(target_arch = "wasm32")]
-#[component]
-fn EntityName(id: String) -> impl IntoView {
-    let _ = id;
-}
-
-#[component]
-pub fn LegalInfo(legal_info: Vec<LegalInfoData>) -> impl IntoView {
-    legal_info
-        .iter()
-        .map(|info| {
-            let license_is_placeholder = dpe_core::is_placeholder(&info.license.license_identifier)
+/// The legal-info block: license (CC badge or link), copyright holder, and
+/// authorship. Placeholder values are hidden in production, shown red in dev.
+pub fn legal_info(legal_info: &[LegalInfoData]) -> Markup {
+    html! {
+        @for info in legal_info {
+            @let license_is_placeholder = dpe_core::is_placeholder(&info.license.license_identifier)
                 || dpe_core::is_placeholder(&info.license.license_uri);
-
-            view! {
-                {if license_is_placeholder {
-                    should_render_value(&info.license.license_identifier)
-                        .then(|| {
-                            // Placeholder: hide in production, show red in dev/stage
-                            view! {
-                                <div>
-                                    <div class="dpe-subtitle">"License"</div>
-                                    <PlaceholderValue value=info
-                                        .license
-                                        .license_identifier
-                                        .clone() />
-                                </div>
+            @if license_is_placeholder {
+                @if should_render_value(&info.license.license_identifier) {
+                    div {
+                        div class="dpe-subtitle" { "License" }
+                        (placeholder_value(&info.license.license_identifier))
+                    }
+                }
+            } @else {
+                div {
+                    div class="dpe-subtitle" { "License" }
+                    @match get_cc_license_info(&info.license.license_uri, &info.license.license_identifier) {
+                        Some((img_url, alt_text)) => {
+                            a href=(info.license.license_uri) rel="noopener noreferrer" class="block mb-1" {
+                                img src=(img_url) alt=(alt_text) class="h-8" title=(info.license.license_identifier);
                             }
-                        })
-                        .into_any()
-                } else {
-                    view! {
-                        <div>
-                            <div class="dpe-subtitle">"License"</div>
-                            {match get_cc_license_info(
-                                &info.license.license_uri,
-                                &info.license.license_identifier,
-                            ) {
-                                Some((img_url, alt_text)) => {
-                                    view! {
-                                        <a
-                                            href=info.license.license_uri.clone()
-                                            rel="noopener noreferrer"
-                                            class="block mb-1"
-                                        >
-                                            <img
-                                                src=img_url
-                                                alt=alt_text
-                                                class="h-8"
-                                                title=info.license.license_identifier.clone()
-                                            />
-                                        </a>
-                                    }
-                                        .into_any()
-                                }
-                                None => {
-                                    let href = info.license.license_uri.clone();
-                                    let text = info.license.license_identifier.clone();
-                                    view! { <Link href=href>{text}</Link> }.into_any()
-                                }
-                            }}
-                            <div>"(" {info.license.license_date.clone()} ")"</div>
-                        </div>
+                        }
+                        None => {
+                            (link(
+                                LinkProps { href: &info.license.license_uri, ..Default::default() },
+                                html! { (info.license.license_identifier) },
+                            ))
+                        }
                     }
-                        .into_any()
-                }}
-
-                {if dpe_core::is_placeholder(&info.copyright_holder) {
-                    should_render_value(&info.copyright_holder)
-                        .then(|| {
-                            view! {
-                                <div>
-                                    <h3 class="dpe-subtitle">"Copyright"</h3>
-                                    <PlaceholderValue value=info.copyright_holder.clone() />
-                                </div>
-                            }
-                        })
-                        .into_any()
-                } else {
-                    view! {
-                        <div>
-                            <h3 class="dpe-subtitle">"Copyright"</h3>
-                            <EntityName id=info.copyright_holder.clone() />
-                        </div>
-                    }
-                        .into_any()
-                }}
-                <div>
-                    {
-                        let ids: Vec<String> = info
-                            .authorship
-                            .iter()
-                            .filter(|id| should_render_value(id))
-                            .cloned()
-                            .collect();
-                        (!ids.is_empty())
-                            .then(|| {
-                                view! {
-                                    <div class="dpe-subtitle">"Authorship"</div>
-                                    <div>
-                                        {ids
-                                            .into_iter()
-                                            .map(|id| {
-                                                if dpe_core::is_placeholder(&id) {
-                                                    view! {
-                                                        <div>
-                                                            <PlaceholderValue value=id />
-                                                        </div>
-                                                    }
-                                                        .into_any()
-                                                } else {
-                                                    view! {
-                                                        <div>
-                                                            <EntityName id=id />
-                                                        </div>
-                                                    }
-                                                        .into_any()
-                                                }
-                                            })
-                                            .collect_view()}
-                                    </div>
-                                }
-                            })
-                    }
-                </div>
+                    div { "(" (info.license.license_date) ")" }
+                }
             }
-        })
-        .collect_view()
+
+            @if dpe_core::is_placeholder(&info.copyright_holder) {
+                @if should_render_value(&info.copyright_holder) {
+                    div {
+                        h3 class="dpe-subtitle" { "Copyright" }
+                        (placeholder_value(&info.copyright_holder))
+                    }
+                }
+            } @else {
+                div {
+                    h3 class="dpe-subtitle" { "Copyright" }
+                    (entity_name(&info.copyright_holder))
+                }
+            }
+
+            div {
+                @let ids: Vec<&str> = info
+                    .authorship
+                    .iter()
+                    .map(String::as_str)
+                    .filter(|&id| should_render_value(id))
+                    .collect();
+                @if !ids.is_empty() {
+                    div class="dpe-subtitle" { "Authorship" }
+                    div {
+                        @for id in ids {
+                            @if dpe_core::is_placeholder(id) {
+                                div { (placeholder_value(id)) }
+                            } @else {
+                                div { (entity_name(id)) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
-#[component]
-pub fn ContactSection(ids: Vec<String>) -> impl IntoView {
-    view! {
-        <h3 class="dpe-subtitle">"Contact"</h3>
-        <div class="space-y-2">
-            {ids
-                .into_iter()
-                .map(|id| {
-                    if id.starts_with("organization-") || id.contains("-organization-") {
-                        view! {
-                            <InfoCard>
-                                <AffiliationName org_id=id />
-                            </InfoCard>
-                        }
-                            .into_any()
-                    } else {
-                        view! {
-                            <InfoCard>
-                                <Person person_id=id roles=None show_email=true />
-                            </InfoCard>
-                        }
-                            .into_any()
-                    }
-                })
-                .collect_view()}
-        </div>
+/// The contact block: each contact is an org affiliation name or a person card
+/// (with email).
+pub fn contact_section(ids: &[String]) -> Markup {
+    html! {
+        h3 class="dpe-subtitle" { "Contact" }
+        div class="space-y-2" {
+            @for id in ids {
+                @if id.starts_with("organization-") || id.contains("-organization-") {
+                    (info_card(affiliation_name(id)))
+                } @else {
+                    (info_card(person(id, None, true)))
+                }
+            }
+        }
     }
 }
 
@@ -244,5 +172,74 @@ fn extract_cc_license_type(license_uri: &str, license_identifier: &str) -> Optio
         Some("cc0".to_string())
     } else {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use dpe_core::project::License;
+
+    use super::*;
+
+    fn legal(identifier: &str, uri: &str, copyright: &str) -> LegalInfoData {
+        LegalInfoData {
+            license: License {
+                license_identifier: identifier.to_string(),
+                license_date: "2024-01-01".to_string(),
+                license_uri: uri.to_string(),
+            },
+            copyright_holder: copyright.to_string(),
+            authorship: vec!["Free Text Author".to_string()],
+        }
+    }
+
+    #[test]
+    fn cc_license_renders_badge_image() {
+        let info = vec![legal(
+            "CC BY 4.0",
+            "https://creativecommons.org/licenses/by/4.0/",
+            "DaSCH",
+        )];
+        let out = legal_info(&info).into_string();
+        assert!(out.contains("/assets/images/cc-licenses/by-4.0.svg"), "{out}");
+        assert!(out.contains("(2024-01-01)"), "license date: {out}");
+    }
+
+    #[test]
+    fn non_cc_license_renders_link() {
+        let info = vec![legal("MIT", "https://opensource.org/license/mit", "DaSCH")];
+        let out = legal_info(&info).into_string();
+        assert!(out.contains(r#"href="https://opensource.org/license/mit""#), "{out}");
+        assert!(out.contains("MIT"), "{out}");
+    }
+
+    #[test]
+    fn free_text_copyright_and_authorship_render() {
+        let info = vec![legal(
+            "CC BY 4.0",
+            "https://creativecommons.org/licenses/by/4.0/",
+            "ACME Corp",
+        )];
+        let out = legal_info(&info).into_string();
+        assert!(out.contains("Copyright"), "{out}");
+        assert!(out.contains("ACME Corp"), "{out}");
+        assert!(out.contains("Authorship"), "{out}");
+        assert!(out.contains("Free Text Author"), "{out}");
+    }
+
+    #[test]
+    fn cc_license_type_extraction() {
+        assert_eq!(
+            extract_cc_license_type("creativecommons.org/licenses/by-nc-nd/4.0", ""),
+            Some("by-nc-nd".to_string())
+        );
+        assert_eq!(
+            extract_cc_license_type("creativecommons.org/publicdomain/zero/1.0", ""),
+            Some("cc0".to_string())
+        );
+        assert_eq!(
+            extract_cc_license_type("creativecommons.org/licenses/by/4.0", ""),
+            Some("by".to_string())
+        );
     }
 }

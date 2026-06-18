@@ -76,7 +76,10 @@ mod tests {
         // static page structure renders regardless.
         let out = projects_page(&ProjectQuery::default()).into_string();
         assert!(out.contains("Filters"), "{out}");
-        assert!(out.contains(r#"<form method="get" action="/dpe/projects">"#), "search form: {out}");
+        assert!(
+            out.contains(r#"<form method="get" action="/dpe/projects">"#),
+            "search form: {out}"
+        );
         assert!(out.contains("Access Rights"), "{out}");
     }
 }

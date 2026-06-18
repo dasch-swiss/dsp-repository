@@ -1,33 +1,46 @@
-use leptos::prelude::*;
-use mosaic_tiles::card::{Card, CardBody, CardVariant};
-use mosaic_tiles::link::Link;
+use maud::{html, Markup};
+use mosaic_tiles::card::{card, card_body, CardProps, CardVariant};
+use mosaic_tiles::link::{link, LinkProps};
 
-#[component]
-pub fn LinkListSection(title: String, items: Vec<String>, #[prop(default = false)] as_links: bool) -> impl IntoView {
-    view! {
-        <Card variant=CardVariant::Bordered>
-            <CardBody>
-                <h3 class="text-base font-semibold mb-3">{title}</h3>
-                <ul class="list-disc list-inside text-sm">
-                    {items
-                        .iter()
-                        .map(|item| {
-                            if as_links {
-                                let href = item.clone();
-                                let text = item.clone();
-                                view! {
-                                    <li>
-                                        <Link href=href>{text}</Link>
-                                    </li>
-                                }
-                                    .into_any()
-                            } else {
-                                view! { <li>{item.clone()}</li> }.into_any()
-                            }
-                        })
-                        .collect_view()}
-                </ul>
-            </CardBody>
-        </Card>
+/// A bordered card with a bulleted list. When `as_links`, each item renders as a
+/// link to itself; otherwise as plain text.
+pub fn link_list_section(title: &str, items: &[String], as_links: bool) -> Markup {
+    card(
+        CardProps { variant: CardVariant::Bordered, class: "" },
+        card_body(
+            "",
+            html! {
+                h3 class="text-base font-semibold mb-3" { (title) }
+                ul class="list-disc list-inside text-sm" {
+                    @for item in items {
+                        @if as_links {
+                            li { (link(LinkProps { href: item, ..Default::default() }, html! { (item) })) }
+                        } @else {
+                            li { (item) }
+                        }
+                    }
+                }
+            },
+        ),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn as_links_renders_anchors() {
+        let items = vec!["https://example.org/doc".to_string()];
+        let out = link_list_section("Documentation Material", &items, true).into_string();
+        assert!(out.contains("Documentation Material"), "{out}");
+        assert!(out.contains(r#"href="https://example.org/doc""#), "{out}");
+    }
+
+    #[test]
+    fn plain_renders_list_text() {
+        let items = vec!["Some material".to_string()];
+        let out = link_list_section("Additional Material", &items, false).into_string();
+        assert!(out.contains("<li>Some material</li>"), "{out}");
     }
 }

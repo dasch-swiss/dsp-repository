@@ -1,189 +1,112 @@
-use leptos::prelude::*;
+use dpe_core::organization::Organization;
+use dpe_core::person::Person;
+use maud::{html, Markup};
 
-use crate::domain::organization::Organization;
-use crate::domain::person::Person as PersonData;
-
-// See `super` module docs for why this is a sync lookup with a wasm32 stub.
-
-/// Renders a person by ID. Used where the caller only has an ID (e.g. legal info
-/// sidebar). For bulk contributor rendering, prefer `PersonView` with pre-resolved data.
-#[cfg(not(target_arch = "wasm32"))]
-#[component]
-pub fn Person(person_id: String, roles: Option<String>, #[prop(default = false)] show_email: bool) -> impl IntoView {
-    match dpe_core::load_person(&person_id) {
-        Some(person) => {
-            let affiliation_ids = person.affiliations.clone();
-            view! {
-                <PersonViewWithAffiliationIds
-                    person=person
-                    affiliation_ids=affiliation_ids
-                    roles=roles
-                    show_email=show_email
-                />
+/// Shared name + roles + job-titles block for a resolved [`Person`].
+fn person_name_and_roles(person: &Person, roles: Option<&str>) -> Markup {
+    let full_name = format!("{} {}", person.given_names.join(" "), person.family_names.join(" "));
+    let orcid_url = person.same_as.iter().find(|r| r.type_ == "ORCID").map(|r| r.url.as_str());
+    html! {
+        div class="font-medium" {
+            @match orcid_url {
+                Some(url) => a href=(url) target="_blank" rel="noopener noreferrer" class="text-primary hover:underline" { (full_name) },
+                None => span { (full_name) },
             }
-            .into_any()
         }
-        None => view! { <div class="italic text-base-content/70">"Person not found"</div> }.into_any(),
+        @if let Some(r) = roles {
+            div class="text-gray-600" { (r) }
+        }
+        @if !person.job_titles.is_empty() {
+            div class="text-gray-600" { (person.job_titles.join(", ")) }
+        }
     }
 }
 
-#[cfg(target_arch = "wasm32")]
-#[component]
-pub fn Person(person_id: String, roles: Option<String>, #[prop(default = false)] show_email: bool) -> impl IntoView {
-    let _ = (person_id, roles, show_email);
-}
-
-// Only instantiated by the non-wasm `Person` above. Gated to silence
-// dead-code warnings in the wasm32 build.
-#[cfg(not(target_arch = "wasm32"))]
-#[component]
-fn PersonViewWithAffiliationIds(
-    person: PersonData,
-    affiliation_ids: Vec<String>,
-    roles: Option<String>,
-    #[prop(default = false)] show_email: bool,
-) -> impl IntoView {
-    let full_name = format!("{} {}", person.given_names.join(" "), person.family_names.join(" "),);
-    let orcid_url = person.same_as.iter().find(|r| r.type_ == "ORCID").map(|r| r.url.clone());
-    let job_titles = person.job_titles;
-    let email = if show_email { person.email } else { None };
-
-    view! {
-        <div class="font-medium">
-            {match orcid_url {
-                Some(url) => {
-                    view! {
-                        <a
-                            href=url
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="text-primary hover:underline"
-                        >
-                            {full_name}
-                        </a>
-                    }
-                        .into_any()
-                }
-                None => view! { <span>{full_name}</span> }.into_any(),
-            }}
-        </div>
-        {roles.map(|r| view! { <div class="text-gray-600">{r}</div> })}
-        {(!job_titles.is_empty())
-            .then(|| view! { <div class="text-gray-600">{job_titles.join(", ")}</div> })}
-        {affiliation_ids
-            .into_iter()
-            .map(|org_id| view! { <AffiliationName org_id=org_id /> })
-            .collect_view()}
-        {(show_email)
-            .then(|| {
-                email
-                    .map(|addr| {
-                        let href = format!("mailto:{}", addr);
-                        view! {
-                            <a
-                                href=href
-                                class="text-primary hover:underline inline-flex items-center gap-1 mt-1"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="w-3 h-3"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                >
-                                    <rect width="20" height="16" x="2" y="4" rx="2" />
-                                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                                </svg>
-                                {addr}
-                            </a>
-                        }
-                    })
-            })}
+/// A `mailto:` link with an envelope icon.
+fn email_link(addr: &str) -> Markup {
+    html! {
+        a href=(format!("mailto:{addr}")) class="text-primary hover:underline inline-flex items-center gap-1 mt-1" {
+            svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" {
+                rect width="20" height="16" x="2" y="4" rx="2";
+                path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7";
+            }
+            (addr)
+        }
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-#[component]
-pub fn AffiliationName(org_id: String) -> impl IntoView {
-    dpe_core::load_organization(&org_id).map(|o| view! { <div class="text-gray-600">{o.name}</div> })
-}
-
-#[cfg(target_arch = "wasm32")]
-#[component]
-pub fn AffiliationName(org_id: String) -> impl IntoView {
-    let _ = org_id;
-}
-
-/// Renders a person's name (with ORCID link if available), job titles, and affiliations.
-/// All data is pre-resolved — no server calls are made from this component.
-#[component]
-pub fn PersonView(
-    person: PersonData,
-    affiliations: Vec<Organization>,
-    roles: Option<String>,
-    #[prop(default = false)] show_email: bool,
-) -> impl IntoView {
-    let full_name = format!("{} {}", person.given_names.join(" "), person.family_names.join(" "),);
-    let orcid_url = person.same_as.iter().find(|r| r.type_ == "ORCID").map(|r| r.url.clone());
-    let job_titles = person.job_titles;
-    let email = if show_email { person.email } else { None };
-
-    view! {
-        <div class="font-medium">
-            {match orcid_url {
-                Some(url) => {
-                    view! {
-                        <a
-                            href=url
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="text-primary hover:underline"
-                        >
-                            {full_name}
-                        </a>
-                    }
-                        .into_any()
+/// Render a person looked up by ID. Affiliations are resolved (by ID) to their
+/// organization names. Used where the caller only has an ID (e.g. contact).
+pub fn person(person_id: &str, roles: Option<&str>, show_email: bool) -> Markup {
+    match dpe_core::load_person(person_id) {
+        Some(person) => html! {
+            (person_name_and_roles(&person, roles))
+            @for org_id in &person.affiliations {
+                (affiliation_name(org_id))
+            }
+            @if show_email {
+                @if let Some(addr) = &person.email {
+                    (email_link(addr))
                 }
-                None => view! { <span>{full_name}</span> }.into_any(),
-            }}
-        </div>
-        {roles.map(|r| view! { <div class="text-gray-600">{r}</div> })}
-        {(!job_titles.is_empty())
-            .then(|| view! { <div class="text-gray-600">{job_titles.join(", ")}</div> })}
-        {affiliations
-            .into_iter()
-            .map(|org| view! { <div class="text-gray-600">{org.name}</div> })
-            .collect_view()}
-        {(show_email)
-            .then(|| {
-                email
-                    .map(|addr| {
-                        let href = format!("mailto:{}", addr);
-                        view! {
-                            <a
-                                href=href
-                                class="text-primary hover:underline inline-flex items-center gap-1 mt-1"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="w-3 h-3"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                >
-                                    <rect width="20" height="16" x="2" y="4" rx="2" />
-                                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                                </svg>
-                                {addr}
-                            </a>
-                        }
-                    })
-            })}
+            }
+        },
+        None => html! { div class="italic text-base-content/70" { "Person not found" } },
+    }
+}
+
+/// Render an organization name (by ID) as an affiliation line.
+pub fn affiliation_name(org_id: &str) -> Markup {
+    match dpe_core::load_organization(org_id) {
+        Some(o) => html! { div class="text-gray-600" { (o.name) } },
+        None => html! {},
+    }
+}
+
+/// Render a person with pre-resolved affiliation organizations. No lookups —
+/// all data is supplied by the caller (the contributor resolver).
+pub fn person_view(person: &Person, affiliations: &[Organization], roles: Option<&str>, show_email: bool) -> Markup {
+    html! {
+        (person_name_and_roles(person, roles))
+        @for org in affiliations {
+            div class="text-gray-600" { (org.name) }
+        }
+        @if show_email {
+            @if let Some(addr) = &person.email {
+                (email_link(addr))
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::{sample_organization, sample_person};
+
+    #[test]
+    fn person_view_renders_name_roles_and_affiliation() {
+        let p = sample_person();
+        let orgs = vec![sample_organization()];
+        let out = person_view(&p, &orgs, Some("Author"), false).into_string();
+        assert!(out.contains("Ada Lovelace"), "{out}");
+        assert!(out.contains("Author"), "role: {out}");
+        assert!(out.contains("Researcher"), "job title: {out}");
+        assert!(out.contains("Sample University"), "affiliation: {out}");
+    }
+
+    #[test]
+    fn person_view_shows_email_only_when_requested() {
+        let p = sample_person();
+        assert!(person_view(&p, &[], None, true)
+            .into_string()
+            .contains("mailto:ada@example.org"));
+        assert!(!person_view(&p, &[], None, false).into_string().contains("mailto:"));
+    }
+
+    #[test]
+    fn unknown_person_renders_not_found() {
+        let out = person("person-missing", None, false).into_string();
+        assert!(out.contains("Person not found"), "{out}");
     }
 }

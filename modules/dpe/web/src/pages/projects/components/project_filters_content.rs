@@ -70,9 +70,8 @@ mod tests {
         assert!(!inactive.contains("Clear all"), "{inactive}");
 
         let active_status = vec![("Ongoing".to_string(), true, "/dpe/projects?ongoing=true".to_string())];
-        let active =
-            project_filters_content(&active_status, &unchecked("b"), &unchecked("c"), &unchecked("d"), false)
-                .into_string();
+        let active = project_filters_content(&active_status, &unchecked("b"), &unchecked("c"), &unchecked("d"), false)
+            .into_string();
         assert!(active.contains("Clear all"), "{active}");
     }
 }

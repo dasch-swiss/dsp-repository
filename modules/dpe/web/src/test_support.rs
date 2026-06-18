@@ -12,8 +12,8 @@ use dpe_core::models::AuthorityFileReference;
 use dpe_core::organization::Organization;
 use dpe_core::person::Person;
 use dpe_core::project::{
-    AccessRights, AccessRightsType, Attribution, Funding, Grant, LegalInfo, License, Project, ProjectStatus,
-    Publication, Pid,
+    AccessRights, AccessRightsType, Attribution, Funding, Grant, LegalInfo, License, Pid, Project, ProjectStatus,
+    Publication,
 };
 
 fn lang_map(value: &str) -> HashMap<String, String> {
@@ -41,7 +41,10 @@ pub(crate) fn sample_project() -> Project {
         url: Some(url_ref("https://example.org/project")),
         secondary_url: None,
         how_to_cite: "Sample, A. (2020). Sample Research Project.".to_string(),
-        access_rights: AccessRights { access_rights: AccessRightsType::FullOpenAccess, embargo_date: None },
+        access_rights: AccessRights {
+            access_rights: AccessRightsType::FullOpenAccess,
+            embargo_date: None,
+        },
         legal_info: vec![LegalInfo {
             license: License {
                 license_identifier: "CC BY 4.0".to_string(),
@@ -71,7 +74,10 @@ pub(crate) fn sample_project() -> Project {
         contact_point: None,
         publications: Some(vec![Publication {
             text: "Sample, A. (2021). A paper.".to_string(),
-            pid: Some(Pid { url: "https://doi.org/10.0/sample".to_string(), text: Some("DOI".to_string()) }),
+            pid: Some(Pid {
+                url: "https://doi.org/10.0/sample".to_string(),
+                text: Some("DOI".to_string()),
+            }),
         }]),
         funding: Funding::Grants(vec![Grant {
             funders: vec!["SNSF".to_string()],

@@ -85,7 +85,10 @@ mod tests {
         let out = project_search_input().into_string();
         assert!(out.contains("data-bind:search"), "{out}");
         // Dotted attribute name survives as a literal name (not an escaped value).
-        assert!(out.contains(r#"data-on:input__debounce.300ms="@get('/dpe/projects/search')""#), "{out}");
+        assert!(
+            out.contains(r#"data-on:input__debounce.300ms="@get('/dpe/projects/search')""#),
+            "{out}"
+        );
         assert!(out.contains(r#"data-on:focus="$_focused = true""#), "{out}");
         assert!(out.contains("data-on:blur__debounce.200ms"), "{out}");
         assert!(out.contains(r#"data-signals="{_focused: false}""#), "{out}");
@@ -98,6 +101,9 @@ mod tests {
         assert!(out.contains(r#"role="listbox""#), "{out}");
         // Maud HTML-escapes literal attribute values (`&`→`&amp;`, `>`→`&gt;`);
         // the browser decodes them back when Datastar reads the expression.
-        assert!(out.contains(r#"data-show="$_focused &amp;&amp; $search.length &gt; 0""#), "{out}");
+        assert!(
+            out.contains(r#"data-show="$_focused &amp;&amp; $search.length &gt; 0""#),
+            "{out}"
+        );
     }
 }

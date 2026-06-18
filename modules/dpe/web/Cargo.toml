@@ -6,22 +6,8 @@ publish = false
 
 [dependencies]
 dpe-core = { path = "../core" }
-leptos.workspace = true
-leptos-use.workspace = true
 mosaic-tiles = { path = "../../mosaic/tiles" }
-leptos_meta.workspace = true
-leptos_router.workspace = true
-leptos_axum = { workspace = true, optional = true }
-
-http.workspace = true
-cfg-if.workspace = true
-thiserror.workspace = true
-tokio = { workspace = true, optional = true }
+maud.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-tracing = { workspace = true, optional = true }
 urlencoding = "2.1"
-
-[features]
-default = []
-ssr = ["leptos/ssr", "leptos/islands", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_axum", "dep:tokio", "dep:tracing"]

@@ -1,90 +1,86 @@
-use leptos::prelude::*;
+use dpe_core::Project;
+use maud::{html, Markup};
 use mosaic_tiles::button::ButtonVariant;
-use mosaic_tiles::card::{Card, CardBody, CardVariant};
-use mosaic_tiles::icon::{Export, Icon, OpenDocument};
-use mosaic_tiles::link::Link;
+use mosaic_tiles::card::{card, card_body, CardProps, CardVariant};
+use mosaic_tiles::icon::{icon, Export, OpenDocument};
+use mosaic_tiles::link::{link, LinkProps};
 
-use super::description::Description;
-use crate::domain::models::AuthorityFileReference;
+use super::description::description;
 
-#[component]
-pub fn ProjectHeader(
-    name: String,
-    shortcode: String,
-    description: String,
-    alternative_names: Vec<String>,
-    url: Option<AuthorityFileReference>,
-    secondary_url: Option<AuthorityFileReference>,
-) -> impl IntoView {
-    let image_src = format!("/assets/images/{shortcode}.webp");
-    view! {
-        <Card variant=CardVariant::Bordered>
-            <figure>
-                <div class="overflow-hidden">
-                    <img
-                        src=image_src
-                        alt=name.clone()
-                        class="w-full object-cover"
-                        style="height: 320px"
-                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-                    />
-                    <div
-                        class="w-full bg-gray-100 items-center justify-center hidden"
-                        style="height: 320px"
-                    >
-                        <Icon icon=OpenDocument class="w-12 h-12 text-gray-300" />
-                    </div>
-                </div>
-            </figure>
-            <CardBody>
-                <div class="p-8 flex flex-row justify-center">
-                    <div class="max-w-3xl">
-                        <h2 class="font-bold font-display text-3xl text-ellipsis">{name}</h2>
-                        {(!alternative_names.is_empty())
-                            .then(|| {
-                                view! {
-                                    <p class="mt-1 text-sm text-gray-600">
-                                        <span>"Also known as: "</span>
-                                        {alternative_names
-                                            .into_iter()
-                                            .map(|name| view! { <span>{name}</span> })
-                                            .collect_view()}
-                                    </p>
+/// The project hero: cover image (with fallback), title, alternative names,
+/// description, and primary/secondary "discover data" buttons.
+pub fn project_header(proj: &Project) -> Markup {
+    let image_src = format!("/assets/images/{}.webp", proj.shortcode);
+    let desc = dpe_core::lang_value(&proj.description).cloned().unwrap_or_default();
+    let alternative_names: Vec<String> = proj
+        .alternative_names
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|m| dpe_core::lang_value(m).cloned())
+        .collect();
+
+    card(
+        CardProps { variant: CardVariant::Bordered, class: "" },
+        html! {
+            figure {
+                div class="overflow-hidden" {
+                    img src=(image_src) alt=(proj.name) class="w-full object-cover" style="height: 320px"
+                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'";
+                    div class="w-full bg-gray-100 items-center justify-center hidden" style="height: 320px" {
+                        (icon(OpenDocument, "w-12 h-12 text-gray-300"))
+                    }
+                }
+            }
+            (card_body("", html! {
+                div class="p-8 flex flex-row justify-center" {
+                    div class="max-w-3xl" {
+                        h2 class="font-bold font-display text-3xl text-ellipsis" { (proj.name) }
+                        @if !alternative_names.is_empty() {
+                            p class="mt-1 text-sm text-gray-600" {
+                                span { "Also known as: " }
+                                @for name in &alternative_names {
+                                    span { (name) }
                                 }
-                            })}
-                        <div class="mt-4">
-                            <Description text=description />
-                        </div>
+                            }
+                        }
+                        div class="mt-4" { (description(&desc)) }
 
-                        <div class="mt-6 flex gap-4">
-                            {url
-                                .map(|u| {
-                                    let label = u
-                                        .text
-                                        .unwrap_or_else(|| "Discover Project Data".to_string());
-                                    view! {
-                                        <Link href=u.url as_button=ButtonVariant::Primary>
-                                            {label}
-                                            <Icon icon=Export class="w-5 h-5" />
-                                        </Link>
-                                    }
-                                })}
-                            {secondary_url
-                                .map(|u| {
-                                    let label = u
-                                        .text
-                                        .unwrap_or_else(|| "External Project Website".to_string());
-                                    view! {
-                                        <Link href=u.url as_button=ButtonVariant::Outline>
-                                            {label}
-                                            <Icon icon=Export class="w-5 h-5" />
-                                        </Link>
-                                    }
-                                })}
-                        </div>
-                    </div>
-                </div>
-            </CardBody>
-        </Card>
+                        div class="mt-6 flex gap-4" {
+                            @if let Some(u) = &proj.url {
+                                @let label = u.text.clone().unwrap_or_else(|| "Discover Project Data".to_string());
+                                (link(
+                                    LinkProps { href: &u.url, as_button: Some(ButtonVariant::Primary), ..Default::default() },
+                                    html! { (label) (icon(Export, "w-5 h-5")) },
+                                ))
+                            }
+                            @if let Some(u) = &proj.secondary_url {
+                                @let label = u.text.clone().unwrap_or_else(|| "External Project Website".to_string());
+                                (link(
+                                    LinkProps { href: &u.url, as_button: Some(ButtonVariant::Outline), ..Default::default() },
+                                    html! { (label) (icon(Export, "w-5 h-5")) },
+                                ))
+                            }
+                        }
+                    }
+                }
+            }))
+        },
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::sample_project;
+
+    #[test]
+    fn renders_title_image_and_primary_link() {
+        let out = project_header(&sample_project()).into_string();
+        assert!(out.contains("Sample Research Project"), "{out}");
+        assert!(out.contains(r#"src="/assets/images/0ABC.webp""#), "{out}");
+        // sample_project has a primary url → "Discover Project Data" button.
+        assert!(out.contains(r#"href="https://example.org/project""#), "{out}");
+        assert!(out.contains("Discover Project Data"), "{out}");
     }
 }

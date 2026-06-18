@@ -161,6 +161,41 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
     Page { items, nr_pages, total_items }
 }
 
+pub fn get_project(shortcode: &str) -> Option<Project> {
+    use std::fs;
+    use std::path::PathBuf;
+
+    use dpe_core::{get_data_dir, CollectionRef};
+
+    // Look up the base project from the in-memory cache — case-insensitive,
+    // so e.g. /dpe/projects/080c resolves to the project stored as 080C.
+    let base = dpe_core::project_cache::project_by_shortcode(shortcode)?;
+    let mut project = base.clone();
+    let canonical_shortcode = project.shortcode.clone();
+
+    // Resolve clusters from the in-memory cache (reverse lookup). Compare
+    // case-insensitively so cluster files referencing a different case still
+    // resolve to the same project.
+    project.clusters = dpe_core::cluster_cache::clusters_for_shortcode(&canonical_shortcode);
+
+    // Resolve collection IDs stored on the cached project.
+    let data_path = PathBuf::from(get_data_dir());
+    let collections_dir = data_path.join("collections");
+    project.collections = project
+        .collection_ids
+        .iter()
+        .filter(|id| id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'))
+        .filter_map(|id| {
+            let path = collections_dir.join(format!("{}.json", id));
+            fs::read_to_string(&path)
+                .ok()
+                .and_then(|json: String| serde_json::from_str::<CollectionRef>(&json).ok())
+        })
+        .collect();
+
+    Some(project)
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -578,39 +613,4 @@ mod tests {
         let qs = q.to_query_string();
         assert!(qs.contains("page=2"), "got: {qs}");
     }
-}
-
-pub fn get_project(shortcode: &str) -> Option<Project> {
-    use std::fs;
-    use std::path::PathBuf;
-
-    use dpe_core::{get_data_dir, CollectionRef};
-
-    // Look up the base project from the in-memory cache — case-insensitive,
-    // so e.g. /dpe/projects/080c resolves to the project stored as 080C.
-    let base = dpe_core::project_cache::project_by_shortcode(shortcode)?;
-    let mut project = base.clone();
-    let canonical_shortcode = project.shortcode.clone();
-
-    // Resolve clusters from the in-memory cache (reverse lookup). Compare
-    // case-insensitively so cluster files referencing a different case still
-    // resolve to the same project.
-    project.clusters = dpe_core::cluster_cache::clusters_for_shortcode(&canonical_shortcode);
-
-    // Resolve collection IDs stored on the cached project.
-    let data_path = PathBuf::from(get_data_dir());
-    let collections_dir = data_path.join("collections");
-    project.collections = project
-        .collection_ids
-        .iter()
-        .filter(|id| id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'))
-        .filter_map(|id| {
-            let path = collections_dir.join(format!("{}.json", id));
-            fs::read_to_string(&path)
-                .ok()
-                .and_then(|json: String| serde_json::from_str::<CollectionRef>(&json).ok())
-        })
-        .collect();
-
-    Some(project)
 }

@@ -1,7 +1,7 @@
 # Packaging-only Dockerfile — the Rust build happens in GH Actions.
 # Expects pre-built artifacts in the build context:
 #   dpe-server  (static musl binary)
-#   site/       (JS, CSS, static assets)
+#   public/     (static assets + the content-hashed app.<hash>.css)
 #   data/       (JSON data files)
 
 FROM gcr.io/distroless/static-debian12:nonroot
@@ -9,7 +9,7 @@ FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
 
 COPY --chmod=755 dpe-server /app/dpe-server
-COPY site /app/site
+COPY public /app/public
 COPY data /app/server/data
 
 ENV RUST_LOG="info"
@@ -18,11 +18,9 @@ ENV RUST_LOG="info"
 # and panic logs lose the call site — paired with `debug = "line-tables-only"`
 # in the release profile so symbols and file:line make it into the backtrace.
 ENV RUST_BACKTRACE="1"
-ENV LEPTOS_OUTPUT_NAME="dpe"
-ENV LEPTOS_SITE_ROOT="site"
-ENV LEPTOS_SITE_PKG_DIR="pkg"
-ENV LEPTOS_SITE_ADDR="0.0.0.0:8080"
-ENV LEPTOS_ENV="PROD"
+ENV DPE_SITE_ADDR="0.0.0.0:8080"
+ENV DPE_ENV="PROD"
+ENV DPE_PUBLIC_DIR="/app/public"
 ENV DPE_DATA_DIR="/app/server/data"
 
 EXPOSE 8080

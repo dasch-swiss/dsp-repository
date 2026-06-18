@@ -106,7 +106,11 @@ mod tests {
     #[test]
     fn submit_type_and_extra_classes() {
         let out = button(
-            ButtonProps { button_type: ButtonType::Submit, extra_classes: "w-full", ..Default::default() },
+            ButtonProps {
+                button_type: ButtonType::Submit,
+                extra_classes: "w-full",
+                ..Default::default()
+            },
             html! {},
         )
         .into_string();

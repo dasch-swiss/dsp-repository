@@ -89,11 +89,7 @@ mod tests {
 
     #[test]
     fn composes_variant_and_size() {
-        let out = badge(
-            BadgeProps { variant: BadgeVariant::Danger, size: BadgeSize::Large },
-            html! {},
-        )
-        .into_string();
+        let out = badge(BadgeProps { variant: BadgeVariant::Danger, size: BadgeSize::Large }, html! {}).into_string();
         assert!(out.contains(r#"class="badge badge-danger badge-lg""#), "{out}");
     }
 }

@@ -68,7 +68,11 @@ mod tests {
     #[test]
     fn as_button_uses_variant_class() {
         let out = link(
-            LinkProps { href: "/x", as_button: Some(ButtonVariant::Primary), ..Default::default() },
+            LinkProps {
+                href: "/x",
+                as_button: Some(ButtonVariant::Primary),
+                ..Default::default()
+            },
             html! { "Act" },
         )
         .into_string();
@@ -79,7 +83,12 @@ mod tests {
     #[test]
     fn disabled_button_link_sets_negative_tabindex() {
         let out = link(
-            LinkProps { href: "/x", as_button: Some(ButtonVariant::Ghost), disabled: true, ..Default::default() },
+            LinkProps {
+                href: "/x",
+                as_button: Some(ButtonVariant::Ghost),
+                disabled: true,
+                ..Default::default()
+            },
             html! {},
         )
         .into_string();

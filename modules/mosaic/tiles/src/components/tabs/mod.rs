@@ -75,11 +75,19 @@ mod tests {
     #[test]
     fn tab_renders_input_label_panel_triple() {
         let out = tab(
-            TabProps { name: "grp", value: "one", label: "One", ..Default::default() },
+            TabProps {
+                name: "grp",
+                value: "one",
+                label: "One",
+                ..Default::default()
+            },
             html! { "Panel" },
         )
         .into_string();
-        assert!(out.contains(r#"<input type="radio" class="tab-input" id="grp-one" name="grp" value="one">"#), "{out}");
+        assert!(
+            out.contains(r#"<input type="radio" class="tab-input" id="grp-one" name="grp" value="one">"#),
+            "{out}"
+        );
         assert!(out.contains(r#"<label class="tab-label" for="grp-one">"#), "{out}");
         assert!(out.contains("<span>One</span>"), "{out}");
         assert!(out.contains(r#"<div class="tab-panel">Panel</div>"#), "{out}");
@@ -88,7 +96,13 @@ mod tests {
     #[test]
     fn checked_tab_has_checked_attribute() {
         let out = tab(
-            TabProps { name: "g", value: "v", label: "L", checked: true, ..Default::default() },
+            TabProps {
+                name: "g",
+                value: "v",
+                label: "L",
+                checked: true,
+                ..Default::default()
+            },
             html! {},
         )
         .into_string();
@@ -104,7 +118,13 @@ mod tests {
     #[test]
     fn tab_with_icon_renders_tab_icon_svg() {
         let out = tab(
-            TabProps { name: "g", value: "v", label: "L", icon: Some(IconSearch), ..Default::default() },
+            TabProps {
+                name: "g",
+                value: "v",
+                label: "L",
+                icon: Some(IconSearch),
+                ..Default::default()
+            },
             html! {},
         )
         .into_string();

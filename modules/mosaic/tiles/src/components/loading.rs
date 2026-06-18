@@ -18,7 +18,13 @@ mod tests {
     #[test]
     fn renders_centered_spinner() {
         let out = loading().into_string();
-        assert!(out.contains(r#"<div class="flex items-center justify-center w-100 h-100">"#), "{out}");
-        assert!(out.contains(r#"<span class="loading loading-spinner loading-xl"></span>"#), "{out}");
+        assert!(
+            out.contains(r#"<div class="flex items-center justify-center w-100 h-100">"#),
+            "{out}"
+        );
+        assert!(
+            out.contains(r#"<span class="loading loading-spinner loading-xl"></span>"#),
+            "{out}"
+        );
     }
 }

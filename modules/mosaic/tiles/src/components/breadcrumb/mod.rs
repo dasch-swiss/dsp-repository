@@ -49,6 +49,9 @@ mod tests {
     #[test]
     fn item_without_href_is_current_page() {
         let out = breadcrumb_item(None, html! { "Here" }).into_string();
-        assert!(out.contains(r#"<span class="breadcrumb-current" aria-current="page">Here</span>"#), "{out}");
+        assert!(
+            out.contains(r#"<span class="breadcrumb-current" aria-current="page">Here</span>"#),
+            "{out}"
+        );
     }
 }

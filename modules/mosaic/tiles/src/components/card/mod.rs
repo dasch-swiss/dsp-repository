@@ -79,8 +79,14 @@ mod tests {
 
     #[test]
     fn body_header_footer_partials() {
-        assert!(card_header(html! { "h" }).into_string().contains(r#"class="card-header">h</div>"#));
-        assert!(card_body("p-4", html! { "b" }).into_string().contains(r#"class="card-body p-4">b</div>"#));
-        assert!(card_footer(html! { "f" }).into_string().contains(r#"class="card-footer">f</div>"#));
+        assert!(card_header(html! { "h" })
+            .into_string()
+            .contains(r#"class="card-header">h</div>"#));
+        assert!(card_body("p-4", html! { "b" })
+            .into_string()
+            .contains(r#"class="card-body p-4">b</div>"#));
+        assert!(card_footer(html! { "f" })
+            .into_string()
+            .contains(r#"class="card-footer">f</div>"#));
     }
 }

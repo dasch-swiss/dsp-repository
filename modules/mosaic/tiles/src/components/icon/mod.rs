@@ -10,8 +10,6 @@
 //! let markup = icon(IconSearch, "w-5 h-5 text-neutral-600");
 //! ```
 
-use maud::{html, Markup, PreEscaped};
-
 pub use icondata::{
     AiAppstoreOutlined as AppStore, AiArrowLeftOutlined as IconArrowLeft, AiArrowRightOutlined as IconArrowRight,
     AiBarsOutlined as Bars, AiClockCircleOutlined as Clock, AiDownOutlined as IconChevronDown,
@@ -25,6 +23,7 @@ pub use icondata::{
     OcSidebarCollapseLg as Sidebar, OcThreeBarsSm as Hamburger, RiBookOpenDocumentLine as OpenDocument,
     SiGithub as IconGitHub, SiX as IconX,
 };
+use maud::{html, Markup, PreEscaped};
 
 /// Render an SVG icon with the base `icon` class plus any `class` extras.
 ///

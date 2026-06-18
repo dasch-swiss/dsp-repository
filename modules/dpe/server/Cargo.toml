@@ -17,7 +17,7 @@ leptos_axum.workspace = true
 axum.workspace = true
 datastar.workspace = true
 figment = { version = "0.10", features = ["env", "toml"] }
-mosaic-tiles = { path = "../../mosaic/tiles", default-features = false, features = ["icon"] }
+mosaic-tiles = { path = "../../mosaic/tiles" }
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

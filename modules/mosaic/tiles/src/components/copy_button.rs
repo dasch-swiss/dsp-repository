@@ -9,6 +9,11 @@ use crate::components::icon::{icon, CopyPaste};
 
 /// The inline click handler. Copies `data-copy-text` to the clipboard and
 /// flips the tooltip text to confirm.
+///
+/// Security invariant: this must stay a static literal. Caller input reaches
+/// the handler only through the Maud-escaped `data-copy-text` attribute, read
+/// at runtime via `this.dataset.copyText` — never interpolate caller content
+/// into this string, or it becomes an XSS hole.
 const ON_CLICK: &str = "\
 try {
 navigator.clipboard.writeText(this.dataset.copyText);
@@ -47,7 +52,10 @@ mod tests {
     #[test]
     fn escapes_copy_text() {
         let out = copy_button(r#"a"b<c"#).into_string();
-        assert!(!out.contains(r#"copy-text="a"b<c""#), "raw quotes/anglebrackets must be escaped: {out}");
+        assert!(
+            !out.contains(r#"copy-text="a"b<c""#),
+            "raw quotes/anglebrackets must be escaped: {out}"
+        );
         assert!(out.contains("&quot;") || out.contains("&#34;"), "{out}");
     }
 }

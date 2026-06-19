@@ -38,6 +38,10 @@ jobs:
           components: rustfmt, clippy
       - name: Install just
         uses: extractions/setup-just@v4
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+      - name: Install maudfmt
+        run: cargo binstall -y maudfmt@0.1.8
       - name: just check
         run: just check
 

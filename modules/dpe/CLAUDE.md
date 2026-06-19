@@ -128,7 +128,7 @@ DPE uses OpenTelemetry for distributed tracing, metrics, and structured logging.
 3. **Follow Rust conventions**: snake_case for functions/variables, PascalCase for types
 4. **Use `just check`** (fmt + clippy) and `just test` to verify before considering work done
 5. **Use `mosaic-tiles` components** where appropriate for consistent UI
-6. **Format with `cargo +nightly fmt`** — leptosfmt is gone; run formatting at the end of your work
+6. **Format with `just fmt`** — runs `maudfmt` (formats `maud::html!` macro contents; stock rustfmt does not) then `cargo +nightly fmt`. `leptosfmt` is gone. Run at the end of your work
 
 ## Note on the Mosaic Playground
 

@@ -35,7 +35,8 @@
 |-----------|---------|
 | **Tailwind CSS CLI** | Standalone CLI that builds the stylesheet (`just css` / `just css-release`); no Node or build.rs CSS pipeline |
 | **just** | Command runner for development workflows |
-| **cargo +nightly fmt** | Code formatter (also formats `maud::html!` macros) |
+| **maudfmt** | Formats the contents of `maud::html!` macros (stock rustfmt does not) |
+| **cargo +nightly fmt** | Code formatter for Rust outside the `html!` macros |
 | **Biome** | Linter/formatter for E2E test TypeScript |
 
 ## Documentation & Observability

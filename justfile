@@ -48,12 +48,29 @@ _check-pnpm: _check-node
 
 # Run all fmt and clippy checks
 check:
+    #!/usr/bin/env bash
+    set -euo pipefail
     just --check --fmt --unstable
+    # maudfmt 0.1.8 has no --check mode, so verify it is a no-op on the `html!` macros by
+    # formatting a throwaway copy of each tracked .rs file and diffing (non-mutating). maudfmt
+    # leaves files without `html!` byte-identical, so iterating all .rs is safe.
+    tmp="$(mktemp)"
+    trap 'rm -f "$tmp"' EXIT
+    rc=0
+    while IFS= read -r -d '' f; do
+        cp "$f" "$tmp"
+        maudfmt "$tmp" >/dev/null 2>&1
+        if ! diff -q "$f" "$tmp" >/dev/null; then echo "maudfmt would reformat: $f" >&2; rc=1; fi
+    done < <(git ls-files -z '*.rs')
+    [ "$rc" -eq 0 ] || { echo "run 'just fmt' to fix Maud formatting" >&2; exit 1; }
     cargo +nightly fmt --check --all
     cargo clippy -- -D warnings
 
-# Format all rust code (cargo +nightly fmt also formats the `html!` Maud macros)
+# Format all code: maudfmt for the `html!` Maud macros, then cargo +nightly fmt for the rest.
 fmt:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    git ls-files -z '*.rs' | xargs -0 maudfmt --
     cargo +nightly fmt --all
 
 # Fix justfile formatting. Warning: will change existing file. Please first use check.

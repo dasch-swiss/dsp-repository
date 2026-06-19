@@ -54,8 +54,10 @@ just test                       # All workspace tests
 
 ## Formatting
 
-Use `cargo +nightly fmt` for all code in this module (it also formats `maud::html!` macros). `leptosfmt` is gone. Run formatting at the end of your work:
+Run `just fmt` for all code in this module at the end of your work:
 
 ```bash
 just fmt
 ```
+
+`just fmt` runs `maudfmt` (which formats the contents of `maud::html!` macros — stock rustfmt does not) followed by `cargo +nightly fmt` for the surrounding Rust. `just check` verifies both. `leptosfmt` is gone.

@@ -13,7 +13,7 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 | `just check` | Run formatting and linting checks |
 | `just build` | Build all targets |
 | `just test` | Run all tests |
-| `just fmt` | Format all Rust code (`cargo +nightly fmt`, which also formats `maud::html!` macros) |
+| `just fmt` | Format all code (`maudfmt` for `maud::html!` macro contents, then `cargo +nightly fmt`) |
 | `just run` | Run server (release mode) |
 | `just watch` | Watch for changes and run tests |
 | `just watch-dpe` | Run DPE with hot reload |

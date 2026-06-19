@@ -76,10 +76,15 @@ fn range_for(period: &PeriodRaw) -> Option<W3cdtfRange> {
 }
 
 fn load_all_periods() -> HashMap<String, W3cdtfRange> {
-    use std::fs;
-    use std::path::PathBuf;
+    load_from(std::path::Path::new(get_data_dir()))
+}
 
-    let path = PathBuf::from(get_data_dir()).join(PERIODS_FILE);
+/// Load and parse the periods table from `data_dir`. Shared by the cache
+/// initialiser and tests so both go through identical read/parse logic.
+pub fn load_from(data_dir: &std::path::Path) -> HashMap<String, W3cdtfRange> {
+    use std::fs;
+
+    let path = data_dir.join(PERIODS_FILE);
 
     let json = match fs::read_to_string(&path) {
         Ok(json) => json,

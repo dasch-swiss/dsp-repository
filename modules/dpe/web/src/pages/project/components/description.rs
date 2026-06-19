@@ -1,33 +1,46 @@
-use leptos::prelude::*;
+use maud::{html, Markup};
 
 const TRUNCATE_THRESHOLD: usize = 500;
 
-/// Expandable description text using Datastar signals.
-///
-/// No WASM needed — expand/collapse is handled by Datastar `data-signals`
-/// and `data-class` attributes. The `_expanded` signal toggles the CSS
-/// `line-clamp-4` class and button text.
-#[component]
-pub fn Description(text: String) -> impl IntoView {
-    let is_long = text.chars().count() > TRUNCATE_THRESHOLD;
-
-    if is_long {
-        view! {
-            <div data-signals="{_expanded: false}">
-                <p class="text-lg text-gray-600" data-class="{'line-clamp-4': !$_expanded}">
-                    {text}
-                </p>
-                <button
+/// Expandable description text. For long text, expand/collapse is handled
+/// entirely by Datastar signals (`data-signals` + `data-class` + `data-text`),
+/// no WASM. Short text renders as a plain paragraph.
+pub fn description(text: &str) -> Markup {
+    if text.chars().count() > TRUNCATE_THRESHOLD {
+        html! {
+            div data-signals="{_expanded: false}" {
+                p class="text-lg text-gray-600" data-class="{'line-clamp-4': !$_expanded}" { (text) }
+                button
                     class="text-primary cursor-pointer mt-2"
                     data-on:click="$_expanded = !$_expanded"
                     data-text="$_expanded ? 'Show less' : 'Show more'"
-                >
-                    "Show more"
-                </button>
-            </div>
+                { "Show more" }
+            }
         }
-        .into_any()
     } else {
-        view! { <p class="text-lg text-gray-600">{text}</p> }.into_any()
+        html! {
+            p class="text-lg text-gray-600" { (text) }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn short_text_is_a_plain_paragraph() {
+        let out = description("short").into_string();
+        assert_eq!(out, r#"<p class="text-lg text-gray-600">short</p>"#);
+    }
+
+    #[test]
+    fn long_text_gets_datastar_expand_toggle() {
+        let long = "x".repeat(600);
+        let out = description(&long).into_string();
+        assert!(out.contains(r#"data-signals="{_expanded: false}""#), "{out}");
+        assert!(out.contains(r#"data-on:click="$_expanded = !$_expanded""#), "{out}");
+        assert!(out.contains(r#"data-text="$_expanded ? 'Show less' : 'Show more'""#), "{out}");
+        assert!(out.contains("Show more"), "{out}");
     }
 }

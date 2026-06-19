@@ -20,7 +20,7 @@ Run the Grafana LGTM (Loki, Grafana, Tempo, Mimir) all-in-one container alongsid
 just lgtm-up
 
 # Terminal 2: Run DPE with OTel enabled (exports to localhost:4317)
-just watch-dpe-otel
+just dev-otel
 
 # Terminal 3: Generate traffic
 curl http://localhost:4000/projects
@@ -28,7 +28,7 @@ curl http://localhost:4000/dpe/oai?verb=Identify
 curl http://localhost:4000/healthz
 ```
 
-`watch-dpe-otel` sets `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES`, and `PYROSCOPE_ENDPOINT` for you. Run `just --list` to see the underlying commands.
+`dev-otel` sets `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES`, and `PYROSCOPE_ENDPOINT` for you. Run `just --list` to see the underlying commands.
 
 ## Navigating Grafana Locally
 
@@ -74,7 +74,7 @@ All signals are buffered and flushed via `navigator.sendBeacon` on `visibilitych
 
 ## Logging
 
-- **Production** (`LEPTOS_ENV=PROD`): JSON-formatted logs to stdout only. No OTel log export — traces and metrics are exported via OTLP, but logs stay on stdout.
-- **Local development** (`LEPTOS_ENV=DEV` with `OTEL_EXPORTER_OTLP_ENDPOINT` set): Logs go to both stdout and Loki via OTLP. An `OpenTelemetryTracingBridge` layer converts `tracing` events into OTel log records, which are batched and exported alongside traces and metrics. Query them in Grafana Explore → Loki.
+- **Production** (`DPE_ENV=PROD`): JSON-formatted logs to stdout only. No OTel log export — traces and metrics are exported via OTLP, but logs stay on stdout.
+- **Local development** (`DPE_ENV=DEV` with `OTEL_EXPORTER_OTLP_ENDPOINT` set): Logs go to both stdout and Loki via OTLP. An `OpenTelemetryTracingBridge` layer converts `tracing` events into OTel log records, which are batched and exported alongside traces and metrics. Query them in Grafana Explore → Loki.
 - Set `RUST_LOG` to control log levels. Use `RUST_LOG=debug` for verbose output.
 - When `OTEL_EXPORTER_OTLP_ENDPOINT` is not set, the OTel SDK falls back to no-op export — no traces, metrics, or logs are sent, but structured stdout logging still works.

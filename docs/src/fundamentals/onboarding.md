@@ -1,5 +1,19 @@
 # Onboarding
 
+## Toolchain & setup
+
+Two supported paths:
+
+- **Nix** (recommended): `nix develop` (or direnv via `.envrc`). The flake provides the full toolchain, including Node and pnpm.
+- **Without Nix**: `just install-requirements` (rustup + `cargo binstall` + the e2e Node dependencies).
+
+**Node and pnpm must be on `PATH` for all shells (non-Nix path).** `just` runs recipes in `sh`, which does not load shell-function-based version managers. A *lazy* nvm setup (where `node`/`npm`/`pnpm` are shell functions) therefore leaves them invisible to `just`, and recipes such as `lint-e2e`, `test-a11y-dpe`, and the Playwright e2e tests fail with `env: node: No such file`. To fix:
+
+- expose your default Node bin on `PATH` at shell startup — eager-load it in your shell rc, or use a PATH-shim manager such as volta or asdf; and
+- run `corepack enable` to provide `pnpm` (nvm does not ship pnpm).
+
+Only Playwright genuinely requires Node; the Tailwind CSS build is Node-free (standalone CLI). CI provisions Node and pnpm explicitly, so this affects local non-Nix development only.
+
 ## Rust
 
 The main technology we use is Rust.
@@ -16,21 +30,14 @@ We use [serde](https://serde.rs/) for serialization and deserialization of data.
 
 ### Web UI
 
-We use [Leptos](https://leptos.dev/) as our UI framework for building reactive web applications in Rust.
+We use [Maud](https://maud.lang.rs/) for server-side rendering. Maud is a compile-time HTML templating library: the `maud::html!` macro produces a `Markup` value, and view functions are plain Rust functions returning `Markup`.
 
-Leptos is a full-stack web framework that allows writing both server and client code in Rust.
-It provides reactive primitives and a component model similar to modern JavaScript frameworks.
+Key points:
 
-Key features:
-
-* The `islands` Cargo feature is enabled workspace-wide (Leptos 0.8 build requirement)
-* Only the Mosaic component library uses actual island components with client-side WASM hydration
-* DPE uses SSR-only with [Datastar](https://data-star.dev/) for interactivity — no client-side WASM
+* Both DPE and the Mosaic playground are server-side rendered with Maud — no client-side WASM, no hydration, no islands
+* Interactivity is provided by [Datastar](https://data-star.dev/): SSE fragment handlers render `Markup` and stream it back to the browser
+* Routing is native Axum (`Router::new().route(...)`); static assets are served via `tower_http::ServeDir`
 * The architecture follows the MPA paradigm, a "multi-page app"
-* Server-side rendering
-* Fine-grained reactivity
-* Component-based architecture
-* Full Rust syntax support
 
 ### Architectural Design Patterns
 
@@ -50,7 +57,6 @@ the majority of tests are unit tests, with a smaller number of integration tests
 
 Unit and integration tests are written in Rust, following the Rust testing best practices.
 End-to-end tests can be written using Playwright.
-Leptos has some [built-in support for Playwright](https://book.leptos.dev/testing.html?highlight=playwrigh#playwright-with-counters).
 
 ### Domain Driven Design
 
@@ -70,7 +76,7 @@ For the initial development, we work with static content or JSON files.
 
 ## Mosaic Component Library
 
-The Mosaic component library provides reusable UI components built with Leptos and Tailwind CSS.
+The Mosaic component library provides reusable UI components built with Maud and Tailwind CSS.
 
 Components are defined in `modules/mosaic/tiles/` and can be previewed in the playground application at `modules/mosaic/playground/`.
 

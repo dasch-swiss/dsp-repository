@@ -85,16 +85,16 @@
             }
 
             # Versions pinned to match justfile install-requirements
-            _ensure_tool wasm-bindgen    wasm-bindgen-cli  0.2.105   # must match Cargo.toml wasm-bindgen = "=0.2.105"
-            _ensure_tool cargo-leptos    cargo-leptos      0.3.4
             _ensure_tool mdbook          mdbook            0.4.52
-            _ensure_tool leptosfmt       leptosfmt         0.1.33
             _ensure_tool mdbook-alerts   mdbook-alerts     0.8.0
             _ensure_tool mdbook-mermaid  mdbook-mermaid    0.16.2   # 0.17+ requires mdbook 0.5
+            # Maud dev tooling (DEV-6642)
+            _ensure_tool bacon           bacon             3.23.0   # dev loop: kill_then_restart server
+            _ensure_tool maudfmt         maudfmt           0.1.8    # Maud template formatting
 
             unset -f _ensure_tool
 
-            # Install JS dependencies (DaisyUI, Tailwind) if missing
+            # Install JS dependencies (Playwright/Biome for e2e) if missing
             if [ ! -d modules/dpe/node_modules ]; then
               echo "Installing JS dependencies in modules/dpe/ ..."
               (cd modules/dpe && pnpm install --frozen-lockfile)

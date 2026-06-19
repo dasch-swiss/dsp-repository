@@ -1,10 +1,13 @@
-use leptos::either::Either;
-use leptos::prelude::*;
+//! Button tile and the shared `ButtonVariant` / `ButtonType` enums.
+//!
+//! `ButtonVariant::css_class` returns a complete, literal class string per arm
+//! so Tailwind's source scanner can see every class (never interpolate class
+//! fragments). The `link` tile reuses `ButtonVariant` to render anchors styled
+//! as buttons.
 
-#[cfg(feature = "popover")]
-use crate::popover::{PopoverContext, PopoverTriggerContext};
+use maud::{html, Markup};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum ButtonVariant {
     #[default]
     Primary,
@@ -14,15 +17,9 @@ pub enum ButtonVariant {
     Soft,
 }
 
-#[derive(Debug, Clone, Default)]
-pub enum ButtonType {
-    #[default]
-    Button,
-    Reset,
-    Submit,
-}
 impl ButtonVariant {
-    pub fn css_class(&self) -> &'static str {
+    /// Complete, literal class string (includes the base `btn`).
+    pub fn css_class(self) -> &'static str {
         match self {
             ButtonVariant::Primary => "btn btn-primary",
             ButtonVariant::Secondary => "btn btn-secondary",
@@ -33,77 +30,97 @@ impl ButtonVariant {
     }
 }
 
-impl std::fmt::Display for ButtonType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            ButtonType::Submit => "submit",
+#[derive(Clone, Copy, Debug, Default)]
+pub enum ButtonType {
+    #[default]
+    Button,
+    Reset,
+    Submit,
+}
+
+impl ButtonType {
+    /// The `type` attribute value.
+    pub fn as_str(self) -> &'static str {
+        match self {
             ButtonType::Button => "button",
             ButtonType::Reset => "reset",
-        };
-        write!(f, "{}", s)
+            ButtonType::Submit => "submit",
+        }
     }
 }
 
-#[component]
-pub fn Button(
-    /// Toggle whether or not the input is disabled.
-    #[prop(optional, into)]
-    disabled: MaybeProp<bool>,
-    /// The type of the button. Defaults to `button`:
-    /// "button|submit|reset"
-    /// https://www.w3schools.com/TAGs/att_button_type.asp
-    #[prop(optional, into)]
-    button_type: MaybeProp<ButtonType>,
-    #[prop(optional)] children: Option<Children>,
-    #[prop(optional)] variant: ButtonVariant,
-    /// ID of a popover element to control (native HTML popover API).
-    /// When inside a PopoverTrigger, this is automatically set from context.
-    #[prop(optional, into)]
-    popovertarget: MaybeProp<String>,
-    /// Action to perform on the popover: "toggle" | "show" | "hide"
-    #[prop(optional, into)]
-    popovertargetaction: MaybeProp<String>,
-) -> impl IntoView {
-    // Check if we're inside a PopoverTrigger and get the popover ID from context
-    #[cfg(feature = "popover")]
-    let is_trigger = use_context::<PopoverTriggerContext>().is_some();
+#[derive(Default)]
+pub struct ButtonProps<'a> {
+    pub variant: ButtonVariant,
+    pub button_type: ButtonType,
+    pub disabled: bool,
+    pub extra_classes: &'a str,
+}
 
-    view! {
-        <button
-            class=move || {
-                format!(
-                    "{} {}",
-                    "btn",
-                    match variant {
-                        ButtonVariant::Primary => "btn-primary",
-                        ButtonVariant::Secondary => "btn-secondary",
-                        ButtonVariant::Outline => "btn-outline",
-                        ButtonVariant::Ghost => "btn-ghost",
-                        ButtonVariant::Soft => "btn-soft",
-                    },
-                )
-            }
-            disabled=move || disabled.get_untracked()
-            prop:disabled=move || disabled.get()
-            type=move || button_type.get().unwrap_or_default().to_string()
-            popovertarget=move || {
-                #[cfg(feature = "popover")]
-                {
-                    if is_trigger {
-                        if let Some(ref ctx) = use_context::<PopoverContext>() {
-                            return Some(ctx.id.get());
-                        }
-                    }
-                }
-                popovertarget.get()
-            }
-            popovertargetaction=move || popovertargetaction.get()
-        >
-            {if let Some(children) = children {
-                Either::Left(children())
-            } else {
-                Either::Right(())
-            }}
-        </button>
+/// Render a `<button>` with the variant classes and the given `label` content.
+pub fn button(props: ButtonProps, label: Markup) -> Markup {
+    html! {
+        button
+            class=(format!("{} {}", props.variant.css_class(), props.extra_classes))
+            type=(props.button_type.as_str())
+            disabled[props.disabled]
+        { (label) }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn variant_class_mapping_is_complete_and_literal() {
+        assert_eq!(ButtonVariant::Primary.css_class(), "btn btn-primary");
+        assert_eq!(ButtonVariant::Secondary.css_class(), "btn btn-secondary");
+        assert_eq!(ButtonVariant::Outline.css_class(), "btn btn-outline");
+        assert_eq!(ButtonVariant::Ghost.css_class(), "btn btn-ghost");
+        assert_eq!(ButtonVariant::Soft.css_class(), "btn btn-soft");
+    }
+
+    #[test]
+    fn type_mapping() {
+        assert_eq!(ButtonType::Button.as_str(), "button");
+        assert_eq!(ButtonType::Reset.as_str(), "reset");
+        assert_eq!(ButtonType::Submit.as_str(), "submit");
+    }
+
+    #[test]
+    fn default_button_is_primary_and_typed_button() {
+        let out = button(
+            ButtonProps::default(),
+            html! {
+                "Click"
+            },
+        )
+        .into_string();
+        assert!(out.contains(r#"class="btn btn-primary "#), "missing variant class: {out}");
+        assert!(out.contains(r#"type="button""#));
+        assert!(out.contains(">Click</button>"));
+        assert!(!out.contains("disabled"), "default button must not be disabled: {out}");
+    }
+
+    #[test]
+    fn disabled_renders_boolean_attribute() {
+        let out = button(ButtonProps { disabled: true, ..Default::default() }, html! {}).into_string();
+        assert!(out.contains("disabled"), "expected disabled attribute: {out}");
+    }
+
+    #[test]
+    fn submit_type_and_extra_classes() {
+        let out = button(
+            ButtonProps {
+                button_type: ButtonType::Submit,
+                extra_classes: "w-full",
+                ..Default::default()
+            },
+            html! {},
+        )
+        .into_string();
+        assert!(out.contains(r#"type="submit""#));
+        assert!(out.contains("w-full"));
     }
 }

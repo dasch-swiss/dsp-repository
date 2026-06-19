@@ -43,11 +43,11 @@ Review checklist for the DSP Repository. Organized by priority.
 - Fragment handlers in `fragments/` module, not inline in `main.rs`
 - Domain types belong in `dpe-core`, not in web or API crates
 - API crate exposes a handler function (e.g., `pub async fn oai_handler(...)`) for composition in dpe-server
-- Leptos components use `view!` macro consistently
+- View functions return `maud::Markup` via the `html!` macro
 - Test files follow naming convention: `{feature}_tests.rs` for Rust, `{feature}.spec.ts` for Playwright
 
 ## Skip
 
 - Snapshot `.snap` file contents — verify accepted, don't review formatting
-- Formatting-only changes (`cargo fmt` / `leptosfmt` diffs)
+- Formatting-only changes (`cargo +nightly fmt` diffs)
 - `Cargo.lock` changes from dependency updates

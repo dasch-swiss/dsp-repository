@@ -17,7 +17,7 @@ const serverBinary = path.resolve(
 if (!fs.existsSync(serverBinary)) {
   throw new Error(
     `Server binary not found at ${serverBinary}\n` +
-      `Run 'just watch-dpe' (or 'cargo leptos build --release') before running E2E tests.`,
+      `Run 'cargo build -p dpe-server --release' (and 'just css-release') before running E2E tests.`,
   );
 }
 
@@ -115,13 +115,14 @@ export default defineConfig({
   webServer: {
     command: `${serverBinary} serve`,
     port: 4000,
+    // Run from the workspace root so the server's relative data dir
+    // (modules/dpe/server/data, resolved in config.rs) resolves. Without this the
+    // project cache is empty and every page renders without its expected content.
+    cwd: path.resolve(__dirname, "../../.."),
     reuseExistingServer: !process.env.CI,
     env: {
-      LEPTOS_OUTPUT_NAME: "dpe",
-      LEPTOS_SITE_ROOT: path.resolve(__dirname, "..", "target/site"),
-      LEPTOS_SITE_PKG_DIR: "pkg",
-      LEPTOS_SITE_ADDR: "127.0.0.1:4000",
-      LEPTOS_ENV: "PROD",
+      DPE_SITE_ADDR: "127.0.0.1:4000",
+      DPE_ENV: "PROD",
       RUST_LOG: "error",
     },
   },

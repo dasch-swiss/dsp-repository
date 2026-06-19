@@ -5,11 +5,10 @@
 | Technology | Purpose |
 |-----------|---------|
 | **Rust** (Edition 2021) | Primary development language |
-| **Axum** | HTTP web framework |
-| **Leptos** | Reactive UI framework (SSR for DPE, islands for Mosaic) |
+| **Axum** | HTTP web framework (native routing, `ServeDir` for static assets) |
+| **Maud** | Compile-time HTML templating (`maud::html!` → `Markup`) for server-side rendering |
 | **Datastar** | SSE-based interactivity for DPE (~14KB JS, no WASM) |
 | **Tailwind CSS v4** | Utility-first CSS framework |
-| **DaisyUI** | Tailwind component plugin |
 | **Tokio** | Async runtime |
 | **figment** | Layered configuration (defaults → TOML → env vars) |
 
@@ -34,9 +33,10 @@
 
 | Technology | Purpose |
 |-----------|---------|
-| **cargo-leptos** | Leptos build tool (handles Tailwind, WASM, site assets) |
+| **Tailwind CSS CLI** | Standalone CLI that builds the stylesheet (`just css` / `just css-release`); no Node or build.rs CSS pipeline |
 | **just** | Command runner for development workflows |
-| **leptosfmt** | Leptos-aware code formatter |
+| **maudfmt** | Formats the contents of `maud::html!` macros (stock rustfmt does not) |
+| **cargo +nightly fmt** | Code formatter for Rust outside the `html!` macros |
 | **Biome** | Linter/formatter for E2E test TypeScript |
 
 ## Documentation & Observability

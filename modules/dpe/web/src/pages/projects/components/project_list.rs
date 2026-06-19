@@ -1,101 +1,88 @@
-use leptos::prelude::*;
-#[cfg(not(target_arch = "wasm32"))]
+use dpe_core::Page;
+use maud::{html, Markup};
 use mosaic_tiles::button::ButtonVariant;
-#[cfg(not(target_arch = "wasm32"))]
-use mosaic_tiles::card::{Card, CardBody, CardVariant};
-#[cfg(not(target_arch = "wasm32"))]
-use mosaic_tiles::link::Link;
+use mosaic_tiles::card::{card, card_body, CardProps, CardVariant};
+use mosaic_tiles::link::{link, LinkProps};
 
-#[cfg(not(target_arch = "wasm32"))]
-use super::card::ProjectCard;
-#[cfg(not(target_arch = "wasm32"))]
-use super::project_pagination::ProjectPagination;
+use super::card::project_card;
+use super::project_pagination::project_pagination;
+use crate::domain::projects::filter_and_paginate;
 use crate::domain::ProjectQuery;
 
-/// Renders the filtered + paginated project list.
-///
-/// Looked up synchronously from the in-process project cache via
-/// `dpe_web::domain::projects::filter_and_paginate` — no `Resource` /
-/// `<Suspense>`. The previous async pattern wrapped the resolved query in a
-/// `Resource::new(move || query.get(), ...)` whose source closure read the
-/// `Memo<Result<ProjectQuery, _>>` owned by the parent `ProjectsPage`. Under
-/// streaming SSR the resource's async derived re-evaluator could fire after
-/// the parent owner had already been disposed, hitting a recurring
-/// `tokio-rt-worker` panic at
-/// `reactive_graph-0.2.11/src/traits.rs:394:39` ("Tried to access a reactive
-/// value that has already been disposed.") — confirmed in production
-/// backtraces post-PR #212. Resolving the query in `ProjectsPage` and
-/// passing the plain value down removes the cross-owner Memo capture.
-///
-/// `dpe_core::all_projects` and `crate::domain::projects::filter_and_paginate`
-/// are gated on non-wasm targets (disk-backed cache); DPE renders SSR-only,
-/// but cargo-leptos still compiles `dpe-web` for `wasm32-unknown-unknown`
-/// (lib-package), so an inert wasm stub is needed even though it never
-/// renders.
-#[cfg(not(target_arch = "wasm32"))]
-#[component]
-pub fn ProjectList(query: ProjectQuery) -> impl IntoView {
-    use crate::domain::lang_value;
-    use crate::domain::projects::filter_and_paginate;
+/// Filtered + paginated project list, resolved synchronously from the in-process
+/// project cache. Renders an empty-state card when nothing matches, otherwise a
+/// responsive grid of project cards plus pagination.
+pub fn project_list(query: &ProjectQuery) -> Markup {
+    render_project_list(filter_and_paginate(dpe_core::all_projects(), query, None), query)
+}
 
-    let page = filter_and_paginate(dpe_core::all_projects(), &query, None);
-    let nr_pages = page.nr_pages;
-    let total_items = page.total_items;
-
-    if total_items == 0 {
-        view! {
-            <Card variant=CardVariant::Bordered>
-                <CardBody>
-                    <div class="text-center">
-                        <h3 class="mb-4">"No projects found matching your criteria"</h3>
-                        <Link href="/dpe/projects" as_button=ButtonVariant::Ghost>
-                            "Clear your filters"
-                        </Link>
-                    </div>
-                </CardBody>
-            </Card>
-        }
-        .into_any()
-    } else {
-        view! {
-            <div>
-                <div class="mb-4 text-sm text-gray-600">{format!("{} projects", total_items)}</div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {page
-                        .items
-                        .into_iter()
-                        .map(|project| {
-                            let keywords: Vec<String> = project
-                                .keywords
-                                .iter()
-                                .filter_map(|map| lang_value(map).cloned())
-                                .collect();
-                            view! {
-                                <ProjectCard
-                                    title=project.name.clone()
-                                    content=project.short_description.clone()
-                                    status=project.status.clone()
-                                    access_rights=project.access_rights.access_rights.clone()
-                                    btn_target=format!("/dpe/projects/{}", project.shortcode)
-                                    shortcode=project.shortcode.clone()
-                                    keywords=keywords
-                                />
-                            }
+/// Render a resolved [`Page`] of projects. Separated from the cache lookup so it
+/// can be unit-tested with a synthetic page.
+fn render_project_list(page: Page, query: &ProjectQuery) -> Markup {
+    if page.total_items == 0 {
+        return card(
+            CardProps { variant: CardVariant::Bordered, class: "" },
+            card_body(
+                "",
+                html! {
+                    div class="text-center" {
+                        h3 class="mb-4" { "No projects found matching your criteria" }
+                        ({
+                            link(
+                                LinkProps {
+                                    href: "/dpe/projects",
+                                    as_button: Some(ButtonVariant::Ghost),
+                                    ..Default::default()
+                                },
+                                html! {
+                                    "Clear your filters"
+                                },
+                            )
                         })
-                        .collect_view()}
-                </div>
-            </div>
+                    }
+                },
+            ),
+        );
+    }
 
-            <div class="flex justify-center">
-                <ProjectPagination nr_pages=nr_pages query=query />
-            </div>
+    html! {
+        div {
+            div class="mb-4 text-sm text-gray-600" { (format!("{} projects", page.total_items)) }
+            div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" {
+                @for project in &page.items {
+                    @let keywords: Vec<String> = project
+                        .keywords
+                        .iter()
+                        .filter_map(|m| dpe_core::lang_value(m).cloned())
+                        .collect();
+                    (project_card(project, &keywords))
+                }
+            }
         }
-        .into_any()
+        div class="flex justify-center" { (project_pagination(page.nr_pages, query)) }
     }
 }
 
-#[cfg(target_arch = "wasm32")]
-#[component]
-pub fn ProjectList(query: ProjectQuery) -> impl IntoView {
-    let _ = query;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::sample_project;
+
+    #[test]
+    fn empty_page_renders_clear_filters_card() {
+        let page = Page { items: vec![], nr_pages: 1, total_items: 0 };
+        let out = render_project_list(page, &ProjectQuery::default()).into_string();
+        assert!(out.contains("No projects found matching your criteria"), "{out}");
+        assert!(out.contains("Clear your filters"), "{out}");
+        assert!(out.contains(r#"href="/dpe/projects""#), "{out}");
+    }
+
+    #[test]
+    fn non_empty_page_renders_count_cards_and_pagination() {
+        let page = Page { items: vec![sample_project()], nr_pages: 2, total_items: 1 };
+        let out = render_project_list(page, &ProjectQuery::default()).into_string();
+        assert!(out.contains("1 projects"), "{out}");
+        assert!(out.contains("Sample Research Project"), "card rendered: {out}");
+        assert!(out.contains(r#"aria-label="Pagination""#), "pagination rendered: {out}");
+    }
 }

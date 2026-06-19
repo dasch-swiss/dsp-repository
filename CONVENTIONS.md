@@ -6,7 +6,7 @@ Agent reference card for the **work phase**. All authoritative detail lives in `
 
 - **Crate naming and API crate pattern**: See `docs/src/repo_structure.md`
 - **Fragment routes and Datastar attributes**: See `docs/src/dpe/architecture.md`
-- **Formatting**: Defined in `.rustfmt.toml`. Use `leptosfmt` for Leptos code. Run `just fmt`.
+- **Formatting**: Rust style in `.rustfmt.toml`. Run `just fmt`: `maudfmt` formats the `html!` Maud macro contents (stock rustfmt does not), then `cargo +nightly fmt` handles the rest. `just check` verifies both.
 - **Linting**: Strict clippy warnings. Run `just check`.
 
 ## Testing Conventions

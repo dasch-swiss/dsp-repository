@@ -62,7 +62,7 @@ fn load_all_enriched() -> HashMap<String, EnrichedDate> {
 
 /// Load and parse the enrichment table from `data_dir`. Shared by the cache
 /// initialiser and tests so both go through identical read/parse logic.
-fn load_from(data_dir: &std::path::Path) -> HashMap<String, EnrichedDate> {
+pub fn load_from(data_dir: &std::path::Path) -> HashMap<String, EnrichedDate> {
     let path = data_dir.join(ENRICHMENT_FILE);
 
     // A missing enrichment file is normal (e.g. before the tool is first run);

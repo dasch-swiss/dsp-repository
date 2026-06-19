@@ -460,4 +460,100 @@ mod temporal_tests {
         assert_eq!(date.date, "");
         assert_eq!(date.date_information.as_deref(), Some("Vague Period"));
     }
+
+    /// Derive the lookup key / name for a temporalCoverage entry exactly as
+    /// `resolve_temporal_coverage_in` does (Reference → `text`; Text map →
+    /// `get_multilingual_value`). Mirrors `normalized_key` in
+    /// `scripts/build-temporal-coverage-enrichment.py`.
+    fn coverage_name(tc: &TemporalCoverage) -> Option<String> {
+        match tc {
+            TemporalCoverage::Reference(ref_data) => ref_data.text.clone(),
+            TemporalCoverage::Text(text_map) => get_multilingual_value(text_map),
+        }
+    }
+
+    /// Completeness guard over the committed project data: every distinct
+    /// `temporalCoverage` entry across all in-repo project files must resolve to a
+    /// usable date through the *real* period and enrichment tables.
+    ///
+    /// "Resolved" means a non-empty `date` (a ChronOntology timespan or an
+    /// enrichment range). A name-only fallback (empty `date`) counts as
+    /// UNRESOLVED and fails the test — the point of the check is that every path
+    /// carries a machine-readable range, not merely a label.
+    ///
+    /// The sole exception is a name explicitly reviewed as *not a time period*: an
+    /// enrichment row with no `date` and `source == "unresolved"` (e.g. "Swiss",
+    /// "English (culture or style)"). Those are intentionally emitted as
+    /// `dateInformation`-only, so they are allowed to stay name-only. Any other
+    /// empty-date entry is a genuine gap in the enrichment table.
+    ///
+    /// Data, periods, and enrichment are loaded through the same parse logic as
+    /// production (`ProjectRaw`, `chronontology_cache::load_from`,
+    /// `temporal_enrichment_cache::load_from`), resolved relative to this crate so
+    /// the test does not depend on the process working directory or on global
+    /// cache state.
+    #[test]
+    fn every_committed_temporal_coverage_resolves() {
+        use std::path::Path;
+
+        use dpe_core::ProjectRaw;
+
+        let data_dir = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../server/data"));
+        let projects_dir = data_dir.join("projects");
+
+        let periods = dpe_core::chronontology_cache::load_from(data_dir);
+        let enriched = dpe_core::temporal_enrichment_cache::load_from(data_dir);
+        assert!(!enriched.is_empty(), "committed enrichment table should load and be non-empty");
+
+        let entries = std::fs::read_dir(&projects_dir).expect("projects data directory should be readable");
+
+        let mut seen = std::collections::HashSet::new();
+        let mut unresolved = Vec::new();
+
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+            let json = std::fs::read_to_string(&path).expect("project file should be readable");
+            let project = serde_json::from_str::<ProjectRaw>(&json)
+                .map(Project::from)
+                .unwrap_or_else(|e| panic!("failed to parse {filename}: {e}"));
+
+            for tc in &project.temporal_coverage {
+                let Some(name) = coverage_name(tc) else {
+                    continue; // no name to key on; nothing to resolve.
+                };
+                if !seen.insert(name.clone()) {
+                    continue; // already checked this distinct name.
+                }
+
+                let resolved = resolve_temporal_coverage_in(tc, &periods, &enriched);
+                let has_date = resolved.as_ref().is_some_and(|d| !d.date.is_empty());
+                if has_date {
+                    continue;
+                }
+
+                // Empty date: allowed only if the name is an explicitly reviewed
+                // non-period label (enrichment row, no date, source "unresolved").
+                let intentional_label = enriched
+                    .get(&name)
+                    .is_some_and(|e| e.date.is_none() && e.source == "unresolved");
+                if !intentional_label {
+                    unresolved.push(name);
+                }
+            }
+        }
+
+        unresolved.sort();
+        assert!(
+            unresolved.is_empty(),
+            "temporalCoverage names with no resolved date (add a W3CDTF range to \
+             {ENRICHMENT_FILE}, or mark source=\"unresolved\" if not a time period):\n{}",
+            unresolved.join("\n"),
+        );
+    }
+
+    const ENRICHMENT_FILE: &str = "temporal-coverage-enrichment.json";
 }

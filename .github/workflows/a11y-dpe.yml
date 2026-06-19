@@ -7,16 +7,12 @@ on:
   push:
     branches: [main]
     paths:
-      - "modules/dpe/web/**"
-      - "modules/dpe/style/**"
-      - "modules/dpe/public/**"
-      - "modules/dpe/web-e2e-tests/**"
+      # Any DPE crate (server/core/api-oai/telemetry/web), styles, assets, or the
+      # e2e suite — a server-side render change must trigger the a11y job too.
+      - "modules/dpe/**"
   pull_request:
     paths:
-      - "modules/dpe/web/**"
-      - "modules/dpe/style/**"
-      - "modules/dpe/public/**"
-      - "modules/dpe/web-e2e-tests/**"
+      - "modules/dpe/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

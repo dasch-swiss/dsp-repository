@@ -209,8 +209,11 @@ css-release:
     out=modules/dpe/public/assets
     "$bin" -i modules/dpe/style/main.css -o "$out/app.css" --minify
     if command -v sha256sum >/dev/null 2>&1; then h=$(sha256sum "$out/app.css" | cut -c1-8); else h=$(shasum -a 256 "$out/app.css" | cut -c1-8); fi
-    rm -f "$out"/app.[0-9a-f]*.css
-    mv "$out/app.css" "$out/app.$h.css"
+    # Write the hashed file first, then drop the stale hashed files + the unhashed
+    # temp. If the copy fails, the previous hashed CSS is still in place.
+    cp "$out/app.css" "$out/app.$h.css"
+    find "$out" -maxdepth 1 -name 'app.[0-9a-f]*.css' ! -name "app.$h.css" -delete
+    rm -f "$out/app.css"
     echo "built $out/app.$h.css"
 
 # Start the DPE with hot reload: Tailwind --watch + bacon (kill_then_restart) serving dpe-server.

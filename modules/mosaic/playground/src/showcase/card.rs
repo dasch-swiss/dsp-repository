@@ -116,7 +116,7 @@ fn with_images() -> Markup {
     html! {
         div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3" {
             (c(CardVariant::Bordered, html! {
-                img src="https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=400&h=250&fit=crop"
+                img src="/images/card-gradient.jpg"
                     alt="Abstract blue and purple gradient" class="w-full h-48 object-cover";
                 (card_body("", html! {
                     h3 class="text-lg font-semibold mb-2" { "Image Card" }
@@ -124,7 +124,7 @@ fn with_images() -> Markup {
                 }))
             }))
             (c(CardVariant::Elevated, html! {
-                img src="https://images.unsplash.com/photo-1682687220795-796d3f6f7000?w=400&h=250&fit=crop"
+                img src="/images/card-abstract.jpg"
                     alt="Colorful abstract art" class="w-full h-48 object-cover";
                 (card_body("", html! {
                     h3 class="text-lg font-semibold mb-2" { "Gallery Item" }
@@ -138,7 +138,7 @@ fn with_images() -> Markup {
                 }))
             }))
             (c(CardVariant::Bordered, html! {
-                img src="https://images.unsplash.com/photo-1682695796497-31a44224d6d6?w=400&h=250&fit=crop"
+                img src="/images/card-landscape.jpg"
                     alt="Nature landscape" class="w-full h-48 object-cover rounded-t-lg";
                 (card_header(html! {
                     h3 class="text-lg font-semibold" { "Featured Article" }

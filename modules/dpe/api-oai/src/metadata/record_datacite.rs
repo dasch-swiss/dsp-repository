@@ -10,6 +10,19 @@ use super::types::{
 
 const PUBLISHER: &str = "DaSCH";
 
+/// Determines the DataCite `nameType` for an authorship entry.
+///
+/// Record authorship is a free-text name with no structured person/organization
+/// flag, so the type is inferred from the name. DaSCH itself is an organization;
+/// every other authorship name is treated as a person.
+fn authorship_name_type(name: &str) -> &'static str {
+    if name == PUBLISHER {
+        "Organizational"
+    } else {
+        "Personal"
+    }
+}
+
 /// Maps typeOfData to a DataCite resourceTypeGeneral value.
 fn type_of_data_to_general(type_of_data: &str) -> String {
     match type_of_data {
@@ -29,7 +42,7 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
         .iter()
         .map(|name| DataCiteCreator {
             name: name.clone(),
-            name_type: Some("Personal".to_string()),
+            name_type: Some(authorship_name_type(name).to_string()),
             ..Default::default()
         })
         .collect();
@@ -207,6 +220,33 @@ mod tests {
         assert_eq!(dc.creators.len(), 2);
         assert_eq!(dc.creators[0].name, "Dr. Anna Müller");
         assert_eq!(dc.creators[1].name, "Prof. Hans Bauer");
+    }
+
+    #[test]
+    fn personal_authorship_keeps_personal_name_type() {
+        let dc = record_to_datacite(&test_record());
+        assert_eq!(dc.creators[0].name_type.as_deref(), Some("Personal"));
+        assert_eq!(dc.creators[1].name_type.as_deref(), Some("Personal"));
+    }
+
+    #[test]
+    fn dasch_authorship_is_organizational() {
+        let mut record = test_record();
+        record.legal_info.authorship = vec!["DaSCH".to_string()];
+        let dc = record_to_datacite(&record);
+        assert_eq!(dc.creators.len(), 1);
+        assert_eq!(dc.creators[0].name, "DaSCH");
+        assert_eq!(dc.creators[0].name_type.as_deref(), Some("Organizational"));
+    }
+
+    #[test]
+    fn empty_authorship_falls_back_to_organizational_dasch() {
+        let mut record = test_record();
+        record.legal_info.authorship = vec![];
+        let dc = record_to_datacite(&record);
+        assert_eq!(dc.creators.len(), 1);
+        assert_eq!(dc.creators[0].name, "DaSCH");
+        assert_eq!(dc.creators[0].name_type.as_deref(), Some("Organizational"));
     }
 
     #[test]

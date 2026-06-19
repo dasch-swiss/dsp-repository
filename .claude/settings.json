@@ -23,8 +23,7 @@
       "Bash(just watch-mosaic-playground)",
       "Bash(rg:*)",
       "WebFetch(domain:crates.io)",
-      "WebFetch(domain:just.systems)",
-      "WebFetch(domain:leptos.dev)"
+      "WebFetch(domain:just.systems)"
     ],
     "deny": []
   }

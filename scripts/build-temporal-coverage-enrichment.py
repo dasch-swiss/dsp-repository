@@ -25,7 +25,8 @@ rows). A coverage report is printed to stderr.
 Workflow:
   1. Run this tool. New non-ChronOntology names appear with `date: null`.
   2. Fill each null `date` with a W3CDTF range (year or `start/end`, zero-padded
-     to 4+ digits, `-` for BCE, `..` for an open bound) and set `source: "llm"`.
+     to 4+ digits, `-` for BCE, a bare trailing/leading slash `1900/` or `/1900`
+     for an open bound per RKMS-ISO8601) and set `source: "llm"`.
      Leave `date: null` only for names that are not time periods at all
      (e.g. "Swiss"); those are emitted as dateInformation-only.
   3. Re-run with `--check` in CI to ensure every distinct dataset name is present.
@@ -85,8 +86,8 @@ def w3cdtf_range(begin: int | None, end: int | None) -> str | None:
             return None
         return _w3cdtf_year(begin) if begin == end else f"{_w3cdtf_year(begin)}/{_w3cdtf_year(end)}"
     if begin is not None:
-        return f"{_w3cdtf_year(begin)}/.."
-    return f"../{_w3cdtf_year(end)}"
+        return f"{_w3cdtf_year(begin)}/"
+    return f"/{_w3cdtf_year(end)}"
 
 
 def normalized_key(entry: dict) -> str | None:

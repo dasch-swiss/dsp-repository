@@ -15,12 +15,12 @@
 
 /// A formatted, W3CDTF-valid temporal range ready to drop into a DataCite
 /// `date` value. Always either a single year or a `start/end` interval (with
-/// `..` for an open side).
+/// a bare trailing/leading slash for an open side).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct W3cdtfRange(String);
 
 impl W3cdtfRange {
-    /// The formatted range string (e.g. `0098/0117`, `-0054`, `0030/..`).
+    /// The formatted range string (e.g. `0098/0117`, `-0054`, `0030/`).
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -78,8 +78,10 @@ pub fn to_w3cdtf_range(begin: Option<&str>, end: Option<&str>) -> Option<W3cdtfR
                 Some(W3cdtfRange(format!("{bs}/{es}")))
             }
         }
-        (Some((_, bs)), None) => Some(W3cdtfRange(format!("{bs}/.."))),
-        (None, Some((_, es))) => Some(W3cdtfRange(format!("../{es}"))),
+        // Open ranges use the RKMS-ISO8601 bare-slash form (`1900/`, `/1900`)
+        // that DataCite cites, not EDTF's `1900/..` / `../1900`.
+        (Some((_, bs)), None) => Some(W3cdtfRange(format!("{bs}/"))),
+        (None, Some((_, es))) => Some(W3cdtfRange(format!("/{es}"))),
         (None, None) => None,
     }
 }
@@ -114,17 +116,17 @@ mod tests {
 
     #[test]
     fn open_end_present_literal() {
-        assert_eq!(range(Some("1900"), Some("present")), Some("1900/..".to_string()));
+        assert_eq!(range(Some("1900"), Some("present")), Some("1900/".to_string()));
     }
 
     #[test]
     fn open_end_not_specified_literal() {
-        assert_eq!(range(Some("1900"), Some("not specified")), Some("1900/..".to_string()));
+        assert_eq!(range(Some("1900"), Some("not specified")), Some("1900/".to_string()));
     }
 
     #[test]
     fn open_begin() {
-        assert_eq!(range(None, Some("1900")), Some("../1900".to_string()));
+        assert_eq!(range(None, Some("1900")), Some("/1900".to_string()));
     }
 
     #[test]
@@ -140,12 +142,12 @@ mod tests {
 
     #[test]
     fn whitespace_and_empty_treated_as_open() {
-        assert_eq!(range(Some("  "), Some("1900")), Some("../1900".to_string()));
+        assert_eq!(range(Some("  "), Some("1900")), Some("/1900".to_string()));
     }
 
     #[test]
     fn non_numeric_bound_is_open() {
         // Anything that isn't a recognised year or sentinel is treated as absent.
-        assert_eq!(range(Some("circa 1900"), Some("1950")), Some("../1950".to_string()));
+        assert_eq!(range(Some("circa 1900"), Some("1950")), Some("/1950".to_string()));
     }
 }

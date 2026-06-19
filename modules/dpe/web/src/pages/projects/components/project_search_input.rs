@@ -47,9 +47,9 @@ pub fn project_search_input() -> Markup {
     html! {
         form method="get" action="/dpe/projects" {
             div class="relative flex-1" data-signals="{_focused: false}" {
-                label class="flex w-full items-center gap-2 rounded-md border border-neutral-300 bg-white px-3 py-2 focus-within:border-primary-600 focus-within:ring-1 focus-within:ring-primary-600" {
+                label class="flex w-full items-center gap-2 rounded-md border border-neutral-300 bg-white h-10 px-3 focus-within:border-primary-600 focus-within:ring-1 focus-within:ring-primary-600" {
                     (icon(IconSearch, "w-4 h-4 opacity-50 shrink-0"))
-                    input type="search" name="search" placeholder="Search projects..." class="grow bg-transparent outline-none"
+                    input type="search" name="search" placeholder="Search projects..." class="grow bg-transparent outline-none text-sm/[1.5] text-neutral-950"
                           role="combobox" aria-autocomplete="list" aria-controls="search-results"
                           aria-expanded="false"
                           data-attr:aria-expanded="$_focused && $search.length > 0 ? 'true' : 'false'"

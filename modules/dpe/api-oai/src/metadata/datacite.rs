@@ -392,10 +392,23 @@ mod temporal_tests {
             .collect()
     }
 
+    /// The default enrichment fixture for tests that are not specifically about an
+    /// empty or missing table. It does carry a `"Trajanic"` row with a *different*
+    /// range than the period cache, so a URL-tier test can prove the URL wins over
+    /// a same-named enrichment row.
+    fn default_enrichment() -> HashMap<String, EnrichedDate> {
+        enrichment(&[
+            ("Trajanic", Some("1111/2222"), "Trajanic"),
+            ("Bronze Age", Some("-3300/-1200"), "Bronze Age"),
+        ])
+    }
+
     #[test]
     fn chronontology_url_resolves_to_range() {
         let tc = reference("https://chronontology.dainst.org/period/0vGXxVln724L", Some("Trajanic"));
-        let date = resolve_temporal_coverage_in(&tc, &periods(), &HashMap::new()).unwrap();
+        // Enrichment is present and even has a "Trajanic" row with a different
+        // range; the URL tier must still win, proving its precedence.
+        let date = resolve_temporal_coverage_in(&tc, &periods(), &default_enrichment()).unwrap();
         assert_eq!(date.date, "0098/0117");
         assert_eq!(date.date_type, "Coverage");
         assert_eq!(date.date_information.as_deref(), Some("Trajanic"));
@@ -423,7 +436,9 @@ mod temporal_tests {
     #[test]
     fn unresolved_emits_name_only_empty_date() {
         let tc = text("Mysterious Era");
-        let date = resolve_temporal_coverage_in(&tc, &HashMap::new(), &HashMap::new()).unwrap();
+        // Enrichment is populated but has no row for "Mysterious Era": resolution
+        // must fall through both the URL and enrichment tiers to the name-only tier.
+        let date = resolve_temporal_coverage_in(&tc, &periods(), &default_enrichment()).unwrap();
         assert_eq!(date.date, "");
         assert_eq!(date.date_type, "Coverage");
         assert_eq!(date.date_information.as_deref(), Some("Mysterious Era"));
@@ -432,7 +447,9 @@ mod temporal_tests {
     #[test]
     fn no_name_and_no_resolution_is_none() {
         let tc = reference("", None);
-        assert!(resolve_temporal_coverage_in(&tc, &HashMap::new(), &HashMap::new()).is_none());
+        // Even with the period cache and enrichment populated, an entry that
+        // carries neither a resolvable URL nor any name yields nothing.
+        assert!(resolve_temporal_coverage_in(&tc, &periods(), &default_enrichment()).is_none());
     }
 
     #[test]

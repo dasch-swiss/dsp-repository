@@ -36,17 +36,19 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
   test("clicking a tab updates tab panel content", async ({ page }) => {
     await page.goto(PROJECT_URL);
 
-    const initialContent = await page.locator("#tab-panel").innerHTML();
+    const panel = page.locator("#tab-panel");
+    // The default Overview tab renders the dataset overview; "Type of Data" is
+    // overview-only content, a stable marker that the overview panel is showing.
+    await expect(panel).toContainText("Type of Data");
 
-    const contributorsTab = page.locator('[role="tab"]', {
-      hasText: "Contributors",
-    });
-    await contributorsTab.click();
+    await page.locator('[role="tab"]', { hasText: "Contributors" }).click();
 
-    // Wait for content to change
-    await expect(page.locator("#tab-panel")).not.toHaveInnerHTML(
-      initialContent,
-    );
+    // After the SSE morph the active tab is Contributors and the panel no longer
+    // shows the overview content.
+    await expect(
+      page.locator('[role="tab"][aria-selected="true"]'),
+    ).toHaveText(/Contributors/);
+    await expect(panel).not.toContainText("Type of Data");
   });
 
   test("scroll position preserved after tab switch", async ({ page }) => {
@@ -67,8 +69,11 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
       /Contributors/,
     );
 
+    // The active tab is re-focused after the morph (focus restoration), which can
+    // nudge the scroll a few pixels to keep it in view. Assert the page stayed put
+    // (no jump back to the top) rather than exact equality.
     const scrollAfter = await page.evaluate(() => window.scrollY);
-    expect(scrollAfter).toBe(scrollBefore);
+    expect(Math.abs(scrollAfter - scrollBefore)).toBeLessThan(50);
   });
 
   test("browser URL updates to ?tab={tab} after tab switch", async ({

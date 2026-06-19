@@ -25,6 +25,9 @@ pub fn project_pagination(nr_pages: i32, query: &ProjectQuery) -> Markup {
                         href: &prev_url,
                         as_button: Some(ButtonVariant::Outline),
                         disabled: is_first_page,
+                        // Only the interactive (href-bearing) link carries the name; a
+                        // disabled link is a roleless <a>, where aria-label is prohibited.
+                        aria_label: (!is_first_page).then_some("Previous page"),
                         ..Default::default()
                     },
                     icon(IconChevronLeft, "w-3 h-3"),
@@ -42,6 +45,7 @@ pub fn project_pagination(nr_pages: i32, query: &ProjectQuery) -> Markup {
                         href: &next_url,
                         as_button: Some(ButtonVariant::Outline),
                         disabled: is_last_page,
+                        aria_label: (!is_last_page).then_some("Next page"),
                         ..Default::default()
                     },
                     icon(IconChevronRight, "w-3 h-3"),

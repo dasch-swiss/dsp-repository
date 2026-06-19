@@ -4,8 +4,8 @@
 //! (free-text names, or periods without a timespan). An offline tool produces
 //! `temporal-coverage-enrichment.json`, a reviewed lookup table mapping a
 //! normalized name to a W3CDTF date range, the original name, and the source of
-//! the range (`chronontology`, `parsed`, `llm`, or `unresolved`). This module
-//! loads that table at runtime.
+//! the range (`chronontology`, `llm`, or `unresolved`). This module loads that
+//! table at runtime.
 //!
 //! The table is keyed by the same value the OAI mapping computes at request time
 //! (the preferred-language / deterministic multilingual value), so collection and
@@ -34,9 +34,9 @@ pub struct EnrichedDate {
     pub date: Option<String>,
     /// The original human-readable period name.
     pub original_name: String,
-    /// Provenance of the range (`"chronontology"`, `"parsed"`, `"llm"`, or
-    /// `"unresolved"`). Retained for round-trip fidelity and debugging; the OAI
-    /// mapping does not read it.
+    /// Provenance of the range (`"chronontology"`, `"llm"`, or `"unresolved"`).
+    /// Retained for round-trip fidelity and debugging; the OAI mapping does not
+    /// read it.
     #[serde(default)]
     pub source: String,
 }
@@ -57,14 +57,17 @@ pub fn enriched_for(key: &str) -> Option<EnrichedDate> {
 }
 
 fn load_all_enriched() -> HashMap<String, EnrichedDate> {
-    use std::fs;
-    use std::path::PathBuf;
+    load_from(std::path::Path::new(get_data_dir()))
+}
 
-    let path = PathBuf::from(get_data_dir()).join(ENRICHMENT_FILE);
+/// Load and parse the enrichment table from `data_dir`. Shared by the cache
+/// initialiser and tests so both go through identical read/parse logic.
+fn load_from(data_dir: &std::path::Path) -> HashMap<String, EnrichedDate> {
+    let path = data_dir.join(ENRICHMENT_FILE);
 
     // A missing enrichment file is normal (e.g. before the tool is first run);
     // callers fall back to a name-only date. Only a present-but-broken file warns.
-    let json = match fs::read_to_string(&path) {
+    let json = match std::fs::read_to_string(&path) {
         Ok(json) => json,
         Err(_) => return HashMap::new(),
     };
@@ -120,5 +123,39 @@ mod tests {
     fn unknown_key_is_none() {
         let entries = fixtures();
         assert!(enriched_for_in(&entries, "Unknown").is_none());
+    }
+
+    /// A single W3CDTF year: optional `-`, then 4+ digits.
+    fn is_w3cdtf_year(s: &str) -> bool {
+        let digits = s.strip_prefix('-').unwrap_or(s);
+        digits.len() >= 4 && digits.chars().all(|c| c.is_ascii_digit())
+    }
+
+    /// Accepts a single year, a `begin/end` range, or an RKMS-ISO8601 open range
+    /// (`year/` or `/year`).
+    fn is_w3cdtf(s: &str) -> bool {
+        match s.split_once('/') {
+            None => is_w3cdtf_year(s),
+            Some(("", end)) => is_w3cdtf_year(end),     // /1900
+            Some((begin, "")) => is_w3cdtf_year(begin), // 1900/
+            Some((begin, end)) => is_w3cdtf_year(begin) && is_w3cdtf_year(end),
+        }
+    }
+
+    /// Loads the real committed enrichment table through the production
+    /// `load_from` and asserts every filled date is valid W3CDTF. This is the
+    /// guard against a typo'd range or broken JSON in the committed data file.
+    #[test]
+    fn committed_enrichment_table_is_valid() {
+        let data_dir = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../server/data"));
+        let table = load_from(data_dir);
+
+        assert!(!table.is_empty(), "committed enrichment table should load and be non-empty");
+        for (key, entry) in &table {
+            if let Some(ref date) = entry.date {
+                assert!(is_w3cdtf(date), "entry {key:?} has malformed W3CDTF date {date:?}");
+            }
+            assert!(!entry.original_name.is_empty(), "entry {key:?} has empty original_name");
+        }
     }
 }

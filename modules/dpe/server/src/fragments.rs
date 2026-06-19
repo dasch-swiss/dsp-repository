@@ -471,6 +471,56 @@ mod tests {
         assert!(body_str.contains("aria-selected"), "missing aria-selected on active tab");
     }
 
+    /// Extract the `<div id="project-tabs" …>` opening tag, up to and including
+    /// the first `>`. The morph-root open tag carries no `>` inside its attribute
+    /// values, so the first `>` terminates it. Both the Maud page render and the
+    /// SSE `elements` line escape attribute values identically (`&` → `&amp;`),
+    /// so the two open tags are directly comparable without entity-decoding.
+    fn project_tabs_open_tag(html: &str) -> &str {
+        let start = html.find(r#"<div id="project-tabs""#).expect("no #project-tabs element");
+        let end = html[start..].find('>').expect("unterminated #project-tabs open tag");
+        &html[start..start + end + 1]
+    }
+
+    /// Morph contract: the `#project-tabs` open tag the full page emits (wrapped
+    /// in a card by `project_details`) must be byte-identical to the one the
+    /// `/tab/{tab}` SSE route emits. Both render through the single `project_tabs`
+    /// fn, so this guards against a caller wrapping or mutating the morph root and
+    /// silently breaking Datastar's outer-morph.
+    #[tokio::test]
+    async fn morph_contract_project_tabs_open_tag_identical() {
+        init_test_data();
+
+        // Page path: the full project-detail view wraps `project_tabs` in a card.
+        let project = dpe_core::project_cache::project_by_shortcode("0803")
+            .expect("project 0803 missing in test data")
+            .clone();
+        let page_html =
+            dpe_web::pages::project::components::project_details::project_details(&project, &[], "overview")
+                .into_string();
+        let page_open_tag = project_tabs_open_tag(&page_html);
+
+        // SSE path: the tab fragment handler emits `#project-tabs` via PatchElements.
+        let app = test_app();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/dpe/projects/0803/tab/overview")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body_str = String::from_utf8_lossy(&body);
+        let sse_open_tag = project_tabs_open_tag(&body_str);
+
+        assert_eq!(
+            page_open_tag, sse_open_tag,
+            "the #project-tabs morph-root open tag drifted between the page and SSE paths"
+        );
+    }
+
     #[tokio::test]
     async fn snapshot_sse_overview_response() {
         let app = test_app();

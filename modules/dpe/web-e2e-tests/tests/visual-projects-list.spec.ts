@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 // Pre-migration visual A/B (DEV-6642). Same specs drive the old (Leptos) and new (Maud)
 // builds over HTTP. The projects list is fully URL-query-driven (search, filters,
@@ -12,11 +12,24 @@ const LIST_URL = "http://localhost:4000/dpe/projects";
 // pagination links (`?page=`) or the about link.
 const PROJECT_CARD = 'a[href^="/dpe/projects/0"]';
 
+// The status/access-rights badges (an enumerated delta surface) render their `.tooltip`
+// bubble as a position:absolute, whitespace-nowrap element that extends past the card
+// edge. On edge-column cards that adds *off-screen* horizontal overflow — in BOTH the old
+// (DaisyUI) and migrated (Mosaic) builds — which a full-page screenshot would otherwise
+// capture, so a 7px difference in the hidden bubble's width shifts every centered card.
+// The migrated build clips this at the page level (`main{overflow-x:clip}`); applying the
+// same clip here makes the full-page A/B assert visible-layout parity rather than a hidden
+// hover bubble's off-screen footprint. Harmless on the migrated build (already clipped).
+async function clipTooltipOverflow(page: Page) {
+  await page.addStyleTag({ content: "main{overflow-x:clip}" });
+}
+
 test.describe("Visual parity — projects list (desktop)", () => {
   test("default list — full page", async ({ page }) => {
     await page.goto(LIST_URL);
     await expect(page.locator(PROJECT_CARD).first()).toBeVisible();
     await page.evaluate(() => document.fonts.ready.then(() => {}));
+    await clipTooltipOverflow(page);
 
     await expect(page).toHaveScreenshot("list-default-full.png", {
       maxDiffPixelRatio: 0.01,
@@ -30,6 +43,7 @@ test.describe("Visual parity — projects list (desktop)", () => {
     await page.goto(`${LIST_URL}?search=080`);
     await expect(page.locator(PROJECT_CARD).first()).toBeVisible();
     await page.evaluate(() => document.fonts.ready.then(() => {}));
+    await clipTooltipOverflow(page);
 
     await expect(page).toHaveScreenshot("list-search-full.png", {
       maxDiffPixelRatio: 0.01,
@@ -41,6 +55,7 @@ test.describe("Visual parity — projects list (desktop)", () => {
     await page.goto(`${LIST_URL}?search=zzqqxxnomatch`);
     await expect(page.getByText("No projects found")).toBeVisible();
     await page.evaluate(() => document.fonts.ready.then(() => {}));
+    await clipTooltipOverflow(page);
 
     await expect(page).toHaveScreenshot("list-no-results-full.png", {
       maxDiffPixelRatio: 0.01,
@@ -52,6 +67,7 @@ test.describe("Visual parity — projects list (desktop)", () => {
     await page.goto(`${LIST_URL}?finished=true`);
     await expect(page.locator(PROJECT_CARD).first()).toBeVisible();
     await page.evaluate(() => document.fonts.ready.then(() => {}));
+    await clipTooltipOverflow(page);
 
     await expect(page).toHaveScreenshot("list-filter-finished-full.png", {
       maxDiffPixelRatio: 0.01,
@@ -64,6 +80,7 @@ test.describe("Visual parity — projects list (desktop)", () => {
     await expect(page.locator(PROJECT_CARD).first()).toBeVisible();
     await expect(page.locator('nav[aria-label="Pagination"]')).toBeVisible();
     await page.evaluate(() => document.fonts.ready.then(() => {}));
+    await clipTooltipOverflow(page);
 
     await expect(page).toHaveScreenshot("list-page-2-full.png", {
       maxDiffPixelRatio: 0.01,
@@ -78,6 +95,7 @@ test.describe("Visual parity — projects list (desktop)", () => {
     const card = page.locator(PROJECT_CARD).first();
     await expect(card).toBeVisible();
     await page.evaluate(() => document.fonts.ready.then(() => {}));
+    await clipTooltipOverflow(page);
 
     await expect(card).toHaveScreenshot("list-project-card.png", {
       maxDiffPixelRatio: 0.01,
@@ -92,6 +110,7 @@ test.describe("Visual parity — projects list (mobile)", () => {
     await page.goto(LIST_URL);
     await expect(page.locator(PROJECT_CARD).first()).toBeVisible();
     await page.evaluate(() => document.fonts.ready.then(() => {}));
+    await clipTooltipOverflow(page);
 
     await expect(page).toHaveScreenshot("list-mobile-default-full.png", {
       maxDiffPixelRatio: 0.01,
@@ -105,6 +124,7 @@ test.describe("Visual parity — projects list (mobile)", () => {
     // the a11y tree; getByRole('checkbox') targets the open dialog's filter controls.
     await expect(page.getByRole("checkbox").first()).toBeVisible();
     await page.evaluate(() => document.fonts.ready.then(() => {}));
+    await clipTooltipOverflow(page);
 
     await expect(page).toHaveScreenshot("list-mobile-dialog-full.png", {
       maxDiffPixelRatio: 0.01,

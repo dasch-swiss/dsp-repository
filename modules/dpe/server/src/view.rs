@@ -48,7 +48,7 @@ pub fn page(
             body class="font-body" {
                 div class="bg-gray-50 min-h-screen flex flex-col gap-4" {
                     (dpe_web::components::header())
-                    main class="flex-1 dpe-max-layout-width mx-auto px-4 w-full" {
+                    main class="flex-1 dpe-max-layout-width mx-auto px-4 w-full overflow-x-clip" {
                         (content)
                     }
                     (dpe_web::components::footer())
@@ -74,7 +74,7 @@ mod tests {
         assert!(out.contains(r#"<link rel="stylesheet" href="/assets/app.css">"#), "{out}");
         assert!(out.contains(r#"<body class="font-body">"#), "{out}");
         assert!(
-            out.contains(r#"<main class="flex-1 dpe-max-layout-width mx-auto px-4 w-full"><p>content</p></main>"#),
+            out.contains(r#"<main class="flex-1 dpe-max-layout-width mx-auto px-4 w-full overflow-x-clip"><p>content</p></main>"#),
             "{out}"
         );
         assert!(out.contains(r#"<script type="module" src="/vendor/datastar.js">"#), "{out}");

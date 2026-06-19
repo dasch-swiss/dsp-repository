@@ -65,17 +65,15 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 | `OTEL_SERVICE_NAME` | No | *(none)* | Service name for OTel resource attributes (e.g., `dpe`) |
 | `OTEL_RESOURCE_ATTRIBUTES` | No | *(none)* | Comma-separated OTel resource attributes (e.g., `service.namespace=dpe,service.version=0.2.1,deployment.environment=prod`) |
 | `PYROSCOPE_ENDPOINT` | No | *(none)* | Pyroscope HTTP endpoint (e.g., `http://pyroscope:4040`). When unset, profiling is disabled. |
-| `LEPTOS_SITE_ADDR` | No | `0.0.0.0:8080` | Listen address and port |
-| `LEPTOS_SITE_ROOT` | No | `site` | Path to static site assets |
-| `LEPTOS_SITE_PKG_DIR` | No | `pkg` | JS/CSS package subdirectory |
-| `LEPTOS_OUTPUT_NAME` | No | `dpe` | CSS/JS output filename prefix |
-| `LEPTOS_ENV` | No | *(auto)* | Leptos environment (`DEV` or `PROD`). Set automatically by cargo-leptos: `watch` = `DEV`, `build --release` = `PROD`. Do not set manually. |
+| `DPE_SITE_ADDR` | No | `127.0.0.1:4000` | Listen address and port. The Docker image sets `0.0.0.0:8080`. |
+| `DPE_PUBLIC_DIR` | No | `modules/dpe/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, project images, and the compiled `app.<hash>.css`). |
+| `DPE_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`. |
 
 ## Health Check
 
 - **Endpoint**: `GET /healthz`
 - **Response**: `200 OK` (no body)
-- **Purpose**: Lightweight probe for Traefik/load balancers. Does not hit Leptos SSR.
+- **Purpose**: Lightweight probe for Traefik/load balancers. Does not render any page.
 
 ## Data Volume
 
@@ -93,7 +91,7 @@ The DPE is lightweight — it serves static data with no database.
 
 ## Logging
 
-Structured logging via `init-tracing-opentelemetry` (OTel-aware tracing subscriber). In production (`LEPTOS_ENV=PROD`), logs are JSON-formatted to stdout only. In local development (`LEPTOS_ENV=DEV`), logs are additionally exported via OTLP to Loki when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Configure levels with `RUST_LOG`:
+Structured logging via `init-tracing-opentelemetry` (OTel-aware tracing subscriber). In production (`DPE_ENV=PROD`), logs are JSON-formatted to stdout only. In local development (`DPE_ENV=DEV`), logs are additionally exported via OTLP to Loki when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Configure levels with `RUST_LOG`:
 
 ```bash
 # Default (info level)

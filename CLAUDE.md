@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-This repository is a Rust-based monorepo for the DaSCH Service Platform. It contains the Discovery and Presentation Environment (DPE) — a server-side rendered web application built with Leptos and Axum — and the Mosaic component library (design system).
+This repository is a Rust-based monorepo for the DaSCH Service Platform. It contains the Discovery and Presentation Environment (DPE) — a server-side rendered web application built with Maud and Axum — and the Mosaic component library (design system).
 
 ## Setup
 
@@ -31,10 +31,10 @@ just install-requirements
 ## Key Commands
 
 ```bash
-just watch-dpe                  # Run DPE with hot reload
+just dev                        # Run DPE with hot reload (Tailwind --watch + bacon serve)
 just watch-mosaic-playground    # Run Mosaic playground with hot reload
 just check                      # Run fmt checks and clippy
-just fmt                        # Format all Rust code (cargo fmt + leptosfmt)
+just fmt                        # Format all Rust code (cargo +nightly fmt, incl. html! Maud macros)
 just test                       # Run all tests
 just build                      # Build all targets
 just docs-serve                 # Serve docs at localhost:3000

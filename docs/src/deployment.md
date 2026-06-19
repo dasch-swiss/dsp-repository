@@ -8,7 +8,7 @@ All CI/CD workflows are defined as GitHub Actions in `.github/workflows/`.
 
 Every push and pull request runs:
 
-- **check.yml** — Formatting (`rustfmt`, `leptosfmt`) and linting (`clippy`)
+- **check.yml** — Formatting (`cargo +nightly fmt`) and linting (`clippy`)
 - **test.yml** — Runs the full test suite
 - **scout-dpe.yml** / **scout-mosaic-playground.yml** — Docker image vulnerability scanning (see [Security](./security.md))
 
@@ -30,7 +30,7 @@ Common CI steps are extracted into composite actions in `.github/actions/`:
 
 | Action | Purpose |
 |--------|---------|
-| `build-dpe` | Compile DPE (Rust musl binary + Leptos site assets) and stage artifacts |
+| `build-dpe` | Compile DPE (static musl `dpe-server` binary + content-hashed Tailwind `app.css` via `just css-release`) and stage artifacts |
 | `docker-publish` | Set up Buildx, log in to Docker Hub, build and push an image |
 | `docker-scout` | Run Docker Scout CVE scan and upload SARIF results |
 
@@ -69,8 +69,8 @@ When a pull request modifies files under `modules/dpe/`, a preview of the DPE is
 Defined in `dpe-docker-publish.yml`.
 
 On every push to `main`:
-1. Builds site assets with `cargo-leptos`
-2. Builds a static musl-linked binary
+1. Builds the content-hashed Tailwind stylesheet (`just css-release`)
+2. Builds a static musl-linked `dpe-server` binary
 3. Pushes the Docker image to Docker Hub (`daschswiss/dpe:{tag}`)
 4. Triggers a Jenkins webhook for DEV deployment
 

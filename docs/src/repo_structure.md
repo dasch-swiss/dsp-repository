@@ -9,7 +9,7 @@ modules/
 ├── dpe/                       # Discovery and Presentation Environment
 │   ├── core/                  # Pure domain types, repositories, data loading (crate: dpe-core)
 │   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
-│   ├── web/                   # Web layer: Leptos components, pages (crate: dpe-web)
+│   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
 │   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
 │   ├── telemetry/             # Telemetry types and validation (crate: dpe-telemetry)
 │   ├── web-e2e-tests/         # Playwright E2E tests
@@ -17,26 +17,24 @@ modules/
 │   ├── style/                 # CSS / Tailwind
 │   └── Dockerfile             # Production container image
 └── mosaic/                    # Mosaic component library (design system)
-    ├── tiles/                 # Reusable Leptos UI components (crate: mosaic-tiles)
+    ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
     ├── playground/            # Component playground application (crate: mosaic-playground)
-    ├── playground_macro/      # Proc macro for playground page generation (crate: mosaic-playground-macro)
     └── playground-e2e-tests/  # Playwright E2E tests for the playground
 ```
 
 ## Crate and Folder Naming Convention
 
-**Crate names** follow the `{module}-{role}` pattern. **Folder names** strip the module prefix, keeping only the role part. Hyphens in crate names become underscores in folder names when needed for Rust compatibility (proc macro crates).
+**Crate names** follow the `{module}-{role}` pattern. **Folder names** strip the module prefix, keeping only the role part.
 
 | Crate | Folder | Role |
 |-------|--------|------|
 | `dpe-core` | `dpe/core` | Pure domain types and data access (zero framework deps) |
 | `dpe-api-oai` | `dpe/api-oai` | OAI-PMH 2.0 API (depends on `dpe-core` only) |
-| `dpe-web` | `dpe/web` | Leptos SSR components, pages, `#[server]` functions |
+| `dpe-web` | `dpe/web` | Maud pages and components (`fn -> Markup`) |
 | `dpe-server` | `dpe/server` | Server binary — composes all routes |
 | `dpe-telemetry` | `dpe/telemetry` | Telemetry types, validation, and origin checking |
 | `mosaic-tiles` | `mosaic/tiles` | Reusable UI component library |
 | `mosaic-playground` | `mosaic/playground` | Component showcase application |
-| `mosaic-playground-macro` | `mosaic/playground_macro` | Proc macro for playground page generation |
 
 ## API Crate Pattern
 

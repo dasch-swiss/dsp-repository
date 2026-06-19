@@ -59,7 +59,7 @@ Parallel job group 1 (~2 min):
 
 Parallel job group 2 (~5 min):
   cargo nextest run --workspace
-  cargo leptos build --release
+  cargo build --release (dpe-server) + just css-release
   cargo-llvm-cov (coverage → Codecov)
 
 Parallel job group 3 (~5 min):

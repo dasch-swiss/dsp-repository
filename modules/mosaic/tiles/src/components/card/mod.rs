@@ -31,25 +31,29 @@ pub struct CardProps<'a> {
 /// Render the outer `<div class="card …">` wrapping the given content.
 pub fn card(props: CardProps, content: Markup) -> Markup {
     html! {
-        div class=(format!("card {} {}", props.variant.css_class(), props.class)) {
-            (content)
-        }
+        div class=(format!("card {} {}", props.variant.css_class(), props.class)) { (content) }
     }
 }
 
 /// Render the card header partial.
 pub fn card_header(content: Markup) -> Markup {
-    html! { div class="card-header" { (content) } }
+    html! {
+        div class="card-header" { (content) }
+    }
 }
 
 /// Render the card body partial with optional extra `class`.
 pub fn card_body(class: &str, content: Markup) -> Markup {
-    html! { div class=(format!("card-body {class}")) { (content) } }
+    html! {
+        div class=(format!("card-body {class}")) { (content) }
+    }
 }
 
 /// Render the card footer partial.
 pub fn card_footer(content: Markup) -> Markup {
-    html! { div class="card-footer" { (content) } }
+    html! {
+        div class="card-footer" { (content) }
+    }
 }
 
 #[cfg(test)]
@@ -66,7 +70,13 @@ mod tests {
 
     #[test]
     fn default_card_wraps_content() {
-        let out = card(CardProps::default(), html! { "body" }).into_string();
+        let out = card(
+            CardProps::default(),
+            html! {
+                "body"
+            },
+        )
+        .into_string();
         assert!(out.contains(r#"class="card card-default "#), "{out}");
         assert!(out.contains(">body</div>"));
     }

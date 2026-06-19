@@ -19,9 +19,30 @@ pub fn page() -> Markup {
 
 fn examples() -> Markup {
     html! {
-        (example("icon-all_icons", "All Available Icons", "All available icons with their names", all_icons()))
-        (example("icon-sizes_and_colors", "Sizes and Colors", "Control icon size with Tailwind width/height classes and color with text color classes", sizes_and_colors()))
-        (example("icon-usage", "Real-World Usage", "Icons in buttons, links, alerts, and other UI elements", usage()))
+        ({
+            example(
+                "icon-all_icons",
+                "All Available Icons",
+                "All available icons with their names",
+                all_icons(),
+            )
+        })
+        ({
+            example(
+                "icon-sizes_and_colors",
+                "Sizes and Colors",
+                "Control icon size with Tailwind width/height classes and color with text color classes",
+                sizes_and_colors(),
+            )
+        })
+        ({
+            example(
+                "icon-usage",
+                "Real-World Usage",
+                "Icons in buttons, links, alerts, and other UI elements",
+                usage(),
+            )
+        })
     }
 }
 
@@ -73,9 +94,19 @@ fn sizes_and_colors() -> Markup {
         div class="space-y-8" {
             div {
                 h4 class="text-base font-semibold mb-3" { "Sizes" }
-                p class="text-sm text-neutral-600 mb-4" { "Control icon size using Tailwind width and height classes." }
+                p class="text-sm text-neutral-600 mb-4" {
+                    "Control icon size using Tailwind width and height classes."
+                }
                 div class="space-y-3" {
-                    @for (cls, label) in [("w-4 h-4", "w-4 h-4 (16px)"), ("w-5 h-5", "w-5 h-5 (20px)"), ("w-6 h-6", "w-6 h-6 (24px)"), ("w-8 h-8", "w-8 h-8 (32px)"), ("w-12 h-12", "w-12 h-12 (48px)")] {
+                    @for (cls, label) in {
+                        [
+                            ("w-4 h-4", "w-4 h-4 (16px)"),
+                            ("w-5 h-5", "w-5 h-5 (20px)"),
+                            ("w-6 h-6", "w-6 h-6 (24px)"),
+                            ("w-8 h-8", "w-8 h-8 (32px)"),
+                            ("w-12 h-12", "w-12 h-12 (48px)"),
+                        ]
+                    } {
                         div class="flex items-center gap-4" {
                             (icon(IconSearch, cls))
                             code class="text-sm" { (label) }
@@ -85,7 +116,9 @@ fn sizes_and_colors() -> Markup {
             }
             div {
                 h4 class="text-base font-semibold mb-3" { "Colors" }
-                p class="text-sm text-neutral-600 mb-4" { "Icons use currentColor and inherit text color from parent or Tailwind classes." }
+                p class="text-sm text-neutral-600 mb-4" {
+                    "Icons use currentColor and inherit text color from parent or Tailwind classes."
+                }
                 div class="flex gap-6" {
                     (icon(IconGitHub, "w-8 h-8 text-neutral-500"))
                     (icon(IconGitHub, "w-8 h-8 text-primary-600"))
@@ -103,10 +136,9 @@ fn usage() -> Markup {
         div class="space-y-6" {
             div {
                 h4 class="text-base font-semibold mb-3" { "Buttons" }
-                button class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700" {
-                    (icon(IconSearch, "w-4 h-4"))
-                    "Search"
-                }
+                button
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                { (icon(IconSearch, "w-4 h-4")) "Search" }
             }
             div {
                 h4 class="text-base font-semibold mb-3" { "Links" }
@@ -117,7 +149,8 @@ fn usage() -> Markup {
             }
             div {
                 h4 class="text-base font-semibold mb-3" { "Alerts" }
-                div class="flex items-center gap-2 p-3 bg-info-50 border border-info-200 rounded-lg" {
+                div class="flex items-center gap-2 p-3 bg-info-50 border border-info-200 rounded-lg"
+                {
                     (icon(Info, "w-5 h-5 text-info-600"))
                     span class="text-sm text-info-800" { "This is an informational message" }
                 }
@@ -137,12 +170,14 @@ fn usage() -> Markup {
             div {
                 h4 class="text-base font-semibold mb-3" { "Social Media" }
                 div class="flex gap-4" {
-                    a href="#" class="p-2 text-neutral-600 hover:text-neutral-900" aria-label="GitHub" {
-                        (icon(IconGitHub, "w-6 h-6"))
-                    }
-                    a href="#" class="p-2 text-neutral-600 hover:text-primary-600" aria-label="LinkedIn" {
-                        (icon(IconLinkedIn, "w-6 h-6"))
-                    }
+                    a   href="#"
+                        class="p-2 text-neutral-600 hover:text-neutral-900"
+                        aria-label="GitHub"
+                    { (icon(IconGitHub, "w-6 h-6")) }
+                    a   href="#"
+                        class="p-2 text-neutral-600 hover:text-primary-600"
+                        aria-label="LinkedIn"
+                    { (icon(IconLinkedIn, "w-6 h-6")) }
                     a href="#" class="p-2 text-neutral-600 hover:text-neutral-900" aria-label="X" {
                         (icon(IconX, "w-6 h-6"))
                     }

@@ -16,23 +16,28 @@ pub fn filter_checkbox_group(
                 span class="dpe-subtitle" { (title) }
                 @if let (Some(href), Some(tooltip)) = (info_href, info_tooltip) {
                     div class="group relative" {
-                        a href=(href) target="_blank" rel="noopener noreferrer"
-                          class="text-gray-400 hover:text-primary transition-colors"
-                          aria-label="More information" {
-                            (icon(Info, "w-4 h-4"))
-                        }
-                        div class="invisible group-hover:visible absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10 pointer-events-none" {
-                            (tooltip)
-                        }
+                        a   href=(href)
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-gray-400 hover:text-primary transition-colors"
+                            aria-label="More information"
+                        { (icon(Info, "w-4 h-4")) }
+                        div class="invisible group-hover:visible absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10 pointer-events-none"
+                        { (tooltip) }
                     }
                 }
             }
             div class="space-y-2" {
                 @for (label, checked, href) in items {
-                    a href=(href) class="flex items-center gap-2 cursor-pointer"
-                      aria-current=[checked.then_some("true")] {
-                        input type="checkbox" class="w-4 h-4 pointer-events-none"
-                              checked[*checked] aria-label=(label);
+                    a   href=(href)
+                        class="flex items-center gap-2 cursor-pointer"
+                        aria-current=[checked.then_some("true")]
+                    {
+                        input
+                            type="checkbox"
+                            class="w-4 h-4 pointer-events-none"
+                            checked[*checked]
+                            aria-label=(label);
                         span { (label) }
                     }
                 }

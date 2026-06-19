@@ -19,12 +19,17 @@ pub fn project_card_indicators(status: ProjectStatus, access_rights: AccessRight
     };
 
     html! {
-        div class="absolute bottom-0 right-0 flex items-center gap-1.5 bg-gray-900/60 backdrop-blur-sm rounded-tl px-2 py-1.5" {
-            div class=(format!("tooltip {status_bg} {status_text} px-2.5 py-1.5 rounded")) data-tip=(status_label) {
+        div class="absolute bottom-0 right-0 flex items-center gap-1.5 bg-gray-900/60 backdrop-blur-sm rounded-tl px-2 py-1.5"
+        {
+            div class=(format!("tooltip {status_bg} {status_text} px-2.5 py-1.5 rounded"))
+                data-tip=(status_label)
+            {
                 (icon(status_icon, "w-4 h-4"))
                 span class="sr-only" { (status_label) }
             }
-            div class=(format!("tooltip {access_bg} {access_text} px-2.5 py-1.5 rounded")) data-tip=(access_label) {
+            div class=(format!("tooltip {access_bg} {access_text} px-2.5 py-1.5 rounded"))
+                data-tip=(access_label)
+            {
                 (icon(access_icon, "w-4 h-4"))
                 span class="sr-only" { (access_label) }
             }

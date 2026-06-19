@@ -20,36 +20,50 @@ pub fn project_pagination(nr_pages: i32, query: &ProjectQuery) -> Markup {
     html! {
         nav role="navigation" aria-label="Pagination" {
             div class="flex items-center justify-center gap-2" {
-                (link(
-                    LinkProps {
-                        href: &prev_url,
-                        as_button: Some(ButtonVariant::Outline),
-                        disabled: is_first_page,
-                        // Only the interactive (href-bearing) link carries the name; a
-                        // disabled link is a roleless <a>, where aria-label is prohibited.
-                        aria_label: (!is_first_page).then_some("Previous page"),
-                        ..Default::default()
-                    },
-                    icon(IconChevronLeft, "w-3 h-3"),
-                ))
+                ({
+                    link(
+                        LinkProps {
+                            href: &prev_url,
+                            as_button: Some(ButtonVariant::Outline),
+                            disabled: is_first_page,
+                            aria_label: (!is_first_page).then_some("Previous page"),
+                            ..Default::default()
+                        },
+                        icon(IconChevronLeft, "w-3 h-3"),
+                    )
+                })
                 @for page in 1..=nr_pages {
                     @let page_url = build_page_url(page);
-                    @let variant = if page == current_page { ButtonVariant::Primary } else { ButtonVariant::Ghost };
-                    (link(
-                        LinkProps { href: &page_url, as_button: Some(variant), ..Default::default() },
-                        html! { (page) },
-                    ))
+                    @let variant = if page == current_page {
+                        ButtonVariant::Primary
+                    } else {
+                        ButtonVariant::Ghost
+                    };
+                    ({
+                        link(
+                            LinkProps {
+                                href: &page_url,
+                                as_button: Some(variant),
+                                ..Default::default()
+                            },
+                            html! {
+                                (page)
+                            },
+                        )
+                    })
                 }
-                (link(
-                    LinkProps {
-                        href: &next_url,
-                        as_button: Some(ButtonVariant::Outline),
-                        disabled: is_last_page,
-                        aria_label: (!is_last_page).then_some("Next page"),
-                        ..Default::default()
-                    },
-                    icon(IconChevronRight, "w-3 h-3"),
-                ))
+                ({
+                    link(
+                        LinkProps {
+                            href: &next_url,
+                            as_button: Some(ButtonVariant::Outline),
+                            disabled: is_last_page,
+                            aria_label: (!is_last_page).then_some("Next page"),
+                            ..Default::default()
+                        },
+                        icon(IconChevronRight, "w-3 h-3"),
+                    )
+                })
             }
         }
     }

@@ -43,23 +43,34 @@ pub fn projects_page(query: &ProjectQuery) -> Markup {
     html! {
         div class="flex gap-4" {
             div class="hidden lg:block lg:w-72 2xl:w-80 flex-shrink-0" {
-                (project_filters(&status_items, &type_of_data_items, &data_language_items, &access_rights_items))
+                ({
+                    project_filters(
+                        &status_items,
+                        &type_of_data_items,
+                        &data_language_items,
+                        &access_rights_items,
+                    )
+                })
             }
             div class="flex-1 flex flex-col gap-2" {
-                (card(
-                    CardProps { variant: CardVariant::Bordered, class: "overflow-visible" },
-                    card_body("", html! {
-                        div class="flex gap-4" {
-                            div class="flex-1" { (project_search_input()) }
-                            div class="lg:hidden" {
-                                (mobile_filters_button(
-                                    &status_items, &type_of_data_items, &data_language_items, &access_rights_items,
-                                    dialog_open, &open_dialog_href, &close_dialog_href,
-                                ))
-                            }
-                        }
-                    }),
-                ))
+                ({
+                    card(
+                        CardProps {
+                            variant: CardVariant::Bordered,
+                            class: "overflow-visible",
+                        },
+                        card_body(
+                            "",
+                            html! {
+                                div class = "flex gap-4" { div class = "flex-1" {
+                                (project_search_input()) } div class = "lg:hidden" {
+                                (mobile_filters_button(& status_items, & type_of_data_items,
+                                & data_language_items, & access_rights_items, dialog_open, &
+                                open_dialog_href, & close_dialog_href,)) } }
+                            },
+                        ),
+                    )
+                })
                 (project_list(query))
             }
         }

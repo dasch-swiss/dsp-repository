@@ -52,9 +52,9 @@ pub fn dataset_overview_section(proj: &Project) -> Markup {
                     h3 class="dpe-subtitle" { "Keywords" }
                     div class="flex flex-wrap gap-2" {
                         @for k in &all_keywords {
-                            span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700" {
-                                (k)
-                            }
+                            span
+                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700"
+                            { (k) }
                         }
                     }
                 }
@@ -70,10 +70,21 @@ pub fn dataset_overview_section(proj: &Project) -> Markup {
                 (link_list_section("Additional Material", materials, true))
             }
             @if let Some(prov) = &proj.provenance {
-                (card(CardProps { variant: CardVariant::Bordered, class: "" }, card_body("", html! {
-                    h3 class="text-base font-semibold mb-3" { "Provenance" }
-                    p { (prov) }
-                })))
+                ({
+                    card(
+                        CardProps {
+                            variant: CardVariant::Bordered,
+                            class: "",
+                        },
+                        card_body(
+                            "",
+                            html! {
+                                h3 class = "text-base font-semibold mb-3" { "Provenance" } p
+                                { (prov) }
+                            },
+                        ),
+                    )
+                })
             }
         }
     }

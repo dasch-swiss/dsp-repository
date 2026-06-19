@@ -8,9 +8,9 @@ pub fn type_of_data_section(type_of_data: Option<&[String]>) -> Markup {
                 h3 class="dpe-subtitle" { "Type of Data" }
                 div class="flex flex-wrap gap-1.5" {
                     @for t in types {
-                        span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700" {
-                            (t)
-                        }
+                        span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700"
+                        { (t) }
                     }
                 }
             }

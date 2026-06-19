@@ -10,15 +10,17 @@ pub fn description(text: &str) -> Markup {
         html! {
             div data-signals="{_expanded: false}" {
                 p class="text-lg text-gray-600" data-class="{'line-clamp-4': !$_expanded}" { (text) }
-                button class="text-primary cursor-pointer mt-2"
-                       data-on:click="$_expanded = !$_expanded"
-                       data-text="$_expanded ? 'Show less' : 'Show more'" {
-                    "Show more"
-                }
+                button
+                    class="text-primary cursor-pointer mt-2"
+                    data-on:click="$_expanded = !$_expanded"
+                    data-text="$_expanded ? 'Show less' : 'Show more'"
+                { "Show more" }
             }
         }
     } else {
-        html! { p class="text-lg text-gray-600" { (text) } }
+        html! {
+            p class="text-lg text-gray-600" { (text) }
+        }
     }
 }
 

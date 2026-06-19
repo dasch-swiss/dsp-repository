@@ -9,8 +9,12 @@ fn person_name_and_roles(person: &Person, roles: Option<&str>) -> Markup {
     html! {
         div class="font-medium" {
             @match orcid_url {
-                Some(url) => a href=(url) target="_blank" rel="noopener noreferrer" class="text-primary hover:underline" { (full_name) },
-                None => span { (full_name) },
+                Some(url) => a   href=(url)
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-primary hover:underline"
+                { (full_name) }
+                None => span { (full_name) }
             }
         }
         @if let Some(r) = roles {
@@ -25,9 +29,18 @@ fn person_name_and_roles(person: &Person, roles: Option<&str>) -> Markup {
 /// A `mailto:` link with an envelope icon.
 fn email_link(addr: &str) -> Markup {
     html! {
-        a href=(format!("mailto:{addr}")) class="text-primary hover:underline inline-flex items-center gap-1 mt-1" {
-            svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" {
+        a   href=(format!("mailto:{addr}"))
+            class="text-primary hover:underline inline-flex items-center gap-1 mt-1"
+        {
+            svg xmlns="http://www.w3.org/2000/svg"
+                class="w-3 h-3"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            {
                 rect width="20" height="16" x="2" y="4" rx="2";
                 path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7";
             }
@@ -42,23 +55,23 @@ pub fn person(person_id: &str, roles: Option<&str>, show_email: bool) -> Markup 
     match dpe_core::load_person(person_id) {
         Some(person) => html! {
             (person_name_and_roles(&person, roles))
-            @for org_id in &person.affiliations {
-                (affiliation_name(org_id))
-            }
+            @for org_id in &person.affiliations { (affiliation_name(org_id)) }
             @if show_email {
-                @if let Some(addr) = &person.email {
-                    (email_link(addr))
-                }
+                @if let Some(addr) = &person.email { (email_link(addr)) }
             }
         },
-        None => html! { div class="italic text-neutral-500" { "Person not found" } },
+        None => html! {
+            div class="italic text-neutral-500" { "Person not found" }
+        },
     }
 }
 
 /// Render an organization name (by ID) as an affiliation line.
 pub fn affiliation_name(org_id: &str) -> Markup {
     match dpe_core::load_organization(org_id) {
-        Some(o) => html! { div class="text-gray-600" { (o.name) } },
+        Some(o) => html! {
+            div class="text-gray-600" { (o.name) }
+        },
         None => html! {},
     }
 }
@@ -72,9 +85,7 @@ pub fn person_view(person: &Person, affiliations: &[Organization], roles: Option
             div class="text-gray-600" { (org.name) }
         }
         @if show_email {
-            @if let Some(addr) = &person.email {
-                (email_link(addr))
-            }
+            @if let Some(addr) = &person.email { (email_link(addr)) }
         }
     }
 }

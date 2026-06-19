@@ -60,11 +60,11 @@ pub struct ButtonProps<'a> {
 /// Render a `<button>` with the variant classes and the given `label` content.
 pub fn button(props: ButtonProps, label: Markup) -> Markup {
     html! {
-        button class=(format!("{} {}", props.variant.css_class(), props.extra_classes))
-               type=(props.button_type.as_str())
-               disabled[props.disabled] {
-            (label)
-        }
+        button
+            class=(format!("{} {}", props.variant.css_class(), props.extra_classes))
+            type=(props.button_type.as_str())
+            disabled[props.disabled]
+        { (label) }
     }
 }
 
@@ -90,7 +90,13 @@ mod tests {
 
     #[test]
     fn default_button_is_primary_and_typed_button() {
-        let out = button(ButtonProps::default(), html! { "Click" }).into_string();
+        let out = button(
+            ButtonProps::default(),
+            html! {
+                "Click"
+            },
+        )
+        .into_string();
         assert!(out.contains(r#"class="btn btn-primary "#), "missing variant class: {out}");
         assert!(out.contains(r#"type="button""#));
         assert!(out.contains(">Click</button>"));

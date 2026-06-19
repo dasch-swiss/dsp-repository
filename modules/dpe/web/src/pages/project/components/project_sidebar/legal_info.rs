@@ -13,14 +13,20 @@ fn entity_name(id: &str) -> Markup {
         let name = dpe_core::load_person(id)
             .map(|p| format!("{} {}", p.given_names.join(" "), p.family_names.join(" ")))
             .unwrap_or_else(|| id.to_string());
-        html! { span { (name) } }
+        html! {
+            span { (name) }
+        }
     } else if id.starts_with("organization-") || id.contains("-organization-") {
         let name = dpe_core::load_organization(id)
             .map(|o| o.name)
             .unwrap_or_else(|| id.to_string());
-        html! { span { (name) } }
+        html! {
+            span { (name) }
+        }
     } else {
-        html! { span { (id) } }
+        html! {
+            span { (id) }
+        }
     }
 }
 
@@ -29,8 +35,9 @@ fn entity_name(id: &str) -> Markup {
 pub fn legal_info(legal_info: &[LegalInfoData]) -> Markup {
     html! {
         @for info in legal_info {
-            @let license_is_placeholder = dpe_core::is_placeholder(&info.license.license_identifier)
-                || dpe_core::is_placeholder(&info.license.license_uri);
+            @let license_is_placeholder = dpe_core::is_placeholder(
+                &info.license.license_identifier,
+            ) || dpe_core::is_placeholder(&info.license.license_uri);
             @if license_is_placeholder {
                 @if should_render_value(&info.license.license_identifier) {
                     div {
@@ -41,17 +48,34 @@ pub fn legal_info(legal_info: &[LegalInfoData]) -> Markup {
             } @else {
                 div {
                     div class="dpe-subtitle" { "License" }
-                    @match get_cc_license_info(&info.license.license_uri, &info.license.license_identifier) {
+                    @let cc_license = get_cc_license_info(
+                        &info.license.license_uri,
+                        &info.license.license_identifier,
+                    );
+                    @match cc_license {
                         Some((img_url, alt_text)) => {
-                            a href=(info.license.license_uri) rel="noopener noreferrer" class="block mb-1" {
-                                img src=(img_url) alt=(alt_text) class="h-8" title=(info.license.license_identifier);
+                            a   href=(info.license.license_uri)
+                                rel="noopener noreferrer"
+                                class="block mb-1"
+                            {
+                                img src=(img_url)
+                                    alt=(alt_text)
+                                    class="h-8"
+                                    title=(info.license.license_identifier);
                             }
                         }
                         None => {
-                            (link(
-                                LinkProps { href: &info.license.license_uri, ..Default::default() },
-                                html! { (info.license.license_identifier) },
-                            ))
+                            ({
+                                link(
+                                    LinkProps {
+                                        href: &info.license.license_uri,
+                                        ..Default::default()
+                                    },
+                                    html! {
+                                        (info.license.license_identifier)
+                                    },
+                                )
+                            })
                         }
                     }
                     div { "(" (info.license.license_date) ")" }
@@ -105,9 +129,7 @@ pub fn contact_section(ids: &[String]) -> Markup {
             @for id in ids {
                 @if id.starts_with("organization-") || id.contains("-organization-") {
                     (info_card(affiliation_name(id)))
-                } @else {
-                    (info_card(person(id, None, true)))
-                }
+                } @else { (info_card(person(id, None, true))) }
             }
         }
     }

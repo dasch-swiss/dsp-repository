@@ -24,9 +24,7 @@ use crate::components::icon::IconData;
 /// Render the tabs container wrapping the given `tab` triples.
 pub fn tabs(content: Markup) -> Markup {
     html! {
-        div class="tabs" style="border-width: 0" {
-            (content)
-        }
+        div class="tabs" style="border-width: 0" { (content) }
     }
 }
 
@@ -48,12 +46,20 @@ pub struct TabProps<'a> {
 pub fn tab(props: TabProps, content: Markup) -> Markup {
     let input_id = format!("{}-{}", props.name, props.value);
     html! {
-        input type="radio" class="tab-input" id=(input_id) name=(props.name) value=(props.value) checked[props.checked];
+        input
+            type="radio"
+            class="tab-input"
+            id=(input_id)
+            name=(props.name)
+            value=(props.value)
+            checked[props.checked];
         label class="tab-label" for=(input_id) {
             @if let Some(icon) = props.icon {
-                svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" viewBox=[icon.view_box] fill="currentColor" {
-                    (PreEscaped(icon.data))
-                }
+                svg class="tab-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox=[icon.view_box]
+                    fill="currentColor"
+                { (PreEscaped(icon.data)) }
             }
             span { (props.label) }
         }
@@ -68,7 +74,10 @@ mod tests {
 
     #[test]
     fn container_wraps_content() {
-        let out = tabs(html! { "x" }).into_string();
+        let out = tabs(html! {
+            "x"
+        })
+        .into_string();
         assert!(out.contains(r#"<div class="tabs" style="border-width: 0">x</div>"#), "{out}");
     }
 
@@ -81,7 +90,9 @@ mod tests {
                 label: "One",
                 ..Default::default()
             },
-            html! { "Panel" },
+            html! {
+                "Panel"
+            },
         )
         .into_string();
         assert!(

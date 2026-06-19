@@ -26,16 +26,22 @@ pub fn mobile_filters_button(
             // Backdrop
             a href=(close_dialog_href) class="fixed inset-0 bg-black/40 z-40 lg:hidden" {}
             // Panel
-            div class="fixed right-0 top-0 bottom-0 w-full md:w-96 bg-white z-50 overflow-y-auto lg:hidden" {
+            div class="fixed right-0 top-0 bottom-0 w-full md:w-96 bg-white z-50 overflow-y-auto lg:hidden"
+            {
                 div class="relative p-4" {
-                    a href=(close_dialog_href)
-                      aria-label="Close filters"
-                      class="btn btn-ghost size-8 justify-center rounded-full p-0 absolute right-2 top-2 cursor-pointer" {
-                        "✕"
-                    }
-                    (project_filters_content(
-                        status_items, type_of_data_items, data_language_items, access_rights_items, true,
-                    ))
+                    a   href=(close_dialog_href)
+                        aria-label="Close filters"
+                        class="btn btn-ghost size-8 justify-center rounded-full p-0 absolute right-2 top-2 cursor-pointer"
+                    { "✕" }
+                    ({
+                        project_filters_content(
+                            status_items,
+                            type_of_data_items,
+                            data_language_items,
+                            access_rights_items,
+                            true,
+                        )
+                    })
                 }
             }
         }

@@ -85,7 +85,9 @@ async fn not_found(
     axum::extract::State(state): axum::extract::State<AppState>,
 ) -> (axum::http::StatusCode, axum::response::Html<String>) {
     let tp = traceparent::extract_traceparent();
-    let content = maud::html! { "Page not found." };
+    let content = maud::html! {
+        "Page not found."
+    };
     (
         axum::http::StatusCode::NOT_FOUND,
         axum::response::Html(

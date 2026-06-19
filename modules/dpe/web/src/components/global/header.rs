@@ -15,10 +15,7 @@ pub fn header() -> Markup {
                         "DaSCH Metadata Browser"
                     }
                 }
-
-                div class="flex" {
-                    (header_links())
-                }
+                div class="flex" { (header_links()) }
             }
         }
     }

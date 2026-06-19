@@ -10,9 +10,7 @@ pub fn about_page() -> Markup {
         }
 
         div class="bg-white border border-gray-200 rounded-lg p-8" {
-            h1 class="font-display text-3xl font-bold text-gray-900 mb-6" {
-                "Help & Documentation"
-            }
+            h1 class="font-display text-3xl font-bold text-gray-900 mb-6" { "Help & Documentation" }
             div class="space-y-6" {
                 section {
                     h2 class="font-display text-xl font-semibold text-gray-900 mb-3" {
@@ -50,7 +48,9 @@ pub fn about_page() -> Markup {
                             " - Data is freely available to everyone"
                         }
                         li {
-                            span class="font-medium text-yellow-700" { "Open Access with Restrictions" }
+                            span class="font-medium text-yellow-700" {
+                                "Open Access with Restrictions"
+                            }
                             " - Some access limitations apply"
                         }
                         li {
@@ -69,15 +69,19 @@ pub fn about_page() -> Markup {
                     }
                     p class="text-gray-700 leading-relaxed" {
                         "For questions about specific projects, data access, or depositing your own data at DaSCH, please visit "
-                        (link(
-                            LinkProps {
-                                href: "https://dasch.swiss",
-                                target: Some("_blank"),
-                                rel: Some("noopener noreferrer"),
-                                ..Default::default()
-                            },
-                            html! { "dasch.swiss" },
-                        ))
+                        ({
+                            link(
+                                LinkProps {
+                                    href: "https://dasch.swiss",
+                                    target: Some("_blank"),
+                                    rel: Some("noopener noreferrer"),
+                                    ..Default::default()
+                                },
+                                html! {
+                                    "dasch.swiss"
+                                },
+                            )
+                        })
                         " or contact the DaSCH team directly."
                     }
                 }

@@ -25,46 +25,40 @@ pub fn project_header(proj: &Project) -> Markup {
         html! {
             figure {
                 div class="overflow-hidden" {
-                    img src=(image_src) alt=(proj.name) class="w-full object-cover" style="height: 320px"
+                    img src=(image_src)
+                        alt=(proj.name)
+                        class="w-full object-cover"
+                        style="height: 320px"
                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'";
-                    div class="w-full bg-gray-100 items-center justify-center hidden" style="height: 320px" {
-                        (icon(OpenDocument, "w-12 h-12 text-gray-300"))
-                    }
+                    div class="w-full bg-gray-100 items-center justify-center hidden"
+                        style="height: 320px"
+                    { (icon(OpenDocument, "w-12 h-12 text-gray-300")) }
                 }
             }
-            (card_body("", html! {
-                div class="p-8 flex flex-row justify-center" {
-                    div class="max-w-3xl" {
-                        h2 class="font-bold font-display text-3xl text-ellipsis" { (proj.name) }
-                        @if !alternative_names.is_empty() {
-                            p class="mt-1 text-sm text-gray-600" {
-                                span { "Also known as: " }
-                                @for name in &alternative_names {
-                                    span { (name) }
-                                }
-                            }
-                        }
-                        div class="mt-4" { (description(&desc)) }
-
-                        div class="mt-6 flex gap-4" {
-                            @if let Some(u) = &proj.url {
-                                @let label = u.text.clone().unwrap_or_else(|| "Discover Project Data".to_string());
-                                (link(
-                                    LinkProps { href: &u.url, as_button: Some(ButtonVariant::Primary), ..Default::default() },
-                                    html! { (label) (icon(Export, "w-5 h-5")) },
-                                ))
-                            }
-                            @if let Some(u) = &proj.secondary_url {
-                                @let label = u.text.clone().unwrap_or_else(|| "External Project Website".to_string());
-                                (link(
-                                    LinkProps { href: &u.url, as_button: Some(ButtonVariant::Outline), ..Default::default() },
-                                    html! { (label) (icon(Export, "w-5 h-5")) },
-                                ))
-                            }
-                        }
-                    }
-                }
-            }))
+            ({
+                card_body(
+                    "",
+                    html! {
+                        div class = "p-8 flex flex-row justify-center" { div class =
+                        "max-w-3xl" { h2 class =
+                        "font-bold font-display text-3xl text-ellipsis" { (proj.name) } @
+                        if ! alternative_names.is_empty() { p class =
+                        "mt-1 text-sm text-gray-600" { span { "Also known as: " } @ for
+                        name in & alternative_names { span { (name) } } } } div class =
+                        "mt-4" { (description(& desc)) } div class = "mt-6 flex gap-4" {
+                        @ if let Some(u) = & proj.url { @ let label = u.text.clone()
+                        .unwrap_or_else(|| "Discover Project Data".to_string());
+                        (link(LinkProps { href : & u.url, as_button :
+                        Some(ButtonVariant::Primary), ..Default::default() }, html! {
+                        (label) (icon(Export, "w-5 h-5")) },)) } @ if let Some(u) = &
+                        proj.secondary_url { @ let label = u.text.clone()
+                        .unwrap_or_else(|| "External Project Website".to_string());
+                        (link(LinkProps { href : & u.url, as_button :
+                        Some(ButtonVariant::Outline), ..Default::default() }, html! {
+                        (label) (icon(Export, "w-5 h-5")) },)) } } } }
+                    },
+                )
+            })
         },
     )
 }

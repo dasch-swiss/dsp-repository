@@ -15,9 +15,7 @@ pub fn project_loader(shortcode: &str, active_tab: &str) -> Markup {
         None => html! {
             div class="text-center py-12" {
                 h1 class="font-display text-3xl font-bold mb-4" { "Project Not Found" }
-                p class="text-lg" {
-                    "The project with shortcode " (shortcode) " could not be found."
-                }
+                p class="text-lg" { "The project with shortcode " (shortcode) " could not be found." }
             }
         },
     }

@@ -11,9 +11,7 @@ pub fn attributions_section(contributors: &[ResolvedContributor]) -> Markup {
     }
     html! {
         div class="grid md:grid-cols-1 lg:grid-cols-2 gap-2" {
-            @for c in contributors {
-                (contributor(c))
-            }
+            @for c in contributors { (contributor(c)) }
         }
     }
 }

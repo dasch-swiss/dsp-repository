@@ -47,20 +47,29 @@ pub fn project_search_input() -> Markup {
     html! {
         form method="get" action="/dpe/projects" {
             div class="relative flex-1" data-signals="{_focused: false}" {
-                label class="flex w-full items-center gap-2 rounded-md border border-neutral-300 bg-white h-10 px-3 focus-within:border-primary-600 focus-within:ring-1 focus-within:ring-primary-600" {
+                label
+                    class="flex w-full items-center gap-2 rounded-md border border-neutral-300 bg-white h-10 px-3 focus-within:border-primary-600 focus-within:ring-1 focus-within:ring-primary-600"
+                {
                     (icon(IconSearch, "w-4 h-4 opacity-50 shrink-0"))
-                    input type="search" name="search" placeholder="Search projects..." class="grow bg-transparent outline-none text-sm/[1.5] text-neutral-950"
-                          role="combobox" aria-autocomplete="list" aria-controls="search-results"
-                          aria-expanded="false"
-                          data-attr:aria-expanded="$_focused && $search.length > 0 ? 'true' : 'false'"
-                          data-bind:search
-                          "data-on:input__debounce.300ms"="@get('/dpe/projects/search')"
-                          data-on:focus="$_focused = true"
-                          "data-on:blur__debounce.200ms"="$_focused = false"
-                          onkeydown=(SEARCH_KEYBOARD_NAV);
+                    input
+                        type="search"
+                        name="search"
+                        placeholder="Search projects..."
+                        class="grow bg-transparent outline-none text-sm/[1.5] text-neutral-950"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-controls="search-results"
+                        aria-expanded="false"
+                        data-attr:aria-expanded="$_focused && $search.length > 0 ? 'true' : 'false'"
+                        data-bind:search
+                        "data-on:input__debounce.300ms"="@get('/dpe/projects/search')"
+                        data-on:focus="$_focused = true"
+                        "data-on:blur__debounce.200ms"="$_focused = false"
+                        onkeydown=(SEARCH_KEYBOARD_NAV);
                 }
-
-                div id="search-results" role="listbox" aria-label="Search results"
+                div id="search-results"
+                    role="listbox"
+                    aria-label="Search results"
                     data-show="$_focused && $search.length > 0"
                     class="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg z-[100] p-2" {}
             }

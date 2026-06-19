@@ -13,9 +13,11 @@ pub fn contributor(contributor: &ResolvedContributor) -> Markup {
         }
         ResolvedContributor::Organization { org, roles } => html! {
             div class="font-medium" {
-                a href=(org.url) target="_blank" rel="noopener noreferrer" class="text-primary hover:underline" {
-                    (org.name)
-                }
+                a   href=(org.url)
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-primary hover:underline"
+                { (org.name) }
             }
             @if let Some(r) = roles {
                 div class="text-gray-600" { (r) }

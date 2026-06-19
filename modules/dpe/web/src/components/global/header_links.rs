@@ -7,27 +7,33 @@ pub fn header_links() -> Markup {
     html! {
         ul class="flex items-center gap-4" {
             li {
-                (link(
-                    LinkProps { href: "/dpe/about", as_button: Some(ButtonVariant::Ghost), ..Default::default() },
-                    html! {
-                        (icon(Help, "w-5 h-5"))
-                        "Help"
-                    },
-                ))
+                ({
+                    link(
+                        LinkProps {
+                            href: "/dpe/about",
+                            as_button: Some(ButtonVariant::Ghost),
+                            ..Default::default()
+                        },
+                        html! {
+                            (icon(Help, "w-5 h-5")) "Help"
+                        },
+                    )
+                })
             }
             li {
-                (link(
-                    LinkProps {
-                        href: "https://dasch.swiss",
-                        as_button: Some(ButtonVariant::Primary),
-                        target: Some("_blank"),
-                        ..Default::default()
-                    },
-                    html! {
-                        "Deposit Data at DaSCH"
-                        (icon(Export, "w-5 h-5"))
-                    },
-                ))
+                ({
+                    link(
+                        LinkProps {
+                            href: "https://dasch.swiss",
+                            as_button: Some(ButtonVariant::Primary),
+                            target: Some("_blank"),
+                            ..Default::default()
+                        },
+                        html! {
+                            "Deposit Data at DaSCH"(icon(Export, "w-5 h-5"))
+                        },
+                    )
+                })
             }
         }
     }

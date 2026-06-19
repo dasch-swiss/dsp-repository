@@ -14,35 +14,34 @@ pub fn project_card(project: &Project, keywords: &[String]) -> Markup {
     let btn_target = format!("/dpe/projects/{}", project.shortcode);
     html! {
         a href=(btn_target) class="block h-full relative hover:z-10" {
-            (card(
-                CardProps { variant: CardVariant::AutoHover, class: "flex flex-col h-full ![overflow:visible]" },
-                html! {
-                    figure class="bg-neutral-900 relative rounded-t-[inherit]" {
-                        div class="overflow-hidden rounded-t-[inherit]" {
-                            img src=(image_src) alt=(project.name) class="w-full h-48 object-cover"
-                                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'";
-                            div class="w-full h-48 bg-gray-100 items-center justify-center hidden" {
-                                (icon(OpenDocument, "w-12 h-12 text-gray-300"))
-                            }
-                        }
-                        (project_card_indicators(project.status.clone(), project.access_rights.access_rights.clone()))
-                    }
-                    (card_body("flex-1 flex flex-col", html! {
-                        div class="flex flex-col flex-1" {
-                            h2 class="font-display font-bold text-lg line-clamp-2" { (project.name) }
-                            p class="text-sm text-gray-600 line-clamp-4 mt-2 flex-1" { (project.short_description) }
-                            div class="flex flex-wrap gap-1 mt-3" {
-                                @for kw in keywords.iter().take(3) {
-                                    (badge(
-                                        BadgeProps { variant: BadgeVariant::Secondary, size: BadgeSize::Small },
-                                        html! { (kw) },
-                                    ))
-                                }
-                            }
-                        }
-                    }))
-                },
-            ))
+            ({
+                card(
+                    CardProps {
+                        variant: CardVariant::AutoHover,
+                        class: "flex flex-col h-full ![overflow:visible]",
+                    },
+                    html! {
+                        figure class = "bg-neutral-900 relative rounded-t-[inherit]" {
+                        div class = "overflow-hidden rounded-t-[inherit]" { img src =
+                        (image_src) alt = (project.name) class =
+                        "w-full h-48 object-cover" onerror =
+                        "this.style.display='none';this.nextElementSibling.style.display='flex'";
+                        div class =
+                        "w-full h-48 bg-gray-100 items-center justify-center hidden" {
+                        (icon(OpenDocument, "w-12 h-12 text-gray-300")) } }
+                        (project_card_indicators(project.status.clone(), project
+                        .access_rights.access_rights.clone())) }
+                        (card_body("flex-1 flex flex-col", html! { div class =
+                        "flex flex-col flex-1" { h2 class =
+                        "font-display font-bold text-lg line-clamp-2" { (project.name) }
+                        p class = "text-sm text-gray-600 line-clamp-4 mt-2 flex-1" {
+                        (project.short_description) } div class =
+                        "flex flex-wrap gap-1 mt-3" { @ for kw in keywords.iter().take(3)
+                        { (badge(BadgeProps { variant : BadgeVariant::Secondary, size :
+                        BadgeSize::Small }, html! { (kw) },)) } } } }))
+                    },
+                )
+            })
         }
     }
 }

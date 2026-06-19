@@ -3,8 +3,12 @@ use maud::{html, Markup};
 /// Renders an organization name from the in-process org cache, by ID.
 pub fn organization_name(organization_id: &str) -> Markup {
     match dpe_core::load_organization(organization_id) {
-        Some(org) => html! { span class="font-semibold" { (org.name) } },
-        None => html! { span class="italic text-neutral-500" { "Organization not found" } },
+        Some(org) => html! {
+            span class="font-semibold" { (org.name) }
+        },
+        None => html! {
+            span class="italic text-neutral-500" { "Organization not found" }
+        },
     }
 }
 

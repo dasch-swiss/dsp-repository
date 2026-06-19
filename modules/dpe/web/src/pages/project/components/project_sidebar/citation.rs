@@ -7,12 +7,14 @@ use super::super::info_card::info_card;
 pub fn citation(citation: &str) -> Markup {
     html! {
         h3 class="dpe-subtitle" { "Citation" }
-        (info_card(html! {
-            div class="flex items-center" {
-                div class="flex-1" { (citation) }
-                (copy_button(citation))
-            }
-        }))
+        ({
+            info_card(
+                html! {
+                    div class = "flex items-center" { div class = "flex-1" { (citation) }
+                    (copy_button(citation)) }
+                },
+            )
+        })
     }
 }
 

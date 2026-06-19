@@ -16,9 +16,8 @@ pub fn project_details(proj: &Project, contributors: &[ResolvedContributor], act
             (project_header(proj))
 
             div class="flex flex-col lg:flex-row gap-6 lg:items-start" {
-                div class="card card-bordered overflow-visible p-4 space-y-4 text-gray-700 flex-1 pt-4" {
-                    (project_tabs(proj, contributors, active_tab, has_publications(proj)))
-                }
+                div class="card card-bordered overflow-visible p-4 space-y-4 text-gray-700 flex-1 pt-4"
+                { (project_tabs(proj, contributors, active_tab, has_publications(proj))) }
                 (project_sidebar(proj))
             }
         }

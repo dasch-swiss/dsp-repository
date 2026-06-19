@@ -81,7 +81,15 @@ mod tests {
     /// The `example` wrapper emits the key verbatim on the outer block.
     #[test]
     fn example_emits_data_example_key() {
-        let out = example("card-variants", "Title", "", html! { "x" }).into_string();
+        let out = example(
+            "card-variants",
+            "Title",
+            "",
+            html! {
+                "x"
+            },
+        )
+        .into_string();
         assert!(out.contains(r#"<div class="mb-8" data-example-key="card-variants">"#), "{out}");
     }
 }

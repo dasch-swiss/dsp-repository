@@ -15,12 +15,21 @@ pub fn disciplines_section(disciplines: &[Discipline]) -> Markup {
             div class="flex flex-wrap gap-1.5" {
                 @for d in disciplines {
                     @let (label, url) = match d {
-                        Discipline::Text(map) => (dpe_core::lang_value(map).cloned().unwrap_or_default(), None),
-                        Discipline::Reference(r) => (r.text.clone().unwrap_or_else(|| r.url.clone()), Some(r.url.clone())),
+                        Discipline::Text(map) => {
+                            (dpe_core::lang_value(map).cloned().unwrap_or_default(), None)
+                        }
+                        Discipline::Reference(r) => {
+                            (
+                                r.text.clone().unwrap_or_else(|| r.url.clone()),
+                                Some(r.url.clone()),
+                            )
+                        }
                     };
                     @match url {
-                        Some(href) => a href=(href) { span class=(CHIP) { (label) } },
-                        None => span class=(CHIP) { (label) },
+                        Some(href) => a href=(href) {
+                            span class=(CHIP) { (label) }
+                        }
+                        None => span class=(CHIP) { (label) }
                     }
                 }
             }

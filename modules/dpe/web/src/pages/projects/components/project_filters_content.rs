@@ -19,7 +19,14 @@ pub fn project_filters_content(
         || access_rights_items.iter().any(|(_, c, _)| *c);
 
     html! {
-        div class=(if dialog_open { "flex flex-col justify-between mb-4" } else { "flex items-center justify-between" }) {
+        div class=({
+                if dialog_open {
+                    "flex flex-col justify-between mb-4"
+                } else {
+                    "flex items-center justify-between"
+                }
+            })
+        {
             h4 class="dpe-title" { "Filters" }
             @if any_filter_active {
                 a href="/dpe/projects" class="text-xs text-primary hover:underline" { "Clear all" }
@@ -27,12 +34,18 @@ pub fn project_filters_content(
         }
         div class="space-y-4" {
             div {
-                (filter_checkbox_group(
-                    "Access Rights",
-                    access_rights_items,
-                    Some("https://dasch.swiss/knowledge-hub/fundamentals-access-rights"),
-                    Some("Access rights define how openly the data can be accessed. Learn more here."),
-                ))
+                ({
+                    filter_checkbox_group(
+                        "Access Rights",
+                        access_rights_items,
+                        Some(
+                            "https://dasch.swiss/knowledge-hub/fundamentals-access-rights",
+                        ),
+                        Some(
+                            "Access rights define how openly the data can be accessed. Learn more here.",
+                        ),
+                    )
+                })
             }
             div class="border-t border-neutral-200" {}
             div { (filter_checkbox_group("Project Status", status_items, None, None)) }

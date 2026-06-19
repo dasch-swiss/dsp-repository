@@ -15,9 +15,7 @@ pub fn publication_tab(abstract_en: Option<&str>, publications: Option<&[Publica
                 }
             }
             div {
-                @if let Some(pubs) = publications {
-                    (publications_section(pubs))
-                }
+                @if let Some(pubs) = publications { (publications_section(pubs)) }
             }
         }
     }

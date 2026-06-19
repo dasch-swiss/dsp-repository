@@ -27,13 +27,13 @@ this.setAttribute('data-tip', 'Copy failed');
 /// Render a ghost button that copies `text` to the clipboard on click.
 pub fn copy_button(text: &str) -> Markup {
     html! {
-        button class="btn btn-ghost px-1 py-0.5 text-xs tooltip tooltip-left flex-shrink-0"
-               aria-label="Copy"
-               data-tip="Copy"
-               data-copy-text=(text)
-               onclick=(ON_CLICK) {
-            (icon(CopyPaste, "w-4 h-4"))
-        }
+        button
+            class="btn btn-ghost px-1 py-0.5 text-xs tooltip tooltip-left flex-shrink-0"
+            aria-label="Copy"
+            data-tip="Copy"
+            data-copy-text=(text)
+            onclick=(ON_CLICK)
+        { (icon(CopyPaste, "w-4 h-4")) }
     }
 }
 

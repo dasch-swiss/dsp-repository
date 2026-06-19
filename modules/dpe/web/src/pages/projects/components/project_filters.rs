@@ -11,8 +11,17 @@ pub fn project_filters(
     access_rights_items: &[(String, bool, String)],
 ) -> Markup {
     html! {
-        div class="card card-bordered overflow-visible dpe-small p-4 space-y-4 text-gray-700 w-full" {
-            (project_filters_content(status_items, type_of_data_items, data_language_items, access_rights_items, false))
+        div class="card card-bordered overflow-visible dpe-small p-4 space-y-4 text-gray-700 w-full"
+        {
+            ({
+                project_filters_content(
+                    status_items,
+                    type_of_data_items,
+                    data_language_items,
+                    access_rights_items,
+                    false,
+                )
+            })
         }
     }
 }

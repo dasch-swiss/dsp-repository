@@ -10,9 +10,9 @@ pub fn data_language_section(data_languages: &[String]) -> Markup {
             h3 class="dpe-subtitle" { "Data Languages" }
             div class="flex flex-wrap gap-1.5" {
                 @for l in data_languages {
-                    span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700" {
-                        (l)
-                    }
+                    span
+                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700"
+                    { (l) }
                 }
             }
         }

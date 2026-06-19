@@ -7,12 +7,15 @@ use super::super::info_card::info_card;
 pub fn permalink(permalink: &str) -> Markup {
     html! {
         h3 class="dpe-subtitle" { "Permalink" }
-        (info_card(html! {
-            div class="flex items-center justify-between gap-3" {
-                a href=(permalink) class="text-primary break-all flex-1" { (permalink) }
-                (copy_button(permalink))
-            }
-        }))
+        ({
+            info_card(
+                html! {
+                    div class = "flex items-center justify-between gap-3" { a href =
+                    (permalink) class = "text-primary break-all flex-1" { (permalink) }
+                    (copy_button(permalink)) }
+                },
+            )
+        })
     }
 }
 

@@ -35,20 +35,35 @@ mod tests {
 
     #[test]
     fn breadcrumb_wraps_nav_and_list() {
-        let out = breadcrumb(html! { "items" }).into_string();
+        let out = breadcrumb(html! {
+            "items"
+        })
+        .into_string();
         assert!(out.contains(r#"<nav aria-label="Breadcrumb" class="breadcrumb">"#), "{out}");
         assert!(out.contains(r#"<ol class="breadcrumb-list">items</ol>"#), "{out}");
     }
 
     #[test]
     fn item_with_href_renders_link() {
-        let out = breadcrumb_item(Some("/home"), html! { "Home" }).into_string();
+        let out = breadcrumb_item(
+            Some("/home"),
+            html! {
+                "Home"
+            },
+        )
+        .into_string();
         assert!(out.contains(r#"<a href="/home" class="breadcrumb-link">Home</a>"#), "{out}");
     }
 
     #[test]
     fn item_without_href_is_current_page() {
-        let out = breadcrumb_item(None, html! { "Here" }).into_string();
+        let out = breadcrumb_item(
+            None,
+            html! {
+                "Here"
+            },
+        )
+        .into_string();
         assert!(
             out.contains(r#"<span class="breadcrumb-current" aria-current="page">Here</span>"#),
             "{out}"

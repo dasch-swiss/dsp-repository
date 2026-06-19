@@ -32,23 +32,56 @@ pub fn project_tabs(
     let shortcode = &proj.shortcode;
     html! {
         div id="project-tabs"
-            data-on:datastar-fetch="(evt.detail.type === 'error' || evt.detail.type === 'retries-failed') && evt.detail.el.closest('#project-tabs') && (window.location.href = evt.detail.el.getAttribute('href'))" {
-            div class="tabs" style="border-width: 0" role="tablist" aria-label="Project details" aria-orientation="horizontal"
-                data-on:keydown="const tabs=[...evt.currentTarget.querySelectorAll('[role=tab]')];const idx=tabs.indexOf(evt.target);if(idx<0)return;let next;if(evt.key==='ArrowRight')next=tabs[(idx+1)%tabs.length];else if(evt.key==='ArrowLeft')next=tabs[(idx-1+tabs.length)%tabs.length];else if(evt.key==='Home')next=tabs[0];else if(evt.key==='End')next=tabs[tabs.length-1];else if(evt.key===' '){evt.preventDefault();evt.target.click();return}else return;evt.preventDefault();next.focus()" {
+            data-on:datastar-fetch="(evt.detail.type === 'error' || evt.detail.type === 'retries-failed') && evt.detail.el.closest('#project-tabs') && (window.location.href = evt.detail.el.getAttribute('href'))"
+        {
+            div class="tabs"
+                style="border-width: 0"
+                role="tablist"
+                aria-label="Project details"
+                aria-orientation="horizontal"
+                data-on:keydown="const tabs=[...evt.currentTarget.querySelectorAll('[role=tab]')];const idx=tabs.indexOf(evt.target);if(idx<0)return;let next;if(evt.key==='ArrowRight')next=tabs[(idx+1)%tabs.length];else if(evt.key==='ArrowLeft')next=tabs[(idx-1+tabs.length)%tabs.length];else if(evt.key==='Home')next=tabs[0];else if(evt.key==='End')next=tabs[tabs.length-1];else if(evt.key===' '){evt.preventDefault();evt.target.click();return}else return;evt.preventDefault();next.focus()"
+            {
                 (tab_link("overview", active_tab, Info, "Overview", shortcode))
                 @if has_publications_tab {
-                    (tab_link("publications", active_tab, Document, "Publications", shortcode))
+                    ({
+                        tab_link(
+                            "publications",
+                            active_tab,
+                            Document,
+                            "Publications",
+                            shortcode,
+                        )
+                    })
                 }
-                (tab_link("contributors", active_tab, People, "Contributors", shortcode))
+                ({
+                    tab_link(
+                        "contributors",
+                        active_tab,
+                        People,
+                        "Contributors",
+                        shortcode,
+                    )
+                })
             }
 
-            div id="tab-panel" class="tab-panel" style="display: block" role="tabpanel" aria-labelledby=(format!("tab-{active_tab}")) {
+            div id="tab-panel"
+                class="tab-panel"
+                style="display: block"
+                role="tabpanel"
+                aria-labelledby=(format!("tab-{active_tab}"))
+            {
                 @if active_tab == "publications" && has_publications_tab {
-                    @let abstract_en = proj.abstract_text.as_ref().and_then(|m| lang_value(m).cloned());
-                    (publication_tab(abstract_en.as_deref(), proj.publications.as_deref()))
-                } @else if active_tab == "contributors" {
-                    (attributions_section(contributors))
-                } @else {
+                    @let abstract_en = proj
+                        .abstract_text
+                        .as_ref()
+                        .and_then(|m| lang_value(m).cloned());
+                    ({
+                        publication_tab(
+                            abstract_en.as_deref(),
+                            proj.publications.as_deref(),
+                        )
+                    })
+                } @else if active_tab == "contributors" { (attributions_section(contributors)) } @else {
                     (dataset_overview_section(proj))
                 }
             }
@@ -66,19 +99,27 @@ fn tab_link(value: &str, active_tab: &str, icon: IconData, label: &str, shortcod
         "tab-label"
     };
     html! {
-        a href=(format!("/dpe/projects/{shortcode}?tab={value}"))
-          rel="external"
-          role="tab"
-          id=(format!("tab-{value}"))
-          aria-selected=(is_active.to_string())
-          aria-controls="tab-panel"
-          tabindex=(if is_active { "0" } else { "-1" })
-          data-on:click__prevent=(format!("@get('/dpe/projects/{shortcode}/tab/{value}', {{retry: 'never'}})"))
-          data-indicator:_tab_loading
-          class=(class) {
-            svg class="tab-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox=[icon.view_box] fill="currentColor" {
-                (PreEscaped(icon.data))
-            }
+        a   href=(format!("/dpe/projects/{shortcode}?tab={value}"))
+            rel="external"
+            role="tab"
+            id=(format!("tab-{value}"))
+            aria-selected=(is_active.to_string())
+            aria-controls="tab-panel"
+            tabindex=(if is_active { "0" } else { "-1" })
+            data-on:click__prevent=({
+                format!(
+                    "@get('/dpe/projects/{shortcode}/tab/{value}', {{retry: 'never'}})",
+                )
+            })
+            data-indicator:_tab_loading
+            class=(class)
+        {
+            svg class="tab-icon"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox=[icon.view_box]
+                fill="currentColor"
+            { (PreEscaped(icon.data)) }
             span { (label) }
         }
     }

@@ -27,14 +27,18 @@ fn render_project_list(page: Page, query: &ProjectQuery) -> Markup {
                 html! {
                     div class="text-center" {
                         h3 class="mb-4" { "No projects found matching your criteria" }
-                        (link(
-                            LinkProps {
-                                href: "/dpe/projects",
-                                as_button: Some(ButtonVariant::Ghost),
-                                ..Default::default()
-                            },
-                            html! { "Clear your filters" },
-                        ))
+                        ({
+                            link(
+                                LinkProps {
+                                    href: "/dpe/projects",
+                                    as_button: Some(ButtonVariant::Ghost),
+                                    ..Default::default()
+                                },
+                                html! {
+                                    "Clear your filters"
+                                },
+                            )
+                        })
                     }
                 },
             ),
@@ -46,15 +50,16 @@ fn render_project_list(page: Page, query: &ProjectQuery) -> Markup {
             div class="mb-4 text-sm text-gray-600" { (format!("{} projects", page.total_items)) }
             div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" {
                 @for project in &page.items {
-                    @let keywords: Vec<String> =
-                        project.keywords.iter().filter_map(|m| dpe_core::lang_value(m).cloned()).collect();
+                    @let keywords: Vec<String> = project
+                        .keywords
+                        .iter()
+                        .filter_map(|m| dpe_core::lang_value(m).cloned())
+                        .collect();
                     (project_card(project, &keywords))
                 }
             }
         }
-        div class="flex justify-center" {
-            (project_pagination(page.nr_pages, query))
-        }
+        div class="flex justify-center" { (project_pagination(page.nr_pages, query)) }
     }
 }
 

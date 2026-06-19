@@ -10,8 +10,22 @@ pub fn breadcrumb(project_name: &str) -> Markup {
     };
 
     tiles_breadcrumb(html! {
-        (breadcrumb_item(Some("/dpe/projects"), html! { "Projects" }))
-        (breadcrumb_item(None, html! { (project_name_truncated) }))
+        ({
+            breadcrumb_item(
+                Some("/dpe/projects"),
+                html! {
+                    "Projects"
+                },
+            )
+        })
+        ({
+            breadcrumb_item(
+                None,
+                html! {
+                    (project_name_truncated)
+                },
+            )
+        })
     })
 }
 

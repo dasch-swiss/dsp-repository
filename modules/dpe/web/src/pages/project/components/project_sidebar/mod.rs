@@ -19,10 +19,10 @@ use crate::components::{placeholder_value, should_render_value};
 /// timeline, funding, and the data-management plan link.
 pub fn project_sidebar(proj: &Project) -> Markup {
     html! {
-        div class="card card-bordered overflow-visible dpe-small p-4 space-y-4 text-gray-700 lg:w-96" {
+        div class="card card-bordered overflow-visible dpe-small p-4 space-y-4 text-gray-700 lg:w-96"
+        {
             div class="space-y-4" {
                 h2 class="dpe-title" { "Cite this Project" }
-
                 div { (permalink(&proj.pid)) }
                 div { (citation(&proj.how_to_cite)) }
                 div class="dpe-divider" {}
@@ -32,16 +32,12 @@ pub fn project_sidebar(proj: &Project) -> Markup {
                     (access_rights_section(&proj.access_rights))
                 }
 
-                @if !proj.legal_info.is_empty() {
-                    (legal_info(&proj.legal_info))
-                }
+                @if !proj.legal_info.is_empty() { (legal_info(&proj.legal_info)) }
 
                 @if let Some(ids) = proj.contact_point.as_ref().filter(|v| !v.is_empty()) {
                     div { (contact_section(ids)) }
                 }
-
                 div class="dpe-divider" {}
-
                 h3 class="dpe-title" { "Project Timeline" }
                 div {
                     div class="dpe-subtitle" { "Period" }
@@ -60,15 +56,15 @@ pub fn project_sidebar(proj: &Project) -> Markup {
                 div {
                     div class="dpe-subtitle" { "Status" }
                     div {
-                        (match proj.status {
-                            ProjectStatus::Ongoing => "Ongoing",
-                            ProjectStatus::Finished => "Finished",
+                        ({
+                            match proj.status {
+                                ProjectStatus::Ongoing => "Ongoing",
+                                ProjectStatus::Finished => "Finished",
+                            }
                         })
                     }
                 }
-
                 div class="dpe-divider" {}
-
                 h3 class="dpe-title" { "Funding" }
                 (funding_section(&proj.funding))
 
@@ -78,7 +74,11 @@ pub fn project_sidebar(proj: &Project) -> Markup {
                         @if dmp == "not accessible" {
                             div { "Not accessible" }
                         } @else {
-                            a href=(dmp) target="_blank" rel="noopener noreferrer" class="text-primary" { "Available" }
+                            a   href=(dmp)
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="text-primary"
+                            { "Available" }
                         }
                     }
                 }

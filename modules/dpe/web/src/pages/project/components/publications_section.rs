@@ -12,19 +12,18 @@ pub fn publications_section(publications: &[Publication]) -> Markup {
             h3 class="dpe-subtitle" { "Publications" }
             div class="space-y-2 text-sm" {
                 @for pub_ in publications {
-                    (info_card(html! {
-                        @if !pub_.text.is_empty() {
-                            span { (pub_.text) " " }
-                        }
-                        @if let Some(pid) = &pub_.pid {
-                            @let text = pid.text.clone().unwrap_or_else(|| pid.url.clone());
-                            span class="ml-2" {
-                                (link(LinkProps { href: &pid.url, ..Default::default() }, html! {
-                                    (text) (icon(Export, "w-3 h-3"))
-                                }))
-                            }
-                        }
-                    }))
+                    ({
+                        info_card(
+                            html! {
+                                @ if ! pub_.text.is_empty() { span { (pub_.text) " " } } @
+                                if let Some(pid) = & pub_.pid { @ let text = pid.text
+                                .clone().unwrap_or_else(|| pid.url.clone()); span class =
+                                "ml-2" { (link(LinkProps { href : & pid.url,
+                                ..Default::default() }, html! { (text) (icon(Export,
+                                "w-3 h-3")) })) } }
+                            },
+                        )
+                    })
                 }
             }
         }

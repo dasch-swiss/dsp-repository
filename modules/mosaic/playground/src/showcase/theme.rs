@@ -16,8 +16,22 @@ pub fn page() -> Markup {
 
 fn examples() -> Markup {
     html! {
-        (example("theme-colors", "Color Scales", "Semantic color tokens (50–950) derived from DaSCH brand values in OKLCH. Each row shows the full scale for one semantic color.", colors()))
-        (example("theme-typography", "Typography", "Font tokens: font-display (Lora) for headings and font-body (Lato) for body text, with fallback stacks.", typography()))
+        ({
+            example(
+                "theme-colors",
+                "Color Scales",
+                "Semantic color tokens (50–950) derived from DaSCH brand values in OKLCH. Each row shows the full scale for one semantic color.",
+                colors(),
+            )
+        })
+        ({
+            example(
+                "theme-typography",
+                "Typography",
+                "Font tokens: font-display (Lora) for headings and font-body (Lato) for body text, with fallback stacks.",
+                typography(),
+            )
+        })
     }
 }
 
@@ -48,7 +62,7 @@ fn color_scale(name: &str, base_hex: &str) -> Markup {
                     @let is_light = matches!(*stop, "50" | "100" | "200" | "300");
                     @let text_color = if is_light { "#1a1a1a" } else { "#ffffff" };
                     @let style = format!(
-                        "background-color: var(--color-{name}-{stop}); color: {text_color}; min-width: 4rem; min-height: 4rem"
+                        "background-color: var(--color-{name}-{stop}); color: {text_color}; min-width: 4rem; min-height: 4rem",
                     );
                     div class="flex flex-col items-center justify-end p-2 rounded" style=(style) {
                         span class="text-xs font-mono" { (stop) }
@@ -66,11 +80,10 @@ fn colors() -> Markup {
                 "Colors are defined as CSS custom properties (e.g. "
                 code class="text-sm bg-neutral-100 px-1 rounded" { "var(--color-primary-500)" }
                 ") and are also available as Tailwind utilities (e.g. "
-                code class="text-sm bg-neutral-100 px-1 rounded" { "bg-primary-500" } ")."
+                code class="text-sm bg-neutral-100 px-1 rounded" { "bg-primary-500" }
+                ")."
             }
-            @for (name, hex) in SCALES {
-                (color_scale(name, hex))
-            }
+            @for (name, hex) in SCALES { (color_scale(name, hex)) }
         }
     }
 }
@@ -81,7 +94,9 @@ fn typography() -> Markup {
             div {
                 h4 class="text-sm font-semibold text-neutral-500 mb-3" {
                     "font-display"
-                    span class="font-normal text-neutral-400" { " — Lora, Georgia, Times New Roman, serif" }
+                    span class="font-normal text-neutral-400" {
+                        " — Lora, Georgia, Times New Roman, serif"
+                    }
                 }
                 div style="font-family: var(--font-display)" {
                     p class="text-4xl mb-2" { "The quick brown fox jumps over the lazy dog" }
@@ -92,7 +107,9 @@ fn typography() -> Markup {
             div {
                 h4 class="text-sm font-semibold text-neutral-500 mb-3" {
                     "font-body"
-                    span class="font-normal text-neutral-400" { " — Lato, Helvetica Neue, Arial, sans-serif" }
+                    span class="font-normal text-neutral-400" {
+                        " — Lato, Helvetica Neue, Arial, sans-serif"
+                    }
                 }
                 div style="font-family: var(--font-body)" {
                     p class="text-base mb-2" {

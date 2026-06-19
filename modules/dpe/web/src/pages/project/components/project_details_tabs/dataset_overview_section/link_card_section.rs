@@ -12,7 +12,9 @@ pub fn link_card_section(title: &str, items: &[(String, String, String)], clicka
             div class="flex flex-col gap-2" {
                 @for (href, name, description) in items {
                     @if clickable {
-                        a href=(href) class="block bg-gray-50 border border-gray-200 rounded p-3 hover:border-primary-400 transition-colors" {
+                        a   href=(href)
+                            class="block bg-gray-50 border border-gray-200 rounded p-3 hover:border-primary-400 transition-colors"
+                        {
                             div class="font-medium text-gray-900" { (name) }
                             div class="text-sm text-gray-600 line-clamp-2" { (description) }
                         }

@@ -28,13 +28,15 @@ pub fn coverage_section(temporal_coverage: &[TemporalCoverage], spatial_coverage
                     @for t in temporal {
                         @match t {
                             TemporalCoverage::Text(map) => {
-                                @let label = map.iter().map(|(lang, text)| format!("{text} ({lang})")).collect::<Vec<_>>().join(" / ");
+                                @let label = map
+                                    .iter()
+                                    .map(|(lang, text)| format!("{text} ({lang})"))
+                                    .collect::<Vec<_>>()
+                                    .join(" / ");
                                 span class=(CHIP) { (label) }
                             }
                             TemporalCoverage::Reference(r) => {
-                                @if dpe_core::is_placeholder(&r.url) {
-                                    (placeholder_value(&r.url))
-                                } @else {
+                                @if dpe_core::is_placeholder(&r.url) { (placeholder_value(&r.url)) } @else {
                                     @let label = r.text.clone().unwrap_or_else(|| r.url.clone());
                                     a href=(r.url) class="tooltip" data-tip=(r.url) {
                                         span class=(CHIP) { (label) }
@@ -51,9 +53,7 @@ pub fn coverage_section(temporal_coverage: &[TemporalCoverage], spatial_coverage
                 h3 class="dpe-subtitle" { "Spatial Coverage" }
                 div class="flex flex-wrap gap-1.5" {
                     @for s in spatial {
-                        @if dpe_core::is_placeholder(&s.url) {
-                            (placeholder_value(&s.url))
-                        } @else {
+                        @if dpe_core::is_placeholder(&s.url) { (placeholder_value(&s.url)) } @else {
                             @let label = s.text.clone().unwrap_or_else(|| s.url.clone());
                             a href=(s.url) class="tooltip" data-tip=(s.url) {
                                 span class=(CHIP) { (label) }

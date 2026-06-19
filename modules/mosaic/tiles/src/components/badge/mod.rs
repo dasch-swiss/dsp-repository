@@ -82,7 +82,13 @@ mod tests {
 
     #[test]
     fn default_badge_is_primary_medium() {
-        let out = badge(BadgeProps::default(), html! { "New" }).into_string();
+        let out = badge(
+            BadgeProps::default(),
+            html! {
+                "New"
+            },
+        )
+        .into_string();
         assert!(out.contains(r#"class="badge badge-primary badge-md""#), "{out}");
         assert!(out.contains(">New</span>"));
     }

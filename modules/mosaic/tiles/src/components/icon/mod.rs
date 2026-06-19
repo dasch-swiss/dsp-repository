@@ -35,9 +35,8 @@ pub fn icon(icon: IconData, class: &str) -> Markup {
         svg class=(format!("icon {class}"))
             xmlns="http://www.w3.org/2000/svg"
             viewBox=[icon.view_box]
-            fill="currentColor" {
-            (PreEscaped(icon.data))
-        }
+            fill="currentColor"
+        { (PreEscaped(icon.data)) }
     }
 }
 

@@ -14,7 +14,19 @@ pub fn link_list_section(title: &str, items: &[String], as_links: bool) -> Marku
                 ul class="list-disc list-inside text-sm" {
                     @for item in items {
                         @if as_links {
-                            li { (link(LinkProps { href: item, ..Default::default() }, html! { (item) })) }
+                            li {
+                                ({
+                                    link(
+                                        LinkProps {
+                                            href: item,
+                                            ..Default::default()
+                                        },
+                                        html! {
+                                            (item)
+                                        },
+                                    )
+                                })
+                            }
                         } @else {
                             li { (item) }
                         }

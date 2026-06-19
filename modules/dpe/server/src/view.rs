@@ -18,14 +18,17 @@ fn head(title: &str, traceparent: Option<&str>, css_href: &str, fathom_site_id: 
             // Google Fonts: Lora (display) and Lato (body) for the design tokens.
             link rel="preconnect" href="https://fonts.googleapis.com";
             link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="";
-            link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap";
+            link
+                rel="stylesheet"
+                href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap";
             link rel="stylesheet" href=(css_href);
             @if let Some(site_id) = fathom_site_id {
-                script src="https://cdn.usefathom.com/script.js"
-                       data-site=(site_id)
-                       data-spa="auto"
-                       data-excluded-domains="localhost,repository.dev.dasch.swiss,repository.test.dasch.swiss,repository.stage.dasch.swiss"
-                       defer {}
+                script
+                    src="https://cdn.usefathom.com/script.js"
+                    data-site=(site_id)
+                    data-spa="auto"
+                    data-excluded-domains="localhost,repository.dev.dasch.swiss,repository.test.dasch.swiss,repository.stage.dasch.swiss"
+                    defer {}
             }
             title { (title) }
         }
@@ -68,13 +71,24 @@ mod tests {
 
     #[test]
     fn renders_doctype_html_head_and_body_shell() {
-        let out = page("My Title", None, "/assets/app.css", None, html! { p { "content" } }).into_string();
+        let out = page(
+            "My Title",
+            None,
+            "/assets/app.css",
+            None,
+            html! {
+                p { "content" }
+            },
+        )
+        .into_string();
         assert!(out.starts_with("<!DOCTYPE html><html lang=\"en\">"), "{out}");
         assert!(out.contains("<title>My Title</title>"), "{out}");
         assert!(out.contains(r#"<link rel="stylesheet" href="/assets/app.css">"#), "{out}");
         assert!(out.contains(r#"<body class="font-body">"#), "{out}");
         assert!(
-            out.contains(r#"<main class="flex-1 dpe-max-layout-width mx-auto px-4 w-full overflow-x-clip"><p>content</p></main>"#),
+            out.contains(
+                r#"<main class="flex-1 dpe-max-layout-width mx-auto px-4 w-full overflow-x-clip"><p>content</p></main>"#
+            ),
             "{out}"
         );
         assert!(out.contains(r#"<script type="module" src="/vendor/datastar.js">"#), "{out}");

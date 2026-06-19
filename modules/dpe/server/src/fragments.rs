@@ -151,7 +151,10 @@ pub async fn search_fragment_handler(
 /// auto-escaped Maud splice — never `PreEscaped` (it is user-controlled).
 fn render_search_results(query: &str, results: &Page) -> String {
     if results.items.is_empty() {
-        return html! { p class="text-sm text-neutral-500 px-2 py-1" { "No results" } }.into_string();
+        return html! {
+            p class="text-sm text-neutral-500 px-2 py-1" { "No results" }
+        }
+        .into_string();
     }
 
     let encoded_query = urlencoding::encode(query);
@@ -159,8 +162,9 @@ fn render_search_results(query: &str, results: &Page) -> String {
         ul role="listbox" {
             @for p in &results.items {
                 li role="option" {
-                    a href=(format!("/dpe/projects/{}", p.shortcode))
-                      class="block px-4 py-3 hover:bg-neutral-100 transition-colors text-sm" {
+                    a   href=(format!("/dpe/projects/{}", p.shortcode))
+                        class="block px-4 py-3 hover:bg-neutral-100 transition-colors text-sm"
+                    {
                         div class="font-medium text-neutral-700" { (p.name) }
                         div class="text-sm text-neutral-500 truncate mt-0.5" { (p.short_description) }
                     }
@@ -168,8 +172,9 @@ fn render_search_results(query: &str, results: &Page) -> String {
             }
         }
         div class="border-t border-neutral-200 mt-1 pt-1" {
-            a href=(format!("/dpe/projects?search={encoded_query}"))
-              class="flex items-center gap-2 px-2 py-1 hover:bg-neutral-100 rounded text-sm text-neutral-500" {
+            a   href=(format!("/dpe/projects?search={encoded_query}"))
+                class="flex items-center gap-2 px-2 py-1 hover:bg-neutral-100 rounded text-sm text-neutral-500"
+            {
                 (icon(IconSearch, "w-4 h-4"))
                 (format!("Search for \"{query}\" ({} results)", results.total_items))
             }

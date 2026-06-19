@@ -7,11 +7,15 @@ pub fn access_rights_section(access_rights: &AccessRights) -> Markup {
         div {
             div class="dpe-subtitle" { "Access Rights" }
             div {
-                (match access_rights.access_rights {
-                    AccessRightsType::FullOpenAccess => "Full Open Access",
-                    AccessRightsType::OpenAccessWithRestrictions => "Open Access with Restrictions",
-                    AccessRightsType::EmbargoedAccess => "Embargoed Access",
-                    AccessRightsType::MetadataOnlyAccess => "Metadata only Access",
+                ({
+                    match access_rights.access_rights {
+                        AccessRightsType::FullOpenAccess => "Full Open Access",
+                        AccessRightsType::OpenAccessWithRestrictions => {
+                            "Open Access with Restrictions"
+                        }
+                        AccessRightsType::EmbargoedAccess => "Embargoed Access",
+                        AccessRightsType::MetadataOnlyAccess => "Metadata only Access",
+                    }
                 })
             }
             @if let Some(date) = &access_rights.embargo_date {

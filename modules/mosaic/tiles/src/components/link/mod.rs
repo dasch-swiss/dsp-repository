@@ -31,15 +31,14 @@ pub fn link(props: LinkProps, content: Markup) -> Markup {
         None => format!("link {}", if props.disabled { "link-disabled" } else { "" }),
     };
     html! {
-        a href=[href]
-          class=(class)
-          target=[props.target]
-          rel=[props.rel]
-          aria-label=[props.aria_label]
-          aria-disabled=[aria_disabled]
-          tabindex=[tabindex] {
-            (content)
-        }
+        a   href=[href]
+            class=(class)
+            target=[props.target]
+            rel=[props.rel]
+            aria-label=[props.aria_label]
+            aria-disabled=[aria_disabled]
+            tabindex=[tabindex]
+        { (content) }
     }
 }
 
@@ -49,7 +48,13 @@ mod tests {
 
     #[test]
     fn default_renders_anchor_with_link_class() {
-        let out = link(LinkProps { href: "/x", ..Default::default() }, html! { "Go" }).into_string();
+        let out = link(
+            LinkProps { href: "/x", ..Default::default() },
+            html! {
+                "Go"
+            },
+        )
+        .into_string();
         assert!(out.starts_with("<a "), "{out}");
         assert!(out.contains(r#"href="/x""#));
         assert!(out.contains(r#"class="link "#), "{out}");
@@ -73,7 +78,9 @@ mod tests {
                 as_button: Some(ButtonVariant::Primary),
                 ..Default::default()
             },
-            html! { "Act" },
+            html! {
+                "Act"
+            },
         )
         .into_string();
         assert!(out.contains(r#"class="btn btn-primary""#), "{out}");

@@ -63,7 +63,9 @@ fn head(title: &str) -> Markup {
             meta name="viewport" content="width=device-width, initial-scale=1";
             link rel="preconnect" href="https://fonts.googleapis.com";
             link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="";
-            link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap";
+            link
+                rel="stylesheet"
+                href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap";
             link rel="stylesheet" href="/assets/app.css";
             link rel="icon" href="/favicon.png";
             title { (title) " — Mosaic" }
@@ -83,9 +85,7 @@ fn document(active: &str, title: &str, content: Markup) -> Markup {
                     div class="flex flex-1 overflow-hidden" {
                         (sidebar(active))
                         main class="flex-1 overflow-y-auto" {
-                            div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" {
-                                (content)
-                            }
+                            div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" { (content) }
                         }
                     }
                 }
@@ -126,16 +126,12 @@ fn sidebar(active: &str) -> Markup {
         aside class="w-64 bg-white border-r border-neutral-200 overflow-y-auto" {
             nav class="p-4" {
                 div class="mb-4" { (nav_link(active, "/", "Home")) }
-                div class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 px-3" {
-                    "Foundation"
-                }
+                div class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 px-3"
+                { "Foundation" }
                 (nav_link(active, "/theme", "Design Tokens"))
-                div class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 mt-4 px-3" {
-                    "Components"
-                }
-                @for &(href, label) in COMPONENT_NAV {
-                    (nav_link(active, href, label))
-                }
+                div class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 mt-4 px-3"
+                { "Components" }
+                @for &(href, label) in COMPONENT_NAV { (nav_link(active, href, label)) }
             }
         }
     }
@@ -160,9 +156,17 @@ fn home() -> Markup {
                 section {
                     h2 class="text-2xl font-semibold mb-4" { "Architecture" }
                     ul class="space-y-2 text-neutral-700" {
-                        li { "• Tiles render HTML on the server with Maud; this playground is a plain Axum MPA." }
+                        li {
+                            "• Tiles render HTML on the server with Maud; this playground is a plain Axum MPA."
+                        }
                         li { "• Styled with Tailwind CSS v4 utility classes." }
-                        li { "• Design tokens are defined in " code class="text-sm bg-neutral-100 px-1 rounded" { "tokens.css" } " via Tailwind " code class="text-sm bg-neutral-100 px-1 rounded" { "@theme" } "." }
+                        li {
+                            "• Design tokens are defined in "
+                            code class="text-sm bg-neutral-100 px-1 rounded" { "tokens.css" }
+                            " via Tailwind "
+                            code class="text-sm bg-neutral-100 px-1 rounded" { "@theme" }
+                            "."
+                        }
                         li { "• Each component ships its own CSS next to its Rust source." }
                     }
                 }

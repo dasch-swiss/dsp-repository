@@ -45,9 +45,9 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
 
     // After the SSE morph the active tab is Contributors and the panel no longer
     // shows the overview content.
-    await expect(
-      page.locator('[role="tab"][aria-selected="true"]'),
-    ).toHaveText(/Contributors/);
+    await expect(page.locator('[role="tab"][aria-selected="true"]')).toHaveText(
+      /Contributors/,
+    );
     await expect(panel).not.toContainText("Type of Data");
   });
 

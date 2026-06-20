@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Operations - DSP-Repository Developer Documentation</title>
+        <title>JSON API - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -242,128 +242,95 @@
 }
 
 </style>
-<h1 id="dpe-operations-guide"><a class="header" href="#dpe-operations-guide">DPE Operations Guide</a></h1>
-<p>Operations documentation for the DPE infrastructure team.</p>
-<h2 id="docker-image"><a class="header" href="#docker-image">Docker Image</a></h2>
-<ul>
-<li><strong>Base</strong>: <code>gcr.io/distroless/static-debian12:nonroot</code></li>
-<li><strong>User</strong>: uid 65534 (nonroot, built-in to distroless)</li>
-<li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
-<li><strong>Binary</strong>: Static musl-linked <code>dpe</code> (CLI with subcommands)</li>
-</ul>
-<h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
-<p>The <code>dpe</code> binary provides three subcommands:</p>
-<div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>dpe serve</code></td><td>Start the web server</td></tr>
-<tr><td><code>dpe validate &lt;data_dir&gt;</code></td><td>Validate all data files under the given directory</td></tr>
-<tr><td><code>dpe healthcheck [--url URL]</code></td><td>Check if the server is healthy (default: <code>http://localhost:8080/healthz</code>)</td></tr>
+<h1 id="json-api"><a class="header" href="#json-api">JSON API</a></h1>
+<p>Read-only JSON endpoints that expose DaSCH research project metadata. They serve the same project data as the DPE pages and the <a href="./oai-pmh.html">OAI-PMH endpoint</a>, sourced from the in-process project cache that is loaded from the data directory at startup. The handlers live in the <code>dpe-server</code> crate (<code>server/src/fragments.rs</code>).</p>
+<h2 id="endpoints"><a class="header" href="#endpoints">Endpoints</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Method</th><th>Path</th><th>Returns</th></tr></thead><tbody>
+<tr><td>GET</td><td><code>/dpe/api/v2/projects</code></td><td>JSON array of all projects</td></tr>
+<tr><td>GET</td><td><code>/dpe/api/v2/projects/{shortcode}</code></td><td>A single project object</td></tr>
 </tbody></table>
 </div>
-<h3 id="dpe-validate"><a class="header" href="#dpe-validate"><code>dpe validate</code></a></h3>
-<p>Validates JSON data files for structural correctness and cross-reference integrity.</p>
-<pre><code class="language-bash">dpe validate ./data
-</code></pre>
-<p><strong>What it checks:</strong></p>
 <ul>
-<li>JSON schema validity for all data file types (projects, persons, organizations, records, clusters, collections)</li>
-<li>Cross-references between projects, persons, and organizations</li>
-<li>Orphaned files that are not referenced by any parent entity</li>
-<li>Project roles misplaced in a person's <code>jobTitles</code> (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's <code>attributions</code> (<code>contributorType</code>), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is <code>JOB_TITLE_ROLE_WORDS</code> in <code>dpe-core</code>.</li>
+<li><strong>Method</strong>: GET only.</li>
+<li><strong>Response</strong>: <code>Content-Type: application/json</code>.</li>
+<li><strong>Authentication</strong>: none.</li>
 </ul>
-<p><strong>Exit codes:</strong></p>
-<ul>
-<li><code>0</code> — all data files are valid</li>
-<li><code>1</code> — validation errors found (details printed to stderr)</li>
-</ul>
-<h3 id="dpe-healthcheck"><a class="header" href="#dpe-healthcheck"><code>dpe healthcheck</code></a></h3>
-<p>Lightweight probe for Docker HEALTHCHECK or monitoring:</p>
-<pre><code class="language-bash">dpe healthcheck                                    # default: http://localhost:8080/healthz
-dpe healthcheck --url http://localhost:9090/healthz # custom URL
-</code></pre>
-<h2 id="ports"><a class="header" href="#ports">Ports</a></h2>
-<div class="table-wrapper"><table><thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody>
-<tr><td>8080</td><td>HTTP</td><td>Application server</td></tr>
+<div class="table-wrapper"><table><thead><tr><th>Environment</th><th>Base URL</th></tr></thead><tbody>
+<tr><td>Local development (<code>just watch-dpe</code>)</td><td><code>http://localhost:4000</code></td></tr>
+<tr><td>DEV</td><td><code>https://api.dev.dasch.swiss</code></td></tr>
+<tr><td>Production</td><td>Not yet deployed</td></tr>
 </tbody></table>
 </div>
-<h2 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h2>
-<div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Required</th><th>Default</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g., <code>dpe_server=info,tower_http=debug</code>)</td></tr>
-<tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>modules/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
-<tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret)</td></tr>
-<tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility.</td></tr>
-<tr><td><code>DPE_OAI_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td><td>Public base URL emitted as the OAI-PMH <code>baseURL</code> and echoed in <code>&lt;request&gt;</code> elements. Set per environment to match the public endpoint (e.g. <code>https://api.dev.dasch.swiss/dpe/oai</code> on DEV, <code>http://localhost:4000/dpe/oai</code> locally). See <a href="./oai-pmh.html">OAI-PMH</a>.</td></tr>
-<tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g., <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
-<tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g., <code>dpe</code>)</td></tr>
-<tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g., <code>service.namespace=dpe,service.version=0.2.1,deployment.environment=prod</code>)</td></tr>
-<tr><td><code>PYROSCOPE_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>Pyroscope HTTP endpoint (e.g., <code>http://pyroscope:4040</code>). When unset, profiling is disabled.</td></tr>
-<tr><td><code>LEPTOS_SITE_ADDR</code></td><td>No</td><td><code>0.0.0.0:8080</code></td><td>Listen address and port</td></tr>
-<tr><td><code>LEPTOS_SITE_ROOT</code></td><td>No</td><td><code>site</code></td><td>Path to static site assets</td></tr>
-<tr><td><code>LEPTOS_SITE_PKG_DIR</code></td><td>No</td><td><code>pkg</code></td><td>JS/CSS package subdirectory</td></tr>
-<tr><td><code>LEPTOS_OUTPUT_NAME</code></td><td>No</td><td><code>dpe</code></td><td>CSS/JS output filename prefix</td></tr>
-<tr><td><code>LEPTOS_ENV</code></td><td>No</td><td><em>(auto)</em></td><td>Leptos environment (<code>DEV</code> or <code>PROD</code>). Set automatically by cargo-leptos: <code>watch</code> = <code>DEV</code>, <code>build --release</code> = <code>PROD</code>. Do not set manually.</td></tr>
+<h2 id="list-all-projects"><a class="header" href="#list-all-projects">List all projects</a></h2>
+<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/api/v2/projects"
+</code></pre>
+<p>Returns a JSON array containing every project. The list is <strong>not paginated and not filtered</strong> — the entire collection is returned in one response. (The HTML listing at <code>/dpe/projects</code> supports search and faceting; this JSON endpoint does not.)</p>
+<h2 id="fetch-a-single-project"><a class="header" href="#fetch-a-single-project">Fetch a single project</a></h2>
+<p>The path segment is the project <strong>shortcode</strong>, not the <code>id</code> field. Matching is case-insensitive, so <code>0803</code> and any case variant of an alphanumeric shortcode (e.g. <code>080c</code> for <code>080C</code>) resolve to the same project.</p>
+<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/api/v2/projects/0803"
+</code></pre>
+<div class="table-wrapper"><table><thead><tr><th>Status</th><th>Returned when</th></tr></thead><tbody>
+<tr><td><code>200 OK</code></td><td>The shortcode resolves to a project.</td></tr>
+<tr><td><code>400 Bad Request</code></td><td>The shortcode is not alphanumeric (e.g. contains <code>/</code>, <code>-</code>, <code>_</code>, or other characters). Empty body.</td></tr>
+<tr><td><code>404 Not Found</code></td><td>The shortcode is well-formed but matches no project. Empty body.</td></tr>
 </tbody></table>
 </div>
-<h2 id="health-check"><a class="header" href="#health-check">Health Check</a></h2>
+<h2 id="response-format"><a class="header" href="#response-format">Response format</a></h2>
+<p>Both endpoints serialize the project metadata with <strong>camelCase</strong> keys. The shape mirrors the stored project JSON files; the single-project endpoint returns one object, the list endpoint an array of the same. For the meaning and cardinality of each field, see the <a href="./metadata-model.html">Metadata Model (v2)</a>; the table below describes only the wire format.</p>
+<div class="table-wrapper"><table><thead><tr><th>Key</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+<tr><td><code>id</code></td><td>string</td><td>Internal project id</td></tr>
+<tr><td><code>pid</code></td><td>string</td><td>Persistent identifier (ARK URL)</td></tr>
+<tr><td><code>name</code></td><td>string</td><td>Display name</td></tr>
+<tr><td><code>shortcode</code></td><td>string</td><td>Project shortcode (the lookup key for the single-project endpoint)</td></tr>
+<tr><td><code>officialName</code></td><td>string</td><td></td></tr>
+<tr><td><code>status</code></td><td>string</td><td><code>"Ongoing"</code> or <code>"Finished"</code> (PascalCase, unlike the rest of the payload)</td></tr>
+<tr><td><code>shortDescription</code></td><td>string</td><td></td></tr>
+<tr><td><code>description</code></td><td>object</td><td>Language code → text</td></tr>
+<tr><td><code>startDate</code>, <code>endDate</code></td><td>string</td><td><code>YYYY-MM-DD</code></td></tr>
+<tr><td><code>url</code></td><td>object | array | null</td><td>Raw stored value — either a structured reference object or a legacy string array; not normalized</td></tr>
+<tr><td><code>secondaryUrl</code></td><td>object | null</td><td>Secondary reference (new-format files only)</td></tr>
+<tr><td><code>howToCite</code></td><td>string</td><td></td></tr>
+<tr><td><code>accessRights</code></td><td>object</td><td>Access-rights type and optional embargo date</td></tr>
+<tr><td><code>legalInfo</code></td><td>array</td><td>License, copyright holder, and authorship entries</td></tr>
+<tr><td><code>dataManagementPlan</code></td><td>string | null</td><td></td></tr>
+<tr><td><code>dataPublicationYear</code></td><td>string | null</td><td></td></tr>
+<tr><td><code>typeOfData</code></td><td>array&lt;string&gt; | null</td><td></td></tr>
+<tr><td><code>dataLanguage</code></td><td>array&lt;string&gt; | null</td><td></td></tr>
+<tr><td><code>clusters</code></td><td>array&lt;string&gt; | null</td><td>Cluster ids</td></tr>
+<tr><td><code>collections</code></td><td>array&lt;string&gt; | null</td><td>Collection ids</td></tr>
+<tr><td><code>records</code></td><td>array&lt;string&gt; | null</td><td>Record ids</td></tr>
+<tr><td><code>keywords</code></td><td>array&lt;object&gt;</td><td>Language maps</td></tr>
+<tr><td><code>disciplines</code></td><td>array</td><td></td></tr>
+<tr><td><code>temporalCoverage</code></td><td>array</td><td></td></tr>
+<tr><td><code>spatialCoverage</code></td><td>array</td><td>Authority-file references</td></tr>
+<tr><td><code>attributions</code></td><td>array</td><td></td></tr>
+<tr><td><code>abstract</code></td><td>object | null</td><td>Language map (the field is named <code>abstract</code>, not <code>abstractText</code>)</td></tr>
+<tr><td><code>contactPoint</code></td><td>array&lt;string&gt; | null</td><td></td></tr>
+<tr><td><code>publications</code></td><td>array | null</td><td></td></tr>
+<tr><td><code>funding</code></td><td>object</td><td></td></tr>
+<tr><td><code>alternativeNames</code></td><td>array&lt;object&gt; | null</td><td></td></tr>
+<tr><td><code>documentationMaterial</code></td><td>array&lt;string&gt; | null</td><td></td></tr>
+<tr><td><code>provenance</code></td><td>string | null</td><td></td></tr>
+<tr><td><code>additionalMaterial</code></td><td>array&lt;string&gt; | null</td><td></td></tr>
+</tbody></table>
+</div>
+<h2 id="notes-and-limitations"><a class="header" href="#notes-and-limitations">Notes and limitations</a></h2>
 <ul>
-<li><strong>Endpoint</strong>: <code>GET /healthz</code></li>
-<li><strong>Response</strong>: <code>200 OK</code> (no body)</li>
-<li><strong>Purpose</strong>: Lightweight probe for Traefik/load balancers. Does not hit Leptos SSR.</li>
-</ul>
-<h2 id="data-volume"><a class="header" href="#data-volume">Data Volume</a></h2>
-<ul>
-<li><strong>Mount point</strong>: Value of <code>DPE_DATA_DIR</code></li>
-<li><strong>Access</strong>: Read-only</li>
-<li><strong>Contents</strong>: Project metadata JSON files, organized by type (<code>projects/</code>, <code>persons/</code>, <code>organizations/</code>, <code>clusters/</code>, <code>collections/</code>, <code>records/</code>)</li>
-</ul>
-<h2 id="resource-requirements"><a class="header" href="#resource-requirements">Resource Requirements</a></h2>
-<p>The DPE is lightweight — it serves static data with no database.</p>
-<ul>
-<li><strong>Memory</strong>: ~50-100 MB typical</li>
-<li><strong>CPU</strong>: Minimal (SSR rendering is fast, data is cached in-memory)</li>
-<li><strong>Disk</strong>: Data files + static assets (~50 MB)</li>
-</ul>
-<h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
-<p>Structured logging via <code>init-tracing-opentelemetry</code> (OTel-aware tracing subscriber). In production (<code>LEPTOS_ENV=PROD</code>), logs are JSON-formatted to stdout only. In local development (<code>LEPTOS_ENV=DEV</code>), logs are additionally exported via OTLP to Loki when <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is set. Configure levels with <code>RUST_LOG</code>:</p>
-<pre><code class="language-bash"># Default (info level)
-RUST_LOG=info
-
-# Debug HTTP requests
-RUST_LOG=dpe_server=info,tower_http=debug
-
-# Verbose debugging
-RUST_LOG=debug
-</code></pre>
-<h2 id="observability"><a class="header" href="#observability">Observability</a></h2>
-<h3 id="fathom-analytics"><a class="header" href="#fathom-analytics">Fathom Analytics</a></h3>
-<p>Privacy-friendly, GDPR-compliant analytics. No cookies, no personal data collected.</p>
-<p><strong>Configuration:</strong> Set the <code>DPE_FATHOM_SITE_ID</code> environment variable to your Fathom site ID (not a secret). The tracking script is automatically injected into the HTML shell.</p>
-<p><strong>What gets tracked:</strong></p>
-<ul>
-<li>Page views</li>
-<li>Tab switches (detected automatically via <code>history.replaceState</code>)</li>
-</ul>
-<p><strong>Disable:</strong> Omit the <code>DPE_FATHOM_SITE_ID</code> environment variable — no tracking script is rendered.</p>
-<h3 id="opentelemetry"><a class="header" href="#opentelemetry">OpenTelemetry</a></h3>
-<p>DPE exports traces, metrics, and structured logs via OTLP gRPC. In production, the OTLP endpoint points to Grafana Alloy, which forwards to Grafana Cloud (Tempo for traces, Mimir for metrics, Loki for logs).</p>
-<p>When <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is not set, the OTel SDK falls back to no-op export — the application runs normally without telemetry export. See <code>docs/src/dpe/observability.md</code> for the developer guide.</p>
-<h3 id="continuous-profiling-pyroscope"><a class="header" href="#continuous-profiling-pyroscope">Continuous Profiling (Pyroscope)</a></h3>
-<p>CPU profiling via Grafana Pyroscope. Samples at 100Hz and pushes profiles to the configured endpoint.</p>
-<p><strong>Configuration:</strong> Set <code>PYROSCOPE_ENDPOINT</code> to the Pyroscope HTTP endpoint. When unset, no profiling agent runs and there is zero overhead.</p>
-<p><strong>What gets profiled:</strong></p>
-<ul>
-<li>CPU time per function (sampling-based, 100 samples/second)</li>
-<li>Flame graphs viewable in Grafana (Explore &gt; Pyroscope)</li>
+<li><strong>Read-only.</strong> GET only; there are no create/update/delete operations.</li>
+<li><strong>No pagination or filtering</strong> on the list endpoint — it always returns the full collection.</li>
+<li><strong>Cached at startup.</strong> Data is read from the configured data directory when the server starts; changes to project files require a restart to surface.</li>
+<li><strong><code>url</code> is a raw passthrough.</strong> Unlike the typed project model used to render pages, the JSON output emits the stored <code>url</code> value verbatim (structured object or legacy array), including any placeholder values.</li>
 </ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../dpe/observability.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../dpe/operations.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../dpe/json-api.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../dpe/oai-pmh.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -373,11 +340,11 @@ RUST_LOG=debug
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../dpe/observability.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../dpe/operations.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../dpe/json-api.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../dpe/oai-pmh.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

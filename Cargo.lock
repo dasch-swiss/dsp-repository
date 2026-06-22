@@ -869,7 +869,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-api-oai"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "axum",
  "chrono",
@@ -883,7 +883,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-core"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -893,7 +893,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-server"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "axum",
  "axum-tracing-opentelemetry",
@@ -933,7 +933,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-telemetry"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "proptest",
  "serde",
@@ -942,7 +942,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-web"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "cfg-if",
  "dpe-core",
@@ -2675,7 +2675,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-playground"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "axum",
  "console_error_panic_hook",
@@ -2691,7 +2691,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-playground-macro"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2702,7 +2702,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-tiles"
-version = "0.7.1"
+version = "0.8.0"
 dependencies = [
  "console_error_panic_hook",
  "icondata",

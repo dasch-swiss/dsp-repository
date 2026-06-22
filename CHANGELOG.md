@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.8.0](https://github.com/dasch-swiss/dsp-repository/compare/v0.7.1...v0.8.0) (2026-06-22)
+
+
+### Features
+
+* **dpe-api-oai:** add optional dateInformation to DataCiteDate ([4946a7d](https://github.com/dasch-swiss/dsp-repository/commit/4946a7d171b621b737f8b01d1c4decc8c0d632ce))
+* **dpe-api-oai:** resolve temporal coverage to DataCite date ranges ([dbf039e](https://github.com/dasch-swiss/dsp-repository/commit/dbf039e42dac7c8f2a3486e1ba59841677c4b861))
+* **dpe-core:** add W3CDTF formatter and ChronOntology period cache ([695a8fd](https://github.com/dasch-swiss/dsp-repository/commit/695a8fdc4197b4b06d0d5e99435f7be72f24cbae))
+* **dpe:** add temporal-coverage enrichment tool and table ([0aaa7f1](https://github.com/dasch-swiss/dsp-repository/commit/0aaa7f1d49041226dd5acbbdcbcea03b4d0484cd))
+
+
+### Bug Fixes
+
+* **dpe-api-oai:** classify DaSCH record creator as Organizational (DEV-6524) ([3675afd](https://github.com/dasch-swiss/dsp-repository/commit/3675afd506b97fb5f2790a1deb5594363b2ac928))
+* **dpe-core:** use RKMS-ISO8601 open-range form for temporal coverage ([6d3025a](https://github.com/dasch-swiss/dsp-repository/commit/6d3025a019a120360e55d31dbe79b2726128d8d9))
+
+
+### Documentation
+
+* add DPE JSON API reference page ([49c0bae](https://github.com/dasch-swiss/dsp-repository/commit/49c0baeee116b98b068b3fe8766266ff567da974))
+* add v2 metadata model documentation ([#257](https://github.com/dasch-swiss/dsp-repository/issues/257)) ([7f35d89](https://github.com/dasch-swiss/dsp-repository/commit/7f35d8902a735e85178d01aa04d567ad8322e601))
+* **dpe:** correct temporal-coverage resolution description ([0de8062](https://github.com/dasch-swiss/dsp-repository/commit/0de8062583b79185b82aa0bdd532f1e36b6a3be9))
+
+
+### Refactoring
+
+* **dpe-api-oai:** drop speculative temporal-coverage dedup guard ([3c23873](https://github.com/dasch-swiss/dsp-repository/commit/3c23873a63f02b619d0cad3178150432384f3ae6))
+* **dpe-api-oai:** resolve temporal coverage via *_in pure functions ([cc5be13](https://github.com/dasch-swiss/dsp-repository/commit/cc5be132b770c11c6369c625f1dfa7c0399183e5))
+* **dpe:** make temporal enrichment fully LLM-generated ([a41d858](https://github.com/dasch-swiss/dsp-repository/commit/a41d85856b6284ccc594cdad368f5d7cb5e3b576))
+
+
+### Build System
+
+* **deps:** bump the backend-dependencies group across 1 directory with 6 updates ([7b6d2f1](https://github.com/dasch-swiss/dsp-repository/commit/7b6d2f1ef6c0f0f416102342e82dc1a6b861f58f))
+
 ## [0.7.1](https://github.com/dasch-swiss/dsp-repository/compare/v0.7.0...v0.7.1) (2026-06-16)
 
 

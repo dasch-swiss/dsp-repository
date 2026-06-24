@@ -43,14 +43,12 @@ WORKDIR /app/modules/mosaic/playground
 ENV SINGLESTAGE_TAILWIND_PATH=/usr/local/bin/tailwindcss
 RUN cargo leptos build --release -vv
 
-FROM debian:bookworm-slim AS runtime
+# Distroless runtime — glibc + C/C++ runtime only, no shell, no apt, no perl.
+# `reqwest` is a build-only dependency (tiles/build.rs), so the runtime binary
+# needs no openssl or ca-certificates. This keeps the image minimal and free of
+# the OS-package CVEs that ship with debian-slim.
+FROM gcr.io/distroless/cc-debian12:nonroot AS runtime
 WORKDIR /app
-RUN apt-get update -y \
-  && apt-get upgrade -y --no-install-recommends \
-  && apt-get install -y --no-install-recommends openssl ca-certificates \
-  && apt-get autoremove -y \
-  && apt-get clean -y \
-  && rm -rf /var/lib/apt/lists/*
 
 # Copy the server binary to the /app directory
 COPY --from=builder /app/target/release/mosaic-playground /app/
@@ -58,7 +56,7 @@ COPY --from=builder /app/target/release/mosaic-playground /app/
 # /target/site contains our JS/WASM/CSS, etc.
 COPY --from=builder /app/target/site /app/site
 
-# Copy Cargo.toml if it's needed at runtime
+# Copy Cargo.toml — Leptos reads [package.metadata.leptos] from it at runtime
 COPY --from=builder /app/modules/mosaic/playground/Cargo.toml /app/
 
 # Set any required env variables
@@ -68,4 +66,4 @@ ENV LEPTOS_SITE_ROOT="site"
 EXPOSE 8080
 
 # Run the server
-CMD ["/app/mosaic-playground"]
+ENTRYPOINT ["/app/mosaic-playground"]

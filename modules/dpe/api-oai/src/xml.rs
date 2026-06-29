@@ -235,6 +235,9 @@ impl OaiXmlBuilder {
         if !dc.resource_type.is_empty() {
             self.write_prefixed_element("dc", "type", &dc.resource_type);
         }
+        for format in &dc.formats {
+            self.write_prefixed_element("dc", "format", format);
+        }
         for identifier in &dc.identifiers {
             self.write_prefixed_element("dc", "identifier", identifier);
         }
@@ -442,6 +445,15 @@ impl OaiXmlBuilder {
                 );
             }
             self.end_element("relatedIdentifiers");
+        }
+
+        // Formats (optional) — file MIME types
+        if !datacite.formats.is_empty() {
+            self.start_element("formats");
+            for format in &datacite.formats {
+                self.write_element("format", format);
+            }
+            self.end_element("formats");
         }
 
         // Rights

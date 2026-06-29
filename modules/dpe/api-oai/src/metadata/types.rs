@@ -16,6 +16,7 @@ pub struct DublinCoreRecord {
     pub relations: Vec<String>,
     pub coverages: Vec<String>,
     pub rights: Vec<String>,
+    pub formats: Vec<String>,
 }
 
 /// DataCite 4.6 metadata record containing mandatory and recommended properties.
@@ -38,6 +39,7 @@ pub struct DataCiteRecord {
     pub rights_list: Vec<DataCiteRights>,
     pub geo_locations: Vec<DataCiteGeoLocation>,
     pub funding_references: Vec<DataCiteFundingReference>,
+    pub formats: Vec<String>,
 }
 
 #[derive(Debug, Default)]

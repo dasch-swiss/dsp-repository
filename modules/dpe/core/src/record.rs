@@ -95,6 +95,14 @@ pub struct RecordLegalInfo {
     pub authorship: Vec<String>,
 }
 
+/// A downloadable file belonging to a Record: its MIME type and a direct download link.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct RecordFile {
+    #[serde(rename = "mimeType")]
+    pub mime_type: String,
+    pub url: String,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Record {
     pub id: String,
@@ -124,6 +132,9 @@ pub struct Record {
     pub size: String,
     #[serde(default)]
     pub keywords: Vec<HashMap<String, String>>,
+    /// The record's file (MIME type + direct download link), present only for bitstream records.
+    #[serde(default)]
+    pub file: Option<RecordFile>,
 }
 
 impl Record {
@@ -182,6 +193,12 @@ mod tests {
         assert_eq!(record.publisher, "DaSCH");
         assert_eq!(record.type_of_data, "Text");
         assert_eq!(record.keywords, Vec::<HashMap<String, String>>::new());
+        let file = record.file.expect("0803 record should carry a file");
+        assert_eq!(file.mime_type, "application/pdf");
+        assert_eq!(
+            file.url,
+            "https://ingest.dasch.swiss/projects/0803/assets/lklK7rVuVOmpBZYWrF8o-g/original"
+        );
     }
 
     #[test]

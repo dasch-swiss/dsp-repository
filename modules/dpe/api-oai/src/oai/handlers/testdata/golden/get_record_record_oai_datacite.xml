@@ -33,7 +33,11 @@
               </dates>
               <relatedIdentifiers>
                 <relatedIdentifier relatedIdentifierType="URL" relationType="IsPartOf">https://ark.dasch.swiss/ark:/72163/1/0803</relatedIdentifier>
+                <relatedIdentifier relatedIdentifierType="URL" relationType="HasPart">https://ingest.dasch.swiss/projects/0803/assets/lklK7rVuVOmpBZYWrF8o-g/original</relatedIdentifier>
               </relatedIdentifiers>
+              <formats>
+                <format>application/pdf</format>
+              </formats>
               <rightsList>
                 <rights rightsURI="https://creativecommons.org/publicdomain/zero/1.0/" rightsIdentifier="public domain" rightsIdentifierScheme="SPDX">public domain</rights>
               </rightsList>

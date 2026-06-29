@@ -137,12 +137,30 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
         rights_identifier_scheme: if has_identifier { Some("SPDX".to_string()) } else { None },
     }];
 
-    // RelatedIdentifiers — link to parent project via IsPartOf
-    let related_identifiers = vec![DataCiteRelatedIdentifier {
+    // RelatedIdentifiers — link to parent project via IsPartOf, and to the file download via HasPart.
+    let mut related_identifiers = vec![DataCiteRelatedIdentifier {
         identifier: record.project_ark(),
         related_identifier_type: "URL".to_string(),
         relation_type: "IsPartOf".to_string(),
     }];
+    if let Some(file) = &record.file {
+        if !file.url.is_empty() {
+            related_identifiers.push(DataCiteRelatedIdentifier {
+                identifier: file.url.clone(),
+                related_identifier_type: "URL".to_string(),
+                relation_type: "HasPart".to_string(),
+            });
+        }
+    }
+
+    // Formats (optional) — the file's MIME type (DataCite property 14, bitstream records only).
+    let formats: Vec<String> = record
+        .file
+        .as_ref()
+        .map(|f| f.mime_type.clone())
+        .filter(|m| !m.is_empty())
+        .into_iter()
+        .collect();
 
     DataCiteRecord {
         identifier: record.pid.ark_path(),
@@ -157,6 +175,7 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
         descriptions,
         rights_list,
         related_identifiers,
+        formats,
         ..DataCiteRecord::default()
     }
 }
@@ -166,9 +185,20 @@ mod tests {
     use std::collections::HashMap;
 
     use dpe_core::record::Pid;
-    use dpe_core::{RecordLegalInfo, RecordLicense};
+    use dpe_core::{RecordFile, RecordLegalInfo, RecordLicense};
 
     use super::*;
+
+    /// A record with a downloadable file (bitstream record).
+    fn bitstream_record() -> Record {
+        Record {
+            file: Some(RecordFile {
+                mime_type: "image/jp2".to_string(),
+                url: "https://ingest.dasch.swiss/projects/0001/assets/5RMOnH7RmAY-qKzgr431bg7/original".to_string(),
+            }),
+            ..test_record()
+        }
+    }
 
     fn test_record() -> Record {
         Record {
@@ -207,6 +237,7 @@ mod tests {
             type_of_data: "Text".to_string(),
             size: "2.3 GB".to_string(),
             keywords: vec![],
+            file: None,
         }
     }
 
@@ -336,5 +367,34 @@ mod tests {
         assert_eq!(ri.identifier, "https://ark.dasch.swiss/ark:/72163/1/0803");
         assert_eq!(ri.related_identifier_type, "URL");
         assert_eq!(ri.relation_type, "IsPartOf");
+    }
+
+    #[test]
+    fn record_without_file_has_no_format() {
+        let dc = record_to_datacite(&test_record());
+        assert!(dc.formats.is_empty());
+    }
+
+    #[test]
+    fn bitstream_format_is_mime_type() {
+        let dc = record_to_datacite(&bitstream_record());
+        assert_eq!(dc.formats, vec!["image/jp2"]);
+    }
+
+    #[test]
+    fn bitstream_file_url_is_related_identifier_with_has_part() {
+        let dc = record_to_datacite(&bitstream_record());
+        let file_ri = dc
+            .related_identifiers
+            .iter()
+            .find(|ri| ri.relation_type == "HasPart")
+            .expect("expected a HasPart related identifier for the file");
+        assert_eq!(
+            file_ri.identifier,
+            "https://ingest.dasch.swiss/projects/0001/assets/5RMOnH7RmAY-qKzgr431bg7/original"
+        );
+        assert_eq!(file_ri.related_identifier_type, "URL");
+        // The parent-project IsPartOf link must still be present alongside the file link.
+        assert!(dc.related_identifiers.iter().any(|ri| ri.relation_type == "IsPartOf"));
     }
 }

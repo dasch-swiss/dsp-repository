@@ -121,6 +121,32 @@ Ranges are resolved offline (no network or LLM calls at request time), in two ti
 
 When no range resolves (a `date: null` row, or a name absent from both sources), the element is emitted with the `dateInformation` attribute only and an empty body, so the original label is never dropped.
 
+### Record files
+
+A bitstream Record may carry a single `file` (its MIME type and a direct download link, served by dsp-ingest). When present it is exposed in both formats:
+
+- **`oai_datacite`** — the MIME type becomes a `format`, and the download link becomes a `relatedIdentifier` with `relatedIdentifierType="URL"` and `relationType="HasPart"` (alongside the existing `IsPartOf` link to the parent project):
+
+  ```xml
+  <relatedIdentifiers>
+    <relatedIdentifier relatedIdentifierType="URL" relationType="IsPartOf">https://ark.dasch.swiss/ark:/72163/1/0803</relatedIdentifier>
+    <relatedIdentifier relatedIdentifierType="URL" relationType="HasPart">https://ingest.dasch.swiss/projects/0803/assets/{assetId}/original</relatedIdentifier>
+  </relatedIdentifiers>
+  <formats>
+    <format>application/pdf</format>
+  </formats>
+  ```
+
+- **`oai_dc`** — the MIME type becomes a `dc:format`, and the download link is added as a second `dc:identifier` (after the record's ARK):
+
+  ```xml
+  <dc:format>application/pdf</dc:format>
+  <dc:identifier>https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</dc:identifier>
+  <dc:identifier>https://ingest.dasch.swiss/projects/0803/assets/{assetId}/original</dc:identifier>
+  ```
+
+Records without a file (e.g. project-metadata entries, or text-only records) omit all of the above.
+
 ## Identifiers
 
 OAI identifiers are derived from DaSCH [ARK](https://arks.org/) identifiers:

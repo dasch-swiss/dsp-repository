@@ -45,7 +45,9 @@ pub use project_cache::all_projects;
 #[cfg(not(target_arch = "wasm32"))]
 pub use project_repository::FsProjectRepository;
 pub use project_repository::ProjectRepository;
-pub use record::{record_datestamp, Pid as RecordPid, Record, RecordLegalInfo, RecordLicense, ARK_PATH_PREFIX};
+pub use record::{
+    record_datestamp, Pid as RecordPid, Record, RecordFile, RecordLegalInfo, RecordLicense, ARK_PATH_PREFIX,
+};
 #[cfg(not(target_arch = "wasm32"))]
 pub use record_repository::FsRecordRepository;
 pub use record_repository::RecordRepository;

@@ -21,8 +21,13 @@ fn type_of_data_to_dc_type(type_of_data: &str) -> String {
 pub fn record_to_dublin_core(record: &Record) -> DublinCoreRecord {
     let mut dc = DublinCoreRecord::default();
 
-    // dc:identifier - use pid
+    // dc:identifier - use pid, plus the direct file download link when present
     dc.identifiers.push(record.pid.as_url());
+    if let Some(file) = &record.file {
+        if !file.url.is_empty() {
+            dc.identifiers.push(file.url.clone());
+        }
+    }
 
     // dc:title - prefer "en", fallback to first available
     if let Some(title) = get_multilingual_value(&record.label) {
@@ -48,6 +53,13 @@ pub fn record_to_dublin_core(record: &Record) -> DublinCoreRecord {
     // dc:type derived from typeOfData
     dc.resource_type = type_of_data_to_dc_type(&record.type_of_data);
 
+    // dc:format — the file's MIME type (bitstream records only)
+    if let Some(file) = &record.file {
+        if !file.mime_type.is_empty() {
+            dc.formats.push(file.mime_type.clone());
+        }
+    }
+
     // dc:relation — link to parent project
     dc.relations.push(record.project_ark());
 
@@ -69,9 +81,20 @@ mod tests {
     use std::collections::HashMap;
 
     use dpe_core::record::Pid;
-    use dpe_core::{RecordLegalInfo, RecordLicense};
+    use dpe_core::{RecordFile, RecordLegalInfo, RecordLicense};
 
     use super::*;
+
+    /// A record with a downloadable file (bitstream record).
+    fn bitstream_record() -> Record {
+        Record {
+            file: Some(RecordFile {
+                mime_type: "image/jp2".to_string(),
+                url: "https://ingest.dasch.swiss/projects/0001/assets/5RMOnH7RmAY-qKzgr431bg7/original".to_string(),
+            }),
+            ..test_record()
+        }
+    }
 
     fn test_record() -> Record {
         Record {
@@ -110,6 +133,7 @@ mod tests {
             type_of_data: "Text".to_string(),
             size: "2.3 GB".to_string(),
             keywords: vec![],
+            file: None,
         }
     }
 
@@ -182,5 +206,27 @@ mod tests {
         assert_eq!(type_of_data_to_dc_type("Video"), "Audiovisual");
         assert_eq!(type_of_data_to_dc_type("Audio"), "Sound");
         assert_eq!(type_of_data_to_dc_type("Other"), "Other");
+    }
+
+    #[test]
+    fn record_without_file_has_no_format() {
+        let dc = record_to_dublin_core(&test_record());
+        assert!(dc.formats.is_empty());
+    }
+
+    #[test]
+    fn bitstream_format_is_mime_type() {
+        let dc = record_to_dublin_core(&bitstream_record());
+        assert_eq!(dc.formats, vec!["image/jp2"]);
+    }
+
+    #[test]
+    fn bitstream_file_url_is_an_additional_identifier() {
+        let dc = record_to_dublin_core(&bitstream_record());
+        assert!(dc
+            .identifiers
+            .contains(&"https://ingest.dasch.swiss/projects/0001/assets/5RMOnH7RmAY-qKzgr431bg7/original".to_string()));
+        // The pid identifier must still be present alongside the file link.
+        assert!(dc.identifiers.contains(&bitstream_record().pid.as_url()));
     }
 }

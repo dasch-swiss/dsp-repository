@@ -33,9 +33,10 @@ jobs:
         id: find-pr
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
         run: |
-          if [ -n '${{ steps.release.outputs.pr }}' ]; then
-            BRANCH=$(echo '${{ steps.release.outputs.pr }}' | jq -r '.headBranchName')
+          if [ -n "$RELEASE_PR" ]; then
+            BRANCH=$(echo "$RELEASE_PR" | jq -r '.headBranchName')
           else
             BRANCH=$(gh pr list --repo "${{ github.repository }}" --label "autorelease: pending" --json headRefName --jq '.[0].headRefName // empty')
           fi

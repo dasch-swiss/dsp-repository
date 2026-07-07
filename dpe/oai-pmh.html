@@ -335,6 +335,29 @@
 <li><strong>Everything else</strong> — free-text names resolve against <code>modules/dpe/server/data/temporal-coverage-enrichment.json</code>, a reviewed lookup table built by <code>scripts/build-temporal-coverage-enrichment.py</code>. The tool does not parse names itself; it collects each distinct name and assigns a range one of two ways. A name that carries a ChronOntology URL with a known timespan is resolved from the periods file (<code>source: "chronontology"</code>). Any other name is emitted as a skeleton row (<code>date: null</code>, <code>source: "unresolved"</code>) for an operator or LLM agent to fill with a W3CDTF range and re-tag <code>source: "llm"</code>. Names that are not time periods at all (e.g. a cultural style like "Swiss") keep <code>date: null</code> and stay <code>source: "unresolved"</code>. Re-running is merge-preserving — existing rows are never overwritten, so reviewed rows survive; <code>--check</code> fails if a distinct dataset name has no row yet.</li>
 </ol>
 <p>When no range resolves (a <code>date: null</code> row, or a name absent from both sources), the element is emitted with the <code>dateInformation</code> attribute only and an empty body, so the original label is never dropped.</p>
+<h3 id="record-files"><a class="header" href="#record-files">Record files</a></h3>
+<p>A bitstream Record may carry a single <code>file</code> (its MIME type and a direct download link, served by dsp-ingest). When present it is exposed in both formats:</p>
+<ul>
+<li>
+<p><strong><code>oai_datacite</code></strong> — the MIME type becomes a <code>format</code>, and the download link becomes a <code>relatedIdentifier</code> with <code>relatedIdentifierType="URL"</code> and <code>relationType="HasPart"</code> (alongside the existing <code>IsPartOf</code> link to the parent project):</p>
+<pre><code class="language-xml">&lt;relatedIdentifiers&gt;
+  &lt;relatedIdentifier relatedIdentifierType="URL" relationType="IsPartOf"&gt;https://ark.dasch.swiss/ark:/72163/1/0803&lt;/relatedIdentifier&gt;
+  &lt;relatedIdentifier relatedIdentifierType="URL" relationType="HasPart"&gt;https://ingest.dasch.swiss/projects/0803/assets/{assetId}/original&lt;/relatedIdentifier&gt;
+&lt;/relatedIdentifiers&gt;
+&lt;formats&gt;
+  &lt;format&gt;application/pdf&lt;/format&gt;
+&lt;/formats&gt;
+</code></pre>
+</li>
+<li>
+<p><strong><code>oai_dc</code></strong> — the MIME type becomes a <code>dc:format</code>, and the download link is added as a second <code>dc:identifier</code> (after the record's ARK):</p>
+<pre><code class="language-xml">&lt;dc:format&gt;application/pdf&lt;/dc:format&gt;
+&lt;dc:identifier&gt;https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh&lt;/dc:identifier&gt;
+&lt;dc:identifier&gt;https://ingest.dasch.swiss/projects/0803/assets/{assetId}/original&lt;/dc:identifier&gt;
+</code></pre>
+</li>
+</ul>
+<p>Records without a file (e.g. project-metadata entries, or text-only records) omit all of the above.</p>
 <h2 id="identifiers"><a class="header" href="#identifiers">Identifiers</a></h2>
 <p>OAI identifiers are derived from DaSCH <a href="https://arks.org/">ARK</a> identifiers:</p>
 <div class="table-wrapper"><table><thead><tr><th>Item type</th><th>Pattern</th><th>Example</th></tr></thead><tbody>

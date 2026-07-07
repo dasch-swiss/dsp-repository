@@ -1,0 +1,323 @@
+{
+    "id": "085D",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/085D",
+    "name": "The Beach in the Long Twentieth Century",
+    "shortcode": "085D",
+    "officialName": "The Beach in the Long Twentieth Century",
+    "status": "Finished",
+    "shortDescription": "This project consists of four individual projects and a digital literary atlas as a visualisation of the function of the beach in anglophone literature between 1890 and 2023.",
+    "description": {
+        "en": "The beach is an important space in Western literature. Ever since the rise in popularity of the seaside holiday, the beach has been depicted as a site of leisure, sensuous enjoyment and play, clearly distinguished from and often in a dialectical relationship with industrialised and metropolitan spaces of work. Despite its significance as a spatial frame in fiction, travel writing and memoirs, however, the beach has played a relatively minor role in scholarship until fairly recently. This project seeks to redress this neglect, focussing on a period in which the beach has undergone dramatic changes, both in everyday culture and in literary and artistic representations: the ‘long twentieth century,’ dating roughly from 1890 to the present. At the beginning of this period, the beach emerged as the vacation site we are still familiar with today. Twentieth-century authors chose the beach as a recurring setting to explore a specifically modern mobility that is both literal and figurative, encompassing bodily movement, travel, sexual transgression and cross-cultural encounters, as well as creativity and transformation. However, the prevalent conception of the beach as a liberating, and even paradisiacal, space mainly connoting leisure overlooks the continuous presence of violence and death, specifically the fact that beaches were theatres of war in both the First and the Second World War. If beach holidays from the 1950s onwards indicated post-war prosperity – but also, in the naming of the bikini after a site of nuclear testing, pre-war anxiety – in the last decades of the twentieth century and even more so since the millennium the paradisiacal connotations of the beach have begun to disintegrate. Natural and human-caused disasters such as tsunamis, oil spills, nuclear tests and rising sea levels as harbingers of climate change signal the fragility of littoral space. The arrival of large numbers of refugees on the European coasts of the Mediterranean has transformed the beach into a contested legal and political zone, its instability eradiating into the centres of the European Union. Extant research on the beach is mainly of two types: survey studies covering long periods, often from early modernity to the present, or articles restricted to analyses of a few authors or texts. By contrast, this project chooses a meso-level of analysis: within a sufficiently long but clearly delimited period, the subprojects provide in-depth studies of selected research areas. Close cooperation between the subprojects ensures that the archival and analytical work conducted in each is linked to a common set of questions, thus significantly contributing to the conceptualisation of the beach and littoral space."
+    },
+    "startDate": "2020-08-01",
+    "endDate": "2025-07-31",
+    "dataPublicationYear": "2025",
+    "url": [
+        "https://readingthebeach.unibe.ch/",
+        "https://dhbern.github.io/reading-the-beach/"
+    ],
+    "howToCite": "Guðrun í Jákupsstovu, Ursula Kluwick, Virginia Richter, Katharina Scheller, Marion Troxler (2025). Digital Shores: An Interactive Atlas of Beach Narratives. [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085D.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2025-03-14",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "Digital Shores: An Interactive Atlas of Beach Narratives",
+            "authorship": [
+                "CALCULATED"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Text"
+    ],
+    "dataLanguage": [
+        "en"
+    ],
+    "keywords": [
+        {
+            "en": "modernism"
+        },
+        {
+            "en": "beach"
+        },
+        {
+            "en": "anglophone literature"
+        },
+        {
+            "en": "littoral studies"
+        },
+        {
+            "en": "ecocriticism"
+        },
+        {
+            "en": "space"
+        },
+        {
+            "en": "twentieth-century literature"
+        },
+        {
+            "en": "blue humanities"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10501 German and English languages and literature"
+        },
+        {
+            "en": "10101 Philosophy"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "Long Twentieth Century"
+        },
+        {
+            "en": "1890-2023"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3411923/north-atlantic-ocean.html",
+            "text": "North Atlantic Ocean"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3358844/south-atlantic-ocean.html",
+            "text": "South Atlantic Ocean"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3373405/atlantic-ocean.html",
+            "text": "Atlantic Ocean"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/363196/mediterranean-sea.html",
+            "text": "Mediterranean Sea"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3183462/adriatic-sea.html",
+            "text": "Adriatic Sea"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/265695/aegean-sea.html",
+            "text": "Aegean Sea"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3831546/gulf-of-saint-lawrence.html",
+            "text": "Gulf of Saint Lawrence"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2960848/north-sea.html",
+            "text": "North Sea"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/4563233/caribbean-sea.html",
+            "text": "Caribbean Sea"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2633321/baltic-sea.html",
+            "text": "Baltic Sea"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/1545739/indian-ocean.html",
+            "text": "Indian Ocean"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/6640368/irish-sea.html",
+            "text": "Irish Sea"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2649991/english-channel.html",
+            "text": "English Channel"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3523271/gulf-of-mexico.html",
+            "text": "Gulf of Mexico"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "person-403",
+            "contributorType": [
+                "Project Leader"
+            ]
+        },
+        {
+            "contributor": "person-404",
+            "contributorType": [
+                "Project Manager"
+            ]
+        },
+        {
+            "contributor": "person-405",
+            "contributorType": [
+                "Project Member"
+            ]
+        },
+        {
+            "contributor": "person-406",
+            "contributorType": [
+                "Project Member"
+            ]
+        },
+        {
+            "contributor": "person-407",
+            "contributorType": [
+                "Data Curator"
+            ]
+        },
+        {
+            "contributor": "person-408",
+            "contributorType": [
+                "Data Curator"
+            ]
+        },
+        {
+            "contributor": "person-409",
+            "contributorType": [
+                "Designer"
+            ]
+        },
+        {
+            "contributor": "person-410",
+            "contributorType": [
+                "Support"
+            ]
+        },
+        {
+            "contributor": "person-411",
+            "contributorType": [
+                "Producer"
+            ]
+        },
+        {
+            "contributor": "person-412",
+            "contributorType": [
+                "Related Person"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Digital Shores: An Interactive Atlas of Beach Narratives was created as a part of an SNSF project on \"The Beach in the Long Twentieth Century\" (100012_192810 / 1) and links the four individual projects that the team members worked on. This digital literary atlas is a visualisation of the function of the beach in (mainly) anglophone literature, published between 1890 and 2023. It foregrounds the beach not simply as a setting, but as an active element in literary texts. Littoral spaces, like shores, coasts, and beaches, enable unruliness, disturbance, and change. Encounters involving social conflict, violence, death, romance, and sex are exceptionally pervasive on the literary beach, whether they happen between humans or between humans and the more-than-human world. So are experiences of new self-awareness, renewal, and rebirth. A map displays a selection of texts – novels, short stories, and narrative nonfiction – in which the beach plays a crucial role, and the thematic and regional maps that were designed for the project visualise some of the classifications the team decided on for key topics and regions. From each of the texts in the corpus, short excerpts were chosen that showcase the function of the beach."
+    },
+    "contactPoint": [
+        "person-403"
+    ],
+    "publications": [
+        {
+            "text": "Kluwick, Ursula. 2020. “The Global Deluge: Floods, Diluvian Imagery, and Aquatic Language in Amitav Ghosh’s The Hungry Tide and Gun Island.” Green Letters 24:1 (2020), 64-78.",
+            "pid": {
+                "url": "https://doi.org/10.1080/14688417.2020.1752516"
+            }
+        },
+        {
+            "text": "Kluwick, Ursula. 2020. “The Aesthetics of Bodies in Translation: From The Water-Babies to Real Humans.” Medial Bodies. Ed. Denisa Butnaru. Bielefeld: Transcript, pp. 85-103.",
+            "pid": {
+                "url": "https://doi.org/10.14361/9783839447291-005"
+            }
+        },
+        {
+            "text": "Kluwick, Ursula and Virginia Richter. 2020. “Of Tourists and Refugees: The Global Beach in the Twenty-First Century.” Heterotopia and Globalisation in the Twenty-First Century. Ed. Simon Ferdinand, Irina Souch, and Daan Wesselman. London: Routledge, pp. 116-130.",
+            "pid": {
+                "url": "https://doi.org/10.4324/9780429290732"
+            }
+        },
+        {
+            "text": "Richter, Virginia. “‘The whole China Sea had climbed on the bridge’: Oceanic Agency in Joseph Conrad’s Typhoon”. The Conradian 45.1 (Spring 2020): 21-37.",
+            "pid": {
+                "url": "https://boris.unibe.ch/134720/"
+            }
+        },
+        {
+            "text": "Richter, Virginia. “Stranded. The Beach as Ultimate Destination in Joseph Conrad’s ‘Amy Foster’ and Thomas Mann’s ‘Death in Venice’”. Narrating and Constructing the Beach. Ed. Carina Breidenbach, Tamara Fröhler et al. Berlin: De Gruyter, 2020, 57-81.",
+            "pid": {
+                "url": "https://doi.org/10.1515/9783110672244-003"
+            }
+        },
+        {
+            "text": "Gurr, Jens Martin and Ursula Kluwick. 2021. “Literature and …? Perspectives on Interdisciplinarity: Introduction.” Literature and …: Interdisciplinary Explorations. Anglistik 32.3 (Winter 2021), pp. 5-18.",
+            "pid": {
+                "url": "https://doi.org/10.33675/ANGL/2021/3/4"
+            }
+        },
+        {
+            "text": "Richter, Virginia. “Seaside Resort Blues: The English Seaside in the 1930s”, Hungarian Journal of English and American Studies (HJEAS) 27.1 (Spring 2021), 33-48.",
+            "pid": {
+                "url": "https://doi.org/10.30608/HJEAS/2021/27/1/4"
+            }
+        },
+        {
+            "text": "De Waal, Ariane and Ursula Kluwick. 2022. “Victorian Materialisms: Approaching Nineteenth-Century Matter.” European Journal of English Studies 26.1 (March 2022), pp. 1-13.",
+            "pid": {
+                "url": "https://doi.org/10.1080/13825577.2022.2044143"
+            }
+        },
+        {
+            "text": "Richter, Virginia. “A Grave for Fish: The Haunted Shore in Wyl Menmuir’s The Many.” Gothic Nature 3 (2022), 93-116.",
+            "pid": {
+                "url": "https://boris.unibe.ch/id/eprint/172248"
+            }
+        },
+        {
+            "text": "í Jákupsstovu, Guðrun. “At fata okkara náttúru, at fata okkum sjálvi.” Frøði 30.2 (Feb 2023), pp. 21–27."
+        },
+        {
+            "text": "Kluwick, Ursula. “A Sanitary Sense of Smell: Olfaction and Bodily Boundaries in Victorian Writing.” Literature and the Senses. Oxford Twenty-First Century Approaches to Literature. Ed. Annette Kern-Stähler and Elizabeth Robertson. Oxford: Oxford University Press, 2023."
+        },
+        {
+            "text": "Kluwick, Ursula. “The Mobility of Water: Aquatic Transformation and Disease in Victorian Literature.” Medicine and Mobility in Nineteenth-Century British Literature, History, and Culture. Ed. Sandra Dinter and Sarah Schäfer-Althaus. Basingstoke: Palgrave, 2023, pp. 145-164."
+        },
+        {
+            "text": "Richter, Virginia. “Salt Taste of the Sea: The Multisensorial Beach in Kate Chopin’s The Awakening and Charles Simmons’s Salt Water”, Literature and the Senses. Oxford Twenty-First Century Approaches to Literature, ed. Annette Kern-Stähler and Elizabeth Robertson. Oxford: Oxford University Press, 2023."
+        },
+        {
+            "text": "Troxler, Marion. “Resisting Domination: Merfolk and the Beach in Amy Sackville’s Orkney.” Litteraria Pragensia: Studies in Literature and Culture 33.66 (2023): 87-103.",
+            "pid": {
+                "url": "https://doi.org/10.14712/2571452X.2023.66.6"
+            }
+        },
+        {
+            "text": "í Jákupsstovu, Guðrun. “Allegory of an Anthropocene Epic”. Nordeuropaforum, special issue. Ed. Katie Ritson & Frederike Felcht (2024): 190-206.",
+            "pid": {
+                "url": "https://doi.org/10.18452/30842"
+            }
+        },
+        {
+            "text": "Kluwick, Ursula. \"Blue Humanities.\" Live Handbook Environmental Humanities. Ed. Evi Zemanek and Timo Müller. Berlin, Heidelberg: Springer Berlin Heidelberg, 2025, pp. 1-6."
+        }
+    ],
+    "funding": [
+        {
+            "funders": [
+                "organization-002"
+            ],
+            "number": "100012_192810",
+            "name": "Projektförderung/Project Funding",
+            "url": "https://data.snf.ch/grants/grant/192810"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "Digital Shores: An Interactive Atlas of Beach Narratives"
+        }
+    ]
+}

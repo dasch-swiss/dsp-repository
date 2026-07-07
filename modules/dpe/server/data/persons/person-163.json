@@ -1,0 +1,23 @@
+{
+    "id": "person-163",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://unibas.academia.edu/AlexisDenDoncker",
+            "text": "https://unibas.academia.edu/AlexisDenDoncker"
+        }
+    ],
+    "givenNames": [
+        "Alexis"
+    ],
+    "familyNames": [
+        "Den Doncker"
+    ],
+    "jobTitles": [
+        "Assistant Post-Doc (Chair of Egyptology)"
+    ],
+    "affiliations": [
+        "organization-056"
+    ],
+    "email": "alexis.dendoncker@unibas.ch"
+}

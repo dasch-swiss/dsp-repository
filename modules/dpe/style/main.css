@@ -1,0 +1,49 @@
+@import 'tailwindcss';
+@import '../../mosaic/tiles/src/components/theme_provider/tokens.css';
+
+@plugin "@tailwindcss/typography";
+
+@plugin "daisyui" {
+    themes: light --default;
+    exclude: button, badge, tab, breadcrumb, card, link;
+}
+
+@import './daisy-ui-theme.css';
+
+@utility dpe-title {
+    @apply font-semibold text-gray-700;
+}
+
+@layer components {
+    .dpe-card {
+        @apply bg-white border border-gray-200 text-gray-700 rounded-lg p-4 space-y-4;
+
+        .dpe-title {
+            @apply mb-2;
+        }
+
+        .dpe-subtitle {
+            @apply font-semibold mb-2 text-gray-700 text-sm;
+        }
+
+        &.dpe-small {
+            @apply text-xs;
+
+            .dpe-title {
+                @apply text-base;
+            }
+
+            .dpe-subtitle {
+                @apply text-xs text-gray-600 mb-1;
+            }
+        }
+    }
+
+    .dpe-divider {
+        @apply border-t border-gray-200;
+    }
+
+    .dpe-max-layout-width {
+        max-width: 1536px;
+    }
+}

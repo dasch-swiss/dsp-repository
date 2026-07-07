@@ -1,0 +1,74 @@
+name = "Tabs"
+description = "A tabbed interface component with underlined style and CSS-only tab switching."
+
+[[examples]]
+name = "basic"
+title = "Basic Tabs"
+description = "Simple tabs with text content demonstrating the underlined style"
+
+[[examples]]
+name = "with_icons"
+title = "Tabs with Icons"
+description = "Tabs with icons displayed before labels"
+
+[[examples]]
+name = "interactive"
+title = "Interactive Tabs"
+description = "Tabs with reactive state and interactive components"
+
+[[examples]]
+name = "multiple_groups"
+title = "Multiple Tab Groups"
+description = "Multiple independent tab groups on the same page"
+
+[[references]]
+name = "Tabs"
+description = "Container component for organizing tabs."
+extra = "Uses CSS Grid layout to manage tab labels and panels."
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "Tab components to display"
+
+[[references]]
+name = "Tab"
+description = "Individual tab component with label and content panel."
+extra = "Uses radio inputs for CSS-only tab switching. All tabs in a group must share the same name prop."
+
+[[references.attrs]]
+attr = "name"
+attr_type = "String"
+default = "required"
+description = "Radio group name - must be the same for all tabs in a group"
+
+[[references.attrs]]
+attr = "value"
+attr_type = "String"
+default = "required"
+description = "Unique identifier for this tab"
+
+[[references.attrs]]
+attr = "label"
+attr_type = "String"
+default = "required"
+description = "The tab label text displayed in the tab button"
+
+[[references.attrs]]
+attr = "icon"
+attr_type = "Option<IconData>"
+default = "None"
+description = "Optional icon to display before the label (requires icon feature)"
+
+[[references.attrs]]
+attr = "checked"
+attr_type = "bool"
+default = "false"
+description = "Whether this tab is initially selected"
+
+[[references.attrs]]
+attr = "children"
+attr_type = "Option<Children>"
+default = "None"
+description = "The content to display when this tab is active"

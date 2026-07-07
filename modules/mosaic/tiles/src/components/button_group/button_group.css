@@ -1,0 +1,66 @@
+@layer components {
+  /* Button Group Container */
+  .btn-group {
+    @apply inline-flex;
+  }
+
+  /* Override button styling when inside button group */
+  .btn-group .btn {
+    @apply relative shadow-none focus:z-10;
+  }
+
+  /* Horizontal orientation */
+  .btn-group-horizontal {
+    @apply flex-row;
+  }
+
+  .btn-group-horizontal .btn:first-child {
+    @apply rounded-r-none;
+  }
+
+  .btn-group-horizontal .btn:last-child {
+    @apply rounded-l-none;
+  }
+
+  .btn-group-horizontal .btn:not(:first-child):not(:last-child) {
+    @apply rounded-none;
+  }
+
+  .btn-group-horizontal .btn:not(:first-child) {
+    @apply -ml-px;
+  }
+
+  /* Vertical orientation */
+  .btn-group-vertical {
+    @apply flex-col;
+  }
+
+  .btn-group-vertical .btn:first-child {
+    @apply rounded-b-none;
+  }
+
+  .btn-group-vertical .btn:last-child {
+    @apply rounded-t-none;
+  }
+
+  .btn-group-vertical .btn:not(:first-child):not(:last-child) {
+    @apply rounded-none;
+  }
+
+  .btn-group-vertical .btn:not(:first-child) {
+    @apply -mt-px;
+  }
+
+  /* Size variants */
+  .btn-group-sm .btn {
+    @apply px-2 py-1 text-xs;
+  }
+
+  .btn-group-md .btn {
+    @apply px-3 py-2 text-sm;
+  }
+
+  .btn-group-lg .btn {
+    @apply px-4 py-3 text-base;
+  }
+}

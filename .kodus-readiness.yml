@@ -1,0 +1,5 @@
+criteria:
+  # Kodus does not recognise Playwright E2E tests in a Rust/Leptos monorepo —
+  # supplemental assessment script handles e2e-tests.
+  # This criterion genuinely cannot be evaluated from the local filesystem:
+  bundle-analysis: false   # N/A — Rust backend, no frontend bundle

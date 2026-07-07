@@ -1,0 +1,47 @@
+@layer components {
+  .accordion {
+    @apply w-full space-y-2;
+  }
+
+  .accordion-item {
+    @apply border border-neutral-200 rounded-md overflow-hidden;
+  }
+
+  .accordion-header {
+    @apply w-full flex items-center justify-between px-4 py-3 text-left font-medium text-neutral-900 bg-white hover:bg-neutral-50 transition-colors cursor-pointer;
+    list-style: none;
+  }
+
+  .accordion-header::-webkit-details-marker {
+    display: none;
+  }
+
+  .accordion-title {
+    @apply flex-1;
+  }
+
+  .accordion-icon {
+    @apply w-5 h-5 text-neutral-500 transition-transform duration-200;
+  }
+
+  details[open] > .accordion-header .accordion-icon {
+    @apply rotate-90;
+  }
+
+  .accordion-content {
+    @apply grid transition-all duration-200 ease-in-out;
+    grid-template-rows: 0fr;
+  }
+
+  details[open] > .accordion-content {
+    grid-template-rows: 1fr;
+  }
+
+  .accordion-body {
+    @apply overflow-hidden px-4 py-0;
+  }
+
+  details[open] > .accordion-content .accordion-body {
+    @apply py-4;
+  }
+}

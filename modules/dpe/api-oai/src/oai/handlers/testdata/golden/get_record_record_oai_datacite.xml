@@ -32,7 +32,7 @@
                 <date dateType="Available">2012-06-19T14:33:33Z</date>
               </dates>
               <relatedIdentifiers>
-                <relatedIdentifier relatedIdentifierType="URL" relationType="IsPartOf">https://ark.dasch.swiss/ark:/72163/1/0803</relatedIdentifier>
+                <relatedIdentifier relatedIdentifierType="ARK" relationType="IsPartOf">https://ark.dasch.swiss/ark:/72163/1/0803</relatedIdentifier>
                 <relatedIdentifier relatedIdentifierType="URL" relationType="HasPart">https://ingest.dasch.swiss/projects/0803/assets/lklK7rVuVOmpBZYWrF8o-g/original</relatedIdentifier>
               </relatedIdentifiers>
               <formats>

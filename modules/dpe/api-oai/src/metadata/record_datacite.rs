@@ -140,7 +140,7 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
     // RelatedIdentifiers — link to parent project via IsPartOf, and to the file download via HasPart.
     let mut related_identifiers = vec![DataCiteRelatedIdentifier {
         identifier: record.project_ark(),
-        related_identifier_type: "URL".to_string(),
+        related_identifier_type: "ARK".to_string(),
         relation_type: "IsPartOf".to_string(),
     }];
     if let Some(file) = &record.file {
@@ -365,7 +365,7 @@ mod tests {
         assert_eq!(dc.related_identifiers.len(), 1);
         let ri = &dc.related_identifiers[0];
         assert_eq!(ri.identifier, "https://ark.dasch.swiss/ark:/72163/1/0803");
-        assert_eq!(ri.related_identifier_type, "URL");
+        assert_eq!(ri.related_identifier_type, "ARK");
         assert_eq!(ri.relation_type, "IsPartOf");
     }
 

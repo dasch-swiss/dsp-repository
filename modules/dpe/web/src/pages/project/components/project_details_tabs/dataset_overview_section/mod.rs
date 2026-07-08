@@ -6,21 +6,30 @@ mod link_list_section;
 mod publication_year;
 mod type_of_data_section;
 
-use coverage_section::CoverageSection;
-use data_language_section::DataLanguageSection;
-use disciplines_section::DisciplinesSection;
-use leptos::prelude::*;
-use link_card_section::LinkCardSection;
-use link_list_section::LinkListSection;
-use mosaic_tiles::card::{Card, CardBody, CardVariant};
-use publication_year::PublicationYear;
-use type_of_data_section::TypeOfDataSection;
+use coverage_section::coverage_section;
+use data_language_section::data_language_section;
+use disciplines_section::disciplines_section;
+use dpe_core::Project;
+use link_card_section::link_card_section;
+use link_list_section::link_list_section;
+use maud::{html, Markup};
+use mosaic_tiles::card::{card, card_body, CardVariant};
+use mosaic_tiles::ComponentBuilder;
+use publication_year::publication_year;
+use type_of_data_section::type_of_data_section;
 
-use crate::domain::Project;
+/// Shared chip class strings for the overview tab. Kept as single literals here
+/// (rather than duplicated per section) so Tailwind still scans them and the
+/// styling can't drift between sections.
+pub(super) const CHIP_PRIMARY: &str =
+    "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700";
+pub(super) const CHIP_NEUTRAL: &str =
+    "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700";
 
-#[component]
-pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
-    // Collect all keyword values across all language maps
+/// The "Overview" tab panel: type of data, data languages, publication year,
+/// keywords, disciplines, coverage, clusters, collections, documentation /
+/// additional material, and provenance.
+pub fn dataset_overview_section(proj: &Project) -> Markup {
     let all_keywords: Vec<String> = proj.keywords.iter().flat_map(|map| map.values().cloned()).collect();
     let data_languages: Vec<String> = proj
         .data_language
@@ -29,117 +38,70 @@ pub fn DatasetOverviewSection(proj: Project) -> impl IntoView {
         .iter()
         .map(|code| dpe_core::language_display_name(code).to_string())
         .collect();
-
     let cluster_items: Vec<(String, String, String)> = proj
         .clusters
         .iter()
         .map(|c| (format!("/cluster/{}", c.id), c.name.clone(), c.description.clone()))
         .collect();
-
     let collection_items: Vec<(String, String, String)> = proj
         .collections
         .iter()
         .map(|c| (format!("/collection/{}", c.id), c.name.clone(), c.description.clone()))
         .collect();
 
-    view! {
-        <div class="space-y-4">
-            <TypeOfDataSection type_of_data=proj.type_of_data.clone() />
-
-            <DataLanguageSection data_languages=data_languages />
-            {proj
-                .data_publication_year
-                .clone()
-                .map(|year| {
-                    view! {
-                        <div>
-                            <PublicationYear year=year />
-                        </div>
+    html! {
+        div class="space-y-4" {
+            (type_of_data_section(proj.type_of_data.as_deref()))
+            (data_language_section(&data_languages))
+            @if let Some(year) = &proj.data_publication_year {
+                div { (publication_year(year)) }
+            }
+            @if !all_keywords.is_empty() {
+                div {
+                    h3 class="dpe-subtitle" { "Keywords" }
+                    div class="flex flex-wrap gap-2" {
+                        @for k in &all_keywords {
+                            span class=(CHIP_NEUTRAL) { (k) }
+                        }
                     }
-                })}
+                }
+            }
+            (disciplines_section(&proj.disciplines))
+            (coverage_section(&proj.temporal_coverage, &proj.spatial_coverage))
+            (link_card_section("Part of Cluster", &cluster_items, false))
+            (link_card_section("Collections", &collection_items, false))
+            @if let Some(docs) = proj.documentation_material.as_ref().filter(|d| !d.is_empty()) {
+                (link_list_section("Documentation Material", docs, true))
+            }
+            @if let Some(materials) = proj.additional_material.as_ref().filter(|a| !a.is_empty()) {
+                (link_list_section("Additional Material", materials, true))
+            }
+            @if let Some(prov) = &proj.provenance { (provenance_card(prov)) }
+        }
+    }
+}
 
-            {(!all_keywords.is_empty())
-                .then(|| {
-                    view! {
-                        <div>
-                            <h3 class="dpe-subtitle">"Keywords"</h3>
-                            <div class="flex flex-wrap gap-2">
-                                {all_keywords
-                                    .into_iter()
-                                    .map(|k| {
-                                        view! {
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700">
-                                                {k}
-                                            </span>
-                                        }
-                                    })
-                                    .collect_view()}
-                            </div>
-                        </div>
-                    }
-                        .into_any()
-                })}
+/// A bordered card presenting the project's free-text provenance statement.
+fn provenance_card(prov: &str) -> Markup {
+    let body = html! {
+        h3 class="text-base font-semibold mb-3" { "Provenance" }
+        p { (prov) }
+    };
+    card(card_body(body)).variant(CardVariant::Bordered).build()
+}
 
-            <DisciplinesSection disciplines=proj.disciplines.clone() />
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::sample_project;
 
-            <CoverageSection
-                temporal_coverage=proj.temporal_coverage.clone()
-                spatial_coverage=proj.spatial_coverage.clone()
-            />
-
-            <LinkCardSection
-                title="Part of Cluster".to_string()
-                items=cluster_items
-                clickable=false
-            />
-
-            <LinkCardSection
-                title="Collections".to_string()
-                items=collection_items
-                clickable=false
-            />
-
-            {proj
-                .documentation_material
-                .as_ref()
-                .and_then(|d| if d.is_empty() { None } else { Some(d) })
-                .map(|docs| {
-                    view! {
-                        <LinkListSection
-                            title="Documentation Material".to_string()
-                            items=docs.clone()
-                            as_links=true
-                        />
-                    }
-                })}
-
-            {proj
-                .additional_material
-                .as_ref()
-                .and_then(|a| if a.is_empty() { None } else { Some(a) })
-                .map(|materials| {
-                    view! {
-                        <LinkListSection
-                            title="Additional Material".to_string()
-                            items=materials.clone()
-                            as_links=true
-                        />
-                    }
-                })}
-
-            {proj
-                .provenance
-                .clone()
-                .map(|prov| {
-                    view! {
-                        <Card variant=CardVariant::Bordered>
-                            <CardBody>
-                                <h3 class="text-base font-semibold mb-3">"Provenance"</h3>
-                                <p>{prov}</p>
-                            </CardBody>
-                        </Card>
-                    }
-                })}
-        </div>
+    #[test]
+    fn renders_overview_sections_from_project() {
+        let out = dataset_overview_section(&sample_project()).into_string();
+        assert!(out.contains("Type of Data"), "{out}");
+        assert!(out.contains("Data Languages"), "{out}");
+        assert!(out.contains("Data Publication Year"), "{out}");
+        assert!(out.contains("Keywords"), "{out}");
+        assert!(out.contains("archaeology"), "keyword value: {out}");
     }
 }

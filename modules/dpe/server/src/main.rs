@@ -7,9 +7,169 @@ mod config;
 mod fragments;
 mod telemetry_collector;
 mod traceparent;
+mod view;
+
+/// Shared state for the page handlers: the (optional) Fathom site id and the
+/// resolved stylesheet href (unhashed in dev, content-hashed in release).
+#[derive(Clone)]
+struct AppState {
+    fathom_site_id: Option<String>,
+    css_href: String,
+}
+
+/// Query params for the project detail page: `?tab=` pre-selects the tab.
+#[derive(serde::Deserialize, Default)]
+struct TabQuery {
+    #[serde(default)]
+    tab: Option<String>,
+}
+
+async fn projects_page_handler(
+    axum::extract::State(state): axum::extract::State<AppState>,
+    axum::extract::Query(query): axum::extract::Query<dpe_web::domain::ProjectQuery>,
+) -> axum::response::Html<String> {
+    let tp = traceparent::extract_traceparent();
+    let content = dpe_web::pages::projects_page(&query);
+    axum::response::Html(
+        view::page(
+            "DaSCH Metadata Browser Projects Overview",
+            tp.as_deref(),
+            &state.css_href,
+            state.fathom_site_id.as_deref(),
+            content,
+        )
+        .into_string(),
+    )
+}
+
+async fn about_page_handler(
+    axum::extract::State(state): axum::extract::State<AppState>,
+) -> axum::response::Html<String> {
+    let tp = traceparent::extract_traceparent();
+    let content = dpe_web::pages::about_page();
+    axum::response::Html(
+        view::page(
+            "DaSCH Metadata Browser — About",
+            tp.as_deref(),
+            &state.css_href,
+            state.fathom_site_id.as_deref(),
+            content,
+        )
+        .into_string(),
+    )
+}
+
+async fn project_page_handler(
+    axum::extract::State(state): axum::extract::State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Query(tab): axum::extract::Query<TabQuery>,
+) -> axum::response::Html<String> {
+    let tp = traceparent::extract_traceparent();
+    // Fall back to "overview" for a missing or unrecognized tab, mirroring the
+    // validation the SSE fragment handler applies against VALID_TABS.
+    let active_tab = tab
+        .tab
+        .as_deref()
+        .filter(|t| dpe_core::project::VALID_TABS.contains(t))
+        .unwrap_or("overview");
+    let content = dpe_web::pages::project_page(&id, active_tab);
+    // Prefer the project's display name for the document title (falls back to the
+    // shortcode when the project can't be resolved). `project_by_shortcode` reads
+    // from the in-memory project cache, so this is not an extra load.
+    let title = dpe_core::project_cache::project_by_shortcode(&id)
+        .map(|p| format!("{} — DaSCH Metadata Browser", p.name))
+        .unwrap_or_else(|| format!("Project {id} — DaSCH Metadata Browser"));
+    axum::response::Html(
+        view::page(&title, tp.as_deref(), &state.css_href, state.fathom_site_id.as_deref(), content).into_string(),
+    )
+}
+
+/// 404 fallback (after `ServeDir` finds no matching static file): the app shell
+/// with a "Page not found." body.
+async fn not_found(
+    axum::extract::State(state): axum::extract::State<AppState>,
+) -> (axum::http::StatusCode, axum::response::Html<String>) {
+    let tp = traceparent::extract_traceparent();
+    let content = maud::html! {
+        "Page not found."
+    };
+    (
+        axum::http::StatusCode::NOT_FOUND,
+        axum::response::Html(
+            view::page(
+                "DaSCH Metadata Browser — Page Not Found",
+                tp.as_deref(),
+                &state.css_href,
+                state.fathom_site_id.as_deref(),
+                content,
+            )
+            .into_string(),
+        ),
+    )
+}
+
+/// Resolve the stylesheet href. Dev serves the unhashed `app.css` at a fixed
+/// path; release builds emit a content-hashed `app.<hash>.css`, whose name is
+/// discovered from the assets directory at startup.
+fn resolve_css_href(public_dir: &std::path::Path) -> String {
+    if cfg!(debug_assertions) {
+        return "/assets/app.css".to_string();
+    }
+    let assets = public_dir.join("assets");
+    discover_hashed_css(&assets).unwrap_or_else(|| "/assets/app.css".to_string())
+}
+
+/// Scan `assets_dir` for a content-hashed `app.<hash>.css` and return its
+/// `/assets/…` href if one is present. Kept separate from [`resolve_css_href`]
+/// (which gates on `debug_assertions`) so the discovery logic is unit-testable
+/// under `cargo test`.
+fn discover_hashed_css(assets_dir: &std::path::Path) -> Option<String> {
+    let entries = std::fs::read_dir(assets_dir).ok()?;
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name.starts_with("app.") && name.ends_with(".css") && name != "app.css" {
+            return Some(format!("/assets/{name}"));
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod css_href_tests {
+    use super::discover_hashed_css;
+
+    #[test]
+    fn discovers_content_hashed_stylesheet() {
+        let dir = std::env::temp_dir().join(format!("dpe_css_discover_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("app.abc123.css"), "").unwrap();
+
+        assert_eq!(discover_hashed_css(&dir).as_deref(), Some("/assets/app.abc123.css"));
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn ignores_unhashed_stylesheet_and_returns_none() {
+        let dir = std::env::temp_dir().join(format!("dpe_css_none_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("app.css"), "").unwrap();
+
+        assert_eq!(discover_hashed_css(&dir), None);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn missing_dir_returns_none() {
+        let dir = std::env::temp_dir().join(format!("dpe_css_missing_{}", std::process::id()));
+        assert_eq!(discover_hashed_css(&dir), None);
+    }
+}
 
 #[derive(Parser)]
-#[command(name = "dpe", about = "DaSCH Discovery and Presentation Environment")]
+#[command(name = "dpe-server", about = "DaSCH Discovery and Presentation Environment")]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -51,13 +211,12 @@ fn main() -> ExitCode {
 #[tokio::main]
 async fn serve() -> ExitCode {
     use axum::http::StatusCode;
+    use axum::response::Redirect;
     use axum::routing::get;
     use axum::Router;
-    use dpe_web::*;
     use init_tracing_opentelemetry::TracingConfig;
-    use leptos::prelude::*;
-    use leptos_axum::{generate_route_list, LeptosRoutes};
     use opentelemetry_sdk::logs::{SdkLogger, SdkLoggerProvider};
+    use tower_http::services::ServeDir;
     use tracing_subscriber::layer::SubscriberExt;
 
     // Route panics through tracing so they appear as structured Grafana logs
@@ -66,10 +225,10 @@ async fn serve() -> ExitCode {
     // back to the default stderr hook until a subscriber is registered).
     install_tracing_panic_hook();
 
-    // Export logs via OTLP only when LEPTOS_ENV=DEV (local dev) and an OTLP
-    // endpoint is configured. Production (LEPTOS_ENV=PROD) logs to stdout only.
-    // Default to "DEV" when unset, matching leptos_config's own default.
-    let logger_provider: Option<SdkLoggerProvider> = if std::env::var("LEPTOS_ENV").as_deref().unwrap_or("DEV") == "DEV"
+    // Export logs via OTLP only when DPE_ENV=DEV (local dev) and an OTLP
+    // endpoint is configured. Production (DPE_ENV=PROD) logs to stdout only.
+    // Default to "DEV" when unset.
+    let logger_provider: Option<SdkLoggerProvider> = if std::env::var("DPE_ENV").as_deref().unwrap_or("DEV") == "DEV"
         && std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").is_ok()
     {
         let exporter = opentelemetry_otlp::LogExporter::builder()
@@ -146,38 +305,40 @@ async fn serve() -> ExitCode {
 
     tokio::task::spawn_blocking(dpe_core::record_cache::all_records);
 
-    // Load Leptos configuration from Cargo.toml metadata
-    let conf =
-        get_configuration(None).expect("Leptos configuration missing — check Cargo.toml [package.metadata.leptos]");
-    let addr = conf.leptos_options.site_addr;
-    let leptos_options = conf.leptos_options;
+    // Listen address: DPE_SITE_ADDR → default 127.0.0.1:4000.
+    let addr: std::net::SocketAddr = std::env::var("DPE_SITE_ADDR")
+        .unwrap_or_else(|_| "127.0.0.1:4000".to_string())
+        .parse()
+        .expect("invalid site address (DPE_SITE_ADDR)");
 
-    // Generate the list of routes in your Leptos App
-    let routes = generate_route_list(App);
-    let fathom_site_id = dpe_config.fathom_site_id.clone();
+    let state = AppState {
+        fathom_site_id: dpe_config.fathom_site_id.clone(),
+        css_href: resolve_css_href(&dpe_config.public_dir),
+    };
 
     use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
 
+    // Static assets + 404: serve files from the public dir, falling back to the
+    // "Page not found." shell.
+    let serve_dir = ServeDir::new(&dpe_config.public_dir).not_found_service(get(not_found).with_state(state.clone()));
+
     let app = Router::new()
-        // --- Traced routes ---
-        // Routes declared BEFORE .layer() calls are wrapped by those layers.
+        // --- Traced routes (declared BEFORE .layer()) ---
+        // Page routes.
+        .route("/", get(|| async { Redirect::permanent("/dpe/projects") }))
+        .route("/dpe", get(|| async { Redirect::permanent("/dpe/projects") }))
+        .route("/dpe/projects", get(projects_page_handler))
+        .route("/dpe/about", get(about_page_handler))
+        .route("/dpe/projects/{id}", get(project_page_handler))
+        // OAI-PMH (note: /dpe/oai, not /oai) — XML, must stay unbroken.
         .route("/dpe/oai", get(dpe_api_oai::oai_handler))
+        // Datastar SSE + JSON endpoints.
         .route("/dpe/projects/{id}/tab/{tab}", get(fragments::tab_fragment_handler))
         .route("/dpe/projects/search", get(fragments::search_fragment_handler))
         .route("/dpe/api/v2/projects", get(fragments::projects_json_handler))
         .route("/dpe/api/v2/projects/{id}", get(fragments::project_json_handler))
-        .leptos_routes(&leptos_options, routes, {
-            let leptos_options = leptos_options.clone();
-            let fathom_site_id = fathom_site_id.clone();
-            move || {
-                let traceparent = traceparent::extract_traceparent();
-                shell(leptos_options.clone(), fathom_site_id.clone(), traceparent)
-            }
-        })
-        .fallback(leptos_axum::file_and_error_handler({
-            let fathom_site_id = fathom_site_id.clone();
-            move |options| shell(options, fathom_site_id.clone(), None)
-        }))
+        // Static assets + 404 fallback.
+        .fallback_service(serve_dir)
         // --- OTel layers ---
         // Axum layers wrap in reverse declaration order:
         // - OtelInResponseLayer (declared first) runs INNER — injects traceparent into response headers
@@ -203,7 +364,7 @@ async fn serve() -> ExitCode {
                 GovernorLayer { config: std::sync::Arc::new(governor_conf) }
             }),
         )
-        .with_state(leptos_options);
+        .with_state(state);
 
     tracing::info!("listening on http://{}", &addr);
     let listener = tokio::net::TcpListener::bind(&addr)

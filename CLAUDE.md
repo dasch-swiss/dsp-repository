@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-This repository is a Rust-based monorepo for the DaSCH Service Platform. It contains the Discovery and Presentation Environment (DPE) — a server-side rendered web application built with Leptos and Axum — and the Mosaic component library (design system).
+This repository is a Rust-based monorepo for the DaSCH Service Platform. It contains the Discovery and Presentation Environment (DPE) — a server-side rendered web application built with Maud and Axum — and the Mosaic component library (design system).
 
 ## Setup
 
@@ -12,7 +12,8 @@ This repository is a Rust-based monorepo for the DaSCH Service Platform. It cont
 
 - **Rust**: Toolchain managed via `rustup` (or Nix flake)
 - **Just**: Command runner for development tasks
-- **pnpm**: Package manager for the DPE frontend
+- **bacon**: Background code checker/runner used by `just dev`
+- **Node**: Required only for the Playwright E2E suites (`npx`); the Tailwind CSS build is Node-free (standalone CLI)
 
 ### First-Time Setup
 
@@ -31,10 +32,10 @@ just install-requirements
 ## Key Commands
 
 ```bash
-just watch-dpe                  # Run DPE with hot reload
+just dev                        # Run DPE with hot reload (Tailwind --watch + bacon serve)
 just watch-mosaic-playground    # Run Mosaic playground with hot reload
 just check                      # Run fmt checks and clippy
-just fmt                        # Format all Rust code (cargo fmt + leptosfmt)
+just fmt                        # Format all code (maudfmt for html! macros, then cargo +nightly fmt)
 just test                       # Run all tests
 just build                      # Build all targets
 just docs-serve                 # Serve docs at localhost:3000
@@ -48,6 +49,7 @@ All authoritative documentation lives in `docs/src/`. Key pages:
 |-------|----------|
 | Architecture | `docs/src/dpe/architecture.md` |
 | Metadata Model (v2) | `docs/src/dpe/metadata-model.md` |
+| Mosaic Component API Conventions | `docs/src/mosaic/component-api-conventions.md` |
 | Project Structure | `docs/src/dpe/project_structure.md` |
 | Repo Structure & Crate Naming | `docs/src/repo_structure.md` |
 | Testing Strategy | `docs/src/dpe/testing-strategy.md` |

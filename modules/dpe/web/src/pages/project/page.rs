@@ -1,18 +1,23 @@
-use leptos::prelude::*;
-use leptos_meta::Title;
-use leptos_router::hooks::use_params_map;
+use maud::{html, Markup};
 
-use super::project_loader::ProjectLoader;
+use super::project_loader::project_loader;
 
-#[component]
-pub fn ProjectPage() -> impl IntoView {
-    let params = use_params_map();
-    let shortcode = move || params.read().get("id").unwrap_or_default();
+/// Project detail page content. The page `<title>` (the project's display name)
+/// is set by the route handler; `active_tab` comes from the `?tab=` query param.
+pub fn project_page(shortcode: &str, active_tab: &str) -> Markup {
+    html! {
+        div class="min-h-100" { (project_loader(shortcode, active_tab)) }
+    }
+}
 
-    view! {
-        <Title text=move || format!("Project {}", shortcode()) />
-        <div class="min-h-100">
-            <ProjectLoader shortcode=shortcode() />
-        </div>
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn wraps_loader_in_min_height_container() {
+        let out = project_page("zzzz", "overview").into_string();
+        assert!(out.contains(r#"class="min-h-100""#), "{out}");
+        assert!(out.contains("Project Not Found"), "loader rendered: {out}");
     }
 }

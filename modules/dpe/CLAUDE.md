@@ -4,7 +4,7 @@ This document provides DPE-specific guidance for AI coding assistants. For proje
 
 ## Project Overview
 
-DPE is a server-side rendered web application. Pages are rendered on the server with **Leptos SSR** and served as plain HTML. Interactive behavior (tab switching, live search) is handled by **Datastar**, which streams HTML fragments over SSE — there is no client-side WASM, no hydration, and no islands architecture for DPE.
+DPE is a server-side rendered web application. Pages are rendered on the server as plain HTML with **Maud** (`maud::html!` → `Markup`) and served by **Axum**. Interactive behavior (tab switching, live search) is handled by **Datastar**, which streams HTML fragments over SSE. There is no client-side WASM, no hydration, and no islands architecture — the server is the single source of truth for UI state.
 
 ## Architecture and Structure
 
@@ -15,35 +15,34 @@ DPE is a server-side rendered web application. Pages are rendered on the server 
 
 ## Key Technologies and Versions
 
-- **Leptos**: 0.8.2 (SSR only — no `hydrate` feature for DPE)
-- **Axum**: 0.8.8
-- **Datastar**: SSE-based interactivity via `datastar` crate (0.3)
-- **Tailwind CSS**: 4.x + DaisyUI
+- **Maud**: compile-time HTML templates (`html!` → `Markup`)
+- **Axum**: native routing, `ServeDir` static serving, SSE
+- **Datastar**: SSE-based interactivity via the `datastar` crate (0.3)
+- **Tailwind CSS**: 4.x (single invocation, no DaisyUI)
 - **Rust Edition**: 2021
 - **Runtime**: Tokio
 
 ## Code Organization Patterns
 
-### Components
+### Views (`dpe-web`)
 
-Components live in `web/src/components/`. Each file exports one or more Leptos `#[component]` functions. Re-export new components in `web/src/components/mod.rs`.
+`dpe-web` is a plain library crate of view functions. Components live in `web/src/components/` and pages in `web/src/pages/`; each is a `fn(...) -> maud::Markup`. Split aggressively into small partials. Subdirectories group related pieces (e.g., `pages/project/components/`). There is no component macro and no re-export shim — import `dpe-core` types directly.
 
-Subdirectories under `components/` group related pieces (e.g., `components/global/` for layout-level elements).
+### Routing, head, and the page shell (`dpe-server`)
 
-### Pages
-
-Pages live in `web/src/pages/`. Each page is a top-level Leptos component rendered by the router. Subdirectories group page-specific sub-components (e.g., `pages/project/components/`).
-
-Routes are declared in `web/src/lib.rs` inside the `<Routes>` block:
+`dpe-server` is the composition root. Routes are declared in `server/src/main.rs` with the native Axum router:
 
 ```rust
-<Route path=StaticSegment("projects") view=ProjectsPage />
-<Route path=path!("projects/:id") view=ProjectPage />
+.route("/dpe/projects", get(projects_page_handler))
+.route("/dpe/projects/{id}", get(project_page_handler))
+.route("/dpe/projects/{id}/tab/{tab}", get(fragments::tab_fragment_handler))
 ```
 
-### Domain Re-exports
+The `<head>` and outer HTML document are hand-written in `server/src/view.rs` (`head()` + `page()`): charset/viewport, the conditional `traceparent` meta tag, Google Fonts, the content-hashed stylesheet `<link>`, conditional Fathom, and the Datastar + telemetry scripts. Static assets are served by `tower_http::ServeDir` with an Axum 404 fallback.
 
-`web/src/domain/` re-exports types and functions from `dpe-core`. The server crate imports domain items through `dpe_web::domain` so there is a single import path.
+### Fragments (Datastar SSE)
+
+Fragment handlers live in `server/src/fragments.rs`. Each renders a Maud view to a string and returns a `Sse` stream of Datastar `PatchElements` (and optionally `ExecuteScript`) events. The `#project-tabs` morph root is rendered by the single `project_tabs` function in `dpe-web`, used by **both** the full page and the `/tab/{tab}` SSE route, so the two can never drift (a test pins this contract).
 
 ## Running Tests
 
@@ -71,69 +70,77 @@ cd modules/dpe/web-e2e-tests && npx playwright test
 
 ### Adding a New Component
 
-1. Create file in `web/src/components/`
-2. Define component with `#[component]` macro
-3. Export in `web/src/components/mod.rs`
-4. Import in the relevant page or layout
+1. Add a `fn name(...) -> maud::Markup` in `web/src/components/`
+2. Re-export it in `web/src/components/mod.rs`
+3. Call it from the relevant page or layout
+4. Add a unit test rendering the partial and asserting on its output
 
 ### Adding a New Page
 
-1. Create file in `web/src/pages/`
-2. Define page component
-3. Export in `web/src/pages/mod.rs`
-4. Add route in `web/src/lib.rs` inside `<Routes>`
+1. Add a `fn page(...) -> maud::Markup` in `web/src/pages/`
+2. Export it in `web/src/pages/mod.rs`
+3. Add a handler in `dpe-server` that loads data and renders the page inside the `page()` shell
+4. Register the route in `server/src/main.rs`
 
 ### Adding a New Fragment Handler
 
-1. Add the async handler function in `server/src/fragments.rs`
+1. Add the async handler in `server/src/fragments.rs`
 2. Register the route in `server/src/main.rs`
-3. Use `Owner::new()` + `view! { ... }.to_html()` to render Leptos components
+3. Render the relevant `dpe-web` view function and `.into_string()` its `Markup`
 4. Return a `Sse` stream of `PatchElements` (and optionally `ExecuteScript`) events
-5. Strip hot-reload comments with `strip_hot_reload_comments()` in dev mode
 
 ### Modifying Styles
 
-- Global styles: edit `style/main.css`
-- Component styles: use Tailwind / DaisyUI classes in component templates
-- Tailwind input is configured in `Cargo.toml`: `tailwind-input-file = "style/main.css"`
+- The single Tailwind entry is `style/main.css` (imports `tokens.css` + the Mosaic component CSS). Tailwind content-scans both `dpe-web` and `dpe-server`.
+- Use Tailwind utility classes and the Mosaic component classes in the Maud markup; there is no DaisyUI.
+- Rebuild the stylesheet with `just css` (dev, unhashed `public/assets/app.css`) or `just css-release` (content-hashed). After CSS-affecting changes, grep the built CSS for the expected classes — a class that resolves to nothing is the common footgun.
 
 ## Common Pitfalls
 
-### Leptos 0.8.x API
+### Maud + Datastar attribute syntax
 
-- Import via `use leptos::prelude::*;`
-- Router uses `StaticSegment` and `path!` macro (different from 0.7.x)
-- Signal APIs may differ from older online examples
+- Colon/hyphen attribute names are written bare (`data-on:click__prevent`, `data-bind:search`).
+- **Dotted** names (`data-on:input__debounce.300ms`) must be a quoted string-literal attribute name — Maud only allows `:`/`-` between bare name fragments.
+- Maud HTML-escapes literal attribute values (`&` → `&amp;`); the browser decodes them back for Datastar — semantically identical to hand-written HTML.
 
-### Styling Not Applying
+### Nested `html!` as a function argument
 
-- Stylesheet link is in `web/src/lib.rs`: `<Stylesheet id="leptos" href="/pkg/dpe.css" />`
-- Ensure Tailwind build runs (automatic with `just watch-dpe`)
-- Check DaisyUI theme configuration in `style/main.css`
+Don't pass a non-trivial `html!` block directly into a component call
+(`card(html! { … })`). Bind it to a Rust `let` first
+(`let body = html! { … }; card(body)`) or extract a `fn … -> Markup`
+helper. `maudfmt` only formats `html!` at Rust statement/`let` position; a block
+nested as a call argument — or via Maud's in-macro `@let x = html! { … }` — is
+skipped by `maudfmt` and then mangled by `cargo fmt` (flat indentation,
+`class = "…"` with stray spaces). Trivial one-liners like `html! { (label) }`
+passed inline are fine.
 
-### Hot-Reload Comments in Fragments
+### Escaping
 
-In dev mode, Leptos wraps output in `<!--hot-reload|...|-->` comments. These break Datastar morphing. Always pass fragment HTML through `strip_hot_reload_comments()`.
+Default `(expr)` splices auto-escape. The only sanctioned `PreEscaped` site is the trusted mosaic `IconData` SVG. The search-query echo (`fragments.rs`) must stay a plain auto-escaped splice — never `PreEscaped` (the one realistic XSS reintroduction).
+
+### Styling not applying
+
+- The stylesheet link is emitted by `head()` in `server/src/view.rs`; the href is `/assets/app.css` in dev and the discovered `app.<hash>.css` in release.
+- Ensure the Tailwind build ran (`just css`, or automatic under `just dev`).
 
 ## Observability
 
 DPE uses OpenTelemetry for distributed tracing, metrics, and structured logging. See `docs/src/dpe/observability.md` for the full developer guide.
 
 - **OTel middleware**: `OtelAxumLayer` creates `SPAN_KIND_SERVER` spans for HTTP requests. Use `otel.kind = "internal"` on handler-level `#[instrument]` spans.
-- **Telemetry collector**: `POST /telemetry/collect` is placed after OTel layers (untraced). It converts browser beacons into OTel metrics and structured logs. Types and validation live in `dpe-telemetry` crate; the collector in `dpe-server` handles OTel conversion.
-- **Vendored JS**: Client-side dependencies live in `modules/dpe/public/vendor/`, tracked by `vendor/README.md`. No `package.json` or Node.js build step.
-- **Traceparent**: The server renders `<meta name="traceparent">` in the HTML shell for client-side trace correlation.
+- **Telemetry collector**: `POST /telemetry/collect` is placed after the OTel layers (untraced). It converts browser beacons into OTel metrics and structured logs. Types and validation live in the `dpe-telemetry` crate; the collector in `dpe-server` handles OTel conversion.
+- **Vendored JS**: Client-side dependencies live in `modules/dpe/public/vendor/`, tracked by `vendor/README.md`. No `package.json` or Node.js build step for the runtime.
+- **Traceparent**: The server renders `<meta name="traceparent">` in the HTML shell for client-side trace correlation, and injects a `traceparent` response header.
 
 ## Best Practices for AI Agents
 
 1. **Read existing code first** before making changes to understand patterns
-2. **Maintain consistency** with existing component and file structure
-3. **Use Leptos 0.8.x syntax** — many online examples target 0.7.x
-4. **Follow Rust conventions**: snake_case for functions/variables, PascalCase for types/components
-5. **Use `just check`** to verify formatting and linting before considering work done
-6. **Use mosaic-tiles components** where appropriate for consistent UI
-7. **Check Tailwind v4 syntax** — some classes changed from v3
+2. **Maintain consistency** with the existing partial/file structure
+3. **Follow Rust conventions**: snake_case for functions/variables, PascalCase for types
+4. **Use `just check`** (fmt + clippy) and `just test` to verify before considering work done
+5. **Use `mosaic-tiles` components** where appropriate for consistent UI
+6. **Format with `just fmt`** — runs `maudfmt` (formats `maud::html!` macro contents; stock rustfmt does not) then `cargo +nightly fmt`. Run at the end of your work
 
-## Note on Mosaic Playground
+## Note on the Mosaic Playground
 
-The Mosaic component playground (`modules/mosaic/playground/`) is a separate application that does use Leptos islands and WASM. That architecture does not apply to DPE. Do not conflate the two.
+The Mosaic component playground (`modules/mosaic/playground/`) is a separate plain Axum + Maud application. See `modules/mosaic/CLAUDE.md` for its guide.

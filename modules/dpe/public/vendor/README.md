@@ -17,4 +17,4 @@ Do not edit these files directly. See update process below.
 1. Download the new version from the source URL
 2. Replace the file in this directory
 3. Update the version and SHA-256 in the table above: `shasum -a 256 <file>`
-4. Verify the application works (`just watch-dpe`, test tab switching and search)
+4. Verify the application works (`just dev`, test tab switching and search)

@@ -10,7 +10,7 @@ Usage guide for the DPE [OAI-PMH 2.0](https://www.openarchives.org/OAI/openarchi
 
 | Environment | Base URL |
 |-------------|----------|
-| Local development (`just watch-dpe`) | `http://localhost:4000/dpe/oai` |
+| Local development (`just dev`) | `http://localhost:4000/dpe/oai` |
 | DEV | `https://api.dev.dasch.swiss/dpe/oai` |
 | Production | `https://repository.dasch.swiss/dpe/oai` |
 

@@ -1,36 +1,22 @@
-#[cfg(feature = "ssr")]
+//! Mosaic playground: a plain Axum + Maud server that renders the component
+//! showcase as a server-rendered MPA.
+
+mod app;
+mod showcase;
+
 #[tokio::main]
 async fn main() {
-    use axum::Router;
-    use leptos::logging::log;
-    use leptos::prelude::*;
-    use leptos_axum::{generate_route_list, LeptosRoutes};
-    use mosaic_playground::app::*;
+    // Listen address and static-asset root are env-overridable so the same
+    // binary serves both local dev (`just watch-mosaic-playground`) and the
+    // Cloud Run container (`MOSAIC_SITE_ADDR=0.0.0.0:8080`, `MOSAIC_PUBLIC_DIR=/app/public`).
+    let addr = std::env::var("MOSAIC_SITE_ADDR").unwrap_or_else(|_| "127.0.0.1:3000".to_string());
+    let public_dir = std::env::var("MOSAIC_PUBLIC_DIR").unwrap_or_else(|_| "public".to_string());
 
-    let conf = get_configuration(None).unwrap();
-    let addr = conf.leptos_options.site_addr;
-    let leptos_options = conf.leptos_options;
-    // Generate the list of routes in your Leptos App
-    let routes = generate_route_list(App);
+    let router = app::router(public_dir.into());
 
-    let app = Router::new()
-        .leptos_routes(&leptos_options, routes, {
-            let leptos_options = leptos_options.clone();
-            move || shell(leptos_options.clone())
-        })
-        .fallback(leptos_axum::file_and_error_handler(shell))
-        .with_state(leptos_options);
-
-    // run our app with hyper
-    // `axum::Server` is a re-export of `hyper::Server`
-    log!("listening on http://{}", &addr);
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-    axum::serve(listener, app.into_make_service()).await.unwrap();
-}
-
-#[cfg(not(feature = "ssr"))]
-pub fn main() {
-    // no client-side main function
-    // unless we want this to work with e.g., Trunk for pure client-side testing
-    // see lib.rs for hydration function instead
+    let listener = tokio::net::TcpListener::bind(&addr)
+        .await
+        .unwrap_or_else(|e| panic!("failed to bind to {addr}: {e}"));
+    println!("listening on http://{addr}");
+    axum::serve(listener, router).await.expect("server exited with error");
 }

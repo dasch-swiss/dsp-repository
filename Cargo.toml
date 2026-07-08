@@ -1,7 +1,6 @@
 [workspace]
 members = [
   "modules/mosaic/playground",
-  "modules/mosaic/playground_macro",
   "modules/mosaic/tiles",
   "modules/dpe/core",
   "modules/dpe/api-oai",
@@ -27,10 +26,8 @@ authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
 axum = { version = "0.8.9", features = ["macros", "ws"] }
 insta = { version = "1.47", features = ["yaml", "filters"] }
 datastar = { version = "0.3", features = ["axum"] }
-console_error_panic_hook = "0.1.7"
-leptos = { version = "0.8.2", features = ["islands"] }
-leptos_meta = "0.8.2"
-leptos-use = "0.15"
+# Templating (`axum` feature gives `impl IntoResponse for Markup`).
+maud = { version = "0.27", features = ["axum"] }
 log = "0.4.30"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -56,12 +53,7 @@ tracing-opentelemetry = "0.32"
 # Continuous profiling
 pyroscope = { version = "2.0.4", features = ["backend-pprof-rs"] }
 url = { version = "2", features = ["serde"] }
-uuid = { version = "1.23", features = ["v4", "v7", "js"] }
-wasm-bindgen = "=0.2.105"
-leptos_router = "0.8.2"
-leptos_axum = "0.8.2"
-cfg-if = "1.0.0"
-console_log = "1.0.0"
+uuid = { version = "1.23", features = ["v4", "v7"] }
 http = "1.4.1"
 thiserror = "2.0.12"
 quick-xml = "0.37"
@@ -78,31 +70,3 @@ opt-level = 'z'
 # hook in dpe-server to produce actionable stacktraces — paired with
 # `RUST_BACKTRACE=1` in modules/dpe/Dockerfile.
 debug = "line-tables-only"
-
-# WASM-optimized release profile for mosaic-playground (Leptos islands + WASM)
-[profile.wasm-release]
-inherits = "release"
-opt-level = 'z'
-lto = true
-codegen-units = 1
-panic = "abort"
-
-# Leptos configuration for cargo-leptos
-[[workspace.metadata.leptos]]
-name = "dpe"
-bin-package = "dpe-server"
-lib-package = "dpe-web"
-site-root = "modules/dpe/target/site"
-site-pkg-dir = "pkg"
-assets-dir = "modules/dpe/public"
-site-addr = "127.0.0.1:4000"
-reload-port = 4001
-end2end-cmd = "npx playwright test"
-end2end-dir = "modules/dpe/web-e2e-tests"
-browserquery = "defaults"
-bin-features = []
-bin-default-features = false
-lib-features = []
-lib-default-features = false
-tailwind-input-file = "modules/dpe/style/main.css"
-watch-additional-files = ["modules/mosaic/tiles"]

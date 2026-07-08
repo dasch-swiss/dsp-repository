@@ -1,56 +1,73 @@
-use leptos::either::Either;
-use leptos::prelude::*;
+//! Breadcrumb navigation tile.
 
-#[component]
-pub fn Breadcrumb(#[prop(optional)] children: Option<Children>) -> impl IntoView {
-    view! {
-        <nav aria-label="Breadcrumb" class="breadcrumb">
-            <ol class="breadcrumb-list">
-                {if let Some(children) = children {
-                    Either::Left(children())
-                } else {
-                    Either::Right(())
-                }}
-            </ol>
-        </nav>
+use maud::{html, Markup, Render};
+
+/// Render the breadcrumb `<nav>` wrapping a `<ol>` of items.
+#[must_use]
+pub fn breadcrumb(items: impl Render) -> Markup {
+    html! {
+        nav aria-label="Breadcrumb" class="breadcrumb" {
+            ol class="breadcrumb-list" { (items) }
+        }
     }
 }
 
-#[component]
-pub fn BreadcrumbItem(
-    /// Optional href for the breadcrumb item. If provided, renders as a link.
-    /// If omitted, renders as plain text (typically for the current page).
-    #[prop(optional, into)]
-    href: Option<String>,
-    #[prop(optional)] children: Option<Children>,
-) -> impl IntoView {
-    view! {
-        <li class="breadcrumb-item">
-            {if let Some(href) = href {
-                Either::Left(
-                    view! {
-                        <a href=href class="breadcrumb-link">
-                            {if let Some(children) = children {
-                                Either::Left(children())
-                            } else {
-                                Either::Right(())
-                            }}
-                        </a>
-                    },
-                )
-            } else {
-                Either::Right(
-                    view! {
-                        <span class="breadcrumb-current" aria-current="page">
-                            {if let Some(children) = children {
-                                Either::Left(children())
-                            } else {
-                                Either::Right(())
-                            }}
-                        </span>
-                    },
-                )
-            }}
-        </li>
+/// A breadcrumb item that links to `href`.
+#[must_use]
+pub fn breadcrumb_item(href: impl Into<String>, label: impl Render) -> Markup {
+    html! {
+        li class="breadcrumb-item" {
+            a href=(href.into()) class="breadcrumb-link" { (label) }
+        }
+    }
+}
+
+/// The final, current-page breadcrumb item: unlinked text carrying
+/// `aria-current="page"`.
+#[must_use]
+pub fn breadcrumb_current(label: impl Render) -> Markup {
+    html! {
+        li class="breadcrumb-item" {
+            span class="breadcrumb-current" aria-current="page" { (label) }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn breadcrumb_wraps_nav_and_list() {
+        let out = breadcrumb(html! {
+            "items"
+        })
+        .into_string();
+        assert!(out.contains(r#"<nav aria-label="Breadcrumb" class="breadcrumb">"#), "{out}");
+        assert!(out.contains(r#"<ol class="breadcrumb-list">items</ol>"#), "{out}");
+    }
+
+    #[test]
+    fn item_renders_link() {
+        let out = breadcrumb_item(
+            "/home",
+            html! {
+                "Home"
+            },
+        )
+        .into_string();
+        assert!(out.contains(r#"<a href="/home" class="breadcrumb-link">Home</a>"#), "{out}");
+    }
+
+    #[test]
+    fn current_item_is_current_page() {
+        let out = breadcrumb_current(html! {
+            "Here"
+        })
+        .into_string();
+        assert!(
+            out.contains(r#"<span class="breadcrumb-current" aria-current="page">Here</span>"#),
+            "{out}"
+        );
     }
 }

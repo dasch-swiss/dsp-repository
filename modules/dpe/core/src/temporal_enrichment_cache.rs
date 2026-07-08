@@ -12,8 +12,6 @@
 //! lookup agree.
 //!
 //! Loaded from disk once on first access, like the other `*_cache` modules.
-//!
-//! Note: This module is gated with `#[cfg(not(target_arch = "wasm32"))]` in lib.rs.
 use std::collections::HashMap;
 use std::sync::OnceLock;
 

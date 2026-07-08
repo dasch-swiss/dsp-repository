@@ -1,39 +1,22 @@
 # Mosaic Playground
 
-A showcase and documentation application for the [mosaic-tiles](../tiles) component library. It serves as a development playground and storybook for exploring components with live examples, anatomy diagrams, and API references.
+A showcase and documentation application for the [mosaic-tiles](../tiles) component library. It serves as a development playground and storybook for exploring components with live examples and API references. It is a plain **Axum + Maud** binary — no Leptos, no WASM, no `cargo-leptos`.
 
 ## Running
 
 ```bash
-cargo leptos watch
+just watch-mosaic-playground
 ```
 
-The application will be available at `http://localhost:3000`.
+This runs Tailwind in `--watch` mode alongside the server with hot reload. The application is available at `http://localhost:3000`.
 
 ## Structure
 
-Each component page lives in `src/components/[name]/` with:
-
-- `anatomy.rs` - Component structure visualization
-- `component.toml` - Metadata, example definitions, and API docs
-- `examples/` - Individual example files demonstrating usage patterns
-
-The `component.toml` defines:
-
-- `name` - Component display name
-- `description` - Summary of what the components is
-- `[[examples]]` - Array of example
-  - with `name` must match the Rust file
-  - with `title` of the example page
-  - and `description` of the example
-- `[[references]]` - API documentation with component attributes
-  - `attr` - Attribute name
-  - `attr_type` - Rust type
-  - `default` - Default value
-  - `description` - What this attribute does
-
-Routes and pages are auto-generated from the TOML metadata via a procedural macro.
+- `src/showcase/<name>.rs` — a hand-written showcase page per component (title, description, and rendered examples), each a `fn -> maud::Markup`.
+- `src/showcase/mod.rs` — exports the showcase pages.
+- `src/app.rs` — declares the routes with the native Axum router and the sidebar navigation entries.
+- The document shell (head, nav, sidebar) is hand-written Maud in `src/app.rs`.
 
 ## Adding Components
 
-Use the `/add-component-to-playground` skill which provides step-by-step instructions for adding new component pages, including creating the directory structure, examples, TOML configuration, and registering routes.
+Use the `/add-mosaic-component` skill. It walks through adding the tile in `tiles/`, importing its CSS into the consuming Tailwind entries, creating the `src/showcase/<name>.rs` page, exporting it in `src/showcase/mod.rs`, and registering the route and sidebar nav entry in `src/app.rs`.

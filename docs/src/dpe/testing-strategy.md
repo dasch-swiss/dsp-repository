@@ -37,7 +37,7 @@ The DPE follows a 4-layer testing pyramid, adapted from the [Sipi testing strate
 
 - **Location**: `modules/dpe/web-e2e-tests/`
 - **Runner**: `npx playwright test`
-- **Scope**: Tab switching, search autocomplete, scroll preservation, accessibility (axe-core), visual regression
+- **Scope**: Tab switching, search autocomplete, scroll preservation, accessibility (axe-core)
 - **Accessibility**: Full-page axe-core scans against WCAG 2.1 AA
 
 ## Layer 4: Fuzz Testing
@@ -53,13 +53,13 @@ Target: **≤ 10 minutes** wall-clock per PR.
 
 ```
 Parallel job group 1 (~2 min):
-  cargo fmt --check
+  maudfmt --check + cargo fmt --check
   cargo clippy --all-targets -Dwarnings
   cargo-deny check
 
 Parallel job group 2 (~5 min):
   cargo nextest run --workspace
-  cargo leptos build --release
+  cargo build --release (dpe-server) + just css-release
   cargo-llvm-cov (coverage → Codecov)
 
 Parallel job group 3 (~5 min):

@@ -1,6 +1,6 @@
 # DPE -- Discovery and Presentation Environment
 
-Server-side rendered web application built with [Leptos](https://github.com/leptos-rs/leptos) and [Axum](https://github.com/tokio-rs/axum). Interactive behavior (tab switching, live search) is driven by [Datastar](https://data-star.dev/) SSE fragments -- no client-side WASM.
+Server-side rendered web application built with [Maud](https://maud.lambda.xyz/) and [Axum](https://github.com/tokio-rs/axum). Pages render to HTML on the server; interactive behavior (tab switching, live search) is driven by [Datastar](https://data-star.dev/) SSE fragments -- no client-side WASM.
 
 ## Project Structure
 
@@ -8,37 +8,40 @@ Server-side rendered web application built with [Leptos](https://github.com/lept
 dpe/
 ├── core/             # Pure domain types and data loading (crate: dpe-core)
 ├── api-oai/          # OAI-PMH 2.0 API (crate: dpe-api-oai)
-├── web/              # Leptos components and pages (crate: dpe-web)
-├── server/           # Server binary and fragment handlers (crate: dpe-server)
+├── web/              # Maud pages and components, `fn -> Markup` (crate: dpe-web)
+├── server/           # Server binary, routing, head, fragment handlers (crate: dpe-server)
+├── telemetry/        # Browser telemetry types and validation (crate: dpe-telemetry)
 ├── web-e2e-tests/    # Playwright E2E tests
-├── public/           # Static assets
-└── style/            # CSS / Tailwind configuration
+├── public/           # Static assets (served by ServeDir, includes compiled app.<hash>.css)
+└── style/            # Tailwind v4 entry (main.css)
 ```
 
 ## Prerequisites
 
 - Rust toolchain (managed via `rustup`)
-- `cargo-leptos` (`cargo install cargo-leptos --locked`)
-- Node.js + pnpm (for Tailwind CSS / DaisyUI)
 - [just](https://github.com/casey/just) command runner
+- [bacon](https://dystroy.org/bacon/) for the dev loop (`cargo install bacon`)
+
+The Tailwind CLI is fetched automatically by the `just css*` recipes; CSS needs no Node or pnpm.
 
 ## Running the Development Server
 
 ```bash
-just watch-dpe
+just dev
 ```
 
-Starts the server with hot reload at `http://127.0.0.1:4000`.
+Runs Tailwind in `--watch` mode alongside `bacon serve`, which rebuilds and restarts `dpe-server` on change. The server listens at `http://127.0.0.1:4000`.
 
 ## Building for Production
 
 ```bash
-cargo leptos build --project dpe --release
+cargo build --release --bin dpe-server   # static binary
+just css-release                          # content-hashed app.<hash>.css into public/assets/
 ```
 
 Output:
 - Server binary: `target/release/dpe-server`
-- Site assets: `modules/dpe/target/site/`
+- Compiled stylesheet: `modules/dpe/public/assets/app.<hash>.css`
 
 ## Testing
 
@@ -54,7 +57,7 @@ E2E tests use [Playwright](https://playwright.dev) and live in `web-e2e-tests/`.
 
 ```bash
 cd modules/dpe/web-e2e-tests
-pnpm install
+npm install
 npx playwright test
 ```
 
@@ -82,10 +85,10 @@ See `docs/src/dpe/operations.md` for the full list of environment variables, CLI
 
 ## Remote Deployment Without Toolchain
 
-After `cargo leptos build --release`, copy:
+After building the binary and stylesheet (see [Building for Production](#building-for-production)), copy:
 
 1. The server binary from `target/release/dpe-server`
-2. The `site/` directory from `modules/dpe/target/site/`
+2. The `public/` directory from `modules/dpe/public/` (static assets + the content-hashed `app.<hash>.css`)
 3. The data directory from `modules/dpe/server/data/`
 
-Set the environment variables documented in `docs/src/dpe/operations.md` and run the binary.
+Set the environment variables documented in `docs/src/dpe/operations.md` (notably `DPE_PUBLIC_DIR` and `DPE_DATA_DIR`) and run the binary.

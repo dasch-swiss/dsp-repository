@@ -26,6 +26,10 @@
 - [JSON API](./dpe/json-api.md)
 - [OAI-PMH Endpoint](./dpe/oai-pmh.md)
 
+## Mosaic
+
+- [Component API Conventions](./mosaic/component-api-conventions.md)
+
 ---
 
 # Fundamentals

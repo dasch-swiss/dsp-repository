@@ -1,0 +1,17 @@
+# bacon config for the DPE dev loop. Used by `just dev` / `just dev-otel`.
+
+default_job = "serve"
+
+[jobs.check]
+command = ["cargo", "check", "--all-targets", "--color", "always"]
+need_stdout = false
+
+[jobs.serve]
+command = ["cargo", "run", "--bin", "dpe-server", "--", "serve"]
+need_stdout = true
+background = false
+on_change_strategy = "kill_then_restart"
+# Graceful SIGINT so the server releases its port before restart.
+kill = ["kill", "-s", "INT"]
+# Also watch the tiles crate so tile changes rebuild.
+watch = ["modules/dpe", "modules/mosaic/tiles/src"]

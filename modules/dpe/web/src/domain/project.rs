@@ -1,11 +1,11 @@
-// Domain types (Project, ProjectRaw, etc.) are now in dpe-core.
-// This file retains only ProjectQuery which requires the Leptos Params derive.
+// Domain types (Project, ProjectRaw, etc.) live in dpe-core. This file retains
+// ProjectQuery: the projects-list query/filter state, deserialized from the URL
+// query string via Axum's `Query` extractor.
 
 use dpe_core::ACCESS_RIGHTS_VALUES;
-use leptos_router::params::Params;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize, leptos::Params, PartialEq, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct ProjectQuery {
     pub ongoing: Option<bool>,
     pub finished: Option<bool>,

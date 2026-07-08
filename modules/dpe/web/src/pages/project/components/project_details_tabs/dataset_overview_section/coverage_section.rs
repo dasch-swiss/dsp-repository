@@ -1,110 +1,102 @@
-use leptos::prelude::*;
+use dpe_core::models::AuthorityFileReference;
+use dpe_core::project::TemporalCoverage;
+use maud::{html, Markup};
 
-use crate::components::{should_render_value, PlaceholderValue};
-use crate::domain::models::AuthorityFileReference;
-use crate::domain::TemporalCoverage;
+use super::CHIP_PRIMARY;
+use crate::components::{placeholder_value, should_render_value};
 
-#[component]
-pub fn CoverageSection(
-    temporal_coverage: Vec<TemporalCoverage>,
-    spatial_coverage: Vec<AuthorityFileReference>,
-) -> impl IntoView {
-    let temporal_coverage: Vec<_> = temporal_coverage
-        .into_iter()
+/// Temporal + spatial coverage chips. Reference values that are placeholders
+/// render via [`placeholder_value`] (hidden in production); real references link
+/// out with a tooltip of the URL. Sections with no renderable values are omitted.
+pub fn coverage_section(temporal_coverage: &[TemporalCoverage], spatial_coverage: &[AuthorityFileReference]) -> Markup {
+    let temporal: Vec<&TemporalCoverage> = temporal_coverage
+        .iter()
         .filter(|t| match t {
             TemporalCoverage::Text(_) => true,
-            TemporalCoverage::Reference(ref_) => should_render_value(&ref_.url),
+            TemporalCoverage::Reference(r) => should_render_value(&r.url),
         })
         .collect();
+    let spatial: Vec<&AuthorityFileReference> =
+        spatial_coverage.iter().filter(|s| should_render_value(&s.url)).collect();
 
-    let spatial_coverage: Vec<_> = spatial_coverage.into_iter().filter(|s| should_render_value(&s.url)).collect();
+    html! {
+        @if !temporal.is_empty() {
+            div {
+                h3 class="dpe-subtitle" { "Temporal Coverage" }
+                div class="flex flex-wrap gap-1.5" {
+                    @for t in temporal {
+                        @match t {
+                            TemporalCoverage::Text(map) => {
+                                @let label = map
+                                    .iter()
+                                    .map(|(lang, text)| format!("{text} ({lang})"))
+                                    .collect::<Vec<_>>()
+                                    .join(" / ");
+                                span class=(CHIP_PRIMARY) { (label) }
+                            }
+                            TemporalCoverage::Reference(r) => {
+                                @if dpe_core::is_placeholder(&r.url) { (placeholder_value(&r.url)) } @else {
+                                    @let label = r.text.clone().unwrap_or_else(|| r.url.clone());
+                                    a href=(r.url) class="tooltip" data-tip=(r.url) {
+                                        span class=(CHIP_PRIMARY) { (label) }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        @if !spatial.is_empty() {
+            div {
+                h3 class="dpe-subtitle" { "Spatial Coverage" }
+                div class="flex flex-wrap gap-1.5" {
+                    @for s in spatial {
+                        @if dpe_core::is_placeholder(&s.url) { (placeholder_value(&s.url)) } @else {
+                            @let label = s.text.clone().unwrap_or_else(|| s.url.clone());
+                            a href=(s.url) class="tooltip" data-tip=(s.url) {
+                                span class=(CHIP_PRIMARY) { (label) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
-    view! {
-        {(!temporal_coverage.is_empty())
-            .then(|| {
-                view! {
-                    <div>
-                        <h3 class="dpe-subtitle">"Temporal Coverage"</h3>
-                        <div class="flex flex-wrap gap-1.5">
-                            {temporal_coverage
-                                .iter()
-                                .map(|t| match t {
-                                    TemporalCoverage::Text(map) => {
-                                        let label = map
-                                            .iter()
-                                            .map(|(lang, text)| format!("{} ({})", text, lang))
-                                            .collect::<Vec<_>>()
-                                            .join(" / ");
-                                        view! {
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700">
-                                                {label}
-                                            </span>
-                                        }
-                                            .into_any()
-                                    }
-                                    TemporalCoverage::Reference(ref_) => {
-                                        if dpe_core::is_placeholder(&ref_.url) {
-                                            view! { <PlaceholderValue value=ref_.url.clone() /> }
-                                                .into_any()
-                                        } else {
-                                            let label = ref_
-                                                .text
-                                                .clone()
-                                                .unwrap_or_else(|| ref_.url.clone());
-                                            view! {
-                                                <a
-                                                    href=ref_.url.clone()
-                                                    class="tooltip"
-                                                    data-tip=ref_.url.clone()
-                                                >
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700">
-                                                        {label}
-                                                    </span>
-                                                </a>
-                                            }
-                                                .into_any()
-                                        }
-                                    }
-                                })
-                                .collect_view()}
-                        </div>
-                    </div>
-                }
-                    .into_any()
-            })}
-        {(!spatial_coverage.is_empty())
-            .then(|| {
-                view! {
-                    <div>
-                        <h3 class="dpe-subtitle">"Spatial Coverage"</h3>
-                        <div class="flex flex-wrap gap-1.5">
-                            {spatial_coverage
-                                .iter()
-                                .map(|s| {
-                                    if dpe_core::is_placeholder(&s.url) {
-                                        view! { <PlaceholderValue value=s.url.clone() /> }
-                                            .into_any()
-                                    } else {
-                                        let label = s.text.clone().unwrap_or_else(|| s.url.clone());
-                                        view! {
-                                            <a
-                                                href=s.url.clone()
-                                                class="tooltip"
-                                                data-tip=s.url.clone()
-                                            >
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700">
-                                                    {label}
-                                                </span>
-                                            </a>
-                                        }
-                                            .into_any()
-                                    }
-                                })
-                                .collect_view()}
-                        </div>
-                    </div>
-                }
-                    .into_any()
-            })}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reference_coverage_links_out_with_tooltip() {
+        let temporal = vec![TemporalCoverage::Reference(AuthorityFileReference {
+            type_: "URL".to_string(),
+            url: "https://chronontology.dainst.org/period/x".to_string(),
+            text: Some("Bronze Age".to_string()),
+        })];
+        let out = coverage_section(&temporal, &[]).into_string();
+        assert!(out.contains("Temporal Coverage"), "{out}");
+        assert!(out.contains(r#"href="https://chronontology.dainst.org/period/x""#), "{out}");
+        assert!(out.contains(r#"data-tip="https://chronontology.dainst.org/period/x""#), "{out}");
+        assert!(out.contains("Bronze Age"), "{out}");
+    }
+
+    #[test]
+    fn spatial_reference_renders() {
+        let spatial = vec![AuthorityFileReference {
+            type_: "URL".to_string(),
+            url: "https://www.geonames.org/1".to_string(),
+            text: Some("Rome".to_string()),
+        }];
+        let out = coverage_section(&[], &spatial).into_string();
+        assert!(out.contains("Spatial Coverage"), "{out}");
+        assert!(out.contains("Rome"), "{out}");
+    }
+
+    #[test]
+    fn empty_renders_nothing() {
+        assert_eq!(coverage_section(&[], &[]).into_string(), "");
     }
 }

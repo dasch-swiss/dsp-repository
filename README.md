@@ -17,7 +17,7 @@ just docs-serve              # http://localhost:3000
 
 ```bash
 just install-requirements    # Install all dependencies
-just watch-dpe               # Run DPE at http://127.0.0.1:4000
+just dev                     # Run DPE at http://127.0.0.1:4000
 just watch-mosaic-playground # Run Mosaic playground
 ```
 

@@ -1,36 +1,44 @@
-use leptos::prelude::*;
+use dpe_core::{Project, ResolvedContributor};
+use maud::{html, Markup};
 
-use crate::domain::{lang_value, Project, ResolvedContributor};
-use crate::pages::project::components::breadcrumb::Breadcrumb;
-use crate::pages::project::components::project_details_tabs::ProjectDetailsTabs;
-use crate::pages::project::components::project_header::ProjectHeader;
-use crate::pages::project::components::project_sidebar::ProjectSidebar;
+use crate::pages::project::components::breadcrumb::breadcrumb;
+use crate::pages::project::components::project_details_tabs::{has_publications, project_tabs};
+use crate::pages::project::components::project_header::project_header;
+use crate::pages::project::components::project_sidebar::project_sidebar;
 
-#[component]
-pub fn ProjectDetails(proj: Project, contributors: Vec<ResolvedContributor>) -> impl IntoView {
-    view! {
-        <div class="space-y-6">
-            <Breadcrumb project_name=proj.name.clone() />
+/// The full project-detail view: breadcrumb, hero header, then the tabs (in a
+/// card) alongside the sidebar. `active_tab` selects which tab panel renders.
+pub fn project_details(proj: &Project, contributors: &[ResolvedContributor], active_tab: &str) -> Markup {
+    html! {
+        div class="space-y-6" {
+            (breadcrumb(&proj.name))
 
-            <ProjectHeader
-                name=proj.name.clone()
-                shortcode=proj.shortcode.clone()
-                description=lang_value(&proj.description).cloned().unwrap_or_default()
-                alternative_names=proj
-                    .alternative_names
-                    .as_deref()
-                    .unwrap_or_default()
-                    .iter()
-                    .filter_map(|m| lang_value(m).cloned())
-                    .collect()
-                url=proj.url.clone()
-                secondary_url=proj.secondary_url.clone()
-            />
+            (project_header(proj))
 
-            <div class="flex flex-col lg:flex-row gap-6 lg:items-start">
-                <ProjectDetailsTabs proj=proj.clone() contributors=contributors />
-                <ProjectSidebar proj=proj />
-            </div>
-        </div>
+            div class="flex flex-col lg:flex-row gap-6 lg:items-start" {
+                div class="card card-bordered overflow-visible p-4 space-y-4 text-gray-700 flex-1 pt-4"
+                { (project_tabs(proj, contributors, active_tab, has_publications(proj))) }
+                (project_sidebar(proj))
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::sample_project;
+
+    #[test]
+    fn assembles_breadcrumb_header_tabs_and_sidebar() {
+        let out = project_details(&sample_project(), &[], "overview").into_string();
+        assert!(out.contains("breadcrumb"), "breadcrumb: {out}");
+        assert!(out.contains(r#"id="project-tabs""#), "tabs morph root: {out}");
+        assert!(out.contains("Cite this Project"), "sidebar: {out}");
+        // The tabs card wrapper that the SSE fragment morphs within.
+        assert!(
+            out.contains(r#"class="card card-bordered overflow-visible p-4 space-y-4 text-gray-700 flex-1 pt-4""#),
+            "{out}"
+        );
     }
 }

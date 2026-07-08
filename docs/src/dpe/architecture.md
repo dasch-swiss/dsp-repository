@@ -11,57 +11,58 @@ dpe-core          Pure domain types, repositories, data loading
           ┌────────────┼────────────┐
           │            │            │
      dpe-api-oai   dpe-web     (future APIs)
-     OAI-PMH 2.0  Leptos SSR
-     + axum        + Datastar
+     OAI-PMH 2.0  Maud views
+     + axum
           │            │
           └────────────┘
                  │
            dpe-server
            Route composition
-           (binary: dpe)
+           + Datastar
+           (binary: dpe-server)
 ```
 
 - **dpe-core**: Framework-free domain layer. All types, repository traits, Fs implementations, and data loading.
-- **dpe-api-oai**: OAI-PMH 2.0 endpoint (see [OAI-PMH Endpoint](./oai-pmh.md)). Depends only on dpe-core — no Leptos.
-- **dpe-web**: Leptos SSR components, pages, and `#[server]` wrappers. Re-exports dpe-core types for backward compatibility.
-- **dpe-server**: Thin composition root. Wires Leptos routes (dpe-web) and API handlers (dpe-api-oai) into a single Axum server.
+- **dpe-api-oai**: OAI-PMH 2.0 endpoint (see [OAI-PMH Endpoint](./oai-pmh.md)). Depends only on dpe-core.
+- **dpe-web**: A native library of [Maud](https://maud.lambda.xyz/) page and component functions (`fn -> Markup`). Imports dpe-core types directly.
+- **dpe-server**: Thin composition root. Wires the native Axum router, the `<head>`/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers into a single Axum server.
 
 ## Hypermedia-Driven Architecture
 
-The DPE uses a **hypermedia-driven architecture** where the server is the single source of truth for UI state. Interactivity is provided by [Datastar](https://data-star.dev/) (~14KB JS) instead of client-side frameworks or WASM.
+The DPE uses a **hypermedia-driven architecture** where the server is the single source of truth for UI state. Pages are rendered as plain HTML with [Maud](https://maud.lambda.xyz/) (a compile-time HTML template macro), and interactivity is provided by [Datastar](https://data-star.dev/) (~14KB JS) instead of a client-side framework or WASM.
 
-**Why Datastar over Leptos islands:**
-- No WASM compilation step (faster builds)
-- Smaller client-side footprint (~14KB vs ~200KB+ WASM)
+**Why this approach:**
+- No WASM compilation step (faster builds, no `wasm32` toolchain)
+- Small client-side footprint (~14KB Datastar, no hydration bundle)
 - Server controls all state (HATEOAS)
 - Graceful degradation — works as plain HTML links without JavaScript
 - Simpler mental model — HTML attributes, not reactive signals
 
 ## Rendering Model
 
-Pages are rendered server-side by **Leptos SSR**. Dynamic content updates (tab switching, search autocomplete) are handled by **Datastar SSE fragments**.
+Pages are rendered server-side with **Maud** (`maud::html!` → `Markup`). Dynamic content updates (tab switching, search autocomplete) are handled by **Datastar SSE fragments**.
 
 ```
 Initial page load:
-  Browser → GET /projects/ABC1 → Leptos SSR → Full HTML page
+  Browser → GET /dpe/projects/ABC1 → Maud SSR → Full HTML page
 
 Tab switch (with JS):
-  Browser → GET /projects/ABC1/tab/publications (SSE)
+  Browser → GET /dpe/projects/ABC1/tab/publications (SSE)
          ← PatchElements (#project-tabs replacement)
          ← ExecuteScript (history.replaceState for URL)
 
 Tab switch (without JS):
-  Browser → GET /projects/ABC1?tab=publications → Full page reload
+  Browser → GET /dpe/projects/ABC1?tab=publications → Full page reload
 ```
 
 ## Fragment Route Convention
 
-Fragment endpoints are pure Axum handlers (not Leptos routes) that render Leptos components to HTML strings and deliver them as Datastar SSE events.
+Fragment endpoints are plain Axum handlers that render Maud `Markup` to HTML strings and deliver them as Datastar SSE events. The full page and the SSE fragment render the `#project-tabs` morph root through the same `project_tabs` function, so the two paths cannot drift.
 
 **Route pattern: resource-action nesting**
 
 ```
-GET /projects/{id}              → Full page (Leptos SSR)
+GET /projects/{id}              → Full page (Maud SSR)
 GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
 ```
 

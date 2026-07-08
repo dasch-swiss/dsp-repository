@@ -36,14 +36,11 @@ target/
 # Node.js dependencies
 node_modules/
 
-# Playwright test artifacts (but NOT baseline screenshots)
-modules/design_system/playground/tests/output/
-modules/design_system/playground/tests/.cache/
-
 .DS_Store
 
-# Generated Tailwind CSS output (built from input.css)
-modules/design_system/tailwind.css
+# Generated unified DPE stylesheet (built by `just css` / `just css-release`, DEV-6642)
+modules/dpe/public/assets/app.css
+modules/dpe/public/assets/app.*.css
 
 
 # Nix

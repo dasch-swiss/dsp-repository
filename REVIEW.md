@@ -31,6 +31,7 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 - [ ] Datastar attribute patterns match conventions (`_` prefix for signals)
 - [ ] Fragment handlers in `fragments/` module, not inline
 - [ ] Domain types in `dpe-core`, not in web or API crates
+- [ ] No non-trivial `html!` block passed directly as a function argument — bind to a `let` or extract a `fn -> Markup` helper (nested-as-arg `html!` gets mangled by `just fmt`)
 - [ ] Test files: `{feature}_tests.rs` (Rust), `{feature}.spec.ts` (Playwright)
 
 ## Skip

@@ -1,166 +1,215 @@
-use leptos::either::Either;
-use leptos::prelude::*;
+//! Tabs tile with CSS-only switching via hidden radio inputs.
+//!
+//! `tabs` renders the container; each `tab` renders a sibling triple
+//! (radio input, label, panel). All tabs in a group must share the same
+//! `name` so the radios form a mutually exclusive set. Switching is pure CSS
+//! (see `tabs.css`), no JavaScript.
+//!
+//! `tab(name, value, label, panel)` returns a [`TabBuilder`]; set the optional
+//! icon/checked state with chained methods and splice it into `html!` directly
+//! (it implements [`Render`]). Being a compound of three sibling elements, the
+//! tab has no single `id`/`data-testid` target, so it does not implement
+//! `ComponentBuilder`; it provides an inherent `.build()` for standalone use.
+//!
+//! NOTE (DEV-6642): this CSS-only radio tile emits no ARIA tab-widget semantics
+//! (`role="tablist"`/`"tab"`/`"tabpanel"`, `aria-selected`, `aria-controls`), so
+//! screen readers announce it as a radio group, not a tab interface. The DPE
+//! hand-rolls a second, richer tab implementation in
+//! `dpe-web`'s `pages/project/components/project_details_tabs` — a Datastar/SSE,
+//! URL-addressable tablist that *does* carry full ARIA + keyboard nav. These two
+//! should probably converge: grow this tile into the canonical, ARIA-complete
+//! tab component (with a `.selected()` semantic method) and have the DPE consume
+//! it, rather than maintaining two. Deferred — it's a design decision, not a
+//! mechanical change (CSS-radio vs Datastar-morph switching differ).
+//!
+//! ```
+//! use mosaic_tiles::tabs::{tab, tabs};
+//! use maud::html;
+//!
+//! let markup = tabs(html! {
+//!     (tab("g", "a", "A", html! { "Panel A" }).checked())
+//!     (tab("g", "b", "B", html! { "Panel B" }))
+//! });
+//! ```
 
-#[cfg(feature = "icon")]
-use crate::icon::IconData;
+use maud::{html, Markup, Render};
 
-/// Tabs container component that manages a set of tabs with CSS-only switching.
-///
-/// Tabs use radio buttons for CSS-only tab switching, providing an accessible
-/// and performant solution without JavaScript.
-///
-/// # Examples
-///
-/// ```rust,no_run
-/// use leptos::prelude::*;
-/// use mosaic_tiles::tabs::*;
-/// use mosaic_tiles::icon::*;
-///
-/// view! {
-///     <Tabs>
-///         <Tab
-///             name="my-tabs"
-///             value="tab1"
-///             label="First Tab"
-///             checked=true
-///         >
-///             <p>"Content of first tab"</p>
-///         </Tab>
-///         <Tab
-///             name="my-tabs"
-///             value="tab2"
-///             label="Second Tab"
-///             icon=IconSearch
-///         >
-///             <p>"Content of second tab"</p>
-///         </Tab>
-///     </Tabs>
-/// };
-/// ```
-#[component]
-pub fn Tabs(
-    /// The Tab components
-    #[prop(optional)]
-    children: Option<Children>,
-) -> impl IntoView {
-    view! {
-        <div class="tabs" style="border-width: 0">
-            {if let Some(children) = children {
-                Either::Left(children())
-            } else {
-                Either::Right(())
-            }}
-        </div>
+use crate::components::icon::{icon, IconData};
+
+/// Render the tabs container wrapping the given `tab` triples.
+#[must_use]
+pub fn tabs(content: impl Render) -> Markup {
+    html! {
+        div class="tabs" { (content) }
     }
 }
 
-/// Individual tab component with label, optional icon, and content panel.
-///
-/// Each Tab renders a radio input, label, and content panel. The radio inputs
-/// enable CSS-only tab switching. All tabs in a group must share the same `name`
-/// prop to function as a mutually exclusive set.
-///
-/// # Props
-///
-/// * `name` - Radio group name (must be the same for all tabs in a group)
-/// * `value` - Unique identifier for this tab
-/// * `label` - The tab label text
-/// * `icon` - Optional icon to display before the label (requires "icon" feature)
-/// * `checked` - Whether this tab is initially selected
-/// * `children` - The content to display when this tab is active
-///
-/// # Examples
-///
-/// ```rust,no_run
-/// use leptos::prelude::*;
-/// use mosaic_tiles::tabs::*;
-/// use mosaic_tiles::icon::*;
-///
-/// // Tab with icon
-/// view! {
-///     <Tab
-///         name="tabs"
-///         value="search"
-///         label="Search"
-///         icon=IconSearch
-///         checked=true
-///     >
-///         <p>"Search content"</p>
-///     </Tab>
-/// };
-///
-/// // Simple tab without icon
-/// view! {
-///     <Tab
-///         name="tabs"
-///         value="settings"
-///         label="Settings"
-///     >
-///         <p>"Settings content"</p>
-///     </Tab>
-/// };
-/// ```
-#[component]
-pub fn Tab(
-    /// Radio group name - must be the same for all tabs in a group
-    #[prop(into)]
+/// Builder for a single tab (radio input + label + panel). Construct with [`tab`].
+#[must_use = "a builder renders nothing unless it is spliced into `html!` or `.build()` is called"]
+pub struct TabBuilder {
     name: String,
-    /// Unique identifier for this tab
-    #[prop(into)]
     value: String,
-    /// The tab label text
-    #[prop(into)]
-    label: String,
-    /// Optional icon to display before the label
-    #[cfg(feature = "icon")]
-    #[prop(optional)]
+    label: Markup,
+    panel: Markup,
     icon: Option<IconData>,
-    /// Whether this tab is initially selected
-    #[prop(optional, into)]
-    checked: MaybeProp<bool>,
-    /// The content to display when this tab is active
-    #[prop(optional)]
-    children: Option<Children>,
-) -> impl IntoView {
-    let is_checked = Memo::new(move |_| checked.get().unwrap_or(false));
-    let input_id = format!("{}-{}", name, value);
+    checked: bool,
+}
 
-    view! {
-        <input
-            type="radio"
-            class="tab-input"
-            id=input_id.clone()
-            name=name
-            value=value
-            checked=is_checked.get()
-        />
-        <label class="tab-label" for=input_id>
-            {#[cfg(feature = "icon")]
-            if let Some(icon_data) = icon {
-                Either::Left(
-                    view! {
-                        <svg
-                            class="tab-icon"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox=icon_data.view_box
-                            fill="currentColor"
-                            inner_html=icon_data.data
-                        ></svg>
-                    },
-                )
-            } else {
-                Either::Right(())
-            }}
-            {#[cfg(not(feature = "icon"))]
-            ()}
-            <span>{label}</span>
-        </label>
-        <div class="tab-panel">
-            {if let Some(children) = children {
-                Either::Left(children())
-            } else {
-                Either::Right(())
-            }}
-        </div>
+/// Start a tab in group `name` with the given `value`, `label`, and panel
+/// content. All tabs in a group must share the same `name`. `label` is
+/// `impl Render` (a string or richer markup), consistent with the other tiles.
+pub fn tab(name: impl Into<String>, value: impl Into<String>, label: impl Render, panel: impl Render) -> TabBuilder {
+    TabBuilder {
+        name: name.into(),
+        value: value.into(),
+        label: label.render(),
+        panel: panel.render(),
+        icon: None,
+        checked: false,
+    }
+}
+
+impl TabBuilder {
+    /// Show an icon before the label.
+    pub fn icon(mut self, icon: IconData) -> Self {
+        self.icon = Some(icon);
+        self
+    }
+
+    /// Mark this tab initially selected.
+    pub fn checked(mut self) -> Self {
+        self.checked = true;
+        self
+    }
+
+    fn markup(&self) -> Markup {
+        let input_id = format!("{}-{}", self.name, self.value);
+        html! {
+            input
+                type="radio"
+                class="tab-input"
+                id=(input_id)
+                name=(self.name)
+                value=(self.value)
+                checked[self.checked];
+            label class="tab-label" for=(input_id) {
+                @if let Some(tab_icon) = self.icon { (icon(tab_icon, "tab-icon")) }
+                span { (self.label) }
+            }
+            div class="tab-panel" { (self.panel) }
+        }
+    }
+
+    /// Render to `Markup` (for standalone use; inside `html!`, splice directly).
+    pub fn build(self) -> Markup {
+        self.markup()
+    }
+}
+
+impl Render for TabBuilder {
+    fn render(&self) -> Markup {
+        self.markup()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::components::icon::IconSearch;
+
+    #[test]
+    fn container_wraps_content() {
+        let out = tabs(html! {
+            "x"
+        })
+        .into_string();
+        assert!(out.contains(r#"<div class="tabs">x</div>"#), "{out}");
+    }
+
+    #[test]
+    fn tab_renders_input_label_panel_triple() {
+        let out = tab(
+            "grp",
+            "one",
+            "One",
+            html! {
+                "Panel"
+            },
+        )
+        .build()
+        .into_string();
+        assert!(
+            out.contains(r#"<input type="radio" class="tab-input" id="grp-one" name="grp" value="one">"#),
+            "{out}"
+        );
+        assert!(out.contains(r#"<label class="tab-label" for="grp-one">"#), "{out}");
+        assert!(out.contains("<span>One</span>"), "{out}");
+        assert!(out.contains(r#"<div class="tab-panel">Panel</div>"#), "{out}");
+    }
+
+    #[test]
+    fn checked_tab_has_checked_attribute() {
+        let out = tab("g", "v", "L", html! {}).checked().build().into_string();
+        assert!(out.contains("checked"), "{out}");
+    }
+
+    #[test]
+    fn unchecked_tab_omits_checked_attribute() {
+        let out = tab("g", "v", "L", html! {}).build().into_string();
+        assert!(!out.contains("checked"), "{out}");
+    }
+
+    #[test]
+    fn tab_with_icon_renders_tab_icon_svg() {
+        let out = tab("g", "v", "L", html! {}).icon(IconSearch).build().into_string();
+        // The tab icon is rendered through the shared `icon()` tile, so it
+        // carries the base `icon` class and is `aria-hidden`.
+        assert!(out.contains(r#"<svg class="icon tab-icon""#), "{out}");
+        assert!(out.contains(r#"aria-hidden="true""#), "{out}");
+    }
+
+    #[test]
+    fn tab_label_accepts_markup() {
+        let out = tab(
+            "g",
+            "v",
+            html! {
+                span { "Rich" }
+            },
+            html! {},
+        )
+        .build()
+        .into_string();
+        assert!(out.contains("<span>Rich</span>"), "{out}");
+    }
+
+    #[test]
+    fn renders_identically_whether_spliced_or_built() {
+        let built = tab(
+            "g",
+            "v",
+            "L",
+            html! {
+                "p"
+            },
+        )
+        .checked()
+        .build()
+        .into_string();
+        let spliced = html! {
+            ({
+                tab(
+                        "g",
+                        "v",
+                        "L",
+                        html! {
+                            "p"
+                        },
+                    )
+                    .checked()
+            })
+        }
+        .into_string();
+        assert_eq!(built, spliced);
     }
 }

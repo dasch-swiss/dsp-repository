@@ -6,7 +6,8 @@ Agent reference card for the **work phase**. All authoritative detail lives in `
 
 - **Crate naming and API crate pattern**: See `docs/src/repo_structure.md`
 - **Fragment routes and Datastar attributes**: See `docs/src/dpe/architecture.md`
-- **Formatting**: Defined in `.rustfmt.toml`. Use `leptosfmt` for Leptos code. Run `just fmt`.
+- **Formatting**: Rust style in `.rustfmt.toml`. Run `just fmt`: `maudfmt` formats the `html!` Maud macro contents (stock rustfmt does not), then `cargo +nightly fmt` handles the rest. `just check` verifies both.
+- **No nested `html!` as a function argument**: bind non-trivial inner markup to a Rust `let` (`let body = html! { … }; card(body)`) or extract a `fn … -> Markup` helper — don't pass a multi-element `html! { … }` block directly into a call. `maudfmt` only formats `html!` at Rust statement/`let` position; a block nested as a call argument (or via Maud's in-macro `@let x = html! { … }`) is skipped and then mangled by `cargo fmt`. Trivial one-liners like `html! { (label) }` are fine inline.
 - **Linting**: Strict clippy warnings. Run `just check`.
 
 ## Testing Conventions

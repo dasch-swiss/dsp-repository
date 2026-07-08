@@ -45,18 +45,14 @@ pub fn language_display_name(code: &str) -> &str {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 use std::sync::OnceLock;
 
-#[cfg(not(target_arch = "wasm32"))]
 static DATA_DIR: OnceLock<String> = OnceLock::new();
 
-#[cfg(not(target_arch = "wasm32"))]
 static SHOW_PLACEHOLDER_VALUES: OnceLock<bool> = OnceLock::new();
 
 /// Set the data directory path at startup. Must be called before any data access.
 /// Thread-safe: uses OnceLock (first call wins, subsequent calls are no-ops).
-#[cfg(not(target_arch = "wasm32"))]
 pub fn set_data_dir(path: &str) {
     if DATA_DIR.set(path.to_string()).is_err() {
         tracing::warn!(
@@ -71,7 +67,6 @@ pub fn set_data_dir(path: &str) {
 ///
 /// Priority: OnceLock (set by main.rs) → DPE_DATA_DIR env var → DATA_DIR env var → development
 /// default. Falls back to setting the OnceLock from env/default on first call.
-#[cfg(not(target_arch = "wasm32"))]
 pub fn get_data_dir() -> &'static str {
     DATA_DIR.get_or_init(|| {
         std::env::var("DPE_DATA_DIR")
@@ -82,7 +77,6 @@ pub fn get_data_dir() -> &'static str {
 
 /// Set whether placeholder values ("MISSING", "CALCULATED") should be shown in the UI.
 /// Thread-safe: uses OnceLock (first call wins, subsequent calls are no-ops).
-#[cfg(not(target_arch = "wasm32"))]
 pub fn set_show_placeholder_values(show: bool) {
     if SHOW_PLACEHOLDER_VALUES.set(show).is_err() {
         tracing::warn!(
@@ -98,7 +92,6 @@ pub fn set_show_placeholder_values(show: bool) {
 /// Priority: OnceLock (set by main.rs) → DPE_SHOW_PLACEHOLDER_VALUES env var → false.
 /// When true, placeholders are rendered with red styling for QA visibility.
 /// When false (default/production), placeholders are hidden entirely.
-#[cfg(not(target_arch = "wasm32"))]
 pub fn show_placeholder_values() -> bool {
     *SHOW_PLACEHOLDER_VALUES.get_or_init(|| {
         std::env::var("DPE_SHOW_PLACEHOLDER_VALUES")

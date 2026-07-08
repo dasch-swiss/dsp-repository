@@ -1,7 +1,6 @@
 mod global;
-pub mod loading;
 pub mod placeholder_value;
 
-pub use global::footer::Footer;
-pub use global::header::Header;
-pub use placeholder_value::{should_render_value, PlaceholderValue};
+pub use global::footer::footer;
+pub use global::header::header;
+pub use placeholder_value::{placeholder_value, should_render_value};

@@ -40,8 +40,8 @@ jobs:
         uses: extractions/setup-just@v4
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@main
-      - name: Install leptosfmt
-        run: cargo binstall -y leptosfmt
+      - name: Install maudfmt
+        run: cargo binstall -y maudfmt@0.1.8
       - name: just check
         run: just check
 
@@ -78,7 +78,7 @@ jobs:
       # intentionally no target specifier; see https://github.com/jonhoo/rust-ci-conf/pull/4
       # --feature-powerset runs for every combination of features
       - name: cargo hack
-        run: cargo hack --feature-powerset --exclude-no-default-features --exclude mosaic-tiles check
+        run: cargo hack --feature-powerset --exclude-no-default-features check
 
   lint-e2e:
     runs-on: ubuntu-latest

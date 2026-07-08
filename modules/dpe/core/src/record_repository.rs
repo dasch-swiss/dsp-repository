@@ -11,24 +11,20 @@ pub trait RecordRepository {
 /// Filesystem-backed implementation of [`RecordRepository`].
 ///
 /// Backed by the in-process record cache (loaded once on first access).
-#[cfg(not(target_arch = "wasm32"))]
 pub struct FsRecordRepository;
 
-#[cfg(not(target_arch = "wasm32"))]
 impl Default for FsRecordRepository {
     fn default() -> Self {
         Self
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl FsRecordRepository {
     pub fn new() -> Self {
         Self
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 impl RecordRepository for FsRecordRepository {
     #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn get_all(&self) -> &[Record] {

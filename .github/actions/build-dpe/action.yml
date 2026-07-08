@@ -1,5 +1,5 @@
 name: Build DPE
-description: Compile DPE (Rust musl binary + Leptos site assets) and stage to staging/
+description: Compile DPE (static musl dpe-server binary + content-hashed Tailwind app.css) and stage to staging/
 
 runs:
   using: composite
@@ -13,30 +13,18 @@ runs:
       shell: bash
       run: sudo apt-get update -y && sudo apt-get install -y --no-install-recommends musl-tools clang
 
-    - name: Install cargo-binstall
-      uses: cargo-bins/cargo-binstall@main
-
-    - name: Install cargo-leptos
+    - name: Add build target
       shell: bash
-      run: cargo binstall cargo-leptos -y --force
+      run: rustup target add x86_64-unknown-linux-musl
 
-    - name: Add build targets
+    - name: Install just
+      uses: extractions/setup-just@v4
+
+    - name: Build stylesheet
       shell: bash
-      run: rustup target add wasm32-unknown-unknown x86_64-unknown-linux-musl
-
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 24
-
-    - name: Install pnpm and dependencies
-      shell: bash
-      run: |
-        npm install -g pnpm
-        cd modules/dpe && CI=true pnpm install --frozen-lockfile
-
-    - name: Build site assets
-      shell: bash
-      run: cargo leptos build --project dpe --release -vv
+      # Standalone Tailwind CLI → modules/dpe/public/assets/app.<hash>.css.
+      # No Node/npm needed: the CLI bundles the official plugins.
+      run: just css-release
 
     - name: Build static musl binary
       shell: bash
@@ -47,6 +35,6 @@ runs:
       run: |
         mkdir -p staging
         cp target/x86_64-unknown-linux-musl/release/dpe-server staging/
-        cp -r modules/dpe/target/site staging/
+        cp -r modules/dpe/public staging/
         cp -r modules/dpe/server/data staging/
         cp modules/dpe/Dockerfile staging/

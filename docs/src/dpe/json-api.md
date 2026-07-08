@@ -15,7 +15,7 @@ Read-only JSON endpoints that expose DaSCH research project metadata. They serve
 
 | Environment | Base URL |
 |-------------|----------|
-| Local development (`just watch-dpe`) | `http://localhost:4000` |
+| Local development (`just dev`) | `http://localhost:4000` |
 | DEV | `https://api.dev.dasch.swiss` |
 | Production | Not yet deployed |
 

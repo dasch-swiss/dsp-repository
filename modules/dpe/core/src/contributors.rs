@@ -38,10 +38,8 @@ pub trait ContributorLookup {
 
 /// Production [`ContributorLookup`] backed by the in-process person and
 /// organization caches.
-#[cfg(not(target_arch = "wasm32"))]
 pub struct CachedContributorLookup;
 
-#[cfg(not(target_arch = "wasm32"))]
 impl ContributorLookup for CachedContributorLookup {
     fn person(&self, id: &str) -> Option<Person> {
         load_person(id)
@@ -52,12 +50,10 @@ impl ContributorLookup for CachedContributorLookup {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 pub fn load_person(id: &str) -> Option<Person> {
     super::person_cache::all_persons().get(id).cloned()
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 pub fn load_organization(id: &str) -> Option<Organization> {
     super::organization_cache::all_organizations().get(id).cloned()
 }

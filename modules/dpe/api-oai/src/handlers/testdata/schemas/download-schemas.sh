@@ -4,7 +4,7 @@
 #
 # Run this script from within the schemas/ directory to refresh the local copies:
 #
-#   cd modules/leptos-dpe/server/src/oai/handlers/testdata/schemas/
+#   cd modules/dpe/api-oai/src/handlers/testdata/schemas/
 #   bash download-schemas.sh
 #
 # Sources:

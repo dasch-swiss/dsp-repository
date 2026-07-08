@@ -1,22 +1,11 @@
 // Project-list domain helpers.
 //
-// These were previously `#[server]` async fns (Leptos server functions). DPE
-// has no WASM client, so the server-fn indirection just exposed reactive
-// `Resource::new(..)` panic surfaces in `<Suspense>::dry_resolve` under
-// streaming SSR. The bodies are pure synchronous reads of the in-memory
-// project cache (`dpe_core::all_projects`), so we expose them as plain `pub fn`
-// gated on non-wasm — matching the cfg of `dpe_core::all_projects` itself —
-// and call them directly from page components and fragment handlers.
-//
-// `dpe-web` is still compiled for `wasm32-unknown-unknown` by cargo-leptos
-// (lib-package), but DPE renders SSR-only and the wasm output never executes;
-// gating on non-wasm avoids dragging the disk-backed cache into the wasm
-// build.
+// Plain synchronous reads of the in-memory project cache
+// (`dpe_core::all_projects`), called directly from page handlers and the SSE
+// fragment handler.
 
-#[cfg(not(target_arch = "wasm32"))]
 use dpe_core::{Page, Project};
 
-#[cfg(not(target_arch = "wasm32"))]
 pub fn list_type_of_data() -> Vec<String> {
     use std::collections::HashSet;
 
@@ -33,7 +22,6 @@ pub fn list_type_of_data() -> Vec<String> {
     result
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 pub fn list_data_languages() -> Vec<(String, String)> {
     use std::collections::HashSet;
 
@@ -58,7 +46,6 @@ pub fn list_data_languages() -> Vec<(String, String)> {
     result
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 #[allow(clippy::too_many_arguments)]
 pub fn list_projects(
     ongoing: Option<bool>,
@@ -88,12 +75,6 @@ pub fn list_projects(
     filter_and_paginate(all_projects(), &query, page_size)
 }
 
-// Gated on non-wasm targets to match `dpe_core::all_projects` (the only
-// realistic source of the `&[Project]` argument); the previous narrower
-// `#[cfg(feature = "ssr")]` gate kept the function from compiling under
-// `cargo hack --features default`, even though the body only touches plain
-// `dpe_core` types and has nothing SSR-specific.
-#[cfg(not(target_arch = "wasm32"))]
 pub fn filter_and_paginate(projects: &[Project], query: &super::project::ProjectQuery, page_size: Option<i32>) -> Page {
     use dpe_core::{AccessRightsType, ProjectStatus};
 
@@ -180,7 +161,42 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
     Page { items, nr_pages, total_items }
 }
 
-#[cfg(all(test, feature = "ssr"))]
+pub fn get_project(shortcode: &str) -> Option<Project> {
+    use std::fs;
+    use std::path::PathBuf;
+
+    use dpe_core::{get_data_dir, CollectionRef};
+
+    // Look up the base project from the in-memory cache — case-insensitive,
+    // so e.g. /dpe/projects/080c resolves to the project stored as 080C.
+    let base = dpe_core::project_cache::project_by_shortcode(shortcode)?;
+    let mut project = base.clone();
+    let canonical_shortcode = project.shortcode.clone();
+
+    // Resolve clusters from the in-memory cache (reverse lookup). Compare
+    // case-insensitively so cluster files referencing a different case still
+    // resolve to the same project.
+    project.clusters = dpe_core::cluster_cache::clusters_for_shortcode(&canonical_shortcode);
+
+    // Resolve collection IDs stored on the cached project.
+    let data_path = PathBuf::from(get_data_dir());
+    let collections_dir = data_path.join("collections");
+    project.collections = project
+        .collection_ids
+        .iter()
+        .filter(|id| id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'))
+        .filter_map(|id| {
+            let path = collections_dir.join(format!("{}.json", id));
+            fs::read_to_string(&path)
+                .ok()
+                .and_then(|json: String| serde_json::from_str::<CollectionRef>(&json).ok())
+        })
+        .collect();
+
+    Some(project)
+}
+
+#[cfg(test)]
 mod tests {
     use std::collections::HashMap;
 
@@ -597,40 +613,4 @@ mod tests {
         let qs = q.to_query_string();
         assert!(qs.contains("page=2"), "got: {qs}");
     }
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-pub fn get_project(shortcode: &str) -> Option<Project> {
-    use std::fs;
-    use std::path::PathBuf;
-
-    use dpe_core::{get_data_dir, CollectionRef};
-
-    // Look up the base project from the in-memory cache — case-insensitive,
-    // so e.g. /dpe/projects/080c resolves to the project stored as 080C.
-    let base = dpe_core::project_cache::project_by_shortcode(shortcode)?;
-    let mut project = base.clone();
-    let canonical_shortcode = project.shortcode.clone();
-
-    // Resolve clusters from the in-memory cache (reverse lookup). Compare
-    // case-insensitively so cluster files referencing a different case still
-    // resolve to the same project.
-    project.clusters = dpe_core::cluster_cache::clusters_for_shortcode(&canonical_shortcode);
-
-    // Resolve collection IDs stored on the cached project.
-    let data_path = PathBuf::from(get_data_dir());
-    let collections_dir = data_path.join("collections");
-    project.collections = project
-        .collection_ids
-        .iter()
-        .filter(|id| id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'))
-        .filter_map(|id| {
-            let path = collections_dir.join(format!("{}.json", id));
-            fs::read_to_string(&path)
-                .ok()
-                .and_then(|json: String| serde_json::from_str::<CollectionRef>(&json).ok())
-        })
-        .collect();
-
-    Some(project)
 }

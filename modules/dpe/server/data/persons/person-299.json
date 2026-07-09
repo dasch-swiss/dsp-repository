@@ -1,0 +1,16 @@
+{
+    "id": "person-299",
+    "givenNames": [
+        "Philipp"
+    ],
+    "familyNames": [
+        "Marti"
+    ],
+    "jobTitles": [
+        "Wissenschaftlicher Mitarbeiter"
+    ],
+    "affiliations": [
+        "organization-100"
+    ],
+    "email": "philipp.marti@fhnw.ch"
+}

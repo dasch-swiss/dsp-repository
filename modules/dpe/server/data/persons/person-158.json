@@ -1,0 +1,22 @@
+{
+    "id": "person-158",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://selinabaechli.ch/",
+            "text": "https://selinabaechli.ch/"
+        }
+    ],
+    "givenNames": [
+        "Selina"
+    ],
+    "familyNames": [
+        "Bächli"
+    ],
+    "jobTitles": [
+        "Scientific Illustrator (BA)"
+    ],
+    "affiliations": [
+        "organization-059"
+    ]
+}

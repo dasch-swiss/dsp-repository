@@ -1,0 +1,72 @@
+[workspace]
+members = [
+  "modules/mosaic/playground",
+  "modules/mosaic/tiles",
+  "modules/dpe/core",
+  "modules/dpe/api-oai",
+  "modules/dpe/web",
+  "modules/dpe/server",
+  "modules/dpe/telemetry",
+]
+resolver = "3"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace.package]
+version = "0.9.0"
+edition = "2021"
+homepage = "https://github.com/dasch-swiss/dsp-repository"
+repository = "https://github.com/dasch-swiss/dsp-repository"
+documentation = "https://github.com/dasch-swiss/dsp-repository"
+readme = "README.md"
+description = "The DSP-Repository provides tooling and services for transforming, validating, and serving research project metadata and data. It is part of the DaSCH Service Platform, supporting FAIR principles for research data in the humanities."
+authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
+
+[workspace.dependencies]
+axum = { version = "0.8.9", features = ["macros", "ws"] }
+insta = { version = "1.47", features = ["yaml", "filters"] }
+datastar = { version = "0.3", features = ["axum"] }
+# Templating (`axum` feature gives `impl IntoResponse for Markup`).
+maud = { version = "0.27", features = ["axum"] }
+log = "0.4.30"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tower = "0.5.3"
+tower_governor = "0.6"
+tower-http = { version = "0.6.11", features = ["trace", "fs", "cors"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+# OpenTelemetry
+axum-tracing-opentelemetry = "0.33"
+init-tracing-opentelemetry = { version = "0.36", features = [
+    "otlp",
+    "metrics",
+    "tracing_subscriber_ext",
+] }
+tracing-opentelemetry-instrumentation-sdk = "0.32"
+opentelemetry = { version = "0.31", features = ["metrics"] }
+opentelemetry_sdk = { version = "0.31", features = ["rt-tokio", "metrics", "logs"] }
+opentelemetry-otlp = { version = "0.31", features = ["grpc-tonic", "trace", "metrics", "logs"] }
+opentelemetry-appender-tracing = "0.31"
+tracing-opentelemetry = "0.32"
+# Continuous profiling
+pyroscope = { version = "2.0.4", features = ["backend-pprof-rs"] }
+url = { version = "2", features = ["serde"] }
+uuid = { version = "1.23", features = ["v4", "v7"] }
+http = "1.4.1"
+thiserror = "2.0.12"
+quick-xml = "0.37"
+chrono = { version = "0.4" }
+proptest = "1"
+
+# Build profiles
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 'z'
+# Keep DWARF line tables so panic backtraces in production show file:line.
+# Cheap (~10-20% binary size, no runtime cost) and required for the panic
+# hook in dpe-server to produce actionable stacktraces — paired with
+# `RUST_BACKTRACE=1` in modules/dpe/Dockerfile.
+debug = "line-tables-only"

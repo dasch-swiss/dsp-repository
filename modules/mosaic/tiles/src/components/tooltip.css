@@ -1,0 +1,24 @@
+@layer components {
+  /* CSS-only hover/focus tooltip. Markup: `class="tooltip"` + `data-tip="…"`.
+     The bubble text comes from the `data-tip` attribute.
+     Purely decorative — provide an accessible name
+     (`sr-only` text or `aria-label`) separately where the tooltip is the only
+     label. Default position is above; `tooltip-left` positions it to the left. */
+  .tooltip {
+    @apply relative inline-block;
+  }
+
+  .tooltip::before {
+    content: attr(data-tip);
+    @apply absolute bottom-full left-1/2 z-50 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-150 pointer-events-none;
+  }
+
+  .tooltip:hover::before,
+  .tooltip:focus-visible::before {
+    @apply opacity-100;
+  }
+
+  .tooltip-left::before {
+    @apply bottom-1/2 left-auto right-full mr-1 mb-0 translate-x-0 translate-y-1/2;
+  }
+}

@@ -1,0 +1,50 @@
+name: Scout / Mosaic Playground
+
+on:
+  pull_request:
+    paths:
+      - "modules/mosaic/**"
+      - "Cargo.lock"
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Docker Scout / Mosaic Playground
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image locally
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: modules/mosaic/playground/Dockerfile
+          load: true
+          push: false
+          tags: local-scan/mosaic-playground:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - uses: ./.github/actions/docker-scout
+        with:
+          image: local://local-scan/mosaic-playground:latest
+          sarif-file: scout-mosaic.sarif
+          sarif-category: docker-scout-mosaic-playground
+          docker-user: ${{ secrets.DOCKER_USER }}
+          docker-hub-token: ${{ secrets.DOCKER_HUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,32 @@
+{
+    "id": "person-360",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5470-8720",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5470-8720"
+        },
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5470-8720",
+            "text": "ORCID URL: 0000-0002-5470-8720"
+        }
+    ],
+    "givenNames": [
+        "Rita"
+    ],
+    "familyNames": [
+        "Gautschy"
+    ],
+    "jobTitles": [
+        "Prof. Dr.",
+        "Scientific Collaborator",
+        "Professor"
+    ],
+    "affiliations": [
+        "organization-032",
+        "organization-056",
+        "organization-032"
+    ],
+    "email": "rita.gautschy@dasch.swiss"
+}

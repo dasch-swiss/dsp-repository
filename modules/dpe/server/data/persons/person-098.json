@@ -1,0 +1,24 @@
+{
+    "id": "person-098",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://stephangraf.ch/",
+            "text": "https://stephangraf.ch/"
+        }
+    ],
+    "givenNames": [
+        "Stephan"
+    ],
+    "familyNames": [
+        "Graf"
+    ],
+    "jobTitles": [
+        "Project Consultant",
+        "Research associate"
+    ],
+    "affiliations": [
+        "organization-034"
+    ],
+    "email": "mail@stephangraf.ch"
+}

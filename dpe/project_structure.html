@@ -248,7 +248,7 @@
 ├── core/             dpe-core          Pure domain (serde only)
 ├── telemetry/        dpe-telemetry     Telemetry types and validation (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
-├── web/              dpe-web           Leptos SSR + Datastar fragments
+├── web/              dpe-web           Maud view library (pages + components)
 ├── server/           dpe-server        Axum binary (composition root)
 ├── web-e2e-tests/                      Playwright E2E tests
 ├── public/                             Static assets
@@ -258,7 +258,7 @@
 <pre><code>dpe-core              ← pure domain, no framework deps
   ↑
   ├── dpe-api-oai     ← OAI-PMH endpoint
-  ├── dpe-web         ← Leptos SSR pages + components
+  ├── dpe-web         ← Maud pages + components
   └── dpe-server      ← composition root, Datastar fragment handlers
        ↑
        dpe-telemetry  ← telemetry types and validation (serde only)
@@ -276,15 +276,15 @@
 <p>Dependencies: <code>serde</code>, <code>serde_json</code> only.</p>
 <h3 id="dpe-api-oai-api-oai"><a class="header" href="#dpe-api-oai-api-oai"><code>dpe-api-oai</code> (api-oai/)</a></h3>
 <p>OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord). Usage is documented in <a href="./oai-pmh.html">OAI-PMH Endpoint</a>.</p>
-<p>Depends on <code>dpe-core</code> for domain types — no Leptos or web framework dependency.</p>
+<p>Depends on <code>dpe-core</code> for domain types — no web framework dependency.</p>
 <h3 id="dpe-web-web"><a class="header" href="#dpe-web-web"><code>dpe-web</code> (web/)</a></h3>
-<p>Leptos SSR web layer. Contains:</p>
+<p>Maud view library — a plain <code>lib</code> crate of page and component functions returning <code>maud::Markup</code>. Contains:</p>
 <ul>
 <li><strong>Pages</strong>: <code>home</code>, <code>about</code>, <code>project</code>, <code>projects</code> (with filters and pagination)</li>
-<li><strong>Components</strong>: navbar, footer, project cards, tab panels, search input</li>
-<li><strong>Domain re-exports</strong>: <code>domain/mod.rs</code> re-exports <code>dpe-core</code> types for a single import path</li>
-<li><strong>Server functions</strong>: <code>#[server]</code> wrappers around <code>dpe-core</code> functions</li>
+<li><strong>Components</strong>: navbar, footer, project cards, tab panels, search input — small <code>fn -&gt; Markup</code> partials</li>
+<li><strong>Data access</strong>: loaders and resolvers (<code>get_project</code>, <code>list_projects</code>, <code>get_contributors</code>) as plain functions over <code>dpe-core</code></li>
 </ul>
+<p>Imports <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
 <h3 id="dpe-telemetry-telemetry"><a class="header" href="#dpe-telemetry-telemetry"><code>dpe-telemetry</code> (telemetry/)</a></h3>
 <p>Telemetry types and validation logic. Extracted as a library crate so fuzz targets can test the real code. Contains:</p>
 <ul>
@@ -297,8 +297,9 @@
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
 <p>Composition root and Axum binary. Contains:</p>
 <ul>
-<li><strong>Route wiring</strong>: Leptos SSR routes, OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code>, <code>/telemetry/collect</code></li>
-<li><strong>Fragment handlers</strong>: <code>fragments.rs</code> — pure Axum handlers that render Leptos components to HTML and return Datastar SSE events</li>
+<li><strong>Route wiring</strong>: native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code>, <code>/telemetry/collect</code>, plus <code>ServeDir</code> static serving and a 404 fallback</li>
+<li><strong>Head/page shell</strong>: <code>view.rs</code> — the hand-written <code>head()</code> + <code>page()</code> partials (title, content-hashed stylesheet link, conditional <code>traceparent</code> meta, fonts, Fathom, Datastar + telemetry scripts)</li>
+<li><strong>Fragment handlers</strong>: <code>fragments.rs</code> — plain Axum handlers that render Maud <code>Markup</code> to HTML and return Datastar SSE events</li>
 <li><strong>Telemetry collector</strong>: <code>telemetry_collector.rs</code> — converts browser beacons to OTel metrics and structured logs (uses types from <code>dpe-telemetry</code>)</li>
 <li><strong>Configuration</strong>: <code>config.rs</code> — figment-based layered config (defaults → <code>dpe.toml</code> → <code>DPE_*</code> env vars)</li>
 <li><strong>Logging</strong>: OTel-aware subscriber via <code>init-tracing-opentelemetry</code></li>
@@ -307,8 +308,8 @@
 <ul>
 <li><strong>Domain types in <code>dpe-core</code></strong>, not in web or API crates</li>
 <li><strong>API crates depend on <code>dpe-core</code> only</strong>, never on each other or on <code>dpe-web</code></li>
-<li><strong><code>dpe-server</code> contains no business logic</strong> — only route composition and fragment rendering</li>
-<li><strong>Fragment handlers</strong> use <code>Owner::new()</code> + <code>view! { ... }.to_html()</code> to render Leptos components from pure Axum handlers</li>
+<li><strong><code>dpe-server</code> contains no business logic</strong> — only route composition, the head/page shell, and fragment rendering</li>
+<li><strong>Fragment handlers</strong> call dpe-web view functions and render their <code>Markup</code> with <code>.into_string()</code>, then wrap it in Datastar <code>PatchElements</code>/<code>ExecuteScript</code> SSE events</li>
 </ul>
 
                     </main>

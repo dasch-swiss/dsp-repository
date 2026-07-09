@@ -249,7 +249,7 @@
 ├── dpe/                       # Discovery and Presentation Environment
 │   ├── core/                  # Pure domain types, repositories, data loading (crate: dpe-core)
 │   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
-│   ├── web/                   # Web layer: Leptos components, pages (crate: dpe-web)
+│   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
 │   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
 │   ├── telemetry/             # Telemetry types and validation (crate: dpe-telemetry)
 │   ├── web-e2e-tests/         # Playwright E2E tests
@@ -257,22 +257,20 @@
 │   ├── style/                 # CSS / Tailwind
 │   └── Dockerfile             # Production container image
 └── mosaic/                    # Mosaic component library (design system)
-    ├── tiles/                 # Reusable Leptos UI components (crate: mosaic-tiles)
+    ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
     ├── playground/            # Component playground application (crate: mosaic-playground)
-    ├── playground_macro/      # Proc macro for playground page generation (crate: mosaic-playground-macro)
     └── playground-e2e-tests/  # Playwright E2E tests for the playground
 </code></pre>
 <h2 id="crate-and-folder-naming-convention"><a class="header" href="#crate-and-folder-naming-convention">Crate and Folder Naming Convention</a></h2>
-<p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part. Hyphens in crate names become underscores in folder names when needed for Rust compatibility (proc macro crates).</p>
+<p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part.</p>
 <div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
 <tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>Pure domain types and data access (zero framework deps)</td></tr>
 <tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> only)</td></tr>
-<tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Leptos SSR components, pages, <code>#[server]</code> functions</td></tr>
+<tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
 <tr><td><code>dpe-server</code></td><td><code>dpe/server</code></td><td>Server binary — composes all routes</td></tr>
 <tr><td><code>dpe-telemetry</code></td><td><code>dpe/telemetry</code></td><td>Telemetry types, validation, and origin checking</td></tr>
 <tr><td><code>mosaic-tiles</code></td><td><code>mosaic/tiles</code></td><td>Reusable UI component library</td></tr>
 <tr><td><code>mosaic-playground</code></td><td><code>mosaic/playground</code></td><td>Component showcase application</td></tr>
-<tr><td><code>mosaic-playground-macro</code></td><td><code>mosaic/playground_macro</code></td><td>Proc macro for playground page generation</td></tr>
 </tbody></table>
 </div>
 <h2 id="api-crate-pattern"><a class="header" href="#api-crate-pattern">API Crate Pattern</a></h2>

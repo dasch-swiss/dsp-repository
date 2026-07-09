@@ -427,10 +427,10 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 <tr><td><code>just check</code></td><td>Run formatting and linting checks</td></tr>
 <tr><td><code>just build</code></td><td>Build all targets</td></tr>
 <tr><td><code>just test</code></td><td>Run all tests</td></tr>
-<tr><td><code>just fmt</code></td><td>Format all Rust code (cargo fmt + leptosfmt)</td></tr>
+<tr><td><code>just fmt</code></td><td>Format all code (<code>maudfmt</code> for <code>maud::html!</code> macro contents, then <code>cargo +nightly fmt</code>)</td></tr>
 <tr><td><code>just run</code></td><td>Run server (release mode)</td></tr>
 <tr><td><code>just watch</code></td><td>Watch for changes and run tests</td></tr>
-<tr><td><code>just watch-dpe</code></td><td>Run DPE with hot reload</td></tr>
+<tr><td><code>just dev</code></td><td>Run DPE with hot reload</td></tr>
 <tr><td><code>just watch-mosaic-playground</code></td><td>Run Mosaic playground with hot reload</td></tr>
 <tr><td><code>just install-requirements</code></td><td>Install all development dependencies</td></tr>
 <tr><td><code>just install-e2e-requirements</code></td><td>Install Playwright browsers for E2E tests</td></tr>
@@ -445,7 +445,7 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 <li><strong>Clean commit history</strong>: Before merging, clean up the branch so that each commit represents one logical unit of change. Squash fixups, reword messages, and reorder commits so the history reads well on main.</li>
 </ul>
 <h2 id="commit-conventions"><a class="header" href="#commit-conventions">Commit Conventions</a></h2>
-<p>Follow <a href="https://www.conventionalcommits.org/">Conventional Commits</a>. Scopes match crate names: <code>dpe-server</code>, <code>dpe-core</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>mosaic-playground-macro</code>.</p>
+<p>Follow <a href="https://www.conventionalcommits.org/">Conventional Commits</a>. Scopes match crate names: <code>dpe-server</code>, <code>dpe-core</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>dpe-telemetry</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>.</p>
 <h3 id="types"><a class="header" href="#types">Types</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Prefix</th><th>Meaning</th><th>Changelog</th><th>Version bump</th></tr></thead><tbody>
 <tr><td><code>feat:</code></td><td>New user-visible functionality</td><td>Features</td><td>minor</td></tr>
@@ -599,7 +599,7 @@ actionable — not just "this is hard" but "do X instead of Y".
 ├── dpe/                       # Discovery and Presentation Environment
 │   ├── core/                  # Pure domain types, repositories, data loading (crate: dpe-core)
 │   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
-│   ├── web/                   # Web layer: Leptos components, pages (crate: dpe-web)
+│   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
 │   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
 │   ├── telemetry/             # Telemetry types and validation (crate: dpe-telemetry)
 │   ├── web-e2e-tests/         # Playwright E2E tests
@@ -607,22 +607,20 @@ actionable — not just "this is hard" but "do X instead of Y".
 │   ├── style/                 # CSS / Tailwind
 │   └── Dockerfile             # Production container image
 └── mosaic/                    # Mosaic component library (design system)
-    ├── tiles/                 # Reusable Leptos UI components (crate: mosaic-tiles)
+    ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
     ├── playground/            # Component playground application (crate: mosaic-playground)
-    ├── playground_macro/      # Proc macro for playground page generation (crate: mosaic-playground-macro)
     └── playground-e2e-tests/  # Playwright E2E tests for the playground
 </code></pre>
 <h2 id="crate-and-folder-naming-convention"><a class="header" href="#crate-and-folder-naming-convention">Crate and Folder Naming Convention</a></h2>
-<p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part. Hyphens in crate names become underscores in folder names when needed for Rust compatibility (proc macro crates).</p>
+<p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part.</p>
 <div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
 <tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>Pure domain types and data access (zero framework deps)</td></tr>
 <tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> only)</td></tr>
-<tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Leptos SSR components, pages, <code>#[server]</code> functions</td></tr>
+<tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
 <tr><td><code>dpe-server</code></td><td><code>dpe/server</code></td><td>Server binary — composes all routes</td></tr>
 <tr><td><code>dpe-telemetry</code></td><td><code>dpe/telemetry</code></td><td>Telemetry types, validation, and origin checking</td></tr>
 <tr><td><code>mosaic-tiles</code></td><td><code>mosaic/tiles</code></td><td>Reusable UI component library</td></tr>
 <tr><td><code>mosaic-playground</code></td><td><code>mosaic/playground</code></td><td>Component showcase application</td></tr>
-<tr><td><code>mosaic-playground-macro</code></td><td><code>mosaic/playground_macro</code></td><td>Proc macro for playground page generation</td></tr>
 </tbody></table>
 </div>
 <h2 id="api-crate-pattern"><a class="header" href="#api-crate-pattern">API Crate Pattern</a></h2>
@@ -707,7 +705,7 @@ actionable — not just "this is hard" but "do X instead of Y".
 <h3 id="checks-and-tests"><a class="header" href="#checks-and-tests">Checks and Tests</a></h3>
 <p>Every push and pull request runs:</p>
 <ul>
-<li><strong>check.yml</strong> — Formatting (<code>rustfmt</code>, <code>leptosfmt</code>) and linting (<code>clippy</code>)</li>
+<li><strong>check.yml</strong> — Formatting (<code>maudfmt</code> for <code>html!</code> macros + <code>cargo +nightly fmt</code>) and linting (<code>clippy</code>)</li>
 <li><strong>test.yml</strong> — Runs the full test suite</li>
 <li><strong>scout-dpe.yml</strong> / <strong>scout-mosaic-playground.yml</strong> — Docker image vulnerability scanning (see <a href="./security.html">Security</a>)</li>
 </ul>
@@ -720,7 +718,7 @@ actionable — not just "this is hard" but "do X instead of Y".
 <h3 id="reusable-actions"><a class="header" href="#reusable-actions">Reusable Actions</a></h3>
 <p>Common CI steps are extracted into composite actions in <code>.github/actions/</code>:</p>
 <div class="table-wrapper"><table><thead><tr><th>Action</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><code>build-dpe</code></td><td>Compile DPE (Rust musl binary + Leptos site assets) and stage artifacts</td></tr>
+<tr><td><code>build-dpe</code></td><td>Compile DPE (static musl <code>dpe-server</code> binary + content-hashed Tailwind <code>app.css</code> via <code>just css-release</code>) and stage artifacts</td></tr>
 <tr><td><code>docker-publish</code></td><td>Set up Buildx, log in to Docker Hub, build and push an image</td></tr>
 <tr><td><code>docker-scout</code></td><td>Run Docker Scout CVE scan and upload SARIF results</td></tr>
 </tbody></table>
@@ -747,8 +745,8 @@ actionable — not just "this is hard" but "do X instead of Y".
 <p>Defined in <code>dpe-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>
 <ol>
-<li>Builds site assets with <code>cargo-leptos</code></li>
-<li>Builds a static musl-linked binary</li>
+<li>Builds the content-hashed Tailwind stylesheet (<code>just css-release</code>)</li>
+<li>Builds a static musl-linked <code>dpe-server</code> binary</li>
 <li>Pushes the Docker image to Docker Hub (<code>daschswiss/dpe:{tag}</code>)</li>
 <li>Triggers a Jenkins webhook for DEV deployment</li>
 </ol>
@@ -981,48 +979,49 @@ are detected</li>
           ┌────────────┼────────────┐
           │            │            │
      dpe-api-oai   dpe-web     (future APIs)
-     OAI-PMH 2.0  Leptos SSR
-     + axum        + Datastar
+     OAI-PMH 2.0  Maud views
+     + axum
           │            │
           └────────────┘
                  │
            dpe-server
            Route composition
-           (binary: dpe)
+           + Datastar
+           (binary: dpe-server)
 </code></pre>
 <ul>
 <li><strong>dpe-core</strong>: Framework-free domain layer. All types, repository traits, Fs implementations, and data loading.</li>
-<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="dpe/./oai-pmh.html">OAI-PMH Endpoint</a>). Depends only on dpe-core — no Leptos.</li>
-<li><strong>dpe-web</strong>: Leptos SSR components, pages, and <code>#[server]</code> wrappers. Re-exports dpe-core types for backward compatibility.</li>
-<li><strong>dpe-server</strong>: Thin composition root. Wires Leptos routes (dpe-web) and API handlers (dpe-api-oai) into a single Axum server.</li>
+<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="dpe/./oai-pmh.html">OAI-PMH Endpoint</a>). Depends only on dpe-core.</li>
+<li><strong>dpe-web</strong>: A native library of <a href="https://maud.lambda.xyz/">Maud</a> page and component functions (<code>fn -&gt; Markup</code>). Imports dpe-core types directly.</li>
+<li><strong>dpe-server</strong>: Thin composition root. Wires the native Axum router, the <code>&lt;head&gt;</code>/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers into a single Axum server.</li>
 </ul>
 <h2 id="hypermedia-driven-architecture"><a class="header" href="#hypermedia-driven-architecture">Hypermedia-Driven Architecture</a></h2>
-<p>The DPE uses a <strong>hypermedia-driven architecture</strong> where the server is the single source of truth for UI state. Interactivity is provided by <a href="https://data-star.dev/">Datastar</a> (~14KB JS) instead of client-side frameworks or WASM.</p>
-<p><strong>Why Datastar over Leptos islands:</strong></p>
+<p>The DPE uses a <strong>hypermedia-driven architecture</strong> where the server is the single source of truth for UI state. Pages are rendered as plain HTML with <a href="https://maud.lambda.xyz/">Maud</a> (a compile-time HTML template macro), and interactivity is provided by <a href="https://data-star.dev/">Datastar</a> (~14KB JS) instead of a client-side framework or WASM.</p>
+<p><strong>Why this approach:</strong></p>
 <ul>
-<li>No WASM compilation step (faster builds)</li>
-<li>Smaller client-side footprint (~14KB vs ~200KB+ WASM)</li>
+<li>No WASM compilation step (faster builds, no <code>wasm32</code> toolchain)</li>
+<li>Small client-side footprint (~14KB Datastar, no hydration bundle)</li>
 <li>Server controls all state (HATEOAS)</li>
 <li>Graceful degradation — works as plain HTML links without JavaScript</li>
 <li>Simpler mental model — HTML attributes, not reactive signals</li>
 </ul>
 <h2 id="rendering-model"><a class="header" href="#rendering-model">Rendering Model</a></h2>
-<p>Pages are rendered server-side by <strong>Leptos SSR</strong>. Dynamic content updates (tab switching, search autocomplete) are handled by <strong>Datastar SSE fragments</strong>.</p>
+<p>Pages are rendered server-side with <strong>Maud</strong> (<code>maud::html!</code> → <code>Markup</code>). Dynamic content updates (tab switching, search autocomplete) are handled by <strong>Datastar SSE fragments</strong>.</p>
 <pre><code>Initial page load:
-  Browser → GET /projects/ABC1 → Leptos SSR → Full HTML page
+  Browser → GET /dpe/projects/ABC1 → Maud SSR → Full HTML page
 
 Tab switch (with JS):
-  Browser → GET /projects/ABC1/tab/publications (SSE)
+  Browser → GET /dpe/projects/ABC1/tab/publications (SSE)
          ← PatchElements (#project-tabs replacement)
          ← ExecuteScript (history.replaceState for URL)
 
 Tab switch (without JS):
-  Browser → GET /projects/ABC1?tab=publications → Full page reload
+  Browser → GET /dpe/projects/ABC1?tab=publications → Full page reload
 </code></pre>
 <h2 id="fragment-route-convention"><a class="header" href="#fragment-route-convention">Fragment Route Convention</a></h2>
-<p>Fragment endpoints are pure Axum handlers (not Leptos routes) that render Leptos components to HTML strings and deliver them as Datastar SSE events.</p>
+<p>Fragment endpoints are plain Axum handlers that render Maud <code>Markup</code> to HTML strings and deliver them as Datastar SSE events. The full page and the SSE fragment render the <code>#project-tabs</code> morph root through the same <code>project_tabs</code> function, so the two paths cannot drift.</p>
 <p><strong>Route pattern: resource-action nesting</strong></p>
-<pre><code>GET /projects/{id}              → Full page (Leptos SSR)
+<pre><code>GET /projects/{id}              → Full page (Maud SSR)
 GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
 </code></pre>
 <p>Different path depths in Axum's radix trie mean no conflict and no header-based discrimination.</p>
@@ -1906,7 +1905,7 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 ├── core/             dpe-core          Pure domain (serde only)
 ├── telemetry/        dpe-telemetry     Telemetry types and validation (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
-├── web/              dpe-web           Leptos SSR + Datastar fragments
+├── web/              dpe-web           Maud view library (pages + components)
 ├── server/           dpe-server        Axum binary (composition root)
 ├── web-e2e-tests/                      Playwright E2E tests
 ├── public/                             Static assets
@@ -1916,7 +1915,7 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 <pre><code>dpe-core              ← pure domain, no framework deps
   ↑
   ├── dpe-api-oai     ← OAI-PMH endpoint
-  ├── dpe-web         ← Leptos SSR pages + components
+  ├── dpe-web         ← Maud pages + components
   └── dpe-server      ← composition root, Datastar fragment handlers
        ↑
        dpe-telemetry  ← telemetry types and validation (serde only)
@@ -1934,15 +1933,15 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 <p>Dependencies: <code>serde</code>, <code>serde_json</code> only.</p>
 <h3 id="dpe-api-oai-api-oai"><a class="header" href="#dpe-api-oai-api-oai"><code>dpe-api-oai</code> (api-oai/)</a></h3>
 <p>OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord). Usage is documented in <a href="dpe/./oai-pmh.html">OAI-PMH Endpoint</a>.</p>
-<p>Depends on <code>dpe-core</code> for domain types — no Leptos or web framework dependency.</p>
+<p>Depends on <code>dpe-core</code> for domain types — no web framework dependency.</p>
 <h3 id="dpe-web-web"><a class="header" href="#dpe-web-web"><code>dpe-web</code> (web/)</a></h3>
-<p>Leptos SSR web layer. Contains:</p>
+<p>Maud view library — a plain <code>lib</code> crate of page and component functions returning <code>maud::Markup</code>. Contains:</p>
 <ul>
 <li><strong>Pages</strong>: <code>home</code>, <code>about</code>, <code>project</code>, <code>projects</code> (with filters and pagination)</li>
-<li><strong>Components</strong>: navbar, footer, project cards, tab panels, search input</li>
-<li><strong>Domain re-exports</strong>: <code>domain/mod.rs</code> re-exports <code>dpe-core</code> types for a single import path</li>
-<li><strong>Server functions</strong>: <code>#[server]</code> wrappers around <code>dpe-core</code> functions</li>
+<li><strong>Components</strong>: navbar, footer, project cards, tab panels, search input — small <code>fn -&gt; Markup</code> partials</li>
+<li><strong>Data access</strong>: loaders and resolvers (<code>get_project</code>, <code>list_projects</code>, <code>get_contributors</code>) as plain functions over <code>dpe-core</code></li>
 </ul>
+<p>Imports <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
 <h3 id="dpe-telemetry-telemetry"><a class="header" href="#dpe-telemetry-telemetry"><code>dpe-telemetry</code> (telemetry/)</a></h3>
 <p>Telemetry types and validation logic. Extracted as a library crate so fuzz targets can test the real code. Contains:</p>
 <ul>
@@ -1955,8 +1954,9 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
 <p>Composition root and Axum binary. Contains:</p>
 <ul>
-<li><strong>Route wiring</strong>: Leptos SSR routes, OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code>, <code>/telemetry/collect</code></li>
-<li><strong>Fragment handlers</strong>: <code>fragments.rs</code> — pure Axum handlers that render Leptos components to HTML and return Datastar SSE events</li>
+<li><strong>Route wiring</strong>: native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code>, <code>/telemetry/collect</code>, plus <code>ServeDir</code> static serving and a 404 fallback</li>
+<li><strong>Head/page shell</strong>: <code>view.rs</code> — the hand-written <code>head()</code> + <code>page()</code> partials (title, content-hashed stylesheet link, conditional <code>traceparent</code> meta, fonts, Fathom, Datastar + telemetry scripts)</li>
+<li><strong>Fragment handlers</strong>: <code>fragments.rs</code> — plain Axum handlers that render Maud <code>Markup</code> to HTML and return Datastar SSE events</li>
 <li><strong>Telemetry collector</strong>: <code>telemetry_collector.rs</code> — converts browser beacons to OTel metrics and structured logs (uses types from <code>dpe-telemetry</code>)</li>
 <li><strong>Configuration</strong>: <code>config.rs</code> — figment-based layered config (defaults → <code>dpe.toml</code> → <code>DPE_*</code> env vars)</li>
 <li><strong>Logging</strong>: OTel-aware subscriber via <code>init-tracing-opentelemetry</code></li>
@@ -1965,8 +1965,8 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 <ul>
 <li><strong>Domain types in <code>dpe-core</code></strong>, not in web or API crates</li>
 <li><strong>API crates depend on <code>dpe-core</code> only</strong>, never on each other or on <code>dpe-web</code></li>
-<li><strong><code>dpe-server</code> contains no business logic</strong> — only route composition and fragment rendering</li>
-<li><strong>Fragment handlers</strong> use <code>Owner::new()</code> + <code>view! { ... }.to_html()</code> to render Leptos components from pure Axum handlers</li>
+<li><strong><code>dpe-server</code> contains no business logic</strong> — only route composition, the head/page shell, and fragment rendering</li>
+<li><strong>Fragment handlers</strong> call dpe-web view functions and render their <code>Markup</code> with <code>.into_string()</code>, then wrap it in Datastar <code>PatchElements</code>/<code>ExecuteScript</code> SSE events</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
@@ -2069,7 +2069,7 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 <ul>
 <li><strong>Location</strong>: <code>modules/dpe/web-e2e-tests/</code></li>
 <li><strong>Runner</strong>: <code>npx playwright test</code></li>
-<li><strong>Scope</strong>: Tab switching, search autocomplete, scroll preservation, accessibility (axe-core), visual regression</li>
+<li><strong>Scope</strong>: Tab switching, search autocomplete, scroll preservation, accessibility (axe-core)</li>
 <li><strong>Accessibility</strong>: Full-page axe-core scans against WCAG 2.1 AA</li>
 </ul>
 <h2 id="layer-4-fuzz-testing"><a class="header" href="#layer-4-fuzz-testing">Layer 4: Fuzz Testing</a></h2>
@@ -2082,13 +2082,13 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 <h2 id="ci-pipeline-budget"><a class="header" href="#ci-pipeline-budget">CI Pipeline Budget</a></h2>
 <p>Target: <strong>≤ 10 minutes</strong> wall-clock per PR.</p>
 <pre><code>Parallel job group 1 (~2 min):
-  cargo fmt --check
+  maudfmt --check + cargo fmt --check
   cargo clippy --all-targets -Dwarnings
   cargo-deny check
 
 Parallel job group 2 (~5 min):
   cargo nextest run --workspace
-  cargo leptos build --release
+  cargo build --release (dpe-server) + just css-release
   cargo-llvm-cov (coverage → Codecov)
 
 Parallel job group 3 (~5 min):
@@ -2189,14 +2189,14 @@ Parallel job group 3 (~5 min):
 just lgtm-up
 
 # Terminal 2: Run DPE with OTel enabled (exports to localhost:4317)
-just watch-dpe-otel
+just dev-otel
 
 # Terminal 3: Generate traffic
 curl http://localhost:4000/projects
 curl http://localhost:4000/dpe/oai?verb=Identify
 curl http://localhost:4000/healthz
 </code></pre>
-<p><code>watch-dpe-otel</code> sets <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>, <code>OTEL_SERVICE_NAME</code>, <code>OTEL_RESOURCE_ATTRIBUTES</code>, and <code>PYROSCOPE_ENDPOINT</code> for you. Run <code>just --list</code> to see the underlying commands.</p>
+<p><code>dev-otel</code> sets <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>, <code>OTEL_SERVICE_NAME</code>, <code>OTEL_RESOURCE_ATTRIBUTES</code>, and <code>PYROSCOPE_ENDPOINT</code> for you. Run <code>just --list</code> to see the underlying commands.</p>
 <h2 id="navigating-grafana-locally"><a class="header" href="#navigating-grafana-locally">Navigating Grafana Locally</a></h2>
 <p>Open <a href="http://localhost:3000">http://localhost:3000</a> (no login required):</p>
 <ul>
@@ -2237,8 +2237,8 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <p>All signals are buffered and flushed via <code>navigator.sendBeacon</code> on <code>visibilitychange</code> (page hide). The server collector converts them to OTel metrics (bounded attributes only) and structured logs (high-cardinality attribution data).</p>
 <h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
 <ul>
-<li><strong>Production</strong> (<code>LEPTOS_ENV=PROD</code>): JSON-formatted logs to stdout only. No OTel log export — traces and metrics are exported via OTLP, but logs stay on stdout.</li>
-<li><strong>Local development</strong> (<code>LEPTOS_ENV=DEV</code> with <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> set): Logs go to both stdout and Loki via OTLP. An <code>OpenTelemetryTracingBridge</code> layer converts <code>tracing</code> events into OTel log records, which are batched and exported alongside traces and metrics. Query them in Grafana Explore → Loki.</li>
+<li><strong>Production</strong> (<code>DPE_ENV=PROD</code>): JSON-formatted logs to stdout only. No OTel log export — traces and metrics are exported via OTLP, but logs stay on stdout.</li>
+<li><strong>Local development</strong> (<code>DPE_ENV=DEV</code> with <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> set): Logs go to both stdout and Loki via OTLP. An <code>OpenTelemetryTracingBridge</code> layer converts <code>tracing</code> events into OTel log records, which are batched and exported alongside traces and metrics. Query them in Grafana Explore → Loki.</li>
 <li>Set <code>RUST_LOG</code> to control log levels. Use <code>RUST_LOG=debug</code> for verbose output.</li>
 <li>When <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is not set, the OTel SDK falls back to no-op export — no traces, metrics, or logs are sent, but structured stdout logging still works.</li>
 </ul>
@@ -2316,19 +2316,19 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <li><strong>Base</strong>: <code>gcr.io/distroless/static-debian12:nonroot</code></li>
 <li><strong>User</strong>: uid 65534 (nonroot, built-in to distroless)</li>
 <li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
-<li><strong>Binary</strong>: Static musl-linked <code>dpe</code> (CLI with subcommands)</li>
+<li><strong>Binary</strong>: Static musl-linked <code>dpe-server</code> (CLI with subcommands)</li>
 </ul>
 <h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
-<p>The <code>dpe</code> binary provides three subcommands:</p>
+<p>The <code>dpe-server</code> binary provides three subcommands:</p>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>dpe serve</code></td><td>Start the web server</td></tr>
-<tr><td><code>dpe validate &lt;data_dir&gt;</code></td><td>Validate all data files under the given directory</td></tr>
-<tr><td><code>dpe healthcheck [--url URL]</code></td><td>Check if the server is healthy (default: <code>http://localhost:8080/healthz</code>)</td></tr>
+<tr><td><code>dpe-server serve</code></td><td>Start the web server</td></tr>
+<tr><td><code>dpe-server validate &lt;data_dir&gt;</code></td><td>Validate all data files under the given directory</td></tr>
+<tr><td><code>dpe-server healthcheck [--url URL]</code></td><td>Check if the server is healthy (default: <code>http://localhost:8080/healthz</code>)</td></tr>
 </tbody></table>
 </div>
-<h3 id="dpe-validate"><a class="header" href="#dpe-validate"><code>dpe validate</code></a></h3>
+<h3 id="dpe-server-validate"><a class="header" href="#dpe-server-validate"><code>dpe-server validate</code></a></h3>
 <p>Validates JSON data files for structural correctness and cross-reference integrity.</p>
-<pre><code class="language-bash">dpe validate ./data
+<pre><code class="language-bash">dpe-server validate ./data
 </code></pre>
 <p><strong>What it checks:</strong></p>
 <ul>
@@ -2342,10 +2342,10 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <li><code>0</code> — all data files are valid</li>
 <li><code>1</code> — validation errors found (details printed to stderr)</li>
 </ul>
-<h3 id="dpe-healthcheck"><a class="header" href="#dpe-healthcheck"><code>dpe healthcheck</code></a></h3>
+<h3 id="dpe-server-healthcheck"><a class="header" href="#dpe-server-healthcheck"><code>dpe-server healthcheck</code></a></h3>
 <p>Lightweight probe for Docker HEALTHCHECK or monitoring:</p>
-<pre><code class="language-bash">dpe healthcheck                                    # default: http://localhost:8080/healthz
-dpe healthcheck --url http://localhost:9090/healthz # custom URL
+<pre><code class="language-bash">dpe-server healthcheck                             # default: http://localhost:8080/healthz
+dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 </code></pre>
 <h2 id="ports"><a class="header" href="#ports">Ports</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody>
@@ -2363,18 +2363,16 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g., <code>dpe</code>)</td></tr>
 <tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g., <code>service.namespace=dpe,service.version=0.2.1,deployment.environment=prod</code>)</td></tr>
 <tr><td><code>PYROSCOPE_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>Pyroscope HTTP endpoint (e.g., <code>http://pyroscope:4040</code>). When unset, profiling is disabled.</td></tr>
-<tr><td><code>LEPTOS_SITE_ADDR</code></td><td>No</td><td><code>0.0.0.0:8080</code></td><td>Listen address and port</td></tr>
-<tr><td><code>LEPTOS_SITE_ROOT</code></td><td>No</td><td><code>site</code></td><td>Path to static site assets</td></tr>
-<tr><td><code>LEPTOS_SITE_PKG_DIR</code></td><td>No</td><td><code>pkg</code></td><td>JS/CSS package subdirectory</td></tr>
-<tr><td><code>LEPTOS_OUTPUT_NAME</code></td><td>No</td><td><code>dpe</code></td><td>CSS/JS output filename prefix</td></tr>
-<tr><td><code>LEPTOS_ENV</code></td><td>No</td><td><em>(auto)</em></td><td>Leptos environment (<code>DEV</code> or <code>PROD</code>). Set automatically by cargo-leptos: <code>watch</code> = <code>DEV</code>, <code>build --release</code> = <code>PROD</code>. Do not set manually.</td></tr>
+<tr><td><code>DPE_SITE_ADDR</code></td><td>No</td><td><code>127.0.0.1:4000</code></td><td>Listen address and port. The Docker image sets <code>0.0.0.0:8080</code>.</td></tr>
+<tr><td><code>DPE_PUBLIC_DIR</code></td><td>No</td><td><code>modules/dpe/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, project images, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
+<tr><td><code>DPE_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="dpe/operations.html#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
 </tbody></table>
 </div>
 <h2 id="health-check"><a class="header" href="#health-check">Health Check</a></h2>
 <ul>
 <li><strong>Endpoint</strong>: <code>GET /healthz</code></li>
 <li><strong>Response</strong>: <code>200 OK</code> (no body)</li>
-<li><strong>Purpose</strong>: Lightweight probe for Traefik/load balancers. Does not hit Leptos SSR.</li>
+<li><strong>Purpose</strong>: Lightweight probe for Traefik/load balancers. Does not render any page.</li>
 </ul>
 <h2 id="data-volume"><a class="header" href="#data-volume">Data Volume</a></h2>
 <ul>
@@ -2390,7 +2388,7 @@ dpe healthcheck --url http://localhost:9090/healthz # custom URL
 <li><strong>Disk</strong>: Data files + static assets (~50 MB)</li>
 </ul>
 <h2 id="logging-1"><a class="header" href="#logging-1">Logging</a></h2>
-<p>Structured logging via <code>init-tracing-opentelemetry</code> (OTel-aware tracing subscriber). In production (<code>LEPTOS_ENV=PROD</code>), logs are JSON-formatted to stdout only. In local development (<code>LEPTOS_ENV=DEV</code>), logs are additionally exported via OTLP to Loki when <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is set. Configure levels with <code>RUST_LOG</code>:</p>
+<p>Structured logging via <code>init-tracing-opentelemetry</code> (OTel-aware tracing subscriber). In production (<code>DPE_ENV=PROD</code>), logs are JSON-formatted to stdout only. In local development (<code>DPE_ENV=DEV</code>), logs are additionally exported via OTLP to Loki when <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is set. Configure levels with <code>RUST_LOG</code>:</p>
 <pre><code class="language-bash"># Default (info level)
 RUST_LOG=info
 
@@ -2502,7 +2500,7 @@ RUST_LOG=debug
 <li><strong>Authentication</strong>: none.</li>
 </ul>
 <div class="table-wrapper"><table><thead><tr><th>Environment</th><th>Base URL</th></tr></thead><tbody>
-<tr><td>Local development (<code>just watch-dpe</code>)</td><td><code>http://localhost:4000</code></td></tr>
+<tr><td>Local development (<code>just dev</code>)</td><td><code>http://localhost:4000</code></td></tr>
 <tr><td>DEV</td><td><code>https://api.dev.dasch.swiss</code></td></tr>
 <tr><td>Production</td><td>Not yet deployed</td></tr>
 </tbody></table>
@@ -2643,7 +2641,7 @@ RUST_LOG=debug
 <li><strong>Protocol version</strong>: 2.0</li>
 </ul>
 <div class="table-wrapper"><table><thead><tr><th>Environment</th><th>Base URL</th></tr></thead><tbody>
-<tr><td>Local development (<code>just watch-dpe</code>)</td><td><code>http://localhost:4000/dpe/oai</code></td></tr>
+<tr><td>Local development (<code>just dev</code>)</td><td><code>http://localhost:4000/dpe/oai</code></td></tr>
 <tr><td>DEV</td><td><code>https://api.dev.dasch.swiss/dpe/oai</code></td></tr>
 <tr><td>Production</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td></tr>
 </tbody></table>
@@ -2924,6 +2922,265 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 }
 
 </style>
+<h1 id="component-api-conventions"><a class="header" href="#component-api-conventions">Component API Conventions</a></h1>
+<p>How Mosaic tile functions are shaped. Mosaic is a Maud component library: every
+tile ultimately produces <code>maud::Markup</code>. These conventions exist so tiles read
+naturally in Maud, compose without ceremony, and stay consistent as the library
+grows and gains a second consumer.</p>
+<h2 id="background-not-a-leptos-port"><a class="header" href="#background-not-a-leptos-port">Background: not a Leptos port</a></h2>
+<p>Mosaic was ported from Leptos, whose components take a <code>Props</code> struct and
+<code>children</code>. Translating that shape literally into Rust — a <code>*Props</code> struct on
+every tile plus a <code>Markup</code> content argument — reads against the grain of Maud.
+Maud has no <code>view!</code>-style macro that lets a user function participate in the
+brace-nesting grammar, so the Leptos mental model does not carry over. These
+conventions describe the Maud-native shape instead.</p>
+<h2 id="leaf-tiles-vs-container-tiles"><a class="header" href="#leaf-tiles-vs-container-tiles">Leaf tiles vs container tiles</a></h2>
+<p>Distinguish two kinds of tile, because they differ in how many options they carry:</p>
+<ul>
+<li><strong>Leaf tiles</strong> render self-contained markup from a little data: <code>badge</code>, <code>icon</code>,
+<code>copy_button</code>, <code>breadcrumb_item</code>, <code>tab</code>.</li>
+<li><strong>Container tiles</strong> wrap arbitrary caller-supplied content: <code>card</code> and its
+body/header/footer partials, <code>tabs</code>.</li>
+</ul>
+<p>Both take content the same way (see below). The <em>form</em> (plain function vs
+builder) is driven by how many options the tile carries — not by this
+leaf/container distinction.</p>
+<h2 id="content-is-impl-render"><a class="header" href="#content-is-impl-render">Content is <code>impl Render</code></a></h2>
+<p>Every content or label parameter is <code>impl Render</code>, never a bare <code>Markup</code> and
+never <code>&amp;str</code>/<code>impl Into&lt;String&gt;</code>.</p>
+<p>Maud's <code>Render</code> trait is implemented by string-like types (rendered as escaped
+text), by <code>Markup</code>/<code>PreEscaped</code>, and — by our own tiles (see <a href="mosaic/component-api-conventions.html#everything-else-builders">Builders</a>).
+A single <code>impl Render</code> parameter therefore accepts all of them:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn badge(label: impl Render) -&gt; BadgeBuilder { /* … */ }
+
+badge("archaeology")                              // a string
+badge(html! { (icon(Info, "w-4 h-4")) "info" })   // markup
+<span class="boring">}</span></code></pre></pre>
+<p>Prefer <code>impl Render</code> over <code>&amp;str</code>/<code>impl Into&lt;String&gt;</code> (too narrow — cannot hold an
+icon) and over a bare <code>Markup</code> parameter (too heavy — forces <code>html! { … }</code> at
+every call site, and cannot accept a builder directly).</p>
+<p>This applies to <strong>container slots too</strong>: a card body is <code>impl Render</code>, not
+<code>Markup</code>. That lets a builder, a bare <code>html!</code> block, or a string all flow into a
+container with no conversion:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>card(button("Save").variant(ButtonVariant::Primary)).variant(CardVariant::Bordered)  // a builder as content
+card(html! { h2 { (title) } p { (summary) } }).variant(CardVariant::Bordered)   // markup as content
+<span class="boring">}</span></code></pre></pre>
+<p>The trade-off is that <code>impl Render</code> slots are permissive — they accept anything
+renderable. That is acceptable here: the alternative (<code>Markup</code>) buys no real
+safety and costs ergonomics.</p>
+<h2 id="options-plain-functions-vs-builders"><a class="header" href="#options-plain-functions-vs-builders">Options: plain functions vs builders</a></h2>
+<p>Choose the form by how many options the tile carries. Do not impose one pattern
+globally — a <code>Props</code> struct on every tile would reintroduce the Leptos shape
+for no benefit.</p>
+<p>In practice this is a <strong>two-way</strong> split. A named-constructor middle tier
+(<code>badge::secondary(...)</code>) does not survive contact with the real call sites:
+every tile that has a variant also carries at least one more axis (an extra
+class, a size, an id/test-id), so it wants a builder rather than a fixed-shape
+function.</p>
+<h3 id="trivial-tiles-plain-functions"><a class="header" href="#trivial-tiles-plain-functions">Trivial tiles: plain functions</a></h3>
+<p>No variant and one or two required arguments → a plain function returning
+<code>Markup</code>. These are the genuinely simple primitives:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>icon(IconType::Search, "w-4 h-4")
+copy_button(text)
+loading()
+<span class="boring">}</span></code></pre></pre>
+<h3 id="everything-else-builders"><a class="header" href="#everything-else-builders">Everything else: builders</a></h3>
+<p>A variant, or several independent optional axes (a card: variant + extra class +
+id/test-id; a link: href + as_button + target + rel + aria_label + disabled) → a
+<strong>builder</strong>. A builder reads better than a <code>Props</code> struct — no <code>Some(...)</code>
+wrapping, no <code>..Default::default()</code>, you pay only for what you set:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>card(body).variant(CardVariant::Bordered).class("overflow-visible")
+link("Docs", "/x").target("_blank").rel("noopener").build()
+<span class="boring">}</span></code></pre></pre>
+<p>Builders follow four rules:</p>
+<ol>
+<li>
+<p><strong>They implement Maud's <code>Render</code> trait</strong>, so they splice into <code>html!</code> directly
+— no <code>.build()</code> inside a template:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>html! {
+    (button("Save").variant(Secondary))
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p><strong>The struct is <code>#[must_use]</code></strong>, so a builder that is constructed but never
+spliced or built warns at compile time.</p>
+</li>
+<li>
+<p><strong><code>.build()</code> materialises a <code>Markup</code></strong> for the rare standalone path (a function
+whose body is just a builder, or a test). Inside <code>html!</code> you never call it.
+Route <code>Render::render(&amp;self)</code> and <code>build(self)</code> through one private
+<code>markup(&amp;self)</code>. Do <strong>not</strong> add <code>impl From&lt;Builder&gt; for Markup</code> / <code>Into</code> —
+<code>.build()</code> is self-documenting and needs no type annotation, whereas <code>.into()</code>
+is opaque and inference-hungry, and <code>Render</code> already covers the splice case.</p>
+</li>
+<li>
+<p><strong>Universal options come from a shared <code>ComponentBuilder</code> trait</strong> — <code>with_id</code>,
+<code>with_test_id</code>, and <code>build</code> as defaults — so every builder gets them without
+per-component code.</p>
+</li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait ComponentBuilder: Sized {
+    fn id_mut(&amp;mut self) -&gt; &amp;mut Option&lt;String&gt;;
+    fn test_id_mut(&amp;mut self) -&gt; &amp;mut Option&lt;String&gt;;
+    fn build(self) -&gt; Markup;
+
+    #[must_use] fn with_id(mut self, id: impl Into&lt;String&gt;) -&gt; Self { /* … */ self }
+    #[must_use] fn with_test_id(mut self, id: impl Into&lt;String&gt;) -&gt; Self { /* … */ self }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="inlining-content-at-call-sites"><a class="header" href="#inlining-content-at-call-sites">Inlining content at call sites</a></h2>
+<p>Because a container takes its content as an <strong>argument</strong> (Maud has no child-block
+syntax for functions), a multi-element <code>html!</code> block passed <em>inline</em> into the call
+is skipped by <code>maudfmt</code> and then mangled by <code>cargo fmt</code>. Bind it to a Rust <code>let</code>
+first, or extract a <code>fn -&gt; Markup</code> helper:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Good — the body is named, and maudfmt formats it.
+let body = html! {
+    h2 { (project.name) }
+    p  { (project.short_description) }
+};
+html! { (card(body).variant(CardVariant::Bordered)) }
+<span class="boring">}</span></code></pre></pre>
+<p><code>maudfmt</code> only formats <code>html!</code> at Rust statement/<code>let</code> position; a block nested as
+a call argument (or via Maud's in-macro <code>@let x = html! { … }</code>) is not. Note this
+is only about <em>inline <code>html!</code> blocks</em> — a builder or a pre-bound variable passed
+into an <code>impl Render</code> slot needs no such care. See also the formatting note in
+<code>CONVENTIONS.md</code>.</p>
+<h2 id="css-classes"><a class="header" href="#css-classes">CSS classes</a></h2>
+<ul>
+<li>Variant enums expose <code>css_class(self) -&gt; &amp;'static str</code> returning <strong>complete
+literal class strings</strong>, so Tailwind's content scan sees them. Never assemble
+class names from fragments.</li>
+<li>No BEM — it adds nothing under Tailwind. Use utility classes directly in the
+markup, and <strong>wrap a reused Tailwind class combination behind a single semantic
+class</strong> (via <code>@apply</code> in the component's co-located CSS) where the combination
+repeats. A tile function and any hand-written markup then share that one class
+instead of duplicating a long utility string.</li>
+</ul>
+<h2 id="accessibility"><a class="header" href="#accessibility">Accessibility</a></h2>
+<p>Accessibility is the tile's responsibility, not the caller's. Model the semantic
+state and emit the correct <code>aria-*</code> / <code>role</code> internally, rather than exposing raw
+aria attributes as knobs:</p>
+<ul>
+<li><strong>State and structure</strong> (<code>aria-selected</code>, <code>aria-expanded</code>, <code>aria-current</code>,
+<code>aria-disabled</code>, <code>role</code>, <code>aria-controls</code>) follow from a semantic method. The
+link's <code>.disabled()</code> already emits <code>aria-disabled="true"</code> (and, in button mode,
+<code>tabindex="-1"</code>); a tab's <code>.checked()</code> would ideally also emit <code>aria-selected="true"</code>
+plus <code>role="tab"</code> (not yet implemented — the tabs tile is currently a CSS-only
+radio group). If one of these keeps appearing as a caller-set value, that is the
+signal a semantic method is missing — add the method, not a raw knob.</li>
+<li><strong>Author-supplied labels</strong> (<code>aria-label</code> for icon-only or image-only controls)
+are genuinely the caller's to provide, so they are a builder method
+(<code>.aria_label(...)</code>) on the interactive tiles that need one — not forced onto
+every tile via <code>ComponentBuilder</code>, since e.g. a card has no use for one.</li>
+<li><strong>Bundle safe defaults into intent methods.</strong> <code>link(...).external()</code> sets both
+<code>target="_blank"</code> and <code>rel="noopener noreferrer"</code>, so the <code>noopener</code> guard can't
+be forgotten. Prefer such a method over the raw <code>target</code>/<code>rel</code> knobs.</li>
+<li><strong>Avoid a generic <code>.attr(name, value)</code> escape hatch.</strong> Raw attribute passthrough
+invites incorrect a11y and quietly defeats the guarantees the design system
+exists to provide.</li>
+</ul>
+<h2 id="test-ids"><a class="header" href="#test-ids">Test IDs</a></h2>
+<p>Builder-backed tiles that implement <code>ComponentBuilder</code> (<code>button</code>, <code>card</code>, <code>link</code>,
+<code>badge</code>) carry <code>.with_test_id(...)</code> for free, giving the Playwright suites stable,
+per-instance selectors. <code>tab</code> is a builder but — being a compound of three sibling
+elements with no single id target — does not implement <code>ComponentBuilder</code>.</p>
+<p>Leaf free-function tiles do <strong>not</strong> emit a test id. A constant default would be
+non-unique across repeated instances (every badge in a list sharing one id) and
+adds output noise for no selector value. When a specific leaf needs a stable
+selector, add <code>data-testid</code> in the surrounding markup at the call site; if a tile
+genuinely needs several configurable attributes, that is the signal to promote it
+to a builder.</p>
+<h2 id="status"><a class="header" href="#status">Status</a></h2>
+<p>Convergence is complete. The builders — <code>button</code>, <code>card</code>, <code>link</code>, <code>badge</code>, <code>tab</code>
+— follow these conventions; <code>button</code>, <code>card</code>, <code>link</code>, and <code>badge</code> implement the
+<code>ComponentBuilder</code> trait in <code>tiles/src/builder.rs</code>, while <code>tab</code> is a builder
+without it (a 3-element compound with no single id target).
+<code>breadcrumb</code>/<code>breadcrumb_current</code> and the container <code>tabs</code>/<code>breadcrumb</code> take
+<code>impl Render</code>. The trivial tiles (<code>icon</code>, <code>copy_button</code>, <code>loading</code>) intentionally
+remain plain functions — they have no variant or optional axes. No tile carries a
+<code>*Props</code> struct anymore. New tiles should follow this shape from the start.</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
 <h1 id="discovery-design-and-development-process"><a class="header" href="#discovery-design-and-development-process">Discovery, Design and Development Process</a></h1>
 <p>Any work on the DSP Repository is done in collaboration between
 Management, Product Management (PM), the Research Data Unit (RDU) and Development (Dev).
@@ -3010,11 +3267,10 @@ and identify opportunities for further improvements.</p>
 <h2 id="core"><a class="header" href="#core">Core</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
 <tr><td><strong>Rust</strong> (Edition 2021)</td><td>Primary development language</td></tr>
-<tr><td><strong>Axum</strong></td><td>HTTP web framework</td></tr>
-<tr><td><strong>Leptos</strong></td><td>Reactive UI framework (SSR for DPE, islands for Mosaic)</td></tr>
+<tr><td><strong>Axum</strong></td><td>HTTP web framework (native routing, <code>ServeDir</code> for static assets)</td></tr>
+<tr><td><strong>Maud</strong></td><td>Compile-time HTML templating (<code>maud::html!</code> → <code>Markup</code>) for server-side rendering</td></tr>
 <tr><td><strong>Datastar</strong></td><td>SSE-based interactivity for DPE (~14KB JS, no WASM)</td></tr>
 <tr><td><strong>Tailwind CSS v4</strong></td><td>Utility-first CSS framework</td></tr>
-<tr><td><strong>DaisyUI</strong></td><td>Tailwind component plugin</td></tr>
 <tr><td><strong>Tokio</strong></td><td>Async runtime</td></tr>
 <tr><td><strong>figment</strong></td><td>Layered configuration (defaults → TOML → env vars)</td></tr>
 </tbody></table>
@@ -3036,9 +3292,10 @@ and identify opportunities for further improvements.</p>
 </div>
 <h2 id="build--development"><a class="header" href="#build--development">Build &amp; Development</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><strong>cargo-leptos</strong></td><td>Leptos build tool (handles Tailwind, WASM, site assets)</td></tr>
+<tr><td><strong>Tailwind CSS CLI</strong></td><td>Standalone CLI that builds the stylesheet (<code>just css</code> / <code>just css-release</code>); no Node or build.rs CSS pipeline</td></tr>
 <tr><td><strong>just</strong></td><td>Command runner for development workflows</td></tr>
-<tr><td><strong>leptosfmt</strong></td><td>Leptos-aware code formatter</td></tr>
+<tr><td><strong>maudfmt</strong></td><td>Formats the contents of <code>maud::html!</code> macros (stock rustfmt does not)</td></tr>
+<tr><td><strong>cargo +nightly fmt</strong></td><td>Code formatter for Rust outside the <code>html!</code> macros</td></tr>
 <tr><td><strong>Biome</strong></td><td>Linter/formatter for E2E test TypeScript</td></tr>
 </tbody></table>
 </div>
@@ -3245,7 +3502,7 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 <p><strong>Architecture</strong></p>
 <ul>
 <li>New API crates follow the <code>dpe-api-{name}</code> pattern with <code>dpe-core</code> as only domain dependency (see <a href="fundamentals/../repo_structure.html">Project Structure</a>)</li>
-<li><code>dpe-core</code> has no framework dependencies (no leptos, no axum)</li>
+<li><code>dpe-core</code> has no framework dependencies (no axum, no maud)</li>
 <li>Validate command covers all data file types (DPE)</li>
 <li>E2E test directory naming: <code>web-e2e-tests/</code> for DPE, <code>playground-e2e-tests/</code> for Mosaic</li>
 </ul>
@@ -3275,13 +3532,14 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 <li>Fragment handlers in <code>fragments/</code> module, not inline in <code>main.rs</code></li>
 <li>Domain types belong in <code>dpe-core</code>, not in web or API crates</li>
 <li>API crate exposes a handler function (e.g., <code>pub async fn oai_handler(...)</code>) for composition in dpe-server</li>
-<li>Leptos components use <code>view!</code> macro consistently</li>
+<li>View functions return <code>maud::Markup</code> via the <code>html!</code> macro</li>
+<li>No non-trivial <code>html!</code> block passed directly as a function argument — bind it to a Rust <code>let</code> or extract a <code>fn -&gt; Markup</code> helper (nested-as-argument <code>html!</code> is skipped by <code>maudfmt</code> and mangled by <code>cargo fmt</code>; trivial one-liners like <code>html! { (label) }</code> are fine)</li>
 <li>Test files follow naming convention: <code>{feature}_tests.rs</code> for Rust, <code>{feature}.spec.ts</code> for Playwright</li>
 </ul>
 <h2 id="skip"><a class="header" href="#skip">Skip</a></h2>
 <ul>
 <li>Snapshot <code>.snap</code> file contents — verify accepted, don't review formatting</li>
-<li>Formatting-only changes (<code>cargo fmt</code> / <code>leptosfmt</code> diffs)</li>
+<li>Formatting-only changes (<code>maudfmt</code> and <code>cargo +nightly fmt</code> diffs)</li>
 <li><code>Cargo.lock</code> changes from dependency updates</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><style>
@@ -3352,6 +3610,14 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 
 </style>
 <h1 id="onboarding"><a class="header" href="#onboarding">Onboarding</a></h1>
+<h2 id="toolchain--setup"><a class="header" href="#toolchain--setup">Toolchain &amp; setup</a></h2>
+<p>Two supported paths:</p>
+<ul>
+<li><strong>Nix</strong> (recommended): <code>nix develop</code> (or direnv via <code>.envrc</code>). The flake provides the full toolchain, including Node.</li>
+<li><strong>Without Nix</strong>: <code>just install-requirements</code> (rustup + <code>cargo binstall</code> + the e2e Node dependencies).</li>
+</ul>
+<p><strong>Node must be on <code>PATH</code> for all shells (non-Nix path).</strong> <code>just</code> runs recipes in <code>sh</code>, which does not load shell-function-based version managers. A <em>lazy</em> nvm setup (where <code>node</code>/<code>npm</code> are shell functions) therefore leaves them invisible to <code>just</code>, and recipes such as <code>lint-e2e</code>, <code>test-a11y-dpe</code>, and the Playwright e2e tests fail with <code>env: node: No such file</code>. To fix, expose your default Node bin on <code>PATH</code> at shell startup — eager-load it in your shell rc, or use a PATH-shim manager such as volta or asdf.</p>
+<p>Only Playwright genuinely requires Node; the Tailwind CSS build is Node-free (standalone CLI). CI provisions Node explicitly, so this affects local non-Nix development only.</p>
 <h2 id="rust"><a class="header" href="#rust">Rust</a></h2>
 <p>The main technology we use is Rust.
 A solid understanding of Rust is needed,
@@ -3361,19 +3627,13 @@ though particularly the frontend work does not require deep knowledge of Rust.</
 <h3 id="serialization-and-deserialization"><a class="header" href="#serialization-and-deserialization">Serialization and Deserialization</a></h3>
 <p>We use <a href="https://serde.rs/">serde</a> for serialization and deserialization of data.</p>
 <h3 id="web-ui"><a class="header" href="#web-ui">Web UI</a></h3>
-<p>We use <a href="https://leptos.dev/">Leptos</a> as our UI framework for building reactive web applications in Rust.</p>
-<p>Leptos is a full-stack web framework that allows writing both server and client code in Rust.
-It provides reactive primitives and a component model similar to modern JavaScript frameworks.</p>
-<p>Key features:</p>
+<p>We use <a href="https://maud.lang.rs/">Maud</a> for server-side rendering. Maud is a compile-time HTML templating library: the <code>maud::html!</code> macro produces a <code>Markup</code> value, and view functions are plain Rust functions returning <code>Markup</code>.</p>
+<p>Key points:</p>
 <ul>
-<li>The <code>islands</code> Cargo feature is enabled workspace-wide (Leptos 0.8 build requirement)</li>
-<li>Only the Mosaic component library uses actual island components with client-side WASM hydration</li>
-<li>DPE uses SSR-only with <a href="https://data-star.dev/">Datastar</a> for interactivity — no client-side WASM</li>
+<li>Both DPE and the Mosaic playground are server-side rendered with Maud — no client-side WASM, no hydration, no islands</li>
+<li>Interactivity is provided by <a href="https://data-star.dev/">Datastar</a>: SSE fragment handlers render <code>Markup</code> and stream it back to the browser</li>
+<li>Routing is native Axum (<code>Router::new().route(...)</code>); static assets are served via <code>tower_http::ServeDir</code></li>
 <li>The architecture follows the MPA paradigm, a "multi-page app"</li>
-<li>Server-side rendering</li>
-<li>Fine-grained reactivity</li>
-<li>Component-based architecture</li>
-<li>Full Rust syntax support</li>
 </ul>
 <h3 id="architectural-design-patterns"><a class="header" href="#architectural-design-patterns">Architectural Design Patterns</a></h3>
 <p>We follow concepts such as <a href="https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html">Clean Architecture</a>
@@ -3387,8 +3647,7 @@ but the general principles are the same.</p>
 <p>We follow the Testing Pyramid approach to testing,
 the majority of tests are unit tests, with a smaller number of integration tests, and a few end-to-end tests.</p>
 <p>Unit and integration tests are written in Rust, following the Rust testing best practices.
-End-to-end tests can be written using Playwright.
-Leptos has some <a href="https://book.leptos.dev/testing.html?highlight=playwrigh#playwright-with-counters">built-in support for Playwright</a>.</p>
+End-to-end tests can be written using Playwright.</p>
 <h3 id="domain-driven-design"><a class="header" href="#domain-driven-design">Domain Driven Design</a></h3>
 <p>We do not follow strict Domain Driven Design (DDD) principles,
 but we try to follow some of the concepts.
@@ -3399,7 +3658,7 @@ In particular, we try to keep the language used in code aligned with the domain 
 <p>We are still evaluating the database to use.</p>
 <p>For the initial development, we work with static content or JSON files.</p>
 <h2 id="mosaic-component-library"><a class="header" href="#mosaic-component-library">Mosaic Component Library</a></h2>
-<p>The Mosaic component library provides reusable UI components built with Leptos and Tailwind CSS.</p>
+<p>The Mosaic component library provides reusable UI components built with Maud and Tailwind CSS.</p>
 <p>Components are defined in <code>modules/mosaic/tiles/</code> and can be previewed in the playground application at <code>modules/mosaic/playground/</code>.</p>
 <p>To run the playground locally:</p>
 <pre><code class="language-bash">just watch-mosaic-playground

@@ -261,7 +261,7 @@
 <p><strong>Architecture</strong></p>
 <ul>
 <li>New API crates follow the <code>dpe-api-{name}</code> pattern with <code>dpe-core</code> as only domain dependency (see <a href="../repo_structure.html">Project Structure</a>)</li>
-<li><code>dpe-core</code> has no framework dependencies (no leptos, no axum)</li>
+<li><code>dpe-core</code> has no framework dependencies (no axum, no maud)</li>
 <li>Validate command covers all data file types (DPE)</li>
 <li>E2E test directory naming: <code>web-e2e-tests/</code> for DPE, <code>playground-e2e-tests/</code> for Mosaic</li>
 </ul>
@@ -291,13 +291,14 @@
 <li>Fragment handlers in <code>fragments/</code> module, not inline in <code>main.rs</code></li>
 <li>Domain types belong in <code>dpe-core</code>, not in web or API crates</li>
 <li>API crate exposes a handler function (e.g., <code>pub async fn oai_handler(...)</code>) for composition in dpe-server</li>
-<li>Leptos components use <code>view!</code> macro consistently</li>
+<li>View functions return <code>maud::Markup</code> via the <code>html!</code> macro</li>
+<li>No non-trivial <code>html!</code> block passed directly as a function argument — bind it to a Rust <code>let</code> or extract a <code>fn -&gt; Markup</code> helper (nested-as-argument <code>html!</code> is skipped by <code>maudfmt</code> and mangled by <code>cargo fmt</code>; trivial one-liners like <code>html! { (label) }</code> are fine)</li>
 <li>Test files follow naming convention: <code>{feature}_tests.rs</code> for Rust, <code>{feature}.spec.ts</code> for Playwright</li>
 </ul>
 <h2 id="skip"><a class="header" href="#skip">Skip</a></h2>
 <ul>
 <li>Snapshot <code>.snap</code> file contents — verify accepted, don't review formatting</li>
-<li>Formatting-only changes (<code>cargo fmt</code> / <code>leptosfmt</code> diffs)</li>
+<li>Formatting-only changes (<code>maudfmt</code> and <code>cargo +nightly fmt</code> diffs)</li>
 <li><code>Cargo.lock</code> changes from dependency updates</li>
 </ul>
 

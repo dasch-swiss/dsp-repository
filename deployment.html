@@ -248,7 +248,7 @@
 <h3 id="checks-and-tests"><a class="header" href="#checks-and-tests">Checks and Tests</a></h3>
 <p>Every push and pull request runs:</p>
 <ul>
-<li><strong>check.yml</strong> — Formatting (<code>rustfmt</code>, <code>leptosfmt</code>) and linting (<code>clippy</code>)</li>
+<li><strong>check.yml</strong> — Formatting (<code>maudfmt</code> for <code>html!</code> macros + <code>cargo +nightly fmt</code>) and linting (<code>clippy</code>)</li>
 <li><strong>test.yml</strong> — Runs the full test suite</li>
 <li><strong>scout-dpe.yml</strong> / <strong>scout-mosaic-playground.yml</strong> — Docker image vulnerability scanning (see <a href="./security.html">Security</a>)</li>
 </ul>
@@ -261,7 +261,7 @@
 <h3 id="reusable-actions"><a class="header" href="#reusable-actions">Reusable Actions</a></h3>
 <p>Common CI steps are extracted into composite actions in <code>.github/actions/</code>:</p>
 <div class="table-wrapper"><table><thead><tr><th>Action</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><code>build-dpe</code></td><td>Compile DPE (Rust musl binary + Leptos site assets) and stage artifacts</td></tr>
+<tr><td><code>build-dpe</code></td><td>Compile DPE (static musl <code>dpe-server</code> binary + content-hashed Tailwind <code>app.css</code> via <code>just css-release</code>) and stage artifacts</td></tr>
 <tr><td><code>docker-publish</code></td><td>Set up Buildx, log in to Docker Hub, build and push an image</td></tr>
 <tr><td><code>docker-scout</code></td><td>Run Docker Scout CVE scan and upload SARIF results</td></tr>
 </tbody></table>
@@ -288,8 +288,8 @@
 <p>Defined in <code>dpe-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>
 <ol>
-<li>Builds site assets with <code>cargo-leptos</code></li>
-<li>Builds a static musl-linked binary</li>
+<li>Builds the content-hashed Tailwind stylesheet (<code>just css-release</code>)</li>
+<li>Builds a static musl-linked <code>dpe-server</code> binary</li>
 <li>Pushes the Docker image to Docker Hub (<code>daschswiss/dpe:{tag}</code>)</li>
 <li>Triggers a Jenkins webhook for DEV deployment</li>
 </ol>

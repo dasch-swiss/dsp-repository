@@ -251,10 +251,10 @@
 <tr><td><code>just check</code></td><td>Run formatting and linting checks</td></tr>
 <tr><td><code>just build</code></td><td>Build all targets</td></tr>
 <tr><td><code>just test</code></td><td>Run all tests</td></tr>
-<tr><td><code>just fmt</code></td><td>Format all Rust code (cargo fmt + leptosfmt)</td></tr>
+<tr><td><code>just fmt</code></td><td>Format all code (<code>maudfmt</code> for <code>maud::html!</code> macro contents, then <code>cargo +nightly fmt</code>)</td></tr>
 <tr><td><code>just run</code></td><td>Run server (release mode)</td></tr>
 <tr><td><code>just watch</code></td><td>Watch for changes and run tests</td></tr>
-<tr><td><code>just watch-dpe</code></td><td>Run DPE with hot reload</td></tr>
+<tr><td><code>just dev</code></td><td>Run DPE with hot reload</td></tr>
 <tr><td><code>just watch-mosaic-playground</code></td><td>Run Mosaic playground with hot reload</td></tr>
 <tr><td><code>just install-requirements</code></td><td>Install all development dependencies</td></tr>
 <tr><td><code>just install-e2e-requirements</code></td><td>Install Playwright browsers for E2E tests</td></tr>
@@ -269,7 +269,7 @@
 <li><strong>Clean commit history</strong>: Before merging, clean up the branch so that each commit represents one logical unit of change. Squash fixups, reword messages, and reorder commits so the history reads well on main.</li>
 </ul>
 <h2 id="commit-conventions"><a class="header" href="#commit-conventions">Commit Conventions</a></h2>
-<p>Follow <a href="https://www.conventionalcommits.org/">Conventional Commits</a>. Scopes match crate names: <code>dpe-server</code>, <code>dpe-core</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>, <code>mosaic-playground-macro</code>.</p>
+<p>Follow <a href="https://www.conventionalcommits.org/">Conventional Commits</a>. Scopes match crate names: <code>dpe-server</code>, <code>dpe-core</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>dpe-telemetry</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>.</p>
 <h3 id="types"><a class="header" href="#types">Types</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Prefix</th><th>Meaning</th><th>Changelog</th><th>Version bump</th></tr></thead><tbody>
 <tr><td><code>feat:</code></td><td>New user-visible functionality</td><td>Features</td><td>minor</td></tr>

@@ -251,48 +251,49 @@
           ┌────────────┼────────────┐
           │            │            │
      dpe-api-oai   dpe-web     (future APIs)
-     OAI-PMH 2.0  Leptos SSR
-     + axum        + Datastar
+     OAI-PMH 2.0  Maud views
+     + axum
           │            │
           └────────────┘
                  │
            dpe-server
            Route composition
-           (binary: dpe)
+           + Datastar
+           (binary: dpe-server)
 </code></pre>
 <ul>
 <li><strong>dpe-core</strong>: Framework-free domain layer. All types, repository traits, Fs implementations, and data loading.</li>
-<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="./oai-pmh.html">OAI-PMH Endpoint</a>). Depends only on dpe-core — no Leptos.</li>
-<li><strong>dpe-web</strong>: Leptos SSR components, pages, and <code>#[server]</code> wrappers. Re-exports dpe-core types for backward compatibility.</li>
-<li><strong>dpe-server</strong>: Thin composition root. Wires Leptos routes (dpe-web) and API handlers (dpe-api-oai) into a single Axum server.</li>
+<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="./oai-pmh.html">OAI-PMH Endpoint</a>). Depends only on dpe-core.</li>
+<li><strong>dpe-web</strong>: A native library of <a href="https://maud.lambda.xyz/">Maud</a> page and component functions (<code>fn -&gt; Markup</code>). Imports dpe-core types directly.</li>
+<li><strong>dpe-server</strong>: Thin composition root. Wires the native Axum router, the <code>&lt;head&gt;</code>/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers into a single Axum server.</li>
 </ul>
 <h2 id="hypermedia-driven-architecture"><a class="header" href="#hypermedia-driven-architecture">Hypermedia-Driven Architecture</a></h2>
-<p>The DPE uses a <strong>hypermedia-driven architecture</strong> where the server is the single source of truth for UI state. Interactivity is provided by <a href="https://data-star.dev/">Datastar</a> (~14KB JS) instead of client-side frameworks or WASM.</p>
-<p><strong>Why Datastar over Leptos islands:</strong></p>
+<p>The DPE uses a <strong>hypermedia-driven architecture</strong> where the server is the single source of truth for UI state. Pages are rendered as plain HTML with <a href="https://maud.lambda.xyz/">Maud</a> (a compile-time HTML template macro), and interactivity is provided by <a href="https://data-star.dev/">Datastar</a> (~14KB JS) instead of a client-side framework or WASM.</p>
+<p><strong>Why this approach:</strong></p>
 <ul>
-<li>No WASM compilation step (faster builds)</li>
-<li>Smaller client-side footprint (~14KB vs ~200KB+ WASM)</li>
+<li>No WASM compilation step (faster builds, no <code>wasm32</code> toolchain)</li>
+<li>Small client-side footprint (~14KB Datastar, no hydration bundle)</li>
 <li>Server controls all state (HATEOAS)</li>
 <li>Graceful degradation — works as plain HTML links without JavaScript</li>
 <li>Simpler mental model — HTML attributes, not reactive signals</li>
 </ul>
 <h2 id="rendering-model"><a class="header" href="#rendering-model">Rendering Model</a></h2>
-<p>Pages are rendered server-side by <strong>Leptos SSR</strong>. Dynamic content updates (tab switching, search autocomplete) are handled by <strong>Datastar SSE fragments</strong>.</p>
+<p>Pages are rendered server-side with <strong>Maud</strong> (<code>maud::html!</code> → <code>Markup</code>). Dynamic content updates (tab switching, search autocomplete) are handled by <strong>Datastar SSE fragments</strong>.</p>
 <pre><code>Initial page load:
-  Browser → GET /projects/ABC1 → Leptos SSR → Full HTML page
+  Browser → GET /dpe/projects/ABC1 → Maud SSR → Full HTML page
 
 Tab switch (with JS):
-  Browser → GET /projects/ABC1/tab/publications (SSE)
+  Browser → GET /dpe/projects/ABC1/tab/publications (SSE)
          ← PatchElements (#project-tabs replacement)
          ← ExecuteScript (history.replaceState for URL)
 
 Tab switch (without JS):
-  Browser → GET /projects/ABC1?tab=publications → Full page reload
+  Browser → GET /dpe/projects/ABC1?tab=publications → Full page reload
 </code></pre>
 <h2 id="fragment-route-convention"><a class="header" href="#fragment-route-convention">Fragment Route Convention</a></h2>
-<p>Fragment endpoints are pure Axum handlers (not Leptos routes) that render Leptos components to HTML strings and deliver them as Datastar SSE events.</p>
+<p>Fragment endpoints are plain Axum handlers that render Maud <code>Markup</code> to HTML strings and deliver them as Datastar SSE events. The full page and the SSE fragment render the <code>#project-tabs</code> morph root through the same <code>project_tabs</code> function, so the two paths cannot drift.</p>
 <p><strong>Route pattern: resource-action nesting</strong></p>
-<pre><code>GET /projects/{id}              → Full page (Leptos SSR)
+<pre><code>GET /projects/{id}              → Full page (Maud SSR)
 GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
 </code></pre>
 <p>Different path depths in Axum's radix trie mean no conflict and no header-based discrimination.</p>

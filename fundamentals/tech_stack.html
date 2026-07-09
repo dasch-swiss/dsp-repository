@@ -246,11 +246,10 @@
 <h2 id="core"><a class="header" href="#core">Core</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
 <tr><td><strong>Rust</strong> (Edition 2021)</td><td>Primary development language</td></tr>
-<tr><td><strong>Axum</strong></td><td>HTTP web framework</td></tr>
-<tr><td><strong>Leptos</strong></td><td>Reactive UI framework (SSR for DPE, islands for Mosaic)</td></tr>
+<tr><td><strong>Axum</strong></td><td>HTTP web framework (native routing, <code>ServeDir</code> for static assets)</td></tr>
+<tr><td><strong>Maud</strong></td><td>Compile-time HTML templating (<code>maud::html!</code> → <code>Markup</code>) for server-side rendering</td></tr>
 <tr><td><strong>Datastar</strong></td><td>SSE-based interactivity for DPE (~14KB JS, no WASM)</td></tr>
 <tr><td><strong>Tailwind CSS v4</strong></td><td>Utility-first CSS framework</td></tr>
-<tr><td><strong>DaisyUI</strong></td><td>Tailwind component plugin</td></tr>
 <tr><td><strong>Tokio</strong></td><td>Async runtime</td></tr>
 <tr><td><strong>figment</strong></td><td>Layered configuration (defaults → TOML → env vars)</td></tr>
 </tbody></table>
@@ -272,9 +271,10 @@
 </div>
 <h2 id="build--development"><a class="header" href="#build--development">Build &amp; Development</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><strong>cargo-leptos</strong></td><td>Leptos build tool (handles Tailwind, WASM, site assets)</td></tr>
+<tr><td><strong>Tailwind CSS CLI</strong></td><td>Standalone CLI that builds the stylesheet (<code>just css</code> / <code>just css-release</code>); no Node or build.rs CSS pipeline</td></tr>
 <tr><td><strong>just</strong></td><td>Command runner for development workflows</td></tr>
-<tr><td><strong>leptosfmt</strong></td><td>Leptos-aware code formatter</td></tr>
+<tr><td><strong>maudfmt</strong></td><td>Formats the contents of <code>maud::html!</code> macros (stock rustfmt does not)</td></tr>
+<tr><td><strong>cargo +nightly fmt</strong></td><td>Code formatter for Rust outside the <code>html!</code> macros</td></tr>
 <tr><td><strong>Biome</strong></td><td>Linter/formatter for E2E test TypeScript</td></tr>
 </tbody></table>
 </div>

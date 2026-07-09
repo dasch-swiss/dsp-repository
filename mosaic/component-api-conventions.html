@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Operations - DSP-Repository Developer Documentation</title>
+        <title>Component API Conventions - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -242,126 +242,208 @@
 }
 
 </style>
-<h1 id="dpe-operations-guide"><a class="header" href="#dpe-operations-guide">DPE Operations Guide</a></h1>
-<p>Operations documentation for the DPE infrastructure team.</p>
-<h2 id="docker-image"><a class="header" href="#docker-image">Docker Image</a></h2>
+<h1 id="component-api-conventions"><a class="header" href="#component-api-conventions">Component API Conventions</a></h1>
+<p>How Mosaic tile functions are shaped. Mosaic is a Maud component library: every
+tile ultimately produces <code>maud::Markup</code>. These conventions exist so tiles read
+naturally in Maud, compose without ceremony, and stay consistent as the library
+grows and gains a second consumer.</p>
+<h2 id="background-not-a-leptos-port"><a class="header" href="#background-not-a-leptos-port">Background: not a Leptos port</a></h2>
+<p>Mosaic was ported from Leptos, whose components take a <code>Props</code> struct and
+<code>children</code>. Translating that shape literally into Rust — a <code>*Props</code> struct on
+every tile plus a <code>Markup</code> content argument — reads against the grain of Maud.
+Maud has no <code>view!</code>-style macro that lets a user function participate in the
+brace-nesting grammar, so the Leptos mental model does not carry over. These
+conventions describe the Maud-native shape instead.</p>
+<h2 id="leaf-tiles-vs-container-tiles"><a class="header" href="#leaf-tiles-vs-container-tiles">Leaf tiles vs container tiles</a></h2>
+<p>Distinguish two kinds of tile, because they differ in how many options they carry:</p>
 <ul>
-<li><strong>Base</strong>: <code>gcr.io/distroless/static-debian12:nonroot</code></li>
-<li><strong>User</strong>: uid 65534 (nonroot, built-in to distroless)</li>
-<li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
-<li><strong>Binary</strong>: Static musl-linked <code>dpe-server</code> (CLI with subcommands)</li>
+<li><strong>Leaf tiles</strong> render self-contained markup from a little data: <code>badge</code>, <code>icon</code>,
+<code>copy_button</code>, <code>breadcrumb_item</code>, <code>tab</code>.</li>
+<li><strong>Container tiles</strong> wrap arbitrary caller-supplied content: <code>card</code> and its
+body/header/footer partials, <code>tabs</code>.</li>
 </ul>
-<h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
-<p>The <code>dpe-server</code> binary provides three subcommands:</p>
-<div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>dpe-server serve</code></td><td>Start the web server</td></tr>
-<tr><td><code>dpe-server validate &lt;data_dir&gt;</code></td><td>Validate all data files under the given directory</td></tr>
-<tr><td><code>dpe-server healthcheck [--url URL]</code></td><td>Check if the server is healthy (default: <code>http://localhost:8080/healthz</code>)</td></tr>
-</tbody></table>
-</div>
-<h3 id="dpe-server-validate"><a class="header" href="#dpe-server-validate"><code>dpe-server validate</code></a></h3>
-<p>Validates JSON data files for structural correctness and cross-reference integrity.</p>
-<pre><code class="language-bash">dpe-server validate ./data
-</code></pre>
-<p><strong>What it checks:</strong></p>
-<ul>
-<li>JSON schema validity for all data file types (projects, persons, organizations, records, clusters, collections)</li>
-<li>Cross-references between projects, persons, and organizations</li>
-<li>Orphaned files that are not referenced by any parent entity</li>
-<li>Project roles misplaced in a person's <code>jobTitles</code> (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's <code>attributions</code> (<code>contributorType</code>), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is <code>JOB_TITLE_ROLE_WORDS</code> in <code>dpe-core</code>.</li>
-</ul>
-<p><strong>Exit codes:</strong></p>
-<ul>
-<li><code>0</code> — all data files are valid</li>
-<li><code>1</code> — validation errors found (details printed to stderr)</li>
-</ul>
-<h3 id="dpe-server-healthcheck"><a class="header" href="#dpe-server-healthcheck"><code>dpe-server healthcheck</code></a></h3>
-<p>Lightweight probe for Docker HEALTHCHECK or monitoring:</p>
-<pre><code class="language-bash">dpe-server healthcheck                             # default: http://localhost:8080/healthz
-dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
-</code></pre>
-<h2 id="ports"><a class="header" href="#ports">Ports</a></h2>
-<div class="table-wrapper"><table><thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody>
-<tr><td>8080</td><td>HTTP</td><td>Application server</td></tr>
-</tbody></table>
-</div>
-<h2 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h2>
-<div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Required</th><th>Default</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g., <code>dpe_server=info,tower_http=debug</code>)</td></tr>
-<tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>modules/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
-<tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret)</td></tr>
-<tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility.</td></tr>
-<tr><td><code>DPE_OAI_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td><td>Public base URL emitted as the OAI-PMH <code>baseURL</code> and echoed in <code>&lt;request&gt;</code> elements. Set per environment to match the public endpoint (e.g. <code>https://api.dev.dasch.swiss/dpe/oai</code> on DEV, <code>http://localhost:4000/dpe/oai</code> locally). See <a href="./oai-pmh.html">OAI-PMH</a>.</td></tr>
-<tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g., <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
-<tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g., <code>dpe</code>)</td></tr>
-<tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g., <code>service.namespace=dpe,service.version=0.2.1,deployment.environment=prod</code>)</td></tr>
-<tr><td><code>PYROSCOPE_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>Pyroscope HTTP endpoint (e.g., <code>http://pyroscope:4040</code>). When unset, profiling is disabled.</td></tr>
-<tr><td><code>DPE_SITE_ADDR</code></td><td>No</td><td><code>127.0.0.1:4000</code></td><td>Listen address and port. The Docker image sets <code>0.0.0.0:8080</code>.</td></tr>
-<tr><td><code>DPE_PUBLIC_DIR</code></td><td>No</td><td><code>modules/dpe/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, project images, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
-<tr><td><code>DPE_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
-</tbody></table>
-</div>
-<h2 id="health-check"><a class="header" href="#health-check">Health Check</a></h2>
-<ul>
-<li><strong>Endpoint</strong>: <code>GET /healthz</code></li>
-<li><strong>Response</strong>: <code>200 OK</code> (no body)</li>
-<li><strong>Purpose</strong>: Lightweight probe for Traefik/load balancers. Does not render any page.</li>
-</ul>
-<h2 id="data-volume"><a class="header" href="#data-volume">Data Volume</a></h2>
-<ul>
-<li><strong>Mount point</strong>: Value of <code>DPE_DATA_DIR</code></li>
-<li><strong>Access</strong>: Read-only</li>
-<li><strong>Contents</strong>: Project metadata JSON files, organized by type (<code>projects/</code>, <code>persons/</code>, <code>organizations/</code>, <code>clusters/</code>, <code>collections/</code>, <code>records/</code>)</li>
-</ul>
-<h2 id="resource-requirements"><a class="header" href="#resource-requirements">Resource Requirements</a></h2>
-<p>The DPE is lightweight — it serves static data with no database.</p>
-<ul>
-<li><strong>Memory</strong>: ~50-100 MB typical</li>
-<li><strong>CPU</strong>: Minimal (SSR rendering is fast, data is cached in-memory)</li>
-<li><strong>Disk</strong>: Data files + static assets (~50 MB)</li>
-</ul>
-<h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
-<p>Structured logging via <code>init-tracing-opentelemetry</code> (OTel-aware tracing subscriber). In production (<code>DPE_ENV=PROD</code>), logs are JSON-formatted to stdout only. In local development (<code>DPE_ENV=DEV</code>), logs are additionally exported via OTLP to Loki when <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is set. Configure levels with <code>RUST_LOG</code>:</p>
-<pre><code class="language-bash"># Default (info level)
-RUST_LOG=info
+<p>Both take content the same way (see below). The <em>form</em> (plain function vs
+builder) is driven by how many options the tile carries — not by this
+leaf/container distinction.</p>
+<h2 id="content-is-impl-render"><a class="header" href="#content-is-impl-render">Content is <code>impl Render</code></a></h2>
+<p>Every content or label parameter is <code>impl Render</code>, never a bare <code>Markup</code> and
+never <code>&amp;str</code>/<code>impl Into&lt;String&gt;</code>.</p>
+<p>Maud's <code>Render</code> trait is implemented by string-like types (rendered as escaped
+text), by <code>Markup</code>/<code>PreEscaped</code>, and — by our own tiles (see <a href="#everything-else-builders">Builders</a>).
+A single <code>impl Render</code> parameter therefore accepts all of them:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn badge(label: impl Render) -&gt; BadgeBuilder { /* … */ }
 
-# Debug HTTP requests
-RUST_LOG=dpe_server=info,tower_http=debug
+badge("archaeology")                              // a string
+badge(html! { (icon(Info, "w-4 h-4")) "info" })   // markup
+<span class="boring">}</span></code></pre></pre>
+<p>Prefer <code>impl Render</code> over <code>&amp;str</code>/<code>impl Into&lt;String&gt;</code> (too narrow — cannot hold an
+icon) and over a bare <code>Markup</code> parameter (too heavy — forces <code>html! { … }</code> at
+every call site, and cannot accept a builder directly).</p>
+<p>This applies to <strong>container slots too</strong>: a card body is <code>impl Render</code>, not
+<code>Markup</code>. That lets a builder, a bare <code>html!</code> block, or a string all flow into a
+container with no conversion:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>card(button("Save").variant(ButtonVariant::Primary)).variant(CardVariant::Bordered)  // a builder as content
+card(html! { h2 { (title) } p { (summary) } }).variant(CardVariant::Bordered)   // markup as content
+<span class="boring">}</span></code></pre></pre>
+<p>The trade-off is that <code>impl Render</code> slots are permissive — they accept anything
+renderable. That is acceptable here: the alternative (<code>Markup</code>) buys no real
+safety and costs ergonomics.</p>
+<h2 id="options-plain-functions-vs-builders"><a class="header" href="#options-plain-functions-vs-builders">Options: plain functions vs builders</a></h2>
+<p>Choose the form by how many options the tile carries. Do not impose one pattern
+globally — a <code>Props</code> struct on every tile would reintroduce the Leptos shape
+for no benefit.</p>
+<p>In practice this is a <strong>two-way</strong> split. A named-constructor middle tier
+(<code>badge::secondary(...)</code>) does not survive contact with the real call sites:
+every tile that has a variant also carries at least one more axis (an extra
+class, a size, an id/test-id), so it wants a builder rather than a fixed-shape
+function.</p>
+<h3 id="trivial-tiles-plain-functions"><a class="header" href="#trivial-tiles-plain-functions">Trivial tiles: plain functions</a></h3>
+<p>No variant and one or two required arguments → a plain function returning
+<code>Markup</code>. These are the genuinely simple primitives:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>icon(IconType::Search, "w-4 h-4")
+copy_button(text)
+loading()
+<span class="boring">}</span></code></pre></pre>
+<h3 id="everything-else-builders"><a class="header" href="#everything-else-builders">Everything else: builders</a></h3>
+<p>A variant, or several independent optional axes (a card: variant + extra class +
+id/test-id; a link: href + as_button + target + rel + aria_label + disabled) → a
+<strong>builder</strong>. A builder reads better than a <code>Props</code> struct — no <code>Some(...)</code>
+wrapping, no <code>..Default::default()</code>, you pay only for what you set:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>card(body).variant(CardVariant::Bordered).class("overflow-visible")
+link("Docs", "/x").target("_blank").rel("noopener").build()
+<span class="boring">}</span></code></pre></pre>
+<p>Builders follow four rules:</p>
+<ol>
+<li>
+<p><strong>They implement Maud's <code>Render</code> trait</strong>, so they splice into <code>html!</code> directly
+— no <code>.build()</code> inside a template:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>html! {
+    (button("Save").variant(Secondary))
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p><strong>The struct is <code>#[must_use]</code></strong>, so a builder that is constructed but never
+spliced or built warns at compile time.</p>
+</li>
+<li>
+<p><strong><code>.build()</code> materialises a <code>Markup</code></strong> for the rare standalone path (a function
+whose body is just a builder, or a test). Inside <code>html!</code> you never call it.
+Route <code>Render::render(&amp;self)</code> and <code>build(self)</code> through one private
+<code>markup(&amp;self)</code>. Do <strong>not</strong> add <code>impl From&lt;Builder&gt; for Markup</code> / <code>Into</code> —
+<code>.build()</code> is self-documenting and needs no type annotation, whereas <code>.into()</code>
+is opaque and inference-hungry, and <code>Render</code> already covers the splice case.</p>
+</li>
+<li>
+<p><strong>Universal options come from a shared <code>ComponentBuilder</code> trait</strong> — <code>with_id</code>,
+<code>with_test_id</code>, and <code>build</code> as defaults — so every builder gets them without
+per-component code.</p>
+</li>
+</ol>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub trait ComponentBuilder: Sized {
+    fn id_mut(&amp;mut self) -&gt; &amp;mut Option&lt;String&gt;;
+    fn test_id_mut(&amp;mut self) -&gt; &amp;mut Option&lt;String&gt;;
+    fn build(self) -&gt; Markup;
 
-# Verbose debugging
-RUST_LOG=debug
-</code></pre>
-<h2 id="observability"><a class="header" href="#observability">Observability</a></h2>
-<h3 id="fathom-analytics"><a class="header" href="#fathom-analytics">Fathom Analytics</a></h3>
-<p>Privacy-friendly, GDPR-compliant analytics. No cookies, no personal data collected.</p>
-<p><strong>Configuration:</strong> Set the <code>DPE_FATHOM_SITE_ID</code> environment variable to your Fathom site ID (not a secret). The tracking script is automatically injected into the HTML shell.</p>
-<p><strong>What gets tracked:</strong></p>
+    #[must_use] fn with_id(mut self, id: impl Into&lt;String&gt;) -&gt; Self { /* … */ self }
+    #[must_use] fn with_test_id(mut self, id: impl Into&lt;String&gt;) -&gt; Self { /* … */ self }
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="inlining-content-at-call-sites"><a class="header" href="#inlining-content-at-call-sites">Inlining content at call sites</a></h2>
+<p>Because a container takes its content as an <strong>argument</strong> (Maud has no child-block
+syntax for functions), a multi-element <code>html!</code> block passed <em>inline</em> into the call
+is skipped by <code>maudfmt</code> and then mangled by <code>cargo fmt</code>. Bind it to a Rust <code>let</code>
+first, or extract a <code>fn -&gt; Markup</code> helper:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Good — the body is named, and maudfmt formats it.
+let body = html! {
+    h2 { (project.name) }
+    p  { (project.short_description) }
+};
+html! { (card(body).variant(CardVariant::Bordered)) }
+<span class="boring">}</span></code></pre></pre>
+<p><code>maudfmt</code> only formats <code>html!</code> at Rust statement/<code>let</code> position; a block nested as
+a call argument (or via Maud's in-macro <code>@let x = html! { … }</code>) is not. Note this
+is only about <em>inline <code>html!</code> blocks</em> — a builder or a pre-bound variable passed
+into an <code>impl Render</code> slot needs no such care. See also the formatting note in
+<code>CONVENTIONS.md</code>.</p>
+<h2 id="css-classes"><a class="header" href="#css-classes">CSS classes</a></h2>
 <ul>
-<li>Page views</li>
-<li>Tab switches (detected automatically via <code>history.replaceState</code>)</li>
+<li>Variant enums expose <code>css_class(self) -&gt; &amp;'static str</code> returning <strong>complete
+literal class strings</strong>, so Tailwind's content scan sees them. Never assemble
+class names from fragments.</li>
+<li>No BEM — it adds nothing under Tailwind. Use utility classes directly in the
+markup, and <strong>wrap a reused Tailwind class combination behind a single semantic
+class</strong> (via <code>@apply</code> in the component's co-located CSS) where the combination
+repeats. A tile function and any hand-written markup then share that one class
+instead of duplicating a long utility string.</li>
 </ul>
-<p><strong>Disable:</strong> Omit the <code>DPE_FATHOM_SITE_ID</code> environment variable — no tracking script is rendered.</p>
-<h3 id="opentelemetry"><a class="header" href="#opentelemetry">OpenTelemetry</a></h3>
-<p>DPE exports traces, metrics, and structured logs via OTLP gRPC. In production, the OTLP endpoint points to Grafana Alloy, which forwards to Grafana Cloud (Tempo for traces, Mimir for metrics, Loki for logs).</p>
-<p>When <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is not set, the OTel SDK falls back to no-op export — the application runs normally without telemetry export. See <code>docs/src/dpe/observability.md</code> for the developer guide.</p>
-<h3 id="continuous-profiling-pyroscope"><a class="header" href="#continuous-profiling-pyroscope">Continuous Profiling (Pyroscope)</a></h3>
-<p>CPU profiling via Grafana Pyroscope. Samples at 100Hz and pushes profiles to the configured endpoint.</p>
-<p><strong>Configuration:</strong> Set <code>PYROSCOPE_ENDPOINT</code> to the Pyroscope HTTP endpoint. When unset, no profiling agent runs and there is zero overhead.</p>
-<p><strong>What gets profiled:</strong></p>
+<h2 id="accessibility"><a class="header" href="#accessibility">Accessibility</a></h2>
+<p>Accessibility is the tile's responsibility, not the caller's. Model the semantic
+state and emit the correct <code>aria-*</code> / <code>role</code> internally, rather than exposing raw
+aria attributes as knobs:</p>
 <ul>
-<li>CPU time per function (sampling-based, 100 samples/second)</li>
-<li>Flame graphs viewable in Grafana (Explore &gt; Pyroscope)</li>
+<li><strong>State and structure</strong> (<code>aria-selected</code>, <code>aria-expanded</code>, <code>aria-current</code>,
+<code>aria-disabled</code>, <code>role</code>, <code>aria-controls</code>) follow from a semantic method. The
+link's <code>.disabled()</code> already emits <code>aria-disabled="true"</code> (and, in button mode,
+<code>tabindex="-1"</code>); a tab's <code>.checked()</code> would ideally also emit <code>aria-selected="true"</code>
+plus <code>role="tab"</code> (not yet implemented — the tabs tile is currently a CSS-only
+radio group). If one of these keeps appearing as a caller-set value, that is the
+signal a semantic method is missing — add the method, not a raw knob.</li>
+<li><strong>Author-supplied labels</strong> (<code>aria-label</code> for icon-only or image-only controls)
+are genuinely the caller's to provide, so they are a builder method
+(<code>.aria_label(...)</code>) on the interactive tiles that need one — not forced onto
+every tile via <code>ComponentBuilder</code>, since e.g. a card has no use for one.</li>
+<li><strong>Bundle safe defaults into intent methods.</strong> <code>link(...).external()</code> sets both
+<code>target="_blank"</code> and <code>rel="noopener noreferrer"</code>, so the <code>noopener</code> guard can't
+be forgotten. Prefer such a method over the raw <code>target</code>/<code>rel</code> knobs.</li>
+<li><strong>Avoid a generic <code>.attr(name, value)</code> escape hatch.</strong> Raw attribute passthrough
+invites incorrect a11y and quietly defeats the guarantees the design system
+exists to provide.</li>
 </ul>
+<h2 id="test-ids"><a class="header" href="#test-ids">Test IDs</a></h2>
+<p>Builder-backed tiles that implement <code>ComponentBuilder</code> (<code>button</code>, <code>card</code>, <code>link</code>,
+<code>badge</code>) carry <code>.with_test_id(...)</code> for free, giving the Playwright suites stable,
+per-instance selectors. <code>tab</code> is a builder but — being a compound of three sibling
+elements with no single id target — does not implement <code>ComponentBuilder</code>.</p>
+<p>Leaf free-function tiles do <strong>not</strong> emit a test id. A constant default would be
+non-unique across repeated instances (every badge in a list sharing one id) and
+adds output noise for no selector value. When a specific leaf needs a stable
+selector, add <code>data-testid</code> in the surrounding markup at the call site; if a tile
+genuinely needs several configurable attributes, that is the signal to promote it
+to a builder.</p>
+<h2 id="status"><a class="header" href="#status">Status</a></h2>
+<p>Convergence is complete. The builders — <code>button</code>, <code>card</code>, <code>link</code>, <code>badge</code>, <code>tab</code>
+— follow these conventions; <code>button</code>, <code>card</code>, <code>link</code>, and <code>badge</code> implement the
+<code>ComponentBuilder</code> trait in <code>tiles/src/builder.rs</code>, while <code>tab</code> is a builder
+without it (a 3-element compound with no single id target).
+<code>breadcrumb</code>/<code>breadcrumb_current</code> and the container <code>tabs</code>/<code>breadcrumb</code> take
+<code>impl Render</code>. The trivial tiles (<code>icon</code>, <code>copy_button</code>, <code>loading</code>) intentionally
+remain plain functions — they have no variant or optional axes. No tile carries a
+<code>*Props</code> struct anymore. New tiles should follow this shape from the start.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../dpe/observability.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../dpe/oai-pmh.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../dpe/json-api.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../fundamentals/processes.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -371,11 +453,11 @@ RUST_LOG=debug
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../dpe/observability.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../dpe/oai-pmh.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../dpe/json-api.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../fundamentals/processes.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

@@ -257,14 +257,14 @@
 just lgtm-up
 
 # Terminal 2: Run DPE with OTel enabled (exports to localhost:4317)
-just watch-dpe-otel
+just dev-otel
 
 # Terminal 3: Generate traffic
 curl http://localhost:4000/projects
 curl http://localhost:4000/dpe/oai?verb=Identify
 curl http://localhost:4000/healthz
 </code></pre>
-<p><code>watch-dpe-otel</code> sets <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>, <code>OTEL_SERVICE_NAME</code>, <code>OTEL_RESOURCE_ATTRIBUTES</code>, and <code>PYROSCOPE_ENDPOINT</code> for you. Run <code>just --list</code> to see the underlying commands.</p>
+<p><code>dev-otel</code> sets <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>, <code>OTEL_SERVICE_NAME</code>, <code>OTEL_RESOURCE_ATTRIBUTES</code>, and <code>PYROSCOPE_ENDPOINT</code> for you. Run <code>just --list</code> to see the underlying commands.</p>
 <h2 id="navigating-grafana-locally"><a class="header" href="#navigating-grafana-locally">Navigating Grafana Locally</a></h2>
 <p>Open <a href="http://localhost:3000">http://localhost:3000</a> (no login required):</p>
 <ul>
@@ -305,8 +305,8 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <p>All signals are buffered and flushed via <code>navigator.sendBeacon</code> on <code>visibilitychange</code> (page hide). The server collector converts them to OTel metrics (bounded attributes only) and structured logs (high-cardinality attribution data).</p>
 <h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
 <ul>
-<li><strong>Production</strong> (<code>LEPTOS_ENV=PROD</code>): JSON-formatted logs to stdout only. No OTel log export — traces and metrics are exported via OTLP, but logs stay on stdout.</li>
-<li><strong>Local development</strong> (<code>LEPTOS_ENV=DEV</code> with <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> set): Logs go to both stdout and Loki via OTLP. An <code>OpenTelemetryTracingBridge</code> layer converts <code>tracing</code> events into OTel log records, which are batched and exported alongside traces and metrics. Query them in Grafana Explore → Loki.</li>
+<li><strong>Production</strong> (<code>DPE_ENV=PROD</code>): JSON-formatted logs to stdout only. No OTel log export — traces and metrics are exported via OTLP, but logs stay on stdout.</li>
+<li><strong>Local development</strong> (<code>DPE_ENV=DEV</code> with <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> set): Logs go to both stdout and Loki via OTLP. An <code>OpenTelemetryTracingBridge</code> layer converts <code>tracing</code> events into OTel log records, which are batched and exported alongside traces and metrics. Query them in Grafana Explore → Loki.</li>
 <li>Set <code>RUST_LOG</code> to control log levels. Use <code>RUST_LOG=debug</code> for verbose output.</li>
 <li>When <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> is not set, the OTel SDK falls back to no-op export — no traces, metrics, or logs are sent, but structured stdout logging still works.</li>
 </ul>

@@ -276,7 +276,7 @@
 <ul>
 <li><strong>Location</strong>: <code>modules/dpe/web-e2e-tests/</code></li>
 <li><strong>Runner</strong>: <code>npx playwright test</code></li>
-<li><strong>Scope</strong>: Tab switching, search autocomplete, scroll preservation, accessibility (axe-core), visual regression</li>
+<li><strong>Scope</strong>: Tab switching, search autocomplete, scroll preservation, accessibility (axe-core)</li>
 <li><strong>Accessibility</strong>: Full-page axe-core scans against WCAG 2.1 AA</li>
 </ul>
 <h2 id="layer-4-fuzz-testing"><a class="header" href="#layer-4-fuzz-testing">Layer 4: Fuzz Testing</a></h2>
@@ -289,13 +289,13 @@
 <h2 id="ci-pipeline-budget"><a class="header" href="#ci-pipeline-budget">CI Pipeline Budget</a></h2>
 <p>Target: <strong>≤ 10 minutes</strong> wall-clock per PR.</p>
 <pre><code>Parallel job group 1 (~2 min):
-  cargo fmt --check
+  maudfmt --check + cargo fmt --check
   cargo clippy --all-targets -Dwarnings
   cargo-deny check
 
 Parallel job group 2 (~5 min):
   cargo nextest run --workspace
-  cargo leptos build --release
+  cargo build --release (dpe-server) + just css-release
   cargo-llvm-cov (coverage → Codecov)
 
 Parallel job group 3 (~5 min):

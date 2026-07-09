@@ -243,6 +243,14 @@
 
 </style>
 <h1 id="onboarding"><a class="header" href="#onboarding">Onboarding</a></h1>
+<h2 id="toolchain--setup"><a class="header" href="#toolchain--setup">Toolchain &amp; setup</a></h2>
+<p>Two supported paths:</p>
+<ul>
+<li><strong>Nix</strong> (recommended): <code>nix develop</code> (or direnv via <code>.envrc</code>). The flake provides the full toolchain, including Node.</li>
+<li><strong>Without Nix</strong>: <code>just install-requirements</code> (rustup + <code>cargo binstall</code> + the e2e Node dependencies).</li>
+</ul>
+<p><strong>Node must be on <code>PATH</code> for all shells (non-Nix path).</strong> <code>just</code> runs recipes in <code>sh</code>, which does not load shell-function-based version managers. A <em>lazy</em> nvm setup (where <code>node</code>/<code>npm</code> are shell functions) therefore leaves them invisible to <code>just</code>, and recipes such as <code>lint-e2e</code>, <code>test-a11y-dpe</code>, and the Playwright e2e tests fail with <code>env: node: No such file</code>. To fix, expose your default Node bin on <code>PATH</code> at shell startup — eager-load it in your shell rc, or use a PATH-shim manager such as volta or asdf.</p>
+<p>Only Playwright genuinely requires Node; the Tailwind CSS build is Node-free (standalone CLI). CI provisions Node explicitly, so this affects local non-Nix development only.</p>
 <h2 id="rust"><a class="header" href="#rust">Rust</a></h2>
 <p>The main technology we use is Rust.
 A solid understanding of Rust is needed,
@@ -252,19 +260,13 @@ though particularly the frontend work does not require deep knowledge of Rust.</
 <h3 id="serialization-and-deserialization"><a class="header" href="#serialization-and-deserialization">Serialization and Deserialization</a></h3>
 <p>We use <a href="https://serde.rs/">serde</a> for serialization and deserialization of data.</p>
 <h3 id="web-ui"><a class="header" href="#web-ui">Web UI</a></h3>
-<p>We use <a href="https://leptos.dev/">Leptos</a> as our UI framework for building reactive web applications in Rust.</p>
-<p>Leptos is a full-stack web framework that allows writing both server and client code in Rust.
-It provides reactive primitives and a component model similar to modern JavaScript frameworks.</p>
-<p>Key features:</p>
+<p>We use <a href="https://maud.lang.rs/">Maud</a> for server-side rendering. Maud is a compile-time HTML templating library: the <code>maud::html!</code> macro produces a <code>Markup</code> value, and view functions are plain Rust functions returning <code>Markup</code>.</p>
+<p>Key points:</p>
 <ul>
-<li>The <code>islands</code> Cargo feature is enabled workspace-wide (Leptos 0.8 build requirement)</li>
-<li>Only the Mosaic component library uses actual island components with client-side WASM hydration</li>
-<li>DPE uses SSR-only with <a href="https://data-star.dev/">Datastar</a> for interactivity — no client-side WASM</li>
+<li>Both DPE and the Mosaic playground are server-side rendered with Maud — no client-side WASM, no hydration, no islands</li>
+<li>Interactivity is provided by <a href="https://data-star.dev/">Datastar</a>: SSE fragment handlers render <code>Markup</code> and stream it back to the browser</li>
+<li>Routing is native Axum (<code>Router::new().route(...)</code>); static assets are served via <code>tower_http::ServeDir</code></li>
 <li>The architecture follows the MPA paradigm, a "multi-page app"</li>
-<li>Server-side rendering</li>
-<li>Fine-grained reactivity</li>
-<li>Component-based architecture</li>
-<li>Full Rust syntax support</li>
 </ul>
 <h3 id="architectural-design-patterns"><a class="header" href="#architectural-design-patterns">Architectural Design Patterns</a></h3>
 <p>We follow concepts such as <a href="https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html">Clean Architecture</a>
@@ -278,8 +280,7 @@ but the general principles are the same.</p>
 <p>We follow the Testing Pyramid approach to testing,
 the majority of tests are unit tests, with a smaller number of integration tests, and a few end-to-end tests.</p>
 <p>Unit and integration tests are written in Rust, following the Rust testing best practices.
-End-to-end tests can be written using Playwright.
-Leptos has some <a href="https://book.leptos.dev/testing.html?highlight=playwrigh#playwright-with-counters">built-in support for Playwright</a>.</p>
+End-to-end tests can be written using Playwright.</p>
 <h3 id="domain-driven-design"><a class="header" href="#domain-driven-design">Domain Driven Design</a></h3>
 <p>We do not follow strict Domain Driven Design (DDD) principles,
 but we try to follow some of the concepts.
@@ -290,7 +291,7 @@ In particular, we try to keep the language used in code aligned with the domain 
 <p>We are still evaluating the database to use.</p>
 <p>For the initial development, we work with static content or JSON files.</p>
 <h2 id="mosaic-component-library"><a class="header" href="#mosaic-component-library">Mosaic Component Library</a></h2>
-<p>The Mosaic component library provides reusable UI components built with Leptos and Tailwind CSS.</p>
+<p>The Mosaic component library provides reusable UI components built with Maud and Tailwind CSS.</p>
 <p>Components are defined in <code>modules/mosaic/tiles/</code> and can be previewed in the playground application at <code>modules/mosaic/playground/</code>.</p>
 <p>To run the playground locally:</p>
 <pre><code class="language-bash">just watch-mosaic-playground

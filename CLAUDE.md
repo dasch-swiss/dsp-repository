@@ -82,8 +82,11 @@ Before considering ANY change as "done":
 - **Check if documentation needs updating** —
   Consider `docs/src/`, `CLAUDE.md`, `CONVENTIONS.md`, and `REVIEW.md`.
   Update documentation to reflect the changes.
-- **Ask before committing** —
-  Never run git add or commit without explicit permission.
+- **One commit per PR by default** —
+  We use rebase-merge, so every branch commit lands on main verbatim.
+  Clean up working commits before the PR is merged; aim for a single commit.
+  Use multiple commits only when the work is genuinely several
+  independent, self-contained changes. See `docs/src/workflows.md`.
 - **PR creation** — See `docs/src/workflows.md` for the PR workflow and template.
 
 ## Testing Guidelines

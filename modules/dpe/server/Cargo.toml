@@ -27,7 +27,6 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 axum-tracing-opentelemetry.workspace = true
 init-tracing-opentelemetry.workspace = true
-tracing-opentelemetry-instrumentation-sdk.workspace = true
 opentelemetry.workspace = true
 opentelemetry_sdk.workspace = true
 opentelemetry-otlp.workspace = true

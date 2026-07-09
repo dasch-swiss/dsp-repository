@@ -24,6 +24,7 @@ install-requirements: install-e2e-requirements
     cargo binstall -y mdbook-mermaid@0.16.2
     cargo binstall -y bacon@3.23.0
     cargo binstall -y maudfmt@0.1.8
+    cargo binstall -y cargo-machete@0.9.2
 
 # Install Playwright browsers for E2E tests
 install-e2e-requirements: _check-node
@@ -54,6 +55,9 @@ check:
     [ "$rc" -eq 0 ] || { echo "run 'just fmt' to fix Maud formatting" >&2; exit 1; }
     cargo +nightly fmt --check --all
     cargo clippy --all-features -- -D warnings
+    # Fail on declared-but-unconsumed dependencies (a dep added "for later wiring" that never
+    # got wired survives on the strength of a comment otherwise).
+    cargo machete
 
 # Format all code: maudfmt for the `html!` Maud macros, then cargo +nightly fmt for the rest.
 fmt:

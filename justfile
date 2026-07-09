@@ -53,7 +53,7 @@ check:
     done < <(git ls-files -z '*.rs')
     [ "$rc" -eq 0 ] || { echo "run 'just fmt' to fix Maud formatting" >&2; exit 1; }
     cargo +nightly fmt --check --all
-    cargo clippy -- -D warnings
+    cargo clippy --all-features -- -D warnings
 
 # Format all code: maudfmt for the `html!` Maud macros, then cargo +nightly fmt for the rest.
 fmt:
@@ -81,6 +81,8 @@ validate-data:
 # Run all tests
 test:
     cargo test --tests
+    # The dev-only live-reload code is feature-gated, so its tests need the feature enabled.
+    cargo test -p dpe-server -p mosaic-playground --features dpe-server/dev,mosaic-playground/dev --tests
 
 # Clean all build artifacts
 clean:
@@ -164,7 +166,7 @@ watch-mosaic-playground:
     "$bin" -i modules/mosaic/playground/style/main.css -o modules/mosaic/playground/public/assets/app.css --watch &
     tw=$!
     trap 'kill $tw 2>/dev/null || true' EXIT
-    MOSAIC_PUBLIC_DIR=modules/mosaic/playground/public cargo watch -x 'run -p mosaic-playground'
+    MOSAIC_PUBLIC_DIR=modules/mosaic/playground/public cargo watch -x 'run -p mosaic-playground --features dev'
 
 # Build Docker image for mosaic playground
 [group('mosaic')]

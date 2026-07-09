@@ -35,6 +35,10 @@ tokio = { version = "1", features = ["full"] }
 tower = "0.5.3"
 tower_governor = "0.6"
 tower-http = { version = "0.6.11", features = ["trace", "fs", "cors"] }
+# Dev-loop live-reload (dev feature only): browser auto-refresh layer + asset-dir watcher.
+# tower-livereload injects only into text/html, never text/event-stream (Datastar-safe).
+tower-livereload = "0.10.3"
+notify = "8.2"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 # OpenTelemetry

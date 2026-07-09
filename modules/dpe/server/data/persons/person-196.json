@@ -1,0 +1,22 @@
+{
+    "id": "person-196",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.unige.ch/forel/lap/fr/ancienscoll/studer/",
+            "text": "https://www.unige.ch/forel/lap/fr/ancienscoll/studer/"
+        }
+    ],
+    "givenNames": [
+        "Jacqueline"
+    ],
+    "familyNames": [
+        "Studer"
+    ],
+    "jobTitles": [
+        "Archaeozoologist"
+    ],
+    "affiliations": [
+        "organization-064"
+    ]
+}

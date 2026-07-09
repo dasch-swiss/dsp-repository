@@ -1,0 +1,12 @@
+{
+    "id": "organization-027",
+    "name": "Stavros Niarchos Foundation",
+    "url": "https://www.snf.org/en",
+    "address": {
+        "street": "14, Avenue de Grande Bretagne, \"Le George V\" 4eme étage",
+        "postalCode": "98000",
+        "locality": "Monte Carlo",
+        "country": "Monaco"
+    },
+    "email": "info@snf.org"
+}

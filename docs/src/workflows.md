@@ -27,8 +27,11 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 
 We use a **rebase workflow**. All changes are made on a branch, then rebased onto main before being merged. This keeps a clean, linear commit history.
 
-- **Rebase-merge**: PRs are integrated using rebase-merge (not squash or merge commits). Every commit on a branch becomes a commit on main.
-- **Clean commit history**: Before merging, clean up the branch so that each commit represents one logical unit of change. Squash fixups, reword messages, and reorder commits so the history reads well on main.
+The goal is a **meaningful history on `main`**: every commit on main should be a deliberate, self-contained unit of change. Working commits ("WIP", "fix typo", "address review feedback") do not belong on main.
+
+- **Rebase-merge**: PRs are integrated using rebase-merge (not squash or merge commits). Every commit on the branch lands on main verbatim — so the branch history _is_ the main history. There is no squash-on-merge safety net; whatever you leave on the branch is what ships.
+- **Clean up before merging (mandatory)**: before a PR is merged, rewrite the branch (interactive rebase) so its commits read well on main. Squash working commits, reword messages, reorder as needed.
+- **Default to a single commit**: almost always, a PR should end up as **one** clean commit. Split into multiple commits only when the work genuinely represents several independent, self-contained changes that each deserve their own line in the history — and each must stand on its own. When in doubt, squash to one.
 
 ## Commit Conventions
 
@@ -52,7 +55,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/). Scopes matc
 
 ### Commit Organization
 
-Group commits by user-visible impact, not by implementation journey.
+Group commits by user-visible impact, not by implementation journey. Start from the assumption that the whole PR is **one commit**, and only split it up if the work below genuinely divides into multiple self-contained changes.
 
 1. Each `feat:` or `fix:` commit = one changelog entry visible to deployers
 2. Internal work (`build:`, `ci:`, `refactor:`, `docs:`, `chore:`, `test:`) is hidden from changelog — squash aggressively

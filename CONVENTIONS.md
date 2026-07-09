@@ -41,7 +41,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/). Scopes matc
 | `style:` | Formatting | hidden | none |
 | `chore:` | Maintenance | hidden | none |
 
-Group commits by user-visible impact. Each `feat:` or `fix:` = one changelog entry. Internal work → squash aggressively. See `docs/src/workflows.md` for full details.
+A PR should land as **one commit by default**. Rebase-merge puts every branch commit on main verbatim, so clean up working commits (interactive rebase) before merging — split into multiple commits only when the work is genuinely several independent, self-contained changes. Group by user-visible impact: each `feat:` or `fix:` = one changelog entry; internal work → squash aggressively. See `docs/src/workflows.md` for full details.
 
 ## PR Template
 

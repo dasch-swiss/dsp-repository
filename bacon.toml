@@ -7,7 +7,7 @@ command = ["cargo", "check", "--all-targets", "--color", "always"]
 need_stdout = false
 
 [jobs.serve]
-command = ["cargo", "run", "--bin", "dpe-server", "--", "serve"]
+command = ["cargo", "run", "--bin", "dpe-server", "--features", "dev", "--", "serve"]
 need_stdout = true
 background = false
 on_change_strategy = "kill_then_restart"

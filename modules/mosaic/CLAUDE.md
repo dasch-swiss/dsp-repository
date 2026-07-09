@@ -26,7 +26,7 @@ The `/add-mosaic-component` skill walks through this. In short:
 
 - There is no `build.rs` CSS pipeline. Each component's CSS is self-contained (`@apply` on the design tokens, no DaisyUI) and lives next to its source.
 - The consuming app's Tailwind entry `@import`s `tokens.css` + the component CSS files, then runs a single standalone Tailwind invocation.
-- Playground stylesheet: `just css-mosaic` → `playground/public/assets/app.css` (gitignored). Dev loop: `just watch-mosaic-playground` (Tailwind `--watch` + `cargo watch`).
+- Playground stylesheet: `just css-mosaic` → `playground/public/assets/app.css` (gitignored). Dev loop: `just watch-mosaic-playground` (Tailwind `--watch` + `cargo watch` + browser live-reload via the `dev` feature).
 
 ## Testing and Verification
 

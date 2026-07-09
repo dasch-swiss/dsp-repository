@@ -4,6 +4,11 @@ version.workspace = true
 edition = "2021"
 publish = false
 
+[features]
+# Dev-loop live-reload: browser auto-refresh on server restart + asset changes.
+# Enabled by the dev loop (bacon.toml / `just dev`); never in release builds.
+dev = ["dep:tower-livereload", "dep:notify"]
+
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 ureq = "3"
@@ -33,6 +38,8 @@ futures = "0.3"
 tower.workspace = true
 tower-http.workspace = true
 tower_governor.workspace = true
+tower-livereload = { workspace = true, optional = true }
+notify = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
 url.workspace = true

@@ -32,7 +32,7 @@ just install-requirements
 ## Key Commands
 
 ```bash
-just dev                        # Run DPE with hot reload (Tailwind --watch + bacon serve)
+just dev                        # Run DPE with hot reload (Tailwind --watch + bacon serve + browser live-reload)
 just watch-mosaic-playground    # Run Mosaic playground with hot reload
 just check                      # Run fmt checks and clippy
 just fmt                        # Format all code (maudfmt for html! macros, then cargo +nightly fmt)

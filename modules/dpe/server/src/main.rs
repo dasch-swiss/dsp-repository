@@ -4,6 +4,8 @@ use std::process::ExitCode;
 use clap::{Parser, Subcommand};
 
 mod config;
+#[cfg(feature = "dev")]
+mod dev_reload;
 mod fragments;
 mod telemetry_collector;
 mod traceparent;
@@ -344,7 +346,14 @@ async fn serve() -> ExitCode {
         // - OtelInResponseLayer (declared first) runs INNER — injects traceparent into response headers
         // - OtelAxumLayer (declared second) runs OUTER — creates the server span from the request
         .layer(OtelInResponseLayer)
-        .layer(OtelAxumLayer::default())
+        .layer(OtelAxumLayer::default());
+
+    // Dev-only browser live-reload (`dev` feature): wraps the page/static
+    // routes declared above; the untraced routes below stay outside it.
+    #[cfg(feature = "dev")]
+    let app = dev_reload::apply(app, &dpe_config.public_dir);
+
+    let app = app
         // --- Untraced routes ---
         // Routes declared AFTER .layer() calls are NOT wrapped by those layers.
         .route("/healthz", get(|| async { StatusCode::OK }))

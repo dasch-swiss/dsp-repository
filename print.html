@@ -440,9 +440,11 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 </div>
 <h2 id="git-workflow"><a class="header" href="#git-workflow">Git Workflow</a></h2>
 <p>We use a <strong>rebase workflow</strong>. All changes are made on a branch, then rebased onto main before being merged. This keeps a clean, linear commit history.</p>
+<p>The goal is a <strong>meaningful history on <code>main</code></strong>: every commit on main should be a deliberate, self-contained unit of change. Working commits ("WIP", "fix typo", "address review feedback") do not belong on main.</p>
 <ul>
-<li><strong>Rebase-merge</strong>: PRs are integrated using rebase-merge (not squash or merge commits). Every commit on a branch becomes a commit on main.</li>
-<li><strong>Clean commit history</strong>: Before merging, clean up the branch so that each commit represents one logical unit of change. Squash fixups, reword messages, and reorder commits so the history reads well on main.</li>
+<li><strong>Rebase-merge</strong>: PRs are integrated using rebase-merge (not squash or merge commits). Every commit on the branch lands on main verbatim — so the branch history <em>is</em> the main history. There is no squash-on-merge safety net; whatever you leave on the branch is what ships.</li>
+<li><strong>Clean up before merging (mandatory)</strong>: before a PR is merged, rewrite the branch (interactive rebase) so its commits read well on main. Squash working commits, reword messages, reorder as needed.</li>
+<li><strong>Default to a single commit</strong>: almost always, a PR should end up as <strong>one</strong> clean commit. Split into multiple commits only when the work genuinely represents several independent, self-contained changes that each deserve their own line in the history — and each must stand on its own. When in doubt, squash to one.</li>
 </ul>
 <h2 id="commit-conventions"><a class="header" href="#commit-conventions">Commit Conventions</a></h2>
 <p>Follow <a href="https://www.conventionalcommits.org/">Conventional Commits</a>. Scopes match crate names: <code>dpe-server</code>, <code>dpe-core</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>dpe-telemetry</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code>.</p>
@@ -462,7 +464,7 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 </tbody></table>
 </div>
 <h3 id="commit-organization"><a class="header" href="#commit-organization">Commit Organization</a></h3>
-<p>Group commits by user-visible impact, not by implementation journey.</p>
+<p>Group commits by user-visible impact, not by implementation journey. Start from the assumption that the whole PR is <strong>one commit</strong>, and only split it up if the work below genuinely divides into multiple self-contained changes.</p>
 <ol>
 <li>Each <code>feat:</code> or <code>fix:</code> commit = one changelog entry visible to deployers</li>
 <li>Internal work (<code>build:</code>, <code>ci:</code>, <code>refactor:</code>, <code>docs:</code>, <code>chore:</code>, <code>test:</code>) is hidden from changelog — squash aggressively</li>

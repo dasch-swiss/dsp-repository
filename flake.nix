@@ -90,6 +90,7 @@
             # Maud dev tooling (DEV-6642)
             _ensure_tool bacon           bacon             3.23.0   # dev loop: kill_then_restart server
             _ensure_tool maudfmt         maudfmt           0.1.8    # Maud template formatting
+            _ensure_tool cargo-machete   cargo-machete     0.9.2    # unused-dependency check (just check)
 
             unset -f _ensure_tool
           '';

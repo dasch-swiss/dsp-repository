@@ -637,7 +637,6 @@ dependencies = [
  "tower_governor",
  "tracing",
  "tracing-opentelemetry",
- "tracing-opentelemetry-instrumentation-sdk",
  "tracing-subscriber",
  "ureq",
  "url",

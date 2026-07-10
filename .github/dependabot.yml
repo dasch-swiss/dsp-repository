@@ -23,8 +23,29 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
   - package-ecosystem: "docker"
-    # Look for a `Dockerfile` in the `root` directory
-    directory: "/"
+    # Dockerfiles live under the module directories, not the repo root
+    directories:
+      - "/modules/dpe"
+      - "/modules/mosaic/playground"
     # Check for updates once a week
     schedule:
       interval: "weekly"
+  - package-ecosystem: "npm"
+    # The Playwright e2e suites are the only Node footprint in the repo
+    directories:
+      - "/modules/dpe/web-e2e-tests"
+      - "/modules/mosaic/playground-e2e-tests"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    groups:
+      e2e-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+    ignore:
+      # Ignore major updates for all dependencies
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

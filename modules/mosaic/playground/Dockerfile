@@ -44,14 +44,13 @@ RUN tailwindcss -i modules/mosaic/playground/style/main.css \
 # Build the server binary.
 RUN cargo build --release -p mosaic-playground
 
-FROM debian:bookworm-slim AS runtime
+# Distroless runtime — glibc + C/C++ runtime only, no shell, no apt, no perl.
+# The server is a plain Axum binary serving static files; it makes no outbound
+# TLS calls, so it needs no extra OS packages. This keeps the image minimal and
+# free of the OS-package CVEs that ship with debian-slim (e.g. perl's
+# CVE-2026-12087, "Not Fixed" in bookworm).
+FROM gcr.io/distroless/cc-debian12:nonroot AS runtime
 WORKDIR /app
-RUN apt-get update -y \
-  && apt-get upgrade -y --no-install-recommends \
-  && apt-get install -y --no-install-recommends ca-certificates \
-  && apt-get autoremove -y \
-  && apt-get clean -y \
-  && rm -rf /var/lib/apt/lists/*
 
 # The server binary and the public dir (static assets + the built app.css).
 COPY --from=builder /app/target/release/mosaic-playground /app/mosaic-playground
@@ -61,4 +60,4 @@ ENV MOSAIC_SITE_ADDR="0.0.0.0:8080"
 ENV MOSAIC_PUBLIC_DIR="/app/public"
 EXPOSE 8080
 
-CMD ["/app/mosaic-playground"]
+ENTRYPOINT ["/app/mosaic-playground"]

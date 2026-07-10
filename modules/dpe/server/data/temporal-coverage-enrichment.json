@@ -1,0 +1,592 @@
+{
+  "10th - 20th century": {
+    "date": "0901/2000",
+    "original_name": "10th - 20th century",
+    "source": "llm"
+  },
+  "1269-1465": {
+    "date": "1269/1465",
+    "original_name": "1269-1465",
+    "source": "llm"
+  },
+  "1300-1650": {
+    "date": "1300/1650",
+    "original_name": "1300-1650",
+    "source": "llm"
+  },
+  "15th-16th c.": {
+    "date": "1401/1600",
+    "original_name": "15th-16th c.",
+    "source": "llm"
+  },
+  "16th Century": {
+    "date": "1501/1600",
+    "original_name": "16th Century",
+    "source": "llm"
+  },
+  "16th to 18th centuries": {
+    "date": "1501/1800",
+    "original_name": "16th to 18th centuries",
+    "source": "llm"
+  },
+  "1700 to 2020": {
+    "date": "1700/2020",
+    "original_name": "1700 to 2020",
+    "source": "llm"
+  },
+  "1766-1905": {
+    "date": "1766/1905",
+    "original_name": "1766-1905",
+    "source": "llm"
+  },
+  "1794-1871": {
+    "date": "1794/1871",
+    "original_name": "1794-1871",
+    "source": "llm"
+  },
+  "1797-1854": {
+    "date": "1797/1854",
+    "original_name": "1797-1854",
+    "source": "llm"
+  },
+  "17th Century": {
+    "date": "1601/1700",
+    "original_name": "17th Century",
+    "source": "llm"
+  },
+  "17th century and 18th century CE": {
+    "date": "1601/1800",
+    "original_name": "17th century and 18th century CE",
+    "source": "llm"
+  },
+  "1826 - today": {
+    "date": "1826/2026",
+    "original_name": "1826 - today",
+    "source": "llm"
+  },
+  "1850–today": {
+    "date": "1850/2026",
+    "original_name": "1850–today",
+    "source": "llm"
+  },
+  "1885-1889": {
+    "date": "1885/1889",
+    "original_name": "1885-1889",
+    "source": "llm"
+  },
+  "1890-2023": {
+    "date": "1890/2023",
+    "original_name": "1890-2023",
+    "source": "llm"
+  },
+  "1894-1972": {
+    "date": "1894/1972",
+    "original_name": "1894-1972",
+    "source": "llm"
+  },
+  "18th Century": {
+    "date": "1701/1800",
+    "original_name": "18th Century",
+    "source": "llm"
+  },
+  "18th and 19th Centuries": {
+    "date": "1700/1900",
+    "original_name": "18th and 19th Centuries",
+    "source": "chronontology"
+  },
+  "18th century": {
+    "date": "1701/1800",
+    "original_name": "18th century",
+    "source": "llm"
+  },
+  "18th dynasty": {
+    "date": "-1550/-1295",
+    "original_name": "18th dynasty",
+    "source": "chronontology"
+  },
+  "1900-1939": {
+    "date": "1900/1939",
+    "original_name": "1900-1939",
+    "source": "llm"
+  },
+  "1920-1970": {
+    "date": "1920/1970",
+    "original_name": "1920-1970",
+    "source": "llm"
+  },
+  "1930-1990": {
+    "date": "1930/1990",
+    "original_name": "1930-1990",
+    "source": "llm"
+  },
+  "1942-1949": {
+    "date": "1942/1949",
+    "original_name": "1942-1949",
+    "source": "llm"
+  },
+  "1949-1990": {
+    "date": "1949/1990",
+    "original_name": "1949-1990",
+    "source": "llm"
+  },
+  "1951-1981": {
+    "date": "1951/1981",
+    "original_name": "1951-1981",
+    "source": "llm"
+  },
+  "1957-2007": {
+    "date": "1957/2007",
+    "original_name": "1957-2007",
+    "source": "llm"
+  },
+  "1970–2000": {
+    "date": "1970/2000",
+    "original_name": "1970–2000",
+    "source": "llm"
+  },
+  "1972-1980": {
+    "date": "1972/1980",
+    "original_name": "1972-1980",
+    "source": "llm"
+  },
+  "1984 - 2000": {
+    "date": "1984/2000",
+    "original_name": "1984 - 2000",
+    "source": "llm"
+  },
+  "1987-2018": {
+    "date": "1987/2018",
+    "original_name": "1987-2018",
+    "source": "llm"
+  },
+  "1990s": {
+    "date": "1990/1999",
+    "original_name": "1990s",
+    "source": "llm"
+  },
+  "19th Century": {
+    "date": "1801/1900",
+    "original_name": "19th Century",
+    "source": "llm"
+  },
+  "19th Century (1800 - 1899)": {
+    "date": "1800/1899",
+    "original_name": "19th Century (1800 - 1899)",
+    "source": "chronontology"
+  },
+  "19th century": {
+    "date": "1801/1900",
+    "original_name": "19th century",
+    "source": "llm"
+  },
+  "1st century A.D. – 21st century A.D.": {
+    "date": "0001/2100",
+    "original_name": "1st century A.D. – 21st century A.D.",
+    "source": "llm"
+  },
+  "2000s": {
+    "date": "2000/2009",
+    "original_name": "2000s",
+    "source": "llm"
+  },
+  "2006-2016": {
+    "date": "2006/2016",
+    "original_name": "2006-2016",
+    "source": "llm"
+  },
+  "2007-2018": {
+    "date": "2007/2018",
+    "original_name": "2007-2018",
+    "source": "llm"
+  },
+  "2010s": {
+    "date": "2010/2019",
+    "original_name": "2010s",
+    "source": "llm"
+  },
+  "2012-2021": {
+    "date": "2012/2021",
+    "original_name": "2012-2021",
+    "source": "llm"
+  },
+  "2012-2040": {
+    "date": "2012/2040",
+    "original_name": "2012-2040",
+    "source": "llm"
+  },
+  "2020s": {
+    "date": "2020/2029",
+    "original_name": "2020s",
+    "source": "llm"
+  },
+  "2024-2025": {
+    "date": "2024/2025",
+    "original_name": "2024-2025",
+    "source": "llm"
+  },
+  "20e siècle": {
+    "date": "1901/2000",
+    "original_name": "20e siècle",
+    "source": "llm"
+  },
+  "20th Century": {
+    "date": "1901/2000",
+    "original_name": "20th Century",
+    "source": "llm"
+  },
+  "20th Century (1900 - 1999)": {
+    "date": "1900/1999",
+    "original_name": "20th Century (1900 - 1999)",
+    "source": "chronontology"
+  },
+  "20th and 21st Centuries": {
+    "date": "1900/2100",
+    "original_name": "20th and 21st Centuries",
+    "source": "chronontology"
+  },
+  "21. Jhd.": {
+    "date": "2001/2100",
+    "original_name": "21. Jhd.",
+    "source": "llm"
+  },
+  "21st century": {
+    "date": "2001/2100",
+    "original_name": "21st century",
+    "source": "llm"
+  },
+  "22nd dynasty": {
+    "date": "-0945/-0715",
+    "original_name": "22nd dynasty",
+    "source": "chronontology"
+  },
+  "2500 BCE to 1000 CE": {
+    "date": "-2500/1000",
+    "original_name": "2500 BCE to 1000 CE",
+    "source": "llm"
+  },
+  "300 BC": {
+    "date": "-0300",
+    "original_name": "300 BC",
+    "source": "llm"
+  },
+  "5th century to today": {
+    "date": "0401/2026",
+    "original_name": "5th century to today",
+    "source": "llm"
+  },
+  "780–1300": {
+    "date": "0780/1300",
+    "original_name": "780–1300",
+    "source": "llm"
+  },
+  "9th and 10th century": {
+    "date": "0801/1000",
+    "original_name": "9th and 10th century",
+    "source": "llm"
+  },
+  "AD 200": {
+    "date": "0200",
+    "original_name": "AD 200",
+    "source": "llm"
+  },
+  "AD 400": {
+    "date": "0400",
+    "original_name": "AD 400",
+    "source": "llm"
+  },
+  "Ancient Greek (culture or style)": {
+    "date": "-0800/-0146",
+    "original_name": "Ancient Greek (culture or style)",
+    "source": "llm"
+  },
+  "Baroque period, seventeenth and eighteenth centuries": {
+    "date": "1600/1750",
+    "original_name": "Baroque period, seventeenth and eighteenth centuries",
+    "source": "llm"
+  },
+  "Century of Reformation (Europe)": {
+    "date": "1517/1648",
+    "original_name": "Century of Reformation (Europe)",
+    "source": "llm"
+  },
+  "Classical World": {
+    "date": "-0800/0500",
+    "original_name": "Classical World",
+    "source": "llm"
+  },
+  "Contemporary period": {
+    "date": "1945/2026",
+    "original_name": "Contemporary period",
+    "source": "llm"
+  },
+  "Coptic (culture or style)": {
+    "date": "0300/1200",
+    "original_name": "Coptic (culture or style)",
+    "source": "chronontology"
+  },
+  "Early Christian": {
+    "date": "0030/0800",
+    "original_name": "Early Christian",
+    "source": "llm"
+  },
+  "Early Christianity": {
+    "date": "0001/0800",
+    "original_name": "Early Christianity",
+    "source": "chronontology"
+  },
+  "Early Modern": {
+    "date": "1500/1800",
+    "original_name": "Early Modern",
+    "source": "llm"
+  },
+  "Egyptian (ancient)": {
+    "date": "-3100/-0332",
+    "original_name": "Egyptian (ancient)",
+    "source": "llm"
+  },
+  "Elizabethan": {
+    "date": "1558/1603",
+    "original_name": "Elizabethan",
+    "source": "chronontology"
+  },
+  "English (culture or style)": {
+    "date": null,
+    "original_name": "English (culture or style)",
+    "source": "unresolved"
+  },
+  "Etruscan (culture or style)": {
+    "date": "-0700/-0200",
+    "original_name": "Etruscan (culture or style)",
+    "source": "chronontology"
+  },
+  "From Ancient Greek period to Contemporary period": {
+    "date": "-0800/2026",
+    "original_name": "From Ancient Greek period to Contemporary period",
+    "source": "llm"
+  },
+  "Frühhumanismus 15. Jh.": {
+    "date": "1401/1500",
+    "original_name": "Frühhumanismus 15. Jh.",
+    "source": "llm"
+  },
+  "Gothic (Medieval)": {
+    "date": "1150/1250",
+    "original_name": "Gothic (Medieval)",
+    "source": "chronontology"
+  },
+  "Hellenistic": {
+    "date": "-0323/-0031",
+    "original_name": "Hellenistic",
+    "source": "llm"
+  },
+  "Helvetic Republic, 1798-1803": {
+    "date": "1798/1803",
+    "original_name": "Helvetic Republic, 1798-1803",
+    "source": "llm"
+  },
+  "Iron Age": {
+    "date": "-1200/-0550",
+    "original_name": "Iron Age",
+    "source": "llm"
+  },
+  "Jacobean": {
+    "date": "1603/1625",
+    "original_name": "Jacobean",
+    "source": "chronontology"
+  },
+  "Late Antiquity II": {
+    "date": "0400/0526",
+    "original_name": "Late Antiquity II",
+    "source": "chronontology"
+  },
+  "Late Bronze Age": {
+    "date": "-1550/-1200",
+    "original_name": "Late Bronze Age",
+    "source": "llm"
+  },
+  "Late Middle Ages": {
+    "date": "1250/1500",
+    "original_name": "Late Middle Ages",
+    "source": "llm"
+  },
+  "Late Period": {
+    "date": "-0664/-0332",
+    "original_name": "Late Period",
+    "source": "llm"
+  },
+  "Late Period (Chronontology)": {
+    "date": "-0664/-0332",
+    "original_name": "Late Period (Chronontology)",
+    "source": "llm"
+  },
+  "Long Twentieth Century": {
+    "date": "1870/1991",
+    "original_name": "Long Twentieth Century",
+    "source": "llm"
+  },
+  "Medieval": {
+    "date": "0500/1500",
+    "original_name": "Medieval",
+    "source": "llm"
+  },
+  "Middle Ages": {
+    "date": "0500/1500",
+    "original_name": "Middle Ages",
+    "source": "llm"
+  },
+  "Middle Ages, 500-1500": {
+    "date": "0500/1500",
+    "original_name": "Middle Ages, 500-1500",
+    "source": "chronontology"
+  },
+  "Middle Assyrian": {
+    "date": "-1365/-1050",
+    "original_name": "Middle Assyrian",
+    "source": "llm"
+  },
+  "Middle Kingdom": {
+    "date": "-2055/-1650",
+    "original_name": "Middle Kingdom",
+    "source": "llm"
+  },
+  "Mitanni": {
+    "date": "-1500/-1300",
+    "original_name": "Mitanni",
+    "source": "llm"
+  },
+  "Modern": {
+    "date": "1500/1849",
+    "original_name": "Modern",
+    "source": "chronontology"
+  },
+  "Modern period": {
+    "date": "1800/1945",
+    "original_name": "Modern period",
+    "source": "llm"
+  },
+  "Moyen Âge classique": {
+    "date": "1000/1250",
+    "original_name": "Moyen Âge classique",
+    "source": "llm"
+  },
+  "Near Eastern (Early Western World)": {
+    "date": "-3500/-0300",
+    "original_name": "Near Eastern (Early Western World)",
+    "source": "llm"
+  },
+  "Neo-Assyrian": {
+    "date": "-0911/-0609",
+    "original_name": "Neo-Assyrian",
+    "source": "llm"
+  },
+  "New Kingdom": {
+    "date": "-1550/-1069",
+    "original_name": "New Kingdom",
+    "source": "llm"
+  },
+  "New Kingdom (Chronontology)": {
+    "date": "-1550/-1069",
+    "original_name": "New Kingdom (Chronontology)",
+    "source": "llm"
+  },
+  "Ottoman": {
+    "date": "1299/1922",
+    "original_name": "Ottoman",
+    "source": "llm"
+  },
+  "Ottoman period": {
+    "date": "1300/1922",
+    "original_name": "Ottoman period",
+    "source": "chronontology"
+  },
+  "Palaeolithic to Modern": {
+    "date": "-3300000/2026",
+    "original_name": "Palaeolithic to Modern",
+    "source": "llm"
+  },
+  "Persian Period": {
+    "date": "-0525/-0332",
+    "original_name": "Persian Period",
+    "source": "llm"
+  },
+  "Photography: 1850-today": {
+    "date": "1850/2026",
+    "original_name": "Photography: 1850-today",
+    "source": "llm"
+  },
+  "Roman": {
+    "date": "-0027/0476",
+    "original_name": "Roman",
+    "source": "llm"
+  },
+  "Roman (ancient Italian culture or period)": {
+    "date": "-0700/0499",
+    "original_name": "Roman (ancient Italian culture or period)",
+    "source": "chronontology"
+  },
+  "Roman Republic": {
+    "date": "-0509/-0027",
+    "original_name": "Roman Republic",
+    "source": "chronontology"
+  },
+  "Roman imperial period": {
+    "date": "-0100/0400",
+    "original_name": "Roman imperial period",
+    "source": "chronontology"
+  },
+  "Second Empire, 1852-1870": {
+    "date": "1852/1870",
+    "original_name": "Second Empire, 1852-1870",
+    "source": "llm"
+  },
+  "Second Intermediate Period": {
+    "date": "-1650/-1550",
+    "original_name": "Second Intermediate Period",
+    "source": "llm"
+  },
+  "Siècle des Lumières": {
+    "date": "1715/1789",
+    "original_name": "Siècle des Lumières",
+    "source": "llm"
+  },
+  "Sonderbund, 1845-1847": {
+    "date": "1845/1847",
+    "original_name": "Sonderbund, 1845-1847",
+    "source": "llm"
+  },
+  "South Italian (Greek pottery style)": {
+    "date": "-0440/-0300",
+    "original_name": "South Italian (Greek pottery style)",
+    "source": "llm"
+  },
+  "Swiss": {
+    "date": null,
+    "original_name": "Swiss",
+    "source": "unresolved"
+  },
+  "Text: 1700-today": {
+    "date": "1700/2026",
+    "original_name": "Text: 1700-today",
+    "source": "llm"
+  },
+  "Third Intermediate Period": {
+    "date": "-1069/-0664",
+    "original_name": "Third Intermediate Period",
+    "source": "llm"
+  },
+  "Under Mediation act, 1803-1814": {
+    "date": "1803/1814",
+    "original_name": "Under Mediation act, 1803-1814",
+    "source": "llm"
+  },
+  "XIXe siècle EC": {
+    "date": "1801/1900",
+    "original_name": "XIXe siècle EC",
+    "source": "llm"
+  },
+  "XVIIIe siècle EC": {
+    "date": "1701/1800",
+    "original_name": "XVIIIe siècle EC",
+    "source": "llm"
+  }
+}

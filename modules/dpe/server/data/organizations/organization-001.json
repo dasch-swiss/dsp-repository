@@ -1,0 +1,11 @@
+{
+    "id": "organization-001",
+    "name": "Université de Lausanne",
+    "url": "https://www.unil.ch/",
+    "address": {
+        "street": "Unicentre",
+        "postalCode": "1015",
+        "locality": "Lausanne",
+        "country": "Switzerland"
+    }
+}

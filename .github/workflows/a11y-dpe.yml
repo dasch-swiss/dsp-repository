@@ -1,0 +1,65 @@
+name: a11y / dpe
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Any DPE crate (server/core/api-oai/telemetry/web), styles, assets, or the
+      # e2e suite — a server-side render change must trigger the a11y job too.
+      - "modules/dpe/**"
+  pull_request:
+    paths:
+      - "modules/dpe/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    name: a11y / dpe / WCAG 2.1 AA
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install web-e2e-tests dependencies
+        run: cd modules/dpe/web-e2e-tests && npm install
+
+      - name: Install Playwright browsers
+        run: cd modules/dpe/web-e2e-tests && npx playwright install chromium --with-deps
+
+      - name: Build dpe-server and stylesheet
+        # `cargo build -p dpe-server --release` yields target/release/dpe-server
+        # directly (the [[bin]] name), which the Playwright webServer launches.
+        # `just css-release` builds the content-hashed app.css the release server
+        # discovers from modules/dpe/public/assets at startup.
+        run: |
+          cargo build -p dpe-server --release
+          just css-release
+
+      - name: Run accessibility tests
+        run: just test-a11y-dpe
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-a11y-dpe
+          path: modules/dpe/web-e2e-tests/playwright-report/
+          retention-days: 7

@@ -1,0 +1,52 @@
+name: Scout / DPE
+
+on:
+  pull_request:
+    paths:
+      - "modules/dpe/**"
+      - "Cargo.lock"
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Docker Scout / DPE
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: ./.github/actions/build-dpe
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image locally
+        uses: docker/build-push-action@v6
+        with:
+          context: staging/
+          file: staging/Dockerfile
+          load: true
+          push: false
+          tags: local-scan/dpe:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - uses: ./.github/actions/docker-scout
+        with:
+          image: local://local-scan/dpe:latest
+          sarif-file: scout-dpe.sarif
+          sarif-category: docker-scout-dpe
+          docker-user: ${{ secrets.DOCKER_USER }}
+          docker-hub-token: ${{ secrets.DOCKER_HUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

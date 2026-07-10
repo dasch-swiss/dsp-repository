@@ -1,0 +1,17 @@
+{
+    "id": "person-040",
+    "givenNames": [
+        "Bruno"
+    ],
+    "familyNames": [
+        "Pellegrino"
+    ],
+    "jobTitles": [
+        "Junior SNSF Researcher",
+        "Scientific collaborator"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "bruno.pellegrino@unil.ch"
+}

@@ -1,0 +1,16 @@
+{
+    "id": "person-007",
+    "givenNames": [
+        "Loïc"
+    ],
+    "familyNames": [
+        "Jaouen"
+    ],
+    "jobTitles": [
+        "IT support"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "loic.jaouen@unil.ch"
+}

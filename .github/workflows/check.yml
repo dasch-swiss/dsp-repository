@@ -1,0 +1,113 @@
+# This workflow runs whenever a PR is opened or updated, or a commit is pushed to main. It runs
+# several checks:
+# - fmt: checks that the code is formatted according to rustfmt
+# - clippy: checks that the code does not contain any clippy warnings
+# - doc: checks that the code can be documented without errors
+# - hack: check combinations of feature flags
+
+name: check
+
+permissions:
+  contents: read
+
+# This configuration allows maintainers of this repo to create a branch and pull request based on
+# the new branch. Restricting the push trigger to the main branch ensures that the PR only gets
+# built once.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# If new code is pushed to a PR branch, then cancel in progress workflows for that PR. Ensures that
+# we don't waste CI time, and returns results quicker https://github.com/jonhoo/rust-ci-conf/pull/5
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    name: check
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt, clippy
+      - name: Install just
+        uses: extractions/setup-just@v4
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+      - name: Install maudfmt
+        run: cargo binstall -y maudfmt@0.1.8
+      - name: just check
+        run: just check
+
+  rustdoc:
+    # run docs generation on nightly rather than stable. This enables features like
+    # https://doc.rust-lang.org/beta/unstable-book/language-features/doc-cfg.html which allows an
+    # API be documented as only available in some specific platforms.
+    runs-on: ubuntu-latest
+    name: check / rustdoc / nightly
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install nightly
+        uses: dtolnay/rust-toolchain@nightly
+      - name: cargo doc
+        run: cargo doc --no-deps --all-features
+        env:
+          RUSTDOCFLAGS: --cfg docsrs
+
+  hack:
+    # cargo-hack checks combinations of feature flags to ensure that features are all additive
+    # which is required for feature unification
+    runs-on: ubuntu-latest
+    name: check / hack / ubuntu / stable / features
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: cargo install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
+      # intentionally no target specifier; see https://github.com/jonhoo/rust-ci-conf/pull/4
+      # --feature-powerset runs for every combination of features
+      - name: cargo hack
+        run: cargo hack --feature-powerset --exclude-no-default-features check
+
+  lint-e2e:
+    runs-on: ubuntu-latest
+    name: check / biome / e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Lint DPE E2E tests
+        run: cd modules/dpe/web-e2e-tests && npx @biomejs/biome check .
+      - name: Lint Mosaic E2E tests
+        run: cd modules/mosaic/playground-e2e-tests && npx @biomejs/biome check .
+
+  docs:
+    runs-on: ubuntu-latest
+    name: check / docs / stable
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Setup mdBook
+        uses: peaceiris/actions-mdbook@v2
+        with:
+          mdbook-version: "0.4.52"
+      - name: Install mdBook-alerts
+        run: cargo install mdbook-alerts
+      - name: Install mdBook-mermaid
+        run: cargo install mdbook-mermaid --version 0.16.2
+      - name: Generate mermaid assets
+        run: mdbook-mermaid install docs
+      - run: mdbook build docs

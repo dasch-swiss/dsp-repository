@@ -1,0 +1,22 @@
+{
+    "id": "person-164",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://cchs.csic.es/es/personal/lucia-elena-diaz-iglesias-llanos",
+            "text": "https://cchs.csic.es/es/personal/lucia-elena-diaz-iglesias-llanos"
+        }
+    ],
+    "givenNames": [
+        "Lucía"
+    ],
+    "familyNames": [
+        "Díaz-Iglesias"
+    ],
+    "jobTitles": [
+        "Egyptologist"
+    ],
+    "affiliations": [
+        "organization-060"
+    ]
+}

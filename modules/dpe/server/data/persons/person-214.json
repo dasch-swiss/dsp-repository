@@ -1,0 +1,20 @@
+{
+    "id": "person-214",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-8238-7859",
+            "text": "ORCID URL: https://orcid.org/0000-0001-8238-7859"
+        }
+    ],
+    "givenNames": [
+        "Anja"
+    ],
+    "familyNames": [
+        "Giudici"
+    ],
+    "jobTitles": [],
+    "affiliations": [
+        "organization-071"
+    ]
+}

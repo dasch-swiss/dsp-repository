@@ -2,7 +2,8 @@
 
 use dpe_core::{ClusterRaw, ContributorLookup, ProjectRepository, RecordRepository};
 
-use super::{build_error_response, build_list_request_params, validate_list_params, OaiParams};
+use super::{build_error_response, next_page_token, validate_list_params, OaiParams};
+use crate::resumption::DEFAULT_PAGE_SIZE;
 use crate::xml::OaiXmlBuilder;
 
 /// Handles the ListIdentifiers verb.
@@ -13,19 +14,37 @@ pub fn handle_list_identifiers(
     clusters: &[ClusterRaw],
     lookup: &dyn ContributorLookup,
 ) -> String {
-    let (prefix, records) = match validate_list_params(params, repo, record_repo, clusters, lookup) {
+    handle_list_identifiers_paged(params, repo, record_repo, clusters, lookup, DEFAULT_PAGE_SIZE)
+}
+
+/// ListIdentifiers with an explicit page size, so tests can exercise paging
+/// without large fixtures. Production callers use [`handle_list_identifiers`].
+pub fn handle_list_identifiers_paged(
+    params: &OaiParams,
+    repo: &dyn ProjectRepository,
+    record_repo: &dyn RecordRepository,
+    clusters: &[ClusterRaw],
+    lookup: &dyn ContributorLookup,
+    page_size: usize,
+) -> String {
+    let page = match validate_list_params(params, repo, record_repo, clusters, lookup, page_size) {
         Ok(result) => result,
         Err(err) => return build_error_response(err, Some("ListIdentifiers")),
     };
 
-    let request_params = build_list_request_params(prefix, params);
+    let request_params: Vec<(&str, &str)> = page.request_params.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
 
     let mut builder = OaiXmlBuilder::new();
     builder.write_request("ListIdentifiers", &request_params);
 
+    let end = (page.offset + page.page_size).min(page.records.len());
     builder.start_element("ListIdentifiers");
-    for record in &records {
+    for record in &page.records[page.offset..end] {
         builder.write_record_header(&record.header.identifier, &record.header.datestamp, &record.header.set_specs);
+    }
+    if page.records.len() > page.page_size {
+        let token = next_page_token(&page, end);
+        builder.write_resumption_token(token.as_deref(), page.records.len(), page.offset);
     }
     builder.end_element("ListIdentifiers");
 
@@ -36,9 +55,24 @@ pub fn handle_list_identifiers(
 mod tests {
     use super::super::test_utils::{
         cluster_fixture, first_0803_record, golden, incunabula_lookup, incunabula_project, normalize,
-        InMemoryProjectRepository, InMemoryRecordRepository,
+        project_with_shortcode, InMemoryProjectRepository, InMemoryRecordRepository,
     };
     use super::*;
+
+    /// Extracts the resumption token text from a list response, if present and
+    /// non-empty. Returns `None` for a final (empty) token or when absent.
+    fn extract_token(xml: &str) -> Option<String> {
+        let start = xml.find("<resumptionToken")?;
+        let rest = &xml[start..];
+        let gt = rest.find('>')?;
+        if rest[..gt].ends_with('/') {
+            return None;
+        }
+        let after = &rest[gt + 1..];
+        let end = after.find("</resumptionToken>")?;
+        let token = after[..end].trim();
+        (!token.is_empty()).then(|| token.to_string())
+    }
 
     fn make_params(metadata_prefix: Option<&str>) -> OaiParams {
         OaiParams {
@@ -74,13 +108,85 @@ mod tests {
     }
 
     #[test]
-    fn resumption_token_returns_bad_resumption_token() {
-        let mut params = make_params(Some("oai_dc"));
-        params.resumption_token = Some("some-token".to_string());
+    fn malformed_resumption_token_returns_bad_resumption_token() {
+        let mut params = make_params(None);
+        params.resumption_token = Some("not-a-valid-token!!!".to_string());
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml =
             handle_list_identifiers(&params, &repo, &InMemoryRecordRepository::empty(), &[], &incunabula_lookup());
         assert!(xml.contains("<error code=\"badResumptionToken\">"), "got: {}", xml);
+    }
+
+    #[test]
+    fn resumption_token_with_other_arguments_returns_bad_argument() {
+        let mut params = make_params(Some("oai_dc"));
+        params.resumption_token = Some("anytoken".to_string());
+        let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
+        let xml =
+            handle_list_identifiers(&params, &repo, &InMemoryRecordRepository::empty(), &[], &incunabula_lookup());
+        assert!(xml.contains("<error code=\"badArgument\">"), "got: {}", xml);
+    }
+
+    // ---- paging / resumption token ----
+
+    #[test]
+    fn single_page_emits_no_resumption_token() {
+        let params = make_params(Some("oai_dc"));
+        let repo = InMemoryProjectRepository::new(vec![project_with_shortcode("0001"), project_with_shortcode("0002")]);
+        let xml = handle_list_identifiers_paged(
+            &params,
+            &repo,
+            &InMemoryRecordRepository::empty(),
+            &[],
+            &incunabula_lookup(),
+            2,
+        );
+        assert!(!xml.contains("<resumptionToken"), "no token for a single page, got: {}", xml);
+    }
+
+    #[test]
+    fn paging_walks_the_whole_list_of_identifiers() {
+        let repo = InMemoryProjectRepository::new(vec![
+            project_with_shortcode("0001"),
+            project_with_shortcode("0002"),
+            project_with_shortcode("0003"),
+        ]);
+        let lookup = incunabula_lookup();
+        // One inner vec per page, so the assertion pins each page's exact
+        // contents (and thereby the 2-1 split, ordering, and no dup/gap).
+        let mut pages: Vec<Vec<String>> = Vec::new();
+        let mut params = make_params(Some("oai_dc"));
+        loop {
+            assert!(pages.len() < 10, "paging did not terminate");
+            let xml =
+                handle_list_identifiers_paged(&params, &repo, &InMemoryRecordRepository::empty(), &[], &lookup, 2);
+            assert!(!xml.contains("<error"), "no page should error, got: {}", xml);
+            let page: Vec<String> = ["0001", "0002", "0003"]
+                .into_iter()
+                .filter(|code| xml.contains(&format!("ark:/72163/1/{code}")))
+                .map(str::to_string)
+                .collect();
+            pages.push(page);
+            match extract_token(&xml) {
+                Some(token) => {
+                    params = OaiParams {
+                        verb: Some("ListIdentifiers".to_string()),
+                        identifier: None,
+                        metadata_prefix: None,
+                        from: None,
+                        until: None,
+                        set: None,
+                        resumption_token: Some(token),
+                    };
+                }
+                None => break,
+            }
+        }
+        assert_eq!(
+            pages,
+            vec![vec!["0001", "0002"], vec!["0003"]],
+            "expected pages of 2, 1 with every identifier once, in order"
+        );
     }
 
     #[test]

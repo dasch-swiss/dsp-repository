@@ -101,6 +101,29 @@ impl OaiXmlBuilder {
         self.end_element("request");
     }
 
+    /// Writes a `<resumptionToken>` element for a list response.
+    ///
+    /// `token` is `Some(next_token)` when more items remain, or `None` for the
+    /// final page of a paged list — the latter emits an empty element (per
+    /// OAI-PMH 2.0 the final token has empty content) so harvesters know the list
+    /// is complete. `complete_list_size` is the total number of matching items;
+    /// `cursor` is the zero-based index of the first item in the current page.
+    pub fn write_resumption_token(&mut self, token: Option<&str>, complete_list_size: usize, cursor: usize) {
+        let complete_list_size = complete_list_size.to_string();
+        let cursor = cursor.to_string();
+        let mut elem = BytesStart::new("resumptionToken");
+        elem.push_attribute(("completeListSize", complete_list_size.as_str()));
+        elem.push_attribute(("cursor", cursor.as_str()));
+        match token {
+            Some(token) => {
+                self.write(Event::Start(elem));
+                self.write(Event::Text(BytesText::new(token)));
+                self.end_element("resumptionToken");
+            }
+            None => self.write(Event::Empty(elem)),
+        }
+    }
+
     /// Writes the request element for badVerb error responses (no verb attribute).
     pub fn write_error_request(&mut self) {
         self.start_element("request");

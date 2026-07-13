@@ -35,7 +35,7 @@ impl OaiError {
         match self {
             Self::BadVerb => "Illegal OAI verb".to_string(),
             Self::BadArgument(msg) => msg.clone(),
-            Self::BadResumptionToken => "The resumptionToken is not supported by this repository".to_string(),
+            Self::BadResumptionToken => "The resumptionToken is invalid or expired".to_string(),
             Self::CannotDisseminateFormat => {
                 "The metadata format identified by metadataPrefix is not supported".to_string()
             }

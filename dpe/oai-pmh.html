@@ -263,12 +263,13 @@
 <tr><td><code>Identify</code></td><td>—</td><td>—</td></tr>
 <tr><td><code>ListMetadataFormats</code></td><td>—</td><td><code>identifier</code></td></tr>
 <tr><td><code>ListSets</code></td><td>—</td><td>—</td></tr>
-<tr><td><code>ListIdentifiers</code></td><td><code>metadataPrefix</code></td><td><code>from</code>, <code>until</code>, <code>set</code></td></tr>
-<tr><td><code>ListRecords</code></td><td><code>metadataPrefix</code></td><td><code>from</code>, <code>until</code>, <code>set</code></td></tr>
+<tr><td><code>ListIdentifiers</code></td><td><code>metadataPrefix</code></td><td><code>from</code>, <code>until</code>, <code>set</code>, <code>resumptionToken</code></td></tr>
+<tr><td><code>ListRecords</code></td><td><code>metadataPrefix</code></td><td><code>from</code>, <code>until</code>, <code>set</code>, <code>resumptionToken</code></td></tr>
 <tr><td><code>GetRecord</code></td><td><code>identifier</code>, <code>metadataPrefix</code></td><td>—</td></tr>
 </tbody></table>
 </div>
-<p>Arguments outside these lists are rejected with <code>badArgument</code>, with two exceptions that are silently ignored: <code>set</code> on <code>ListSets</code> and <code>metadataPrefix</code> on <code>ListMetadataFormats</code>. A <code>resumptionToken</code> is rejected with <code>badResumptionToken</code> on every verb — see <a href="#known-limitations">Known Limitations</a>.</p>
+<p>Arguments outside these lists are rejected with <code>badArgument</code>, with two exceptions that are silently ignored: <code>set</code> on <code>ListSets</code> and <code>metadataPrefix</code> on <code>ListMetadataFormats</code>.</p>
+<p><code>ListIdentifiers</code> and <code>ListRecords</code> support <code>resumptionToken</code> for paging — see <a href="#flow-control-paging">Flow control (paging)</a>. When a <code>resumptionToken</code> is supplied it must be the request's only argument besides <code>verb</code>; combining it with any other argument yields <code>badArgument</code>, and an invalid or expired token yields <code>badResumptionToken</code>. Every other verb rejects <code>resumptionToken</code> with <code>badResumptionToken</code>.</p>
 <h3 id="identify"><a class="header" href="#identify">Identify</a></h3>
 <pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=Identify"
 </code></pre>
@@ -397,7 +398,16 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oa
 <p>Headers only (no metadata payloads):</p>
 <pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&amp;metadataPrefix=oai_dc"
 </code></pre>
-<p>List responses are returned complete and unpaged — there is no <code>resumptionToken</code> element, and its absence means the response is complete, not truncated.</p>
+<h3 id="flow-control-paging"><a class="header" href="#flow-control-paging">Flow control (paging)</a></h3>
+<p><code>ListIdentifiers</code> and <code>ListRecords</code> return at most 100 items per response (configurable via the <code>DPE_OAI_PAGE_SIZE</code> env var — see <a href="./operations.html#environment-variables">Operations</a>). When more items match, the response ends with a <code>resumptionToken</code> element carrying the token to fetch the next page, along with <code>completeListSize</code> (the total number of matching items) and <code>cursor</code> (the zero-based index of the first item in the current response):</p>
+<pre><code class="language-xml">&lt;resumptionToken completeListSize="342" cursor="0"&gt;MHwyMDIw...&lt;/resumptionToken&gt;
+</code></pre>
+<p>To fetch the next page, repeat the request with <strong>only</strong> the <code>verb</code> and the <code>resumptionToken</code> — no other arguments (the token already carries the original <code>metadataPrefix</code>, <code>from</code>, <code>until</code>, and <code>set</code>):</p>
+<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;resumptionToken=MHwyMDIw..."
+</code></pre>
+<p>The token is opaque: harvesters must pass it back verbatim and must not attempt to parse or construct it. The last page of a paged list carries an empty <code>resumptionToken</code> element (<code>&lt;resumptionToken completeListSize="342" cursor="300"/&gt;</code>), signalling that the list is complete. A response whose entire result fits in one page carries no <code>resumptionToken</code> element at all.</p>
+<p>Tokens encode a position into the list rather than server-side state, so a token remains valid as long as the underlying data has not changed. A token whose position no longer exists (for example, because records were removed) is rejected with <code>badResumptionToken</code>; re-harvest from the start in that case.</p>
+<p>Tokens are stateless: each carries its own filter arguments and offset, and the server keeps no session between pages, re-running the query from scratch on each resume. The trade-off is that tokens never expire on a clock, but the list is not a pinned snapshot — so items added or removed between pages can shift the offset and cause a resumed page to skip or duplicate items. Harvesters needing a strictly consistent view should re-harvest in one uninterrupted pass.</p>
 <h3 id="fetching-a-single-item"><a class="header" href="#fetching-a-single-item">Fetching a single item</a></h3>
 <pre><code class="language-bash"># A research project
 curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_dc&amp;identifier=oai:dasch.swiss:ark:/72163/1/0803"
@@ -450,7 +460,7 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 <div class="table-wrapper"><table><thead><tr><th>Code</th><th>Returned when</th></tr></thead><tbody>
 <tr><td><code>badVerb</code></td><td>The <code>verb</code> argument is missing or not one of the six verbs. The <code>&lt;request&gt;</code> element omits the verb attribute in this case.</td></tr>
 <tr><td><code>badArgument</code></td><td>An argument is missing, repeated, or not allowed for the verb (e.g. <code>set</code> on <code>GetRecord</code>); also returned for an unrecognised <code>set</code> value (bad prefix, empty value, or unknown project/cluster).</td></tr>
-<tr><td><code>badResumptionToken</code></td><td>A <code>resumptionToken</code> argument is supplied (resumption tokens are not supported).</td></tr>
+<tr><td><code>badResumptionToken</code></td><td>A <code>resumptionToken</code> is invalid, expired, or refers to a position that no longer exists; also returned when any verb other than <code>ListIdentifiers</code>/<code>ListRecords</code> receives one.</td></tr>
 <tr><td><code>cannotDisseminateFormat</code></td><td><code>metadataPrefix</code> is not <code>oai_dc</code> or <code>oai_datacite</code>.</td></tr>
 <tr><td><code>idDoesNotExist</code></td><td>The <code>identifier</code> does not resolve — including malformed identifiers (wrong prefix, bare shortcode), which are not reported as <code>badArgument</code>.</td></tr>
 <tr><td><code>noRecordsMatch</code></td><td>A list request matches nothing: empty result, a recognised <code>set</code> with no items, or a <code>from</code>/<code>until</code> window with no matches. An empty list is never returned.</td></tr>
@@ -458,7 +468,6 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 </div>
 <h2 id="known-limitations"><a class="header" href="#known-limitations">Known Limitations</a></h2>
 <ul>
-<li><strong>No resumption tokens.</strong> List responses are complete and unpaged; any <code>resumptionToken</code> argument yields <code>badResumptionToken</code>.</li>
 <li><strong><code>baseURL</code> is a fixed configured value.</strong> It is set per environment via <code>DPE_OAI_BASE_URL</code> rather than derived from each incoming request. Deploying behind a hostname that does not match the configured value will make the advertised <code>baseURL</code> disagree with the request URL, which OAI validators flag — keep the env var in sync with the public endpoint.</li>
 <li><strong>No deleted-record tracking</strong> (<code>deletedRecord: no</code>). Items that disappear are not announced; see the re-harvesting recommendation above.</li>
 <li><strong>GET only.</strong> OAI-PMH 2.0 also requires POST; harvesters that default to POST will not get an OAI response.</li>

@@ -222,6 +222,18 @@ pub fn incunabula_project() -> Project {
     }
 }
 
+/// Clones the incunabula project fixture with a distinct shortcode/id/pid, so
+/// tests can build a repository of several projects to exercise paging without a
+/// large fixture. The shortcode drives the OAI identifier, so each is unique.
+pub fn project_with_shortcode(shortcode: &str) -> Project {
+    Project {
+        id: shortcode.to_string(),
+        shortcode: shortcode.to_string(),
+        pid: format!("https://ark.dasch.swiss/ark:/72163/1/{shortcode}"),
+        ..incunabula_project()
+    }
+}
+
 /// Builds a cluster fixture (`cluster-001`, "EKWS") containing the given member
 /// project shortcodes. Use for cluster-set tests so they don't depend on the
 /// process-global cluster cache.

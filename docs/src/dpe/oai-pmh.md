@@ -25,11 +25,13 @@ All six OAI-PMH 2.0 verbs are implemented:
 | `Identify` | — | — |
 | `ListMetadataFormats` | — | `identifier` |
 | `ListSets` | — | — |
-| `ListIdentifiers` | `metadataPrefix` | `from`, `until`, `set` |
-| `ListRecords` | `metadataPrefix` | `from`, `until`, `set` |
+| `ListIdentifiers` | `metadataPrefix` | `from`, `until`, `set`, `resumptionToken` |
+| `ListRecords` | `metadataPrefix` | `from`, `until`, `set`, `resumptionToken` |
 | `GetRecord` | `identifier`, `metadataPrefix` | — |
 
-Arguments outside these lists are rejected with `badArgument`, with two exceptions that are silently ignored: `set` on `ListSets` and `metadataPrefix` on `ListMetadataFormats`. A `resumptionToken` is rejected with `badResumptionToken` on every verb — see [Known Limitations](#known-limitations).
+Arguments outside these lists are rejected with `badArgument`, with two exceptions that are silently ignored: `set` on `ListSets` and `metadataPrefix` on `ListMetadataFormats`.
+
+`ListIdentifiers` and `ListRecords` support `resumptionToken` for paging — see [Flow control (paging)](#flow-control-paging). When a `resumptionToken` is supplied it must be the request's only argument besides `verb`; combining it with any other argument yields `badArgument`, and an invalid or expired token yields `badResumptionToken`. Every other verb rejects `resumptionToken` with `badResumptionToken`.
 
 ### Identify
 
@@ -208,7 +210,25 @@ Headers only (no metadata payloads):
 curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&metadataPrefix=oai_dc"
 ```
 
-List responses are returned complete and unpaged — there is no `resumptionToken` element, and its absence means the response is complete, not truncated.
+### Flow control (paging)
+
+`ListIdentifiers` and `ListRecords` return at most 100 items per response. When more items match, the response ends with a `resumptionToken` element carrying the token to fetch the next page, along with `completeListSize` (the total number of matching items) and `cursor` (the zero-based index of the first item in the current response):
+
+```xml
+<resumptionToken completeListSize="342" cursor="0">MHwyMDIw...</resumptionToken>
+```
+
+To fetch the next page, repeat the request with **only** the `verb` and the `resumptionToken` — no other arguments (the token already carries the original `metadataPrefix`, `from`, `until`, and `set`):
+
+```bash
+curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&resumptionToken=MHwyMDIw..."
+```
+
+The token is opaque: harvesters must pass it back verbatim and must not attempt to parse or construct it. The last page of a paged list carries an empty `resumptionToken` element (`<resumptionToken completeListSize="342" cursor="300"/>`), signalling that the list is complete. A response whose entire result fits in one page carries no `resumptionToken` element at all.
+
+Tokens encode a position into the list rather than server-side state, so a token remains valid as long as the underlying data has not changed. A token whose position no longer exists (for example, because records were removed) is rejected with `badResumptionToken`; re-harvest from the start in that case.
+
+Tokens are stateless: each carries its own filter arguments and offset, and the server keeps no session between pages, re-running the query from scratch on each resume. The trade-off is that tokens never expire on a clock, but the list is not a pinned snapshot — so items added or removed between pages can shift the offset and cause a resumed page to skip or duplicate items. Harvesters needing a strictly consistent view should re-harvest in one uninterrupted pass.
 
 ### Fetching a single item
 
@@ -275,14 +295,13 @@ Errors are returned as OAI `<error>` elements with HTTP status `200`:
 |------|---------------|
 | `badVerb` | The `verb` argument is missing or not one of the six verbs. The `<request>` element omits the verb attribute in this case. |
 | `badArgument` | An argument is missing, repeated, or not allowed for the verb (e.g. `set` on `GetRecord`); also returned for an unrecognised `set` value (bad prefix, empty value, or unknown project/cluster). |
-| `badResumptionToken` | A `resumptionToken` argument is supplied (resumption tokens are not supported). |
+| `badResumptionToken` | A `resumptionToken` is invalid, expired, or refers to a position that no longer exists; also returned when any verb other than `ListIdentifiers`/`ListRecords` receives one. |
 | `cannotDisseminateFormat` | `metadataPrefix` is not `oai_dc` or `oai_datacite`. |
 | `idDoesNotExist` | The `identifier` does not resolve — including malformed identifiers (wrong prefix, bare shortcode), which are not reported as `badArgument`. |
 | `noRecordsMatch` | A list request matches nothing: empty result, a recognised `set` with no items, or a `from`/`until` window with no matches. An empty list is never returned. |
 
 ## Known Limitations
 
-- **No resumption tokens.** List responses are complete and unpaged; any `resumptionToken` argument yields `badResumptionToken`.
 - **`baseURL` is a fixed configured value.** It is set per environment via `DPE_OAI_BASE_URL` rather than derived from each incoming request. Deploying behind a hostname that does not match the configured value will make the advertised `baseURL` disagree with the request URL, which OAI validators flag — keep the env var in sync with the public endpoint.
 - **No deleted-record tracking** (`deletedRecord: no`). Items that disappear are not announced; see the re-harvesting recommendation above.
 - **GET only.** OAI-PMH 2.0 also requires POST; harvesters that default to POST will not get an OAI response.

@@ -35,6 +35,7 @@ use super::xml::OaiXmlBuilder;
 use crate::metadata::{
     matches_date_filter, matches_date_filter_record, to_oai_record, to_oai_record_from_record, OaiRecord,
 };
+use crate::resumption::ResumptionCursor;
 
 /// Query parameters for OAI-PMH requests.
 #[derive(Debug, Deserialize)]
@@ -133,17 +134,113 @@ pub fn parse_set_syntax(set: Option<&str>) -> Result<SetSyntax, OaiError> {
     }
 }
 
+/// A validated, filtered, and paged list ready for a list-verb XML response.
+pub struct ListPage {
+    /// The complete filtered list, in deterministic order. The handler slices the
+    /// current page out of this; its length is the `completeListSize`.
+    pub records: Vec<OaiRecord>,
+    /// Zero-based index of the first item to emit in this response.
+    pub offset: usize,
+    /// The maximum number of items to emit in this response.
+    pub page_size: usize,
+    /// The `<request>` element parameters to echo back. When resuming, per
+    /// OAI-PMH this is just the resumption token; otherwise it is the filter args.
+    pub request_params: Vec<(String, String)>,
+    /// The effective filter arguments (from the request or the token). Carried so
+    /// the next page's resumption token reproduces the same filtered list.
+    filter: FilterArgs,
+}
+
+/// The filter arguments that define which items a list request matches.
+#[derive(Clone)]
+struct FilterArgs {
+    metadata_prefix: String,
+    from: Option<String>,
+    until: Option<String>,
+    set: Option<String>,
+}
+
+/// Computes the resumption token to emit after the current page, given the index
+/// one past the last item emitted (`end`). Returns `Some(token)` when items
+/// remain, or `None` for the final page (an empty token marks list completion).
+pub fn next_page_token(page: &ListPage, end: usize) -> Option<String> {
+    if end >= page.records.len() {
+        return None;
+    }
+    Some(
+        ResumptionCursor {
+            metadata_prefix: page.filter.metadata_prefix.clone(),
+            from: page.filter.from.clone(),
+            until: page.filter.until.clone(),
+            set: page.filter.set.clone(),
+            offset: end,
+        }
+        .encode(),
+    )
+}
+
 /// Validates the common parameters for ListIdentifiers and ListRecords and returns
-/// the validated metadata prefix and the filtered list of OAI records.
+/// the filtered, order-stable list of OAI records together with the page offset.
+///
+/// When `params.resumption_token` is present the filter arguments are taken from
+/// the token (and must be the request's only argument besides `verb`); otherwise
+/// they are taken from the request. `page_size` bounds how many items a single
+/// response emits — production passes [`resumption::DEFAULT_PAGE_SIZE`]; tests pass
+/// a small value to exercise paging without large fixtures.
 ///
 /// Returns `Err(OaiError)` if any validation step fails.
-pub fn validate_list_params<'a>(
-    params: &'a OaiParams,
+pub fn validate_list_params(
+    params: &OaiParams,
     repo: &dyn ProjectRepository,
     record_repo: &dyn RecordRepository,
     clusters: &[ClusterRaw],
     lookup: &dyn ContributorLookup,
-) -> Result<(&'a str, Vec<OaiRecord>), OaiError> {
+    page_size: usize,
+) -> Result<ListPage, OaiError> {
+    if let Some(token) = params.resumption_token.as_deref() {
+        // OAI-PMH 2.0: resumptionToken is exclusive with all other arguments except verb.
+        if params.metadata_prefix.is_some()
+            || params.identifier.is_some()
+            || params.from.is_some()
+            || params.until.is_some()
+            || params.set.is_some()
+        {
+            return Err(OaiError::BadArgument(
+                "resumptionToken is exclusive with all other arguments except verb".to_string(),
+            ));
+        }
+
+        let cursor = ResumptionCursor::decode(token)?;
+        let records = collect_filtered_records(
+            &cursor.metadata_prefix,
+            cursor.from.as_deref(),
+            cursor.until.as_deref(),
+            cursor.set.as_deref(),
+            repo,
+            record_repo,
+            clusters,
+            lookup,
+        )?;
+        // The list is regenerated deterministically, so an offset past its end
+        // means the token refers to a list that has since shrunk — treat as
+        // expired rather than silently returning nothing.
+        if cursor.offset >= records.len() {
+            return Err(OaiError::BadResumptionToken);
+        }
+        return Ok(ListPage {
+            records,
+            offset: cursor.offset,
+            page_size,
+            request_params: vec![("resumptionToken".to_string(), token.to_string())],
+            filter: FilterArgs {
+                metadata_prefix: cursor.metadata_prefix,
+                from: cursor.from,
+                until: cursor.until,
+                set: cursor.set,
+            },
+        });
+    }
+
     // metadataPrefix is required. Validated BEFORE the set, so a request that is
     // missing/invalid in both reports the prefix error (precedence preserved).
     let prefix = params
@@ -161,16 +258,49 @@ pub fn validate_list_params<'a>(
         return Err(OaiError::BadArgument("identifier argument is not allowed".to_string()));
     }
 
-    // We don't support resumption tokens in v1
-    if params.resumption_token.is_some() {
-        return Err(OaiError::BadResumptionToken);
-    }
+    let records = collect_filtered_records(
+        prefix,
+        params.from.as_deref(),
+        params.until.as_deref(),
+        params.set.as_deref(),
+        repo,
+        record_repo,
+        clusters,
+        lookup,
+    )?;
 
+    Ok(ListPage {
+        records,
+        offset: 0,
+        page_size,
+        request_params: build_filter_request_params(prefix, params),
+        filter: FilterArgs {
+            metadata_prefix: prefix.to_string(),
+            from: params.from.clone(),
+            until: params.until.clone(),
+            set: params.set.clone(),
+        },
+    })
+}
+
+/// Builds the deterministic, filtered list of OAI records for the given filter
+/// arguments. Shared by fresh requests and resumed (tokened) requests so both
+/// reproduce exactly the same list.
+///
+/// Returns `Err(OaiError)` for an unsupported/unknown set or when nothing matches.
+#[allow(clippy::too_many_arguments)]
+fn collect_filtered_records(
+    prefix: &str,
+    from: Option<&str>,
+    until: Option<&str>,
+    set: Option<&str>,
+    repo: &dyn ProjectRepository,
+    record_repo: &dyn RecordRepository,
+    clusters: &[ClusterRaw],
+    lookup: &dyn ContributorLookup,
+) -> Result<Vec<OaiRecord>, OaiError> {
     // Syntactic parse — an unsupported set or empty value is a badArgument.
-    let syntax = parse_set_syntax(params.set.as_deref())?;
-
-    let from = params.from.as_deref();
-    let until = params.until.as_deref();
+    let syntax = parse_set_syntax(set)?;
 
     let oai_records = match syntax {
         SetSyntax::All => collect_entities(repo, record_repo, prefix, clusters, lookup, from, until, true, true),
@@ -218,7 +348,7 @@ pub fn validate_list_params<'a>(
         return Err(OaiError::NoRecordsMatch);
     }
 
-    Ok((prefix, oai_records))
+    Ok(oai_records)
 }
 
 /// Collects project and/or record OAI items for the entity-type and `All` cases.
@@ -317,22 +447,22 @@ fn collect_cluster(
     oai_records
 }
 
-/// Builds the request parameter list shared by list verb XML responses.
-pub fn build_list_request_params<'a>(prefix: &'a str, params: &'a OaiParams) -> Vec<(&'a str, &'a str)> {
-    let mut request_params = vec![("metadataPrefix", prefix)];
+/// Builds the `<request>` element parameters for a fresh (non-resumed) list
+/// request: the metadata prefix plus any filter arguments that were supplied.
+fn build_filter_request_params(prefix: &str, params: &OaiParams) -> Vec<(String, String)> {
+    let mut request_params = vec![("metadataPrefix".to_string(), prefix.to_string())];
     if let Some(ref from) = params.from {
-        request_params.push(("from", from.as_str()));
+        request_params.push(("from".to_string(), from.clone()));
     }
     if let Some(ref until) = params.until {
-        request_params.push(("until", until.as_str()));
+        request_params.push(("until".to_string(), until.clone()));
     }
     if let Some(ref set) = params.set {
-        request_params.push(("set", set.as_str()));
+        request_params.push(("set".to_string(), set.clone()));
     }
     request_params
 }
 
-#[cfg(test)]
 pub mod test_utils;
 
 #[cfg(test)]

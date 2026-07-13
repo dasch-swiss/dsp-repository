@@ -6,6 +6,7 @@
 mod error;
 mod handlers;
 mod metadata;
+mod resumption;
 mod xml;
 
 use std::sync::OnceLock;

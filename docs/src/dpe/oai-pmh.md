@@ -212,7 +212,7 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&metadataPrefix=oa
 
 ### Flow control (paging)
 
-`ListIdentifiers` and `ListRecords` return at most 100 items per response. When more items match, the response ends with a `resumptionToken` element carrying the token to fetch the next page, along with `completeListSize` (the total number of matching items) and `cursor` (the zero-based index of the first item in the current response):
+`ListIdentifiers` and `ListRecords` return at most 100 items per response (configurable via the `DPE_OAI_PAGE_SIZE` env var — see [Operations](./operations.md#environment-variables)). When more items match, the response ends with a `resumptionToken` element carrying the token to fetch the next page, along with `completeListSize` (the total number of matching items) and `cursor` (the zero-based index of the first item in the current response):
 
 ```xml
 <resumptionToken completeListSize="342" cursor="0">MHwyMDIw...</resumptionToken>

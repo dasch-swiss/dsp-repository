@@ -2,7 +2,7 @@
 # with the standalone Tailwind CLI and the binary is a normal `cargo build` artifact.
 
 # Chef base image — includes cargo-chef and the Rust toolchain.
-FROM lukemathwalker/cargo-chef:latest-rust-1.93.0-bookworm AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.97.0-bookworm AS chef
 WORKDIR /app
 
 # Planner — compute the dependency recipe (changes only when Cargo.toml/Cargo.lock change).

@@ -3,7 +3,7 @@
 use dpe_core::{ClusterRaw, ContributorLookup, ProjectRepository, RecordRepository};
 
 use super::{build_error_response, next_page_token, validate_list_params, OaiParams};
-use crate::resumption::DEFAULT_PAGE_SIZE;
+use crate::resumption::page_size;
 use crate::xml::OaiXmlBuilder;
 
 /// Handles the ListIdentifiers verb.
@@ -14,7 +14,7 @@ pub fn handle_list_identifiers(
     clusters: &[ClusterRaw],
     lookup: &dyn ContributorLookup,
 ) -> String {
-    handle_list_identifiers_paged(params, repo, record_repo, clusters, lookup, DEFAULT_PAGE_SIZE)
+    handle_list_identifiers_paged(params, repo, record_repo, clusters, lookup, page_size())
 }
 
 /// ListIdentifiers with an explicit page size, so tests can exercise paging

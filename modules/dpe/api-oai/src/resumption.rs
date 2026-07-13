@@ -19,8 +19,22 @@ use crate::error::OaiError;
 
 /// Default number of items per page in production. OAI-PMH imposes no fixed page
 /// size; 100 keeps individual responses modest. Overridable per call (tests use a
-/// small value so paging can be exercised without large fixtures).
+/// small value so paging can be exercised without large fixtures), or via the
+/// `DPE_OAI_PAGE_SIZE` env var (see [`page_size`]).
 pub const DEFAULT_PAGE_SIZE: usize = 100;
+
+pub fn page_size() -> usize {
+    resolve_page_size(std::env::var("DPE_OAI_PAGE_SIZE").ok().as_deref())
+}
+
+/// Parses a page size from an optional raw value, ignoring anything that is not a
+/// positive integer. Pure helper so the precedence is unit-testable without
+/// touching the process-global env.
+fn resolve_page_size(raw: Option<&str>) -> usize {
+    raw.and_then(|v| v.parse::<usize>().ok())
+        .filter(|&n| n > 0)
+        .unwrap_or(DEFAULT_PAGE_SIZE)
+}
 
 /// The decoded state carried by a resumption token: the filter arguments of the
 /// original request and the offset of the next item to emit.
@@ -83,6 +97,20 @@ impl ResumptionCursor {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn page_size_parses_a_valid_value() {
+        assert_eq!(resolve_page_size(Some("250")), 250);
+    }
+
+    #[test]
+    fn page_size_falls_back_when_absent_empty_zero_or_garbage() {
+        assert_eq!(resolve_page_size(None), DEFAULT_PAGE_SIZE);
+        assert_eq!(resolve_page_size(Some("")), DEFAULT_PAGE_SIZE);
+        assert_eq!(resolve_page_size(Some("0")), DEFAULT_PAGE_SIZE);
+        assert_eq!(resolve_page_size(Some("-5")), DEFAULT_PAGE_SIZE);
+        assert_eq!(resolve_page_size(Some("lots")), DEFAULT_PAGE_SIZE);
+    }
 
     fn cursor(offset: usize) -> ResumptionCursor {
         ResumptionCursor {

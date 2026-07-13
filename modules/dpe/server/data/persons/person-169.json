@@ -1,0 +1,22 @@
+{
+    "id": "person-169",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/charlotte-gieben/",
+            "text": "https://www.linkedin.com/in/charlotte-gieben/"
+        }
+    ],
+    "givenNames": [
+        "Charlotte"
+    ],
+    "familyNames": [
+        "Gieben"
+    ],
+    "jobTitles": [
+        "Student"
+    ],
+    "affiliations": [
+        "organization-056"
+    ]
+}

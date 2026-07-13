@@ -1,0 +1,51 @@
+[package]
+name = "dpe-server"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[features]
+# Dev-loop live-reload: browser auto-refresh on server restart + asset changes.
+# Enabled by the dev loop (bacon.toml / `just dev`); never in release builds.
+dev = ["dep:tower-livereload", "dep:notify"]
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+ureq = "3"
+dpe-core = { path = "../core" }
+dpe-telemetry = { path = "../telemetry" }
+dpe-api-oai = { path = "../api-oai" }
+dpe-web = { path = "../web" }
+maud.workspace = true
+
+axum.workspace = true
+datastar.workspace = true
+figment = { version = "0.10", features = ["env", "toml"] }
+mosaic-tiles = { path = "../../mosaic/tiles" }
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+axum-tracing-opentelemetry.workspace = true
+init-tracing-opentelemetry.workspace = true
+opentelemetry.workspace = true
+opentelemetry_sdk.workspace = true
+opentelemetry-otlp.workspace = true
+opentelemetry-appender-tracing.workspace = true
+tracing-opentelemetry.workspace = true
+pyroscope.workspace = true
+futures = "0.3"
+tower.workspace = true
+tower-http.workspace = true
+tower_governor.workspace = true
+tower-livereload = { workspace = true, optional = true }
+notify = { workspace = true, optional = true }
+serde.workspace = true
+serde_json.workspace = true
+url.workspace = true
+urlencoding = "2.1"
+
+[dev-dependencies]
+insta.workspace = true
+tower = { workspace = true, features = ["util"] }
+http-body-util = "0.1"
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

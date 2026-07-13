@@ -1,0 +1,24 @@
+{
+    "id": "person-249",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5540-7938",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5540-7938"
+        }
+    ],
+    "givenNames": [
+        "Sarah"
+    ],
+    "familyNames": [
+        "Lo Russo"
+    ],
+    "jobTitles": [
+        "PhD Student"
+    ],
+    "affiliations": [
+        "organization-081",
+        "organization-082"
+    ],
+    "email": "sarah.lorusso@unibas.ch"
+}

@@ -46,6 +46,8 @@ urlencoding = "2.1"
 
 [dev-dependencies]
 insta.workspace = true
+# `test` feature enables figment::Jail for isolated env-var config tests.
+figment = { version = "0.10", features = ["env", "toml", "test"] }
 tower = { workspace = true, features = ["util"] }
 http-body-util = "0.1"
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

@@ -42,6 +42,14 @@ pub struct DpeConfig {
     /// URL harvesters actually use (e.g. `https://repository.dasch.swiss/dpe/oai` in
     /// production, `https://api.dev.dasch.swiss/dpe/oai` on DEV). Set via `DPE_OAI_BASE_URL`.
     pub oai_base_url: String,
+
+    /// OAI-PMH rate limit: seconds per request once burst is spent. Set via
+    /// `DPE_OAI_RATE_LIMIT_PER_SECOND`.
+    pub oai_rate_limit_per_second: u64,
+
+    /// OAI-PMH rate limit: back-to-back requests allowed per IP. Set via
+    /// `DPE_OAI_RATE_LIMIT_BURST`.
+    pub oai_rate_limit_burst: u32,
 }
 
 impl Default for DpeConfig {
@@ -52,6 +60,8 @@ impl Default for DpeConfig {
             fathom_site_id: None,
             show_placeholder_values: false,
             oai_base_url: "https://repository.dasch.swiss/dpe/oai".to_string(),
+            oai_rate_limit_per_second: 1,
+            oai_rate_limit_burst: 60,
         }
     }
 }
@@ -82,6 +92,19 @@ mod tests {
         assert!(config.fathom_site_id.is_none());
         assert!(!config.show_placeholder_values);
         assert_eq!(config.oai_base_url, "https://repository.dasch.swiss/dpe/oai");
+        assert_eq!(config.oai_rate_limit_per_second, 1);
+        assert_eq!(config.oai_rate_limit_burst, 60);
+    }
+
+    #[test]
+    fn oai_rate_limit_burst_env_override() {
+        // Jail isolates env + cwd so DPE_* overrides are tested without touching the real environment.
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("DPE_OAI_RATE_LIMIT_BURST", 5);
+            let config = DpeConfig::load().expect("config should load");
+            assert_eq!(config.oai_rate_limit_burst, 5);
+            Ok(())
+        });
     }
 
     #[test]

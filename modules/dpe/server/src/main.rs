@@ -6,7 +6,8 @@ use clap::{Parser, Subcommand};
 mod config;
 #[cfg(feature = "dev")]
 mod dev_reload;
-mod fragments;
+pub(crate) mod fragments;
+mod router;
 mod telemetry_collector;
 mod traceparent;
 mod view;
@@ -14,7 +15,7 @@ mod view;
 /// Shared state for the page handlers: the (optional) Fathom site id and the
 /// resolved stylesheet href (unhashed in dev, content-hashed in release).
 #[derive(Clone)]
-struct AppState {
+pub(crate) struct AppState {
     fathom_site_id: Option<String>,
     css_href: String,
 }
@@ -26,7 +27,7 @@ struct TabQuery {
     tab: Option<String>,
 }
 
-async fn projects_page_handler(
+pub(crate) async fn projects_page_handler(
     axum::extract::State(state): axum::extract::State<AppState>,
     axum::extract::Query(query): axum::extract::Query<dpe_web::domain::ProjectQuery>,
 ) -> axum::response::Html<String> {
@@ -44,7 +45,7 @@ async fn projects_page_handler(
     )
 }
 
-async fn about_page_handler(
+pub(crate) async fn about_page_handler(
     axum::extract::State(state): axum::extract::State<AppState>,
 ) -> axum::response::Html<String> {
     let tp = traceparent::extract_traceparent();
@@ -61,7 +62,7 @@ async fn about_page_handler(
     )
 }
 
-async fn project_page_handler(
+pub(crate) async fn project_page_handler(
     axum::extract::State(state): axum::extract::State<AppState>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Query(tab): axum::extract::Query<TabQuery>,
@@ -88,7 +89,7 @@ async fn project_page_handler(
 
 /// 404 fallback (after `ServeDir` finds no matching static file): the app shell
 /// with a "Page not found." body.
-async fn not_found(
+pub(crate) async fn not_found(
     axum::extract::State(state): axum::extract::State<AppState>,
 ) -> (axum::http::StatusCode, axum::response::Html<String>) {
     let tp = traceparent::extract_traceparent();
@@ -213,12 +214,9 @@ fn main() -> ExitCode {
 #[tokio::main]
 async fn serve() -> ExitCode {
     use axum::http::StatusCode;
-    use axum::response::Redirect;
     use axum::routing::get;
-    use axum::Router;
     use init_tracing_opentelemetry::TracingConfig;
     use opentelemetry_sdk::logs::{SdkLogger, SdkLoggerProvider};
-    use tower_http::services::ServeDir;
     use tracing_subscriber::layer::SubscriberExt;
 
     // Route panics through tracing so they appear as structured Grafana logs
@@ -318,35 +316,8 @@ async fn serve() -> ExitCode {
         css_href: resolve_css_href(&dpe_config.public_dir),
     };
 
-    use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
-
-    // Static assets + 404: serve files from the public dir, falling back to the
-    // "Page not found." shell.
-    let serve_dir = ServeDir::new(&dpe_config.public_dir).not_found_service(get(not_found).with_state(state.clone()));
-
-    let app = Router::new()
-        // --- Traced routes (declared BEFORE .layer()) ---
-        // Page routes.
-        .route("/", get(|| async { Redirect::permanent("/dpe/projects") }))
-        .route("/dpe", get(|| async { Redirect::permanent("/dpe/projects") }))
-        .route("/dpe/projects", get(projects_page_handler))
-        .route("/dpe/about", get(about_page_handler))
-        .route("/dpe/projects/{id}", get(project_page_handler))
-        // OAI-PMH (note: /dpe/oai, not /oai) — XML, must stay unbroken.
-        .route("/dpe/oai", get(dpe_api_oai::oai_handler))
-        // Datastar SSE + JSON endpoints.
-        .route("/dpe/projects/{id}/tab/{tab}", get(fragments::tab_fragment_handler))
-        .route("/dpe/projects/search", get(fragments::search_fragment_handler))
-        .route("/dpe/api/v2/projects", get(fragments::projects_json_handler))
-        .route("/dpe/api/v2/projects/{id}", get(fragments::project_json_handler))
-        // Static assets + 404 fallback.
-        .fallback_service(serve_dir)
-        // --- OTel layers ---
-        // Axum layers wrap in reverse declaration order:
-        // - OtelInResponseLayer (declared first) runs INNER — injects traceparent into response headers
-        // - OtelAxumLayer (declared second) runs OUTER — creates the server span from the request
-        .layer(OtelInResponseLayer)
-        .layer(OtelAxumLayer::default());
+    // Traced routes, incl. the rate-limited /dpe/oai (limiter scoped to that route).
+    let app = router::build_router(state, &dpe_config.public_dir, router::oai_router(&dpe_config));
 
     // Dev-only browser live-reload (`dev` feature): wraps the page/static
     // routes declared above; the untraced routes below stay outside it.
@@ -361,19 +332,19 @@ async fn serve() -> ExitCode {
             "/telemetry/collect",
             axum::routing::post(telemetry_collector::collect_handler).layer({
                 use tower_governor::governor::GovernorConfigBuilder;
-                use tower_governor::key_extractor::SmartIpKeyExtractor;
                 use tower_governor::GovernorLayer;
+
+                use crate::router::RightmostXffKeyExtractor;
 
                 let governor_conf = GovernorConfigBuilder::default()
                     .per_second(1)
                     .burst_size(10)
-                    .key_extractor(SmartIpKeyExtractor)
+                    .key_extractor(RightmostXffKeyExtractor)
                     .finish()
                     .expect("GovernorConfig should build with valid defaults");
                 GovernorLayer { config: std::sync::Arc::new(governor_conf) }
             }),
-        )
-        .with_state(state);
+        );
 
     tracing::info!("listening on http://{}", &addr);
     let listener = tokio::net::TcpListener::bind(&addr)

@@ -210,6 +210,10 @@ Headers only (no metadata payloads):
 curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&metadataPrefix=oai_dc"
 ```
 
+### Rate limiting
+
+The endpoint is rate-limited per client IP. By default a harvester may make up to 60 requests back-to-back (the burst) and then a sustained ~60 requests/minute; exceeding this yields `429 Too Many Requests` with a `Retry-After` header (and `X-RateLimit-*` headers indicating the limit and remaining budget). A well-behaved harvester that pages through resumption tokens sequentially stays well within these limits. The limits are configurable per environment via `DPE_OAI_RATE_LIMIT_PER_SECOND` and `DPE_OAI_RATE_LIMIT_BURST` (see [operations](./operations.md)).
+
 ### Flow control (paging)
 
 `ListIdentifiers` and `ListRecords` return at most 100 items per response (configurable via the `DPE_OAI_PAGE_SIZE` env var — see [Operations](./operations.md#environment-variables)). When more items match, the response ends with a `resumptionToken` element carrying the token to fetch the next page, along with `completeListSize` (the total number of matching items) and `cursor` (the zero-based index of the first item in the current response):

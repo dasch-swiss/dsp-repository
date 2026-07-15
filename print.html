@@ -2361,6 +2361,8 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret)</td></tr>
 <tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility.</td></tr>
 <tr><td><code>DPE_OAI_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td><td>Public base URL emitted as the OAI-PMH <code>baseURL</code> and echoed in <code>&lt;request&gt;</code> elements. Set per environment to match the public endpoint (e.g. <code>https://api.dev.dasch.swiss/dpe/oai</code> on DEV, <code>http://localhost:4000/dpe/oai</code> locally). See <a href="dpe/./oai-pmh.html">OAI-PMH</a>.</td></tr>
+<tr><td><code>DPE_OAI_RATE_LIMIT_PER_SECOND</code></td><td>No</td><td><code>1</code></td><td>Per-IP rate limit on <code>/dpe/oai</code>: seconds per request once the burst is spent. <code>1</code> ≈ 60 requests/minute sustained. See <a href="dpe/./oai-pmh.html">OAI-PMH</a>.</td></tr>
+<tr><td><code>DPE_OAI_RATE_LIMIT_BURST</code></td><td>No</td><td><code>60</code></td><td>Per-IP burst allowance on <code>/dpe/oai</code>: back-to-back requests before the sustained rate applies.</td></tr>
 <tr><td><code>DPE_OAI_PAGE_SIZE</code></td><td>No</td><td><code>100</code></td><td>Items per page in <code>ListRecords</code> / <code>ListIdentifiers</code> responses before a resumption token is emitted. Non-positive or non-numeric values fall back to the default. See <a href="dpe/./oai-pmh.html">OAI-PMH</a>.</td></tr>
 <tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g., <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
 <tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g., <code>dpe</code>)</td></tr>
@@ -2371,6 +2373,9 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>DPE_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="dpe/operations.html#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
 </tbody></table>
 </div>
+<blockquote>
+<p><strong>Rate limiting and reverse proxies.</strong> The OAI (<code>/dpe/oai</code>) and telemetry (<code>/telemetry/collect</code>) rate limits key on the client IP, taken from the <strong>rightmost</strong> <code>X-Forwarded-For</code> entry (the address Traefik itself appends), falling back to the connection peer address. Reading the rightmost entry — not the leftmost — is deliberate: Traefik appends the real client after any <code>X-Forwarded-For</code> value the client supplied, so the rightmost entry is proxy-authored and cannot be spoofed, while the leftmost stays attacker-controlled. This holds only while Traefik is the sole hop in front of DPE; a second proxy that appends to <code>X-Forwarded-For</code> would shift the trusted entry and require counting hops from the right.</p>
+</blockquote>
 <h2 id="health-check"><a class="header" href="#health-check">Health Check</a></h2>
 <ul>
 <li><strong>Endpoint</strong>: <code>GET /healthz</code></li>
@@ -2791,6 +2796,8 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oa
 <p>Headers only (no metadata payloads):</p>
 <pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&amp;metadataPrefix=oai_dc"
 </code></pre>
+<h3 id="rate-limiting"><a class="header" href="#rate-limiting">Rate limiting</a></h3>
+<p>The endpoint is rate-limited per client IP. By default a harvester may make up to 60 requests back-to-back (the burst) and then a sustained ~60 requests/minute; exceeding this yields <code>429 Too Many Requests</code> with a <code>Retry-After</code> header (and <code>X-RateLimit-*</code> headers indicating the limit and remaining budget). A well-behaved harvester that pages through resumption tokens sequentially stays well within these limits. The limits are configurable per environment via <code>DPE_OAI_RATE_LIMIT_PER_SECOND</code> and <code>DPE_OAI_RATE_LIMIT_BURST</code> (see <a href="dpe/./operations.html">operations</a>).</p>
 <h3 id="flow-control-paging"><a class="header" href="#flow-control-paging">Flow control (paging)</a></h3>
 <p><code>ListIdentifiers</code> and <code>ListRecords</code> return at most 100 items per response (configurable via the <code>DPE_OAI_PAGE_SIZE</code> env var — see <a href="dpe/./operations.html#environment-variables">Operations</a>). When more items match, the response ends with a <code>resumptionToken</code> element carrying the token to fetch the next page, along with <code>completeListSize</code> (the total number of matching items) and <code>cursor</code> (the zero-based index of the first item in the current response):</p>
 <pre><code class="language-xml">&lt;resumptionToken completeListSize="342" cursor="0"&gt;MHwyMDIw...&lt;/resumptionToken&gt;

@@ -398,6 +398,8 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oa
 <p>Headers only (no metadata payloads):</p>
 <pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&amp;metadataPrefix=oai_dc"
 </code></pre>
+<h3 id="rate-limiting"><a class="header" href="#rate-limiting">Rate limiting</a></h3>
+<p>The endpoint is rate-limited per client IP. By default a harvester may make up to 60 requests back-to-back (the burst) and then a sustained ~60 requests/minute; exceeding this yields <code>429 Too Many Requests</code> with a <code>Retry-After</code> header (and <code>X-RateLimit-*</code> headers indicating the limit and remaining budget). A well-behaved harvester that pages through resumption tokens sequentially stays well within these limits. The limits are configurable per environment via <code>DPE_OAI_RATE_LIMIT_PER_SECOND</code> and <code>DPE_OAI_RATE_LIMIT_BURST</code> (see <a href="./operations.html">operations</a>).</p>
 <h3 id="flow-control-paging"><a class="header" href="#flow-control-paging">Flow control (paging)</a></h3>
 <p><code>ListIdentifiers</code> and <code>ListRecords</code> return at most 100 items per response (configurable via the <code>DPE_OAI_PAGE_SIZE</code> env var — see <a href="./operations.html#environment-variables">Operations</a>). When more items match, the response ends with a <code>resumptionToken</code> element carrying the token to fetch the next page, along with <code>completeListSize</code> (the total number of matching items) and <code>cursor</code> (the zero-based index of the first item in the current response):</p>
 <pre><code class="language-xml">&lt;resumptionToken completeListSize="342" cursor="0"&gt;MHwyMDIw...&lt;/resumptionToken&gt;

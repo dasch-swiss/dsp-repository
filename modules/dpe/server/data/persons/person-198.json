@@ -1,0 +1,23 @@
+{
+    "id": "person-198",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "http://www.leatherandshoes.nl/",
+            "text": "http://www.leatherandshoes.nl"
+        }
+    ],
+    "givenNames": [
+        "André"
+    ],
+    "familyNames": [
+        "Veldmeijer"
+    ],
+    "jobTitles": [
+        "Archaeologist",
+        "Paleontologist"
+    ],
+    "affiliations": [
+        "organization-068"
+    ]
+}

@@ -5,10 +5,17 @@ use maud::{html, Markup};
 /// Shared name + roles + job-titles block for a resolved [`Person`].
 fn person_name_and_roles(person: &Person, roles: Option<&str>) -> Markup {
     let full_name = format!("{} {}", person.given_names.join(" "), person.family_names.join(" "));
-    let orcid_url = person.same_as.iter().find(|r| r.type_ == "ORCID").map(|r| r.url.as_str());
+    // Link the name to the person's ORCID when available, otherwise fall back to
+    // their first `sameAs` reference (e.g. an institutional profile page).
+    let link_url = person
+        .same_as
+        .iter()
+        .find(|r| r.type_ == "ORCID")
+        .or_else(|| person.same_as.first())
+        .map(|r| r.url.as_str());
     html! {
         div class="font-medium" {
-            @match orcid_url {
+            @match link_url {
                 Some(url) => a   href=(url)
                     target="_blank"
                     rel="noopener noreferrer"
@@ -121,5 +128,41 @@ mod tests {
     fn unknown_person_renders_not_found() {
         let out = person("person-missing", None, false).into_string();
         assert!(out.contains("Person not found"), "{out}");
+    }
+
+    #[test]
+    fn name_links_to_orcid_when_present() {
+        use dpe_core::models::AuthorityFileReference;
+        let mut p = sample_person();
+        p.same_as = vec![
+            AuthorityFileReference {
+                type_: "URL".to_string(),
+                url: "https://example.org/profile".to_string(),
+                text: None,
+            },
+            AuthorityFileReference {
+                type_: "ORCID".to_string(),
+                url: "https://orcid.org/0000-0002-1825-0097".to_string(),
+                text: None,
+            },
+        ];
+        let out = person_view(&p, &[], None, false).into_string();
+        assert!(out.contains(r#"href="https://orcid.org/0000-0002-1825-0097""#), "{out}");
+    }
+
+    #[test]
+    fn name_links_to_sameas_url_when_no_orcid() {
+        use dpe_core::models::AuthorityFileReference;
+        let mut p = sample_person();
+        p.same_as = vec![AuthorityFileReference {
+            type_: "URL".to_string(),
+            url: "https://kunstgeschichte.philhist.unibas.ch/en/persons/martinez-ruiperez-antonia/".to_string(),
+            text: None,
+        }];
+        let out = person_view(&p, &[], None, false).into_string();
+        assert!(
+            out.contains(r#"href="https://kunstgeschichte.philhist.unibas.ch/en/persons/martinez-ruiperez-antonia/""#),
+            "{out}"
+        );
     }
 }

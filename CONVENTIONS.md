@@ -23,6 +23,10 @@ Agent reference card for the **work phase**. All authoritative detail lives in `
 - Metric attributes must be bounded — validate against known sets, normalize dynamic values. High-cardinality data goes to structured logs only, never to metric attributes
 - Vendored JS files go in `modules/dpe/public/vendor/` — update `vendor/README.md` when adding or updating
 
+## Data Conventions
+
+- New project `temporalCoverage` values must resolve to structured dates for OAI-PMH — add each new free-text value to `modules/dpe/server/data/temporal-coverage-enrichment.json` (keyed by display text, with a W3CDTF range and `source: "llm"`). See `docs/src/dpe/oai-pmh.md` and the "Adding a Project Metadata File" section of `modules/dpe/CLAUDE.md`.
+
 ## Commit Conventions
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/). Scopes match crate names.

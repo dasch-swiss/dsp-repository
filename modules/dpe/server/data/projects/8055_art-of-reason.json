@@ -1,0 +1,105 @@
+{
+    "id": "8055",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/8055",
+    "name": "The Art of Reason in the Middle Ages. Visualizing reason and rational thought (11th-15th centuries)",
+    "shortcode": "8055",
+    "officialName": "The Art of Reason in the Middle Ages. Visualizing reason and rational thought (11th-15th centuries)",
+    "status": "Ongoing",
+    "shortDescription": "The Art of Reason explores how medieval visual culture shaped and represented ideas of reason, revealing images as active forces in medieval intellectual history.",
+    "description": {
+        "en": "The attribution of “irrationality” to the Middle Ages, combined with the complex and multifaceted nature of medieval conceptualizations of reason, has contributed to a fragmented understanding of the history of reason in the medieval period. Medieval images, far from being mere “reflections” of textual discussions of reason, emerge as powerful visual articulations of aspects of reason that were overlooked, marginalized, or only indirectly addressed in medieval texts. At the same time, they functioned as active instruments in shaping and stimulating the very processes of reasoning.\n\nThe Art of Reason aims to provide a comprehensive study of the idea of reason throughout the Middle Ages, examining how it was constructed and represented through medieval visual culture."
+    },
+    "startDate": "2023-09-01",
+    "endDate": "2027-08-31",
+    "howToCite": "Martínez Ruipérez, Antonia; Frische, Jolanda: Vernacular Allegories of Reason in Medieval Art [Database]. DaSCH. Persistent identifier.",
+    "accessRights": {
+        "accessRights": "Embargoed Access",
+        "embargoDate": "2029-08-31"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-ND 4.0",
+                "licenseDate": "2026-07-21",
+                "licenseURI": "https://creativecommons.org/licenses/by-nd/4.0/"
+            },
+            "copyrightHolder": "Vernacular Allegories of Reason in Medieval Art",
+            "authorship": [
+                "CALCULATED"
+            ]
+        }
+    ],
+    "typeOfData": [
+        "Text",
+        "Image"
+    ],
+    "dataLanguage": [
+        "en"
+    ],
+    "keywords": [
+        {
+            "en": "Medieval art"
+        },
+        {
+            "en": "Reason"
+        },
+        {
+            "en": "Manuscripts Studies"
+        },
+        {
+            "en": "History of Thought"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10404 Visual arts and Art history"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "11th-15th centuries"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/6255148/europe.html",
+            "text": "Europe"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "person-414",
+            "contributorType": [
+                "Project Leader"
+            ]
+        },
+        {
+            "contributor": "person-415",
+            "contributorType": [
+                "Data Collector"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "In French allegorical literature of the 13th–15th centuries, Reason emerges as a significant figure in the development of the narrative. Works such as Le Roman de la Rose by Guillaume de Lorris and Jean de Meun, Le Pèlerinage de la vie humaine by Guillaume de Deguileville, and Christine de Pizan’s La Cité des Dames present, each in their own way, a particular conception of Reason. Very popular at the time, these extensively illustrated works offer a rich corpus of representations of Reason. The purpose of this database is to compile the dispersed images of Reason found in these allegorical works. Through the cataloguing of these images, this database also seeks to offer a more nuanced and comprehensive understanding of the representation of Reason within vernacular allegories of the late Middle Ages."
+    },
+    "contactPoint": [
+        "person-414"
+    ],
+    "funding": [
+        {
+            "funders": [
+                "organization-002"
+            ],
+            "number": "216489",
+            "name": "Ambizione",
+            "url": "https://data.snf.ch/grants/grant/216489"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "VARMA"
+        }
+    ]
+}

@@ -68,6 +68,14 @@ cd modules/dpe/web-e2e-tests && npx playwright test
 
 ## When Making Changes
 
+### Adding a Project Metadata File
+
+Project descriptive metadata lives as JSON under `modules/dpe/server/data/`.
+
+1. Add `<shortcode>_<slug>.json` under `projects/` (and any new `persons/person-NNN.json` / `organizations/organization-NNN.json`); pick new person/org ids by scanning existing internal `"id"` values, and reuse existing organizations rather than duplicating them.
+2. **Every `temporalCoverage` value must resolve to a structured date for OAI-PMH.** Free-text values (e.g. `{"en": "11th-15th centuries"}`) resolve against `modules/dpe/server/data/temporal-coverage-enrichment.json`, keyed by the display text. Add a row with a W3CDTF range and `"source": "llm"` (e.g. `"11th-15th centuries": {"date": "1001/1500", "original_name": "11th-15th centuries", "source": "llm"}`); if the value is not a time period, use `"date": null, "source": "unresolved"`. The `every_committed_temporal_coverage_resolves` test fails otherwise. See `docs/src/dpe/oai-pmh.md` → *Temporal coverage*.
+3. Run `just validate-data` (cross-references) and `just test`.
+
 ### Adding a New Component
 
 1. Add a `fn name(...) -> maud::Markup` in `web/src/components/`

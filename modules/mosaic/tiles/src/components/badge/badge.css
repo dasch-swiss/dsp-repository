@@ -1,0 +1,43 @@
+@layer components {
+  .badge {
+    @apply inline-flex items-center justify-center gap-1 rounded-md;
+  }
+
+  /* Sizes */
+  .badge-sm {
+    @apply px-2.5 py-1 text-xs;
+  }
+
+  .badge-md {
+    @apply px-3 py-1 text-sm;
+  }
+
+  .badge-lg {
+    @apply px-4 py-1.5 text-base;
+  }
+
+  /* Variants */
+  .badge-primary {
+    @apply bg-primary-100 text-primary-800;
+  }
+
+  .badge-secondary {
+    @apply bg-gray-100 text-gray-700;
+  }
+
+  .badge-success {
+    @apply bg-success-100 text-success-800;
+  }
+
+  .badge-warning {
+    @apply bg-warning-100 text-warning-800;
+  }
+
+  .badge-danger {
+    @apply bg-danger-100 text-danger-800;
+  }
+
+  .badge-info {
+    @apply bg-info-100 text-info-800;
+  }
+}

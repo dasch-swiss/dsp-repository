@@ -1,0 +1,40 @@
+name: Build DPE
+description: Compile DPE (static musl dpe-server binary + content-hashed Tailwind app.css) and stage to staging/
+
+runs:
+  using: composite
+  steps:
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - uses: Swatinem/rust-cache@v2
+
+    - name: Install system dependencies
+      shell: bash
+      run: sudo apt-get update -y && sudo apt-get install -y --no-install-recommends musl-tools clang
+
+    - name: Add build target
+      shell: bash
+      run: rustup target add x86_64-unknown-linux-musl
+
+    - name: Install just
+      uses: extractions/setup-just@v4
+
+    - name: Build stylesheet
+      shell: bash
+      # Standalone Tailwind CLI → modules/dpe/public/assets/app.<hash>.css.
+      # No Node/npm needed: the CLI bundles the official plugins.
+      run: just css-release
+
+    - name: Build static musl binary
+      shell: bash
+      run: cargo build -p dpe-server --release --target x86_64-unknown-linux-musl
+
+    - name: Stage artifacts
+      shell: bash
+      run: |
+        mkdir -p staging
+        cp target/x86_64-unknown-linux-musl/release/dpe-server staging/
+        cp -r modules/dpe/public staging/
+        cp -r modules/dpe/server/data staging/
+        cp modules/dpe/Dockerfile staging/

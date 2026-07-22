@@ -1,0 +1,15 @@
+[book]
+authors = ["DaSCH - Swiss National Data and Service Center for the Humanities"]
+language = "en"
+src = "src"
+title = "DSP-Repository Developer Documentation"
+
+[preprocessor.alerts]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
+
+[output]
+
+[output.html]
+additional-js = ["mermaid.min.js", "mermaid-init.js"]

@@ -1,0 +1,24 @@
+{
+    "id": "person-406",
+    "givenNames": [
+        "Marion"
+    ],
+    "familyNames": [
+        "Troxler"
+    ],
+    "jobTitles": [
+        "Doctoral Candidate",
+        "Assistant"
+    ],
+    "affiliations": [
+        "organization-109"
+    ],
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://boris-portal.unibe.ch/entities/person/4668fc01-a7cc-4b27-8723-4b2037430a64",
+            "text": "BORIS Portal"
+        }
+    ],
+    "email": "marion.troxler@unibe.ch"
+}

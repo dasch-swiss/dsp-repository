@@ -1,0 +1,23 @@
+{
+    "id": "person-148",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://daw.philhist.unibas.ch/de/personen/andrea-loprieno-gnirs/",
+            "text": "https://daw.philhist.unibas.ch/de/personen/andrea-loprieno-gnirs/"
+        }
+    ],
+    "givenNames": [
+        "Andrea"
+    ],
+    "familyNames": [
+        "Loprieno-Gnirs"
+    ],
+    "jobTitles": [
+        "Egyptologist"
+    ],
+    "affiliations": [
+        "organization-056"
+    ],
+    "email": "andrea.gnirs@unibas.ch"
+}

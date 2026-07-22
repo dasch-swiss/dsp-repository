@@ -9,7 +9,7 @@ mod type_of_data_section;
 use coverage_section::coverage_section;
 use data_language_section::data_language_section;
 use disciplines_section::disciplines_section;
-use dpe_core::Project;
+use dpe_core::{lang_value, Project};
 use link_card_section::link_card_section;
 use link_list_section::link_list_section;
 use maud::{html, Markup};
@@ -26,9 +26,9 @@ pub(super) const CHIP_PRIMARY: &str =
 pub(super) const CHIP_NEUTRAL: &str =
     "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700";
 
-/// The "Overview" tab panel: type of data, data languages, publication year,
-/// keywords, disciplines, coverage, clusters, collections, documentation /
-/// additional material, and provenance.
+/// The "Overview" tab panel: abstract, type of data, data languages,
+/// publication year, keywords, disciplines, coverage, clusters, collections,
+/// documentation / additional material, and provenance.
 pub fn dataset_overview_section(proj: &Project) -> Markup {
     let all_keywords: Vec<String> = proj.keywords.iter().flat_map(|map| map.values().cloned()).collect();
     let data_languages: Vec<String> = proj
@@ -51,6 +51,12 @@ pub fn dataset_overview_section(proj: &Project) -> Markup {
 
     html! {
         div class="space-y-4" {
+            @if let Some(abstract_text) = proj.abstract_text.as_ref().and_then(|m| lang_value(m)) {
+                div {
+                    h3 class="dpe-subtitle" { "Abstract" }
+                    p class="text-sm text-gray-700" { (abstract_text) }
+                }
+            }
             (type_of_data_section(proj.type_of_data.as_deref()))
             (data_language_section(&data_languages))
             @if let Some(year) = &proj.data_publication_year {
@@ -98,6 +104,8 @@ mod tests {
     #[test]
     fn renders_overview_sections_from_project() {
         let out = dataset_overview_section(&sample_project()).into_string();
+        assert!(out.contains("Abstract"), "{out}");
+        assert!(out.contains("An abstract of the sample project."), "abstract value: {out}");
         assert!(out.contains("Type of Data"), "{out}");
         assert!(out.contains("Data Languages"), "{out}");
         assert!(out.contains("Data Publication Year"), "{out}");

@@ -4,17 +4,15 @@ mod publication_tab;
 
 use attributions_section::attributions_section;
 use dataset_overview_section::dataset_overview_section;
-use dpe_core::{lang_value, Project, ResolvedContributor};
+use dpe_core::{Project, ResolvedContributor};
 use maud::{html, Markup, PreEscaped};
 use mosaic_tiles::icon::{Document, IconData, Info, People};
 use publication_tab::publication_tab;
 
-/// Whether the project has content for a publications tab (an abstract or at
-/// least one publication).
+/// Whether the project has content for a publications tab (at least one
+/// publication). The abstract lives in the Overview tab, so it does not count.
 pub fn has_publications(project: &Project) -> bool {
-    let has_abstract = project.abstract_text.as_ref().and_then(|m| lang_value(m).cloned()).is_some();
-    let has_pubs = project.publications.as_ref().map(|p| !p.is_empty()).unwrap_or(false);
-    has_abstract || has_pubs
+    project.publications.as_ref().map(|p| !p.is_empty()).unwrap_or(false)
 }
 
 /// Render the `#project-tabs` morph-root element: the tablist plus the active
@@ -76,16 +74,7 @@ pub fn project_tabs(
                 aria-labelledby=(format!("tab-{active_tab}"))
             {
                 @if active_tab == "publications" && has_publications_tab {
-                    @let abstract_en = proj
-                        .abstract_text
-                        .as_ref()
-                        .and_then(|m| lang_value(m).cloned());
-                    ({
-                        publication_tab(
-                            abstract_en.as_deref(),
-                            proj.publications.as_deref(),
-                        )
-                    })
+                    (publication_tab(proj.publications.as_deref()))
                 } @else if active_tab == "contributors" { (attributions_section(contributors)) } @else {
                     (dataset_overview_section(proj))
                 }
@@ -174,9 +163,16 @@ mod tests {
     }
 
     #[test]
-    fn has_publications_detects_abstract_or_pubs() {
+    fn has_publications_requires_publications() {
         assert!(has_publications(&sample_project()));
         let bare = Project { abstract_text: None, publications: None, ..sample_project() };
         assert!(!has_publications(&bare));
+        // The abstract now lives in the Overview tab, so an abstract alone must
+        // not surface the Publications tab.
+        let abstract_only = Project { publications: None, ..sample_project() };
+        assert!(
+            !has_publications(&abstract_only),
+            "abstract without publications no longer counts"
+        );
     }
 }

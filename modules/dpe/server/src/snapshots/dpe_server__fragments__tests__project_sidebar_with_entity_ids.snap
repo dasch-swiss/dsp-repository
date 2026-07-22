@@ -1,8 +1,9 @@
 ---
 source: modules/dpe/server/src/fragments.rs
+assertion_line: 629
 expression: html
 ---
-<div class="card card-bordered overflow-visible dpe-small p-4 space-y-4 text-gray-700 lg:w-96"><div class="space-y-4"><h2 class="dpe-title">Cite this Project</h2><div><h3 class="dpe-subtitle">Permalink</h3><div class="card card-bordered w-full bg-gray-50 text-gray-700 text-sm"><div class="card-body"><div class="flex items-center justify-between gap-3"><a href="https://ark.dasch.swiss/ark:/72163/1/0001" class="text-primary break-all flex-1">https://ark.dasch.swiss/ark:/72163/1/0001</a><button class="btn btn-ghost px-1 py-0.5 text-xs tooltip tooltip-left flex-shrink-0 inline-flex items-center justify-center min-h-6 min-w-6" aria-label="Copy" data-tip="Copy" data-copy-text="https://ark.dasch.swiss/ark:/72163/1/0001" onclick="var status = this.nextElementSibling;
+<div class="card card-bordered overflow-visible dpe-small p-4 space-y-4 text-gray-700 lg:w-96"><div class="space-y-4"><h2 class="dpe-title">Cite this Project</h2><div><h3 class="dpe-subtitle">Permalink</h3><div class="card card-bordered w-full bg-gray-50 text-gray-700 text-sm"><div class="card-body"><div class="flex items-center justify-between gap-3"><a href="https://ark.dasch.swiss/ark:/72163/1/0001" class="text-primary hover:underline break-all flex-1">ark:/72163/1/0001</a><button class="btn btn-ghost px-1 py-0.5 text-xs tooltip tooltip-left flex-shrink-0 inline-flex items-center justify-center min-h-6 min-w-6" aria-label="Copy" data-tip="Copy" data-copy-text="https://ark.dasch.swiss/ark:/72163/1/0001" onclick="var status = this.nextElementSibling;
 try {
 navigator.clipboard.writeText(this.dataset.copyText);
 this.setAttribute('data-tip', 'Copied!');

@@ -1,0 +1,6 @@
+node_modules
+playwright-report
+test-results
+
+# Playwright screenshot baselines are never committed.
+*-snapshots/

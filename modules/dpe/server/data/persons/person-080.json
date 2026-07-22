@@ -1,0 +1,24 @@
+{
+    "id": "person-080",
+    "sameAs": [
+        {
+            "type": "GND",
+            "url": "http://d-nb.info/gnd/130219827",
+            "text": "GND URL: http://d-nb.info/gnd/130219827"
+        }
+    ],
+    "givenNames": [
+        "Barbara"
+    ],
+    "familyNames": [
+        "Schingnitz"
+    ],
+    "jobTitles": [
+        "Research associate"
+    ],
+    "affiliations": [
+        "organization-010",
+        "organization-011"
+    ],
+    "email": "barbara.schingnitz@unibas.ch"
+}

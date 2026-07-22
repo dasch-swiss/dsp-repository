@@ -1,0 +1,24 @@
+{
+    "id": "person-077",
+    "sameAs": [
+        {
+            "type": "GND",
+            "url": "http://d-nb.info/gnd/12307195X",
+            "text": "GND URL: http://d-nb.info/gnd/12307195X"
+        }
+    ],
+    "givenNames": [
+        "Matthias"
+    ],
+    "familyNames": [
+        "Schmidt"
+    ],
+    "jobTitles": [
+        "Full professor"
+    ],
+    "affiliations": [
+        "organization-010",
+        "organization-011"
+    ],
+    "email": "matthias.schmidt@unibas.ch"
+}

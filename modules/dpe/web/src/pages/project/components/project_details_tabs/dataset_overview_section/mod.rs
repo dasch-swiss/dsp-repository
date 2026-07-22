@@ -1,0 +1,115 @@
+mod coverage_section;
+mod data_language_section;
+mod disciplines_section;
+mod link_card_section;
+mod link_list_section;
+mod publication_year;
+mod type_of_data_section;
+
+use coverage_section::coverage_section;
+use data_language_section::data_language_section;
+use disciplines_section::disciplines_section;
+use dpe_core::{lang_value, Project};
+use link_card_section::link_card_section;
+use link_list_section::link_list_section;
+use maud::{html, Markup};
+use mosaic_tiles::card::{card, card_body, CardVariant};
+use mosaic_tiles::ComponentBuilder;
+use publication_year::publication_year;
+use type_of_data_section::type_of_data_section;
+
+/// Shared chip class strings for the overview tab. Kept as single literals here
+/// (rather than duplicated per section) so Tailwind still scans them and the
+/// styling can't drift between sections.
+pub(super) const CHIP_PRIMARY: &str =
+    "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700";
+pub(super) const CHIP_NEUTRAL: &str =
+    "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-700";
+
+/// The "Overview" tab panel: abstract, type of data, data languages,
+/// publication year, keywords, disciplines, coverage, clusters, collections,
+/// documentation / additional material, and provenance.
+pub fn dataset_overview_section(proj: &Project) -> Markup {
+    let all_keywords: Vec<String> = proj.keywords.iter().flat_map(|map| map.values().cloned()).collect();
+    let data_languages: Vec<String> = proj
+        .data_language
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .map(|code| dpe_core::language_display_name(code).to_string())
+        .collect();
+    let cluster_items: Vec<(String, String, String)> = proj
+        .clusters
+        .iter()
+        .map(|c| (format!("/cluster/{}", c.id), c.name.clone(), c.description.clone()))
+        .collect();
+    let collection_items: Vec<(String, String, String)> = proj
+        .collections
+        .iter()
+        .map(|c| (format!("/collection/{}", c.id), c.name.clone(), c.description.clone()))
+        .collect();
+
+    html! {
+        div class="space-y-4" {
+            @if let Some(abstract_text) = proj.abstract_text.as_ref().and_then(|m| lang_value(m)) {
+                div {
+                    h3 class="dpe-subtitle" { "Abstract" }
+                    p class="text-sm text-gray-700" { (abstract_text) }
+                }
+            }
+            (type_of_data_section(proj.type_of_data.as_deref()))
+            (data_language_section(&data_languages))
+            @if let Some(year) = &proj.data_publication_year {
+                div { (publication_year(year)) }
+            }
+            @if !all_keywords.is_empty() {
+                div {
+                    h3 class="dpe-subtitle" { "Keywords" }
+                    div class="flex flex-wrap gap-2" {
+                        @for k in &all_keywords {
+                            span class=(CHIP_NEUTRAL) { (k) }
+                        }
+                    }
+                }
+            }
+            (disciplines_section(&proj.disciplines))
+            (coverage_section(&proj.temporal_coverage, &proj.spatial_coverage))
+            (link_card_section("Part of Cluster", &cluster_items, false))
+            (link_card_section("Collections", &collection_items, false))
+            @if let Some(docs) = proj.documentation_material.as_ref().filter(|d| !d.is_empty()) {
+                (link_list_section("Documentation Material", docs, true))
+            }
+            @if let Some(materials) = proj.additional_material.as_ref().filter(|a| !a.is_empty()) {
+                (link_list_section("Additional Material", materials, true))
+            }
+            @if let Some(prov) = &proj.provenance { (provenance_card(prov)) }
+        }
+    }
+}
+
+/// A bordered card presenting the project's free-text provenance statement.
+fn provenance_card(prov: &str) -> Markup {
+    let body = html! {
+        h3 class="text-base font-semibold mb-3" { "Provenance" }
+        p { (prov) }
+    };
+    card(card_body(body)).variant(CardVariant::Bordered).build()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::sample_project;
+
+    #[test]
+    fn renders_overview_sections_from_project() {
+        let out = dataset_overview_section(&sample_project()).into_string();
+        assert!(out.contains("Abstract"), "{out}");
+        assert!(out.contains("An abstract of the sample project."), "abstract value: {out}");
+        assert!(out.contains("Type of Data"), "{out}");
+        assert!(out.contains("Data Languages"), "{out}");
+        assert!(out.contains("Data Publication Year"), "{out}");
+        assert!(out.contains("Keywords"), "{out}");
+        assert!(out.contains("archaeology"), "keyword value: {out}");
+    }
+}

@@ -1,0 +1,325 @@
+#![cfg(test)]
+
+use std::collections::HashMap;
+
+use dpe_core::models::AuthorityFileReference;
+use dpe_core::project::{
+    AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, Project,
+    ProjectStatus, TemporalCoverage,
+};
+use dpe_core::{ClusterRaw, ContributorLookup, Organization, Person, ProjectRepository, Record, RecordRepository};
+
+/// In-memory contributor lookup for testing.
+#[derive(Default)]
+pub struct InMemoryContributorLookup {
+    persons: HashMap<String, Person>,
+    organizations: HashMap<String, Organization>,
+}
+
+impl InMemoryContributorLookup {
+    pub fn empty() -> Self {
+        Self::default()
+    }
+
+    pub fn with_person(mut self, person: Person) -> Self {
+        self.persons.insert(person.id.clone(), person);
+        self
+    }
+
+    pub fn with_organization(mut self, org: Organization) -> Self {
+        self.organizations.insert(org.id.clone(), org);
+        self
+    }
+}
+
+impl ContributorLookup for InMemoryContributorLookup {
+    fn person(&self, id: &str) -> Option<Person> {
+        self.persons.get(id).cloned()
+    }
+
+    fn organization(&self, id: &str) -> Option<Organization> {
+        self.organizations.get(id).cloned()
+    }
+}
+
+/// Builds a person fixture matching the incunabula project attribution `0803-person-000`.
+pub fn incunabula_person() -> Person {
+    Person {
+        id: "0803-person-000".to_string(),
+        given_names: vec!["Heinrich".to_string()],
+        family_names: vec!["Holzmann".to_string()],
+        job_titles: vec!["Professor".to_string()],
+        affiliations: vec!["organization-000".to_string()],
+        same_as: vec![AuthorityFileReference {
+            type_: "ORCID".to_string(),
+            url: "https://orcid.org/0000-0002-1825-0097".to_string(),
+            text: None,
+        }],
+        email: None,
+    }
+}
+
+/// Builds a person fixture matching the incunabula project-leader attribution
+/// `0803-person-001`.
+pub fn incunabula_project_leader() -> Person {
+    Person {
+        id: "0803-person-001".to_string(),
+        given_names: vec!["Susanne".to_string()],
+        family_names: vec!["Vogel".to_string()],
+        job_titles: vec![],
+        affiliations: vec![],
+        same_as: vec![],
+        email: None,
+    }
+}
+
+/// Builds an organization fixture matching the incunabula affiliation and funder
+/// `organization-000`.
+pub fn incunabula_organization() -> Organization {
+    Organization {
+        id: "organization-000".to_string(),
+        name: "Universität Basel".to_string(),
+        same_as: vec![],
+        url: "https://www.unibas.ch/".to_string(),
+        address: None,
+        email: None,
+        alternative_name: None,
+    }
+}
+
+/// Contributor lookup pre-populated with the incunabula person and organization.
+pub fn incunabula_lookup() -> InMemoryContributorLookup {
+    InMemoryContributorLookup::empty()
+        .with_person(incunabula_person())
+        .with_person(incunabula_project_leader())
+        .with_organization(incunabula_organization())
+}
+
+/// In-memory repository for testing.
+pub struct InMemoryProjectRepository {
+    projects: Vec<Project>,
+}
+
+impl InMemoryProjectRepository {
+    pub fn new(projects: Vec<Project>) -> Self {
+        Self { projects }
+    }
+}
+
+impl ProjectRepository for InMemoryProjectRepository {
+    fn get_all(&self) -> &[Project] {
+        &self.projects
+    }
+
+    fn get_by_shortcode(&self, shortcode: &str) -> Option<&Project> {
+        self.projects.iter().find(|p| p.shortcode == shortcode)
+    }
+}
+
+/// Builds a minimal Project fixture based on the incunabula project (0803).
+pub fn incunabula_project() -> Project {
+    Project {
+        id: "0803".to_string(),
+        pid: "https://ark.dasch.swiss/ark:/72163/1/0803".to_string(),
+        name: "Die Bilderfolgen der Basler Frühdrucke: Spätmittelalterliche Didaxe als Bild-Text-Lektüre".to_string(),
+        shortcode: "0803".to_string(),
+        official_name: "MISSING".to_string(),
+        status: ProjectStatus::Finished,
+        short_description: "An art-scientific monograph of the richly illustrated early prints in Basel.".to_string(),
+        description: {
+            let mut map = std::collections::HashMap::new();
+            map.insert("en".to_string(), "A description of early prints in Basel.".to_string());
+            map
+        },
+        start_date: "2008-06-01".to_string(),
+        end_date: "2012-08-31".to_string(),
+        url: Some(AuthorityFileReference {
+            type_: "URL".to_string(),
+            url: "https://app.dasch.swiss/project/3ABR_2i8QYGSIDvmP9mlEw".to_string(),
+            text: None,
+        }),
+        secondary_url: None,
+        how_to_cite: "Incunabula (2012) DaSCH. ark.dasch.swiss/ark:/72163/1/0803".to_string(),
+        access_rights: AccessRights {
+            access_rights: AccessRightsType::FullOpenAccess,
+            embargo_date: None,
+        },
+        legal_info: vec![LegalInfo {
+            license: License {
+                license_identifier: "CC-BY-4.0".to_string(),
+                license_date: "2012-08-31".to_string(),
+                license_uri: "https://creativecommons.org/licenses/by/4.0/".to_string(),
+            },
+            copyright_holder: "MISSING".to_string(),
+            authorship: vec!["MISSING".to_string()],
+        }],
+        data_management_plan: Some("not accessible".to_string()),
+        data_publication_year: None,
+        type_of_data: Some(vec!["Image".to_string()]),
+        data_language: Some(vec!["de".to_string()]),
+        clusters: vec![],
+        collections: vec![],
+        collection_ids: vec![],
+        records: None,
+        keywords: vec![{
+            let mut map = std::collections::HashMap::new();
+            map.insert("en".to_string(), "Letterpress Printing".to_string());
+            map
+        }],
+        disciplines: vec![Discipline::Text({
+            let mut map = std::collections::HashMap::new();
+            map.insert("en".to_string(), "10404 Visual arts and Art history".to_string());
+            map
+        })],
+        temporal_coverage: vec![TemporalCoverage::Text({
+            let mut map = std::collections::HashMap::new();
+            map.insert("en".to_string(), "Late Middle Ages".to_string());
+            map
+        })],
+        spatial_coverage: vec![AuthorityFileReference {
+            type_: "Geonames".to_string(),
+            url: "https://www.geonames.org/2661604/basel.html".to_string(),
+            text: Some("Basel".to_string()),
+        }],
+        attributions: vec![
+            Attribution {
+                contributor: "0803-person-000".to_string(),
+                contributor_type: vec!["Applicant".to_string()],
+            },
+            Attribution {
+                contributor: "0803-person-001".to_string(),
+                contributor_type: vec!["Project Leader".to_string()],
+            },
+            Attribution {
+                contributor: "organization-000".to_string(),
+                contributor_type: vec!["Hosting Institution".to_string()],
+            },
+        ],
+        abstract_text: Some({
+            let mut map = std::collections::HashMap::new();
+            map.insert(
+                "en".to_string(),
+                "An interdisciplinary research project on image sequences of Basel's early prints.".to_string(),
+            );
+            map
+        }),
+        contact_point: None,
+        publications: None,
+        funding: Funding::Grants(vec![Grant {
+            funders: vec!["organization-000".to_string()],
+            number: Some("120378".to_string()),
+            name: Some("Project funding".to_string()),
+            url: Some("https://data.snf.ch/grants/grant/120378".to_string()),
+        }]),
+        alternative_names: Some(vec![{
+            let mut map = std::collections::HashMap::new();
+            map.insert("en".to_string(), "Incunabula".to_string());
+            map
+        }]),
+        documentation_material: None,
+        provenance: None,
+        additional_material: None,
+    }
+}
+
+/// Clones the incunabula project fixture with a distinct shortcode/id/pid, so
+/// tests can build a repository of several projects to exercise paging without a
+/// large fixture. The shortcode drives the OAI identifier, so each is unique.
+pub fn project_with_shortcode(shortcode: &str) -> Project {
+    Project {
+        id: shortcode.to_string(),
+        shortcode: shortcode.to_string(),
+        pid: format!("https://ark.dasch.swiss/ark:/72163/1/{shortcode}"),
+        ..incunabula_project()
+    }
+}
+
+/// Builds a cluster fixture (`cluster-001`, "EKWS") containing the given member
+/// project shortcodes. Use for cluster-set tests so they don't depend on the
+/// process-global cluster cache.
+pub fn cluster_fixture(id: &str, name: &str, projects: &[&str]) -> ClusterRaw {
+    let mut description = std::collections::HashMap::new();
+    description.insert("en".to_string(), format!("{name} description"));
+    ClusterRaw {
+        id: id.to_string(),
+        name: name.to_string(),
+        description,
+        pid: None,
+        projects: projects.iter().map(|p| p.to_string()).collect(),
+    }
+}
+
+/// Loads the first record from the 0803-records.json fixture.
+pub fn first_0803_record() -> Record {
+    let json = include_str!("../../../server/data/records_test/0803-records.json");
+    let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0803-records.json");
+    record
+}
+
+/// In-memory record repository for testing.
+pub struct InMemoryRecordRepository {
+    records: Vec<Record>,
+}
+
+impl InMemoryRecordRepository {
+    pub fn new(records: Vec<Record>) -> Self {
+        Self { records }
+    }
+
+    pub fn empty() -> Self {
+        Self { records: vec![] }
+    }
+}
+
+impl RecordRepository for InMemoryRecordRepository {
+    fn get_all(&self) -> &[Record] {
+        &self.records
+    }
+
+    fn get_by_id(&self, ark_suffix: &str) -> Option<&Record> {
+        self.records.iter().find(|r| r.pid.ark_suffix() == ark_suffix)
+    }
+}
+
+/// Strips the `<responseDate>` line from XML so golden comparisons are stable.
+pub fn normalize(xml: &str) -> String {
+    xml.lines()
+        .filter(|l| !l.trim_start().starts_with("<responseDate>"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Loads a golden file, creating it if absent (first-run mode).
+/// Compares and stores the normalized form (without responseDate).
+pub fn golden(name: &str, actual: &str) -> String {
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/oai/handlers/testdata/golden");
+    std::fs::create_dir_all(&dir).expect("create golden dir");
+    let path = dir.join(name);
+    let normalized = normalize(actual);
+    if path.exists() {
+        std::fs::read_to_string(&path).expect("read golden file")
+    } else {
+        std::fs::write(&path, &normalized).expect("write golden file");
+        normalized
+    }
+}
+
+pub fn validate_against_schema(xml: &str) {
+    let xsd_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/testdata/schemas/validate.xsd");
+
+    let mut tmp = tempfile::NamedTempFile::new().expect("create temp file");
+    std::io::Write::write_all(&mut tmp, xml.as_bytes()).expect("write temp file");
+
+    let output = std::process::Command::new("xmllint")
+        .arg("--noout")
+        .arg("--schema")
+        .arg(xsd_path)
+        .arg(tmp.path())
+        .output()
+        .expect("xmllint must be available");
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        panic!("Schema validation failed:\n{}", stderr);
+    }
+}

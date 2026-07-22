@@ -1,0 +1,39 @@
+/*
+ * Unified Tailwind v4 entry for the Mosaic playground.
+ *
+ * Built by `just css-mosaic` with the standalone Tailwind CLI — the same mechanism as the DPE
+ * `just css` recipe. `source(none)` disables auto-detection; classes are collected ONLY from the
+ * explicit `@source` globs, which must cover every file that emits Tailwind classes: the playground
+ * showcase `.rs` files and the mosaic-tiles sources. A missing glob silently drops classes.
+ *
+ * Tokens come from the canonical `tokens.css`; the self-contained Mosaic component CSS (each file
+ * defines its classes via @apply on the tokens) is imported so the built `app.css`
+ * actually contains the component rules (button/card/badge/breadcrumb/link/tabs/icon/loading/tooltip).
+ */
+@import 'tailwindcss' source(none);
+@import '../../tiles/src/components/theme_provider/tokens.css';
+
+@import '../../tiles/src/components/button/button.css';
+@import '../../tiles/src/components/card/card.css';
+@import '../../tiles/src/components/badge/badge.css';
+@import '../../tiles/src/components/breadcrumb/breadcrumb.css';
+@import '../../tiles/src/components/link/link.css';
+@import '../../tiles/src/components/tabs/tabs.css';
+@import '../../tiles/src/components/icon/icon.css';
+@import '../../tiles/src/components/loading.css';
+@import '../../tiles/src/components/tooltip.css';
+
+@source '../src/**/*.rs';
+@source '../../tiles/src/**/*.rs';
+
+/* Headings use the display font (Lora); body text inherits the body font (Lato) from `font-body`. */
+@layer base {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: var(--font-display);
+    }
+}

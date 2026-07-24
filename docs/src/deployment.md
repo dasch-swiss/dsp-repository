@@ -86,6 +86,8 @@ Defined in `release-please.yml`.
 
 On every push to `main`, [Release Please](https://github.com/googleapis/release-please) reads conventional commit messages and creates or updates a release PR with auto-generated changelog. Merging the release PR creates a GitHub Release.
 
+Which prefix produces which changelog section and version bump is defined in [Git Conventions](./git-conventions.md#commit-message-schema) — that page is the human source for the type vocabulary, and this config is the machine source.
+
 Configuration lives in `.github/release-please/config.json` and `.github/release-please/manifest.json`.
 
 ### Documentation (GitHub Pages)

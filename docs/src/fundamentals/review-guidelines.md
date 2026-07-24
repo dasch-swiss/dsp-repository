@@ -29,7 +29,8 @@ Review checklist for the DSP Repository. Organized by priority.
 - New environment variables documented in [DPE Operations](../dpe/operations.md)
 
 **Commits**
-- Commits follow conventional commits (correct prefix, scope matches crate name) — see [Workflows and Conventions](../workflows.md)
+- Commits follow conventional commits — one of the eight types, and a mandatory scope — see [Git Conventions](../git-conventions.md)
+- The PR is a single commit, or `allow-many-commits` is ticked with a reason
 - One topic per commit — apply the "and" test
 - Each commit builds and passes tests
 

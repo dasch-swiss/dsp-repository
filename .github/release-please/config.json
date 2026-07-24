@@ -8,18 +8,21 @@
   },
   "include-component-in-tag": false,
   "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": true,
+  "plugins": ["sentence-case"],
   "changelog-sections": [
     { "type": "feat", "section": "Features" },
+    { "type": "feature", "section": "Features" },
     { "type": "fix", "section": "Bug Fixes" },
-    { "type": "perf", "section": "Performance" },
-    { "type": "revert", "section": "Reverts" },
+    { "type": "perf", "section": "Performance Improvements" },
+    { "type": "refactor", "section": "Code Refactoring" },
     { "type": "docs", "section": "Documentation" },
-    { "type": "refactor", "section": "Refactoring" },
+    { "type": "test", "section": "Tests" },
     { "type": "build", "section": "Build System" },
-    { "type": "style", "section": "Styles", "hidden": true },
-    { "type": "chore", "section": "Miscellaneous", "hidden": true },
-    { "type": "test", "section": "Tests", "hidden": true },
-    { "type": "ci", "section": "CI", "hidden": true }
+    { "type": "chore", "section": "Miscellaneous Chores" },
+    { "type": "revert", "hidden": true },
+    { "type": "style", "hidden": true },
+    { "type": "ci", "hidden": true }
   ],
   "extra-files": [
     { "type": "toml", "path": "Cargo.toml", "jsonpath": "$.workspace.package.version" }

@@ -1,0 +1,33 @@
+# commitlint-rs config — enforced by the `gate` CI job and `just commit-lint`.
+# See docs/src/git-conventions.md for the human-facing rules.
+#
+# The `type` allowlist is the eight allowed types (the machine source for the
+# release-please rendering is .github/release-please/config.json). `scope-empty`
+# makes the scope mandatory so every changelog line reads `concern: subject`.
+# There is deliberately NO `scope` allowlist: the vocabulary in
+# git-conventions.md is advisory, so adding a crate does not require a config
+# edit. The gate enforces only that a scope is present.
+rules:
+  type:
+    level: error
+    options:
+      - feat
+      - fix
+      - perf
+      - refactor
+      - docs
+      - test
+      - build
+      - chore
+  type-empty:
+    level: error
+  scope-empty:
+    level: error
+  # `subject` is the whole header line, `description` is the text after the
+  # colon — so `subject-empty` alone lets `feat(dpe-web):` through. Both are
+  # listed: subject-empty for a wholly empty message, description-empty for a
+  # missing subject line.
+  subject-empty:
+    level: error
+  description-empty:
+    level: error

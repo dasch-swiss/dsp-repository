@@ -18,6 +18,8 @@ install-requirements: install-e2e-requirements
     #!/usr/bin/env sh
     rustup show
     brew install cargo-binstall
+    # cocogitto (cog) powers the conventional-commit check in `just check-commits`
+    cargo binstall -y cocogitto
     cargo binstall -y cargo-watch@8.5.3
     cargo binstall -y mdbook@0.4.52
     cargo binstall -y mdbook-alerts@0.8.0
@@ -87,6 +89,16 @@ test:
     cargo test --tests
     # The dev-only live-reload code is feature-gated, so its tests need the feature enabled.
     cargo test -p dpe-server -p mosaic-playground --features dpe-server/dev,mosaic-playground/dev --tests
+    # Commit-hygiene Layer 0 checker (dependency-free; exercises cog too if installed)
+    bash .github/scripts/check-commit-hygiene.test.sh
+    # Commit-advisory helpers (deterministic parts only; needs jq)
+    bash .github/scripts/commit-advisory.test.sh
+
+# Check commit hygiene of the current branch against `base` (Layer 0 gate, run locally)
+check-commits base="origin/main":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    BASE_REF="{{ base }}" bash .github/scripts/check-commit-hygiene.sh
 
 # Clean all build artifacts
 clean:

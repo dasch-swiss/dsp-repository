@@ -1,0 +1,144 @@
+name: Commit Hygiene
+
+# Checks that a PR's commit history is clean before it is rebase-merged onto
+# main (this repo merges by rebase, so branch commits land on main verbatim).
+#
+# Layer 0 below is the deterministic gate. Advisory LLM layers are added in a
+# follow-up. Whether Layer 0 *blocks* a merge is a branch-protection setting
+# (mark the "gate" check required), not something configured here — so this
+# workflow can ship as a non-blocking signal first and be promoted later
+# without any change to this file.
+
+on:
+  pull_request:
+    # `opened` covers PRs created directly as non-draft (ready_for_review does
+    # NOT fire for those); `edited` lets the `allow-many-commits` body override
+    # re-trigger the check.
+    types: [opened, ready_for_review, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: commit-hygiene-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  # Pinned for reproducibility; bump deliberately.
+  COG_VERSION: "7.0.0"
+
+jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    steps:
+      # Always checks out; the check steps below are the ones gated on draft, so
+      # the "gate" status context always reports (a skipped check would leave a
+      # required status pending and wedge the PR).
+      - name: Checkout PR head (full history for merge-base)
+        uses: actions/checkout@v4
+        with:
+          # The PR branch tip, not the synthetic pull_request merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        if: github.event.pull_request.draft == false
+        env:
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+        run: git fetch --no-tags origin "$BASE_BRANCH"
+
+      - name: Install cocogitto
+        if: github.event.pull_request.draft == false
+        run: |
+          set -euo pipefail
+          url="https://github.com/cocogitto/cocogitto/releases/download/${COG_VERSION}/cocogitto-${COG_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+          curl -sSL "$url" -o /tmp/cog.tgz
+          tar xzf /tmp/cog.tgz -C /tmp --strip-components=1
+          sudo install /tmp/cog /usr/local/bin/cog
+          cog --version
+
+      - name: Check commit hygiene
+        if: github.event.pull_request.draft == false
+        env:
+          BASE_REF: origin/${{ github.event.pull_request.base.ref }}
+          # Passed as an env var (never interpolated into the script) so commit
+          # bodies / PR text cannot be injected into the shell.
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set +e
+          out="$(bash .github/scripts/check-commit-hygiene.sh 2>&1)"
+          rc=$?
+          echo "$out"
+          {
+            echo '## Commit hygiene'
+            echo ''
+            echo '```'
+            echo "$out"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
+
+  # Layer 1 — Haiku advisory (never blocks). Runs only after the deterministic
+  # gate passes (cheapest-first). Skips on drafts and on fork PRs (which get no
+  # secrets, so ANTHROPIC_API_KEY is unavailable). Emits `flagged` so Sonnet is
+  # skipped when Haiku already found something.
+  haiku-advisory:
+    name: advisory (haiku)
+    needs: gate
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      flagged: ${{ steps.advisory.outputs.flagged }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Fetch base branch
+        env:
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+        run: git fetch --no-tags origin "$BASE_BRANCH"
+      - name: Haiku advisory
+        id: advisory
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BASE_REF: origin/${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/commit-advisory.sh haiku
+
+  # Layer 2 — Sonnet advisory (never blocks). Runs only when Haiku found nothing;
+  # reads full diffs + the git-conventions rubric to judge atomicity.
+  sonnet-advisory:
+    name: advisory (sonnet)
+    needs: haiku-advisory
+    if: >-
+      needs.haiku-advisory.outputs.flagged != 'true' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Fetch base branch
+        env:
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+        run: git fetch --no-tags origin "$BASE_BRANCH"
+      - name: Sonnet advisory
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BASE_REF: origin/${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/commit-advisory.sh sonnet

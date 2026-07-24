@@ -16,7 +16,7 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 - [ ] CLI subcommands documented in help text
 - [ ] Documentation updated when patterns change
 - [ ] New env vars documented in `docs/src/dpe/operations.md`
-- [ ] Commits follow conventional commits (`docs/src/workflows.md`)
+- [ ] Commits follow conventional commits (`docs/src/git-conventions.md`)
 - [ ] One topic per commit — apply the "and" test
 - [ ] Each commit builds and passes tests
 - [ ] No secrets in config files or git

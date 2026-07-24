@@ -57,7 +57,8 @@ All authoritative documentation lives in `docs/src/`. Key pages:
 | Operations (Docker, env vars) | `docs/src/dpe/operations.md` |
 | JSON API | `docs/src/dpe/json-api.md` |
 | OAI-PMH Endpoint Usage | `docs/src/dpe/oai-pmh.md` |
-| Workflows & Commits | `docs/src/workflows.md` |
+| Workflows | `docs/src/workflows.md` |
+| Git Conventions (branch, commits, PRs) | `docs/src/git-conventions.md` |
 | Tech Stack | `docs/src/fundamentals/tech_stack.md` |
 | Review Guidelines | `docs/src/fundamentals/review-guidelines.md` |
 | Onboarding | `docs/src/fundamentals/onboarding.md` |
@@ -88,8 +89,8 @@ Before considering ANY change as "done":
   We use rebase-merge, so every branch commit lands on main verbatim.
   Clean up working commits before the PR is merged; aim for a single commit.
   Use multiple commits only when the work is genuinely several
-  independent, self-contained changes. See `docs/src/workflows.md`.
-- **PR creation** — See `docs/src/workflows.md` for the PR workflow and template.
+  independent, self-contained changes. See `docs/src/git-conventions.md`.
+- **PR creation** — See `docs/src/git-conventions.md` for the PR workflow and template.
 
 ## Testing Guidelines
 

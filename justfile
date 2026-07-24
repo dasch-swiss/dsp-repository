@@ -18,6 +18,8 @@ install-requirements: install-e2e-requirements
     #!/usr/bin/env sh
     rustup show
     brew install cargo-binstall
+    # commitlint-rs powers the commit-message gate in `just commit-lint`
+    cargo binstall -y commitlint-rs@0.2.4
     cargo binstall -y cargo-watch@8.5.3
     cargo binstall -y mdbook@0.4.52
     cargo binstall -y mdbook-alerts@0.8.0
@@ -87,6 +89,48 @@ test:
     cargo test --tests
     # The dev-only live-reload code is feature-gated, so its tests need the feature enabled.
     cargo test -p dpe-server -p mosaic-playground --features dpe-server/dev,mosaic-playground/dev --tests
+    # Commit-count gate (dependency-free)
+    bash .github/scripts/check-commit-count.test.sh
+    # Commit-advisory helpers (deterministic parts only; needs jq)
+    bash .github/scripts/commit-advisory.test.sh
+
+# Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap
+commit-lint base="origin/main":
+    #!/usr/bin/env bash
+    # Enforces the type allowlist + mandatory scope from `.commitlintrc.yml`, then
+    # the one-commit-per-PR cap. Same checks the CI `gate` job runs. See
+    # `docs/src/git-conventions.md`.
+    #
+    # We feed one message at a time on stdin instead of commitlint's `--from/--to`
+    # range mode: commitlint-rs reads stdin whenever stdin is not a TTY (always
+    # true in CI and under `just`), so range mode is unreachable in automation.
+    # The loop also attributes each failure to its commit, and is a no-op on an
+    # empty range. `--no-merges` skips merge commits, so neither the synthetic
+    # `refs/pull/N/merge` commit nor a local merge is message-checked: message
+    # rules do not apply to merges, and `required_linear_history` in the ruleset
+    # is what actually blocks a merge commit from landing on `main`.
+    #
+    # Both checks always run, so a branch with two problems reports both. The
+    # count check reads PR_BODY from the environment for the `allow-many-commits`
+    # override — CI passes the PR description; locally it is empty, so the cap
+    # applies strictly.
+    set -uo pipefail
+    merge_base="$(git merge-base "{{ base }}" HEAD)"
+    fail=0
+    while IFS= read -r sha; do
+        [ -n "$sha" ] || continue
+        if ! git log -1 --pretty=%B "$sha" | commitlint; then
+            echo "  ↳ offending commit: $(git log -1 --pretty='%h %s' "$sha")" >&2
+            fail=1
+        fi
+    done < <(git rev-list --no-merges --reverse "$merge_base..HEAD")
+    if [ "$fail" -eq 0 ]; then
+        echo "✓ commit messages: all commits in $merge_base..HEAD OK"
+    else
+        echo "✗ commit messages: one or more commits violate the convention (see above)" >&2
+    fi
+    BASE_REF="{{ base }}" bash .github/scripts/check-commit-count.sh || fail=1
+    exit "$fail"
 
 # Clean all build artifacts
 clean:

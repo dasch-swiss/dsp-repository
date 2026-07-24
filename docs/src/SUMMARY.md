@@ -7,6 +7,7 @@
 # Repo Overview
 
 - [Workflows and Conventions](./workflows.md)
+- [Git Conventions](./git-conventions.md)
 - [Project Structure and Code Organization](./repo_structure.md)
 - [Release, Deployment and Versioning](./deployment.md)
 - [Security](./security.md)

@@ -1,0 +1,87 @@
+name: Commit Hygiene
+
+# Checks that a PR's commit history is clean before it is rebase-merged onto
+# main (this repo merges by rebase, so branch commits land on main verbatim).
+#
+# The `gate` job is deterministic and is the only thing that can fail:
+#   • commitlint-rs — type allowlist + mandatory scope (.commitlintrc.yml)
+#   • commit count  — one commit unless `allow-many-commits` is ticked
+# The advisory job is an LLM pass that never blocks.
+#
+# Whether `gate` *blocks* a merge is a repo ruleset setting (mark the "gate"
+# check required), not something configured here — so this workflow can ship as
+# a non-blocking signal first and be promoted later without changing this file.
+
+on:
+  pull_request:
+    # `opened` covers PRs created directly as non-draft (ready_for_review does
+    # NOT fire for those); `edited` lets the `allow-many-commits` body override
+    # re-trigger the check.
+    types: [opened, ready_for_review, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: commit-hygiene-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    steps:
+      # Always checks out; the check steps below are the ones gated on draft, so
+      # the "gate" status context always reports (a skipped check would leave a
+      # required status pending and wedge the PR).
+      - name: Checkout PR head (full history for merge-base)
+        uses: actions/checkout@v4
+        with:
+          # The PR branch tip, not the synthetic pull_request merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        if: github.event.pull_request.draft == false
+        env:
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+        run: git fetch --no-tags origin "$BASE_BRANCH"
+
+      # Type allowlist + mandatory scope, then the one-commit cap. Runs the same
+      # `just commit-lint` recipe developers run locally.
+      - name: Check commit hygiene
+        if: github.event.pull_request.draft == false
+        uses: ./.github/actions/commit-lint
+        with:
+          base-ref: origin/${{ github.event.pull_request.base.ref }}
+          pr-body: ${{ github.event.pull_request.body }}
+
+  # Advisory LLM pass (never blocks). Runs only after the deterministic gate
+  # passes. Skips on drafts and on fork PRs (which get no secrets, so
+  # ANTHROPIC_API_KEY is unavailable).
+  advisory:
+    name: advisory
+    needs: gate
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Fetch base branch
+        env:
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+        run: git fetch --no-tags origin "$BASE_BRANCH"
+      - name: Commit advisory
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BASE_REF: origin/${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/commit-advisory.sh

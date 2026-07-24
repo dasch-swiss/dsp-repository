@@ -25,3 +25,8 @@ actionable — not just "this is hard" but "do X instead of Y".
 
 ## Test Plan
 - [ ] verification steps
+
+## Commit hygiene
+<!-- This repo rebase-merges: every commit lands on `main` verbatim. A PR lands as ONE commit — see docs/src/git-conventions.md. Every commit needs a type AND a scope: `type(scope): subject`. Check with `just commit-lint`. -->
+- [ ] I have reviewed and cleaned up the branch history (squashed working commits, clear messages) so it reads well on `main`
+- [ ] allow-many-commits — tick only if this PR is genuinely several independent, self-contained changes that each deserve their own line in `main`'s history

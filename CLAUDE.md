@@ -57,7 +57,8 @@ All authoritative documentation lives in `docs/src/`. Key pages:
 | Operations (Docker, env vars) | `docs/src/dpe/operations.md` |
 | JSON API | `docs/src/dpe/json-api.md` |
 | OAI-PMH Endpoint Usage | `docs/src/dpe/oai-pmh.md` |
-| Workflows & Commits | `docs/src/workflows.md` |
+| Workflows | `docs/src/workflows.md` |
+| Git Conventions (branch, commits, PRs) | `docs/src/git-conventions.md` |
 | Tech Stack | `docs/src/fundamentals/tech_stack.md` |
 | Review Guidelines | `docs/src/fundamentals/review-guidelines.md` |
 | Onboarding | `docs/src/fundamentals/onboarding.md` |
@@ -84,12 +85,20 @@ Before considering ANY change as "done":
 - **Check if documentation needs updating** —
   Consider `docs/src/`, `CLAUDE.md`, `CONVENTIONS.md`, and `REVIEW.md`.
   Update documentation to reflect the changes.
-- **One commit per PR by default** —
+- **Commit messages** —
+  `type(scope): subject`, both mandatory. Exactly eight types: `feat`, `fix`,
+  `perf`, `refactor`, `docs`, `test`, `build`, `chore`. `revert`, `style`, and
+  `ci` are **not** valid — use `chore(ci): ...`, fold formatting in, and
+  `fix`/`chore` for reverts. Scope is a crate name or one of `dpe-data`, `ci`,
+  `deps`, `docs` (see `CONVENTIONS.md`); there is no catch-all. Verify with
+  `just commit-lint` before pushing — CI enforces it.
+- **One commit per PR** —
   We use rebase-merge, so every branch commit lands on main verbatim.
-  Clean up working commits before the PR is merged; aim for a single commit.
-  Use multiple commits only when the work is genuinely several
-  independent, self-contained changes. See `docs/src/workflows.md`.
-- **PR creation** — See `docs/src/workflows.md` for the PR workflow and template.
+  CI caps a PR at one commit; tick `allow-many-commits` in the PR body only
+  when the work is genuinely several independent, self-contained changes.
+  A bug you introduced earlier in the same branch is not a `fix:` — amend it
+  into the commit that introduced it. See `docs/src/git-conventions.md`.
+- **PR creation** — See `docs/src/git-conventions.md` for the PR workflow and template.
 
 ## Testing Guidelines
 

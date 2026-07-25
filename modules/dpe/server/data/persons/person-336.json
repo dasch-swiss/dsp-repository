@@ -1,0 +1,23 @@
+{
+    "id": "person-336",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0005-0190-5244",
+            "text": "ORCID URL: https://orcid.org/0009-0005-0190-5244"
+        }
+    ],
+    "givenNames": [
+        "Noémi"
+    ],
+    "familyNames": [
+        "Villars-Amberg"
+    ],
+    "jobTitles": [
+        "Senior Research Data Specialist"
+    ],
+    "affiliations": [
+        "organization-032"
+    ],
+    "email": "noemi.villars@dasch.swiss"
+}

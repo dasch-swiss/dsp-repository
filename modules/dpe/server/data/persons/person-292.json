@@ -1,0 +1,24 @@
+{
+    "id": "person-292",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-3759-6595",
+            "text": "ORCID URL: https://orcid.org/0000-0002-3759-6595"
+        }
+    ],
+    "givenNames": [
+        "Carmen"
+    ],
+    "familyNames": [
+        "Flury"
+    ],
+    "jobTitles": [
+        "Teaching and research associate"
+    ],
+    "affiliations": [
+        "organization-099",
+        "organization-071"
+    ],
+    "email": "carmen.flury@gmx.net"
+}

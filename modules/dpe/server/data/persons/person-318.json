@@ -1,0 +1,22 @@
+{
+    "id": "person-318",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://faculty-directory.dartmouth.edu/nicola-camerlenghi",
+            "text": "https://faculty-directory.dartmouth.edu/nicola-camerlenghi"
+        }
+    ],
+    "givenNames": [
+        "Nicola"
+    ],
+    "familyNames": [
+        "Camerlenghi"
+    ],
+    "jobTitles": [
+        "Associate Professor of Architectural History / Prof. Dr."
+    ],
+    "affiliations": [
+        "organization-104"
+    ]
+}

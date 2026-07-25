@@ -1,0 +1,23 @@
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm shadow-xs cursor-pointer;
+  }
+  .btn:disabled{
+    @apply opacity-50 cursor-not-allowed
+  }
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-300 focus-visible:outline-2 dark:bg-primary-500 dark:text-white dark:shadow-none dark:hover:bg-primary-400 dark:focus-visible:outline-primary-500;
+  }
+  .btn-secondary {
+    @apply bg-secondary-300 text-secondary-900 hover:bg-secondary-600 focus-visible:outline-2;
+  }
+  .btn-outline {
+    @apply bg-transparent text-black ring-1 ring-inset ring-neutral-800 hover:bg-neutral-50 focus-visible:outline-2;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-neutral-600 shadow-none hover:bg-neutral-100 focus-visible:outline-2;
+  }
+  .btn-soft {
+    @apply bg-neutral-100 text-neutral-600 shadow-none hover:bg-neutral-200 focus-visible:outline-2;
+  }
+}

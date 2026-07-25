@@ -1,0 +1,28 @@
+{
+    "id": "person-255",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://aegyptologie.philhist.unibas.ch/de/personen/sandrine-vuilleumier/",
+            "text": "https://aegyptologie.philhist.unibas.ch/de/personen/sandrine-vuilleumier/"
+        },
+        {
+            "type": "URL",
+            "url": "https://daw.philhist.unibas.ch/de/personen/sandrine-vuilleumier",
+            "text": "https://daw.philhist.unibas.ch/de/personen/sandrine-vuilleumier"
+        }
+    ],
+    "givenNames": [
+        "Sandrine"
+    ],
+    "familyNames": [
+        "Vuilleumier"
+    ],
+    "jobTitles": [
+        "Prof. Dr."
+    ],
+    "affiliations": [
+        "organization-056"
+    ],
+    "email": "sandrine.vuilleumier@unibas.ch"
+}

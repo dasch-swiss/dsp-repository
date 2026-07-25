@@ -1,0 +1,23 @@
+{
+    "id": "person-302",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0005-2811-9454",
+            "text": "ORCID URL: https://orcid.org/0009-0005-2811-9454"
+        }
+    ],
+    "givenNames": [
+        "Michele"
+    ],
+    "familyNames": [
+        "Stefani"
+    ],
+    "jobTitles": [
+        "Phd"
+    ],
+    "affiliations": [
+        "organization-101"
+    ],
+    "email": "michele.stefani@unifr.ch"
+}

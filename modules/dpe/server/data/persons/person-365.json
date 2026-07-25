@@ -1,0 +1,24 @@
+{
+    "id": "person-365",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0009-0009-7757-0961",
+            "text": "ORCID URL: https://orcid.org/0009-0009-7757-0961"
+        }
+    ],
+    "givenNames": [
+        "Martin"
+    ],
+    "familyNames": [
+        "Sallmann"
+    ],
+    "jobTitles": [
+        "Prof. Dr."
+    ],
+    "affiliations": [
+        "organization-109",
+        "organization-127"
+    ],
+    "email": "martin.sallmann@unibe.ch"
+}

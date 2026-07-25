@@ -1,0 +1,26 @@
+[package]
+name = "mosaic-playground"
+version.workspace = true
+edition = "2021"
+publish = false
+
+# Plain Axum + Maud server. No cdylib/WASM: the playground is a
+# server-rendered MPA showcase, like DPE.
+
+[features]
+# Dev-loop live-reload: browser auto-refresh on server restart + asset changes.
+# Enabled by `just watch-mosaic-playground`; never in release builds.
+dev = ["dep:tower-livereload", "dep:notify"]
+
+[dependencies]
+axum.workspace = true
+maud.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+mosaic-tiles = { path = "../tiles" }
+tower-livereload = { workspace = true, optional = true }
+notify = { workspace = true, optional = true }
+
+[dev-dependencies]
+# `ServiceExt::oneshot` for router tests
+tower = { workspace = true, features = ["util"] }

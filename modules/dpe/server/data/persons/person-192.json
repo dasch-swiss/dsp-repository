@@ -1,0 +1,22 @@
+{
+    "id": "person-192",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.ames.ox.ac.uk/people/marina-sartori",
+            "text": "https://www.ames.ox.ac.uk/people/marina-sartori"
+        }
+    ],
+    "givenNames": [
+        "Marina"
+    ],
+    "familyNames": [
+        "Sartori"
+    ],
+    "jobTitles": [
+        "Egyptologist"
+    ],
+    "affiliations": [
+        "organization-056"
+    ]
+}

@@ -1,0 +1,12 @@
+{
+    "id": "organization-131",
+    "name": "University of Basel",
+    "url": "https://www.unibas.ch/en.html",
+    "address": {
+        "street": "Petersplatz 1",
+        "postalCode": "4001",
+        "locality": "Basel",
+        "country": "Switzerland",
+        "additional": "P.O. Box"
+    }
+}

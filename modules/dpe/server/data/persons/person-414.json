@@ -1,0 +1,23 @@
+{
+    "id": "person-414",
+    "givenNames": [
+        "Antonia"
+    ],
+    "familyNames": [
+        "Martínez Ruipérez"
+    ],
+    "jobTitles": [
+        "Post-doctoral researcher"
+    ],
+    "affiliations": [
+        "organization-092"
+    ],
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://kunstgeschichte.philhist.unibas.ch/en/persons/martinez-ruiperez-antonia/",
+            "text": "Universität Basel"
+        }
+    ],
+    "email": "antonia.martinezruiperez@unibas.ch"
+}

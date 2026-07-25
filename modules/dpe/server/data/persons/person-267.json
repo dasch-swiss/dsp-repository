@@ -1,0 +1,17 @@
+{
+    "id": "person-267",
+    "givenNames": [
+        "Dominik"
+    ],
+    "familyNames": [
+        "Müller"
+    ],
+    "jobTitles": [
+        "Dr. phil."
+    ],
+    "affiliations": [
+        "organization-085",
+        "organization-087"
+    ],
+    "email": "dom.muller@bluewin.ch"
+}

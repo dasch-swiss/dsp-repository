@@ -1,0 +1,22 @@
+{
+    "id": "person-161",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://archaeovisual.ch/",
+            "text": "https://archaeovisual.ch/"
+        }
+    ],
+    "givenNames": [
+        "Oliver"
+    ],
+    "familyNames": [
+        "Bruderer"
+    ],
+    "jobTitles": [
+        "Scientific Illustrator"
+    ],
+    "affiliations": [
+        "organization-059"
+    ]
+}

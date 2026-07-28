@@ -90,6 +90,9 @@ pub struct ProjectRaw {
     #[serde(default)]
     pub provenance: Option<String>,
     pub additional_material: Option<Vec<String>>,
+    /// Optional credit line for the project's cover image (e.g. a photographer
+    /// copyright). Stored verbatim; distinct from `legal_info` (dataset rights).
+    pub image_credit: Option<String>,
 }
 
 pub const ACCESS_RIGHTS_VALUES: &[&str] = &[
@@ -173,6 +176,9 @@ pub struct Project {
     pub documentation_material: Option<Vec<String>>,
     pub provenance: Option<String>,
     pub additional_material: Option<Vec<String>>,
+    /// Optional credit line for the project's cover image (e.g. a photographer
+    /// copyright). Stored verbatim; distinct from `legal_info` (dataset rights).
+    pub image_credit: Option<String>,
 }
 
 impl From<ProjectRaw> for Project {
@@ -218,6 +224,7 @@ impl From<ProjectRaw> for Project {
             documentation_material: raw.documentation_material,
             provenance: raw.provenance,
             additional_material: raw.additional_material,
+            image_credit: raw.image_credit,
         }
     }
 }
@@ -260,6 +267,7 @@ impl From<&Project> for ProjectRaw {
             documentation_material: p.documentation_material.clone(),
             provenance: p.provenance.clone(),
             additional_material: p.additional_material.clone(),
+            image_credit: p.image_credit.clone(),
         }
     }
 }
@@ -396,6 +404,27 @@ mod tests {
         let (primary, secondary) = parse_url_value(None);
         assert!(primary.is_none());
         assert!(secondary.is_none());
+    }
+
+    /// A file without `imageCredit` (all committed files predate the field) must
+    /// deserialize to `None` — the field is purely additive.
+    #[test]
+    fn image_credit_defaults_to_none_for_existing_file() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../server/data/projects/0102_tanner.json");
+        let json = std::fs::read_to_string(path).expect("sample project file should be readable");
+        let project = serde_json::from_str::<ProjectRaw>(&json).map(Project::from).expect("parses");
+        assert!(project.image_credit.is_none());
+    }
+
+    /// When present, `imageCredit` round-trips verbatim through `ProjectRaw` → `Project`.
+    #[test]
+    fn image_credit_is_parsed_when_present() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../server/data/projects/0102_tanner.json");
+        let json = std::fs::read_to_string(path).expect("sample project file should be readable");
+        let mut value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
+        value["imageCredit"] = json!("© Someone, Somewhere");
+        let project = Project::from(serde_json::from_value::<ProjectRaw>(value).expect("parses"));
+        assert_eq!(project.image_credit.as_deref(), Some("© Someone, Somewhere"));
     }
 
     /// Classify an authority-file URL as a place gazetteer, a period gazetteer,

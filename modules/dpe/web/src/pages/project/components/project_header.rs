@@ -82,6 +82,9 @@ pub fn project_header(proj: &Project) -> Markup {
                     style="height: 320px"
                 { (icon(OpenDocument, "w-12 h-12 text-gray-300")) }
             }
+            @if let Some(credit) = &proj.image_credit {
+                figcaption class="px-3 py-1 text-right text-xs text-gray-500" { (credit) }
+            }
         }
         (card_body(body_inner))
     };
@@ -102,5 +105,24 @@ mod tests {
         // sample_project has a primary url → "Discover Project Data" button.
         assert!(out.contains(r#"href="https://example.org/project""#), "{out}");
         assert!(out.contains("Discover Project Data"), "{out}");
+    }
+
+    #[test]
+    fn renders_image_credit_as_figcaption_when_present() {
+        let proj = Project {
+            image_credit: Some("© Fabrice Ducrest, Unil".to_string()),
+            ..sample_project()
+        };
+        let out = project_header(&proj).into_string();
+        assert!(out.contains("<figcaption"), "{out}");
+        // Verbatim credit — "©" is preserved by Maud's auto-escaping splice.
+        assert!(out.contains("© Fabrice Ducrest, Unil"), "{out}");
+    }
+
+    #[test]
+    fn omits_figcaption_when_no_image_credit() {
+        // sample_project() has image_credit: None.
+        let out = project_header(&sample_project()).into_string();
+        assert!(!out.contains("<figcaption"), "{out}");
     }
 }

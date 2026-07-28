@@ -311,6 +311,7 @@ mod tests {
             documentation_material: None,
             provenance: None,
             additional_material: None,
+            image_credit: None,
         }
     }
 
@@ -624,6 +625,7 @@ mod tests {
             documentation_material: None,
             provenance: None,
             additional_material: None,
+            image_credit: None,
         };
         let html = render_project_sidebar(&project);
         insta::assert_snapshot!("project_sidebar_with_entity_ids", html);

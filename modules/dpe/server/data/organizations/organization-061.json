@@ -1,0 +1,11 @@
+{
+    "id": "organization-061",
+    "name": "Free University of Brussels",
+    "url": "http://www.ulb.be",
+    "address": {
+        "street": "Université Libre de Bruxelles, Avenue Franklin Roosevelt, 50",
+        "postalCode": "1050",
+        "locality": "Brussels",
+        "country": "Belgium"
+    }
+}

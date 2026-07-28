@@ -1,0 +1,23 @@
+{
+    "id": "person-354",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5578-2850",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5578-2850"
+        }
+    ],
+    "givenNames": [
+        "Dubravka"
+    ],
+    "familyNames": [
+        "Jembrih-Simbürger"
+    ],
+    "jobTitles": [
+        "Conservation scientist"
+    ],
+    "affiliations": [
+        "organization-121"
+    ],
+    "email": "D.Jembrih-Simbuerger@akbild.ac.at"
+}

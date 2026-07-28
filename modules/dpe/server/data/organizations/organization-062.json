@@ -1,0 +1,11 @@
+{
+    "id": "organization-062",
+    "name": "Cairo University",
+    "url": "http://www.cu.edu.eg",
+    "address": {
+        "street": "1, Gamaa Street",
+        "postalCode": "12613",
+        "locality": "Giza",
+        "country": "Egypt"
+    }
+}

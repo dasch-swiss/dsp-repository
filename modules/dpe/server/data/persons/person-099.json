@@ -1,0 +1,17 @@
+{
+    "id": "person-099",
+    "givenNames": [
+        "Birgit"
+    ],
+    "familyNames": [
+        "Huber"
+    ],
+    "jobTitles": [
+        "Research associate"
+    ],
+    "affiliations": [
+        "organization-034",
+        "organization-037"
+    ],
+    "email": "birgit.huber@unibas.ch"
+}

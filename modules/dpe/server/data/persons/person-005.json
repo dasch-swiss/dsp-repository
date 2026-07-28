@@ -1,0 +1,15 @@
+{
+    "id": "person-005",
+    "givenNames": [
+        "Selim"
+    ],
+    "familyNames": [
+        "Ben Amor"
+    ],
+    "jobTitles": [
+        "Scientific collaborator"
+    ],
+    "affiliations": [
+        "organization-001"
+    ]
+}

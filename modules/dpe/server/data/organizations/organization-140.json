@@ -1,0 +1,11 @@
+{
+    "id": "organization-140",
+    "name": "University of the Faroe Islands",
+    "url": "https://www.setur.fo/",
+    "address": {
+        "street": "J. C. Svabos gøta 14",
+        "postalCode": "100",
+        "locality": "Tórshavn",
+        "country": "Faroe Islands"
+    }
+}

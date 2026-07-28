@@ -1,0 +1,55 @@
+name: Docker publish mosaic-playground image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "modules/mosaic/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Build and publish mosaic-playground
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Compute image tag
+        id: tag
+        run: echo "tag=$(git describe --tags --match 'v*' | sed 's/^v//')" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/docker-publish
+        with:
+          context: .
+          dockerfile: modules/mosaic/playground/Dockerfile
+          tags: daschswiss/mosaic-playground:${{ steps.tag.outputs.tag }}
+          docker-user: ${{ secrets.DOCKER_USER }}
+          docker-hub-token: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+  trigger-prod-deployment:
+    name: Trigger deployment to PROD
+    runs-on: ubuntu-latest
+    needs: publish
+    steps:
+      - name: Trigger deployment to PROD
+        env:
+          IMAGE_TAG: ${{ needs.publish.outputs.tag }}
+          JENKINS_BASIC_AUTH_USER: ${{ secrets.JENKINS_BASIC_AUTH_USER }}
+          JENKINS_BASIC_AUTH_PASS: ${{ secrets.JENKINS_BASIC_AUTH_PASS }}
+          JENKINS_UPDATE_RELEASE_WEBHOOK: ${{ secrets.JENKINS_UPDATE_MOSAIC_PROD_WEBHOOK }}
+        run: |
+          curl -f -u "${JENKINS_BASIC_AUTH_USER}:${JENKINS_BASIC_AUTH_PASS}" \
+               -X POST "${JENKINS_UPDATE_RELEASE_WEBHOOK}" \
+               -d "Service=mosaic&Version=${IMAGE_TAG}"

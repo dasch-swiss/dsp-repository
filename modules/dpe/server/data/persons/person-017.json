@@ -1,0 +1,16 @@
+{
+    "id": "person-017",
+    "givenNames": [
+        "Paul"
+    ],
+    "familyNames": [
+        "Fièvre"
+    ],
+    "jobTitles": [
+        "IT support"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "paul.fievre@gmail.com"
+}

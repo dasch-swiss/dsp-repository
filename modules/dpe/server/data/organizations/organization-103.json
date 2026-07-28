@@ -1,0 +1,11 @@
+{
+    "id": "organization-103",
+    "name": "Universität Zürich, UZH",
+    "url": "https://www.uzh.ch",
+    "address": {
+        "street": "Rämistrasse 71",
+        "postalCode": "8006",
+        "locality": "Zürich",
+        "country": "Switzerland"
+    }
+}

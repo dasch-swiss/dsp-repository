@@ -1,0 +1,49 @@
+[package]
+name = "dpe-server-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+serde_urlencoded = "0.7"
+
+[dependencies.dpe-core]
+path = "../../core"
+
+[dependencies.dpe-telemetry]
+path = "../../telemetry"
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "tab_validation"
+path = "fuzz_targets/tab_validation.rs"
+doc = false
+
+[[bin]]
+name = "query_params"
+path = "fuzz_targets/query_params.rs"
+doc = false
+
+[[bin]]
+name = "beacon_payload"
+path = "fuzz_targets/beacon_payload.rs"
+doc = false
+
+[[bin]]
+name = "traceparent_validation"
+path = "fuzz_targets/traceparent_validation.rs"
+doc = false
+
+[[bin]]
+name = "origin_validation"
+path = "fuzz_targets/origin_validation.rs"
+doc = false

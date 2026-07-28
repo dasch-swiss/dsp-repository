@@ -1,0 +1,23 @@
+{
+    "id": "person-338",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0120-5249",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0120-5249"
+        }
+    ],
+    "givenNames": [
+        "Eva"
+    ],
+    "familyNames": [
+        "Spinazzè"
+    ],
+    "jobTitles": [
+        "Post-doc researcher"
+    ],
+    "affiliations": [
+        "organization-101"
+    ],
+    "email": "eva.spinazze@alumni.unive.it"
+}

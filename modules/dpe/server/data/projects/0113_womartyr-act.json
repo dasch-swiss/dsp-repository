@@ -1,0 +1,135 @@
+{
+    "id": "0113",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/0113",
+    "name": "Women Martyrs in Action: Recreating and Performing Medieval Heroines Today",
+    "shortcode": "0113",
+    "officialName": "Women Martyrs in Action: Recreating and Performing Medieval Heroines Today",
+    "status": "Ongoing",
+    "shortDescription": "Recherche-création sur deux textes dramatiques médiévaux qui célèbrent des héroïnes martyres : Agnès et Barbe. Le projet envisage la traduction d’extraits originaux et leur experimentation scénique.",
+    "description": {
+        "fr": "Il y a des chefs-d’oeuvre dramatiques des XIVe-XVe siècles, transmis sous forme manuscrite, méconnus de la scène d’aujourd’hui : le jeu provençal de sainte Agnès et le Mystère de sainte Barbe en cinq journées, écrit en moyen français. Ces textes célèbrent des héroïnes saintes martyres. Le projet a le but de dévoiler l’intéret de traduire et d’expérimenter au plateau ces objets médiévaux aujourd’hui et de les faire connaitre à un large public. Le défi est d’explorer cette matière éloignée, en mobilisant des esthétiques contemporaines (jeu de l’acteur, mise en scène, création sonore) qui puissent la rapprocher d’un public contemporain, tout en gardant le texte original. La recherche fonde sa méthodologie sur une exploration sur scène de ces formes théâtrales en collaboration avec des acteur·ices variés : étudiant·e·s en Master de l’Unil, de l’Université Paris Nanterre et de l’EUR ArTeC (partenaire du projet), quatre comédiens et metteurs en scène et un compositeur de musique électro-acoustique. L’expérimentation se base sur un processus de traduction en langue moderne ou d’adaptation d’extraits des sources médiévales et sur des ateliers pratiques qui aboutissent à des performances publiques. Le bilan théorique du projet sera publié sous forme d’un essai ; les données intermédiaires (traductions, adaptations, vidéos des performances et images) seront mises à disposition dans la base de données du projet.",
+        "en": "There are dramatic masterpieces from the 14th and 15th centuries, handed down in manuscript form, which are little known on today’s stage: The Play of Saint Agnes and The Mystery of Saint Barbara in Five Days. These texts celebrate holy female martyrs and are written in Provençal and Middle French. This project aims to highlight the value of translating and staging these medieval works today, and to bring them to the attention of a wider audience. The challenge lies in exploring this distant material by employing contemporary aesthetics (acting, staging, sound design) that can make it accessible to a modern audience, whilst preserving the original text. The research methodology is based on an on-stage exploration of these theatrical forms in collaboration with a diverse group of performers: Master’s students from the University of Lausanne, the University of Paris Nanterre and the School ArTeC (project partner), four actors and directors, and a composer of electroacoustic music. The experimentation is based on a process of translating into modern language or adapting extracts from medieval sources, and on practical workshops leading to public performances. The theoretical findings of the project will be published in the form of an essay; the interimediate data (translations, adaptations, videos of the performances and images) will be archived in the project’s database."
+    },
+    "startDate": "2024-07-01",
+    "endDate": "2026-06-30",
+    "dataPublicationYear": "2026",
+    "url": [
+        "https://app.dasch.swiss/project/b9KW7eOqQcO_g4nEIXh2kQ"
+    ],
+    "howToCite": "Scavello, S., Rivoal, M. (2026), Women Martyrs in Action [base de données] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0113.",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-SA 4.0",
+                "licenseDate": "2026-07-27",
+                "licenseURI": "https://creativecommons.org/licenses/by-sa/4.0/"
+            },
+            "copyrightHolder": "Women Martyrs in Action: Recreating and Performing Medieval Heroines Today",
+            "authorship": [
+                "CALCULATED"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Text",
+        "Image",
+        "Video",
+        "Audio"
+    ],
+    "dataLanguage": [
+        "fr"
+    ],
+    "keywords": [
+        {
+            "fr": "Théâtre médiéval"
+        },
+        {
+            "fr": "héroïnes saintes"
+        },
+        {
+            "fr": "recherche-création"
+        },
+        {
+            "fr": "performance"
+        },
+        {
+            "en": "Medieval Theatre"
+        },
+        {
+            "en": "Holy Heroines"
+        },
+        {
+            "en": "practice-based research"
+        },
+        {
+            "en": "performance"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10406 Theatre and cinema",
+            "fr": "10406 Théâtre et cinéma"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "fr": "XIVe-XVe siècles"
+        },
+        {
+            "fr": "XXIe siècle"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3017382/",
+            "text": "France"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434/",
+            "text": "Suisse"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "person-416",
+            "contributorType": [
+                "Project Leader",
+                "Data Collector",
+                "Data Curator"
+            ]
+        },
+        {
+            "contributor": "person-008",
+            "contributorType": [
+                "Data Curator"
+            ]
+        }
+    ],
+    "abstract": {
+        "fr": "Base de données du projet “Women Martyrs in Action : performing and recreating Medieval Heroines Today”"
+    },
+    "contactPoint": [
+        "person-416"
+    ],
+    "funding": [
+        {
+            "funders": [
+                "organization-002"
+            ],
+            "number": "217235",
+            "name": "SNSF Swiss Postdoctoral Fellowships",
+            "url": "https://data.snf.ch/grants/grant/217235"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "en": "womartyr-act"
+        }
+    ]
+}

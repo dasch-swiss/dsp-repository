@@ -1,0 +1,16 @@
+{
+    "id": "person-030",
+    "givenNames": [
+        "Laure"
+    ],
+    "familyNames": [
+        "Cordonier"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "laure.cordonier@unil.ch"
+}

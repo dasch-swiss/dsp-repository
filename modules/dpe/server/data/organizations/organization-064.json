@@ -1,0 +1,11 @@
+{
+    "id": "organization-064",
+    "name": "University of Geneva",
+    "url": "http://www.unige.ch",
+    "address": {
+        "street": "24, rue du Général-Dufour",
+        "postalCode": "1211",
+        "locality": "Geneva",
+        "country": "Switzerland"
+    }
+}

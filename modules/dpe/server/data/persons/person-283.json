@@ -1,0 +1,23 @@
+{
+    "id": "person-283",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-0225-5221",
+            "text": "ORCID URL: https://orcid.org/0000-0002-0225-5221"
+        }
+    ],
+    "givenNames": [
+        "Áurea"
+    ],
+    "familyNames": [
+        "Domínguez"
+    ],
+    "jobTitles": [
+        "PhD"
+    ],
+    "affiliations": [
+        "organization-096"
+    ],
+    "email": "aurea.dominguez@fhnw.ch"
+}

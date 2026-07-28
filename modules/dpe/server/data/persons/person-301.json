@@ -1,0 +1,23 @@
+{
+    "id": "person-301",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-5668-7695",
+            "text": "ORCID URL: https://orcid.org/0000-0002-5668-7695"
+        }
+    ],
+    "givenNames": [
+        "Simon"
+    ],
+    "familyNames": [
+        "Affolter"
+    ],
+    "jobTitles": [
+        "Wissenschaftlicher Mitarbeiter"
+    ],
+    "affiliations": [
+        "organization-100"
+    ],
+    "email": "simon.affolter@fhnw.ch"
+}

@@ -581,7 +581,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-api-oai"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "axum",
  "base64",
@@ -596,7 +596,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-core"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -606,7 +606,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-server"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "axum",
  "axum-tracing-opentelemetry",
@@ -646,7 +646,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-telemetry"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "proptest",
  "serde",
@@ -655,7 +655,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-web"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "dpe-core",
  "maud",
@@ -1877,7 +1877,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-playground"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "axum",
  "maud",
@@ -1891,7 +1891,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-tiles"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "icondata",
  "maud",

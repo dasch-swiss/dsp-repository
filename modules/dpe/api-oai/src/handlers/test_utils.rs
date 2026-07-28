@@ -219,6 +219,7 @@ pub fn incunabula_project() -> Project {
         documentation_material: None,
         provenance: None,
         additional_material: None,
+        image_credit: None,
     }
 }
 

@@ -183,6 +183,7 @@ cardinality between the archival and in-progress stages.
 | `documentationMaterial` | url[]                                  | 0-n   | 0-n       |
 | `provenance`            | string                                 | 0-1   | 0-1       |
 | `additionalMaterial`    | url[]                                  | 0-n   | 0-n       |
+| `imageCredit`           | string                                 | 0-1   | 0-1       |
 
 - `id`: A unique internal identifier; not exposed to the user and not persistent.
 - `pid`: A unique persistent identifier (currently an ARK URL).
@@ -233,6 +234,10 @@ cardinality between the archival and in-progress stages.
 - `documentationMaterial`: URLs pointing to documentation material.
 - `provenance`: The history of the project, if applicable.
 - `additionalMaterial`: Additional URLs related to the project.
+- `imageCredit`: An optional credit line for the project's cover image (e.g.
+  "© Fabrice Ducrest, Unil"), stored verbatim and rendered as a caption beneath
+  the image. Distinct from `legalInfo`, which describes the dataset's rights —
+  not the teaser image.
 
 > [!NOTE]
 > All records of a project are referenced in its `records` array, regardless of
@@ -253,6 +258,9 @@ cardinality between the archival and in-progress stages.
 > - Many fields are optional in the code regardless of the archival cardinality
 >   above (e.g. `dataManagementPlan`, `dataPublicationYear`, `typeOfData`,
 >   `dataLanguage`, `records`, `publications`, `provenance`, `additionalMaterial`).
+> - `imageCredit` is implemented as an optional string. Note the cover image
+>   itself is **not** modelled: it is resolved by filename convention
+>   (`/assets/images/<shortcode>.webp`); `imageCredit` only records its credit.
 
 ### Collection
 

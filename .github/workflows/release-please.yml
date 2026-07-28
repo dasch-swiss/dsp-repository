@@ -48,6 +48,11 @@ jobs:
         if: steps.find-pr.outputs.branch
         with:
           ref: ${{ steps.find-pr.outputs.branch }}
+          # Full history: the next step amends release-please's commit. A shallow
+          # checkout (default depth 1) has no parent to amend onto, so the amend
+          # becomes a parentless root commit, the force-push makes the branch
+          # disjoint from main, and GitHub auto-closes the release PR.
+          fetch-depth: 0
           token: ${{ secrets.GH_TOKEN }}
 
       - uses: dtolnay/rust-toolchain@stable

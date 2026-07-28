@@ -425,6 +425,7 @@ currently 5 cluster files.</p>
 <tr><td><code>documentationMaterial</code></td><td>url[]</td><td>0-n</td><td>0-n</td></tr>
 <tr><td><code>provenance</code></td><td>string</td><td>0-1</td><td>0-1</td></tr>
 <tr><td><code>additionalMaterial</code></td><td>url[]</td><td>0-n</td><td>0-n</td></tr>
+<tr><td><code>imageCredit</code></td><td>string</td><td>0-1</td><td>0-1</td></tr>
 </tbody></table>
 </div>
 <ul>
@@ -477,6 +478,10 @@ manually, since there may be people without authorship (reviewers, organizers,
 <li><code>documentationMaterial</code>: URLs pointing to documentation material.</li>
 <li><code>provenance</code>: The history of the project, if applicable.</li>
 <li><code>additionalMaterial</code>: Additional URLs related to the project.</li>
+<li><code>imageCredit</code>: An optional credit line for the project's cover image (e.g.
+"© Fabrice Ducrest, Unil"), stored verbatim and rendered as a caption beneath
+the image. Distinct from <code>legalInfo</code>, which describes the dataset's rights —
+not the teaser image.</li>
 </ul>
 <div class="mdbook-alerts mdbook-alerts-note">
 <p class="mdbook-alerts-title">
@@ -505,6 +510,9 @@ lightweight references on demand.</li>
 <li>Many fields are optional in the code regardless of the archival cardinality
 above (e.g. <code>dataManagementPlan</code>, <code>dataPublicationYear</code>, <code>typeOfData</code>,
 <code>dataLanguage</code>, <code>records</code>, <code>publications</code>, <code>provenance</code>, <code>additionalMaterial</code>).</li>
+<li><code>imageCredit</code> is implemented as an optional string. Note the cover image
+itself is <strong>not</strong> modelled: it is resolved by filename convention
+(<code>/assets/images/&lt;shortcode&gt;.webp</code>); <code>imageCredit</code> only records its credit.</li>
 </ul>
 </div>
 <h3 id="collection"><a class="header" href="#collection">Collection</a></h3>

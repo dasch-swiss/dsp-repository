@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.8.1](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.0...v0.8.1) (2026-07-28)
+
+
+### Features
+
+* Add VARMA (8055) project cover image to the DPE ([1adf7e2](https://github.com/dasch-swiss/dsp-repository/commit/1adf7e25403c7e7d2687ccbff5888e40b41a7bf3))
+* **dpe-api-oai:** Add resumption-token paging to ListRecords and ListIdentifiers (DEV-6684) ([625142d](https://github.com/dasch-swiss/dsp-repository/commit/625142dbd93c1f3aa979054382013d79b81b1730))
+* **dpe-api-oai:** Expose record file MIME type and download link in OAI output (DEV-6684) ([b281376](https://github.com/dasch-swiss/dsp-repository/commit/b2813760ce37c4333b9d1d94ab81b1178d4333e9))
+* **dpe-data:** Onboard project 0113 (WoMartyrAct) ([c870215](https://github.com/dasch-swiss/dsp-repository/commit/c87021534560b46c303326311ac995e2aeff9218))
+* **dpe,mosaic:** Browser live-reload in the dev loops (DEV-6728) ([8f1283a](https://github.com/dasch-swiss/dsp-repository/commit/8f1283a91adda697aaeaf262fb0ec4ea461e04ce))
+* Move project abstract from Publications to Overview ([0448a6a](https://github.com/dasch-swiss/dsp-repository/commit/0448a6a25f2f9ca0459424534b3b875ed3a69ab2))
+* OAI-PMH endpoint rate-limiting (DEV-6724) ([9c38251](https://github.com/dasch-swiss/dsp-repository/commit/9c38251b345c0e002ce3d1963585a6dc7d4bdb16))
+* Onboard project 8055 (VARMA) and link contributor profiles ([dfb0478](https://github.com/dasch-swiss/dsp-repository/commit/dfb04780e24d01f7fdd08167b95cc9ac92e9a17f))
+* Show project permalink as the bare ARK identifier ([95233d3](https://github.com/dasch-swiss/dsp-repository/commit/95233d3e898bde09f03651ffcc3d65df090bb249))
+
+
+### Bug Fixes
+
+* Restore default blue link colour ([ccca2c2](https://github.com/dasch-swiss/dsp-repository/commit/ccca2c2f4452f32f0bc583882d2fd1fefe660020))
+
+
+### Code Refactoring
+
+* **dpe,mosaic:** Remove Leptos — migrate to Maud + Axum + Datastar (DEV-6642) ([b89eaf4](https://github.com/dasch-swiss/dsp-repository/commit/b89eaf4fc1f031d463b6385ef0859c1a7f41ead8))
+
+
+### Documentation
+
+* Clarify that PRs should default to a single commit ([73c3c17](https://github.com/dasch-swiss/dsp-repository/commit/73c3c172e602177cc1006836543bc7cc1a4563f1))
+
+
+### Build System
+
+* Add cargo-machete unused-dependency check to just check ([29bfa59](https://github.com/dasch-swiss/dsp-repository/commit/29bfa5913d67c65217cf63062372629ec477a6fb))
+
+
+### Miscellaneous Chores
+
+* **ci:** Enforce commit type, scope, and one commit per PR ([461094c](https://github.com/dasch-swiss/dsp-repository/commit/461094c502f37a0342c8c7aa0e5fc15cd799996b))
+* Docker Scout & Dependabot housekeeping; distroless Mosaic runtime ([314d0c9](https://github.com/dasch-swiss/dsp-repository/commit/314d0c9387c27b1f8fd2ab0f4ab7b8df995a1631))
+
 ## [0.8.0](https://github.com/dasch-swiss/dsp-repository/compare/v0.7.1...v0.8.0) (2026-07-06)
 
 

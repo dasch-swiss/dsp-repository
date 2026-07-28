@@ -584,6 +584,11 @@
     "original_name": "Under Mediation act, 1803-1814",
     "source": "llm"
   },
+  "XIVe-XVe siècles": {
+    "date": "1301/1500",
+    "original_name": "XIVe-XVe siècles",
+    "source": "llm"
+  },
   "XIXe siècle EC": {
     "date": "1801/1900",
     "original_name": "XIXe siècle EC",
@@ -592,6 +597,11 @@
   "XVIIIe siècle EC": {
     "date": "1701/1800",
     "original_name": "XVIIIe siècle EC",
+    "source": "llm"
+  },
+  "XXIe siècle": {
+    "date": "2001/2100",
+    "original_name": "XXIe siècle",
     "source": "llm"
   }
 }

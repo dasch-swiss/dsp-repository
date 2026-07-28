@@ -299,6 +299,7 @@
 <h3 id="release-please"><a class="header" href="#release-please">Release Please</a></h3>
 <p>Defined in <code>release-please.yml</code>.</p>
 <p>On every push to <code>main</code>, <a href="https://github.com/googleapis/release-please">Release Please</a> reads conventional commit messages and creates or updates a release PR with auto-generated changelog. Merging the release PR creates a GitHub Release.</p>
+<p>Which prefix produces which changelog section and version bump is defined in <a href="./git-conventions.html#commit-message-schema">Git Conventions</a> — that page is the human source for the type vocabulary, and this config is the machine source.</p>
 <p>Configuration lives in <code>.github/release-please/config.json</code> and <code>.github/release-please/manifest.json</code>.</p>
 <h3 id="documentation-github-pages"><a class="header" href="#documentation-github-pages">Documentation (GitHub Pages)</a></h3>
 <p>Defined in <code>gh-pages.yml</code>. The mdBook documentation is built and deployed to GitHub Pages on pushes to <code>main</code>.</p>

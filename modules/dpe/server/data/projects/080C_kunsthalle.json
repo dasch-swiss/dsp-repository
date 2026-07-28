@@ -1,0 +1,188 @@
+{
+    "id": "080C",
+    "pid": "https://ark.dasch.swiss/ark:/72163/1/080C",
+    "name": "Fotoarchiv Kunsthalle Basel",
+    "shortcode": "080C",
+    "officialName": "Fotoarchiv Kunsthalle Basel",
+    "status": "Ongoing",
+    "shortDescription": "Kunsthalle Basel is Switzerland’s oldest active art museum displaying contemporary art.",
+    "description": {
+        "en": "Kunsthalle Basel is Switzerland’s oldest active art museum displaying contemporary art. The Photo Archive of Kunsthalle Basel documents the Kunsthalle’s exhibitions from the last century with well over 20,000 photographs. The archive offers a freely accessible insight into the exhibitions, their publications and the works shown. Please be aware that the images are protected by copyright. This database is continuously updated and expanded."
+    },
+    "startDate": "2017-06-22",
+    "endDate": "MISSING",
+    "url": [
+        "https://app.dasch.swiss/project/ExIK4BHPTaejCzk3saF0UQ"
+    ],
+    "howToCite": "Fotoarchiv Kunsthalle Basel (2023). [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/080C",
+    "accessRights": {
+        "accessRights": "Full Open Access"
+    },
+    "legalInfo": [
+        {
+            "license": {
+                "licenseIdentifier": "CC BY-NC 4.0",
+                "licenseDate": "2023-12-07",
+                "licenseURI": "https://creativecommons.org/licenses/by-nc/4.0/deed.en"
+            },
+            "copyrightHolder": "Fotoarchiv Kunsthalle Basel",
+            "authorship": [
+                "CALCULATED"
+            ]
+        }
+    ],
+    "dataManagementPlan": "not accessible",
+    "typeOfData": [
+        "Image",
+        "XML"
+    ],
+    "dataLanguage": [
+        "de",
+        "en"
+    ],
+    "keywords": [
+        {
+            "de": "Basel"
+        },
+        {
+            "de": "Basler Kunstverein"
+        },
+        {
+            "de": "Fotoarchiv"
+        },
+        {
+            "de": "Kunsthalle"
+        },
+        {
+            "de": "Kunsthalle Basel"
+        },
+        {
+            "de": "Lukas Lichtenhan"
+        },
+        {
+            "de": "Zeitgenössische Kunst"
+        }
+    ],
+    "disciplines": [
+        {
+            "en": "10404 Visual arts and Art history"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "1826 - today"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2661604/basel.html",
+            "text": "Basel"
+        }
+    ],
+    "attributions": [
+        {
+            "contributor": "person-090",
+            "contributorType": [
+                "creator of the project, editor"
+            ]
+        },
+        {
+            "contributor": "person-091",
+            "contributorType": [
+                "editor, maintainer"
+            ]
+        },
+        {
+            "contributor": "person-092",
+            "contributorType": [
+                "editor"
+            ]
+        },
+        {
+            "contributor": "person-089",
+            "contributorType": [
+                "maintainer, editor"
+            ]
+        }
+    ],
+    "abstract": {
+        "en": "Kunsthalle Basel is Switzerland’s oldest active art museum displaying contemporary art. The Photo Archive of Kunsthalle Basel documents the Kunsthalle’s exhibitions from the last century with well over 20,000 photographs. The archive offers a freely accessible insight into the exhibitions, their publications and the works shown. Please be aware that the images are protected by copyright. This database is continuously updated and expanded."
+    },
+    "funding": [
+        {
+            "funders": [
+                "organization-018"
+            ],
+            "name": "Bundesamt für Kultur",
+            "url": "https://www.bak.admin.ch/bak/de/home.html"
+        },
+        {
+            "funders": [
+                "organization-019"
+            ],
+            "name": "UBS Kulturstiftung",
+            "url": "https://www.ubs.com/global/de/ubs-society/foundations/culture-foundation.html"
+        },
+        {
+            "funders": [
+                "organization-020"
+            ],
+            "name": "Kulturelles BL"
+        },
+        {
+            "funders": [
+                "organization-021"
+            ],
+            "name": "FMB (Freiwilliger Museumsverein Basel)",
+            "url": "https://www.fmb-basel.ch/"
+        },
+        {
+            "funders": [
+                "organization-028"
+            ],
+            "name": "Ernst Göhner Stiftung",
+            "url": "https://www.ernst-goehner-stiftung.ch/index.php/de"
+        },
+        {
+            "funders": [
+                "organization-022"
+            ],
+            "name": "Sulger Stiftung",
+            "url": "https://stiftungen.stiftungschweiz.ch/organisation/sulger-stiftung"
+        },
+        {
+            "funders": [
+                "organization-030"
+            ],
+            "name": "Sophie und Karl Binding Stiftung",
+            "url": "https://www.binding-stiftung.ch/"
+        },
+        {
+            "funders": [
+                "organization-023"
+            ],
+            "name": "Gerda Henkel Stiftung",
+            "url": "https://www.gerda-henkel-stiftung.de/"
+        },
+        {
+            "funders": [
+                "organization-024"
+            ],
+            "name": "Camille Graeser Stiftung",
+            "url": "http://www.camille-graeser-stiftung.ch/"
+        },
+        {
+            "funders": [
+                "organization-025"
+            ],
+            "name": "Beisheim Stiftung",
+            "url": "https://www.beisheim-stiftung.com/ch/de"
+        }
+    ],
+    "alternativeNames": [
+        {
+            "de": "fotoarchivkunsthalle"
+        }
+    ]
+}

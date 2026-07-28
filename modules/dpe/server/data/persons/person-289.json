@@ -1,0 +1,23 @@
+{
+    "id": "person-289",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-2101-3105",
+            "text": "ORCID URL: https://orcid.org/0000-0002-2101-3105"
+        }
+    ],
+    "givenNames": [
+        "Véronique"
+    ],
+    "familyNames": [
+        "Dasen"
+    ],
+    "jobTitles": [
+        "Professor"
+    ],
+    "affiliations": [
+        "organization-097"
+    ],
+    "email": "veronique.dasen@unifr.ch"
+}

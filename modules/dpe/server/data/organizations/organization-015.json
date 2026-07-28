@@ -1,0 +1,12 @@
+{
+    "id": "organization-015",
+    "name": "Schweizerische Musikforschende Gesellschaft",
+    "url": "https://www.smg-ssm.ch/smg-ssm/",
+    "address": {
+        "street": "Mittelstr. 43",
+        "postalCode": "3012",
+        "locality": "Bern",
+        "country": "Switzerland"
+    },
+    "email": "info@sma-ssm.ch"
+}

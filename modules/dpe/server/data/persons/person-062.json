@@ -1,0 +1,23 @@
+{
+    "id": "person-062",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "http://orcid.org/0000-0003-1380-5986",
+            "text": "ORCID URL: orcid.org/0000-0003-1380-5986"
+        }
+    ],
+    "givenNames": [
+        "Eva"
+    ],
+    "familyNames": [
+        "Pibiri"
+    ],
+    "jobTitles": [
+        "Associate Professor"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "Eva.pibiri@unil.ch"
+}

@@ -1,0 +1,16 @@
+{
+    "id": "person-050",
+    "givenNames": [
+        "Adèle"
+    ],
+    "familyNames": [
+        "Morerod"
+    ],
+    "jobTitles": [
+        "PhD Student"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "adele.morerod@unil.ch"
+}

@@ -1,0 +1,67 @@
+name: Nightly Fuzz Testing
+
+on:
+  schedule:
+    # Run every night at 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: Fuzz ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - tab_validation
+          - query_params
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
+      - name: Install cargo-fuzz
+        run: cargo binstall cargo-fuzz -y
+
+      - name: Restore corpus cache
+        uses: actions/cache@v4
+        with:
+          path: modules/dpe/server/fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: |
+            fuzz-corpus-${{ matrix.target }}-
+
+      - name: Run fuzzer (10 min budget)
+        working-directory: modules/dpe/server
+        run: |
+          cargo +nightly fuzz run ${{ matrix.target }} \
+            --target x86_64-unknown-linux-gnu -- \
+            -max_total_time=600 \
+            -max_len=4096
+        id: fuzz
+
+      - name: Upload corpus as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-corpus-${{ matrix.target }}
+          path: modules/dpe/server/fuzz/corpus/${{ matrix.target }}
+          retention-days: 30
+
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crashes-${{ matrix.target }}
+          path: modules/dpe/server/fuzz/artifacts/${{ matrix.target }}
+          retention-days: 90
+

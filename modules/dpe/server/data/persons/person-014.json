@@ -1,0 +1,16 @@
+{
+    "id": "person-014",
+    "givenNames": [
+        "Aline"
+    ],
+    "familyNames": [
+        "Hodroge"
+    ],
+    "jobTitles": [
+        "PhD student"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "aline.hodroge@unil.ch"
+}

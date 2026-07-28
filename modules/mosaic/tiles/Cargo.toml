@@ -1,0 +1,9 @@
+[package]
+name = "mosaic-tiles"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+maud.workspace = true
+icondata = "0.7"

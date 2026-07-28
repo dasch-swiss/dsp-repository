@@ -1,0 +1,55 @@
+name: Docker Scout CVE Scan
+description: Scan a local Docker image for vulnerabilities and upload results
+
+inputs:
+  image:
+    description: "Local image reference to scan (e.g., local://name:tag)"
+    required: true
+  sarif-file:
+    description: Output SARIF file path
+    required: true
+  sarif-category:
+    description: Category for GitHub Security tab
+    required: true
+  docker-user:
+    description: Docker Hub username
+    required: true
+  docker-hub-token:
+    description: Docker Hub token
+    required: true
+  github-token:
+    description: GitHub token for PR comments
+    required: true
+  organization:
+    description: Docker Hub organization
+    default: daschswiss
+  only-severities:
+    description: Severity filter
+    default: critical,high
+
+runs:
+  using: composite
+  steps:
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ inputs.docker-user }}
+        password: ${{ inputs.docker-hub-token }}
+
+    - name: Docker Scout — CVE report
+      uses: docker/scout-action@v1
+      with:
+        command: cves
+        image: ${{ inputs.image }}
+        sarif-file: ${{ inputs.sarif-file }}
+        only-severities: ${{ inputs.only-severities }}
+        write-comment: true
+        github-token: ${{ inputs.github-token }}
+        organization: ${{ inputs.organization }}
+
+    - name: Upload SARIF to GitHub Security
+      uses: github/codeql-action/upload-sarif@v4
+      if: always()
+      with:
+        sarif_file: ${{ inputs.sarif-file }}
+        category: ${{ inputs.sarif-category }}

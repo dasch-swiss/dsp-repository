@@ -1,0 +1,23 @@
+{
+    "id": "person-199",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/villarsnoemi/",
+            "text": "https://www.linkedin.com/in/villarsnoemi/"
+        }
+    ],
+    "givenNames": [
+        "Noémi"
+    ],
+    "familyNames": [
+        "Villars"
+    ],
+    "jobTitles": [
+        "Egyptologist"
+    ],
+    "affiliations": [
+        "organization-056"
+    ],
+    "email": "noemi.villars@unibas.ch"
+}

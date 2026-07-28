@@ -1,0 +1,38 @@
+name: deploy docs to github pages
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy docs to GitHub Pages
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Setup mdBook
+        uses: peaceiris/actions-mdbook@v2
+        with:
+          mdbook-version: "0.4.52"
+      - name: Install mdBook-alerts
+        run: cargo install mdbook-alerts
+      - name: Install mdBook-mermaid
+        run: cargo install mdbook-mermaid --version 0.16.2
+      - name: Generate mermaid assets
+        run: mdbook-mermaid install docs
+      - name: Build Book
+        run: mdbook build docs
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        if: ${{ github.ref == 'refs/heads/main' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/book

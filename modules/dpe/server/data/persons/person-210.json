@@ -1,0 +1,20 @@
+{
+    "id": "person-210",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0002-2261-907X",
+            "text": "ORCID URL: https://orcid.org/0000-0002-2261-907X"
+        }
+    ],
+    "givenNames": [
+        "Thomas"
+    ],
+    "familyNames": [
+        "Ruoss"
+    ],
+    "jobTitles": [],
+    "affiliations": [
+        "organization-071"
+    ]
+}

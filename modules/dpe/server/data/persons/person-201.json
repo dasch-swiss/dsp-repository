@@ -1,0 +1,22 @@
+{
+    "id": "person-201",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.linkedin.com/in/alina-zalunardo-137b52197/",
+            "text": "https://www.linkedin.com/in/alina-zalunardo-137b52197/"
+        }
+    ],
+    "givenNames": [
+        "Alina"
+    ],
+    "familyNames": [
+        "Zalunardo"
+    ],
+    "jobTitles": [
+        "Student"
+    ],
+    "affiliations": [
+        "organization-056"
+    ]
+}

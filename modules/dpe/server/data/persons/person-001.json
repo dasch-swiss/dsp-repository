@@ -1,0 +1,16 @@
+{
+    "id": "person-001",
+    "givenNames": [
+        "Philippe"
+    ],
+    "familyNames": [
+        "Gonzalez"
+    ],
+    "jobTitles": [
+        "Senior lecturer"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "philippe.gonzalez@unil.ch"
+}

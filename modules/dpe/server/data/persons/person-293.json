@@ -1,0 +1,23 @@
+{
+    "id": "person-293",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-1071-1941",
+            "text": "ORCID URL: https://orcid.org/0000-0003-1071-1941"
+        }
+    ],
+    "givenNames": [
+        "Rosalía"
+    ],
+    "familyNames": [
+        "Guerrero Cantarell"
+    ],
+    "jobTitles": [
+        "Teaching and research associate"
+    ],
+    "affiliations": [
+        "organization-099"
+    ],
+    "email": "rgc0403@gmail.com"
+}

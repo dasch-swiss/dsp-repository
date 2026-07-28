@@ -1,0 +1,22 @@
+{
+    "id": "person-177",
+    "sameAs": [
+        {
+            "type": "URL",
+            "url": "https://www.aegyptologie.uni-muenchen.de/personen/assoziierte/klemm/index.html",
+            "text": "https://www.aegyptologie.uni-muenchen.de/personen/assoziierte/klemm/index.html"
+        }
+    ],
+    "givenNames": [
+        "Rosemarie"
+    ],
+    "familyNames": [
+        "Klemm"
+    ],
+    "jobTitles": [
+        "Egyptologist"
+    ],
+    "affiliations": [
+        "organization-068"
+    ]
+}

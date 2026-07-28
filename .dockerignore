@@ -1,0 +1,42 @@
+# Build artifacts
+target/
+**/target/
+
+# Node modules
+node_modules/
+**/node_modules/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Documentation build output
+docs/book/
+
+# Temporary files
+.claude/
+*.log
+*.tmp
+
+# Fuzz artifacts
+**/fuzz/corpus/
+**/fuzz/artifacts/
+**/fuzz/target/
+
+# Snapshot review files
+**/*.snap.new
+
+# E2E tests (not needed in server build)
+modules/dpe/web-e2e-tests/
+modules/mosaic/playground-e2e-tests/
+
+# Other Docker files
+Dockerfile*
+!modules/mosaic/playground/Dockerfile
+!modules/dpe/Dockerfile

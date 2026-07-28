@@ -1,0 +1,23 @@
+{
+    "id": "person-278",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0001-8954-0115",
+            "text": "ORCID URL: https://orcid.org/0000-0001-8954-0115"
+        }
+    ],
+    "givenNames": [
+        "Claire"
+    ],
+    "familyNames": [
+        "Clivaz"
+    ],
+    "jobTitles": [
+        "Head of Digital Humanities +"
+    ],
+    "affiliations": [
+        "organization-095"
+    ],
+    "email": "claire.clivaz@sib.swiss"
+}

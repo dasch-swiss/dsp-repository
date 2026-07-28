@@ -1,0 +1,23 @@
+{
+    "id": "person-416",
+    "sameAs": [
+        {
+            "type": "ORCID",
+            "url": "https://orcid.org/0000-0003-0659-392X",
+            "text": "ORCID URL: https://orcid.org/0000-0003-0659-392X"
+        }
+    ],
+    "givenNames": [
+        "Susanna"
+    ],
+    "familyNames": [
+        "Scavello"
+    ],
+    "jobTitles": [
+        "FNS Senior Researcher"
+    ],
+    "affiliations": [
+        "organization-001"
+    ],
+    "email": "susanna.scavello@unil.ch"
+}

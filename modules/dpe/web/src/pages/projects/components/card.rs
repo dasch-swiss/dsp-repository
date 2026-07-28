@@ -40,6 +40,12 @@ pub fn project_card(project: &Project, keywords: &[String]) -> Markup {
                     (icon(OpenDocument, "w-12 h-12 text-gray-300"))
                 }
             }
+            @if let Some(credit) = &project.image_credit {
+                figcaption
+                    class="absolute bottom-0 left-0 max-w-[70%] truncate rounded-tr px-2 py-1 text-xs text-gray-700 bg-white/90 backdrop-blur-sm"
+                    title=(credit)
+                { (credit) }
+            }
             ({
                 project_card_indicators(
                     &project.status,
@@ -81,5 +87,26 @@ mod tests {
         let keywords = vec!["a".to_string(), "b".to_string(), "c".to_string(), "d".to_string()];
         let out = project_card(&p, &keywords).into_string();
         assert_eq!(out.matches("badge badge-secondary").count(), 3, "only first 3 keywords: {out}");
+    }
+
+    #[test]
+    fn renders_truncated_image_credit_when_present() {
+        let p = Project {
+            image_credit: Some("© Someone, Somewhere".to_string()),
+            ..sample_project()
+        };
+        let out = project_card(&p, &[]).into_string();
+        assert!(out.contains("© Someone, Somewhere"), "{out}");
+        // overlaid on the image bottom, single-line clip, full text on hover
+        assert!(out.contains("<figcaption"), "{out}");
+        assert!(out.contains("truncate"), "{out}");
+        assert!(out.contains(r#"title="© Someone, Somewhere""#), "{out}");
+    }
+
+    #[test]
+    fn omits_image_credit_when_absent() {
+        // sample_project() has image_credit: None → no caption on the card.
+        let out = project_card(&sample_project(), &[]).into_string();
+        assert!(!out.contains("truncate"), "{out}");
     }
 }

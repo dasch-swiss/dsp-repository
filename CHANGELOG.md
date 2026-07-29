@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.8.2](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.1...v0.8.2) (2026-07-29)
+
+
+### Features
+
+* **dpe-data:** Add imageCredit for 0113 (Women Martyrs in Action) ([3931d4f](https://github.com/dasch-swiss/dsp-repository/commit/3931d4f72d0900c0f6ed9c1d1827ad2f73d9d45d))
+* **dpe-data:** Backfill imageCredit for 16 projects from dsp-app (DEV-6870) ([7c228ed](https://github.com/dasch-swiss/dsp-repository/commit/7c228edf0ae670910cae50c34573074b5e61fb51))
+* **dpe-web:** Add optional imageCredit field + cover-image caption (DEV-6860) ([f169e2f](https://github.com/dasch-swiss/dsp-repository/commit/f169e2f9bc5e5a194b20a0a415ec99a2ceba855d))
+* **dpe-web:** Show project image credit on grid teaser cards ([8b89d99](https://github.com/dasch-swiss/dsp-repository/commit/8b89d990dabbc5abcfb5b9fb54c87f5e35f92b1f))
+
 ## [0.8.1](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.0...v0.8.1) (2026-07-28)
 
 

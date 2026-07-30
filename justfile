@@ -9,6 +9,10 @@ DOCKER_IMAGE := DOCKER_REPO + ":" + IMAGE_TAG
 
 TAILWIND_VERSION := "4.1.18"
 
+# Projects whose OAI records `just fetch-records` refreshes. Add a shortcode here to track a new project.
+
+RECORD_SHORTCODES := "081C 0868 0803"
+
 # List all recipes
 default:
     just --list --unsorted
@@ -83,6 +87,18 @@ run:
 # Validate all data files in the default data directory
 validate-data:
     cargo run --bin dpe-server -- validate modules/dpe/server/data
+
+# Refresh the tracked OAI record dumps. Needs `bearer` in the environment (see README).
+[group('dpe')]
+fetch-records:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    : "${bearer:?export bearer=\"Bearer eyJ...\"}"
+    for sc in {{ RECORD_SHORTCODES }}; do
+        out=modules/dpe/server/data/records/$sc-records.json
+        curl -fsS -H "Authorization: $bearer" 'https://api.dasch.swiss/v3/export/resources/oai' \
+            -d '{"shortcode": "'"$sc"'"}' -o "$out" -w "$out %{http_code}\n" >&2
+    done
 
 # Run all tests
 test:

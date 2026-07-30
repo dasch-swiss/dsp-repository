@@ -21,6 +21,21 @@ just dev                     # Run DPE at http://127.0.0.1:4000
 just watch-mosaic-playground # Run Mosaic playground
 ```
 
+## Refreshing the record data
+
+The record dumps in `modules/dpe/server/data/records/` are tracked in git and
+refreshed by hand after an API deployment changes the exported metadata. The
+token is not stored in the repo — set it yourself, then run the recipe:
+
+```bash
+export bearer="Bearer eyJ..."   # a token for api.dasch.swiss
+just fetch-records
+just validate-data              # check the refreshed dumps
+```
+
+To track another project, add its shortcode to `RECORD_SHORTCODES` at the top of
+the `justfile`.
+
 ## How should I write my commits?
 
 We use [Conventional Commit messages](https://www.conventionalcommits.org/), and

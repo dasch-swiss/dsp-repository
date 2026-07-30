@@ -6,6 +6,7 @@
 modules/dpe/
 ├── core/             dpe-core          Pure domain (serde only)
 ├── telemetry/        dpe-telemetry     Telemetry types and validation (serde only)
+├── api-dataverse/    dpe-api-dataverse Dataverse-compatible file metadata API
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Maud view library (pages + components)
 ├── server/           dpe-server        Axum binary (composition root)
@@ -20,6 +21,7 @@ modules/dpe/
 dpe-core              ← pure domain, no framework deps
   ↑
   ├── dpe-api-oai     ← OAI-PMH endpoint
+  ├── dpe-api-dataverse ← Dataverse-compatible file metadata API
   ├── dpe-web         ← Maud pages + components
   └── dpe-server      ← composition root, Datastar fragment handlers
        ↑
@@ -45,6 +47,12 @@ Dependencies: `serde`, `serde_json` only.
 OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord). Usage is documented in [OAI-PMH Endpoint](./oai-pmh.md).
 
 Depends on `dpe-core` for domain types — no web framework dependency.
+
+### `dpe-api-dataverse` (api-dataverse/)
+
+A minimal subset of the Dataverse Native API — two endpoints — so EOSC Data Commons can harvest DaSCH datasets with file-level download information. Usage and the placeholder-data caveat are documented in [Dataverse-Compatible API](./dataverse-api.md).
+
+Depends on `dpe-core` for the file model and repository traits, and on `axum` because this protocol signals errors through HTTP status codes.
 
 ### `dpe-web` (web/)
 

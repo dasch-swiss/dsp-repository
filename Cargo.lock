@@ -580,6 +580,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "dpe-api-dataverse"
+version = "0.8.2"
+dependencies = [
+ "axum",
+ "dpe-core",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tracing",
+]
+
+[[package]]
 name = "dpe-api-oai"
 version = "0.8.2"
 dependencies = [
@@ -612,6 +624,7 @@ dependencies = [
  "axum-tracing-opentelemetry",
  "clap",
  "datastar",
+ "dpe-api-dataverse",
  "dpe-api-oai",
  "dpe-core",
  "dpe-telemetry",

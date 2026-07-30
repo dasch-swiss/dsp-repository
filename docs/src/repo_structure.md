@@ -8,6 +8,7 @@ This repository is a Rust workspace structured as a monorepo. All Rust crates ar
 modules/
 ├── dpe/                       # Discovery and Presentation Environment
 │   ├── core/                  # Pure domain types, repositories, data loading (crate: dpe-core)
+│   ├── api-dataverse/         # Dataverse-compatible file metadata API (crate: dpe-api-dataverse)
 │   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
 │   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
 │   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
@@ -29,6 +30,7 @@ modules/
 | Crate | Folder | Role |
 |-------|--------|------|
 | `dpe-core` | `dpe/core` | Pure domain types and data access (zero framework deps) |
+| `dpe-api-dataverse` | `dpe/api-dataverse` | Dataverse-compatible file metadata API |
 | `dpe-api-oai` | `dpe/api-oai` | OAI-PMH 2.0 API (depends on `dpe-core` only) |
 | `dpe-web` | `dpe/web` | Maud pages and components (`fn -> Markup`) |
 | `dpe-server` | `dpe/server` | Server binary — composes all routes |
@@ -41,8 +43,8 @@ modules/
 Each API is a separate crate under `modules/dpe/`:
 
 - **Naming**: `dpe-api-{name}` (e.g., `dpe-api-oai`)
-- **Dependencies**: `dpe-core` for domain types; never depends on other API crates or `dpe-web`
-- **Entry point**: Exports a handler function (e.g., `pub async fn oai_handler(...)`)
-- **Composition**: `dpe-server` wires the handler into the Axum router
+- **Dependencies**: `dpe-core` for domain types; never depends on other API crates or `dpe-web`. An API crate may depend on `axum` where the protocol needs it (`dpe-api-dataverse` maps errors to HTTP status codes); `dpe-api-oai` does not, because OAI-PMH carries its errors in the body of a `200`.
+- **Entry point**: Exports handler functions (e.g., `pub async fn oai_handler(...)`)
+- **Composition**: `dpe-server` wires the handlers into the Axum router
 
 For detailed crate responsibilities and the dependency graph, see [DPE Project Structure](./dpe/project_structure.md).

@@ -3,6 +3,7 @@ members = [
   "modules/mosaic/playground",
   "modules/mosaic/tiles",
   "modules/dpe/core",
+  "modules/dpe/api-dataverse",
   "modules/dpe/api-oai",
   "modules/dpe/web",
   "modules/dpe/server",

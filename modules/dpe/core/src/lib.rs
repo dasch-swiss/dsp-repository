@@ -3,6 +3,8 @@ pub mod cluster;
 pub mod cluster_cache;
 pub mod collection;
 pub mod contributors;
+pub mod dataverse_file;
+pub mod dataverse_file_cache;
 pub mod models;
 pub mod organization;
 pub mod organization_cache;
@@ -24,6 +26,8 @@ pub use collection::CollectionRef;
 pub use contributors::{
     is_organization_id, load_organization, load_person, CachedContributorLookup, ContributorLookup, ResolvedContributor,
 };
+pub use dataverse_file::{file_id_for_iri, DataverseFile, DataverseFileRepository, FilePlaceholders};
+pub use dataverse_file_cache::{DataverseFileIndex, FsDataverseFileRepository};
 pub use models::{AuthorityFileReference, Page};
 pub use organization::Organization;
 pub use person::{is_role_job_title, Person, JOB_TITLE_ROLE_WORDS};

@@ -36,6 +36,16 @@ assert_eq() {
   fi
 }
 
+assert_not_contains() {
+  local desc="$1" needle="$2" haystack="$3"
+  if [[ "$haystack" != *"$needle"* ]]; then
+    PASS=$((PASS + 1))
+  else
+    FAIL=$((FAIL + 1))
+    echo "FAIL: $desc (expected NOT to contain '$needle')"
+  fi
+}
+
 make_repo() {
   local dir; dir="$(mktemp -d)"
   (
@@ -66,6 +76,58 @@ diffs_out="$(test_range_and_diffs)"
 assert_contains "diffs: includes the subject"   "feat(dpe-web): add a" "$diffs_out"
 assert_contains "diffs: includes patch body"    "+line one"           "$diffs_out"
 assert_contains "diffs: names the changed file" "a.txt"               "$diffs_out"
+
+# --- build_diffs: per-file cap --------------------------------------------
+# A small file keeps its full hunk; a file whose patch exceeds the cap collapses
+# to header + marker, and its bulk never reaches the payload.
+
+test_per_file_cap() {
+  local repo out; repo="$(make_repo)"
+  out="$(
+    cd "$repo" || exit 1
+    git checkout -q -b feature
+    printf 'small change\n' >small.txt
+    yes 'a big generated line of dump content xxxxxxxxxxxxxxxx' | head -n 2000 >big.txt
+    git add small.txt big.txt
+    git commit -q -m "feat(dpe-web): add small and big"
+    MAX_FILE_PATCH_BYTES=1024 build_diffs "$(compute_range base)"
+  )"
+  rm -rf "$repo"
+  printf '%s' "$out"
+}
+cap_out="$(test_per_file_cap)"
+assert_contains     "cap: keeps small file's hunk"     "+small change"           "$cap_out"
+assert_contains     "cap: still names the big file"    "big.txt"                 "$cap_out"
+assert_contains     "cap: marker with change counts"   "[patch omitted: +2000/-0 lines" "$cap_out"
+assert_not_contains "cap: big file hunk not inlined"   "+a big generated line"   "$cap_out"
+
+# --- build_diffs: total cap -----------------------------------------------
+
+test_total_cap() {
+  local repo out; repo="$(make_repo)"
+  out="$(
+    cd "$repo" || exit 1
+    git checkout -q -b feature
+    printf 'a\nb\nc\n' >f.txt && git add f.txt && git commit -q -m "feat(dpe-web): add f"
+    MAX_TOTAL_DIFF_BYTES=40 build_diffs "$(compute_range base)"
+  )"
+  rm -rf "$repo"
+  printf '%s' "$out"
+}
+total_out="$(test_total_cap)"
+assert_contains "total cap: appends truncation marker" "[diff truncated" "$total_out"
+
+# --- build_request_body: argv-safe for large diffs ------------------------
+# A user string well past the ~128 KB single-argument limit must still build a
+# valid request body (regression for the jq "Argument list too long" failure).
+
+big_user="$(yes 'line of diff content to make the payload large' | head -n 5000)"
+body_out="$(build_request_body "claude-sonnet-5" 8000 "sys" "$big_user" '{"effort":"medium"}')"
+assert_contains "request body: builds with oversized user" '"role": "user"'            "$body_out"
+assert_contains "request body: carries the model"          '"model": "claude-sonnet-5"' "$body_out"
+assert_eq "request body: user content preserved intact" \
+  "$(printf '%s' "$big_user" | wc -c | tr -d ' ')" \
+  "$(jq -rj '.messages[0].content' <<<"$body_out" | wc -c | tr -d ' ')"
 
 # --- extract_text ---------------------------------------------------------
 

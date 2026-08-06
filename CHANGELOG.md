@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.3](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.2...v0.8.3) (2026-08-06)
+
+
+### Miscellaneous Chores
+
+* **ci:** Add just recipe for updating record dumps (DEV-6838) ([b28d161](https://github.com/dasch-swiss/dsp-repository/commit/b28d1617547651611fbccc9b0b3724e46268a3f7))
+* **dpe-data:** Update record dumps (DEV-6838) ([b3f9be7](https://github.com/dasch-swiss/dsp-repository/commit/b3f9be7ea9fcb9427fa54b77a43c87b6f0e4d5a0))
+
 ## [0.8.2](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.1...v0.8.2) (2026-07-29)
 
 

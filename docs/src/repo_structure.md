@@ -16,6 +16,13 @@ modules/
 │   ├── public/                # Static assets
 │   ├── style/                 # CSS / Tailwind
 │   └── Dockerfile             # Production container image
+├── editor/                    # Metadata editor (authenticated; depositor authoring + RDU review)
+│   ├── core/                  # Pure domain types (crate: editor-core)
+│   ├── web/                   # View layer: document shell, Maud pages and components (crate: editor-web)
+│   ├── server/                # Server binary: config, observability, route composition (crate: editor-server)
+│   ├── public/                # Static assets (incl. vendored JS)
+│   ├── style/                 # CSS / Tailwind
+│   └── Dockerfile             # Production container image
 └── mosaic/                    # Mosaic component library (design system)
     ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
     ├── playground/            # Component playground application (crate: mosaic-playground)
@@ -33,6 +40,9 @@ modules/
 | `dpe-web` | `dpe/web` | Maud pages and components (`fn -> Markup`) |
 | `dpe-server` | `dpe/server` | Server binary — composes all routes |
 | `dpe-telemetry` | `dpe/telemetry` | Browser beacon contract, validation, and the collector endpoint (shared with the editor) |
+| `editor-core` | `editor/core` | Pure domain types for the editor (zero framework deps) |
+| `editor-web` | `editor/web` | Editor view layer, including the HTML document shell |
+| `editor-server` | `editor/server` | Editor binary — composes all routes |
 | `mosaic-tiles` | `mosaic/tiles` | Reusable UI component library |
 | `mosaic-playground` | `mosaic/playground` | Component showcase application |
 

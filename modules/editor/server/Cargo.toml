@@ -1,0 +1,38 @@
+[package]
+name = "editor-server"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+ureq = "3"
+editor-web = { path = "../web" }
+# Shared so both services agree on the trace-context and beacon wire formats.
+# Not part of the DPE runtime — it reads none of DPE's data or config. Its
+# contract modules are serde-only; `collector` adds axum/opentelemetry/url.
+dpe-telemetry = { path = "../../dpe/telemetry" }
+maud.workspace = true
+
+axum.workspace = true
+figment = { version = "0.10", features = ["env", "toml"] }
+serde.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+tower_governor.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+axum-tracing-opentelemetry.workspace = true
+init-tracing-opentelemetry.workspace = true
+opentelemetry.workspace = true
+opentelemetry_sdk.workspace = true
+opentelemetry-otlp.workspace = true
+opentelemetry-appender-tracing.workspace = true
+tracing-opentelemetry.workspace = true
+pyroscope.workspace = true
+
+[dev-dependencies]
+# `test` feature enables figment::Jail for isolated env-var config tests.
+figment = { version = "0.10", features = ["env", "toml", "test"] }
+tower = { workspace = true, features = ["util"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

@@ -677,6 +677,45 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
+name = "editor-core"
+version = "0.8.2"
+
+[[package]]
+name = "editor-server"
+version = "0.8.2"
+dependencies = [
+ "axum",
+ "axum-tracing-opentelemetry",
+ "clap",
+ "dpe-telemetry",
+ "editor-web",
+ "figment",
+ "init-tracing-opentelemetry",
+ "maud",
+ "opentelemetry",
+ "opentelemetry-appender-tracing",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
+ "pyroscope",
+ "serde",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tower_governor",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+ "ureq",
+]
+
+[[package]]
+name = "editor-web"
+version = "0.8.2"
+dependencies = [
+ "maud",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

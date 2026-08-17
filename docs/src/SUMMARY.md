@@ -27,6 +27,12 @@
 - [JSON API](./dpe/json-api.md)
 - [OAI-PMH Endpoint](./dpe/oai-pmh.md)
 
+## Editor
+
+- [Architecture](./editor/architecture.md)
+- [Observability](./editor/observability.md)
+- [Operations](./editor/operations.md)
+
 ## Mosaic
 
 - [Component API Conventions](./mosaic/component-api-conventions.md)

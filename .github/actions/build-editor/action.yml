@@ -1,0 +1,43 @@
+name: Build editor
+description: Compile the metadata editor (static musl editor-server binary + content-hashed Tailwind app.css) and stage to staging/
+
+runs:
+  using: composite
+  steps:
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - uses: Swatinem/rust-cache@v2
+
+    - name: Install system dependencies
+      shell: bash
+      run: sudo apt-get update -y && sudo apt-get install -y --no-install-recommends musl-tools clang
+
+    - name: Add build target
+      shell: bash
+      run: rustup target add x86_64-unknown-linux-musl
+
+    - name: Install just
+      uses: extractions/setup-just@v4
+
+    - name: Build stylesheet
+      shell: bash
+      # Standalone Tailwind CLI → modules/editor/public/assets/app.<hash>.css.
+      # No Node/npm needed: the CLI bundles the official plugins.
+      run: just css-editor-release
+
+    - name: Build static musl binary
+      shell: bash
+      run: cargo build -p editor-server --release --target x86_64-unknown-linux-musl
+
+    - name: Stage artifacts
+      shell: bash
+      # The published project/person/organization set comes from DPE's data
+      # directory: git stays the source of truth, and the editor derives project
+      # status by comparing its local records against the set baked into the image.
+      run: |
+        mkdir -p staging
+        cp target/x86_64-unknown-linux-musl/release/editor-server staging/
+        cp -r modules/editor/public staging/
+        cp -r modules/dpe/server/data staging/
+        cp modules/editor/Dockerfile staging/

@@ -1,0 +1,24 @@
+/*
+ * Unified Tailwind v4 entry for the metadata editor.
+ *
+ * `source(none)` disables Tailwind's auto-detection; classes are collected ONLY from the explicit
+ * `@source` globs below, which must cover EVERY crate that emits Tailwind classes — editor-web
+ * (the shell, pages and components), editor-server (markup rendered in handlers) and mosaic-tiles.
+ * A missing glob silently drops classes: no build error, just markup whose classes resolve to
+ * nothing. Tailwind scans `.rs` files as plain text.
+ *
+ * Built by `just css-editor` (dev, unhashed) or `just css-editor-release` (content-hashed).
+ * DPE and the Mosaic playground are separate apps with their own entries and are intentionally
+ * NOT scanned here.
+ */
+@import 'tailwindcss' source(none);
+@import '../../mosaic/tiles/src/components/theme_provider/tokens.css';
+
+/* Every Mosaic component stylesheet, through the barrel — so a tile added for the editor lands
+   in DPE and the playground too, instead of in one hand-maintained list of three. Tokens are
+   imported above because the component files @apply against them. */
+@import '../../mosaic/tiles/src/components/components.css';
+
+@source '../web/**/*.rs';
+@source '../server/**/*.rs';
+@source '../../mosaic/tiles/src/**/*.rs';

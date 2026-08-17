@@ -42,6 +42,10 @@ node_modules/
 modules/dpe/public/assets/app.css
 modules/dpe/public/assets/app.*.css
 
+# Generated editor stylesheet (built by `just css-editor` / `just css-editor-release`)
+modules/editor/public/assets/app.css
+modules/editor/public/assets/app.*.css
+
 
 # Nix
 result

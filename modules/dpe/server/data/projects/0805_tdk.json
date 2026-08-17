@@ -11,9 +11,10 @@
     },
     "startDate": "2015-03-01",
     "endDate": "MISSING",
-    "url": [
-        "https://aegyptologie.philhist.unibas.ch/de/forschung/forschungsprojekte/university-of-basel-kings-valley-project/"
-    ],
+    "secondaryUrl": {
+        "type": "URL",
+        "url": "https://aegyptologie.philhist.unibas.ch/de/forschung/forschungsprojekte/university-of-basel-kings-valley-project/"
+    },
     "howToCite": "University of Basel Kings’ Valley Project Online (UBKVP), 2021, DaSCH. ark.dasch.swiss/ark:/72163/1/0805",
     "accessRights": {
         "accessRights": "Full Open Access"

@@ -11,9 +11,10 @@
     },
     "startDate": "2021-02-01",
     "endDate": "2027-12-31",
-    "url": [
-        "https://beyondthetext.ch/deir-el-medina"
-    ],
+    "secondaryUrl": {
+        "type": "URL",
+        "url": "https://beyondthetext.ch/deir-el-medina"
+    },
     "howToCite": "Deir el-Medina Hieroglyph Palaeography (2028). DaSCH. https://ark.dasch.swiss/ark:/72163/1/0853",
     "accessRights": {
         "accessRights": "Open Access with Restrictions"

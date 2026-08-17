@@ -12,10 +12,10 @@
     "startDate": "2020-08-01",
     "endDate": "2025-07-31",
     "dataPublicationYear": "2025",
-    "url": [
-        "https://readingthebeach.unibe.ch/",
-        "https://dhbern.github.io/reading-the-beach/"
-    ],
+    "secondaryUrl": {
+        "type": "URL",
+        "url": "https://readingthebeach.unibe.ch/"
+    },
     "howToCite": "Guðrun í Jákupsstovu, Ursula Kluwick, Virginia Richter, Katharina Scheller, Marion Troxler (2025). Digital Shores: An Interactive Atlas of Beach Narratives. [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085D.",
     "accessRights": {
         "accessRights": "Full Open Access"
@@ -319,5 +319,8 @@
         {
             "en": "Digital Shores: An Interactive Atlas of Beach Narratives"
         }
+    ],
+    "additionalMaterial": [
+        "https://dhbern.github.io/reading-the-beach/"
     ]
 }

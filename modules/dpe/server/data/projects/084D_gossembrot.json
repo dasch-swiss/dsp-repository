@@ -11,9 +11,10 @@
     },
     "startDate": "2021-02-01",
     "endDate": "2026-01-31",
-    "url": [
-        "https://gossembrot.unibe.ch/gossembrot-portal/"
-    ],
+    "secondaryUrl": {
+        "type": "URL",
+        "url": "https://gossembrot.unibe.ch/gossembrot-portal/"
+    },
     "howToCite": "Michael Stolz, Ioanna Georgiou, Elena Brandazza (2026). Lesen als soziale Negotiation - Rekonstruktion der Bibliothek von Sigmund Gossembrot (1417–1493) [Dataset]. DaSCH. https://ark.dasch.swiss/ark:/72163/1/084D",
     "accessRights": {
         "accessRights": "Full Open Access"

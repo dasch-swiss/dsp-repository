@@ -11,9 +11,10 @@
     },
     "startDate": "2015-02-01",
     "endDate": "2019-01-31",
-    "url": [
-        "https://delille.philhist.unibas.ch/"
-    ],
+    "secondaryUrl": {
+        "type": "URL",
+        "url": "https://delille.philhist.unibas.ch/"
+    },
     "howToCite": "Reconstruire Delille, 2021",
     "accessRights": {
         "accessRights": "Open Access with Restrictions"

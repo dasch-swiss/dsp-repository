@@ -11,9 +11,10 @@
     },
     "startDate": "2014-01-01",
     "endDate": "MISSING",
-    "url": [
-        "https://vitrosearch.ch/en"
-    ],
+    "secondaryUrl": {
+        "type": "URL",
+        "url": "https://vitrosearch.ch/en"
+    },
     "howToCite": "Vitrocentre Romont has to be mentioned, in regards to images: Vitrocentre Romont and where mentioned the photographer has to be mentioned",
     "accessRights": {
         "accessRights": "Open Access with Restrictions"

@@ -99,7 +99,7 @@ Project descriptive metadata lives as JSON under `modules/dpe/server/data/`.
 
 ### Modifying Styles
 
-- The single Tailwind entry is `style/main.css` (imports `tokens.css` + the Mosaic component CSS). Tailwind content-scans both `dpe-web` and `dpe-server`.
+- The single Tailwind entry is `style/main.css` (imports `tokens.css` + the Mosaic `components/components.css` barrel). Tailwind content-scans both `dpe-web` and `dpe-server`.
 - Use Tailwind utility classes and the Mosaic component classes in the Maud markup; there is no DaisyUI.
 - Rebuild the stylesheet with `just css` (dev, unhashed `public/assets/app.css`) or `just css-release` (content-hashed). After CSS-affecting changes, grep the built CSS for the expected classes — a class that resolves to nothing is the common footgun.
 

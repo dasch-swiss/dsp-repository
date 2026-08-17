@@ -15,18 +15,11 @@
 @import '../../mosaic/tiles/src/components/theme_provider/tokens.css';
 
 /* Mosaic component styles — the single component source. Each file defines its
-   own classes via @apply on the shared tokens. Must be imported
-   here so the unified app.css actually contains the component rules
-   (button, card, badge, breadcrumb, link, tabs, icon, loading, tooltip). */
-@import '../../mosaic/tiles/src/components/button/button.css';
-@import '../../mosaic/tiles/src/components/card/card.css';
-@import '../../mosaic/tiles/src/components/badge/badge.css';
-@import '../../mosaic/tiles/src/components/breadcrumb/breadcrumb.css';
-@import '../../mosaic/tiles/src/components/link/link.css';
-@import '../../mosaic/tiles/src/components/tabs/tabs.css';
-@import '../../mosaic/tiles/src/components/icon/icon.css';
-@import '../../mosaic/tiles/src/components/loading.css';
-@import '../../mosaic/tiles/src/components/tooltip.css';
+   own classes via @apply on the shared tokens, and `components.css` is the barrel
+   that imports every one of them. Must be imported here so the unified app.css
+   actually contains the component rules; importing the barrel rather than each
+   file means a newly added tile lands in every consumer at once. */
+@import '../../mosaic/tiles/src/components/components.css';
 
 @plugin "@tailwindcss/typography";
 

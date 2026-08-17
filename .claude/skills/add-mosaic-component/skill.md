@@ -18,8 +18,9 @@ The component name is `${ARGUMENTS}` (snake_case, e.g. `status_chip`).
   `css_class()` returning **complete literal class strings** (so Tailwind's
   content scan sees them); multi-option tiles take a `#[derive(Default)] *Props`
   struct. Content is passed as `Markup`.
-- Component CSS lives next to the tile and is `@import`ed by each consuming
-  Tailwind entry. There is no build-time bundling.
+- Component CSS lives next to the tile and is `@import`ed by the
+  `tiles/src/components/components.css` barrel, which every consuming Tailwind
+  entry imports. There is no build-time bundling.
 - The showcase is a hand-written Maud page per component; the playground is an
   MPA (one Axum route per page, active nav resolved server-side).
 
@@ -94,13 +95,17 @@ Tiles are exported wholesale from `tiles/src/lib.rs` (`pub use components::*;`),
 so adding the module file is enough — but make sure the module is declared in
 `tiles/src/components/mod.rs` if that file lists modules explicitly.
 
-## Step 2 — Wire the CSS into both Tailwind entries
+## Step 2 — Wire the CSS into the component barrel
 
-If you added a `.css` file, `@import` it into **both** consuming entries so the
-classes resolve everywhere the tile is used:
+If you added a `.css` file, `@import` it into the barrel:
 
-- `modules/dpe/style/main.css`
-- `modules/mosaic/playground/style/main.css`
+- `modules/mosaic/tiles/src/components/components.css`
+
+That is the only edit. Every consuming Tailwind entry (`modules/dpe/style/main.css`,
+`modules/mosaic/playground/style/main.css`, `modules/editor/style/main.css`) imports
+the barrel, so the new classes resolve everywhere the tile is used. Do **not** add
+per-file imports to the entries — a tile missing from one hand-maintained list
+silently drops its classes with no build error.
 
 ## Step 3 — Create the showcase page
 
@@ -174,7 +179,7 @@ new classes — a class that resolves to nothing is the common footgun.
 - [ ] `tiles/src/components/<name>/mod.rs` with variant enum(s) + `fn -> Markup` + tests
 - [ ] `tiles/src/components/<name>/<name>.css` (if it needs styles)
 - [ ] Module declared in `tiles/src/components/mod.rs` (if listed explicitly)
-- [ ] CSS `@import`ed into both `dpe/style/main.css` and `playground/style/main.css`
+- [ ] CSS `@import`ed into `tiles/src/components/components.css` (the barrel — not the app entries)
 - [ ] `playground/src/showcase/<name>.rs` with `data-example-key`-wrapped examples
 - [ ] Module declared + added to the test list in `playground/src/showcase/mod.rs`
 - [ ] Route + `COMPONENT_NAV` entry in `playground/src/app.rs`

@@ -18,14 +18,14 @@ Mosaic is the DaSCH design system. It has two crates:
 The `/add-mosaic-component` skill walks through this. In short:
 
 1. Add `fn name(...) -> maud::Markup` in `tiles/src/components/<name>/mod.rs` (plus a co-located `<name>.css` if it needs component styles), and export it in `tiles/src/lib.rs`.
-2. If you added a CSS file, `@import` it into each consuming Tailwind entry: `modules/dpe/style/main.css` and `modules/mosaic/playground/style/main.css`.
+2. If you added a CSS file, `@import` it into the barrel `tiles/src/components/components.css` — that one edit reaches every consuming Tailwind entry. Never add per-file imports to the entries themselves.
 3. Add a hand-written showcase page `playground/src/showcase/<name>.rs` (component title + description + rendered examples), export it in `playground/src/showcase/mod.rs`, and register the route + sidebar nav entry in `playground/src/app.rs`.
 4. Add unit tests rendering the component and asserting on its output.
 
 ## Build System (CSS)
 
 - There is no `build.rs` CSS pipeline. Each component's CSS is self-contained (`@apply` on the design tokens, no DaisyUI) and lives next to its source.
-- The consuming app's Tailwind entry `@import`s `tokens.css` + the component CSS files, then runs a single standalone Tailwind invocation.
+- The consuming app's Tailwind entry `@import`s `tokens.css` + the `components/components.css` barrel (which pulls in every component stylesheet), then runs a single standalone Tailwind invocation.
 - Playground stylesheet: `just css-mosaic` → `playground/public/assets/app.css` (gitignored). Dev loop: `just watch-mosaic-playground` (Tailwind `--watch` + `cargo watch` + browser live-reload via the `dev` feature).
 
 ## Testing and Verification
@@ -40,7 +40,7 @@ just test                       # All workspace tests
 ## Design Tokens
 
 - Brand colors and typography are defined via `@theme static` in `tiles/src/components/theme_provider/tokens.css` — the single token source.
-- `tokens.css` is `@import`ed by both consuming Tailwind entries (DPE's `style/main.css` and the playground's `style/main.css`), so both pipelines share the same tokens.
+- `tokens.css` is `@import`ed by every consuming Tailwind entry — DPE's `style/main.css`, the playground's `style/main.css`, and the editor's `modules/editor/style/main.css` — so all three pipelines share the same tokens. A change here must be checked against all of them.
 - Tokens use OKLCH with 11-stop scales (50–950) per semantic color. Use semantic token classes (`primary-*`, `neutral-*`, `danger-*`, …) instead of hardcoded Tailwind colors (`blue-*`, `gray-*`, `red-*`).
 - `info` tokens reference `secondary` via `var()` — intentionally identical. The neutral scale is experimental and subject to design review.
 - Consuming apps load fonts (Lora/Lato) themselves; the tiles library is font-loading-agnostic.

@@ -11,9 +11,10 @@
     },
     "startDate": "2019-02-01",
     "endDate": "2025-01-31",
-    "url": [
-        "https://woposs.unine.ch/"
-    ],
+    "secondaryUrl": {
+        "type": "URL",
+        "url": "https://woposs.unine.ch/"
+    },
     "howToCite": "The WoPoss modality corpus. University of Neuchâtel. SNSF. Distributed by DaSCH.",
     "accessRights": {
         "accessRights": "Full Open Access"

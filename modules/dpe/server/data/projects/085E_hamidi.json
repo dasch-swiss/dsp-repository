@@ -11,9 +11,10 @@
     },
     "startDate": "2025-07-01",
     "endDate": "2028-07-31",
-    "url": [
-        "https://sites.google.com/site/hamidiyataidu/home"
-    ],
+    "secondaryUrl": {
+        "type": "URL",
+        "url": "https://sites.google.com/site/hamidiyataidu/home"
+    },
     "howToCite": "© Tall al-Hamidiya Online project. DaSCH. https://ark.dasch.swiss/ark:/72163/1/085E.",
     "accessRights": {
         "accessRights": "Full Open Access"

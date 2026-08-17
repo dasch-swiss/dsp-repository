@@ -11,9 +11,10 @@
     },
     "startDate": "1991-04-01",
     "endDate": "2013-07-31",
-    "url": [
-        "https://www.ehkka.ch/ehkka/"
-    ],
+    "secondaryUrl": {
+        "type": "URL",
+        "url": "https://www.ehkka.ch/ehkka/"
+    },
     "howToCite": "Morgenthaler et al., historisch-kritsche Kellerausgabe online, 1996-2013",
     "accessRights": {
         "accessRights": "Full Open Access"

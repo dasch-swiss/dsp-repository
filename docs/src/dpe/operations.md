@@ -5,7 +5,7 @@ Operations documentation for the DPE infrastructure team.
 ## Docker Image
 
 - **Base**: `gcr.io/distroless/static-debian12:nonroot`
-- **User**: uid 65534 (nonroot, built-in to distroless)
+- **User**: uid **65532** — distroless `NONROOT`. Not 65534, which is `nobody`; verified in [`common/variables.bzl`](https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl).
 - **Shell**: None (distroless — no SSH possible)
 - **Binary**: Static musl-linked `dpe-server` (CLI with subcommands)
 

@@ -1,0 +1,11 @@
+[package]
+name = "editor-web"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+maud.workspace = true
+# `mosaic-tiles` is deliberately absent until the first tile is rendered — the
+# form widgets are the first real consumer. The Tailwind entry already scans the
+# crate, so its component CSS ships regardless of the Cargo dependency.

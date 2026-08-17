@@ -17,6 +17,7 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 | `just run` | Run server (release mode) |
 | `just watch` | Watch for changes and run tests |
 | `just dev` | Run DPE with hot reload |
+| `just dev-editor` | Run the metadata editor with hot reload (binds 4100, so it can run alongside `just dev`) |
 | `just watch-mosaic-playground` | Run Mosaic playground with hot reload |
 | `just install-requirements` | Install all development dependencies |
 | `just install-e2e-requirements` | Install Playwright browsers for E2E tests |

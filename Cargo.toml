@@ -7,6 +7,9 @@ members = [
   "modules/dpe/web",
   "modules/dpe/server",
   "modules/dpe/telemetry",
+  "modules/editor/core",
+  "modules/editor/web",
+  "modules/editor/server",
 ]
 resolver = "3"
 

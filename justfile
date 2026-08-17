@@ -334,6 +334,116 @@ run-docker-dpe:
 test-a11y-dpe: _check-node
     cd modules/dpe/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium
 
+###################
+# Editor targets
+###################
+
+# Build the unified editor stylesheet → public/assets/app.css (dev, unhashed). main.css is the single Tailwind entry.
+[group('editor')]
+css-editor:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin="$(just -q _tailwind-bin)"
+    "$bin" -i modules/editor/style/main.css -o modules/editor/public/assets/app.css --minify
+
+# Build the release stylesheet with a content-hashed filename (app.<hash>.css); the server discovers it by scanning the asset dir at startup. Mirrors `just css-release`.
+[group('editor')]
+css-editor-release:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin="$(just -q _tailwind-bin)"
+    out=modules/editor/public/assets
+    "$bin" -i modules/editor/style/main.css -o "$out/app.css" --minify
+    if command -v sha256sum >/dev/null 2>&1; then h=$(sha256sum "$out/app.css" | cut -c1-8); else h=$(shasum -a 256 "$out/app.css" | cut -c1-8); fi
+    # Write the hashed file first, then drop the stale hashed files + the unhashed
+    # temp. If the copy fails, the previous hashed CSS is still in place.
+    cp "$out/app.css" "$out/app.$h.css"
+    find "$out" -maxdepth 1 -name 'app.[0-9a-f]*.css' ! -name "app.$h.css" -delete
+    rm -f "$out/app.css"
+    echo "built $out/app.$h.css"
+
+# Start the editor with hot reload: Tailwind --watch + bacon (kill_then_restart) serving editor-server. Binds 127.0.0.1:4100, so `just dev` can run alongside it.
+[group('editor')]
+dev-editor:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin="$(just -q _tailwind-bin)"
+    "$bin" -i modules/editor/style/main.css -o modules/editor/public/assets/app.css --watch &
+    tw=$!
+    trap 'kill $tw 2>/dev/null || true' EXIT
+    bacon serve-editor
+
+# Start the editor with hot reload, exporting traces/metrics/logs to a local LGTM stack (run `just lgtm-up` in another terminal first)
+[group('editor')]
+dev-editor-otel:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin="$(just -q _tailwind-bin)"
+    "$bin" -i modules/editor/style/main.css -o modules/editor/public/assets/app.css --watch &
+    tw=$!
+    trap 'kill $tw 2>/dev/null || true' EXIT
+    OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
+    OTEL_SERVICE_NAME=editor \
+    OTEL_RESOURCE_ATTRIBUTES="service.namespace=editor,service.version={{ CARGO_VERSION }},deployment.environment=dev" \
+    PYROSCOPE_ENDPOINT=http://localhost:4040 \
+    bacon serve-editor
+
+# Build the editor Docker image locally. Compiles the musl binary inside a Linux container, so this works on macOS too, and stages the same artifacts as the CI build action. Defaults to the host architecture; pass `arch=x86_64` for the one CI publishes.
+[group('editor')]
+build-docker-editor arch="": css-editor-release
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # The image runs a *static musl* binary. A host `cargo build --target
+    # *-unknown-linux-musl` needs a musl cross-linker, which macOS does not have —
+    # so the compile happens in the same container image CI's runner provides,
+    # installing musl-tools + clang exactly as `.github/actions/build-editor` does.
+    arch="{{ arch }}"
+    if [ -z "$arch" ]; then
+        # Default to the host arch: cross-building amd64 on arm64 works but is
+        # emulated, and this release profile (lto, codegen-units=1) is slow enough
+        # already. CI publishes amd64; `arch=x86_64` reproduces it.
+        case "$(uname -m)" in
+            arm64 | aarch64) arch=aarch64 ;;
+            x86_64) arch=x86_64 ;;
+            *) echo "unsupported host arch $(uname -m) — pass arch=aarch64 or arch=x86_64" >&2; exit 1 ;;
+        esac
+    fi
+    case "$arch" in
+        aarch64) platform=linux/arm64 ;;
+        x86_64) platform=linux/amd64 ;;
+        *) echo "arch must be aarch64 or x86_64, got '$arch'" >&2; exit 1 ;;
+    esac
+    target="$arch-unknown-linux-musl"
+    # Track rust-toolchain.toml rather than hardcoding, so a channel bump cannot
+    # leave this recipe building with a different compiler than everything else.
+    rust_version="$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)"
+    stage=target/editor-staging
+    # Container artifacts live outside target/{debug,release} so they never mix
+    # with host builds of the same profile.
+    docker run --rm --platform "$platform" \
+        -v "$PWD":/work -w /work \
+        -e CARGO_TARGET_DIR=/work/target/container \
+        -e CARGO_HOME=/work/target/container-cargo-home \
+        "rust:$rust_version-bookworm" \
+        bash -eu -c "
+            apt-get update -qq
+            apt-get install -y -qq --no-install-recommends musl-tools clang >/dev/null
+            rustup target add $target
+            cargo build -p editor-server --release --target $target
+        "
+    rm -rf "$stage"
+    mkdir -p "$stage"
+    cp "target/container/$target/release/editor-server" "$stage/"
+    cp -r modules/editor/public "$stage/"
+    cp -r modules/dpe/server/data "$stage/"
+    cp modules/editor/Dockerfile "$stage/"
+    docker build --platform "$platform" -f "$stage/Dockerfile" -t metadata-editor "$stage"
+
+# Run the editor Docker container on port 8080
+[group('editor')]
+run-docker-editor:
+    docker run --rm -p 8080:8080 metadata-editor
+
 # Lint E2E test TypeScript with Biome
 lint-e2e: _check-node
     cd modules/dpe/web-e2e-tests && npx @biomejs/biome check .

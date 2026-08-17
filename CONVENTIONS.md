@@ -21,7 +21,7 @@ Agent reference card for the **work phase**. All authoritative detail lives in `
 - Use `#[tracing::instrument]` for new handler and service functions
 - Use `otel.kind = "internal"` on handler-level spans (middleware provides the server span)
 - Metric attributes must be bounded — validate against known sets, normalize dynamic values. High-cardinality data goes to structured logs only, never to metric attributes
-- Vendored JS files go in `modules/dpe/public/vendor/` — update `vendor/README.md` when adding or updating
+- Vendored JS files go in the owning module's `public/vendor/` — `modules/dpe/public/vendor/` or `modules/editor/public/vendor/` — and each has its own `vendor/README.md` (file, package, version, SHA-256) to update when adding or updating. The two are independent: the editor is on Datastar 1.0.2 while DPE is on 1.0.0-RC.8.
 
 ## Data Conventions
 
@@ -39,7 +39,7 @@ Scopes are lowercase and name the concern a change serves, not the directory it 
 
 | Kind | Scopes |
 |------|--------|
-| Crates | `dpe-core`, `dpe-server`, `dpe-web`, `dpe-api-oai`, `dpe-telemetry`, `mosaic-tiles`, `mosaic-playground` |
+| Crates | `dpe-core`, `dpe-server`, `dpe-web`, `dpe-api-oai`, `dpe-telemetry`, `editor-core`, `editor-web`, `editor-server`, `mosaic-tiles`, `mosaic-playground` |
 | Cross-cutting | `dpe-data` (project metadata files), `ci` (workflows, justfile), `deps` (dependency bumps), `docs` (repo-level docs) |
 
 Documentation *about* a crate takes that crate's scope; only repo-level docs take `docs`. There is no catch-all scope — ask before inventing one. The gate checks only that a scope is present, so this list is advisory; keep to it anyway.

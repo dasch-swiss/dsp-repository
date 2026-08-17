@@ -31,6 +31,7 @@ Common CI steps are extracted into composite actions in `.github/actions/`:
 | Action | Purpose |
 |--------|---------|
 | `build-dpe` | Compile DPE (static musl `dpe-server` binary + content-hashed Tailwind `app.css` via `just css-release`) and stage artifacts |
+| `build-editor` | Compile the metadata editor (static musl `editor-server` binary + content-hashed Tailwind `app.css` via `just css-editor-release`) and stage artifacts |
 | `docker-publish` | Set up Buildx, log in to Docker Hub, build and push an image |
 | `docker-scout` | Run Docker Scout CVE scan and upload SARIF results |
 
@@ -79,6 +80,26 @@ On every push to `main`:
 Defined in `dpe-release-publish.yml`.
 
 When a GitHub Release is published (tag starting with `v`), builds and pushes a release-tagged Docker image.
+
+### Editor
+
+#### PR Preview (Cloud Run)
+
+Defined in `cloud-run-editor-pull-request.yml`.
+
+When a pull request modifies files under `modules/editor/`, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.
+
+#### Continuous Deployment (Docker Hub + Jenkins)
+
+Defined in `editor-docker-publish.yml`.
+
+On every push to `main`:
+1. Builds the content-hashed Tailwind stylesheet (`just css-editor-release`)
+2. Builds a static musl-linked `editor-server` binary
+3. Pushes the Docker image to Docker Hub (`daschswiss/metadata-editor:{tag}`)
+4. Attempts a Jenkins webhook for DEV deployment
+
+Step 4 is marked `continue-on-error` and only warns. The editor is not yet registered as a deployable service in Jenkins — that lands with its inventory host and playbook — so the webhook rejects `Service=editor`. The image is already published by the time the trigger runs, so a rejection must not fail the workflow on `main`. Remove the guard once the Jenkins job exists, so a genuinely broken webhook is loud again.
 
 ### Release Please
 

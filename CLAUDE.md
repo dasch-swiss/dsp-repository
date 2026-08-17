@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-This repository is a Rust-based monorepo for the DaSCH Service Platform. It contains the Discovery and Presentation Environment (DPE) — a server-side rendered web application built with Maud and Axum — and the Mosaic component library (design system).
+This repository is a Rust-based monorepo for the DaSCH Service Platform. It contains the Discovery and Presentation Environment (DPE) — a public, read-only, server-side rendered web application built with Maud and Axum — the metadata editor, a separate authenticated service built the same way, and the Mosaic component library (design system) both use.
 
 ## Setup
 
@@ -33,6 +33,7 @@ just install-requirements
 
 ```bash
 just dev                        # Run DPE with hot reload (Tailwind --watch + bacon serve + browser live-reload)
+just dev-editor                 # Run the metadata editor with hot reload (binds 4100, so it can run alongside `just dev`)
 just watch-mosaic-playground    # Run Mosaic playground with hot reload
 just check                      # Run fmt checks, clippy, and unused-dependency check
 just fmt                        # Format all code (maudfmt for html! macros, then cargo +nightly fmt)
@@ -51,6 +52,9 @@ All authoritative documentation lives in `docs/src/`. Key pages:
 | Metadata Model (v2) | `docs/src/dpe/metadata-model.md` |
 | Mosaic Component API Conventions | `docs/src/mosaic/component-api-conventions.md` |
 | Project Structure | `docs/src/dpe/project_structure.md` |
+| Editor Architecture | `docs/src/editor/architecture.md` |
+| Editor Observability | `docs/src/editor/observability.md` |
+| Editor Operations (Docker, env vars, CLI) | `docs/src/editor/operations.md` |
 | Repo Structure & Crate Naming | `docs/src/repo_structure.md` |
 | Testing Strategy | `docs/src/dpe/testing-strategy.md` |
 | Observability | `docs/src/dpe/observability.md` |

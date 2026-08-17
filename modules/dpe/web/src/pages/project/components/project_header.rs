@@ -47,6 +47,7 @@ pub fn project_header(proj: &Project) -> Markup {
                                     },
                                     u.url.as_str(),
                                 )
+                                .external()
                                 .as_button(ButtonVariant::Primary)
                         })
                     }
@@ -62,6 +63,7 @@ pub fn project_header(proj: &Project) -> Markup {
                                     },
                                     u.url.as_str(),
                                 )
+                                .external()
                                 .as_button(ButtonVariant::Outline)
                         })
                     }
@@ -105,6 +107,9 @@ mod tests {
         // sample_project has a primary url → "Discover Project Data" button.
         assert!(out.contains(r#"href="https://example.org/project""#), "{out}");
         assert!(out.contains("Discover Project Data"), "{out}");
+        // Both header buttons leave DPE, so they open in a new tab.
+        assert!(out.contains(r#"target="_blank""#), "{out}");
+        assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
     }
 
     #[test]

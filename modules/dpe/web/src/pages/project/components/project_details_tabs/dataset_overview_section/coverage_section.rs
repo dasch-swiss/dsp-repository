@@ -37,7 +37,12 @@ pub fn coverage_section(temporal_coverage: &[TemporalCoverage], spatial_coverage
                             TemporalCoverage::Reference(r) => {
                                 @if dpe_core::is_placeholder(&r.url) { (placeholder_value(&r.url)) } @else {
                                     @let label = r.text.clone().unwrap_or_else(|| r.url.clone());
-                                    a href=(r.url) class="tooltip" data-tip=(r.url) {
+                                    a   href=(r.url)
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="tooltip"
+                                        data-tip=(r.url)
+                                    {
                                         span class=(CHIP_PRIMARY) { (label) }
                                     }
                                 }
@@ -54,7 +59,12 @@ pub fn coverage_section(temporal_coverage: &[TemporalCoverage], spatial_coverage
                     @for s in spatial {
                         @if dpe_core::is_placeholder(&s.url) { (placeholder_value(&s.url)) } @else {
                             @let label = s.text.clone().unwrap_or_else(|| s.url.clone());
-                            a href=(s.url) class="tooltip" data-tip=(s.url) {
+                            a   href=(s.url)
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="tooltip"
+                                data-tip=(s.url)
+                            {
                                 span class=(CHIP_PRIMARY) { (label) }
                             }
                         }
@@ -81,6 +91,10 @@ mod tests {
         assert!(out.contains(r#"href="https://chronontology.dainst.org/period/x""#), "{out}");
         assert!(out.contains(r#"data-tip="https://chronontology.dainst.org/period/x""#), "{out}");
         assert!(out.contains("Bronze Age"), "{out}");
+        // Gazetteer links leave DPE; the tooltip class must survive alongside them.
+        assert!(out.contains(r#"target="_blank""#), "{out}");
+        assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
+        assert!(out.contains(r#"class="tooltip""#), "{out}");
     }
 
     #[test]
@@ -93,6 +107,9 @@ mod tests {
         let out = coverage_section(&[], &spatial).into_string();
         assert!(out.contains("Spatial Coverage"), "{out}");
         assert!(out.contains("Rome"), "{out}");
+        assert!(out.contains(r#"target="_blank""#), "{out}");
+        assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
+        assert!(out.contains(r#"class="tooltip""#), "{out}");
     }
 
     #[test]

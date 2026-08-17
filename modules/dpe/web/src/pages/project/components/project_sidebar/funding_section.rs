@@ -25,10 +25,11 @@ fn grant_card(grant: &Grant) -> Markup {
             div { (name) }
         }
         @if let Some(url) = &grant.url {
-            a href=(url) class="text-primary items-center gap-1" target="_blank" {
-                "More info"
-                (icon(LinkExternal, "w-3 h-3"))
-            }
+            a   href=(url)
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-primary items-center gap-1"
+            { "More info" (icon(LinkExternal, "w-3 h-3")) }
         }
     };
     info_card(body)
@@ -74,6 +75,8 @@ mod tests {
         assert!(out.contains("Grant: 12345"), "{out}");
         assert!(out.contains("Big Grant"), "{out}");
         assert!(out.contains(r#"href="https://example.org/grant""#), "{out}");
+        assert!(out.contains(r#"target="_blank""#), "{out}");
+        assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
     }
 
     #[test]

@@ -55,6 +55,7 @@ pub fn legal_info(legal_info: &[LegalInfoData]) -> Markup {
                     @match cc_license {
                         Some((img_url, alt_text)) => {
                             a   href=(info.license.license_uri)
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 class="block mb-1"
                             {
@@ -67,11 +68,12 @@ pub fn legal_info(legal_info: &[LegalInfoData]) -> Markup {
                         None => {
                             ({
                                 link(
-                                    html! {
-                                        (info.license.license_identifier)
-                                    },
-                                    info.license.license_uri.as_str(),
-                                )
+                                        html! {
+                                            (info.license.license_identifier)
+                                        },
+                                        info.license.license_uri.as_str(),
+                                    )
+                                    .external()
                             })
                         }
                     }
@@ -222,6 +224,10 @@ mod tests {
         let out = legal_info(&info).into_string();
         assert!(out.contains("/assets/images/cc-licenses/by-4.0.svg"), "{out}");
         assert!(out.contains("(2024-01-01)"), "license date: {out}");
+        // The badge links to creativecommons.org, so it opens in a new tab. Before
+        // DEV-6986 this anchor carried `rel` with no `target`, which does nothing.
+        assert!(out.contains(r#"target="_blank""#), "{out}");
+        assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
     }
 
     #[test]
@@ -230,6 +236,8 @@ mod tests {
         let out = legal_info(&info).into_string();
         assert!(out.contains(r#"href="https://opensource.org/license/mit""#), "{out}");
         assert!(out.contains("MIT"), "{out}");
+        assert!(out.contains(r#"target="_blank""#), "{out}");
+        assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
     }
 
     #[test]

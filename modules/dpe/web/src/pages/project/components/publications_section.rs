@@ -29,11 +29,12 @@ fn publication_card(pub_: &Publication) -> Markup {
             span class="ml-2" {
                 ({
                     link(
-                        html! {
-                            (text) (icon(Export, "w-3 h-3"))
-                        },
-                        pid.url.as_str(),
-                    )
+                            html! {
+                                (text) (icon(Export, "w-3 h-3"))
+                            },
+                            pid.url.as_str(),
+                        )
+                        .external()
                 })
             }
         }
@@ -61,6 +62,8 @@ mod tests {
         assert!(out.contains("A paper (2024)"), "{out}");
         assert!(out.contains(r#"href="https://doi.org/10.0/x""#), "{out}");
         assert!(out.contains("DOI"), "{out}");
+        assert!(out.contains(r#"target="_blank""#), "{out}");
+        assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
     }
 
     #[test]

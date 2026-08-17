@@ -5,7 +5,7 @@
 ```
 modules/dpe/
 ├── core/             dpe-core          Pure domain (serde only)
-├── telemetry/        dpe-telemetry     Telemetry types and validation (serde only)
+├── telemetry/        dpe-telemetry     Browser beacon contract + collector endpoint
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Maud view library (pages + components)
 ├── server/           dpe-server        Axum binary (composition root)
@@ -23,7 +23,7 @@ dpe-core              ← pure domain, no framework deps
   ├── dpe-web         ← Maud pages + components
   └── dpe-server      ← composition root, Datastar fragment handlers
        ↑
-       dpe-telemetry  ← telemetry types and validation (serde only)
+       dpe-telemetry  ← beacon contract + collector endpoint (also used by editor-server)
 ```
 
 ## Crate Responsibilities
@@ -58,14 +58,17 @@ Imports `dpe-core` types directly; depends on `maud` and `mosaic-tiles`. No Lept
 
 ### `dpe-telemetry` (telemetry/)
 
-Telemetry types and validation logic. Extracted as a library crate so fuzz targets can test the real code. Contains:
+The browser telemetry contract and the endpoint that consumes it. Extracted as a library crate so fuzz targets can test the real code, and shared with `editor-server` so the beacon has one implementation across services. The `dpe-` prefix is historical — nothing here reads DPE's data or configuration. Contains:
 
 - **Beacon types**: `BeaconPayload`, `Signal`, `WebVitalSignal`, `ErrorSignal`, etc. (serde deserialization for browser beacons)
 - **Origin validation**: `is_allowed_origin()` — validates dasch.swiss subdomains
 - **URL normalization**: `normalize_page_url()` — cardinality-safe page URL mapping
 - **Traceparent validation**: `is_valid_traceparent()` — W3C traceparent format validation
+- **Collector endpoint**: `collector::collect_route(namespace)` — converts beacons to OTel metrics and structured logs. `namespace` sets the instrumentation scope (`dpe.browser`, `editor.browser`) and is a required argument so it cannot be omitted and silently rename the scope a dashboard filters on
 
-Dependencies: `serde` only.
+The contract modules depend on `serde` only; `collector` additionally pulls in `axum`, `opentelemetry`, `tracing` and `url`.
+
+Dependencies: `serde` and `serde_json` for the contract modules; `collector` additionally uses `axum`, `opentelemetry`, `tracing` and `url`.
 
 ### `dpe-server` (server/)
 
@@ -74,7 +77,6 @@ Composition root and Axum binary. Contains:
 - **Route wiring**: native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, `/healthz`, `/telemetry/collect`, plus `ServeDir` static serving and a 404 fallback
 - **Head/page shell**: `view.rs` — the hand-written `head()` + `page()` partials (title, content-hashed stylesheet link, conditional `traceparent` meta, fonts, Fathom, Datastar + telemetry scripts)
 - **Fragment handlers**: `fragments.rs` — plain Axum handlers that render Maud `Markup` to HTML and return Datastar SSE events
-- **Telemetry collector**: `telemetry_collector.rs` — converts browser beacons to OTel metrics and structured logs (uses types from `dpe-telemetry`)
 - **Configuration**: `config.rs` — figment-based layered config (defaults → `dpe.toml` → `DPE_*` env vars)
 - **Logging**: OTel-aware subscriber via `init-tracing-opentelemetry`
 

@@ -640,7 +640,6 @@ dependencies = [
  "tracing-opentelemetry",
  "tracing-subscriber",
  "ureq",
- "url",
  "urlencoding",
 ]
 
@@ -648,9 +647,15 @@ dependencies = [
 name = "dpe-telemetry"
 version = "0.8.2"
 dependencies = [
+ "axum",
+ "opentelemetry",
  "proptest",
  "serde",
  "serde_json",
+ "tokio",
+ "tower",
+ "tracing",
+ "url",
 ]
 
 [[package]]

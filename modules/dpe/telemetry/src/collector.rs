@@ -1,13 +1,21 @@
-use std::sync::LazyLock;
+//! The `POST /telemetry/collect` endpoint: browser beacons in, OTel metrics and
+//! structured logs out.
+//!
+//! Shared by every DaSCH service that renders the beacon script, so the beacon
+//! contract has exactly one implementation. The only per-service value is the
+//! OTel instrumentation scope, set once at startup with [`set_meter_namespace`].
+
+use std::sync::{LazyLock, OnceLock};
 
 use axum::body::Bytes;
 use axum::http::{HeaderMap, StatusCode};
-use dpe_telemetry::beacon::{BeaconPayload, Signal, VALID_ERROR_KINDS, VALID_RATINGS, VALID_VITAL_NAMES};
-use dpe_telemetry::origin::is_allowed_origin;
-use dpe_telemetry::page_url::normalize_page_url;
-use dpe_telemetry::traceparent::validated_traceparent;
 use opentelemetry::{global, KeyValue};
 use url::Url;
+
+use crate::beacon::{BeaconPayload, Signal, VALID_ERROR_KINDS, VALID_RATINGS, VALID_VITAL_NAMES};
+use crate::origin::is_allowed_origin;
+use crate::page_url::normalize_page_url;
+use crate::traceparent::validated_traceparent;
 
 /// Extract the host from an Origin or Referer URL.
 fn extract_host(value: &str) -> Option<String> {
@@ -15,6 +23,44 @@ fn extract_host(value: &str) -> Option<String> {
 }
 
 // --- OTel metrics ---
+
+/// The resolved OTel instrumentation scope name, e.g. `dpe.browser`.
+static METER_SCOPE: OnceLock<String> = OnceLock::new();
+
+/// Scope name for a service namespace. `dpe` → `dpe.browser`.
+///
+/// A named function rather than an inline `format!` so the mapping DPE's
+/// dashboards depend on is pinned by a test.
+fn meter_scope_name(namespace: &str) -> String {
+    format!("{namespace}.browser")
+}
+
+/// Scope name used if the metrics are built without any route ever being
+/// declared. Unreachable in either binary — [`collect_route`] is the only way to
+/// wire the collector, and it always sets the scope — but a sane name rather
+/// than the `.browser` that an empty namespace would produce.
+const FALLBACK_METER_SCOPE: &str = "browser";
+
+/// The `POST /telemetry/collect` route, for the service identified by
+/// `namespace`.
+///
+/// The namespace is an argument here rather than a separate startup call
+/// precisely so it cannot be forgotten: the scope name is what a dashboard
+/// filters on as `otel_scope_name`, DPE has published `dpe.browser` since the
+/// beacon shipped, and a missed init would silently rename it. Taking it at the
+/// one place the route can be declared makes that a compile error instead.
+///
+/// Layer as usual — the return type is a `MethodRouter`, so
+/// `collect_route("dpe").layer(rate_limiter)` still works.
+pub fn collect_route<S>(namespace: &str) -> axum::routing::MethodRouter<S>
+where
+    S: Clone + Send + Sync + 'static,
+{
+    // Ignore a second call rather than panicking: a double-init is not worth
+    // taking a service down for, and both callers pass a constant.
+    let _ = METER_SCOPE.set(meter_scope_name(namespace));
+    axum::routing::post(collect_handler)
+}
 
 struct BrowserMetrics {
     web_vital: opentelemetry::metrics::Histogram<f64>,
@@ -26,7 +72,16 @@ struct BrowserMetrics {
 }
 
 static BROWSER_METRICS: LazyLock<BrowserMetrics> = LazyLock::new(|| {
-    let meter = global::meter("dpe.browser");
+    let scope_name = METER_SCOPE
+        .get()
+        .map(String::as_str)
+        .unwrap_or(FALLBACK_METER_SCOPE)
+        .to_string();
+    // `global::meter` takes a `&'static str`, which a name assembled at startup
+    // cannot be; `meter_with_scope` accepts an owned name and produces the same
+    // instrumentation scope, so the exported `otel_scope_name` is unchanged.
+    let scope = opentelemetry::InstrumentationScope::builder(scope_name).build();
+    let meter = global::meter_with_scope(scope);
     BrowserMetrics {
         web_vital: meter
             .f64_histogram("browser.web_vital")
@@ -265,13 +320,51 @@ mod tests {
     use axum::http::Request;
     use axum::routing::post;
     use axum::Router;
-    use dpe_telemetry::beacon::{ErrorSignal, WebVitalSignal};
     use tower::ServiceExt;
 
     use super::*;
+    use crate::beacon::{ErrorSignal, WebVitalSignal};
 
     fn test_app() -> Router {
         Router::new().route("/telemetry/collect", post(collect_handler))
+    }
+
+    #[tokio::test]
+    async fn collect_route_serves_the_collector() {
+        // The route helper is the only sanctioned way to wire the collector, so
+        // it has to behave identically to the bare handler.
+        let app: Router = Router::new().route("/telemetry/collect", collect_route("test"));
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/telemetry/collect")
+                    .header("origin", "https://repository.dasch.swiss")
+                    .body(Body::from(valid_beacon_json()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    }
+
+    #[test]
+    fn meter_scope_name_is_the_name_the_dashboards_filter_on() {
+        // `dpe.browser` has been the exported `otel_scope_name` since the beacon
+        // shipped. Changing this mapping renames every existing DPE browser
+        // metric series, so it is pinned here rather than left to a format string.
+        assert_eq!(meter_scope_name("dpe"), "dpe.browser");
+        assert_eq!(meter_scope_name("editor"), "editor.browser");
+    }
+
+    #[test]
+    fn fallback_scope_is_a_usable_name() {
+        // Reached only if the metrics are built without any route being declared.
+        // It must be a plain name, not the `.browser` that an empty namespace
+        // would yield through meter_scope_name.
+        assert!(!FALLBACK_METER_SCOPE.is_empty());
+        assert!(!FALLBACK_METER_SCOPE.starts_with('.'));
+        assert_ne!(FALLBACK_METER_SCOPE, meter_scope_name(""));
     }
 
     fn valid_beacon_json() -> String {

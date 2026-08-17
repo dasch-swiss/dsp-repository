@@ -6,7 +6,16 @@ publish = false
 
 [dependencies]
 serde = { workspace = true }
+serde_json = { workspace = true }
+
+# The collector endpoint. The wire-contract modules (beacon, origin, page_url,
+# traceparent) stay framework-free; these are only reached from `collector`.
+axum.workspace = true
+opentelemetry.workspace = true
+tracing.workspace = true
+url.workspace = true
 
 [dev-dependencies]
 proptest = { workspace = true }
-serde_json = { workspace = true }
+tower = { workspace = true, features = ["util"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

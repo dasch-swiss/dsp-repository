@@ -11,7 +11,7 @@ modules/
 │   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
 │   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
 │   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
-│   ├── telemetry/             # Telemetry types and validation (crate: dpe-telemetry)
+│   ├── telemetry/             # Browser beacon contract + collector endpoint (crate: dpe-telemetry)
 │   ├── web-e2e-tests/         # Playwright E2E tests
 │   ├── public/                # Static assets
 │   ├── style/                 # CSS / Tailwind
@@ -32,7 +32,7 @@ modules/
 | `dpe-api-oai` | `dpe/api-oai` | OAI-PMH 2.0 API (depends on `dpe-core` only) |
 | `dpe-web` | `dpe/web` | Maud pages and components (`fn -> Markup`) |
 | `dpe-server` | `dpe/server` | Server binary — composes all routes |
-| `dpe-telemetry` | `dpe/telemetry` | Telemetry types, validation, and origin checking |
+| `dpe-telemetry` | `dpe/telemetry` | Browser beacon contract, validation, and the collector endpoint (shared with the editor) |
 | `mosaic-tiles` | `mosaic/tiles` | Reusable UI component library |
 | `mosaic-playground` | `mosaic/playground` | Component showcase application |
 

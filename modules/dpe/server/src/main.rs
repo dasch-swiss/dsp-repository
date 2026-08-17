@@ -8,7 +8,6 @@ mod config;
 mod dev_reload;
 pub(crate) mod fragments;
 mod router;
-mod telemetry_collector;
 mod traceparent;
 mod view;
 
@@ -330,7 +329,9 @@ async fn serve() -> ExitCode {
         .route("/healthz", get(|| async { StatusCode::OK }))
         .route(
             "/telemetry/collect",
-            axum::routing::post(telemetry_collector::collect_handler).layer({
+            // "dpe" names the OTel instrumentation scope (`dpe.browser`), which
+            // the dashboards filter on — do not change it.
+            dpe_telemetry::collector::collect_route("dpe").layer({
                 use tower_governor::governor::GovernorConfigBuilder;
                 use tower_governor::GovernorLayer;
 

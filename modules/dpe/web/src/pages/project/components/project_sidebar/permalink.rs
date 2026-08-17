@@ -17,7 +17,11 @@ pub fn permalink(permalink: &str) -> Markup {
         .unwrap_or(permalink);
     let card_inner = html! {
         div class="flex items-center justify-between gap-3" {
-            a href=(permalink) class="text-primary hover:underline break-all flex-1" { (display) }
+            a   href=(permalink)
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-primary hover:underline break-all flex-1"
+            { (display) }
             (copy_button(permalink))
         }
     };
@@ -37,6 +41,9 @@ mod tests {
         assert!(out.contains("Permalink"), "{out}");
         // The link target and copy text keep the full, resolvable URL.
         assert!(out.contains(r#"href="https://ark.dasch.swiss/ark:/72163/1/0ABC""#), "{out}");
+        // The ARK resolves outside DPE, so it opens in a new tab.
+        assert!(out.contains(r#"target="_blank""#), "{out}");
+        assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
         assert!(
             out.contains(r#"data-copy-text="https://ark.dasch.swiss/ark:/72163/1/0ABC""#),
             "copy button: {out}"

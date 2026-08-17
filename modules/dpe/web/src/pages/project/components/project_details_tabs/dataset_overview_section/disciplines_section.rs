@@ -26,7 +26,7 @@ pub fn disciplines_section(disciplines: &[Discipline]) -> Markup {
                         }
                     };
                     @match url {
-                        Some(href) => a href=(href) {
+                        Some(href) => a href=(href) target="_blank" rel="noopener noreferrer" {
                             span class=(CHIP_PRIMARY) { (label) }
                         }
                         None => span class=(CHIP_PRIMARY) { (label) }
@@ -65,7 +65,10 @@ mod tests {
             text: Some("Archaeology".to_string()),
         })];
         let out = disciplines_section(&d).into_string();
-        assert!(out.contains(r#"<a href="https://skos.um.es/d/1">"#), "{out}");
+        assert!(
+            out.contains(r#"<a href="https://skos.um.es/d/1" target="_blank" rel="noopener noreferrer">"#),
+            "{out}"
+        );
         assert!(out.contains("Archaeology"), "{out}");
     }
 

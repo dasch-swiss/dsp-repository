@@ -11,7 +11,7 @@ pub fn link_list_section(title: &str, items: &[String], as_links: bool) -> Marku
         ul class="list-disc list-inside text-sm" {
             @for item in items {
                 @if as_links {
-                    li { (link(item.as_str(), item.as_str())) }
+                    li { (link(item.as_str(), item.as_str()).external()) }
                 } @else {
                     li { (item) }
                 }
@@ -31,6 +31,8 @@ mod tests {
         let out = link_list_section("Documentation Material", &items, true).into_string();
         assert!(out.contains("Documentation Material"), "{out}");
         assert!(out.contains(r#"href="https://example.org/doc""#), "{out}");
+        assert!(out.contains(r#"target="_blank""#), "{out}");
+        assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
     }
 
     #[test]

@@ -1,0 +1,22 @@
+/*
+ * Mosaic component-CSS barrel — the single import list every consumer uses.
+ *
+ * Each component stylesheet defines its classes via @apply on the design tokens, so a consumer
+ * that does not import it silently ships markup whose component classes resolve to nothing (no
+ * build error — see the `source(none)` note in each app's main.css). With three consumers (DPE,
+ * the playground, the editor) and tiles added demand-driven, three hand-maintained import lists
+ * would drift; adding a tile touches this file only.
+ *
+ * Does NOT import `theme_provider/tokens.css`: tokens are the layer these files @apply against
+ * and must be imported first by the consumer, ahead of this barrel.
+ */
+
+@import './button/button.css';
+@import './card/card.css';
+@import './badge/badge.css';
+@import './breadcrumb/breadcrumb.css';
+@import './link/link.css';
+@import './tabs/tabs.css';
+@import './icon/icon.css';
+@import './loading.css';
+@import './tooltip.css';

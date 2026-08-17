@@ -19,4 +19,4 @@ This runs Tailwind in `--watch` mode alongside the server with hot reload. The a
 
 ## Adding Components
 
-Use the `/add-mosaic-component` skill. It walks through adding the tile in `tiles/`, importing its CSS into the consuming Tailwind entries, creating the `src/showcase/<name>.rs` page, exporting it in `src/showcase/mod.rs`, and registering the route and sidebar nav entry in `src/app.rs`.
+Use the `/add-mosaic-component` skill. It walks through adding the tile in `tiles/`, importing its CSS into the `tiles/src/components/components.css` barrel, creating the `src/showcase/<name>.rs` page, exporting it in `src/showcase/mod.rs`, and registering the route and sidebar nav entry in `src/app.rs`.

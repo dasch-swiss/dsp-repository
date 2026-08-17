@@ -10,7 +10,7 @@ mosaic/
 └── playground/        # Showcase and documentation web application
 ```
 
-- **tiles** contains the components themselves. Simple tiles are `fn -> maud::Markup`; multi-option tiles are builders (`name(content) -> NameBuilder`, chained setters, `.build()`) that implement `Render`. Variant enums expose a `css_class()`. Component CSS lives next to each component's Rust source and is collected through the consuming app's Tailwind entry.
+- **tiles** contains the components themselves. Simple tiles are `fn -> maud::Markup`; multi-option tiles are builders (`name(content) -> NameBuilder`, chained setters, `.build()`) that implement `Render`. Variant enums expose a `css_class()`. Component CSS lives next to each component's Rust source and is collected through the `components/components.css` barrel, which every consuming app's Tailwind entry imports.
 - **playground** is a plain Axum + Maud web application that renders live examples and API references for each component. Routes are declared with the native Axum router in `playground/src/app.rs`, and the document shell (head, nav, sidebar) is hand-written Maud.
 
 ## Design Tokens

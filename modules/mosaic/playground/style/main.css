@@ -7,21 +7,13 @@
  * showcase `.rs` files and the mosaic-tiles sources. A missing glob silently drops classes.
  *
  * Tokens come from the canonical `tokens.css`; the self-contained Mosaic component CSS (each file
- * defines its classes via @apply on the tokens) is imported so the built `app.css`
- * actually contains the component rules (button/card/badge/breadcrumb/link/tabs/icon/loading/tooltip).
+ * defines its classes via @apply on the tokens) is pulled in through the `components.css` barrel, so
+ * the built `app.css` actually contains the component rules and a newly added tile needs no edit here.
  */
 @import 'tailwindcss' source(none);
 @import '../../tiles/src/components/theme_provider/tokens.css';
 
-@import '../../tiles/src/components/button/button.css';
-@import '../../tiles/src/components/card/card.css';
-@import '../../tiles/src/components/badge/badge.css';
-@import '../../tiles/src/components/breadcrumb/breadcrumb.css';
-@import '../../tiles/src/components/link/link.css';
-@import '../../tiles/src/components/tabs/tabs.css';
-@import '../../tiles/src/components/icon/icon.css';
-@import '../../tiles/src/components/loading.css';
-@import '../../tiles/src/components/tooltip.css';
+@import '../../tiles/src/components/components.css';
 
 @source '../src/**/*.rs';
 @source '../../tiles/src/**/*.rs';

@@ -5,6 +5,14 @@ on:
     branches:
       - main
 
+# Serialize runs: several pushes to main in quick succession each start a run,
+# and they all force-push the same release-please branch. Without this guard the
+# earlier runs lose the race and fail with "stale info" on --force-with-lease.
+# Queue (don't cancel) so each run re-evaluates against the previous one's push.
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write

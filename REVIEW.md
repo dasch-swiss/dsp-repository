@@ -25,7 +25,7 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 - [ ] New `#[instrument]` spans use `otel.kind = "internal"`, not `"server"`
 - [ ] New OTel metric attributes are bounded — no free-form strings, no per-request unique values
 - [ ] Vendored JS changes reflected in `modules/dpe/public/vendor/README.md`
-- [ ] New routes added to `KNOWN_ROUTES` in `dpe-telemetry/src/page_url.rs` for page_url normalization
+- [ ] New routes added to `KNOWN_ROUTES` in `platform-telemetry/src/page_url.rs` for page_url normalization
 
 ## Style
 

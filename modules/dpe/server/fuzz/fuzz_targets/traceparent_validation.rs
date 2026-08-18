@@ -1,6 +1,6 @@
 #![no_main]
 
-use dpe_telemetry::traceparent::is_valid_traceparent;
+use platform_telemetry::traceparent::is_valid_traceparent;
 use libfuzzer_sys::fuzz_target;
 
 // Fuzz the W3C traceparent validation function.

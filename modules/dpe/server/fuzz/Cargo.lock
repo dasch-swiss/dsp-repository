@@ -40,18 +40,11 @@ name = "dpe-server-fuzz"
 version = "0.0.0"
 dependencies = [
  "dpe-core",
- "dpe-telemetry",
  "libfuzzer-sys",
+ "platform-telemetry",
  "serde",
  "serde_json",
  "serde_urlencoded",
-]
-
-[[package]]
-name = "dpe-telemetry"
-version = "0.3.1"
-dependencies = [
- "serde",
 ]
 
 [[package]]
@@ -136,6 +129,13 @@ name = "pin-project-lite"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
+
+[[package]]
+name = "platform-telemetry"
+version = "0.3.1"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "proc-macro2"

@@ -13,7 +13,7 @@ dev = ["dep:tower-livereload", "dep:notify"]
 clap = { version = "4", features = ["derive"] }
 ureq = "3"
 dpe-core = { path = "../core" }
-dpe-telemetry = { path = "../telemetry" }
+platform-telemetry = { path = "../../platform/telemetry" }
 dpe-api-oai = { path = "../api-oai" }
 dpe-web = { path = "../web" }
 maud.workspace = true

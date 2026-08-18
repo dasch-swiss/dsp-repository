@@ -3,7 +3,7 @@
 //!
 //! Deliberately a separate service from `dpe-server`: the editor is
 //! authenticated and writes state, DPE is public and read-only. They share the
-//! `dpe-telemetry` beacon contract, and will share `mosaic-tiles` for components
+//! `platform-telemetry` beacon contract, and will share `mosaic-tiles` for components
 //! and `dpe-core` for the data contract — but not a process, an image or an
 //! origin.
 

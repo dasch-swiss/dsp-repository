@@ -57,6 +57,7 @@ All authoritative documentation lives in `docs/src/`. Key pages:
 | Operations (Docker, env vars) | `docs/src/dpe/operations.md` |
 | JSON API | `docs/src/dpe/json-api.md` |
 | OAI-PMH Endpoint Usage | `docs/src/dpe/oai-pmh.md` |
+| Dataverse-Compatible API | `docs/src/dpe/dataverse-api.md` |
 | Workflows | `docs/src/workflows.md` |
 | Git Conventions (branch, commits, PRs) | `docs/src/git-conventions.md` |
 | Tech Stack | `docs/src/fundamentals/tech_stack.md` |

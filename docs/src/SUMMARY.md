@@ -26,6 +26,7 @@
 - [Operations](./dpe/operations.md)
 - [JSON API](./dpe/json-api.md)
 - [OAI-PMH Endpoint](./dpe/oai-pmh.md)
+- [Dataverse-Compatible API](./dpe/dataverse-api.md)
 
 ## Mosaic
 

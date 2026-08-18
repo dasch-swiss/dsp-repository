@@ -64,6 +64,8 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 | `DPE_OAI_RATE_LIMIT_PER_SECOND` | No | `1` | Per-IP rate limit on `/dpe/oai`: seconds per request once the burst is spent. `1` ≈ 60 requests/minute sustained. See [OAI-PMH](./oai-pmh.md). |
 | `DPE_OAI_RATE_LIMIT_BURST` | No | `60` | Per-IP burst allowance on `/dpe/oai`: back-to-back requests before the sustained rate applies. |
 | `DPE_OAI_PAGE_SIZE` | No | `100` | Items per page in `ListRecords` / `ListIdentifiers` responses before a resumption token is emitted. Non-positive or non-numeric values fall back to the default. See [OAI-PMH](./oai-pmh.md). |
+| `DPE_DATAVERSE_RATE_LIMIT_PER_SECOND` | No | `1` | Per-IP rate limit on the Dataverse-compat routes: seconds per request once the burst is spent. `1` ≈ 60 requests/minute sustained. See [Dataverse API](./dataverse-api.md). |
+| `DPE_DATAVERSE_RATE_LIMIT_BURST` | No | `60` | Per-IP burst allowance on the Dataverse-compat routes: back-to-back requests before the sustained rate applies. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | *(none)* | OTLP gRPC endpoint (e.g., `http://alloy:4317`). When unset, OTel falls back to no-op export. |
 | `OTEL_SERVICE_NAME` | No | *(none)* | Service name for OTel resource attributes (e.g., `dpe`) |
 | `OTEL_RESOURCE_ATTRIBUTES` | No | *(none)* | Comma-separated OTel resource attributes (e.g., `service.namespace=dpe,service.version=0.2.1,deployment.environment=prod`) |
@@ -72,7 +74,7 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 | `DPE_PUBLIC_DIR` | No | `modules/dpe/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, project images, and the compiled `app.<hash>.css`). |
 | `DPE_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`. |
 
-> **Rate limiting and reverse proxies.** The OAI (`/dpe/oai`) and telemetry (`/telemetry/collect`) rate limits key on the client IP, taken from the **rightmost** `X-Forwarded-For` entry (the address Traefik itself appends), falling back to the connection peer address. Reading the rightmost entry — not the leftmost — is deliberate: Traefik appends the real client after any `X-Forwarded-For` value the client supplied, so the rightmost entry is proxy-authored and cannot be spoofed, while the leftmost stays attacker-controlled. This holds only while Traefik is the sole hop in front of DPE; a second proxy that appends to `X-Forwarded-For` would shift the trusted entry and require counting hops from the right.
+> **Rate limiting and reverse proxies.** The OAI (`/dpe/oai`), Dataverse-compat (`/api/datasets/…`, `/api/access/datafile/…`) and telemetry (`/telemetry/collect`) rate limits key on the client IP, taken from the **rightmost** `X-Forwarded-For` entry (the address Traefik itself appends), falling back to the connection peer address. Reading the rightmost entry — not the leftmost — is deliberate: Traefik appends the real client after any `X-Forwarded-For` value the client supplied, so the rightmost entry is proxy-authored and cannot be spoofed, while the leftmost stays attacker-controlled. This holds only while Traefik is the sole hop in front of DPE; a second proxy that appends to `X-Forwarded-For` would shift the trusted entry and require counting hops from the right.
 
 ## Health Check
 

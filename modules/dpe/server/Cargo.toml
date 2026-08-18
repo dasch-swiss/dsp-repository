@@ -14,6 +14,7 @@ clap = { version = "4", features = ["derive"] }
 ureq = "3"
 dpe-core = { path = "../core" }
 dpe-telemetry = { path = "../telemetry" }
+dpe-api-dataverse = { path = "../api-dataverse" }
 dpe-api-oai = { path = "../api-oai" }
 dpe-web = { path = "../web" }
 maud.workspace = true

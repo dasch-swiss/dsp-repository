@@ -50,6 +50,17 @@ pub struct DpeConfig {
     /// OAI-PMH rate limit: back-to-back requests allowed per IP. Set via
     /// `DPE_OAI_RATE_LIMIT_BURST`.
     pub oai_rate_limit_burst: u32,
+
+    /// Dataverse-compat API rate limit: seconds per request once burst is spent.
+    /// Set via `DPE_DATAVERSE_RATE_LIMIT_PER_SECOND`.
+    ///
+    /// The harvester calls the versions endpoint once per record, so this is
+    /// limited like OAI: bursty traffic against an unauthenticated public route.
+    pub dataverse_rate_limit_per_second: u64,
+
+    /// Dataverse-compat API rate limit: back-to-back requests allowed per IP.
+    /// Set via `DPE_DATAVERSE_RATE_LIMIT_BURST`.
+    pub dataverse_rate_limit_burst: u32,
 }
 
 impl Default for DpeConfig {
@@ -62,6 +73,8 @@ impl Default for DpeConfig {
             oai_base_url: "https://repository.dasch.swiss/dpe/oai".to_string(),
             oai_rate_limit_per_second: 1,
             oai_rate_limit_burst: 60,
+            dataverse_rate_limit_per_second: 1,
+            dataverse_rate_limit_burst: 60,
         }
     }
 }
@@ -94,6 +107,18 @@ mod tests {
         assert_eq!(config.oai_base_url, "https://repository.dasch.swiss/dpe/oai");
         assert_eq!(config.oai_rate_limit_per_second, 1);
         assert_eq!(config.oai_rate_limit_burst, 60);
+        assert_eq!(config.dataverse_rate_limit_per_second, 1);
+        assert_eq!(config.dataverse_rate_limit_burst, 60);
+    }
+
+    #[test]
+    fn dataverse_rate_limit_burst_env_override() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("DPE_DATAVERSE_RATE_LIMIT_BURST", 5);
+            let config = DpeConfig::load().expect("config should load");
+            assert_eq!(config.dataverse_rate_limit_burst, 5);
+            Ok(())
+        });
     }
 
     #[test]

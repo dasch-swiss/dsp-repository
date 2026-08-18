@@ -1,0 +1,13 @@
+[package]
+name = "dpe-api-dataverse"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+dpe-core = { path = "../core" }
+axum.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing = { workspace = true }

@@ -316,8 +316,14 @@ async fn serve() -> ExitCode {
         css_href: resolve_css_href(&dpe_config.public_dir),
     };
 
-    // Traced routes, incl. the rate-limited /dpe/oai (limiter scoped to that route).
-    let app = router::build_router(state, &dpe_config.public_dir, router::oai_router(&dpe_config));
+    // Traced routes, incl. the rate-limited /dpe/oai and the Dataverse-compat API
+    // (each limiter scoped to its own routes).
+    let app = router::build_router(
+        state,
+        &dpe_config.public_dir,
+        router::oai_router(&dpe_config),
+        router::dataverse_router(&dpe_config),
+    );
 
     // Dev-only browser live-reload (`dev` feature): wraps the page/static
     // routes declared above; the untraced routes below stay outside it.

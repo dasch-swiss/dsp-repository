@@ -259,8 +259,9 @@ each image — the full inventory of OS packages, libraries, and application
 dependencies — and matches them against vulnerability databases.</p>
 <h3 id="what-gets-scanned"><a class="header" href="#what-gets-scanned">What Gets Scanned</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Image</th><th>Workflow</th><th>Trigger</th></tr></thead><tbody>
-<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>modules/dpe/**</code> or <code>Cargo.lock</code></td></tr>
+<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>modules/dpe/**</code>, <code>modules/platform/**</code> or <code>Cargo.lock</code></td></tr>
 <tr><td>Mosaic Playground (<code>daschswiss/mosaic-playground</code>)</td><td><code>scout-mosaic-playground.yml</code></td><td>PRs touching <code>modules/mosaic/**</code> or <code>Cargo.lock</code></td></tr>
+<tr><td>Editor (<code>daschswiss/metadata-editor</code>)</td><td><code>scout-editor.yml</code></td><td>PRs touching <code>modules/editor/**</code>, <code>modules/platform/**</code> or <code>Cargo.lock</code></td></tr>
 </tbody></table>
 </div>
 <h3 id="how-it-works"><a class="header" href="#how-it-works">How It Works</a></h3>

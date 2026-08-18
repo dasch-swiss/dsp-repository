@@ -431,6 +431,7 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 <tr><td><code>just run</code></td><td>Run server (release mode)</td></tr>
 <tr><td><code>just watch</code></td><td>Watch for changes and run tests</td></tr>
 <tr><td><code>just dev</code></td><td>Run DPE with hot reload</td></tr>
+<tr><td><code>just dev-editor</code></td><td>Run the metadata editor with hot reload (binds 4100, so it can run alongside <code>just dev</code>)</td></tr>
 <tr><td><code>just watch-mosaic-playground</code></td><td>Run Mosaic playground with hot reload</td></tr>
 <tr><td><code>just install-requirements</code></td><td>Install all development dependencies</td></tr>
 <tr><td><code>just install-e2e-requirements</code></td><td>Install Playwright browsers for E2E tests</td></tr>
@@ -584,7 +585,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <p><strong>A scope is mandatory.</strong> Every commit is <code>type(scope): subject</code>, so every release-notes line reads <code>concern: subject</code>. There is no scopeless form.</p>
 <p>The scope names the <strong>concern the change serves</strong> — the crate or area whose responsibility it belongs to, not the directory the edited files happen to sit in. Use one of these names, lowercase:</p>
 <ul>
-<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>dpe-telemetry</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code></li>
+<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>platform-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code></li>
 <li><strong>Cross-cutting scopes</strong> (changes not tied to one crate):
 <ul>
 <li><code>dpe-data</code> — project metadata files under <code>modules/dpe/server/data/</code></li>
@@ -734,11 +735,19 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 │   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
 │   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
 │   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
-│   ├── telemetry/             # Telemetry types and validation (crate: dpe-telemetry)
 │   ├── web-e2e-tests/         # Playwright E2E tests
 │   ├── public/                # Static assets
 │   ├── style/                 # CSS / Tailwind
 │   └── Dockerfile             # Production container image
+├── editor/                    # Metadata editor (authenticated; depositor authoring + RDU review)
+│   ├── core/                  # Pure domain types (crate: editor-core)
+│   ├── web/                   # View layer: document shell, Maud pages and components (crate: editor-web)
+│   ├── server/                # Server binary: config, observability, route composition (crate: editor-server)
+│   ├── public/                # Static assets (incl. vendored JS)
+│   ├── style/                 # CSS / Tailwind
+│   └── Dockerfile             # Production container image
+├── platform/                  # Crates shared by more than one service
+│   └── telemetry/             # Browser beacon contract + collector endpoint (crate: platform-telemetry)
 └── mosaic/                    # Mosaic component library (design system)
     ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
     ├── playground/            # Component playground application (crate: mosaic-playground)
@@ -751,11 +760,24 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> only)</td></tr>
 <tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
 <tr><td><code>dpe-server</code></td><td><code>dpe/server</code></td><td>Server binary — composes all routes</td></tr>
-<tr><td><code>dpe-telemetry</code></td><td><code>dpe/telemetry</code></td><td>Telemetry types, validation, and origin checking</td></tr>
+<tr><td><code>platform-telemetry</code></td><td><code>platform/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>
+<tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types for the editor (zero framework deps)</td></tr>
+<tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Editor view layer, including the HTML document shell</td></tr>
+<tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Editor binary — composes all routes</td></tr>
 <tr><td><code>mosaic-tiles</code></td><td><code>mosaic/tiles</code></td><td>Reusable UI component library</td></tr>
 <tr><td><code>mosaic-playground</code></td><td><code>mosaic/playground</code></td><td>Component showcase application</td></tr>
 </tbody></table>
 </div>
+<h2 id="shared-crates"><a class="header" href="#shared-crates">Shared Crates</a></h2>
+<p><strong>A crate that more than one service depends on lives under <code>modules/platform/</code>, never inside a service module.</strong> As soon as a second service takes a dependency on it, move it and rename it to <code>platform-{role}</code> in the same commit.</p>
+<p>The directory is the ownership signal, and four things read it:</p>
+<ul>
+<li><strong>CI path filters.</strong> The path-filtered workflows key on a module glob — <code>modules/dpe/**</code> for DPE's preview, Scout and a11y jobs, <code>modules/editor/**</code> for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (<code>check</code>, <code>test</code> and <code>gate</code> carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)</li>
+<li><strong>Dev-loop watch lists.</strong> <code>bacon.toml</code>'s <code>serve</code> and <code>serve-editor</code> jobs each watch their own module directory. A shared crate outside <code>modules/platform/</code> stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.</li>
+<li><strong>Directory-scoped agent instructions.</strong> <code>modules/dpe/CLAUDE.md</code> governs everything under <code>modules/dpe/</code>, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — <code>REVIEW.md</code> carries one pointing into <code>platform-telemetry</code> — and those need to name the real location.</li>
+<li><strong>The dependency direction.</strong> <code>platform-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead.</li>
+</ul>
+<p><code>mosaic-*</code> predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.</p>
 <h2 id="api-crate-pattern"><a class="header" href="#api-crate-pattern">API Crate Pattern</a></h2>
 <p>Each API is a separate crate under <code>modules/dpe/</code>:</p>
 <ul>
@@ -844,7 +866,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 </ul>
 <h3 id="accessibility-testing"><a class="header" href="#accessibility-testing">Accessibility Testing</a></h3>
 <p>Defined in <code>a11y-dpe.yml</code>.</p>
-<p>Runs on PRs and pushes to <code>main</code> that touch DPE UI code (<code>modules/dpe/web/</code>, <code>modules/dpe/style/</code>, <code>modules/dpe/public/</code>). Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
+<p>Runs on PRs and pushes to <code>main</code> that touch <code>modules/dpe/**</code> or <code>modules/platform/**</code> — any DPE crate, style or asset, plus the shared crates DPE renders through. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
 <h3 id="fuzz-testing"><a class="header" href="#fuzz-testing">Fuzz Testing</a></h3>
 <p>Defined in <code>fuzz.yml</code>.</p>
 <p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, automatically creates a GitHub issue with reproduction instructions.</p>
@@ -852,6 +874,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <p>Common CI steps are extracted into composite actions in <code>.github/actions/</code>:</p>
 <div class="table-wrapper"><table><thead><tr><th>Action</th><th>Purpose</th></tr></thead><tbody>
 <tr><td><code>build-dpe</code></td><td>Compile DPE (static musl <code>dpe-server</code> binary + content-hashed Tailwind <code>app.css</code> via <code>just css-release</code>) and stage artifacts</td></tr>
+<tr><td><code>build-editor</code></td><td>Compile the metadata editor (static musl <code>editor-server</code> binary + content-hashed Tailwind <code>app.css</code> via <code>just css-editor-release</code>) and stage artifacts</td></tr>
 <tr><td><code>docker-publish</code></td><td>Set up Buildx, log in to Docker Hub, build and push an image</td></tr>
 <tr><td><code>docker-scout</code></td><td>Run Docker Scout CVE scan and upload SARIF results</td></tr>
 </tbody></table>
@@ -873,7 +896,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <h3 id="dpe"><a class="header" href="#dpe">DPE</a></h3>
 <h4 id="pr-preview-cloud-run-1"><a class="header" href="#pr-preview-cloud-run-1">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-dpe-pull-request.yml</code>.</p>
-<p>When a pull request modifies files under <code>modules/dpe/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
+<p>When a pull request modifies files under <code>modules/dpe/</code> or <code>modules/platform/</code>, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
 <h4 id="continuous-deployment-docker-hub--jenkins"><a class="header" href="#continuous-deployment-docker-hub--jenkins">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>dpe-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>
@@ -886,6 +909,20 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <h4 id="release-publishing"><a class="header" href="#release-publishing">Release Publishing</a></h4>
 <p>Defined in <code>dpe-release-publish.yml</code>.</p>
 <p>When a GitHub Release is published (tag starting with <code>v</code>), builds and pushes a release-tagged Docker image.</p>
+<h3 id="editor"><a class="header" href="#editor">Editor</a></h3>
+<h4 id="pr-preview-cloud-run-2"><a class="header" href="#pr-preview-cloud-run-2">PR Preview (Cloud Run)</a></h4>
+<p>Defined in <code>cloud-run-editor-pull-request.yml</code>.</p>
+<p>When a pull request modifies files under <code>modules/editor/</code> or <code>modules/platform/</code>, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.</p>
+<h4 id="continuous-deployment-docker-hub--jenkins-1"><a class="header" href="#continuous-deployment-docker-hub--jenkins-1">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
+<p>Defined in <code>editor-docker-publish.yml</code>.</p>
+<p>On every push to <code>main</code>:</p>
+<ol>
+<li>Builds the content-hashed Tailwind stylesheet (<code>just css-editor-release</code>)</li>
+<li>Builds a static musl-linked <code>editor-server</code> binary</li>
+<li>Pushes the Docker image to Docker Hub (<code>daschswiss/metadata-editor:{tag}</code>)</li>
+<li>Attempts a Jenkins webhook for DEV deployment</li>
+</ol>
+<p>Step 4 is marked <code>continue-on-error</code> and only warns. The editor is not yet registered as a deployable service in Jenkins — that lands with its inventory host and playbook — so the webhook rejects <code>Service=editor</code>. The image is already published by the time the trigger runs, so a rejection must not fail the workflow on <code>main</code>. Remove the guard once the Jenkins job exists, so a genuinely broken webhook is loud again.</p>
 <h3 id="release-please"><a class="header" href="#release-please">Release Please</a></h3>
 <p>Defined in <code>release-please.yml</code>.</p>
 <p>On every push to <code>main</code>, <a href="https://github.com/googleapis/release-please">Release Please</a> reads conventional commit messages and creates or updates a release PR with auto-generated changelog. Merging the release PR creates a GitHub Release.</p>
@@ -980,8 +1017,9 @@ each image — the full inventory of OS packages, libraries, and application
 dependencies — and matches them against vulnerability databases.</p>
 <h3 id="what-gets-scanned"><a class="header" href="#what-gets-scanned">What Gets Scanned</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Image</th><th>Workflow</th><th>Trigger</th></tr></thead><tbody>
-<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>modules/dpe/**</code> or <code>Cargo.lock</code></td></tr>
+<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>modules/dpe/**</code>, <code>modules/platform/**</code> or <code>Cargo.lock</code></td></tr>
 <tr><td>Mosaic Playground (<code>daschswiss/mosaic-playground</code>)</td><td><code>scout-mosaic-playground.yml</code></td><td>PRs touching <code>modules/mosaic/**</code> or <code>Cargo.lock</code></td></tr>
+<tr><td>Editor (<code>daschswiss/metadata-editor</code>)</td><td><code>scout-editor.yml</code></td><td>PRs touching <code>modules/editor/**</code>, <code>modules/platform/**</code> or <code>Cargo.lock</code></td></tr>
 </tbody></table>
 </div>
 <h3 id="how-it-works"><a class="header" href="#how-it-works">How It Works</a></h3>
@@ -2045,7 +2083,6 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 <h2 id="workspace-layout"><a class="header" href="#workspace-layout">Workspace Layout</a></h2>
 <pre><code>modules/dpe/
 ├── core/             dpe-core          Pure domain (serde only)
-├── telemetry/        dpe-telemetry     Telemetry types and validation (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Maud view library (pages + components)
 ├── server/           dpe-server        Axum binary (composition root)
@@ -2060,7 +2097,8 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
   ├── dpe-web         ← Maud pages + components
   └── dpe-server      ← composition root, Datastar fragment handlers
        ↑
-       dpe-telemetry  ← telemetry types and validation (serde only)
+       platform-telemetry  ← beacon contract + collector endpoint, shared with
+                             editor-server; lives in `modules/platform/`
 </code></pre>
 <h2 id="crate-responsibilities"><a class="header" href="#crate-responsibilities">Crate Responsibilities</a></h2>
 <h3 id="dpe-core-core"><a class="header" href="#dpe-core-core"><code>dpe-core</code> (core/)</a></h3>
@@ -2084,22 +2122,14 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 <li><strong>Data access</strong>: loaders and resolvers (<code>get_project</code>, <code>list_projects</code>, <code>get_contributors</code>) as plain functions over <code>dpe-core</code></li>
 </ul>
 <p>Imports <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
-<h3 id="dpe-telemetry-telemetry"><a class="header" href="#dpe-telemetry-telemetry"><code>dpe-telemetry</code> (telemetry/)</a></h3>
-<p>Telemetry types and validation logic. Extracted as a library crate so fuzz targets can test the real code. Contains:</p>
-<ul>
-<li><strong>Beacon types</strong>: <code>BeaconPayload</code>, <code>Signal</code>, <code>WebVitalSignal</code>, <code>ErrorSignal</code>, etc. (serde deserialization for browser beacons)</li>
-<li><strong>Origin validation</strong>: <code>is_allowed_origin()</code> — validates dasch.swiss subdomains</li>
-<li><strong>URL normalization</strong>: <code>normalize_page_url()</code> — cardinality-safe page URL mapping</li>
-<li><strong>Traceparent validation</strong>: <code>is_valid_traceparent()</code> — W3C traceparent format validation</li>
-</ul>
-<p>Dependencies: <code>serde</code> only.</p>
+<h3 id="browser-telemetry"><a class="header" href="#browser-telemetry">Browser telemetry</a></h3>
+<p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>platform-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>modules/platform/telemetry</code>. See <code>modules/platform/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>modules/dpe/</code>.</p>
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
 <p>Composition root and Axum binary. Contains:</p>
 <ul>
 <li><strong>Route wiring</strong>: native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code>, <code>/telemetry/collect</code>, plus <code>ServeDir</code> static serving and a 404 fallback</li>
 <li><strong>Head/page shell</strong>: <code>view.rs</code> — the hand-written <code>head()</code> + <code>page()</code> partials (title, content-hashed stylesheet link, conditional <code>traceparent</code> meta, fonts, Fathom, Datastar + telemetry scripts)</li>
 <li><strong>Fragment handlers</strong>: <code>fragments.rs</code> — plain Axum handlers that render Maud <code>Markup</code> to HTML and return Datastar SSE events</li>
-<li><strong>Telemetry collector</strong>: <code>telemetry_collector.rs</code> — converts browser beacons to OTel metrics and structured logs (uses types from <code>dpe-telemetry</code>)</li>
 <li><strong>Configuration</strong>: <code>config.rs</code> — figment-based layered config (defaults → <code>dpe.toml</code> → <code>DPE_*</code> env vars)</li>
 <li><strong>Logging</strong>: OTel-aware subscriber via <code>init-tracing-opentelemetry</code></li>
 </ul>
@@ -2456,7 +2486,7 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <h2 id="docker-image"><a class="header" href="#docker-image">Docker Image</a></h2>
 <ul>
 <li><strong>Base</strong>: <code>gcr.io/distroless/static-debian12:nonroot</code></li>
-<li><strong>User</strong>: uid 65534 (nonroot, built-in to distroless)</li>
+<li><strong>User</strong>: uid <strong>65532</strong> — distroless <code>NONROOT</code>. Not 65534, which is <code>nobody</code>; verified in <a href="https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl"><code>common/variables.bzl</code></a>.</li>
 <li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
 <li><strong>Binary</strong>: Static musl-linked <code>dpe-server</code> (CLI with subcommands)</li>
 </ul>
@@ -3014,6 +3044,419 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 <li><strong><code>ListMetadataFormats</code> with a record identifier</strong> returns <code>idDoesNotExist</code>, even for records that <code>GetRecord</code> resolves.</li>
 <li><strong><code>entityType:ProjectCluster</code></strong> is advertised by <code>ListSets</code> but contains no items yet.</li>
 </ul>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="editor-architecture"><a class="header" href="#editor-architecture">Editor Architecture</a></h1>
+<p>The metadata editor is where depositing project teams edit their project metadata, RDU reviews it field by field, and approved records are collected into a pull request against this repository. Git stays the source of truth.</p>
+<p>This page describes the service as it stands. Surfaces that are not built yet are named where they affect a decision taken now, and marked as such.</p>
+<h2 id="relationship-to-dpe"><a class="header" href="#relationship-to-dpe">Relationship to DPE</a></h2>
+<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>platform-telemetry</code> for the browser-beacon contract, and will share <code>mosaic-tiles</code> for components and <code>dpe-core</code> for the data contract — but not a process, an image, or an origin.</p>
+<p>The separation is deliberate:</p>
+<ul>
+<li>DPE is public, unauthenticated and read-only. The editor is authenticated and writes state. A host-level compromise of one should not hand over the other's session cookies.</li>
+<li>The editor's CSRF defence requires <code>Sec-Fetch-Site: same-origin</code> on every state-changing request. On a shared origin, a request originating from DPE <em>is</em> same-origin — so any XSS in DPE, which has a far larger unauthenticated attack surface, could drive authenticated editor mutations. A <code>Path</code> on a cookie is not a security boundary and does not close this.</li>
+</ul>
+<h2 id="rendering-model-1"><a class="header" href="#rendering-model-1">Rendering model</a></h2>
+<p>Same as DPE: server-rendered HTML with <strong>Maud</strong>, served by <strong>Axum</strong>, with <strong>Datastar</strong> for interactivity over SSE. No client-side WASM, no hydration, no islands. The server is the single source of truth for UI state.</p>
+<h2 id="crates"><a class="header" href="#crates">Crates</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
+<tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types (no Axum, Maud or database dependency)</td></tr>
+<tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Maud view library — the document shell, pages and components</td></tr>
+<tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Composition root: configuration, observability, routing, persistence</td></tr>
+</tbody></table>
+</div>
+<p>Dependency direction is <code>server → web → core</code>. Neither library depends on <code>mosaic-tiles</code> yet: the form widgets are the first surface to render a tile. The Tailwind entry already scans the crate, so component CSS ships regardless of the Cargo dependency.</p>
+<p>Unlike DPE, the <strong>HTML document shell lives in the view crate</strong> (<code>editor-web/src/view.rs</code>), not the server crate. DPE keeps <code>head()</code> + <code>page()</code> in <code>dpe-server</code>; here the server is a composition root for routing, auth and persistence, and a document shell is a view concern like any other partial.</p>
+<h2 id="url-scheme"><a class="header" href="#url-scheme">URL scheme</a></h2>
+<p>Paths are <strong>root-mounted</strong>. There is no <code>/editor</code> prefix.</p>
+<p>DPE carries <code>/dpe/…</code> because it shares <code>repository.dasch.swiss</code> with other services. The editor gets its own hostname, so a prefix buys nothing — and adopting one would keep alive the path-routing option this design rejects, for the CSRF reason above.</p>
+<div class="table-wrapper"><table><thead><tr><th>Path</th><th>Method</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>/healthz</code></td><td>GET</td><td>Liveness probe. Untraced.</td></tr>
+<tr><td><code>/telemetry/collect</code></td><td>POST</td><td>Browser telemetry beacon. Untraced, rate-limited per IP.</td></tr>
+</tbody></table>
+</div>
+<p>Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.</p>
+<p>The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:</p>
+<pre><code>GET  /                                        → redirect to /projects
+GET  /login                                   login form
+POST /login                                   issue a one-time code
+POST /logout
+GET  /projects                                the depositor's assigned projects
+GET  /projects/{shortcode}                    → redirect to the first section
+GET  /projects/{shortcode}/sections/{section}  one form section
+POST /projects/{shortcode}/sections/{section}
+GET  /review                                  the review queue, oldest first
+GET  /review/{shortcode}                      the field-by-field diff surface
+</code></pre>
+<p>Two decisions inside that:</p>
+<ul>
+<li><strong>Form sections are real URLs</strong>, not fragment swaps. Bookmarkable, Back-friendly, and consistent with the repository's URL-based-navigation principle.</li>
+<li><strong>Review deep-links by shortcode</strong>, not by submission id. A project has at most one pending submission, so the shortcode is unique for the purpose and reads better in a URL shared between reviewers.</li>
+</ul>
+<h2 id="traced-and-untraced-routes"><a class="header" href="#traced-and-untraced-routes">Traced and untraced routes</a></h2>
+<p>An Axum layer wraps only routes declared <strong>before</strong> it. The router therefore has two halves:</p>
+<ul>
+<li><code>build_router</code> — everything wrapped by <code>OtelInResponseLayer</code> then <code>OtelAxumLayer</code>. <code>OtelInResponseLayer</code> is declared first so it runs <em>inner</em> and injects the <code>traceparent</code> response header; <code>OtelAxumLayer</code> is declared second so it runs <em>outer</em> and creates the server span.</li>
+<li><code>build_app</code> — adds <code>/healthz</code> and <code>/telemetry/collect</code> <strong>after</strong> those layers, so neither is traced. A liveness probe every 30 seconds and a telemetry upload on every page view would otherwise mint a span each and bury the real traffic.</li>
+</ul>
+<p>That split is positional, so it is invisible in the route table and reversible by moving one line. A test asserts <code>/healthz</code> and the beacon are absent from <code>build_router</code>.</p>
+<h2 id="datastar"><a class="header" href="#datastar">Datastar</a></h2>
+<p>The editor vendors Datastar <strong>1.0.2</strong>; DPE is still on 1.0.0-RC.8, and the two vendor directories are independent. See <code>modules/editor/public/vendor/README.md</code>.</p>
+<p>Two things to get right, both of which fail quietly:</p>
+<ul>
+<li><strong>Keyed plugin attributes use <code>:</code>, not <code>-</code>.</strong> <code>data-on:click</code>, <code>data-attr:disabled</code>, <code>data-class:open</code>, and <code>data-init</code> rather than <code>data-on-load</code>. This has been true since RC.6, so it matches DPE's markup too. The hyphen form produces a console error and an inert control: the page renders fine and a snapshot test asserting the attribute is present still passes.</li>
+<li><strong><code>__prevent</code> combines with <code>__debounce</code> / <code>__throttle</code></strong> on 1.0.x. The rule against that combination in <code>docs/src/dpe/architecture.md</code> is about RC.8 and does not apply here.</li>
+</ul>
+<h2 id="styling"><a class="header" href="#styling">Styling</a></h2>
+<p><code>modules/editor/style/main.css</code> is the single Tailwind entry, built by <code>just css-editor</code> (dev) or <code>just css-editor-release</code> (content-hashed). It imports the design tokens and the <code>mosaic-tiles</code> component barrel.</p>
+<p><code>@import 'tailwindcss' source(none)</code> means classes are collected <strong>only</strong> from the explicit <code>@source</code> globs, which must cover every crate that emits Tailwind classes. A missing glob produces no build error — just markup whose classes resolve to nothing. After a change that adds classes in a new location, grep the built stylesheet for them.</p>
+<p>New Mosaic tiles are added <strong>demand-driven</strong>: a screen that needs a missing primitive adds it to <code>mosaic-tiles</code> with a playground showcase and a unit test at that point, rather than an up-front form kit. Their CSS goes in <code>mosaic-tiles/src/components/components.css</code>, the barrel every consumer imports.</p>
+<p><strong>Check a tile against the surface you are putting it on.</strong> Tiles are styled for light backgrounds — <code>link</code> is <code>text-primary-600</code>, which measures 2.35:1 on the footer's <code>bg-slate-800</code> and fails WCAG 2.1 AA. That is why the footer uses plain anchors inheriting <code>text-gray-300</code> (9.93:1), as DPE's does. A dark-surface variant of a tile is a design-system change, so it belongs in <code>mosaic-tiles</code> with its own showcase rather than being worked around locally.</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="editor-observability"><a class="header" href="#editor-observability">Editor Observability</a></h1>
+<p>Developer guide for the metadata editor's observability instrumentation. The pipeline is the same shape as <a href="editor/../dpe/observability.html">DPE's</a>; this page records what differs.</p>
+<h2 id="overview-2"><a class="header" href="#overview-2">Overview</a></h2>
+<p>Two halves, as in DPE:</p>
+<ul>
+<li><strong>Server-side</strong>: OTel-native tracing via <code>axum-tracing-opentelemetry</code> middleware. Every HTTP request except <code>/healthz</code> and <code>/telemetry/collect</code> produces W3C-compliant spans exported over OTLP.</li>
+<li><strong>Client-side</strong>: <code>telemetry.js</code> captures Core Web Vitals, JS errors, Long Animation Frames and navigation timing, and flushes them via <code>navigator.sendBeacon</code> to <code>POST /telemetry/collect</code>, which converts them into OTel metrics and structured logs on the same OTLP pipeline.</li>
+</ul>
+<p>Trace correlation uses the W3C <code>traceparent</code> standard: the server renders a <code>&lt;meta name="traceparent"&gt;</code> tag in the HTML shell and the client includes it in every beacon payload.</p>
+<p>There is <strong>no third-party analytics script</strong>. DPE injects Fathom; the editor is an authenticated tool and does not.</p>
+<h2 id="the-shared-collector"><a class="header" href="#the-shared-collector">The shared collector</a></h2>
+<p>The beacon endpoint is not editor code. <code>platform-telemetry</code> owns the wire contract <em>and</em> the collector, and both services wire the same handler:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>.route("/telemetry/collect", platform_telemetry::collector::collect_route("editor").layer(rate_limit))
+<span class="boring">}</span></code></pre></pre>
+<p>The <code>namespace</code> argument sets the OTel instrumentation scope — <code>editor.browser</code> here, <code>dpe.browser</code> in DPE. It is a required argument rather than a separate startup call precisely so it cannot be forgotten: the scope name is what a dashboard filters on as <code>otel_scope_name</code>, and a missed init would silently rename it.</p>
+<p>So a Grafana query distinguishes the two services by <code>otel_scope_name</code> (<code>editor.browser</code> vs <code>dpe.browser</code>) or by the resource attribute <code>service.namespace</code> (<code>editor</code> vs <code>dpe</code>). Metric <em>names</em> (<code>browser.web_vital</code>, <code>browser.error</code>, …) are identical across both.</p>
+<p>The <code>dpe-</code> crate prefix is historical — DPE was the first consumer. Nothing in the crate reads DPE's data or configuration.</p>
+<h2 id="local-observability-stack-1"><a class="header" href="#local-observability-stack-1">Local observability stack</a></h2>
+<pre><code class="language-bash"># Terminal 1: start the local LGTM stack
+just lgtm-up
+
+# Terminal 2: run the editor with OTel enabled (exports to localhost:4317)
+just dev-editor-otel
+
+# Terminal 3: generate traffic
+curl http://localhost:4100/healthz
+curl http://localhost:4100/no-such-page
+</code></pre>
+<p><code>dev-editor-otel</code> sets <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>, <code>OTEL_SERVICE_NAME</code>, <code>OTEL_RESOURCE_ATTRIBUTES</code> and <code>PYROSCOPE_ENDPOINT</code> for you.</p>
+<p>In Grafana at <a href="http://localhost:3000">http://localhost:3000</a>: traces for page routes in Tempo and <strong>none for <code>/healthz</code></strong>, log records in Loki, browser metrics under <code>editor.browser</code> in Mimir, and CPU flame graphs for <code>editor-server</code> in Pyroscope.</p>
+<h2 id="adding-instrumentation-1"><a class="header" href="#adding-instrumentation-1">Adding instrumentation</a></h2>
+<p>Use <code>#[tracing::instrument]</code> on new handler and service functions, with <code>otel.kind = "internal"</code> — the <code>OtelAxumLayer</code> middleware already creates the <code>SPAN_KIND_SERVER</code> span for the request, and a nested <code>"server"</code> span confuses the trace waterfall.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[tracing::instrument(
+    skip_all,
+    fields(
+        otel.kind = "internal",
+        otel.name = "descriptive name",
+    )
+)]
+pub async fn my_handler(/* ... */) -&gt; /* ... */ {
+    // ...
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="rules-specific-to-an-authenticated-service"><a class="header" href="#rules-specific-to-an-authenticated-service">Rules specific to an authenticated service</a></h2>
+<p>DPE serves public data, so almost nothing it logs is sensitive. The editor holds accounts, so two constraints apply that DPE's guide does not carry:</p>
+<ul>
+<li><strong>No email address may reach a log or a trace, on any path — including error paths.</strong> Auth events are correlated by an opaque per-user id instead. This is a hard requirement, and the test that enforces it lands with authentication — there are no addresses in the service yet, so there is nothing to assert today. Note there is a second capture channel besides explicit logging: <code>axum-tracing-opentelemetry</code> records <code>url.query</code> on every server span, so a query string is exported to Tempo verbatim. Anything address-bearing must therefore stay out of query strings as well as out of log fields.</li>
+<li><strong>Metric attributes must stay bounded.</strong> Validate against known sets and normalise dynamic values; a project shortcode is bounded, a user identifier or a free-text field is not. High-cardinality data goes to structured logs only.</li>
+</ul>
+<h2 id="logging-2"><a class="header" href="#logging-2">Logging</a></h2>
+<ul>
+<li><strong>Production</strong> (<code>EDITOR_ENV=PROD</code>): JSON logs to stdout only.</li>
+<li><strong>Local development</strong> (<code>EDITOR_ENV=DEV</code> with <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> set): also exported over OTLP, via an <code>OpenTelemetryTracingBridge</code> layer that converts <code>tracing</code> events into OTel log records.</li>
+<li>With <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> unset the OTel SDK falls back to no-op export — nothing is sent, but structured stdout logging still works, so local development needs no collector.</li>
+</ul>
+<p>Panics go through the same pipeline: a hook emits them as structured <code>tracing::error!</code> events using the OTel exception semantic conventions, so they share Grafana Sift and Loki query surface with <code>RecordException</code> events from instrumented spans. The default stderr hook fires only if the structured emission itself panics, so a panic is never silently swallowed and never double-reported.</p>
+<p>On shutdown the Pyroscope agent is stopped and the OTel providers flushed inside <code>spawn_blocking</code>: both do blocking I/O (condvar waits, thread joins, HTTP uploads), and doing them on the async runtime deadlocks it. Logs are flushed before the trace guard drops, because log records can reference trace context that becomes invalid afterwards.</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="editor-operations-guide"><a class="header" href="#editor-operations-guide">Editor Operations Guide</a></h1>
+<p>Operations documentation for the metadata editor.</p>
+<h2 id="docker-image-1"><a class="header" href="#docker-image-1">Docker Image</a></h2>
+<ul>
+<li><strong>Image</strong>: <code>daschswiss/metadata-editor</code></li>
+<li><strong>Base</strong>: <code>gcr.io/distroless/static-debian12:nonroot</code></li>
+<li><strong>User</strong>: uid <strong>65532</strong> — distroless <code>NONROOT</code>. Not 65534, which is <code>nobody</code>; verified in <a href="https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl"><code>common/variables.bzl</code></a>.</li>
+<li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
+<li><strong>Binary</strong>: Static musl-linked <code>editor-server</code></li>
+</ul>
+<p>The Dockerfile packages pre-built artifacts; the Rust build happens in
+<code>.github/actions/build-editor</code>. <code>just build-docker-editor</code> reproduces the same
+staging locally, compiling the static musl binary inside a <code>rust:&lt;channel&gt;-bookworm</code>
+container — a host <code>cargo build --target *-unknown-linux-musl</code> needs a musl
+cross-linker, which macOS does not have. It defaults to the host architecture so
+the build is native; <code>just build-docker-editor arch=x86_64</code> reproduces the amd64
+image CI publishes, under emulation.</p>
+<h2 id="cli-commands-1"><a class="header" href="#cli-commands-1">CLI Commands</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>editor-server serve</code></td><td>Start the web server</td></tr>
+<tr><td><code>editor-server healthcheck [--url URL]</code></td><td>Check if the server is healthy (default: <code>http://localhost:8080/healthz</code>)</td></tr>
+</tbody></table>
+</div>
+<p><code>healthcheck</code> only accepts loopback URLs (<code>http://localhost</code>, <code>http://127.0.0.1</code>, <code>http://[::1]</code>). The URL arrives as a CLI flag from the Docker <code>HEALTHCHECK</code>, and restricting it stops a mistyped or tampered value turning the container into an SSRF probe.</p>
+<h2 id="ports-1"><a class="header" href="#ports-1">Ports</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody>
+<tr><td>8080</td><td>HTTP</td><td>Application server</td></tr>
+</tbody></table>
+</div>
+<p>Locally the default is <code>127.0.0.1:4100</code>, deliberately not DPE's 4000, so <code>just dev</code> and <code>just dev-editor</code> can run at the same time.</p>
+<h2 id="environment-variables-1"><a class="header" href="#environment-variables-1">Environment Variables</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Required</th><th>Default</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g. <code>editor_server=info,tower_http=debug</code>)</td></tr>
+<tr><td><code>EDITOR_SITE_ADDR</code></td><td>No</td><td><code>127.0.0.1:4100</code></td><td>Listen address and port. The Docker image sets <code>0.0.0.0:8080</code>.</td></tr>
+<tr><td><code>EDITOR_PUBLIC_DIR</code></td><td>No</td><td><code>modules/editor/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, the telemetry module, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
+<tr><td><code>EDITOR_DATA_DIR</code></td><td>No</td><td><code>modules/dpe/server/data</code></td><td>Directory holding the published project/person/organization set baked into the image. Reported at startup.</td></tr>
+<tr><td><code>EDITOR_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="editor/operations.html#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
+<tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g. <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
+<tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g. <code>editor</code>)</td></tr>
+<tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g. <code>service.namespace=editor,service.version=0.8.2,deployment.environment=prod</code>)</td></tr>
+<tr><td><code>PYROSCOPE_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>Pyroscope HTTP endpoint (e.g. <code>http://pyroscope:4040</code>). When unset, profiling is disabled with zero overhead.</td></tr>
+</tbody></table>
+</div>
+<p>Configuration is layered: code defaults → optional <code>editor.toml</code> → <code>EDITOR_*</code> environment variables, which override everything.</p>
+<blockquote>
+<p><strong>Rate limiting and reverse proxies.</strong> The telemetry beacon (<code>/telemetry/collect</code>) rate limit keys on the client IP taken from the <strong>rightmost</strong> <code>X-Forwarded-For</code> entry — the address Traefik itself appends — falling back to the connection peer address. Reading the rightmost entry, not the leftmost, is deliberate: Traefik appends the real client after any value the client supplied, so the rightmost entry is proxy-authored and cannot be spoofed, while the leftmost stays attacker-controlled. This holds only while Traefik is the sole hop in front of the editor; a second proxy that appends to <code>X-Forwarded-For</code> would shift the trusted entry and require counting hops from the right.</p>
+</blockquote>
+<h2 id="health-check-1"><a class="header" href="#health-check-1">Health Check</a></h2>
+<ul>
+<li><strong>Endpoint</strong>: <code>GET /healthz</code></li>
+<li><strong>Response</strong>: <code>200 OK</code> (no body)</li>
+<li><strong>Purpose</strong>: Lightweight probe for Traefik/load balancers. Declared after the OTel layers, so probes are not traced.</li>
+</ul>
+<blockquote>
+<p><strong><code>/healthz</code> returns 404 on the Cloud Run PR previews.</strong> Something in front of the container answers that exact path with Google's own error page — the response carries no <code>server: Google Frontend</code> header and no <code>traceparent</code>, unlike every response the app produces, and neighbouring paths (<code>/healthz2</code>, <code>/health</code>, <code>/healthz/</code>) all reach the app normally. DPE's preview behaves identically and has had the same route for far longer, so this is not editor-specific and not new. The precise mechanism is unconfirmed; treat it as "previews cannot be used to test the health endpoint".</p>
+<p>It does not affect any real deployment: production runs under Docker Swarm behind Traefik, where <code>/healthz</code> answers 200, and the image's own <code>HEALTHCHECK</code> calls <code>editor-server healthcheck</code> against loopback <em>inside</em> the container, which never crosses a proxy. To check the endpoint by hand, run the image locally (<code>just build-docker-editor &amp;&amp; just run-docker-editor</code>) rather than probing a preview URL.</p>
+</blockquote>
+<h2 id="deployment-1"><a class="header" href="#deployment-1">Deployment</a></h2>
+<p>The editor deploys as its <strong>own Swarm stack on the same VMs as DPE</strong>, with its own inventory host entry and its own playbook — not as a second stack inside the <code>repository</code> inventory group. Co-habiting VMs with separate inventory hosts is how the platform already runs multiple stacks (<code>ark</code> and <code>mosaic</code> share a host that way). The <code>repository</code> group and <code>repository.yml</code> playbook are a holdover that should really be called <code>dpe</code>; splitting them is separate work.</p>
+<p>It deploys on a <strong>separate hostname</strong> from DPE, not a path under <code>repository.dasch.swiss</code> — see the CSRF reasoning in <a href="editor/./architecture.html#relationship-to-dpe">Architecture</a>.</p>
+<p>Not yet in place, and blocking production deployment only:</p>
+<ul>
+<li>The editor is <strong>not registered as a deployable service in Jenkins</strong>, so the DEV deploy trigger in <code>editor-docker-publish.yml</code> is marked <code>continue-on-error</code> and only warns. Remove that guard once the Jenkins job exists, so a genuinely broken webhook is loud again.</li>
+<li>The writable data volume for SQLite. Development and tests use an in-memory database, so only production waits on it.</li>
+</ul>
+<h3 id="data-volume-once-persistence-lands"><a class="header" href="#data-volume-once-persistence-lands">Data volume (once persistence lands)</a></h3>
+<ul>
+<li>Mount the <strong>directory</strong>, not the database file, so SQLite can create its <code>-wal</code> and <code>-shm</code> siblings next to it.</li>
+<li>It must be <strong>writable by uid 65532</strong>. Chowning to 65534 produces <code>unable to open database file</code>, which reads like a wrong mount path and sends the reader hunting for a typo in a path that is perfectly correct.</li>
+<li>Docker Swarm does <strong>not</strong> create missing bind-mount host directories the way <code>docker run -v</code> does, so Ansible must create <em>and</em> chown the directory before the stack starts.</li>
+<li>Keep <code>replicas: 1</code> with <code>order: stop-first</code>, so a rolling update never briefly runs two processes against one database file. Node pinning is unnecessary — there is no multi-node Swarm.</li>
+</ul>
+<h2 id="resource-requirements-1"><a class="header" href="#resource-requirements-1">Resource Requirements</a></h2>
+<ul>
+<li><strong>Memory</strong>: ~50–100 MB typical</li>
+<li><strong>CPU</strong>: Minimal (server-side rendering; the published data set is cached in memory)</li>
+<li><strong>Disk</strong>: Data files + static assets, plus the SQLite database once persistence lands</li>
+</ul>
+<h2 id="logging-3"><a class="header" href="#logging-3">Logging</a></h2>
+<p>Structured logging via <code>init-tracing-opentelemetry</code> (an OTel-aware tracing subscriber).</p>
+<ul>
+<li><strong>Production</strong> (<code>EDITOR_ENV=PROD</code>): JSON logs to stdout only.</li>
+<li><strong>Local development</strong> (<code>EDITOR_ENV=DEV</code> with <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> set): logs additionally exported over OTLP.</li>
+</ul>
+<p>Panics are routed through <code>tracing</code> as structured events using the OTel exception semantic conventions (<code>exception.message</code>, <code>exception.stacktrace</code>, <code>exception.type</code>, <code>thread.name</code>, plus <code>code.filepath</code>/<code>code.lineno</code>), so a production panic lands in the same log pipeline as everything else instead of on stderr. <code>RUST_BACKTRACE=1</code> is set in the image, and the release profile keeps DWARF line tables, so those backtraces carry file and line.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;

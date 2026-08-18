@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Project Structure and Code Organization - DSP-Repository Developer Documentation</title>
+        <title>Operations - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -12,34 +12,34 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "";
+            const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex.js";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="../toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -106,7 +106,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -141,7 +141,7 @@
                     <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
 
                     <div class="right-buttons">
-                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
 
@@ -242,77 +242,101 @@
 }
 
 </style>
-<h1 id="project-structure-and-code-organization"><a class="header" href="#project-structure-and-code-organization">Project Structure and Code Organization</a></h1>
-<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
-<p>This repository is a Rust workspace structured as a monorepo. All Rust crates are organized as subdirectories within the <code>modules/</code> directory.</p>
-<pre><code class="language-txt">modules/
-├── dpe/                       # Discovery and Presentation Environment
-│   ├── core/                  # Pure domain types, repositories, data loading (crate: dpe-core)
-│   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
-│   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
-│   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
-│   ├── web-e2e-tests/         # Playwright E2E tests
-│   ├── public/                # Static assets
-│   ├── style/                 # CSS / Tailwind
-│   └── Dockerfile             # Production container image
-├── editor/                    # Metadata editor (authenticated; depositor authoring + RDU review)
-│   ├── core/                  # Pure domain types (crate: editor-core)
-│   ├── web/                   # View layer: document shell, Maud pages and components (crate: editor-web)
-│   ├── server/                # Server binary: config, observability, route composition (crate: editor-server)
-│   ├── public/                # Static assets (incl. vendored JS)
-│   ├── style/                 # CSS / Tailwind
-│   └── Dockerfile             # Production container image
-├── platform/                  # Crates shared by more than one service
-│   └── telemetry/             # Browser beacon contract + collector endpoint (crate: platform-telemetry)
-└── mosaic/                    # Mosaic component library (design system)
-    ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
-    ├── playground/            # Component playground application (crate: mosaic-playground)
-    └── playground-e2e-tests/  # Playwright E2E tests for the playground
-</code></pre>
-<h2 id="crate-and-folder-naming-convention"><a class="header" href="#crate-and-folder-naming-convention">Crate and Folder Naming Convention</a></h2>
-<p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part.</p>
-<div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
-<tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>Pure domain types and data access (zero framework deps)</td></tr>
-<tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> only)</td></tr>
-<tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
-<tr><td><code>dpe-server</code></td><td><code>dpe/server</code></td><td>Server binary — composes all routes</td></tr>
-<tr><td><code>platform-telemetry</code></td><td><code>platform/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>
-<tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types for the editor (zero framework deps)</td></tr>
-<tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Editor view layer, including the HTML document shell</td></tr>
-<tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Editor binary — composes all routes</td></tr>
-<tr><td><code>mosaic-tiles</code></td><td><code>mosaic/tiles</code></td><td>Reusable UI component library</td></tr>
-<tr><td><code>mosaic-playground</code></td><td><code>mosaic/playground</code></td><td>Component showcase application</td></tr>
+<h1 id="editor-operations-guide"><a class="header" href="#editor-operations-guide">Editor Operations Guide</a></h1>
+<p>Operations documentation for the metadata editor.</p>
+<h2 id="docker-image"><a class="header" href="#docker-image">Docker Image</a></h2>
+<ul>
+<li><strong>Image</strong>: <code>daschswiss/metadata-editor</code></li>
+<li><strong>Base</strong>: <code>gcr.io/distroless/static-debian12:nonroot</code></li>
+<li><strong>User</strong>: uid <strong>65532</strong> — distroless <code>NONROOT</code>. Not 65534, which is <code>nobody</code>; verified in <a href="https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl"><code>common/variables.bzl</code></a>.</li>
+<li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
+<li><strong>Binary</strong>: Static musl-linked <code>editor-server</code></li>
+</ul>
+<p>The Dockerfile packages pre-built artifacts; the Rust build happens in
+<code>.github/actions/build-editor</code>. <code>just build-docker-editor</code> reproduces the same
+staging locally, compiling the static musl binary inside a <code>rust:&lt;channel&gt;-bookworm</code>
+container — a host <code>cargo build --target *-unknown-linux-musl</code> needs a musl
+cross-linker, which macOS does not have. It defaults to the host architecture so
+the build is native; <code>just build-docker-editor arch=x86_64</code> reproduces the amd64
+image CI publishes, under emulation.</p>
+<h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>editor-server serve</code></td><td>Start the web server</td></tr>
+<tr><td><code>editor-server healthcheck [--url URL]</code></td><td>Check if the server is healthy (default: <code>http://localhost:8080/healthz</code>)</td></tr>
 </tbody></table>
 </div>
-<h2 id="shared-crates"><a class="header" href="#shared-crates">Shared Crates</a></h2>
-<p><strong>A crate that more than one service depends on lives under <code>modules/platform/</code>, never inside a service module.</strong> As soon as a second service takes a dependency on it, move it and rename it to <code>platform-{role}</code> in the same commit.</p>
-<p>The directory is the ownership signal, and four things read it:</p>
+<p><code>healthcheck</code> only accepts loopback URLs (<code>http://localhost</code>, <code>http://127.0.0.1</code>, <code>http://[::1]</code>). The URL arrives as a CLI flag from the Docker <code>HEALTHCHECK</code>, and restricting it stops a mistyped or tampered value turning the container into an SSRF probe.</p>
+<h2 id="ports"><a class="header" href="#ports">Ports</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody>
+<tr><td>8080</td><td>HTTP</td><td>Application server</td></tr>
+</tbody></table>
+</div>
+<p>Locally the default is <code>127.0.0.1:4100</code>, deliberately not DPE's 4000, so <code>just dev</code> and <code>just dev-editor</code> can run at the same time.</p>
+<h2 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Required</th><th>Default</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g. <code>editor_server=info,tower_http=debug</code>)</td></tr>
+<tr><td><code>EDITOR_SITE_ADDR</code></td><td>No</td><td><code>127.0.0.1:4100</code></td><td>Listen address and port. The Docker image sets <code>0.0.0.0:8080</code>.</td></tr>
+<tr><td><code>EDITOR_PUBLIC_DIR</code></td><td>No</td><td><code>modules/editor/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, the telemetry module, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
+<tr><td><code>EDITOR_DATA_DIR</code></td><td>No</td><td><code>modules/dpe/server/data</code></td><td>Directory holding the published project/person/organization set baked into the image. Reported at startup.</td></tr>
+<tr><td><code>EDITOR_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
+<tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g. <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
+<tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g. <code>editor</code>)</td></tr>
+<tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g. <code>service.namespace=editor,service.version=0.8.2,deployment.environment=prod</code>)</td></tr>
+<tr><td><code>PYROSCOPE_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>Pyroscope HTTP endpoint (e.g. <code>http://pyroscope:4040</code>). When unset, profiling is disabled with zero overhead.</td></tr>
+</tbody></table>
+</div>
+<p>Configuration is layered: code defaults → optional <code>editor.toml</code> → <code>EDITOR_*</code> environment variables, which override everything.</p>
+<blockquote>
+<p><strong>Rate limiting and reverse proxies.</strong> The telemetry beacon (<code>/telemetry/collect</code>) rate limit keys on the client IP taken from the <strong>rightmost</strong> <code>X-Forwarded-For</code> entry — the address Traefik itself appends — falling back to the connection peer address. Reading the rightmost entry, not the leftmost, is deliberate: Traefik appends the real client after any value the client supplied, so the rightmost entry is proxy-authored and cannot be spoofed, while the leftmost stays attacker-controlled. This holds only while Traefik is the sole hop in front of the editor; a second proxy that appends to <code>X-Forwarded-For</code> would shift the trusted entry and require counting hops from the right.</p>
+</blockquote>
+<h2 id="health-check"><a class="header" href="#health-check">Health Check</a></h2>
 <ul>
-<li><strong>CI path filters.</strong> The path-filtered workflows key on a module glob — <code>modules/dpe/**</code> for DPE's preview, Scout and a11y jobs, <code>modules/editor/**</code> for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (<code>check</code>, <code>test</code> and <code>gate</code> carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)</li>
-<li><strong>Dev-loop watch lists.</strong> <code>bacon.toml</code>'s <code>serve</code> and <code>serve-editor</code> jobs each watch their own module directory. A shared crate outside <code>modules/platform/</code> stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.</li>
-<li><strong>Directory-scoped agent instructions.</strong> <code>modules/dpe/CLAUDE.md</code> governs everything under <code>modules/dpe/</code>, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — <code>REVIEW.md</code> carries one pointing into <code>platform-telemetry</code> — and those need to name the real location.</li>
-<li><strong>The dependency direction.</strong> <code>platform-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead.</li>
+<li><strong>Endpoint</strong>: <code>GET /healthz</code></li>
+<li><strong>Response</strong>: <code>200 OK</code> (no body)</li>
+<li><strong>Purpose</strong>: Lightweight probe for Traefik/load balancers. Declared after the OTel layers, so probes are not traced.</li>
 </ul>
-<p><code>mosaic-*</code> predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.</p>
-<h2 id="api-crate-pattern"><a class="header" href="#api-crate-pattern">API Crate Pattern</a></h2>
-<p>Each API is a separate crate under <code>modules/dpe/</code>:</p>
+<blockquote>
+<p><strong><code>/healthz</code> returns 404 on the Cloud Run PR previews.</strong> Something in front of the container answers that exact path with Google's own error page — the response carries no <code>server: Google Frontend</code> header and no <code>traceparent</code>, unlike every response the app produces, and neighbouring paths (<code>/healthz2</code>, <code>/health</code>, <code>/healthz/</code>) all reach the app normally. DPE's preview behaves identically and has had the same route for far longer, so this is not editor-specific and not new. The precise mechanism is unconfirmed; treat it as "previews cannot be used to test the health endpoint".</p>
+<p>It does not affect any real deployment: production runs under Docker Swarm behind Traefik, where <code>/healthz</code> answers 200, and the image's own <code>HEALTHCHECK</code> calls <code>editor-server healthcheck</code> against loopback <em>inside</em> the container, which never crosses a proxy. To check the endpoint by hand, run the image locally (<code>just build-docker-editor &amp;&amp; just run-docker-editor</code>) rather than probing a preview URL.</p>
+</blockquote>
+<h2 id="deployment"><a class="header" href="#deployment">Deployment</a></h2>
+<p>The editor deploys as its <strong>own Swarm stack on the same VMs as DPE</strong>, with its own inventory host entry and its own playbook — not as a second stack inside the <code>repository</code> inventory group. Co-habiting VMs with separate inventory hosts is how the platform already runs multiple stacks (<code>ark</code> and <code>mosaic</code> share a host that way). The <code>repository</code> group and <code>repository.yml</code> playbook are a holdover that should really be called <code>dpe</code>; splitting them is separate work.</p>
+<p>It deploys on a <strong>separate hostname</strong> from DPE, not a path under <code>repository.dasch.swiss</code> — see the CSRF reasoning in <a href="./architecture.html#relationship-to-dpe">Architecture</a>.</p>
+<p>Not yet in place, and blocking production deployment only:</p>
 <ul>
-<li><strong>Naming</strong>: <code>dpe-api-{name}</code> (e.g., <code>dpe-api-oai</code>)</li>
-<li><strong>Dependencies</strong>: <code>dpe-core</code> for domain types; never depends on other API crates or <code>dpe-web</code></li>
-<li><strong>Entry point</strong>: Exports a handler function (e.g., <code>pub async fn oai_handler(...)</code>)</li>
-<li><strong>Composition</strong>: <code>dpe-server</code> wires the handler into the Axum router</li>
+<li>The editor is <strong>not registered as a deployable service in Jenkins</strong>, so the DEV deploy trigger in <code>editor-docker-publish.yml</code> is marked <code>continue-on-error</code> and only warns. Remove that guard once the Jenkins job exists, so a genuinely broken webhook is loud again.</li>
+<li>The writable data volume for SQLite. Development and tests use an in-memory database, so only production waits on it.</li>
 </ul>
-<p>For detailed crate responsibilities and the dependency graph, see <a href="./dpe/project_structure.html">DPE Project Structure</a>.</p>
+<h3 id="data-volume-once-persistence-lands"><a class="header" href="#data-volume-once-persistence-lands">Data volume (once persistence lands)</a></h3>
+<ul>
+<li>Mount the <strong>directory</strong>, not the database file, so SQLite can create its <code>-wal</code> and <code>-shm</code> siblings next to it.</li>
+<li>It must be <strong>writable by uid 65532</strong>. Chowning to 65534 produces <code>unable to open database file</code>, which reads like a wrong mount path and sends the reader hunting for a typo in a path that is perfectly correct.</li>
+<li>Docker Swarm does <strong>not</strong> create missing bind-mount host directories the way <code>docker run -v</code> does, so Ansible must create <em>and</em> chown the directory before the stack starts.</li>
+<li>Keep <code>replicas: 1</code> with <code>order: stop-first</code>, so a rolling update never briefly runs two processes against one database file. Node pinning is unnecessary — there is no multi-node Swarm.</li>
+</ul>
+<h2 id="resource-requirements"><a class="header" href="#resource-requirements">Resource Requirements</a></h2>
+<ul>
+<li><strong>Memory</strong>: ~50–100 MB typical</li>
+<li><strong>CPU</strong>: Minimal (server-side rendering; the published data set is cached in memory)</li>
+<li><strong>Disk</strong>: Data files + static assets, plus the SQLite database once persistence lands</li>
+</ul>
+<h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
+<p>Structured logging via <code>init-tracing-opentelemetry</code> (an OTel-aware tracing subscriber).</p>
+<ul>
+<li><strong>Production</strong> (<code>EDITOR_ENV=PROD</code>): JSON logs to stdout only.</li>
+<li><strong>Local development</strong> (<code>EDITOR_ENV=DEV</code> with <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> set): logs additionally exported over OTLP.</li>
+</ul>
+<p>Panics are routed through <code>tracing</code> as structured events using the OTel exception semantic conventions (<code>exception.message</code>, <code>exception.stacktrace</code>, <code>exception.type</code>, <code>thread.name</code>, plus <code>code.filepath</code>/<code>code.lineno</code>), so a production panic lands in the same log pipeline as everything else instead of on stderr. <code>RUST_BACKTRACE=1</code> is set in the image, and the release profile keeps DWARF line tables, so those backtraces carry file and line.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="git-conventions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../editor/observability.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="deployment.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../mosaic/component-api-conventions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -322,11 +346,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="git-conventions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../editor/observability.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="deployment.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../mosaic/component-api-conventions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -341,17 +365,17 @@
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="mermaid.min.js"></script>
-        <script src="mermaid-init.js"></script>
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
 
 
 

@@ -247,7 +247,7 @@
 <h2 id="docker-image"><a class="header" href="#docker-image">Docker Image</a></h2>
 <ul>
 <li><strong>Base</strong>: <code>gcr.io/distroless/static-debian12:nonroot</code></li>
-<li><strong>User</strong>: uid 65534 (nonroot, built-in to distroless)</li>
+<li><strong>User</strong>: uid <strong>65532</strong> — distroless <code>NONROOT</code>. Not 65534, which is <code>nobody</code>; verified in <a href="https://github.com/GoogleContainerTools/distroless/blob/main/common/variables.bzl"><code>common/variables.bzl</code></a>.</li>
 <li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
 <li><strong>Binary</strong>: Static musl-linked <code>dpe-server</code> (CLI with subcommands)</li>
 </ul>

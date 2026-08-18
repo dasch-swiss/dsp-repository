@@ -246,7 +246,6 @@
 <h2 id="workspace-layout"><a class="header" href="#workspace-layout">Workspace Layout</a></h2>
 <pre><code>modules/dpe/
 ├── core/             dpe-core          Pure domain (serde only)
-├── telemetry/        dpe-telemetry     Telemetry types and validation (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Maud view library (pages + components)
 ├── server/           dpe-server        Axum binary (composition root)
@@ -261,7 +260,8 @@
   ├── dpe-web         ← Maud pages + components
   └── dpe-server      ← composition root, Datastar fragment handlers
        ↑
-       dpe-telemetry  ← telemetry types and validation (serde only)
+       platform-telemetry  ← beacon contract + collector endpoint, shared with
+                             editor-server; lives in `modules/platform/`
 </code></pre>
 <h2 id="crate-responsibilities"><a class="header" href="#crate-responsibilities">Crate Responsibilities</a></h2>
 <h3 id="dpe-core-core"><a class="header" href="#dpe-core-core"><code>dpe-core</code> (core/)</a></h3>
@@ -285,22 +285,14 @@
 <li><strong>Data access</strong>: loaders and resolvers (<code>get_project</code>, <code>list_projects</code>, <code>get_contributors</code>) as plain functions over <code>dpe-core</code></li>
 </ul>
 <p>Imports <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
-<h3 id="dpe-telemetry-telemetry"><a class="header" href="#dpe-telemetry-telemetry"><code>dpe-telemetry</code> (telemetry/)</a></h3>
-<p>Telemetry types and validation logic. Extracted as a library crate so fuzz targets can test the real code. Contains:</p>
-<ul>
-<li><strong>Beacon types</strong>: <code>BeaconPayload</code>, <code>Signal</code>, <code>WebVitalSignal</code>, <code>ErrorSignal</code>, etc. (serde deserialization for browser beacons)</li>
-<li><strong>Origin validation</strong>: <code>is_allowed_origin()</code> — validates dasch.swiss subdomains</li>
-<li><strong>URL normalization</strong>: <code>normalize_page_url()</code> — cardinality-safe page URL mapping</li>
-<li><strong>Traceparent validation</strong>: <code>is_valid_traceparent()</code> — W3C traceparent format validation</li>
-</ul>
-<p>Dependencies: <code>serde</code> only.</p>
+<h3 id="browser-telemetry"><a class="header" href="#browser-telemetry">Browser telemetry</a></h3>
+<p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>platform-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>modules/platform/telemetry</code>. See <code>modules/platform/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>modules/dpe/</code>.</p>
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
 <p>Composition root and Axum binary. Contains:</p>
 <ul>
 <li><strong>Route wiring</strong>: native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code>, <code>/telemetry/collect</code>, plus <code>ServeDir</code> static serving and a 404 fallback</li>
 <li><strong>Head/page shell</strong>: <code>view.rs</code> — the hand-written <code>head()</code> + <code>page()</code> partials (title, content-hashed stylesheet link, conditional <code>traceparent</code> meta, fonts, Fathom, Datastar + telemetry scripts)</li>
 <li><strong>Fragment handlers</strong>: <code>fragments.rs</code> — plain Axum handlers that render Maud <code>Markup</code> to HTML and return Datastar SSE events</li>
-<li><strong>Telemetry collector</strong>: <code>telemetry_collector.rs</code> — converts browser beacons to OTel metrics and structured logs (uses types from <code>dpe-telemetry</code>)</li>
 <li><strong>Configuration</strong>: <code>config.rs</code> — figment-based layered config (defaults → <code>dpe.toml</code> → <code>DPE_*</code> env vars)</li>
 <li><strong>Logging</strong>: OTel-aware subscriber via <code>init-tracing-opentelemetry</code></li>
 </ul>

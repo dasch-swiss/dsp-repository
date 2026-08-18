@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Project Structure and Code Organization - DSP-Repository Developer Documentation</title>
+        <title>Architecture - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -12,34 +12,34 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "";
+            const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex.js";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="../toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -106,7 +106,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -141,7 +141,7 @@
                     <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
 
                     <div class="right-buttons">
-                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
 
@@ -242,77 +242,82 @@
 }
 
 </style>
-<h1 id="project-structure-and-code-organization"><a class="header" href="#project-structure-and-code-organization">Project Structure and Code Organization</a></h1>
-<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
-<p>This repository is a Rust workspace structured as a monorepo. All Rust crates are organized as subdirectories within the <code>modules/</code> directory.</p>
-<pre><code class="language-txt">modules/
-├── dpe/                       # Discovery and Presentation Environment
-│   ├── core/                  # Pure domain types, repositories, data loading (crate: dpe-core)
-│   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
-│   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
-│   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
-│   ├── web-e2e-tests/         # Playwright E2E tests
-│   ├── public/                # Static assets
-│   ├── style/                 # CSS / Tailwind
-│   └── Dockerfile             # Production container image
-├── editor/                    # Metadata editor (authenticated; depositor authoring + RDU review)
-│   ├── core/                  # Pure domain types (crate: editor-core)
-│   ├── web/                   # View layer: document shell, Maud pages and components (crate: editor-web)
-│   ├── server/                # Server binary: config, observability, route composition (crate: editor-server)
-│   ├── public/                # Static assets (incl. vendored JS)
-│   ├── style/                 # CSS / Tailwind
-│   └── Dockerfile             # Production container image
-├── platform/                  # Crates shared by more than one service
-│   └── telemetry/             # Browser beacon contract + collector endpoint (crate: platform-telemetry)
-└── mosaic/                    # Mosaic component library (design system)
-    ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
-    ├── playground/            # Component playground application (crate: mosaic-playground)
-    └── playground-e2e-tests/  # Playwright E2E tests for the playground
-</code></pre>
-<h2 id="crate-and-folder-naming-convention"><a class="header" href="#crate-and-folder-naming-convention">Crate and Folder Naming Convention</a></h2>
-<p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part.</p>
+<h1 id="editor-architecture"><a class="header" href="#editor-architecture">Editor Architecture</a></h1>
+<p>The metadata editor is where depositing project teams edit their project metadata, RDU reviews it field by field, and approved records are collected into a pull request against this repository. Git stays the source of truth.</p>
+<p>This page describes the service as it stands. Surfaces that are not built yet are named where they affect a decision taken now, and marked as such.</p>
+<h2 id="relationship-to-dpe"><a class="header" href="#relationship-to-dpe">Relationship to DPE</a></h2>
+<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>platform-telemetry</code> for the browser-beacon contract, and will share <code>mosaic-tiles</code> for components and <code>dpe-core</code> for the data contract — but not a process, an image, or an origin.</p>
+<p>The separation is deliberate:</p>
+<ul>
+<li>DPE is public, unauthenticated and read-only. The editor is authenticated and writes state. A host-level compromise of one should not hand over the other's session cookies.</li>
+<li>The editor's CSRF defence requires <code>Sec-Fetch-Site: same-origin</code> on every state-changing request. On a shared origin, a request originating from DPE <em>is</em> same-origin — so any XSS in DPE, which has a far larger unauthenticated attack surface, could drive authenticated editor mutations. A <code>Path</code> on a cookie is not a security boundary and does not close this.</li>
+</ul>
+<h2 id="rendering-model"><a class="header" href="#rendering-model">Rendering model</a></h2>
+<p>Same as DPE: server-rendered HTML with <strong>Maud</strong>, served by <strong>Axum</strong>, with <strong>Datastar</strong> for interactivity over SSE. No client-side WASM, no hydration, no islands. The server is the single source of truth for UI state.</p>
+<h2 id="crates"><a class="header" href="#crates">Crates</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
-<tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>Pure domain types and data access (zero framework deps)</td></tr>
-<tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> only)</td></tr>
-<tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
-<tr><td><code>dpe-server</code></td><td><code>dpe/server</code></td><td>Server binary — composes all routes</td></tr>
-<tr><td><code>platform-telemetry</code></td><td><code>platform/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>
-<tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types for the editor (zero framework deps)</td></tr>
-<tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Editor view layer, including the HTML document shell</td></tr>
-<tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Editor binary — composes all routes</td></tr>
-<tr><td><code>mosaic-tiles</code></td><td><code>mosaic/tiles</code></td><td>Reusable UI component library</td></tr>
-<tr><td><code>mosaic-playground</code></td><td><code>mosaic/playground</code></td><td>Component showcase application</td></tr>
+<tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types (no Axum, Maud or database dependency)</td></tr>
+<tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Maud view library — the document shell, pages and components</td></tr>
+<tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Composition root: configuration, observability, routing, persistence</td></tr>
 </tbody></table>
 </div>
-<h2 id="shared-crates"><a class="header" href="#shared-crates">Shared Crates</a></h2>
-<p><strong>A crate that more than one service depends on lives under <code>modules/platform/</code>, never inside a service module.</strong> As soon as a second service takes a dependency on it, move it and rename it to <code>platform-{role}</code> in the same commit.</p>
-<p>The directory is the ownership signal, and four things read it:</p>
+<p>Dependency direction is <code>server → web → core</code>. Neither library depends on <code>mosaic-tiles</code> yet: the form widgets are the first surface to render a tile. The Tailwind entry already scans the crate, so component CSS ships regardless of the Cargo dependency.</p>
+<p>Unlike DPE, the <strong>HTML document shell lives in the view crate</strong> (<code>editor-web/src/view.rs</code>), not the server crate. DPE keeps <code>head()</code> + <code>page()</code> in <code>dpe-server</code>; here the server is a composition root for routing, auth and persistence, and a document shell is a view concern like any other partial.</p>
+<h2 id="url-scheme"><a class="header" href="#url-scheme">URL scheme</a></h2>
+<p>Paths are <strong>root-mounted</strong>. There is no <code>/editor</code> prefix.</p>
+<p>DPE carries <code>/dpe/…</code> because it shares <code>repository.dasch.swiss</code> with other services. The editor gets its own hostname, so a prefix buys nothing — and adopting one would keep alive the path-routing option this design rejects, for the CSRF reason above.</p>
+<div class="table-wrapper"><table><thead><tr><th>Path</th><th>Method</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>/healthz</code></td><td>GET</td><td>Liveness probe. Untraced.</td></tr>
+<tr><td><code>/telemetry/collect</code></td><td>POST</td><td>Browser telemetry beacon. Untraced, rate-limited per IP.</td></tr>
+</tbody></table>
+</div>
+<p>Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.</p>
+<p>The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:</p>
+<pre><code>GET  /                                        → redirect to /projects
+GET  /login                                   login form
+POST /login                                   issue a one-time code
+POST /logout
+GET  /projects                                the depositor's assigned projects
+GET  /projects/{shortcode}                    → redirect to the first section
+GET  /projects/{shortcode}/sections/{section}  one form section
+POST /projects/{shortcode}/sections/{section}
+GET  /review                                  the review queue, oldest first
+GET  /review/{shortcode}                      the field-by-field diff surface
+</code></pre>
+<p>Two decisions inside that:</p>
 <ul>
-<li><strong>CI path filters.</strong> The path-filtered workflows key on a module glob — <code>modules/dpe/**</code> for DPE's preview, Scout and a11y jobs, <code>modules/editor/**</code> for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (<code>check</code>, <code>test</code> and <code>gate</code> carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)</li>
-<li><strong>Dev-loop watch lists.</strong> <code>bacon.toml</code>'s <code>serve</code> and <code>serve-editor</code> jobs each watch their own module directory. A shared crate outside <code>modules/platform/</code> stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.</li>
-<li><strong>Directory-scoped agent instructions.</strong> <code>modules/dpe/CLAUDE.md</code> governs everything under <code>modules/dpe/</code>, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — <code>REVIEW.md</code> carries one pointing into <code>platform-telemetry</code> — and those need to name the real location.</li>
-<li><strong>The dependency direction.</strong> <code>platform-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead.</li>
+<li><strong>Form sections are real URLs</strong>, not fragment swaps. Bookmarkable, Back-friendly, and consistent with the repository's URL-based-navigation principle.</li>
+<li><strong>Review deep-links by shortcode</strong>, not by submission id. A project has at most one pending submission, so the shortcode is unique for the purpose and reads better in a URL shared between reviewers.</li>
 </ul>
-<p><code>mosaic-*</code> predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.</p>
-<h2 id="api-crate-pattern"><a class="header" href="#api-crate-pattern">API Crate Pattern</a></h2>
-<p>Each API is a separate crate under <code>modules/dpe/</code>:</p>
+<h2 id="traced-and-untraced-routes"><a class="header" href="#traced-and-untraced-routes">Traced and untraced routes</a></h2>
+<p>An Axum layer wraps only routes declared <strong>before</strong> it. The router therefore has two halves:</p>
 <ul>
-<li><strong>Naming</strong>: <code>dpe-api-{name}</code> (e.g., <code>dpe-api-oai</code>)</li>
-<li><strong>Dependencies</strong>: <code>dpe-core</code> for domain types; never depends on other API crates or <code>dpe-web</code></li>
-<li><strong>Entry point</strong>: Exports a handler function (e.g., <code>pub async fn oai_handler(...)</code>)</li>
-<li><strong>Composition</strong>: <code>dpe-server</code> wires the handler into the Axum router</li>
+<li><code>build_router</code> — everything wrapped by <code>OtelInResponseLayer</code> then <code>OtelAxumLayer</code>. <code>OtelInResponseLayer</code> is declared first so it runs <em>inner</em> and injects the <code>traceparent</code> response header; <code>OtelAxumLayer</code> is declared second so it runs <em>outer</em> and creates the server span.</li>
+<li><code>build_app</code> — adds <code>/healthz</code> and <code>/telemetry/collect</code> <strong>after</strong> those layers, so neither is traced. A liveness probe every 30 seconds and a telemetry upload on every page view would otherwise mint a span each and bury the real traffic.</li>
 </ul>
-<p>For detailed crate responsibilities and the dependency graph, see <a href="./dpe/project_structure.html">DPE Project Structure</a>.</p>
+<p>That split is positional, so it is invisible in the route table and reversible by moving one line. A test asserts <code>/healthz</code> and the beacon are absent from <code>build_router</code>.</p>
+<h2 id="datastar"><a class="header" href="#datastar">Datastar</a></h2>
+<p>The editor vendors Datastar <strong>1.0.2</strong>; DPE is still on 1.0.0-RC.8, and the two vendor directories are independent. See <code>modules/editor/public/vendor/README.md</code>.</p>
+<p>Two things to get right, both of which fail quietly:</p>
+<ul>
+<li><strong>Keyed plugin attributes use <code>:</code>, not <code>-</code>.</strong> <code>data-on:click</code>, <code>data-attr:disabled</code>, <code>data-class:open</code>, and <code>data-init</code> rather than <code>data-on-load</code>. This has been true since RC.6, so it matches DPE's markup too. The hyphen form produces a console error and an inert control: the page renders fine and a snapshot test asserting the attribute is present still passes.</li>
+<li><strong><code>__prevent</code> combines with <code>__debounce</code> / <code>__throttle</code></strong> on 1.0.x. The rule against that combination in <code>docs/src/dpe/architecture.md</code> is about RC.8 and does not apply here.</li>
+</ul>
+<h2 id="styling"><a class="header" href="#styling">Styling</a></h2>
+<p><code>modules/editor/style/main.css</code> is the single Tailwind entry, built by <code>just css-editor</code> (dev) or <code>just css-editor-release</code> (content-hashed). It imports the design tokens and the <code>mosaic-tiles</code> component barrel.</p>
+<p><code>@import 'tailwindcss' source(none)</code> means classes are collected <strong>only</strong> from the explicit <code>@source</code> globs, which must cover every crate that emits Tailwind classes. A missing glob produces no build error — just markup whose classes resolve to nothing. After a change that adds classes in a new location, grep the built stylesheet for them.</p>
+<p>New Mosaic tiles are added <strong>demand-driven</strong>: a screen that needs a missing primitive adds it to <code>mosaic-tiles</code> with a playground showcase and a unit test at that point, rather than an up-front form kit. Their CSS goes in <code>mosaic-tiles/src/components/components.css</code>, the barrel every consumer imports.</p>
+<p><strong>Check a tile against the surface you are putting it on.</strong> Tiles are styled for light backgrounds — <code>link</code> is <code>text-primary-600</code>, which measures 2.35:1 on the footer's <code>bg-slate-800</code> and fails WCAG 2.1 AA. That is why the footer uses plain anchors inheriting <code>text-gray-300</code> (9.93:1), as DPE's does. A dark-surface variant of a tile is a design-system change, so it belongs in <code>mosaic-tiles</code> with its own showcase rather than being worked around locally.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="git-conventions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../dpe/oai-pmh.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="deployment.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../editor/observability.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -322,11 +327,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="git-conventions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../dpe/oai-pmh.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="deployment.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../editor/observability.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -341,17 +346,17 @@
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="mermaid.min.js"></script>
-        <script src="mermaid-init.js"></script>
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
 
 
 

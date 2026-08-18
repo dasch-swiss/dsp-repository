@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Project Structure and Code Organization - DSP-Repository Developer Documentation</title>
+        <title>Observability - DSP-Repository Developer Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -12,34 +12,34 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "";
+            const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex.js";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="../toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -106,7 +106,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -141,7 +141,7 @@
                     <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
 
                     <div class="right-buttons">
-                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
 
@@ -242,77 +242,77 @@
 }
 
 </style>
-<h1 id="project-structure-and-code-organization"><a class="header" href="#project-structure-and-code-organization">Project Structure and Code Organization</a></h1>
+<h1 id="editor-observability"><a class="header" href="#editor-observability">Editor Observability</a></h1>
+<p>Developer guide for the metadata editor's observability instrumentation. The pipeline is the same shape as <a href="../dpe/observability.html">DPE's</a>; this page records what differs.</p>
 <h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
-<p>This repository is a Rust workspace structured as a monorepo. All Rust crates are organized as subdirectories within the <code>modules/</code> directory.</p>
-<pre><code class="language-txt">modules/
-├── dpe/                       # Discovery and Presentation Environment
-│   ├── core/                  # Pure domain types, repositories, data loading (crate: dpe-core)
-│   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
-│   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
-│   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
-│   ├── web-e2e-tests/         # Playwright E2E tests
-│   ├── public/                # Static assets
-│   ├── style/                 # CSS / Tailwind
-│   └── Dockerfile             # Production container image
-├── editor/                    # Metadata editor (authenticated; depositor authoring + RDU review)
-│   ├── core/                  # Pure domain types (crate: editor-core)
-│   ├── web/                   # View layer: document shell, Maud pages and components (crate: editor-web)
-│   ├── server/                # Server binary: config, observability, route composition (crate: editor-server)
-│   ├── public/                # Static assets (incl. vendored JS)
-│   ├── style/                 # CSS / Tailwind
-│   └── Dockerfile             # Production container image
-├── platform/                  # Crates shared by more than one service
-│   └── telemetry/             # Browser beacon contract + collector endpoint (crate: platform-telemetry)
-└── mosaic/                    # Mosaic component library (design system)
-    ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
-    ├── playground/            # Component playground application (crate: mosaic-playground)
-    └── playground-e2e-tests/  # Playwright E2E tests for the playground
+<p>Two halves, as in DPE:</p>
+<ul>
+<li><strong>Server-side</strong>: OTel-native tracing via <code>axum-tracing-opentelemetry</code> middleware. Every HTTP request except <code>/healthz</code> and <code>/telemetry/collect</code> produces W3C-compliant spans exported over OTLP.</li>
+<li><strong>Client-side</strong>: <code>telemetry.js</code> captures Core Web Vitals, JS errors, Long Animation Frames and navigation timing, and flushes them via <code>navigator.sendBeacon</code> to <code>POST /telemetry/collect</code>, which converts them into OTel metrics and structured logs on the same OTLP pipeline.</li>
+</ul>
+<p>Trace correlation uses the W3C <code>traceparent</code> standard: the server renders a <code>&lt;meta name="traceparent"&gt;</code> tag in the HTML shell and the client includes it in every beacon payload.</p>
+<p>There is <strong>no third-party analytics script</strong>. DPE injects Fathom; the editor is an authenticated tool and does not.</p>
+<h2 id="the-shared-collector"><a class="header" href="#the-shared-collector">The shared collector</a></h2>
+<p>The beacon endpoint is not editor code. <code>platform-telemetry</code> owns the wire contract <em>and</em> the collector, and both services wire the same handler:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>.route("/telemetry/collect", platform_telemetry::collector::collect_route("editor").layer(rate_limit))
+<span class="boring">}</span></code></pre></pre>
+<p>The <code>namespace</code> argument sets the OTel instrumentation scope — <code>editor.browser</code> here, <code>dpe.browser</code> in DPE. It is a required argument rather than a separate startup call precisely so it cannot be forgotten: the scope name is what a dashboard filters on as <code>otel_scope_name</code>, and a missed init would silently rename it.</p>
+<p>So a Grafana query distinguishes the two services by <code>otel_scope_name</code> (<code>editor.browser</code> vs <code>dpe.browser</code>) or by the resource attribute <code>service.namespace</code> (<code>editor</code> vs <code>dpe</code>). Metric <em>names</em> (<code>browser.web_vital</code>, <code>browser.error</code>, …) are identical across both.</p>
+<p>The <code>dpe-</code> crate prefix is historical — DPE was the first consumer. Nothing in the crate reads DPE's data or configuration.</p>
+<h2 id="local-observability-stack"><a class="header" href="#local-observability-stack">Local observability stack</a></h2>
+<pre><code class="language-bash"># Terminal 1: start the local LGTM stack
+just lgtm-up
+
+# Terminal 2: run the editor with OTel enabled (exports to localhost:4317)
+just dev-editor-otel
+
+# Terminal 3: generate traffic
+curl http://localhost:4100/healthz
+curl http://localhost:4100/no-such-page
 </code></pre>
-<h2 id="crate-and-folder-naming-convention"><a class="header" href="#crate-and-folder-naming-convention">Crate and Folder Naming Convention</a></h2>
-<p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part.</p>
-<div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
-<tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>Pure domain types and data access (zero framework deps)</td></tr>
-<tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> only)</td></tr>
-<tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
-<tr><td><code>dpe-server</code></td><td><code>dpe/server</code></td><td>Server binary — composes all routes</td></tr>
-<tr><td><code>platform-telemetry</code></td><td><code>platform/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>
-<tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types for the editor (zero framework deps)</td></tr>
-<tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Editor view layer, including the HTML document shell</td></tr>
-<tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Editor binary — composes all routes</td></tr>
-<tr><td><code>mosaic-tiles</code></td><td><code>mosaic/tiles</code></td><td>Reusable UI component library</td></tr>
-<tr><td><code>mosaic-playground</code></td><td><code>mosaic/playground</code></td><td>Component showcase application</td></tr>
-</tbody></table>
-</div>
-<h2 id="shared-crates"><a class="header" href="#shared-crates">Shared Crates</a></h2>
-<p><strong>A crate that more than one service depends on lives under <code>modules/platform/</code>, never inside a service module.</strong> As soon as a second service takes a dependency on it, move it and rename it to <code>platform-{role}</code> in the same commit.</p>
-<p>The directory is the ownership signal, and four things read it:</p>
+<p><code>dev-editor-otel</code> sets <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>, <code>OTEL_SERVICE_NAME</code>, <code>OTEL_RESOURCE_ATTRIBUTES</code> and <code>PYROSCOPE_ENDPOINT</code> for you.</p>
+<p>In Grafana at <a href="http://localhost:3000">http://localhost:3000</a>: traces for page routes in Tempo and <strong>none for <code>/healthz</code></strong>, log records in Loki, browser metrics under <code>editor.browser</code> in Mimir, and CPU flame graphs for <code>editor-server</code> in Pyroscope.</p>
+<h2 id="adding-instrumentation"><a class="header" href="#adding-instrumentation">Adding instrumentation</a></h2>
+<p>Use <code>#[tracing::instrument]</code> on new handler and service functions, with <code>otel.kind = "internal"</code> — the <code>OtelAxumLayer</code> middleware already creates the <code>SPAN_KIND_SERVER</code> span for the request, and a nested <code>"server"</code> span confuses the trace waterfall.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[tracing::instrument(
+    skip_all,
+    fields(
+        otel.kind = "internal",
+        otel.name = "descriptive name",
+    )
+)]
+pub async fn my_handler(/* ... */) -&gt; /* ... */ {
+    // ...
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="rules-specific-to-an-authenticated-service"><a class="header" href="#rules-specific-to-an-authenticated-service">Rules specific to an authenticated service</a></h2>
+<p>DPE serves public data, so almost nothing it logs is sensitive. The editor holds accounts, so two constraints apply that DPE's guide does not carry:</p>
 <ul>
-<li><strong>CI path filters.</strong> The path-filtered workflows key on a module glob — <code>modules/dpe/**</code> for DPE's preview, Scout and a11y jobs, <code>modules/editor/**</code> for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (<code>check</code>, <code>test</code> and <code>gate</code> carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)</li>
-<li><strong>Dev-loop watch lists.</strong> <code>bacon.toml</code>'s <code>serve</code> and <code>serve-editor</code> jobs each watch their own module directory. A shared crate outside <code>modules/platform/</code> stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.</li>
-<li><strong>Directory-scoped agent instructions.</strong> <code>modules/dpe/CLAUDE.md</code> governs everything under <code>modules/dpe/</code>, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — <code>REVIEW.md</code> carries one pointing into <code>platform-telemetry</code> — and those need to name the real location.</li>
-<li><strong>The dependency direction.</strong> <code>platform-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead.</li>
+<li><strong>No email address may reach a log or a trace, on any path — including error paths.</strong> Auth events are correlated by an opaque per-user id instead. This is a hard requirement, and the test that enforces it lands with authentication — there are no addresses in the service yet, so there is nothing to assert today. Note there is a second capture channel besides explicit logging: <code>axum-tracing-opentelemetry</code> records <code>url.query</code> on every server span, so a query string is exported to Tempo verbatim. Anything address-bearing must therefore stay out of query strings as well as out of log fields.</li>
+<li><strong>Metric attributes must stay bounded.</strong> Validate against known sets and normalise dynamic values; a project shortcode is bounded, a user identifier or a free-text field is not. High-cardinality data goes to structured logs only.</li>
 </ul>
-<p><code>mosaic-*</code> predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.</p>
-<h2 id="api-crate-pattern"><a class="header" href="#api-crate-pattern">API Crate Pattern</a></h2>
-<p>Each API is a separate crate under <code>modules/dpe/</code>:</p>
+<h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
 <ul>
-<li><strong>Naming</strong>: <code>dpe-api-{name}</code> (e.g., <code>dpe-api-oai</code>)</li>
-<li><strong>Dependencies</strong>: <code>dpe-core</code> for domain types; never depends on other API crates or <code>dpe-web</code></li>
-<li><strong>Entry point</strong>: Exports a handler function (e.g., <code>pub async fn oai_handler(...)</code>)</li>
-<li><strong>Composition</strong>: <code>dpe-server</code> wires the handler into the Axum router</li>
+<li><strong>Production</strong> (<code>EDITOR_ENV=PROD</code>): JSON logs to stdout only.</li>
+<li><strong>Local development</strong> (<code>EDITOR_ENV=DEV</code> with <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> set): also exported over OTLP, via an <code>OpenTelemetryTracingBridge</code> layer that converts <code>tracing</code> events into OTel log records.</li>
+<li>With <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> unset the OTel SDK falls back to no-op export — nothing is sent, but structured stdout logging still works, so local development needs no collector.</li>
 </ul>
-<p>For detailed crate responsibilities and the dependency graph, see <a href="./dpe/project_structure.html">DPE Project Structure</a>.</p>
+<p>Panics go through the same pipeline: a hook emits them as structured <code>tracing::error!</code> events using the OTel exception semantic conventions, so they share Grafana Sift and Loki query surface with <code>RecordException</code> events from instrumented spans. The default stderr hook fires only if the structured emission itself panics, so a panic is never silently swallowed and never double-reported.</p>
+<p>On shutdown the Pyroscope agent is stopped and the OTel providers flushed inside <code>spawn_blocking</code>: both do blocking I/O (condvar waits, thread joins, HTTP uploads), and doing them on the async runtime deadlocks it. Logs are flushed before the trace guard drops, because log records can reference trace context that becomes invalid afterwards.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="git-conventions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../editor/architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="deployment.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../editor/operations.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -322,11 +322,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="git-conventions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../editor/architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="deployment.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../editor/operations.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -341,17 +341,17 @@
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="mermaid.min.js"></script>
-        <script src="mermaid-init.js"></script>
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
 
 
 

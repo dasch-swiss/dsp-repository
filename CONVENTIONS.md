@@ -39,7 +39,7 @@ Scopes are lowercase and name the concern a change serves, not the directory it 
 
 | Kind | Scopes |
 |------|--------|
-| Crates | `dpe-core`, `dpe-server`, `dpe-web`, `dpe-api-oai`, `dpe-telemetry`, `editor-core`, `editor-web`, `editor-server`, `mosaic-tiles`, `mosaic-playground` |
+| Crates | `dpe-core`, `dpe-server`, `dpe-web`, `dpe-api-oai`, `platform-telemetry`, `editor-core`, `editor-web`, `editor-server`, `mosaic-tiles`, `mosaic-playground` |
 | Cross-cutting | `dpe-data` (project metadata files), `ci` (workflows, justfile), `deps` (dependency bumps), `docs` (repo-level docs) |
 
 Documentation *about* a crate takes that crate's scope; only repo-level docs take `docs`. There is no catch-all scope — ask before inventing one. The gate checks only that a scope is present, so this list is advisory; keep to it anyway.

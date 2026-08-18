@@ -1,12 +1,12 @@
 [workspace]
 members = [
+  "modules/platform/telemetry",
   "modules/mosaic/playground",
   "modules/mosaic/tiles",
   "modules/dpe/core",
   "modules/dpe/api-oai",
   "modules/dpe/web",
   "modules/dpe/server",
-  "modules/dpe/telemetry",
   "modules/editor/core",
   "modules/editor/web",
   "modules/editor/server",

@@ -5,7 +5,6 @@
 ```
 modules/dpe/
 ├── core/             dpe-core          Pure domain (serde only)
-├── telemetry/        dpe-telemetry     Browser beacon contract + collector endpoint
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Maud view library (pages + components)
 ├── server/           dpe-server        Axum binary (composition root)
@@ -23,7 +22,8 @@ dpe-core              ← pure domain, no framework deps
   ├── dpe-web         ← Maud pages + components
   └── dpe-server      ← composition root, Datastar fragment handlers
        ↑
-       dpe-telemetry  ← beacon contract + collector endpoint (also used by editor-server)
+       platform-telemetry  ← beacon contract + collector endpoint, shared with
+                             editor-server; lives in `modules/platform/`
 ```
 
 ## Crate Responsibilities
@@ -56,19 +56,9 @@ Maud view library — a plain `lib` crate of page and component functions return
 
 Imports `dpe-core` types directly; depends on `maud` and `mosaic-tiles`. No Leptos, no WASM, no `cdylib`/`hydrate`/`ssr` features.
 
-### `dpe-telemetry` (telemetry/)
+### Browser telemetry
 
-The browser telemetry contract and the endpoint that consumes it. Extracted as a library crate so fuzz targets can test the real code, and shared with `editor-server` so the beacon has one implementation across services. The `dpe-` prefix is historical — nothing here reads DPE's data or configuration. Contains:
-
-- **Beacon types**: `BeaconPayload`, `Signal`, `WebVitalSignal`, `ErrorSignal`, etc. (serde deserialization for browser beacons)
-- **Origin validation**: `is_allowed_origin()` — validates dasch.swiss subdomains
-- **URL normalization**: `normalize_page_url()` — cardinality-safe page URL mapping
-- **Traceparent validation**: `is_valid_traceparent()` — W3C traceparent format validation
-- **Collector endpoint**: `collector::collect_route(namespace)` — converts beacons to OTel metrics and structured logs. `namespace` sets the instrumentation scope (`dpe.browser`, `editor.browser`) and is a required argument so it cannot be omitted and silently rename the scope a dashboard filters on
-
-The contract modules depend on `serde` only; `collector` additionally pulls in `axum`, `opentelemetry`, `tracing` and `url`.
-
-Dependencies: `serde` and `serde_json` for the contract modules; `collector` additionally uses `axum`, `opentelemetry`, `tracing` and `url`.
+`dpe-server` wires `POST /telemetry/collect` from **`platform-telemetry`**, which is not a DPE crate — it is shared with `editor-server` and lives in `modules/platform/telemetry`. See `modules/platform/README.md`, and `docs/src/repo_structure.md` → *Shared Crates* for why it sits outside `modules/dpe/`.
 
 ### `dpe-server` (server/)
 

@@ -15,10 +15,10 @@ There is **no third-party analytics script**. DPE injects Fathom; the editor is 
 
 ## The shared collector
 
-The beacon endpoint is not editor code. `dpe-telemetry` owns the wire contract *and* the collector, and both services wire the same handler:
+The beacon endpoint is not editor code. `platform-telemetry` owns the wire contract *and* the collector, and both services wire the same handler:
 
 ```rust
-.route("/telemetry/collect", dpe_telemetry::collector::collect_route("editor").layer(rate_limit))
+.route("/telemetry/collect", platform_telemetry::collector::collect_route("editor").layer(rate_limit))
 ```
 
 The `namespace` argument sets the OTel instrumentation scope — `editor.browser` here, `dpe.browser` in DPE. It is a required argument rather than a separate startup call precisely so it cannot be forgotten: the scope name is what a dashboard filters on as `otel_scope_name`, and a missed init would silently rename it.

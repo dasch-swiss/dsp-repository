@@ -1,6 +1,6 @@
 #![no_main]
 
-use dpe_telemetry::beacon::BeaconPayload;
+use platform_telemetry::beacon::BeaconPayload;
 use libfuzzer_sys::fuzz_target;
 
 // Fuzz the telemetry beacon payload deserialization.

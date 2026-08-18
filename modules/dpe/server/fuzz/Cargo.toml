@@ -16,8 +16,8 @@ serde_urlencoded = "0.7"
 [dependencies.dpe-core]
 path = "../../core"
 
-[dependencies.dpe-telemetry]
-path = "../../telemetry"
+[dependencies.platform-telemetry]
+path = "../../../platform/telemetry"
 
 # Prevent this from interfering with workspaces
 [workspace]

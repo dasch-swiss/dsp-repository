@@ -574,7 +574,7 @@ mod tests {
         process_signal(&signal); // should not panic, uses "unknown" kind
     }
 
-    // Origin property tests live in dpe_telemetry::origin::tests
+    // Origin property tests live in platform_telemetry::origin::tests
 
     #[tokio::test]
     async fn handler_lookalike_domain_rejected() {

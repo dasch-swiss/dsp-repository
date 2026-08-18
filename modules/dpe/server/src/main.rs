@@ -331,7 +331,7 @@ async fn serve() -> ExitCode {
             "/telemetry/collect",
             // "dpe" names the OTel instrumentation scope (`dpe.browser`), which
             // the dashboards filter on — do not change it.
-            dpe_telemetry::collector::collect_route("dpe").layer({
+            platform_telemetry::collector::collect_route("dpe").layer({
                 use tower_governor::governor::GovernorConfigBuilder;
                 use tower_governor::GovernorLayer;
 

@@ -10,7 +10,6 @@ dpe/
 ├── api-oai/          # OAI-PMH 2.0 API (crate: dpe-api-oai)
 ├── web/              # Maud pages and components, `fn -> Markup` (crate: dpe-web)
 ├── server/           # Server binary, routing, head, fragment handlers (crate: dpe-server)
-├── telemetry/        # Browser telemetry types and validation (crate: dpe-telemetry)
 ├── web-e2e-tests/    # Playwright E2E tests
 ├── public/           # Static assets (served by ServeDir, includes compiled app.<hash>.css)
 └── style/            # Tailwind v4 entry (main.css)

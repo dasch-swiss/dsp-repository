@@ -614,7 +614,6 @@ dependencies = [
  "datastar",
  "dpe-api-oai",
  "dpe-core",
- "dpe-telemetry",
  "dpe-web",
  "figment",
  "futures",
@@ -628,6 +627,7 @@ dependencies = [
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
+ "platform-telemetry",
  "pyroscope",
  "serde",
  "serde_json",
@@ -641,21 +641,6 @@ dependencies = [
  "tracing-subscriber",
  "ureq",
  "urlencoding",
-]
-
-[[package]]
-name = "dpe-telemetry"
-version = "0.8.2"
-dependencies = [
- "axum",
- "opentelemetry",
- "proptest",
- "serde",
- "serde_json",
- "tokio",
- "tower",
- "tracing",
- "url",
 ]
 
 [[package]]
@@ -687,7 +672,6 @@ dependencies = [
  "axum",
  "axum-tracing-opentelemetry",
  "clap",
- "dpe-telemetry",
  "editor-web",
  "figment",
  "init-tracing-opentelemetry",
@@ -696,6 +680,7 @@ dependencies = [
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
+ "platform-telemetry",
  "pyroscope",
  "serde",
  "tokio",
@@ -2254,6 +2239,21 @@ name = "pin-utils"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
+
+[[package]]
+name = "platform-telemetry"
+version = "0.8.2"
+dependencies = [
+ "axum",
+ "opentelemetry",
+ "proptest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tower",
+ "tracing",
+ "url",
+]
 
 [[package]]
 name = "portable-atomic"

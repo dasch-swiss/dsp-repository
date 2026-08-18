@@ -1,5 +1,5 @@
 [package]
-name = "dpe-telemetry"
+name = "platform-telemetry"
 version.workspace = true
 edition = "2021"
 publish = false

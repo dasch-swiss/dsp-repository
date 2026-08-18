@@ -1,6 +1,6 @@
 #![no_main]
 
-use dpe_telemetry::origin::is_allowed_origin;
+use platform_telemetry::origin::is_allowed_origin;
 use libfuzzer_sys::fuzz_target;
 
 // Fuzz the origin validation function used by the telemetry collector.

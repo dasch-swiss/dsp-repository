@@ -136,7 +136,7 @@ Default `(expr)` splices auto-escape. The only sanctioned `PreEscaped` site is t
 DPE uses OpenTelemetry for distributed tracing, metrics, and structured logging. See `docs/src/dpe/observability.md` for the full developer guide.
 
 - **OTel middleware**: `OtelAxumLayer` creates `SPAN_KIND_SERVER` spans for HTTP requests. Use `otel.kind = "internal"` on handler-level `#[instrument]` spans.
-- **Telemetry collector**: `POST /telemetry/collect` is placed after the OTel layers (untraced). It converts browser beacons into OTel metrics and structured logs. Types, validation and the collector all live in the `dpe-telemetry` crate, shared with `editor-server`; `dpe-server` only wires the route via `collector::collect_route("dpe")`.
+- **Telemetry collector**: `POST /telemetry/collect` is placed after the OTel layers (untraced). It converts browser beacons into OTel metrics and structured logs. Types, validation and the collector all live in the `platform-telemetry` crate (`modules/platform/telemetry`), shared with `editor-server`; `dpe-server` only wires the route via `collector::collect_route("dpe")`.
 - **Vendored JS**: Client-side dependencies live in `modules/dpe/public/vendor/`, tracked by `vendor/README.md`. No `package.json` or Node.js build step for the runtime.
 - **Traceparent**: The server renders `<meta name="traceparent">` in the HTML shell for client-side trace correlation, and injects a `traceparent` response header.
 

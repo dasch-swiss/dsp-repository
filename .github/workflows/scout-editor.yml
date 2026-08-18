@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - "modules/editor/**"
+      # `platform-*` crates compile into the editor binary; a source-only change
+      # there touches no Cargo.lock, so without this the image is never scanned.
+      - "modules/platform/**"
       - "Cargo.lock"
 
 permissions:

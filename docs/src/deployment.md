@@ -16,7 +16,7 @@ Every push and pull request runs:
 
 Defined in `a11y-dpe.yml`.
 
-Runs on PRs and pushes to `main` that touch DPE UI code (`modules/dpe/web/`, `modules/dpe/style/`, `modules/dpe/public/`). Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.
+Runs on PRs and pushes to `main` that touch `modules/dpe/**` or `modules/platform/**` — any DPE crate, style or asset, plus the shared crates DPE renders through. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.
 
 ### Fuzz Testing
 
@@ -63,7 +63,7 @@ When changes to `modules/mosaic/` are merged to `main`, the playground image is 
 
 Defined in `cloud-run-dpe-pull-request.yml`.
 
-When a pull request modifies files under `modules/dpe/`, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.
+When a pull request modifies files under `modules/dpe/` or `modules/platform/`, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.
 
 #### Continuous Deployment (Docker Hub + Jenkins)
 
@@ -87,7 +87,7 @@ When a GitHub Release is published (tag starting with `v`), builds and pushes a 
 
 Defined in `cloud-run-editor-pull-request.yml`.
 
-When a pull request modifies files under `modules/editor/`, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.
+When a pull request modifies files under `modules/editor/` or `modules/platform/`, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.
 
 #### Continuous Deployment (Docker Hub + Jenkins)
 

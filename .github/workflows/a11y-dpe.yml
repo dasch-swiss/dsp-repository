@@ -7,12 +7,15 @@ on:
   push:
     branches: [main]
     paths:
-      # Any DPE crate (server/core/api-oai/telemetry/web), styles, assets, or the
-      # e2e suite — a server-side render change must trigger the a11y job too.
+      # Any DPE crate (server/core/api-oai/web), styles, assets, or the e2e suite —
+      # a server-side render change must trigger the a11y job too. `modules/platform/**`
+      # covers the shared crates DPE renders through.
       - "modules/dpe/**"
+      - "modules/platform/**"
   pull_request:
     paths:
       - "modules/dpe/**"
+      - "modules/platform/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

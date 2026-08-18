@@ -26,6 +26,7 @@ updates:
     # Dockerfiles live under the module directories, not the repo root
     directories:
       - "/modules/dpe"
+      - "/modules/editor"
       - "/modules/mosaic/playground"
     # Check for updates once a week
     schedule:

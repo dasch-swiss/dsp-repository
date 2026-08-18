@@ -5,6 +5,9 @@ on:
     types: [opened, synchronize, reopened, closed]
     paths:
       - "modules/editor/**"
+      # `platform-*` crates compile into the editor binary, so a change there must
+      # rebuild the preview — the editor module glob alone never sees it.
+      - "modules/platform/**"
   workflow_dispatch:
 
 permissions:

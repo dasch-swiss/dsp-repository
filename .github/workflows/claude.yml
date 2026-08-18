@@ -33,7 +33,10 @@ jobs:
         contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.review.author_association)
       )
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 30, not 15: the action writes its result only at the end, so a run killed by the
+    # timeout yields no review at all. Measured review runs on comparable diffs reached
+    # 15.5 min, i.e. past the old ceiling. A generous limit costs nothing on fast runs.
+    timeout-minutes: 30
     permissions:
       contents: read
       pull-requests: write
@@ -60,24 +63,95 @@ jobs:
             - Security concerns
             - Test coverage (only for modified code)
 
-            Focus your review **only on files and lines changed in this PR**.
-            Do **not** review unrelated parts of the repository.
+            Report issues **only in lines this PR changed** — but read whatever you need to
+            decide whether an issue is real: the changed files in full (diff hunks alone give
+            too little context), their callers, their tests, and neighbouring implementations
+            of the same pattern. Reading widely is fine; reporting widely is not.
             Do **not** make any code changes, run commands, or push code; only provide analysis and suggestions.
 
+            Before reporting an issue, name the concrete input or state that triggers it and
+            the wrong output, crash, or regression that results. Drop any issue where you
+            cannot; where the justification is only "more robust" or "best practice"; or where
+            a code comment explains it as a deliberate decision (read the comments before
+            flagging). If you checked a concern and could not prove it but still believe it
+            matters, report it as Suspected rather than dropping it or inflating its severity.
+            A few defensible issues beat many speculative ones, and reporting no issues at all
+            is a valid and useful outcome.
+
+            Do not assert how a crate, a browser API or an external service behaves from
+            memory — in either direction. When the diff constructs a value that some other
+            system parses (a Datastar attribute expression or SSE event, a `html!` fragment
+            whose ARIA or attribute semantics a browser interprets, a fragment-endpoint URL
+            or path template, an OpenTelemetry attribute or span name, a SPARQL or SQL query,
+            a media-type string), you must check the constructed form against that system's
+            own specification before you either report it **or clear it**. Well-formed is not
+            the same as accepted: a form can be valid syntax, and listed as supported by the
+            receiving system, and still be rejected or silently mishandled at runtime because
+            of a precondition attached to that form — a permitted value range, a required
+            event or attribute name, a limit that depends on the input data rather than on the
+            string, a flag that must be present for the operation to be allowed. So do not
+            stop at "the syntax is valid" or "the library supports this": find the
+            preconditions the specification attaches to the form you built, and for each one
+            name the input that would violate it or state why none can. Confirm against the
+            versions this repo builds with (`Cargo.lock`) or the specification itself via web
+            search. If you cannot complete that check, say so explicitly and grade the line
+            Suspected — do not declare it correct.
+
             Structure your review as follows:
-            1. Summary of PR changes
-            2. Identified issues (prioritize Critical issues, including bugs, security vulnerabilities, or regressions):
-              - Grade each issue as Critical, Major, or Minor.
-              - Only Critical issues should prevent the PR from being ready to merge.
-              - Minor or style issues should be noted but do not affect merge readiness.
-            3. Recommendations for improvement (aligned with the issue severity)
-            4. Clear statement whether the PR is ready to merge (based **only** on Critical issues)
+            1. Summary of PR changes (one paragraph)
+            2. Identified issues, blocking ones first. For each: `file:line`, the trigger and
+               wrong outcome you named above, how you verified the mechanism, and a suggested
+               fix. Mark each issue Blocking or Non-blocking. This is independent of how bad
+               the outcome is:
+              - Blocking: you established, from the code or an authoritative external source,
+                that a reachable input or state produces a wrong outcome — an error or panic on
+                a normal path, incorrect data written or returned, incorrect markup or ARIA
+                state rendered, access incorrectly granted or denied, or a deterministic CI
+                failure. "Reachable" means you can name the input. It does **not** require the
+                feature to stop working, and it does **not** require the outcome to be severe.
+              - Non-blocking: everything else — style, naming, missing tests, performance that
+                is not a regression, and anything you could not verify.
+              - Suspected: a concern you could not prove. Always Non-blocking. State what
+                would confirm or refute it.
+              Separately, grade impact High, Medium or Low, for triage ordering only. Impact
+              never determines Blocking.
+            3. Clear statement whether the PR is ready to merge: "not ready" if any issue is
+               Blocking, otherwise "ready", and state the number of blocking issues. Do not
+               override this in prose — if you find yourself arguing that a Non-blocking issue
+               should hold the PR, it is Blocking; re-mark it.
 
             Be constructive, precise, and concise. Avoid verbose explanations unless necessary for clarity.
+            Read `REVIEW.md` at the repository root before you start; it is this repository's
+            review checklist and its rules override the defaults above. Honour its "Skip"
+            section — do not spend the run on diffs it tells you to skip.
             Use the repository's CLAUDE.md for guidance on style, conventions, and repository-specific best practices.
             Use `gh pr comment` to leave your review as a comment on the PR.
 
-          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
+          # --model / --effort / --allowed-tools: from the 2026-08 review benchmark — 157 runs
+          # against 15 commits with known answers in dsp-api and dsp-app. The tool list is
+          # aligned with the one validated there, because what a review has to execute is
+          # language-independent: read the diff, read the changed files in full, search the
+          # repo, fetch an external specification, post the review.
+          #
+          # Model: Opus 5 caught 6/6 planted bugs with zero blocking false positives, while
+          # Opus 4.8 caught 0/6 at the same list price. Nothing was pinned here before, so
+          # runs took whatever the action defaulted to.
+          # Effort: medium — detection was identical to high on all nine commits run at both
+          # levels, high's only distinguishing behaviour was holding one clean diff on a real
+          # but non-blocking finding, and medium is ~16% cheaper.
+          #
+          # Read/Grep/Glob/WebSearch/WebFetch are additions, and they are what make the
+          # prompt executable rather than aspirational. --allowed-tools is the complete
+          # resolved set — the action adds nothing to it — so previously this reviewer had
+          # seven `gh` commands and no way to read a file, search the repo, or fetch a spec.
+          #
+          # --setting-sources user: do NOT load this repo's own .claude/settings.json. The
+          # action would otherwise union it into this job, and that file scopes WebFetch to
+          # `crates.io` and `just.systems` — which would silently cap the verification clause
+          # above to two domains, excluding every specification it needs (Datastar, WHATWG,
+          # OpenTelemetry, docs.rs). It also grants cargo/just/git/grep, which a review that
+          # runs no commands does not need.
+          claude_args: '--model claude-opus-5 --effort medium --setting-sources user --allowed-tools "Read,Grep,Glob,WebSearch,WebFetch,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
 
       - name: Notify on failure
         if: failure()

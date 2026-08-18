@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened, closed]
     paths:
       - "modules/dpe/**"
+      - "modules/platform/**"
   workflow_dispatch:
 
 permissions:

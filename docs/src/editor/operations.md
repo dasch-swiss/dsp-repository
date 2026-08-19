@@ -18,6 +18,14 @@ cross-linker, which macOS does not have. It defaults to the host architecture so
 the build is native; `just build-docker-editor arch=x86_64` reproduces the amd64
 image CI publishes, under emulation.
 
+### Data directory (a deliberate build input)
+
+The published project/person/organization set is **DPE's content**, not the editor's. Both `.github/actions/build-editor` and `just build-docker-editor` copy `modules/dpe/server/data` into the staging directory, and the Dockerfile places it at `/app/server/data`, where `EDITOR_DATA_DIR` points. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.
+
+That copy is the seam, and it is explicit on both sides. `EditorConfig` carries **no default** for `data_dir`: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image via `ENV EDITOR_DATA_DIR`, local development via `just dev-editor`. Unset is a legitimate state while nothing reads records, and is reported as `<unset>` at startup rather than as an invented path.
+
+Moving the directory under `modules/platform/` was considered and rejected: the shared-crate rule in [Repo Structure](../repo_structure.md#shared-crates) is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.
+
 ## CLI Commands
 
 | Command | Description |
@@ -42,7 +50,7 @@ Locally the default is `127.0.0.1:4100`, deliberately not DPE's 4000, so `just d
 | `RUST_LOG` | No | `info` | Log level filter (e.g. `editor_server=info,tower_http=debug`) |
 | `EDITOR_SITE_ADDR` | No | `127.0.0.1:4100` | Listen address and port. The Docker image sets `0.0.0.0:8080`. |
 | `EDITOR_PUBLIC_DIR` | No | `modules/editor/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, the telemetry module, and the compiled `app.<hash>.css`). |
-| `EDITOR_DATA_DIR` | No | `modules/dpe/server/data` | Directory holding the published project/person/organization set baked into the image. Reported at startup. |
+| `EDITOR_DATA_DIR` | Yes, to read records | *(none)* | Directory holding the published project/person/organization set baked into the image. No default — see [Data directory](#data-directory-a-deliberate-build-input). Reported at startup, as `<unset>` when absent. |
 | `EDITOR_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | *(none)* | OTLP gRPC endpoint (e.g. `http://alloy:4317`). When unset, OTel falls back to no-op export. |
 | `OTEL_SERVICE_NAME` | No | *(none)* | Service name for OTel resource attributes (e.g. `editor`) |

@@ -32,6 +32,7 @@ dpe-server validate ./data
 - Cross-references between projects, persons, and organizations
 - Orphaned files that are not referenced by any parent entity
 - Project roles misplaced in a person's `jobTitles` (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's `attributions` (`contributorType`), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is `JOB_TITLE_ROLE_WORDS` in `dpe-core`.
+- Every distinct `temporalCoverage` name resolves to a structured date (ChronOntology or the offline enrichment table), or is explicitly marked `source: "unresolved"`. See `docs/src/dpe/oai-pmh.md` → *Temporal coverage*.
 
 **Exit codes:**
 - `0` — all data files are valid

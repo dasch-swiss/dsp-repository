@@ -14,6 +14,7 @@ pub mod project_repository;
 pub mod record;
 pub mod record_cache;
 pub mod record_repository;
+pub mod temporal_coverage;
 pub mod temporal_enrichment_cache;
 pub mod utils;
 pub mod w3cdtf;
@@ -38,6 +39,6 @@ pub use record::{
 };
 pub use record_repository::{FsRecordRepository, RecordRepository};
 pub use utils::{
-    get_data_dir, is_placeholder, lang_value, language_display_name, set_data_dir, set_show_placeholder_values,
-    show_placeholder_values,
+    get_data_dir, is_placeholder, lang_value, language_display_name, multilingual_value, set_data_dir,
+    set_show_placeholder_values, show_placeholder_values,
 };

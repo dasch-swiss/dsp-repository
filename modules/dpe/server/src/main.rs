@@ -405,6 +405,37 @@ async fn shutdown_signal() {
 }
 
 fn validate(data_dir: PathBuf) -> ExitCode {
+    let report = collect_validation_errors(&data_dir);
+
+    println!(
+        "Validated: {} projects, {} records, {} persons, {} organizations",
+        report.project_count, report.record_count, report.person_count, report.org_count
+    );
+
+    if report.errors.is_empty() {
+        println!("All data files are valid.");
+        ExitCode::SUCCESS
+    } else {
+        println!("\n{} error(s) found:", report.errors.len());
+        for err in &report.errors {
+            println!("  - {err}");
+        }
+        ExitCode::FAILURE
+    }
+}
+
+/// Counts and errors gathered by [`collect_validation_errors`]. Factored out of
+/// `validate` so the validation logic is testable without capturing a process
+/// exit code.
+struct ValidationReport {
+    project_count: usize,
+    record_count: usize,
+    person_count: usize,
+    org_count: usize,
+    errors: Vec<String>,
+}
+
+fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
     use std::fs;
 
     let mut errors: Vec<String> = Vec::new();
@@ -416,6 +447,12 @@ fn validate(data_dir: PathBuf) -> ExitCode {
     // Validate projects
     let projects_dir = data_dir.join("projects");
     let mut contributor_ids: Vec<String> = Vec::new();
+    // Temporal-coverage resolution: the same ChronOntology period cache and
+    // offline enrichment table the OAI-PMH `every_committed_temporal_coverage_resolves`
+    // test loads, so the two can never disagree about what counts as resolved.
+    let temporal_periods = dpe_core::chronontology_cache::load_from(data_dir);
+    let temporal_enrichment = dpe_core::temporal_enrichment_cache::load_from(data_dir);
+    let mut seen_temporal_coverage: std::collections::HashSet<String> = std::collections::HashSet::new();
     if projects_dir.is_dir() {
         if let Ok(entries) = fs::read_dir(&projects_dir) {
             for entry in entries.flatten() {
@@ -439,7 +476,32 @@ fn validate(data_dir: PathBuf) -> ExitCode {
                                 }
                                 project_count += 1;
                                 // Validate conversion from raw to domain
-                                let _project: dpe_core::Project = raw.into();
+                                let project: dpe_core::Project = raw.into();
+
+                                for tc in &project.temporal_coverage {
+                                    let Some(name) = dpe_core::temporal_coverage::coverage_name(tc) else {
+                                        continue; // no name to key on; nothing to resolve.
+                                    };
+                                    if !seen_temporal_coverage.insert(name) {
+                                        continue; // already checked this distinct name.
+                                    }
+
+                                    // The same gap decision (resolved / intentionally
+                                    // unresolved / genuine gap) the
+                                    // `every_committed_temporal_coverage_resolves` test
+                                    // applies, so the two can't drift apart.
+                                    if let Some(name) = dpe_core::temporal_coverage::completeness_gap(
+                                        tc,
+                                        &temporal_periods,
+                                        &temporal_enrichment,
+                                    ) {
+                                        errors.push(format!(
+                                            "{filename}: temporalCoverage '{name}' has no resolved date \
+                                             (add a W3CDTF range to temporal-coverage-enrichment.json, \
+                                             or mark source=\"unresolved\" if not a time period)"
+                                        ));
+                                    }
+                                }
                             }
                             Err(e) => errors.push(format!("{filename}: {e}")),
                         }
@@ -545,21 +607,82 @@ fn validate(data_dir: PathBuf) -> ExitCode {
         }
     }
 
-    // Report results
-    println!(
-        "Validated: {} projects, {} records, {} persons, {} organizations",
-        project_count, record_count, person_count, org_count
-    );
+    ValidationReport { project_count, record_count, person_count, org_count, errors }
+}
 
-    if errors.is_empty() {
-        println!("All data files are valid.");
-        ExitCode::SUCCESS
-    } else {
-        println!("\n{} error(s) found:", errors.len());
-        for err in &errors {
-            println!("  - {err}");
+#[cfg(test)]
+mod validate_tests {
+    use super::collect_validation_errors;
+
+    /// A minimal `ProjectRaw`, valid except for its `temporalCoverage`, which
+    /// the caller supplies as a raw JSON array literal.
+    fn project_json(temporal_coverage: &str) -> String {
+        format!(
+            r#"{{
+                "id": "0000", "pid": "MISSING", "name": "Test Project", "shortcode": "0000",
+                "officialName": "Test Project", "status": "Finished", "shortDescription": "test",
+                "description": {{}}, "startDate": "MISSING", "endDate": "MISSING",
+                "howToCite": "test", "accessRights": {{ "accessRights": "Full Open Access" }},
+                "legalInfo": [], "keywords": [], "disciplines": [],
+                "temporalCoverage": {temporal_coverage}, "spatialCoverage": [], "attributions": [],
+                "funding": "No funding"
+            }}"#
+        )
+    }
+
+    /// Writes `project_json(temporal_coverage)` as the sole project file under a
+    /// fresh temp data dir (with an empty `projects/`), plus an optional
+    /// `temporal-coverage-enrichment.json` at the data dir root, and returns the
+    /// collected validation errors.
+    fn validate_with(temporal_coverage: &str, enrichment_json: Option<&str>) -> Vec<String> {
+        // An atomic counter (not e.g. the JSON literal's length) guarantees a
+        // distinct dir per call even if two callers happen to pass same-length
+        // literals — `cargo test` runs test fns concurrently, so a collision
+        // would let one test's cleanup race another's still-in-progress write.
+        static CALL_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let call_id = CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!("dpe_validate_temporal_{}_{call_id}", std::process::id()));
+        let projects_dir = dir.join("projects");
+        std::fs::create_dir_all(&projects_dir).unwrap();
+        std::fs::write(projects_dir.join("0000_test.json"), project_json(temporal_coverage)).unwrap();
+        if let Some(enrichment) = enrichment_json {
+            std::fs::write(dir.join("temporal-coverage-enrichment.json"), enrichment).unwrap();
         }
-        ExitCode::FAILURE
+
+        let report = collect_validation_errors(&dir);
+        std::fs::remove_dir_all(&dir).ok();
+        report.errors
+    }
+
+    #[test]
+    fn flags_temporal_coverage_with_no_resolved_date() {
+        let errors = validate_with(r#"[{"en": "Mysterious Era"}]"#, None);
+        assert!(
+            errors
+                .iter()
+                .any(|e| e.contains("Mysterious Era") && e.contains("no resolved date")),
+            "expected an unresolved temporalCoverage error, got: {errors:?}"
+        );
+    }
+
+    #[test]
+    fn accepts_temporal_coverage_resolved_via_enrichment() {
+        let errors = validate_with(
+            r#"[{"en": "Early Christianity"}]"#,
+            Some(
+                r#"{"Early Christianity": {"date": "0030/0451", "original_name": "Early Christianity", "source": "llm"}}"#,
+            ),
+        );
+        assert!(errors.is_empty(), "expected no errors, got: {errors:?}");
+    }
+
+    #[test]
+    fn accepts_temporal_coverage_explicitly_marked_unresolved() {
+        let errors = validate_with(
+            r#"[{"en": "Swiss"}]"#,
+            Some(r#"{"Swiss": {"date": null, "original_name": "Swiss", "source": "unresolved"}}"#),
+        );
+        assert!(errors.is_empty(), "expected no errors, got: {errors:?}");
     }
 }
 

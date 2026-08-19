@@ -6,15 +6,12 @@ use dpe_core::AccessRightsType;
 
 /// Extracts a value from a multilingual HashMap, preferring English.
 ///
-/// When `en` is absent the entry with the lexicographically smallest language
-/// code is chosen. This makes the result deterministic (a plain `values().next()`
-/// depends on `HashMap` iteration order) — important because the temporal-coverage
-/// enrichment lookup keys on this value at both collection and request time, so
-/// the two must agree.
+/// Delegates to `dpe_core::multilingual_value` — kept as a local alias since
+/// it is imported throughout this module tree. See that function's docs for
+/// the deterministic-fallback rationale (it backs the temporal-coverage
+/// enrichment lookup key, where collection and lookup must agree).
 pub fn get_multilingual_value(map: &HashMap<String, String>) -> Option<String> {
-    map.get("en")
-        .or_else(|| map.iter().min_by(|(a, _), (b, _)| a.cmp(b)).map(|(_, v)| v))
-        .cloned()
+    dpe_core::multilingual_value(map)
 }
 
 /// Extracts the year from a date string (YYYY-MM-DD or YYYY).

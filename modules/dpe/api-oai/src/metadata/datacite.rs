@@ -287,15 +287,12 @@ fn resolve_temporal_coverage(tc: &TemporalCoverage) -> Option<DataCiteDate> {
 }
 
 /// Pure resolution of a `temporalCoverage` entry over the given lookup maps, so
-/// the fallback chain can be unit-tested without the process-global caches (the
-/// same `*_in` shape used by the cache modules themselves).
+/// the fallback chain can be unit-tested without the process-global caches.
 ///
-/// Resolution order:
-/// 1. A ChronOntology reference URL → its timespan range (`periods`).
-/// 2. Otherwise (or on a cache miss) the offline enrichment table (`enrichment`), keyed by the same
-///    name the mapping computes here.
-/// 3. Otherwise a name-only date (`dateInformation` with an empty `date`), so the original
-///    information is never silently dropped.
+/// The actual resolution (ChronOntology URL → enrichment table → name-only
+/// fallback) lives in `dpe_core::temporal_coverage`, shared with `dpe-server`'s
+/// `validate` command so the two can never disagree about what counts as
+/// resolved. This wraps that outcome into the DataCite `Coverage` date shape.
 ///
 /// Returns `None` only when there is neither a resolvable range nor any name to
 /// carry — a date with neither value nor information would be useless.
@@ -304,43 +301,11 @@ fn resolve_temporal_coverage_in(
     periods: &HashMap<String, dpe_core::w3cdtf::W3cdtfRange>,
     enrichment: &HashMap<String, dpe_core::temporal_enrichment_cache::EnrichedDate>,
 ) -> Option<DataCiteDate> {
-    use dpe_core::{chronontology_cache, temporal_enrichment_cache};
-
-    // The display name, used both as the enrichment key and as dateInformation.
-    let name = match tc {
-        TemporalCoverage::Reference(ref_data) => ref_data.text.clone(),
-        TemporalCoverage::Text(text_map) => get_multilingual_value(text_map),
-    };
-
-    // 1. ChronOntology URL → timespan.
-    if let TemporalCoverage::Reference(ref_data) = tc {
-        if !ref_data.url.is_empty() {
-            if let Some(range) = chronontology_cache::timespan_for_in(periods, &ref_data.url) {
-                return Some(DataCiteDate {
-                    date: range.into(),
-                    date_type: "Coverage".to_string(),
-                    date_information: name,
-                });
-            }
-        }
-    }
-
-    // 2. Enrichment table, keyed by the display name.
-    if let Some(ref key) = name {
-        if let Some(enriched) = temporal_enrichment_cache::enriched_for_in(enrichment, key) {
-            return Some(DataCiteDate {
-                date: enriched.date.unwrap_or_default(),
-                date_type: "Coverage".to_string(),
-                date_information: Some(enriched.original_name),
-            });
-        }
-    }
-
-    // 3. Name-only fallback (empty date body, dateInformation set).
-    name.map(|n| DataCiteDate {
-        date: String::new(),
+    let resolution = dpe_core::temporal_coverage::resolve_in(tc, periods, enrichment)?;
+    Some(DataCiteDate {
+        date: resolution.date,
         date_type: "Coverage".to_string(),
-        date_information: Some(n),
+        date_information: resolution.date_information,
     })
 }
 
@@ -461,16 +426,10 @@ mod temporal_tests {
         assert_eq!(date.date_information.as_deref(), Some("Vague Period"));
     }
 
-    /// Derive the lookup key / name for a temporalCoverage entry exactly as
-    /// `resolve_temporal_coverage_in` does (Reference → `text`; Text map →
-    /// `get_multilingual_value`). Mirrors `normalized_key` in
-    /// `scripts/build-temporal-coverage-enrichment.py`.
-    fn coverage_name(tc: &TemporalCoverage) -> Option<String> {
-        match tc {
-            TemporalCoverage::Reference(ref_data) => ref_data.text.clone(),
-            TemporalCoverage::Text(text_map) => get_multilingual_value(text_map),
-        }
-    }
+    // The same lookup-key derivation `resolve_temporal_coverage_in` uses
+    // (Reference → `text`; Text map → `get_multilingual_value`), shared via
+    // dpe-core so the two can't drift apart.
+    use dpe_core::temporal_coverage::coverage_name;
 
     /// Completeness guard over the committed project data: every distinct
     /// `temporalCoverage` entry across all in-repo project files must resolve to a
@@ -525,22 +484,13 @@ mod temporal_tests {
                 let Some(name) = coverage_name(tc) else {
                     continue; // no name to key on; nothing to resolve.
                 };
-                if !seen.insert(name.clone()) {
+                if !seen.insert(name) {
                     continue; // already checked this distinct name.
                 }
 
-                let resolved = resolve_temporal_coverage_in(tc, &periods, &enriched);
-                let has_date = resolved.as_ref().is_some_and(|d| !d.date.is_empty());
-                if has_date {
-                    continue;
-                }
-
-                // Empty date: allowed only if the name is an explicitly reviewed
-                // non-period label (enrichment row, no date, source "unresolved").
-                let intentional_label = enriched
-                    .get(&name)
-                    .is_some_and(|e| e.date.is_none() && e.source == "unresolved");
-                if !intentional_label {
+                // The same gap decision `dpe-server validate` applies, so the
+                // two can't drift apart.
+                if let Some(name) = dpe_core::temporal_coverage::completeness_gap(tc, &periods, &enriched) {
                     unresolved.push(name);
                 }
             }

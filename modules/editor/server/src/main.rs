@@ -217,10 +217,17 @@ async fn serve() -> ExitCode {
         None
     };
 
+    // An unset data directory is a legitimate state today (nothing reads
+    // records yet), so report it rather than failing — but report it as unset,
+    // not as some path the editor invented.
+    let data_dir = config
+        .data_dir
+        .as_deref()
+        .map_or_else(|| "<unset>".to_string(), |path| path.display().to_string());
     tracing::info!(
         env = %config.env,
         public_dir = %config.public_dir.display(),
-        data_dir = %config.data_dir.display(),
+        data_dir = %data_dir,
         "editor configuration loaded"
     );
 

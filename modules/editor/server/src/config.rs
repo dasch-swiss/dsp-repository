@@ -30,10 +30,14 @@ pub struct EditorConfig {
     pub public_dir: PathBuf,
 
     /// Directory holding the published project/person/organization set baked
-    /// into the image. Set via `EDITOR_DATA_DIR`. Reported at startup so an
-    /// operator can see what the container resolved; the startup comparison
-    /// that derives project status is what will read the files themselves.
-    pub data_dir: PathBuf,
+    /// into the image, set via `EDITOR_DATA_DIR`. Deliberately has **no
+    /// default**: the only plausible one is a relative path into DPE's tree,
+    /// which the editor does not own, and which would hide the dependency from
+    /// the code that reads records. Every environment that reads them sets the
+    /// variable — the image to `/app/server/data`, `just dev-editor` to DPE's
+    /// checked-out data. `None` therefore means "no data directory
+    /// configured", and is reported as such at startup.
+    pub data_dir: Option<PathBuf>,
 
     /// Deployment environment, `DEV` or `PROD`. `DEV` additionally exports logs
     /// over OTLP when an endpoint is configured; `PROD` logs to stdout only.
@@ -46,7 +50,7 @@ impl Default for EditorConfig {
         Self {
             site_addr: "127.0.0.1:4100".to_string(),
             public_dir: PathBuf::from("modules/editor/public"),
-            data_dir: PathBuf::from("modules/dpe/server/data"),
+            data_dir: None,
             env: "DEV".to_string(),
         }
     }
@@ -79,7 +83,7 @@ mod tests {
         let config = EditorConfig::default();
         assert_eq!(config.site_addr, "127.0.0.1:4100");
         assert_eq!(config.public_dir, PathBuf::from("modules/editor/public"));
-        assert_eq!(config.data_dir, PathBuf::from("modules/dpe/server/data"));
+        assert_eq!(config.data_dir, None);
         assert_eq!(config.env, "DEV");
     }
 
@@ -118,7 +122,20 @@ mod tests {
         figment::Jail::expect_with(|jail| {
             jail.set_env("EDITOR_DATA_DIR", "/app/server/data");
             let config = EditorConfig::load().expect("config should load");
-            assert_eq!(config.data_dir, PathBuf::from("/app/server/data"));
+            assert_eq!(config.data_dir, Some(PathBuf::from("/app/server/data")));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn data_dir_is_unset_without_the_env_var() {
+        // No default on purpose. The only plausible one is a relative path into
+        // DPE's tree (`modules/dpe/server/data`), which the editor does not own;
+        // baking it in would let a records reader silently resolve another
+        // module's directory instead of failing on an unconfigured seam.
+        figment::Jail::expect_with(|_| {
+            let config = EditorConfig::load().expect("config should load without EDITOR_DATA_DIR");
+            assert_eq!(config.data_dir, None);
             Ok(())
         });
     }

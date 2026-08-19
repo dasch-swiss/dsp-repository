@@ -60,6 +60,8 @@ The directory is the ownership signal, and four things read it:
 
 `mosaic-*` predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.
 
+**The rule covers crates, not content.** `modules/dpe/server/data` stays under DPE even though the editor consumes it: DPE owns it, and the editor reads an image-baked snapshot through an explicit `EDITOR_DATA_DIR` seam rather than a compiled-in path — see [Editor Operations](./editor/operations.md#data-directory-a-deliberate-build-input). Two of the four signals do have analogues there, accepted knowingly: a data-only change matches `modules/dpe/**`, so it deploys a DPE preview but no editor preview, and `serve-editor`'s watch list does not restart the editor on a data edit. Both become visible only once the editor reads records, and both are cheaper to fix in place than a wholesale move would be.
+
 ## API Crate Pattern
 
 Each API is a separate crate under `modules/dpe/`:

@@ -371,6 +371,10 @@ dev-editor:
     "$bin" -i modules/editor/style/main.css -o modules/editor/public/assets/app.css --watch &
     tw=$!
     trap 'kill $tw 2>/dev/null || true' EXIT
+    # The editor has no default data directory: the published set is DPE's
+    # content, consumed through EDITOR_DATA_DIR. Locally that is DPE's
+    # checked-out data; the image bakes a snapshot at /app/server/data.
+    EDITOR_DATA_DIR=modules/dpe/server/data \
     bacon serve-editor
 
 # Start the editor with hot reload, exporting traces/metrics/logs to a local LGTM stack (run `just lgtm-up` in another terminal first)
@@ -382,6 +386,7 @@ dev-editor-otel:
     "$bin" -i modules/editor/style/main.css -o modules/editor/public/assets/app.css --watch &
     tw=$!
     trap 'kill $tw 2>/dev/null || true' EXIT
+    EDITOR_DATA_DIR=modules/dpe/server/data \
     OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
     OTEL_SERVICE_NAME=editor \
     OTEL_RESOURCE_ATTRIBUTES="service.namespace=editor,service.version={{ CARGO_VERSION }},deployment.environment=dev" \
@@ -435,6 +440,9 @@ build-docker-editor arch="": css-editor-release
     mkdir -p "$stage"
     cp "target/container/$target/release/editor-server" "$stage/"
     cp -r modules/editor/public "$stage/"
+    # DPE's published set, copied in deliberately: git stays the source of truth
+    # and the editor reads an image-baked snapshot via EDITOR_DATA_DIR, so a data
+    # change reaches the editor by rebuilding the image, not at runtime.
     cp -r modules/dpe/server/data "$stage/"
     cp modules/editor/Dockerfile "$stage/"
     docker build --platform "$platform" -f "$stage/Dockerfile" -t metadata-editor "$stage"

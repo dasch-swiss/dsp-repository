@@ -58,7 +58,7 @@ Imports `dpe-core` types directly; depends on `maud` and `mosaic-tiles`. No Lept
 
 ### Browser telemetry
 
-`dpe-server` wires `POST /telemetry/collect` from **`platform-telemetry`**, which is not a DPE crate — it is shared with `editor-server` and lives in `modules/platform/telemetry`. See `modules/platform/README.md`, and `docs/src/repo_structure.md` → *Shared Crates* for why it sits outside `modules/dpe/`.
+`dpe-server` wires `POST /telemetry/collect` from **`platform-telemetry`**, which is not a DPE crate — it is shared with `editor-server` and lives in `modules/platform/telemetry`. See `modules/platform/README.md`, and `docs/src/repo_structure.md` → *Shared Crates* for why it sits outside `modules/dpe/`. `page_url.rs` (below) is the one part of the pipeline that stays in `dpe-server`: `page.url` normalization needs DPE's own route table, which a shared crate cannot hold.
 
 ### `dpe-server` (server/)
 
@@ -67,6 +67,7 @@ Composition root and Axum binary. Contains:
 - **Route wiring**: native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, `/healthz`, `/telemetry/collect`, plus `ServeDir` static serving and a 404 fallback
 - **Head/page shell**: `view.rs` — the hand-written `head()` + `page()` partials (title, content-hashed stylesheet link, conditional `traceparent` meta, fonts, Fathom, Datastar + telemetry scripts)
 - **Fragment handlers**: `fragments.rs` — plain Axum handlers that render Maud `Markup` to HTML and return Datastar SSE events
+- **Page-URL normalization**: `page_url.rs` — bounds the telemetry `page.url` metric attribute to DPE's own known routes, passed into `platform_telemetry::collector::collect_route`
 - **Configuration**: `config.rs` — figment-based layered config (defaults → `dpe.toml` → `DPE_*` env vars)
 - **Logging**: OTel-aware subscriber via `init-tracing-opentelemetry`
 

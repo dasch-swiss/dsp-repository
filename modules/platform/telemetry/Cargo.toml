@@ -8,7 +8,7 @@ publish = false
 serde = { workspace = true }
 serde_json = { workspace = true }
 
-# The collector endpoint. The wire-contract modules (beacon, origin, page_url,
+# The collector endpoint. The wire-contract modules (beacon, origin,
 # traceparent) stay framework-free; these are only reached from `collector`.
 axum.workspace = true
 opentelemetry.workspace = true

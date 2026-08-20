@@ -2,8 +2,9 @@
 //! structured logs out.
 //!
 //! Shared by every DaSCH service that renders the beacon script, so the beacon
-//! contract has exactly one implementation. The only per-service value is the
-//! OTel instrumentation scope, set once at startup with [`set_meter_namespace`].
+//! contract has exactly one implementation. The per-service values — the OTel
+//! instrumentation scope and the `page.url` normalizer — are set once, at
+//! startup, by [`collect_route`].
 
 use std::sync::{LazyLock, OnceLock};
 
@@ -14,7 +15,6 @@ use url::Url;
 
 use crate::beacon::{BeaconPayload, Signal, VALID_ERROR_KINDS, VALID_RATINGS, VALID_VITAL_NAMES};
 use crate::origin::is_allowed_origin;
-use crate::page_url::normalize_page_url;
 use crate::traceparent::validated_traceparent;
 
 /// Extract the host from an Origin or Referer URL.
@@ -41,8 +41,23 @@ fn meter_scope_name(namespace: &str) -> String {
 /// than the `.browser` that an empty namespace would produce.
 const FALLBACK_METER_SCOPE: &str = "browser";
 
+/// The per-service page-URL normalizer, set once by [`collect_route`].
+///
+/// A `platform-*` crate depends on no service crate (`docs/src/repo_structure.md`
+/// → Shared Crates), so this crate cannot hold a route table of its own — each
+/// service passes in the function that knows its own routes.
+static PAGE_URL_NORMALIZER: OnceLock<fn(&str) -> &'static str> = OnceLock::new();
+
+/// Normalize a beacon's `page_url` field via the normalizer [`collect_route`]
+/// installed. Falls back to `"other"` if no route ever called `collect_route`
+/// — unreachable in either binary, but keeps this total rather than panicking.
+fn normalize_page_url(url: &str) -> &'static str {
+    PAGE_URL_NORMALIZER.get().map_or("other", |normalize| normalize(url))
+}
+
 /// The `POST /telemetry/collect` route, for the service identified by
-/// `namespace`.
+/// `namespace`, using `normalize_page_url` to bucket each beacon's page URL
+/// into a bounded set of attribute values.
 ///
 /// The namespace is an argument here rather than a separate startup call
 /// precisely so it cannot be forgotten: the scope name is what a dashboard
@@ -50,15 +65,23 @@ const FALLBACK_METER_SCOPE: &str = "browser";
 /// beacon shipped, and a missed init would silently rename it. Taking it at the
 /// one place the route can be declared makes that a compile error instead.
 ///
+/// `normalize_page_url` is a plain `fn`, not a closure, because each service's
+/// route table is a `const` slice plus a pattern match, not captured state —
+/// see `dpe-server::page_url` and `editor-server::page_url`. Passing it in here
+/// keeps this crate free of any one service's routes, per the Shared Crates
+/// rule.
+///
 /// Layer as usual — the return type is a `MethodRouter`, so
-/// `collect_route("dpe").layer(rate_limiter)` still works.
-pub fn collect_route<S>(namespace: &str) -> axum::routing::MethodRouter<S>
+/// `collect_route("dpe", page_url::normalize_page_url).layer(rate_limiter)`
+/// still works.
+pub fn collect_route<S>(namespace: &str, normalize_page_url: fn(&str) -> &'static str) -> axum::routing::MethodRouter<S>
 where
     S: Clone + Send + Sync + 'static,
 {
     // Ignore a second call rather than panicking: a double-init is not worth
     // taking a service down for, and both callers pass a constant.
     let _ = METER_SCOPE.set(meter_scope_name(namespace));
+    let _ = PAGE_URL_NORMALIZER.set(normalize_page_url);
     axum::routing::post(collect_handler)
 }
 
@@ -329,11 +352,15 @@ mod tests {
         Router::new().route("/telemetry/collect", post(collect_handler))
     }
 
+    fn test_normalize_page_url(_url: &str) -> &'static str {
+        "other"
+    }
+
     #[tokio::test]
     async fn collect_route_serves_the_collector() {
         // The route helper is the only sanctioned way to wire the collector, so
         // it has to behave identically to the bare handler.
-        let app: Router = Router::new().route("/telemetry/collect", collect_route("test"));
+        let app: Router = Router::new().route("/telemetry/collect", collect_route("test", test_normalize_page_url));
         let response = app
             .oneshot(
                 Request::builder()

@@ -739,10 +739,28 @@ fn install_tracing_panic_hook() {
     }));
 }
 
+/// Whether `url` is one the healthcheck may call. The URL comes from a CLI
+/// flag the Docker `HEALTHCHECK` supplies, so restricting it to loopback stops
+/// a mistyped or tampered value turning the container into an SSRF probe.
+///
+/// The host must be followed by a port, a path, or end of string. A bare
+/// `starts_with` is not enough: `http://localhost.evil.com/healthz` and
+/// `http://localhost@evil.com/healthz` both begin with `http://localhost` while
+/// addressing `evil.com` — in the second case `localhost` is userinfo, not the
+/// host. Either would send the probe off-box and, on a 200, report the container
+/// healthy while the real server is down.
+///
+/// Separate from [`healthcheck`] so the rule is testable without issuing a
+/// request.
+fn is_allowed_healthcheck_url(url: &str) -> bool {
+    ["http://localhost", "http://127.0.0.1", "http://[::1]"].iter().any(|prefix| {
+        url.strip_prefix(prefix)
+            .is_some_and(|rest| rest.is_empty() || rest.starts_with(':') || rest.starts_with('/'))
+    })
+}
+
 fn healthcheck(url: &str) -> ExitCode {
-    // Only allow localhost URLs to prevent SSRF.
-    let allowed_prefixes = ["http://localhost", "http://127.0.0.1", "http://[::1]"];
-    if !allowed_prefixes.iter().any(|prefix| url.starts_with(prefix)) {
+    if !is_allowed_healthcheck_url(url) {
         eprintln!("healthcheck: only localhost URLs are allowed, got: {url}");
         return ExitCode::FAILURE;
     }
@@ -764,5 +782,32 @@ fn healthcheck(url: &str) -> ExitCode {
             eprintln!("healthcheck: {e}");
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod healthcheck_tests {
+    use super::*;
+
+    #[test]
+    fn healthcheck_allows_only_loopback_urls() {
+        assert!(is_allowed_healthcheck_url("http://localhost:8080/healthz"));
+        assert!(is_allowed_healthcheck_url("http://127.0.0.1:8080/healthz"));
+        assert!(is_allowed_healthcheck_url("http://[::1]:8080/healthz"));
+        // Port and path are both optional.
+        assert!(is_allowed_healthcheck_url("http://localhost/healthz"));
+        assert!(is_allowed_healthcheck_url("http://localhost"));
+
+        assert!(!is_allowed_healthcheck_url("http://example.com/healthz"));
+        // Lookalike hosts: each begins with an allowed prefix but addresses
+        // somewhere else, so the host must end at a `:`, a `/`, or end of string.
+        assert!(!is_allowed_healthcheck_url("http://localhost.evil.com/healthz"));
+        assert!(!is_allowed_healthcheck_url("http://127.0.0.1.evil.com/healthz"));
+        // `localhost` here is userinfo — the actual host is evil.com.
+        assert!(!is_allowed_healthcheck_url("http://localhost@evil.com/healthz"));
+        assert!(!is_allowed_healthcheck_url("http://evil.com/?x=http://localhost"));
+        // Scheme is part of the prefix, so https is rejected too: the probe
+        // talks to the process inside its own container, never over TLS.
+        assert!(!is_allowed_healthcheck_url("https://localhost/healthz"));
     }
 }

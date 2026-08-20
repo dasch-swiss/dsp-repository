@@ -286,13 +286,14 @@
 </ul>
 <p>Imports <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
 <h3 id="browser-telemetry"><a class="header" href="#browser-telemetry">Browser telemetry</a></h3>
-<p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>platform-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>modules/platform/telemetry</code>. See <code>modules/platform/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>modules/dpe/</code>.</p>
+<p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>platform-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>modules/platform/telemetry</code>. See <code>modules/platform/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>modules/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold.</p>
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
 <p>Composition root and Axum binary. Contains:</p>
 <ul>
 <li><strong>Route wiring</strong>: native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, <code>/healthz</code>, <code>/telemetry/collect</code>, plus <code>ServeDir</code> static serving and a 404 fallback</li>
 <li><strong>Head/page shell</strong>: <code>view.rs</code> — the hand-written <code>head()</code> + <code>page()</code> partials (title, content-hashed stylesheet link, conditional <code>traceparent</code> meta, fonts, Fathom, Datastar + telemetry scripts)</li>
 <li><strong>Fragment handlers</strong>: <code>fragments.rs</code> — plain Axum handlers that render Maud <code>Markup</code> to HTML and return Datastar SSE events</li>
+<li><strong>Page-URL normalization</strong>: <code>page_url.rs</code> — bounds the telemetry <code>page.url</code> metric attribute to DPE's own known routes, passed into <code>platform_telemetry::collector::collect_route</code></li>
 <li><strong>Configuration</strong>: <code>config.rs</code> — figment-based layered config (defaults → <code>dpe.toml</code> → <code>DPE_*</code> env vars)</li>
 <li><strong>Logging</strong>: OTel-aware subscriber via <code>init-tracing-opentelemetry</code></li>
 </ul>

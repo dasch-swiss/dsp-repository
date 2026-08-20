@@ -256,9 +256,13 @@
 <p>The beacon endpoint is not editor code. <code>platform-telemetry</code> owns the wire contract <em>and</em> the collector, and both services wire the same handler:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>.route("/telemetry/collect", platform_telemetry::collector::collect_route("editor").layer(rate_limit))
+</span>.route(
+    "/telemetry/collect",
+    platform_telemetry::collector::collect_route("editor", page_url::normalize_page_url).layer(rate_limit),
+)
 <span class="boring">}</span></code></pre></pre>
 <p>The <code>namespace</code> argument sets the OTel instrumentation scope — <code>editor.browser</code> here, <code>dpe.browser</code> in DPE. It is a required argument rather than a separate startup call precisely so it cannot be forgotten: the scope name is what a dashboard filters on as <code>otel_scope_name</code>, and a missed init would silently rename it.</p>
+<p><code>page_url::normalize_page_url</code> is not shared code either: a platform crate cannot hold one service's route table, so the editor owns its own <code>page_url.rs</code> (<code>server/src/page_url.rs</code>) and passes the fn in. New full-page routes need a matching entry there — see <code>REVIEW.md</code>.</p>
 <p>So a Grafana query distinguishes the two services by <code>otel_scope_name</code> (<code>editor.browser</code> vs <code>dpe.browser</code>) or by the resource attribute <code>service.namespace</code> (<code>editor</code> vs <code>dpe</code>). Metric <em>names</em> (<code>browser.web_vital</code>, <code>browser.error</code>, …) are identical across both.</p>
 <p>The <code>dpe-</code> crate prefix is historical — DPE was the first consumer. Nothing in the crate reads DPE's data or configuration.</p>
 <h2 id="local-observability-stack"><a class="header" href="#local-observability-stack">Local observability stack</a></h2>

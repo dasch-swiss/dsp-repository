@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.8.3](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.2...v0.8.3) (2026-08-20)
+
+
+### Features
+
+* **dpe-data:** Add project URL for 0863 (Samaria Ivories) ([afe7ab9](https://github.com/dasch-swiss/dsp-repository/commit/afe7ab98301680f37410f7c9d2dd0bc5f7585932))
+* **dpe-server:** Add temporal-coverage resolution check to validate ([4efbbc2](https://github.com/dasch-swiss/dsp-repository/commit/4efbbc26604ac05e74489c1012eb7f223bfcc6f9))
+* **editor-server:** Scaffold the metadata editor service ([c0b7acd](https://github.com/dasch-swiss/dsp-repository/commit/c0b7acd81d3b76e24d1b6eec11077f92f870281c))
+
+
+### Bug Fixes
+
+* **dpe-data:** Correct solec (0868) data link and contact email ([e4a1575](https://github.com/dasch-swiss/dsp-repository/commit/e4a1575b42f851a35eb407e1b5cd117be0edae74))
+* **dpe-data:** Stop advertising external websites as DSP data ([8fbfac3](https://github.com/dasch-swiss/dsp-repository/commit/8fbfac3f9c179d80912b2741416b187361e353ad))
+* **dpe-web:** Open external links in a new tab ([909a122](https://github.com/dasch-swiss/dsp-repository/commit/909a1221d2136ed7c98a3fac09c930c04ee53d48))
+* **platform-telemetry:** Normalize page_url per-service instead of one shared route table ([6622573](https://github.com/dasch-swiss/dsp-repository/commit/6622573579736c5ca88fbc7b96c8e74ae6df422e))
+
+
+### Code Refactoring
+
+* **dpe-telemetry:** Move the browser beacon collector into the crate ([73d667e](https://github.com/dasch-swiss/dsp-repository/commit/73d667e8b25c76567fb25814143f1020d4085d88))
+* **editor-server:** Make the data directory an explicit, unset-by-default seam ([104b1b8](https://github.com/dasch-swiss/dsp-repository/commit/104b1b89b96de3b33caddd8b459b238208c241fd))
+* **mosaic-tiles:** Extract a component-CSS barrel ([f35de37](https://github.com/dasch-swiss/dsp-repository/commit/f35de376bafbccd0e3a09e446687de7831ec0774))
+* **platform-telemetry:** Move the shared telemetry crate under modules/platform ([5b09cbd](https://github.com/dasch-swiss/dsp-repository/commit/5b09cbdd68cc82d2f72b9c9cfcfe7a1ab2a70dc6))
+
+
+### Documentation
+
+* **dpe-server:** Correct the distroless uid in the operations guide ([3eae258](https://github.com/dasch-swiss/dsp-repository/commit/3eae2583e5a4a12094c87d723249dae15126d452))
+
+
+### Miscellaneous Chores
+
+* **ci:** Add just recipe for updating record dumps (DEV-6838) ([b28d161](https://github.com/dasch-swiss/dsp-repository/commit/b28d1617547651611fbccc9b0b3724e46268a3f7))
+* **ci:** Update the path-keyed automation for the new module layout ([ad83a72](https://github.com/dasch-swiss/dsp-repository/commit/ad83a725cc755f8ae06c00f327f7912a27303f13))
+* **dpe-data:** Normalise language-key order in project files ([acfb409](https://github.com/dasch-swiss/dsp-repository/commit/acfb409b27b3c15a86d52bd4a75b8a868ea2c870))
+* **dpe-data:** Update record dumps (DEV-6838) ([b3f9be7](https://github.com/dasch-swiss/dsp-repository/commit/b3f9be7ea9fcb9427fa54b77a43c87b6f0e4d5a0))
+* **dpe-data:** Update the demo URL for 0854 (Alice in DaSCHland) ([aea9023](https://github.com/dasch-swiss/dsp-repository/commit/aea9023962b61a5aaa50187ecca58b0a1a688775))
+
 ## [0.8.2](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.1...v0.8.2) (2026-07-29)
 
 

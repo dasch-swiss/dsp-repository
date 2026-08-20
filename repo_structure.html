@@ -294,6 +294,7 @@
 <li><strong>The dependency direction.</strong> <code>platform-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead.</li>
 </ul>
 <p><code>mosaic-*</code> predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.</p>
+<p><strong>The rule covers crates, not content.</strong> <code>modules/dpe/server/data</code> stays under DPE even though the editor consumes it: DPE owns it, and the editor reads an image-baked snapshot through an explicit <code>EDITOR_DATA_DIR</code> seam rather than a compiled-in path — see <a href="./editor/operations.html#data-directory-a-deliberate-build-input">Editor Operations</a>. Two of the four signals do have analogues there, accepted knowingly: a data-only change matches <code>modules/dpe/**</code>, so it deploys a DPE preview but no editor preview, and <code>serve-editor</code>'s watch list does not restart the editor on a data edit. Both become visible only once the editor reads records, and both are cheaper to fix in place than a wholesale move would be.</p>
 <h2 id="api-crate-pattern"><a class="header" href="#api-crate-pattern">API Crate Pattern</a></h2>
 <p>Each API is a separate crate under <code>modules/dpe/</code>:</p>
 <ul>

@@ -269,6 +269,7 @@
 <li>Cross-references between projects, persons, and organizations</li>
 <li>Orphaned files that are not referenced by any parent entity</li>
 <li>Project roles misplaced in a person's <code>jobTitles</code> (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's <code>attributions</code> (<code>contributorType</code>), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is <code>JOB_TITLE_ROLE_WORDS</code> in <code>dpe-core</code>.</li>
+<li>Every distinct <code>temporalCoverage</code> name resolves to a structured date (ChronOntology or the offline enrichment table), or is explicitly marked <code>source: "unresolved"</code>. See <code>docs/src/dpe/oai-pmh.md</code> → <em>Temporal coverage</em>.</li>
 </ul>
 <p><strong>Exit codes:</strong></p>
 <ul>

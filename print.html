@@ -2510,6 +2510,7 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <li>Cross-references between projects, persons, and organizations</li>
 <li>Orphaned files that are not referenced by any parent entity</li>
 <li>Project roles misplaced in a person's <code>jobTitles</code> (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's <code>attributions</code> (<code>contributorType</code>), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is <code>JOB_TITLE_ROLE_WORDS</code> in <code>dpe-core</code>.</li>
+<li>Every distinct <code>temporalCoverage</code> name resolves to a structured date (ChronOntology or the offline enrichment table), or is explicitly marked <code>source: "unresolved"</code>. See <code>docs/src/dpe/oai-pmh.md</code> → <em>Temporal coverage</em>.</li>
 </ul>
 <p><strong>Exit codes:</strong></p>
 <ul>
@@ -2906,6 +2907,7 @@ RUST_LOG=debug
 <li><strong>Everything else</strong> — free-text names resolve against <code>modules/dpe/server/data/temporal-coverage-enrichment.json</code>, a reviewed lookup table built by <code>scripts/build-temporal-coverage-enrichment.py</code>. The tool does not parse names itself; it collects each distinct name and assigns a range one of two ways. A name that carries a ChronOntology URL with a known timespan is resolved from the periods file (<code>source: "chronontology"</code>). Any other name is emitted as a skeleton row (<code>date: null</code>, <code>source: "unresolved"</code>) for an operator or LLM agent to fill with a W3CDTF range and re-tag <code>source: "llm"</code>. Names that are not time periods at all (e.g. a cultural style like "Swiss") keep <code>date: null</code> and stay <code>source: "unresolved"</code>. Re-running is merge-preserving — existing rows are never overwritten, so reviewed rows survive; <code>--check</code> fails if a distinct dataset name has no row yet.</li>
 </ol>
 <p>When no range resolves (a <code>date: null</code> row, or a name absent from both sources), the element is emitted with the <code>dateInformation</code> attribute only and an empty body, so the original label is never dropped.</p>
+<p>Resolution lives in <code>dpe_core::temporal_coverage</code>, shared by the OAI-PMH mapping above, <code>dpe-server validate</code> (<code>just validate-data</code>), and the <code>every_committed_temporal_coverage_resolves</code> test — a distinct <code>temporalCoverage</code> name with no resolvable range fails <code>validate</code> (and CI) rather than only surfacing as a name-only DataCite date at request time.</p>
 <h3 id="record-files"><a class="header" href="#record-files">Record files</a></h3>
 <p>A bitstream Record may carry a single <code>file</code> (its MIME type and a direct download link, served by dsp-ingest). When present it is exposed in both formats:</p>
 <ul>

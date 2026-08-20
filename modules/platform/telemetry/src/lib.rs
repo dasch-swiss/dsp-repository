@@ -8,5 +8,4 @@
 pub mod beacon;
 pub mod collector;
 pub mod origin;
-pub mod page_url;
 pub mod traceparent;

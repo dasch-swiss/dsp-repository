@@ -18,10 +18,15 @@ There is **no third-party analytics script**. DPE injects Fathom; the editor is 
 The beacon endpoint is not editor code. `platform-telemetry` owns the wire contract *and* the collector, and both services wire the same handler:
 
 ```rust
-.route("/telemetry/collect", platform_telemetry::collector::collect_route("editor").layer(rate_limit))
+.route(
+    "/telemetry/collect",
+    platform_telemetry::collector::collect_route("editor", page_url::normalize_page_url).layer(rate_limit),
+)
 ```
 
 The `namespace` argument sets the OTel instrumentation scope — `editor.browser` here, `dpe.browser` in DPE. It is a required argument rather than a separate startup call precisely so it cannot be forgotten: the scope name is what a dashboard filters on as `otel_scope_name`, and a missed init would silently rename it.
+
+`page_url::normalize_page_url` is not shared code either: a platform crate cannot hold one service's route table, so the editor owns its own `page_url.rs` (`server/src/page_url.rs`) and passes the fn in. New full-page routes need a matching entry there — see `REVIEW.md`.
 
 So a Grafana query distinguishes the two services by `otel_scope_name` (`editor.browser` vs `dpe.browser`) or by the resource attribute `service.namespace` (`editor` vs `dpe`). Metric *names* (`browser.web_vital`, `browser.error`, …) are identical across both.
 

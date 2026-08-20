@@ -7,6 +7,7 @@ mod config;
 #[cfg(feature = "dev")]
 mod dev_reload;
 pub(crate) mod fragments;
+mod page_url;
 mod router;
 mod traceparent;
 mod view;
@@ -331,7 +332,7 @@ async fn serve() -> ExitCode {
             "/telemetry/collect",
             // "dpe" names the OTel instrumentation scope (`dpe.browser`), which
             // the dashboards filter on — do not change it.
-            platform_telemetry::collector::collect_route("dpe").layer({
+            platform_telemetry::collector::collect_route("dpe", page_url::normalize_page_url).layer({
                 use tower_governor::governor::GovernorConfigBuilder;
                 use tower_governor::GovernorLayer;
 

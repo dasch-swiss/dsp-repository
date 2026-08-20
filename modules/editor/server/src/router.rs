@@ -44,7 +44,7 @@ pub(crate) fn build_app(state: AppState, public_dir: &std::path::Path) -> Router
         // "editor" names the OTel instrumentation scope (`editor.browser`).
         .route(
             "/telemetry/collect",
-            platform_telemetry::collector::collect_route("editor").layer({
+            platform_telemetry::collector::collect_route("editor", crate::page_url::normalize_page_url).layer({
                 use tower_governor::governor::GovernorConfigBuilder;
                 use tower_governor::GovernorLayer;
 

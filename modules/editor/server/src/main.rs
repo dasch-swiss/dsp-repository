@@ -13,6 +13,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use clap::{Parser, Subcommand};
 
 mod config;
+mod page_url;
 mod router;
 mod traceparent;
 

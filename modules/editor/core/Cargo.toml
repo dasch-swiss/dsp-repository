@@ -5,3 +5,12 @@ edition = "2021"
 publish = false
 
 [dependencies]
+# Pure domain types and the repository ports. No Axum, Maud, rusqlite or
+# deadpool here — the SQLite implementations live in `editor-server`, behind
+# these traits.
+async-trait.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]

@@ -43,6 +43,35 @@ pub struct EditorConfig {
     /// over OTLP when an endpoint is configured; `PROD` logs to stdout only.
     /// Set via `EDITOR_ENV`.
     pub env: String,
+
+    /// Directory holding the SQLite database, set via `EDITOR_DB_DIR`.
+    ///
+    /// **No default, and unset means in-memory** — not a path. That is the
+    /// preview-safety default: the Cloud Run PR preview has no mounted volume
+    /// and is publicly reachable, so a publicly reachable preview must not be
+    /// able to accumulate state. It also means tests and `just dev-editor` need
+    /// no volume.
+    ///
+    /// Production sets it to the mount Infra provides. It names the
+    /// **directory**, never the database file: SQLite creates `-wal` and `-shm`
+    /// siblings next to the file, which is impossible if the file itself is the
+    /// mount point. Startup writes and removes a probe file in it, so a
+    /// wrong-uid or root-owned mount fails with a message that says so.
+    pub db_dir: Option<PathBuf>,
+
+    /// Size of the reader connection pool, set via `EDITOR_DB_READERS`.
+    ///
+    /// The writer pool is always one connection: SQLite permits a single writer
+    /// at a time, so a second would move the queue from the pool into SQLite.
+    pub db_readers: usize,
+
+    /// SQLite `busy_timeout` in milliseconds, set via `EDITOR_DB_BUSY_TIMEOUT_MS`.
+    ///
+    /// Applied per connection, because that is the only place it has effect. It
+    /// is a backstop rather than the primary defence: writes serialise in the
+    /// pool and open `BEGIN IMMEDIATE`, so a reader waiting on a checkpoint is
+    /// the case it actually covers.
+    pub db_busy_timeout_ms: u64,
 }
 
 impl Default for EditorConfig {
@@ -52,6 +81,9 @@ impl Default for EditorConfig {
             public_dir: PathBuf::from("modules/editor/public"),
             data_dir: None,
             env: "DEV".to_string(),
+            db_dir: None,
+            db_readers: 4,
+            db_busy_timeout_ms: 5_000,
         }
     }
 }
@@ -72,6 +104,24 @@ impl EditorConfig {
     pub fn exports_otlp_logs(&self) -> bool {
         self.env == "DEV"
     }
+
+    /// Where the database lives: the configured directory, or a named in-memory
+    /// database when `EDITOR_DB_DIR` is unset.
+    ///
+    /// The in-memory name is fixed rather than random, because a shared-cache
+    /// in-memory database is scoped to the process and there is one per process.
+    /// It is never bare `:memory:` — see `db::Source::Memory`.
+    pub fn db_source(&self) -> crate::db::Source {
+        match &self.db_dir {
+            Some(dir) => crate::db::Source::Directory(dir.clone()),
+            None => crate::db::Source::Memory("editor".to_string()),
+        }
+    }
+
+    /// The configured `busy_timeout`.
+    pub fn db_busy_timeout(&self) -> std::time::Duration {
+        std::time::Duration::from_millis(self.db_busy_timeout_ms)
+    }
 }
 
 #[cfg(test)]
@@ -85,6 +135,45 @@ mod tests {
         assert_eq!(config.public_dir, PathBuf::from("modules/editor/public"));
         assert_eq!(config.data_dir, None);
         assert_eq!(config.env, "DEV");
+        assert_eq!(config.db_dir, None);
+        assert_eq!(config.db_readers, 4);
+        assert_eq!(config.db_busy_timeout_ms, 5_000);
+    }
+
+    #[test]
+    fn database_defaults_to_in_memory_so_a_preview_cannot_accumulate_state() {
+        // The Cloud Run PR preview has no mounted volume and is publicly
+        // reachable. If the default were a path, the preview would persist login
+        // codes, sessions and drafts in its ephemeral filesystem for as long as
+        // the revision lived.
+        figment::Jail::expect_with(|_| {
+            let config = EditorConfig::load().expect("config should load");
+            assert!(matches!(config.db_source(), crate::db::Source::Memory(_)));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn db_dir_env_override_selects_a_file_database() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EDITOR_DB_DIR", "/data/editor");
+            let config = EditorConfig::load().expect("config should load");
+            assert_eq!(config.db_dir, Some(PathBuf::from("/data/editor")));
+            assert_eq!(config.db_source(), crate::db::Source::Directory(PathBuf::from("/data/editor")));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn db_pool_and_timeout_env_overrides() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EDITOR_DB_READERS", "8");
+            jail.set_env("EDITOR_DB_BUSY_TIMEOUT_MS", "2500");
+            let config = EditorConfig::load().expect("config should load");
+            assert_eq!(config.db_readers, 8);
+            assert_eq!(config.db_busy_timeout(), std::time::Duration::from_millis(2500));
+            Ok(())
+        });
     }
 
     #[test]

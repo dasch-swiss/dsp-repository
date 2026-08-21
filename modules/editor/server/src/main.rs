@@ -13,6 +13,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use clap::{Parser, Subcommand};
 
 mod config;
+mod db;
 mod page_url;
 mod router;
 mod traceparent;
@@ -225,12 +226,39 @@ async fn serve() -> ExitCode {
         .data_dir
         .as_deref()
         .map_or_else(|| "<unset>".to_string(), |path| path.display().to_string());
+    let db_dir = config
+        .db_dir
+        .as_deref()
+        .map_or_else(|| "<unset, in-memory>".to_string(), |path| path.display().to_string());
     tracing::info!(
         env = %config.env,
         public_dir = %config.public_dir.display(),
         data_dir = %data_dir,
+        db_dir = %db_dir,
         "editor configuration loaded"
     );
+
+    // Persistence. Opened before the listener binds, so a bad mount or a
+    // wrong-uid directory stops the process with a message naming the cause
+    // rather than answering requests that fail one query at a time.
+    //
+    // Reported rather than panicked for the same reason as the config load: the
+    // likely failures here are operational (a missing or wrongly-owned mount),
+    // and `DbError`'s messages already say what to do about them, which a panic
+    // would bury under a backtrace.
+    //
+    // Bound with a leading underscore because nothing reads it yet — the handlers
+    // that will take it as state land with authentication. The binding keeps the
+    // pools alive for the life of the process, which the in-memory variant needs:
+    // a shared-cache in-memory database exists only while a connection to it is
+    // open.
+    let _db = match db::Database::open(config.db_source(), config.db_readers, config.db_busy_timeout()).await {
+        Ok(db) => db,
+        Err(e) => {
+            tracing::error!(error = %e, "failed to open the database");
+            return ExitCode::FAILURE;
+        }
+    };
 
     let addr: std::net::SocketAddr = config
         .site_addr

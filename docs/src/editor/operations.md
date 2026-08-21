@@ -52,6 +52,9 @@ Locally the default is `127.0.0.1:4100`, deliberately not DPE's 4000, so `just d
 | `EDITOR_PUBLIC_DIR` | No | `modules/editor/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, the telemetry module, and the compiled `app.<hash>.css`). |
 | `EDITOR_DATA_DIR` | Yes, to read records | *(none)* | Directory holding the published project/person/organization set baked into the image. No default — see [Data directory](#data-directory-a-deliberate-build-input). Reported at startup, as `<unset>` when absent. |
 | `EDITOR_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`. |
+| `EDITOR_DB_DIR` | No | *(none — in-memory)* | Directory holding the SQLite database. **Unset means in-memory**, not a path — see [Database](#database). Names the *directory*, never the database file. |
+| `EDITOR_DB_READERS` | No | `4` | Size of the reader connection pool. The writer pool is always one connection. |
+| `EDITOR_DB_BUSY_TIMEOUT_MS` | No | `5000` | SQLite `busy_timeout`, applied per connection. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | *(none)* | OTLP gRPC endpoint (e.g. `http://alloy:4317`). When unset, OTel falls back to no-op export. |
 | `OTEL_SERVICE_NAME` | No | *(none)* | Service name for OTel resource attributes (e.g. `editor`) |
 | `OTEL_RESOURCE_ATTRIBUTES` | No | *(none)* | Comma-separated OTel resource attributes (e.g. `service.namespace=editor,service.version=0.8.2,deployment.environment=prod`) |
@@ -80,20 +83,44 @@ It deploys on a **separate hostname** from DPE, not a path under `repository.das
 Not yet in place, and blocking production deployment only:
 
 - The editor is **not registered as a deployable service in Jenkins**, so the DEV deploy trigger in `editor-docker-publish.yml` is marked `continue-on-error` and only warns. Remove that guard once the Jenkins job exists, so a genuinely broken webhook is loud again.
-- The writable data volume for SQLite. Development and tests use an in-memory database, so only production waits on it.
+- The writable data volume `EDITOR_DB_DIR` points at, tracked as [INFRA-1378](https://linear.app/dasch/issue/INFRA-1378/extend-deploy-volumes). Development and tests use the in-memory database, so only production waits on it.
 
-### Data volume (once persistence lands)
+## Database
 
-- Mount the **directory**, not the database file, so SQLite can create its `-wal` and `-shm` siblings next to it.
+One SQLite database, holding users, sessions, one-time codes, drafts, submissions and approved records. See [Architecture](./architecture.md#persistence) for the pool and PRAGMA design.
+
+### In-memory is the default, deliberately
+
+`EDITOR_DB_DIR` has **no default**, and unset means in-memory rather than some path the editor invented. That is preview safety, not a convenience: the Cloud Run PR preview has no mounted volume, runs `--max-instances=1`, and is publicly reachable, so a publicly reachable preview must not be able to accumulate login codes, sessions or drafts. It also means `just dev-editor` and `cargo test` need no volume.
+
+The Docker image deliberately does **not** set `EDITOR_DB_DIR`, for the same reason — the previews run that image. Production sets it through the deployment.
+
+### Data volume
+
+- Mount the **directory**, not the database file, so SQLite can create its `-wal` and `-shm` siblings next to it. `EDITOR_DB_DIR` names the directory and the filename is fixed at `editor.sqlite3`, so pointing it at a file fails at startup with a message saying so rather than at the first WAL write.
 - It must be **writable by uid 65532**. Chowning to 65534 produces `unable to open database file`, which reads like a wrong mount path and sends the reader hunting for a typo in a path that is perfectly correct.
 - Docker Swarm does **not** create missing bind-mount host directories the way `docker run -v` does, so Ansible must create *and* chown the directory before the stack starts.
 - Keep `replicas: 1` with `order: stop-first`, so a rolling update never briefly runs two processes against one database file. Node pinning is unnecessary — there is no multi-node Swarm.
+
+### Startup pre-flight
+
+Before opening the database, startup writes and removes a probe file in `EDITOR_DB_DIR` and reports the three failures separately: the directory is missing, it is a file rather than a directory, or it cannot be written to. Without the probe all three arrive as SQLite's `unable to open database file`, which is the same message for a typo in the path, a wrong uid and a root-owned mount. The unwritable-directory message names uid 65532 explicitly.
+
+### Storage type
+
+virtiofs is preferred over a block device with ext4, and only virtiofs gets the automatic ZFS snapshots. WAL is safe on it: SQLite's restriction is about multiple **hosts**, not multiple processes, and every accessor lives inside one guest VM.
+
+If virtiofs `mmap` ever misbehaves, the escape hatch is `locking_mode=EXCLUSIVE` set before first access, which skips the wal-index entirely — valid here because access is single-process. It is deliberately **not** a configuration knob: an untested code path is worse than a one-line change in `init_connection`, and the situation calling for it has never occurred.
+
+### Backups
+
+Optional, per the PRD. Git holds everything irreplaceable; a total loss of the volume costs drafts, in-flight submissions, approved records not yet collected and the depositor table, all re-creatable. `synchronous=NORMAL` is set with WAL on that basis: a commit no longer fsyncs, so an OS crash or power loss can lose the last transactions — never corrupt the database, and never on an application crash.
 
 ## Resource Requirements
 
 - **Memory**: ~50–100 MB typical
 - **CPU**: Minimal (server-side rendering; the published data set is cached in memory)
-- **Disk**: Data files + static assets, plus the SQLite database once persistence lands
+- **Disk**: Data files + static assets, plus the SQLite database and its `-wal`/`-shm` siblings when `EDITOR_DB_DIR` is set
 
 ## Logging
 

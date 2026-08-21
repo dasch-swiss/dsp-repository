@@ -259,7 +259,7 @@ _tailwind-bin:
         mkdir -p target/tailwind
         url="https://github.com/tailwindlabs/tailwindcss/releases/download/v$ver/tailwindcss-$os-$arch"
         echo "fetching Tailwind standalone CLI: $url" >&2
-        curl -fsSL -o "$bin" "$url"
+        curl -fsSL --connect-timeout 10 --max-time 60 --retry 3 -o "$bin" "$url"
         chmod +x "$bin"
     fi
     echo "$bin"

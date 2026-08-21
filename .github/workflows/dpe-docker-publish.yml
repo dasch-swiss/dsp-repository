@@ -16,6 +16,7 @@ jobs:
   build:
     name: Build DPE
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
@@ -40,6 +41,7 @@ jobs:
     name: Publish DPE image
     runs-on: ubuntu-latest
     needs: build
+    timeout-minutes: 20
     outputs:
       tag: ${{ needs.build.outputs.tag }}
     steps:
@@ -62,6 +64,7 @@ jobs:
     name: Trigger deployment to DEV
     runs-on: ubuntu-latest
     needs: publish
+    timeout-minutes: 20
     steps:
       - name: Trigger deployment to DEV
         env:

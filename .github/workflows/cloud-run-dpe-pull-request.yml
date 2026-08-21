@@ -35,6 +35,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,6 +56,7 @@ jobs:
     name: Deploy DPE preview
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -133,6 +135,7 @@ jobs:
     # Dependabot PRs never deploy a preview, so there is nothing to clean up.
     if: github.event.action == 'closed' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2

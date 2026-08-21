@@ -16,6 +16,7 @@ jobs:
   required:
     runs-on: ubuntu-latest
     name: test / ubuntu / ${{ matrix.toolchain }}
+    timeout-minutes: 20
     strategy:
       matrix:
         # run on stable and beta to ensure that tests won't break on the next version of the rust
@@ -32,7 +33,7 @@ jobs:
           key: ${{ matrix.toolchain }}
       - uses: taiki-e/install-action@nextest
       - name: Install xmllint
-        run: sudo apt-get install -y libxml2-utils
+        run: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y libxml2-utils
       - name: cargo nextest run
         run: cargo nextest run --locked --all-features --all-targets
         env:
@@ -43,6 +44,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     name: test / coverage
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Install stable
@@ -54,7 +56,7 @@ jobs:
           key: coverage
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Install xmllint
-        run: sudo apt-get install -y libxml2-utils
+        run: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y libxml2-utils
       - name: Generate coverage
         run: cargo llvm-cov --workspace --lcov --output-path lcov.info
       - name: Upload to Codecov

@@ -32,6 +32,13 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD ["./editor-server", "healthcheck"]
 
 # The `:nonroot` tag runs as uid 65532 (distroless NONROOT), not 65534 (nobody).
-# This matters once SQLite lands: the mounted data *directory* must be writable
-# by 65532, and chowning it to 65534 produces `unable to open database file`,
-# which reads like a wrong mount path rather than a permissions problem.
+# The directory EDITOR_DB_DIR points at must be writable by 65532; chowning it to
+# 65534 produces `unable to open database file`, which reads like a wrong mount
+# path rather than a permissions problem. The startup pre-flight catches it and
+# says so, but the mount still has to be right.
+#
+# EDITOR_DB_DIR is deliberately NOT set here. Unset means an in-memory database,
+# and the Cloud Run PR previews run this image with no mounted volume, publicly
+# reachable — so a default path would let a preview accumulate login codes,
+# sessions and drafts in its ephemeral filesystem. Production sets the variable
+# through the deployment. See docs/src/editor/operations.md#database.

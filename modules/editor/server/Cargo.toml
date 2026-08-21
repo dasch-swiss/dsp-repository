@@ -7,6 +7,7 @@ publish = false
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 ureq = "3"
+editor-core = { path = "../core" }
 editor-web = { path = "../web" }
 # Shared so both services agree on the trace-context and beacon wire formats.
 # Not part of the DPE runtime — it reads none of DPE's data or config. Its
@@ -17,6 +18,15 @@ maud.workspace = true
 axum.workspace = true
 figment = { version = "0.10", features = ["env", "toml"] }
 serde.workspace = true
+# Persistence. `rusqlite` is synchronous and its `Connection` is `!Sync`;
+# `deadpool-sqlite` keeps each connection on a thread of its own so every
+# call goes through `interact()` and none can be held across an `.await`.
+rusqlite.workspace = true
+deadpool-sqlite.workspace = true
+async-trait.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
 tokio.workspace = true
 tower-http.workspace = true
 tower_governor.workspace = true

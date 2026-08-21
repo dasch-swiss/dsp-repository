@@ -66,6 +66,21 @@ thiserror = "2.0.12"
 quick-xml = "0.37"
 chrono = { version = "0.4" }
 proptest = "1"
+# SQLite for the metadata editor. `bundled` compiles the amalgamation via `cc`,
+# which is what makes the static musl binary self-contained — the known musl
+# segfault report against `rusqlite` is about dynamically linking a host
+# `libsqlite3` without it.
+#
+# Pinned to 0.38 rather than 0.40 because `deadpool-sqlite` 0.13 (latest)
+# requires `rusqlite ^0.38`, and the two cannot coexist: `libsqlite3-sys` 0.36
+# and 0.38 both declare `links = "sqlite3"`, so cargo refuses to link both.
+# Bump both together once deadpool-sqlite tracks 0.40.
+rusqlite = { version = "0.38", features = ["bundled", "chrono"] }
+# Async pool wrapping each `rusqlite::Connection` in a thread of its own, so
+# every call reaches it through `interact()` and the `!Sync` connection can
+# never be held across an `.await`.
+deadpool-sqlite = "0.13"
+async-trait = "0.1"
 
 # Build profiles
 [profile.release]

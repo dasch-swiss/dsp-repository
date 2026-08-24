@@ -3129,13 +3129,31 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 <p>Same as DPE: server-rendered HTML with <strong>Maud</strong>, served by <strong>Axum</strong>, with <strong>Datastar</strong> for interactivity over SSE. No client-side WASM, no hydration, no islands. The server is the single source of truth for UI state.</p>
 <h2 id="crates"><a class="header" href="#crates">Crates</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
-<tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types (no Axum, Maud or database dependency)</td></tr>
+<tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types and the persistence ports (no Axum, Maud or database dependency)</td></tr>
 <tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Maud view library — the document shell, pages and components</td></tr>
 <tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Composition root: configuration, observability, routing, persistence</td></tr>
 </tbody></table>
 </div>
 <p>Dependency direction is <code>server → web → core</code>. Neither library depends on <code>mosaic-tiles</code> yet: the form widgets are the first surface to render a tile. The Tailwind entry already scans the crate, so component CSS ships regardless of the Cargo dependency.</p>
 <p>Unlike DPE, the <strong>HTML document shell lives in the view crate</strong> (<code>editor-web/src/view.rs</code>), not the server crate. DPE keeps <code>head()</code> + <code>page()</code> in <code>dpe-server</code>; here the server is a composition root for routing, auth and persistence, and a document shell is a view concern like any other partial.</p>
+<h2 id="persistence"><a class="header" href="#persistence">Persistence</a></h2>
+<p>One SQLite database, <code>rusqlite</code> with the <code>bundled</code> feature — the amalgamation is compiled by <code>cc</code> into the binary, which is what keeps the static musl image self-contained. <code>editor-core</code> owns the records and one repository trait per aggregate; <code>editor-server/src/db/</code> implements all six against SQLite, so handlers depend on the ports and not on the driver.</p>
+<p><code>rusqlite</code> is pinned to <strong>0.38, not 0.40</strong>, because <code>deadpool-sqlite</code> 0.13 (the latest) requires <code>rusqlite ^0.38</code> and the two cannot coexist: <code>libsqlite3-sys</code> 0.36 and 0.38 both declare <code>links = "sqlite3"</code>, so cargo refuses to link both. Bump the pair together once <code>deadpool-sqlite</code> tracks 0.40.</p>
+<h3 id="two-pools-and-what-that-buys"><a class="header" href="#two-pools-and-what-that-buys">Two pools, and what that buys</a></h3>
+<p><code>Database</code> holds a <strong>writer</strong> pool of exactly one connection and a <strong>reader</strong> pool of several. The split makes two rules structural instead of conventional:</p>
+<ul>
+<li>Reader connections carry <code>query_only=ON</code>, set in the pool's per-connection init hook, so a write cannot go through <code>Database::read</code>. The only way to write is <code>Database::write</code>, and that always opens <code>BEGIN IMMEDIATE</code> — after which SQLite guarantees nothing up to the matching <code>COMMIT</code> returns <code>SQLITE_BUSY</code>. A deferred <code>BEGIN</code> takes a read lock and can fail to upgrade it at the first write, which surfaces only under concurrency, as <code>database is locked</code>, and looks like something <code>busy_timeout</code> should fix.</li>
+<li>SQLite allows one writer at a time regardless, so a second writer connection would move the queue out of the pool (a bounded, observable wait) and into SQLite. One writer connection means writes serialise in the pool.</li>
+</ul>
+<p><code>rusqlite::Connection</code> is <code>!Sync</code>. <code>deadpool-sqlite</code> keeps each connection on a thread of its own and only lends it inside an <code>interact</code> closure, so the connection cannot escape, no <code>.await</code> can happen while it is held, and there is no <code>Mutex</code> guard to hold across one. <code>pool.get()</code> is async, so nothing blocks a Tokio worker either. The same shape is why no read transaction outlives a call, which would otherwise starve WAL checkpointing and let <code>-wal</code> grow without bound.</p>
+<h3 id="pragmas"><a class="header" href="#pragmas">PRAGMAs</a></h3>
+<p>All of them are applied in the pool's <code>post_create</code> hook, not once after the pool is built: everything except <code>journal_mode</code> is per-connection state, so central setup would leave every connection after the first at <code>busy_timeout=0</code> and <code>foreign_keys=OFF</code> while the code read as though they were configured. <code>foreign_keys</code> in particular is a documented <strong>silent no-op inside a transaction</strong>, so it must never be set from a migration — <code>ON DELETE CASCADE</code> would never fire, orphaned <code>sessions</code> would accumulate against deleted <code>users</code>, and an integrity check would pass because the constraint was never enforced.</p>
+<p>File databases get <code>journal_mode=WAL</code> and <code>synchronous=NORMAL</code>; in-memory databases get neither, WAL being a file-database mode.</p>
+<h3 id="schema"><a class="header" href="#schema">Schema</a></h3>
+<p>A forward-only, append-only list of statement batches guarded by <code>PRAGMA user_version</code>, applied at startup — no migration framework and no added dependency. Everything runs in one <code>BEGIN IMMEDIATE</code> transaction including the version bump, so a crash part-way leaves the database at the version it started from. A database reporting a <em>higher</em> version than the build knows stops startup: that is a rollback to an older image, and running anyway would query columns that do not exist.</p>
+<p>The tables are <code>users</code>, <code>user_shortcodes</code>, <code>sessions</code>, <code>login_codes</code>, <code>drafts</code>, <code>submissions</code> and <code>approved_records</code>, all <code>STRICT</code>. <code>drafts</code>, <code>submissions</code> and <code>approved_records</code> carry their body as an opaque JSON <code>payload</code> string; the permissive draft representation types it later, and this layer never interprets it.</p>
+<h3 id="in-memory-variant"><a class="header" href="#in-memory-variant">In-memory variant</a></h3>
+<p>Selected by leaving <code>EDITOR_DB_DIR</code> unset, which is the default — see <a href="editor/./operations.html#database">Operations</a> for why that is also the preview-safety default. It is a <strong>named shared-cache URI</strong> (<code>file:&lt;name&gt;?mode=memory&amp;cache=shared</code>), never bare <code>:memory:</code>: every <code>:memory:</code> database is distinct and visible only to the connection that opened it, so each pooled connection would get its own empty copy, and with a writer/reader split readers could never see anything the writer wrote. The symptom is <code>no such table</code> that comes and goes with pool timing and test order, which reads exactly like a migration bug. Tests use a distinct name each, because a shared-cache in-memory database is scoped to the process and parallel <code>cargo test</code> threads share one.</p>
 <h2 id="url-scheme"><a class="header" href="#url-scheme">URL scheme</a></h2>
 <p>Paths are <strong>root-mounted</strong>. There is no <code>/editor</code> prefix.</p>
 <p>DPE carries <code>/dpe/…</code> because it shares <code>repository.dasch.swiss</code> with other services. The editor gets its own hostname, so a prefix buys nothing — and adopting one would keep alive the path-routing option this design rejects, for the CSRF reason above.</p>
@@ -3421,6 +3439,9 @@ image CI publishes, under emulation.</p>
 <tr><td><code>EDITOR_PUBLIC_DIR</code></td><td>No</td><td><code>modules/editor/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, the telemetry module, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
 <tr><td><code>EDITOR_DATA_DIR</code></td><td>Yes, to read records</td><td><em>(none)</em></td><td>Directory holding the published project/person/organization set baked into the image. No default — see <a href="editor/operations.html#data-directory-a-deliberate-build-input">Data directory</a>. Reported at startup, as <code>&lt;unset&gt;</code> when absent.</td></tr>
 <tr><td><code>EDITOR_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="editor/operations.html#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
+<tr><td><code>EDITOR_DB_DIR</code></td><td>No</td><td><em>(none — in-memory)</em></td><td>Directory holding the SQLite database. <strong>Unset means in-memory</strong>, not a path — see <a href="editor/operations.html#database">Database</a>. Names the <em>directory</em>, never the database file.</td></tr>
+<tr><td><code>EDITOR_DB_READERS</code></td><td>No</td><td><code>4</code></td><td>Size of the reader connection pool. The writer pool is always one connection.</td></tr>
+<tr><td><code>EDITOR_DB_BUSY_TIMEOUT_MS</code></td><td>No</td><td><code>5000</code></td><td>SQLite <code>busy_timeout</code>, applied per connection.</td></tr>
 <tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g. <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
 <tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g. <code>editor</code>)</td></tr>
 <tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g. <code>service.namespace=editor,service.version=0.8.2,deployment.environment=prod</code>)</td></tr>
@@ -3447,20 +3468,32 @@ image CI publishes, under emulation.</p>
 <p>Not yet in place, and blocking production deployment only:</p>
 <ul>
 <li>The editor is <strong>not registered as a deployable service in Jenkins</strong>, so the DEV deploy trigger in <code>editor-docker-publish.yml</code> is marked <code>continue-on-error</code> and only warns. Remove that guard once the Jenkins job exists, so a genuinely broken webhook is loud again.</li>
-<li>The writable data volume for SQLite. Development and tests use an in-memory database, so only production waits on it.</li>
+<li>The writable data volume <code>EDITOR_DB_DIR</code> points at, tracked as <a href="https://linear.app/dasch/issue/INFRA-1378/extend-deploy-volumes">INFRA-1378</a>. Development and tests use the in-memory database, so only production waits on it.</li>
 </ul>
-<h3 id="data-volume-once-persistence-lands"><a class="header" href="#data-volume-once-persistence-lands">Data volume (once persistence lands)</a></h3>
+<h2 id="database"><a class="header" href="#database">Database</a></h2>
+<p>One SQLite database, holding users, sessions, one-time codes, drafts, submissions and approved records. See <a href="editor/./architecture.html#persistence">Architecture</a> for the pool and PRAGMA design.</p>
+<h3 id="in-memory-is-the-default-deliberately"><a class="header" href="#in-memory-is-the-default-deliberately">In-memory is the default, deliberately</a></h3>
+<p><code>EDITOR_DB_DIR</code> has <strong>no default</strong>, and unset means in-memory rather than some path the editor invented. That is preview safety, not a convenience: the Cloud Run PR preview has no mounted volume, runs <code>--max-instances=1</code>, and is publicly reachable, so a publicly reachable preview must not be able to accumulate login codes, sessions or drafts. It also means <code>just dev-editor</code> and <code>cargo test</code> need no volume.</p>
+<p>The Docker image deliberately does <strong>not</strong> set <code>EDITOR_DB_DIR</code>, for the same reason — the previews run that image. Production sets it through the deployment.</p>
+<h3 id="data-volume-1"><a class="header" href="#data-volume-1">Data volume</a></h3>
 <ul>
-<li>Mount the <strong>directory</strong>, not the database file, so SQLite can create its <code>-wal</code> and <code>-shm</code> siblings next to it.</li>
+<li>Mount the <strong>directory</strong>, not the database file, so SQLite can create its <code>-wal</code> and <code>-shm</code> siblings next to it. <code>EDITOR_DB_DIR</code> names the directory and the filename is fixed at <code>editor.sqlite3</code>, so pointing it at a file fails at startup with a message saying so rather than at the first WAL write.</li>
 <li>It must be <strong>writable by uid 65532</strong>. Chowning to 65534 produces <code>unable to open database file</code>, which reads like a wrong mount path and sends the reader hunting for a typo in a path that is perfectly correct.</li>
 <li>Docker Swarm does <strong>not</strong> create missing bind-mount host directories the way <code>docker run -v</code> does, so Ansible must create <em>and</em> chown the directory before the stack starts.</li>
 <li>Keep <code>replicas: 1</code> with <code>order: stop-first</code>, so a rolling update never briefly runs two processes against one database file. Node pinning is unnecessary — there is no multi-node Swarm.</li>
 </ul>
+<h3 id="startup-pre-flight"><a class="header" href="#startup-pre-flight">Startup pre-flight</a></h3>
+<p>Before opening the database, startup writes and removes a probe file in <code>EDITOR_DB_DIR</code> and reports the three failures separately: the directory is missing, it is a file rather than a directory, or it cannot be written to. Without the probe all three arrive as SQLite's <code>unable to open database file</code>, which is the same message for a typo in the path, a wrong uid and a root-owned mount. The unwritable-directory message names uid 65532 explicitly.</p>
+<h3 id="storage-type"><a class="header" href="#storage-type">Storage type</a></h3>
+<p>virtiofs is preferred over a block device with ext4, and only virtiofs gets the automatic ZFS snapshots. WAL is safe on it: SQLite's restriction is about multiple <strong>hosts</strong>, not multiple processes, and every accessor lives inside one guest VM.</p>
+<p>If virtiofs <code>mmap</code> ever misbehaves, the escape hatch is <code>locking_mode=EXCLUSIVE</code> set before first access, which skips the wal-index entirely — valid here because access is single-process. It is deliberately <strong>not</strong> a configuration knob: an untested code path is worse than a one-line change in <code>init_connection</code>, and the situation calling for it has never occurred.</p>
+<h3 id="backups"><a class="header" href="#backups">Backups</a></h3>
+<p>Optional, per the PRD. Git holds everything irreplaceable; a total loss of the volume costs drafts, in-flight submissions, approved records not yet collected and the depositor table, all re-creatable. <code>synchronous=NORMAL</code> is set with WAL on that basis: a commit no longer fsyncs, so an OS crash or power loss can lose the last transactions — never corrupt the database, and never on an application crash.</p>
 <h2 id="resource-requirements-1"><a class="header" href="#resource-requirements-1">Resource Requirements</a></h2>
 <ul>
 <li><strong>Memory</strong>: ~50–100 MB typical</li>
 <li><strong>CPU</strong>: Minimal (server-side rendering; the published data set is cached in memory)</li>
-<li><strong>Disk</strong>: Data files + static assets, plus the SQLite database once persistence lands</li>
+<li><strong>Disk</strong>: Data files + static assets, plus the SQLite database and its <code>-wal</code>/<code>-shm</code> siblings when <code>EDITOR_DB_DIR</code> is set</li>
 </ul>
 <h2 id="logging-3"><a class="header" href="#logging-3">Logging</a></h2>
 <p>Structured logging via <code>init-tracing-opentelemetry</code> (an OTel-aware tracing subscriber).</p>
@@ -4269,7 +4302,7 @@ but we try to follow some of the concepts.
 In particular, we try to keep the language used in code aligned with the domain language.</p>
 <h3 id="test-driven-development"><a class="header" href="#test-driven-development">Test Driven Development</a></h3>
 <p>We should absolutely do TDD and BDD.</p>
-<h2 id="database"><a class="header" href="#database">Database</a></h2>
+<h2 id="database-1"><a class="header" href="#database-1">Database</a></h2>
 <p>We are still evaluating the database to use.</p>
 <p>For the initial development, we work with static content or JSON files.</p>
 <h2 id="mosaic-component-library"><a class="header" href="#mosaic-component-library">Mosaic Component Library</a></h2>

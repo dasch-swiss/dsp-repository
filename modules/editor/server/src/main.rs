@@ -12,11 +12,16 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use clap::{Parser, Subcommand};
 
+mod accounts;
+mod auth;
 mod config;
 mod csrf;
 mod db;
+mod mail;
 mod page_url;
 mod router;
+#[cfg(test)]
+mod test_support;
 mod traceparent;
 
 /// Whether a `tracing` subscriber is installed and will actually record events.
@@ -26,11 +31,21 @@ mod traceparent;
 /// panic precisely nowhere. See [`install_tracing_panic_hook`].
 static SUBSCRIBER_READY: AtomicBool = AtomicBool::new(false);
 
-/// Shared state for the page handlers: the stylesheet href resolved at startup
-/// (unhashed in dev, content-hashed in release).
+/// Shared state for the handlers.
+///
+/// Cheap to clone: the stylesheet href is a short string resolved once at
+/// startup, `Database` is a pair of pool handles, and the mailer is behind an
+/// `Arc` because a transport holds a connection pool of its own.
 #[derive(Clone)]
 pub(crate) struct AppState {
+    /// Unhashed in dev, content-hashed in release.
     css_href: String,
+    db: db::Database,
+    /// Behind a trait rather than the concrete transport, so a test can watch
+    /// what was sent and make sending fail — the failure path is where the code
+    /// rollback and the break-glass decision live.
+    mailer: std::sync::Arc<dyn mail::Mailer>,
+    auth: auth::AuthConfig,
 }
 
 /// `GET /` — the service root.
@@ -39,14 +54,29 @@ pub(crate) struct AppState {
 /// a route, clicking the logo on the 404 page produced another 404, so every
 /// navigation the shell offered was a dead end. Once the project list lands this
 /// becomes the redirect to `/projects` that the URL scheme specifies.
-pub(crate) async fn root(axum::extract::State(state): axum::extract::State<AppState>) -> axum::response::Html<String> {
+///
+/// Signed out it offers the way in, because otherwise `/login` is reachable only
+/// by typing it.
+pub(crate) async fn root(
+    axum::extract::State(state): axum::extract::State<AppState>,
+    headers: axum::http::HeaderMap,
+) -> axum::response::Html<String> {
     let tp = traceparent::extract_traceparent();
+    let name = auth::session::current(&state.db, &state.auth, &headers, chrono::Utc::now())
+        .await
+        .map(|user| user.name);
     let content = maud::html! {
         h1 class="font-display text-2xl mb-2" { "DaSCH Metadata Editor" }
         p { "Editing your project metadata is not available yet. This service is being built." }
+        @if name.is_none() {
+            p class="mt-4" {
+                a href="/login" class="underline" { "Sign in" }
+            }
+        }
     };
+    let viewer = name.as_deref().map(|name| editor_web::view::Viewer { name });
     axum::response::Html(
-        editor_web::view::page("DaSCH Metadata Editor", tp.as_deref(), &state.css_href, None, content).into_string(),
+        editor_web::view::page("DaSCH Metadata Editor", tp.as_deref(), &state.css_href, viewer, content).into_string(),
     )
 }
 
@@ -237,6 +267,7 @@ async fn serve() -> ExitCode {
         public_dir = %config.public_dir.display(),
         data_dir = %data_dir,
         db_dir = %db_dir,
+        smtp_host = %config.smtp_host.as_deref().unwrap_or("<unset, console fallback>"),
         "editor configuration loaded"
     );
 
@@ -249,12 +280,10 @@ async fn serve() -> ExitCode {
     // and `DbError`'s messages already say what to do about them, which a panic
     // would bury under a backtrace.
     //
-    // Bound with a leading underscore because nothing reads it yet — the handlers
-    // that will take it as state land with authentication. The binding keeps the
-    // pools alive for the life of the process, which the in-memory variant needs:
-    // a shared-cache in-memory database exists only while a connection to it is
+    // Held for the life of the process, which the in-memory variant needs: a
+    // shared-cache in-memory database exists only while a connection to it is
     // open.
-    let _db = match db::Database::open(config.db_source(), config.db_readers, config.db_busy_timeout()).await {
+    let db = match db::Database::open(config.db_source(), config.db_readers, config.db_busy_timeout()).await {
         Ok(db) => db,
         Err(e) => {
             tracing::error!(error = %e, "failed to open the database");
@@ -262,12 +291,95 @@ async fn serve() -> ExitCode {
         }
     };
 
+    // RDU members exist without provisioning (REQ-7.2), so the configured ones
+    // are created or promoted on every start. Fatal if it fails: an
+    // administrator who cannot exist means nobody can administer the service,
+    // and carrying on would hide that until someone tried to sign in.
+    match accounts::ensure_rdu(&db, &config.rdu_addresses(), chrono::Utc::now()).await {
+        Ok(changed) => tracing::info!(
+            rdu.configured = config.rdu_addresses().len(),
+            rdu.changed = changed,
+            "RDU accounts reconciled with configuration"
+        ),
+        Err(e) => {
+            tracing::error!(error = %e, "failed to create the configured RDU accounts");
+            return ExitCode::FAILURE;
+        }
+    }
+
+    // The mail transport. A relay that is misconfigured stops the process here
+    // rather than at the first login: an unparseable `EDITOR_SMTP_FROM` makes
+    // every send fail, and learning that from a user report is the expensive way.
+    let mailer: std::sync::Arc<dyn mail::Mailer> = match &config.smtp_host {
+        Some(host) => {
+            match mail::SmtpMailer::new(host, config.smtp_port, config.smtp_credentials(), &config.smtp_from) {
+                Ok(mailer) => std::sync::Arc::new(mailer),
+                Err(e) => {
+                    tracing::error!(error = %e, "failed to configure the SMTP relay");
+                    return ExitCode::FAILURE;
+                }
+            }
+        }
+        // REQ-6.8, and the PR preview's default: with no relay the service stays
+        // usable and codes go to the log.
+        None => std::sync::Arc::new(mail::ConsoleMailer),
+    };
+    tracing::info!(mail.transport = %mailer.describe(), "mail transport ready");
+
+    // Expired rows are deleted wherever the flow trips over them, but a code
+    // nobody ever entered is tripped over by nothing: without a sweep, every
+    // six-digit code ever issued stays in the table, in plaintext, for the life
+    // of the database. Sessions accumulate the same way.
+    //
+    // Detached rather than awaited on shutdown: it holds no state worth
+    // draining, and the next start sweeps whatever a stopped process left.
+    {
+        const CLEANUP_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60 * 60);
+        let db = db.clone();
+        tokio::spawn(async move {
+            use editor_core::repository::{LoginCodeRepository, SessionRepository};
+
+            let mut ticker = tokio::time::interval(CLEANUP_INTERVAL);
+            // The first tick completes immediately; the sweep is for what has
+            // aged out, so start one interval in.
+            ticker.tick().await;
+            loop {
+                ticker.tick().await;
+                let now = chrono::Utc::now();
+                match (
+                    LoginCodeRepository::delete_expired(&db, now).await,
+                    SessionRepository::delete_expired(&db, now).await,
+                ) {
+                    (Ok(codes), Ok(sessions)) if codes > 0 || sessions > 0 => {
+                        tracing::info!(codes, sessions, "swept expired login codes and sessions");
+                    }
+                    (Ok(_), Ok(_)) => {}
+                    (codes, sessions) => {
+                        // Not fatal — nothing depends on the sweep succeeding,
+                        // and it runs again in an hour.
+                        if let Err(error) = codes {
+                            tracing::warn!(error = %error, "could not sweep expired login codes");
+                        }
+                        if let Err(error) = sessions {
+                            tracing::warn!(error = %error, "could not sweep expired sessions");
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     let addr: std::net::SocketAddr = config
         .site_addr
         .parse()
         .unwrap_or_else(|e| panic!("invalid site address (EDITOR_SITE_ADDR) {:?}: {e}", config.site_addr));
 
-    let state = AppState { css_href: resolve_css_href(&config.public_dir) };
+    let state = AppState {
+        css_href: resolve_css_href(&config.public_dir),
+        db,
+        mailer,
+        auth: auth::AuthConfig::from(&config),
+    };
     let app = router::build_app(state, &config.public_dir);
 
     tracing::info!("listening on http://{}", &addr);
@@ -479,7 +591,7 @@ mod tests {
 
     #[tokio::test]
     async fn not_found_renders_the_page_shell_with_a_404() {
-        let state = AppState { css_href: "/assets/app.css".to_string() };
+        let (state, _) = test_support::test_state("not-found").await;
         let (status, body) = not_found(axum::extract::State(state)).await;
         assert_eq!(status, axum::http::StatusCode::NOT_FOUND);
         // A 404 that is a bare status string is a dead end in a browser; it has

@@ -30,6 +30,7 @@
 ## Editor
 
 - [Architecture](./editor/architecture.md)
+- [Authentication](./editor/authentication.md)
 - [Observability](./editor/observability.md)
 - [Operations](./editor/operations.md)
 

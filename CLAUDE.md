@@ -53,6 +53,7 @@ All authoritative documentation lives in `docs/src/`. Key pages:
 | Mosaic Component API Conventions | `docs/src/mosaic/component-api-conventions.md` |
 | Project Structure | `docs/src/dpe/project_structure.md` |
 | Editor Architecture | `docs/src/editor/architecture.md` |
+| Editor Authentication (login, sessions, the standards deviation) | `docs/src/editor/authentication.md` |
 | Editor Observability | `docs/src/editor/observability.md` |
 | Editor Operations (Docker, env vars, CLI) | `docs/src/editor/operations.md` |
 | Repo Structure & Crate Naming | `docs/src/repo_structure.md` |

@@ -46,7 +46,7 @@ pub(crate) async fn root(axum::extract::State(state): axum::extract::State<AppSt
         p { "Editing your project metadata is not available yet. This service is being built." }
     };
     axum::response::Html(
-        editor_web::view::page("DaSCH Metadata Editor", tp.as_deref(), &state.css_href, content).into_string(),
+        editor_web::view::page("DaSCH Metadata Editor", tp.as_deref(), &state.css_href, None, content).into_string(),
     )
 }
 
@@ -66,6 +66,7 @@ pub(crate) async fn not_found(
                 "Page not found — DaSCH Metadata Editor",
                 tp.as_deref(),
                 &state.css_href,
+                None,
                 content,
             )
             .into_string(),

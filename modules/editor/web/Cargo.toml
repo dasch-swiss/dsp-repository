@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 maud.workspace = true
-# `mosaic-tiles` is deliberately absent until the first tile is rendered — the
-# form widgets are the first real consumer. The Tailwind entry already scans the
-# crate, so its component CSS ships regardless of the Cargo dependency.
+# The login screens are the first surface to render a tile (the submit buttons),
+# which is what earns the dependency. The Tailwind entry already scanned the
+# crate before this, so its component CSS shipped regardless.
+mosaic-tiles = { path = "../../mosaic/tiles" }

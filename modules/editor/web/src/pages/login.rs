@@ -1,0 +1,180 @@
+//! The two login screens: the address form and the code-entry form.
+//!
+//! Both are plain `<form method="post">` — no Datastar, no JavaScript. Login is
+//! the one surface that has to work before anything else does, and a fetch-based
+//! submit here would put the whole authentication flow behind a script load.
+//!
+//! Neither page renders the address the user typed. Not because the markup is a
+//! log — REQ-6.10 is about logs and traces — but because it never needs to: the
+//! browser is bound to its code by an `HttpOnly` cookie, so nothing has to be
+//! carried in a hidden field, and a page with no address on it cannot leak one
+//! through a screenshot, a shared URL or a cached response.
+//!
+//! The error strings are the caller's, deliberately. Whether a message may say
+//! "that address is not registered" is an anti-enumeration decision (REQ-6.2)
+//! and belongs with the handler that knows, not with the template.
+
+use maud::{html, Markup};
+use mosaic_tiles::button::{button, ButtonType};
+
+/// A form-level error, above the field it is about.
+///
+/// `role="alert"` so a screen reader announces it on arrival: these pages
+/// re-render on failure, so the message is present at load rather than injected.
+fn error_banner(message: &str) -> Markup {
+    html! {
+        p   role="alert"
+            class="border border-danger-300 bg-danger-50 text-danger-800 rounded px-3 py-2 mb-4"
+        { (message) }
+    }
+}
+
+/// Shared field styling. A one-line helper rather than a Mosaic tile: text
+/// inputs are `mosaic-tiles`' next form primitive and get a proper tile with a
+/// playground showcase then, rather than being guessed at from two fields.
+const FIELD_CLASS: &str =
+    "border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500";
+
+/// `GET /login` — ask for the address.
+pub fn request_code(error: Option<&str>) -> Markup {
+    html! {
+        div class="max-w-md mx-auto py-12" {
+            h1 class="font-display text-2xl mb-2" { "Sign in" }
+            p class="text-gray-600 mb-6" {
+                "Enter your email address and we will send you a six-digit code. The code is valid for ten \
+                 minutes and can be used once."
+            }
+            @if let Some(message) = error { (error_banner(message)) }
+            form method="post" action="/login" class="flex flex-col gap-4" {
+                div class="flex flex-col gap-1" {
+                    label for="email" class="font-bold" { "Email address" }
+                    input
+                        id="email"
+                        name="email"
+                        type="email"
+                        autocomplete="email"
+                        autofocus
+                        required
+                        class=(FIELD_CLASS);
+                }
+                div { (button("Send me a code").button_type(ButtonType::Submit)) }
+            }
+        }
+    }
+}
+
+/// `GET /login/code` — take the six digits.
+///
+/// The way back is a link to `/login`, not a resend button: a resend needs the
+/// address, and the only places to keep it would be a hidden field or a third
+/// endpoint. Retyping it costs a legitimate user a few seconds and keeps the
+/// address off the page.
+///
+/// The field carries `autocomplete="one-time-code"`, the token for an
+/// out-of-band code, which is what lets a browser or phone keyboard offer the
+/// code directly. It is documented here rather than beside the attribute because
+/// `maudfmt` strips comments from inside an `html!` attribute list.
+pub fn enter_code(error: Option<&str>) -> Markup {
+    html! {
+        div class="max-w-md mx-auto py-12" {
+            h1 class="font-display text-2xl mb-2" { "Enter your code" }
+            p class="text-gray-600 mb-6" {
+                "If the address you gave belongs to an account, a six-digit code is on its way to it. Enter the \
+                 code below."
+            }
+            @if let Some(message) = error { (error_banner(message)) }
+            form method="post" action="/login/code" class="flex flex-col gap-4" {
+                div class="flex flex-col gap-1" {
+                    label for="code" class="font-bold" { "Six-digit code" }
+                    input
+                        id="code"
+                        name="code"
+                        type="text"
+                        inputmode="numeric"
+                        pattern="[0-9]{6}"
+                        maxlength="6"
+                        autocomplete="one-time-code"
+                        autofocus
+                        required
+                        class=(FIELD_CLASS);
+                }
+                div { (button("Sign in").button_type(ButtonType::Submit)) }
+            }
+            p class="text-gray-600 mt-6" {
+                "Code not arrived, or expired? "
+                a href="/login" class="underline" { "Start again" }
+                "."
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_request_code_posts_the_address_to_login() {
+        let out = request_code(None).into_string();
+        assert!(out.contains(r#"<form method="post" action="/login""#), "{out}");
+        assert!(out.contains(r#"name="email""#), "{out}");
+        assert!(out.contains(r#"type="email""#), "{out}");
+        assert!(out.contains(r#"type="submit""#), "{out}");
+    }
+
+    #[test]
+    fn test_enter_code_constrains_the_field_to_six_digits() {
+        // Not validation — the server does that — but it keeps a mistyped
+        // seven-digit paste from costing an attempt against the account counter.
+        let out = enter_code(None).into_string();
+        assert!(out.contains(r#"<form method="post" action="/login/code""#), "{out}");
+        assert!(out.contains(r#"pattern="[0-9]{6}""#), "{out}");
+        assert!(out.contains(r#"maxlength="6""#), "{out}");
+        assert!(out.contains(r#"inputmode="numeric""#), "{out}");
+        assert!(out.contains(r#"autocomplete="one-time-code""#), "{out}");
+    }
+
+    #[test]
+    fn test_both_forms_are_plain_posts_without_datastar() {
+        // Login has to work before any script does. A `data-on:` control here
+        // would put the whole authentication flow behind a bundle load.
+        for out in [request_code(None).into_string(), enter_code(None).into_string()] {
+            assert!(!out.contains("data-on"), "{out}");
+            assert!(!out.contains("data-bind"), "{out}");
+            assert!(out.contains(r#"method="post""#), "{out}");
+        }
+    }
+
+    #[test]
+    fn test_an_error_renders_as_an_alert_and_is_absent_otherwise() {
+        let with = request_code(Some("Enter a valid email address.")).into_string();
+        assert!(with.contains(r#"role="alert""#), "{with}");
+        assert!(with.contains("Enter a valid email address."), "{with}");
+        assert!(!request_code(None).into_string().contains(r#"role="alert""#));
+    }
+
+    #[test]
+    fn test_an_error_message_is_escaped() {
+        let out = enter_code(Some("<script>alert(1)</script>")).into_string();
+        assert!(!out.contains("<script>alert(1)</script>"), "{out}");
+        assert!(out.contains("&lt;script&gt;"), "{out}");
+    }
+
+    #[test]
+    fn test_neither_page_carries_an_address_field_to_repost() {
+        // The browser is bound to its code by an HttpOnly cookie, so the address
+        // never has to be carried forward. A hidden field would put it in the
+        // markup, in the back/forward cache and in any screenshot of the page.
+        let out = enter_code(None).into_string();
+        assert!(!out.contains(r#"type="hidden""#), "{out}");
+        assert!(!out.contains(r#"name="email""#), "{out}");
+    }
+
+    #[test]
+    fn test_the_way_back_from_the_code_page_is_a_get_link() {
+        // Not a resend button: a resend needs the address, and the only places to
+        // keep it are a hidden field or a third endpoint.
+        let out = enter_code(None).into_string();
+        assert!(out.contains(r#"<a href="/login""#), "{out}");
+    }
+}

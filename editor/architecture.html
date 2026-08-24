@@ -246,7 +246,7 @@
 <p>The metadata editor is where depositing project teams edit their project metadata, RDU reviews it field by field, and approved records are collected into a pull request against this repository. Git stays the source of truth.</p>
 <p>This page describes the service as it stands. Surfaces that are not built yet are named where they affect a decision taken now, and marked as such.</p>
 <h2 id="relationship-to-dpe"><a class="header" href="#relationship-to-dpe">Relationship to DPE</a></h2>
-<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>platform-telemetry</code> for the browser-beacon contract, and will share <code>mosaic-tiles</code> for components and <code>dpe-core</code> for the data contract — but not a process, an image, or an origin.</p>
+<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>platform-telemetry</code> for the browser-beacon contract and <code>mosaic-tiles</code> for components, and will share <code>dpe-core</code> for the data contract — but not a process, an image, or an origin.</p>
 <p>The separation is deliberate:</p>
 <ul>
 <li>DPE is public, unauthenticated and read-only. The editor is authenticated and writes state. A host-level compromise of one should not hand over the other's session cookies.</li>
@@ -261,7 +261,7 @@
 <tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Composition root: configuration, observability, routing, persistence</td></tr>
 </tbody></table>
 </div>
-<p>Dependency direction is <code>server → web → core</code>. Neither library depends on <code>mosaic-tiles</code> yet: the form widgets are the first surface to render a tile. The Tailwind entry already scans the crate, so component CSS ships regardless of the Cargo dependency.</p>
+<p>Dependency direction is <code>server → web → core</code>. <code>editor-web</code> depends on <code>mosaic-tiles</code>; the login screens' submit buttons are the first surface to render a tile. The Tailwind entry scanned the crate before that dependency existed, so component CSS shipped regardless of it.</p>
 <p>Unlike DPE, the <strong>HTML document shell lives in the view crate</strong> (<code>editor-web/src/view.rs</code>), not the server crate. DPE keeps <code>head()</code> + <code>page()</code> in <code>dpe-server</code>; here the server is a composition root for routing, auth and persistence, and a document shell is a view concern like any other partial.</p>
 <h2 id="persistence"><a class="header" href="#persistence">Persistence</a></h2>
 <p>One SQLite database, <code>rusqlite</code> with the <code>bundled</code> feature — the amalgamation is compiled by <code>cc</code> into the binary, which is what keeps the static musl image self-contained. <code>editor-core</code> owns the records and one repository trait per aggregate; <code>editor-server/src/db/</code> implements all six against SQLite, so handlers depend on the ports and not on the driver.</p>
@@ -278,23 +278,25 @@
 <p>File databases get <code>journal_mode=WAL</code> and <code>synchronous=NORMAL</code>; in-memory databases get neither, WAL being a file-database mode.</p>
 <h3 id="schema"><a class="header" href="#schema">Schema</a></h3>
 <p>A forward-only, append-only list of statement batches guarded by <code>PRAGMA user_version</code>, applied at startup — no migration framework and no added dependency. Everything runs in one <code>BEGIN IMMEDIATE</code> transaction including the version bump, so a crash part-way leaves the database at the version it started from. A database reporting a <em>higher</em> version than the build knows stops startup: that is a rollback to an older image, and running anyway would query columns that do not exist.</p>
-<p>The tables are <code>users</code>, <code>user_shortcodes</code>, <code>sessions</code>, <code>login_codes</code>, <code>drafts</code>, <code>submissions</code> and <code>approved_records</code>, all <code>STRICT</code>. <code>drafts</code>, <code>submissions</code> and <code>approved_records</code> carry their body as an opaque JSON <code>payload</code> string; the permissive draft representation types it later, and this layer never interprets it.</p>
+<p>The tables are <code>users</code>, <code>user_shortcodes</code>, <code>sessions</code>, <code>login_codes</code>, <code>drafts</code>, <code>submissions</code> and <code>approved_records</code>, all <code>STRICT</code>. Migration <code>0002</code> added <code>users.failed_login_at</code> (a lockout has to be measured from somewhere, because the counter it gates resets only on success) and <code>login_codes.browser_token</code> (the pre-auth binding — see <a href="./authentication.html">Authentication</a>). <code>drafts</code>, <code>submissions</code> and <code>approved_records</code> carry their body as an opaque JSON <code>payload</code> string; the permissive draft representation types it later, and this layer never interprets it.</p>
 <h3 id="in-memory-variant"><a class="header" href="#in-memory-variant">In-memory variant</a></h3>
 <p>Selected by leaving <code>EDITOR_DB_DIR</code> unset, which is the default — see <a href="./operations.html#database">Operations</a> for why that is also the preview-safety default. It is a <strong>named shared-cache URI</strong> (<code>file:&lt;name&gt;?mode=memory&amp;cache=shared</code>), never bare <code>:memory:</code>: every <code>:memory:</code> database is distinct and visible only to the connection that opened it, so each pooled connection would get its own empty copy, and with a writer/reader split readers could never see anything the writer wrote. The symptom is <code>no such table</code> that comes and goes with pool timing and test order, which reads exactly like a migration bug. Tests use a distinct name each, because a shared-cache in-memory database is scoped to the process and parallel <code>cargo test</code> threads share one.</p>
 <h2 id="url-scheme"><a class="header" href="#url-scheme">URL scheme</a></h2>
 <p>Paths are <strong>root-mounted</strong>. There is no <code>/editor</code> prefix.</p>
 <p>DPE carries <code>/dpe/…</code> because it shares <code>repository.dasch.swiss</code> with other services. The editor gets its own hostname, so a prefix buys nothing — and adopting one would keep alive the path-routing option this design rejects, for the CSRF reason above.</p>
 <div class="table-wrapper"><table><thead><tr><th>Path</th><th>Method</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>/</code></td><td>GET</td><td>Service root. Offers the way in when signed out.</td></tr>
+<tr><td><code>/login</code></td><td>GET, POST</td><td>The address form, and issuing a one-time code. POST rate-limited per IP.</td></tr>
+<tr><td><code>/login/code</code></td><td>GET, POST</td><td>The code form, and spending the code. POST rate-limited per IP.</td></tr>
+<tr><td><code>/logout</code></td><td>POST</td><td>Delete the session and clear the cookie.</td></tr>
 <tr><td><code>/healthz</code></td><td>GET</td><td>Liveness probe. Untraced.</td></tr>
 <tr><td><code>/telemetry/collect</code></td><td>POST</td><td>Browser telemetry beacon. Untraced, rate-limited per IP.</td></tr>
 </tbody></table>
 </div>
 <p>Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.</p>
+<p>There is deliberately no resend endpoint: asking again is another <code>POST /login</code>, under the same cooldown, which keeps the number of endpoints that can send mail at one. See <a href="./authentication.html">Authentication</a>.</p>
 <p>The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:</p>
-<pre><code>GET  /                                        → redirect to /projects
-GET  /login                                   login form
-POST /login                                   issue a one-time code
-POST /logout
+<pre><code class="language-text">GET  /                                        → redirect to /projects
 GET  /projects                                the depositor's assigned projects
 GET  /projects/{shortcode}                    → redirect to the first section
 GET  /projects/{shortcode}/sections/{section}  one form section
@@ -307,6 +309,13 @@ GET  /review/{shortcode}                      the field-by-field diff surface
 <li><strong>Form sections are real URLs</strong>, not fragment swaps. Bookmarkable, Back-friendly, and consistent with the repository's URL-based-navigation principle.</li>
 <li><strong>Review deep-links by shortcode</strong>, not by submission id. A project has at most one pending submission, so the shortcode is unique for the purpose and reads better in a URL shared between reviewers.</li>
 </ul>
+<h2 id="request-middleware"><a class="header" href="#request-middleware">Request middleware</a></h2>
+<p>Two layers wrap the app, in this order from the outside in:</p>
+<ol>
+<li><strong>CSRF</strong> — <code>Sec-Fetch-Site: same-origin</code> is required on every non-<code>GET</code>/<code>HEAD</code> request, failing closed on everything else including an absent header. It is applied <strong>last</strong> in <code>build_app</code>, which makes it outermost and therefore the one layer the positional traced/untraced split cannot route around: inside <code>build_router</code> it would have missed <code>/telemetry/collect</code>, the only pre-auth POST in the app, with no test failing. See <a href="./authentication.html#csrf">Authentication</a> for why <code>SameSite</code> and <code>__Host-</code> do not close this.</li>
+<li><strong>OTel</strong> — the traced/untraced split below.</li>
+</ol>
+<p>Sessions are read per handler rather than by a middleware, because the policy for an unauthenticated request — redirect preserving the requested URL — belongs with the route table that has routes to protect, and there is not yet a route to protect. Today <code>/</code> reads a session to name the viewer in the header, both login screens read one to send an already-signed-in visitor home, and <code>/logout</code> deletes one.</p>
 <h2 id="traced-and-untraced-routes"><a class="header" href="#traced-and-untraced-routes">Traced and untraced routes</a></h2>
 <p>An Axum layer wraps only routes declared <strong>before</strong> it. The router therefore has two halves:</p>
 <ul>
@@ -335,7 +344,7 @@ GET  /review/{shortcode}                      the field-by-field diff surface
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../editor/observability.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../editor/authentication.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -349,7 +358,7 @@ GET  /review/{shortcode}                      the field-by-field diff surface
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../editor/observability.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../editor/authentication.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

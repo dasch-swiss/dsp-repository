@@ -1,0 +1,398 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Authentication - DSP-Repository Developer Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="editor-authentication"><a class="header" href="#editor-authentication">Editor Authentication</a></h1>
+<p>Login is an email one-time code. This page records the design, and — first — the standards deviation it rests on, because OWASP ASVS 6.1.1 and 6.3.3 require a deviation and its rationale to be written down. Without this page the design reads as compliant when it is not.</p>
+<h2 id="accepted-deviation-email-as-an-authentication-mechanism"><a class="header" href="#accepted-deviation-email-as-an-authentication-mechanism">Accepted deviation: email as an authentication mechanism</a></h2>
+<p><strong>Two standards prohibit this outright.</strong></p>
+<p>NIST SP 800-63B-4 §3.1.3.1: <em>"Email SHALL NOT be used for out-of-band authentication because it may be vulnerable to: Access using only a password; Interception in transit or at intermediate mail servers; Rerouting attacks…"</em></p>
+<p>OWASP ASVS 5.0 V6.6: <em>"Unsafe out-of-band authentication mechanisms such as e-mail and VOIP are not permitted."</em></p>
+<p><strong>The carve-out does not cover us.</strong> NIST exempts codes sent to <em>verify an address</em> and codes used for <em>account recovery</em>. This is neither: it is the login.</p>
+<p><strong>Why it was accepted anyway.</strong> The editor serves roughly thirty people — RDU staff and depositing project teams at institutions across Switzerland. The alternatives were weighed and each costs more than it buys at this size: passwords need a reset channel, which is email again, plus storage, rotation and breach handling; WebAuthn needs enrolment and a recovery path for a lost authenticator, for users who touch the tool a few times a year; federated identity has no single provider these institutions share. What is being protected is project metadata that is public once approved, held for at most one review cycle, in a service that holds no credential to anything else — it cannot write to <code>dsp-repository</code>, which is why the collection endpoint exists.</p>
+<p><strong>What the deviation actually exposes.</strong> Anyone who can read a user's mailbox, or intercept mail in transit or at a relay, can obtain a live code. Browser binding (below) removes most of the value of holding one, but it does not remove all of it, and it does nothing against an attacker who also controls a browser the user will act in.</p>
+<p><strong>When to revisit.</strong> If the editor gains write access to anything outside itself, holds unpublished data of real sensitivity, or grows past a population where enrolment is a conversation rather than a project, this decision should be reopened rather than inherited.</p>
+<h2 id="the-flow"><a class="header" href="#the-flow">The flow</a></h2>
+<pre><code class="language-text">POST /login        address → a code is sent, and the browser is bound to it
+GET  /login/code   the code form
+POST /login/code   code → session
+POST /logout       session deleted, cookie cleared
+</code></pre>
+<p>There is no resend endpoint. Asking again is another <code>POST /login</code>, governed by the same cooldown, which keeps the number of endpoints that send mail at one.</p>
+<h3 id="what-each-control-defends"><a class="header" href="#what-each-control-defends">What each control defends</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Control</th><th>What it stops</th></tr></thead><tbody>
+<tr><td>Identical response for every outcome (REQ-6.2)</td><td>Learning which addresses have accounts</td></tr>
+<tr><td>Browser binding (<code>login_codes.browser_token</code>)</td><td>A code read from the mailbox by someone else</td></tr>
+<tr><td>Three strikes per code (REQ-6.4)</td><td>Guessing against one code</td></tr>
+<tr><td>Account counter surviving resend</td><td>Guessing across codes — see below</td></tr>
+<tr><td>Single use (<code>consumed_at</code>)</td><td>Replay</td></tr>
+<tr><td>Global daily send cap</td><td>Exhausting the shared relay quota, which locks out everyone (partially — see below)</td></tr>
+<tr><td>Per-IP rate limit</td><td>One host driving either endpoint flat out</td></tr>
+<tr><td>Fresh session id on login</td><td>Fixation</td></tr>
+<tr><td><code>Sec-Fetch-Site: same-origin</code></td><td>CSRF from any other <code>*.dasch.swiss</code> host</td></tr>
+</tbody></table>
+</div>
+<h3 id="anti-enumeration-is-a-property-of-the-response-not-a-branch"><a class="header" href="#anti-enumeration-is-a-property-of-the-response-not-a-branch">Anti-enumeration is a property of the response, not a branch</a></h3>
+<p>Every <code>POST /login</code> answers with the same status and the same <code>Location</code>, whether the address is known, unknown, inside its cooldown, throttled, or blocked by the daily cap. Only the mail differs, and only the address's owner sees that.</p>
+<p>The part that is easy to get wrong is the cookie, and the first version of this got it wrong. It set a fresh binding only when a code had been issued <em>or</em> the browser presented none, reasoning that a browser already holding a binding should be left alone. But the presented cookie is attacker-supplied — any non-empty value is accepted, because at that point it is just a token to look up — so a request carrying an invented cookie was answered with <code>Set-Cookie</code> for an address with an account and without one for an address without. One request per address, no timing needed.</p>
+<p>The rule is therefore simpler and absolute: <strong>a freshly minted token is returned on every request</strong>, whatever the outcome. When no code was issued, a binding the browser already holds is <em>moved</em> onto the new token, so the code it owns stays spendable; when it holds nothing, the new token binds to nothing. The move is authorised by holding the old token, so it cannot be used to acquire the binding of a code on its way to somebody else. Every branch produces a byte-identical response.</p>
+<p><strong>A known limit: timing.</strong> The response is identical; the work behind it is not. A request for an address with an account stores a row and hands a message to the relay, where one for an address without returns almost immediately. In production that is tens to hundreds of milliseconds, which is measurable over a network — so an attacker with a list of candidate addresses can still separate them, REQ-6.2's identical <em>response</em> notwithstanding.</p>
+<p>This is not closed here, and it is stated rather than left implied because a page like this one is worthless if it overclaims. The fix is to hand the send to a background task so the response returns before the relay is contacted, which collapses the difference to a single database write — at the cost of a window in which a process stopped between storing a code and sending it leaves a user waiting out a cooldown for a code that was never sent. That trade deserves to be made deliberately rather than as a side effect. Until it is: the per-IP limit bounds probing, the population is about thirty people at largely guessable addresses, and what enumeration buys is knowing which of a small set of guessable addresses has an account.</p>
+<p>The same reasoning is why a failed send is not reported to the user. REQ-6.9 asks for a generic failure report; REQ-6.2 requires the response not to vary. Where they conflict, REQ-6.2 wins: telling the user "we could not send your code" tells an attacker the address exists. The failure is reported in the log instead.</p>
+<h3 id="browser-binding-and-what-it-is-not"><a class="header" href="#browser-binding-and-what-it-is-not">Browser binding, and what it is not</a></h3>
+<p><code>POST /login</code> sets <code>__Host-editor_login</code>, an opaque 256-bit token stored on the code row. Only a browser presenting that token can spend the code. It is set for <strong>every</strong> request, including for addresses with no account, where it binds to nothing — otherwise its presence would itself be the enumeration oracle.</p>
+<p>This defends interception, which is NIST's stated objection. It does <strong>not</strong> defend attacker-initiated social engineering: an attacker who starts the login holds the binding, so talking a victim into reading a code out still works. Nothing here claims otherwise.</p>
+<p>An outstanding code's binding is never handed to a second browser. A browser inside the cooldown that does not already hold the binding cannot verify, and waits the cooldown out. That is deliberate: returning the live binding to whoever posts the address would let anyone acquire the binding for a code already on its way to its owner.</p>
+<h3 id="what-the-send-cap-does-not-yet-do"><a class="header" href="#what-the-send-cap-does-not-yet-do">What the send cap does not yet do</a></h3>
+<p>Two gaps, both tracked in <a href="https://linear.app/dasch/issue/DEV-7023/editor-make-the-login-code-send-cap-countable-and-cap-it-per-account">DEV-7023</a> and both deliberate rather than overlooked.</p>
+<p>The cap is <strong>global only</strong>. With a 60-second cooldown one address can be sent 1,440 codes a day against a default cap of 500, so a single attacker with a single known address can exhaust the shared budget in about eight hours and stop everyone — RDU included — from signing in. A per-account cap closes it.</p>
+<p>The cap also <strong>counts rows rather than sends</strong>. <code>count_issued_since</code> counts live <code>login_codes</code> rows, which is an inference: codes rolled back after a failed delivery vanish (correctly, nothing was sent) and a user's unspent codes are deleted when they sign in (incorrectly, those were mailed). An append-only send counter is the honest form.</p>
+<p>The code just spent is deliberately <strong>not</strong> deleted on sign-in, which an earlier version did. That row is the resend cooldown's only anchor — REQ-6.5 measures from the last code <em>issued</em> — so deleting it let a user sign in and be sent another code immediately, and made every completed sign-in invisible to the cap.</p>
+<h3 id="throttling-and-why-it-is-time-based"><a class="header" href="#throttling-and-why-it-is-time-based">Throttling, and why it is time-based</a></h3>
+<p>REQ-6.4's three strikes are per <em>code</em>, so each resend hands out a fresh budget. At a sixty-second cooldown that is about 4,320 guesses a day against one address, which is roughly a 12% chance of hitting a six-digit code within a month. NIST SP 800-63B-4 addresses this directly: <em>"Generating a new authentication secret SHALL NOT reset the failed authentication count."</em></p>
+<p>So the counter lives on the account (<code>users.failed_logins</code>) and survives invalidation and resend. It clears only on a successful authentication — which means an account at the cap can never clear it by succeeding, because it cannot succeed. A latch would therefore be a permanent lock needing an unlock control that does not exist. Instead <code>users.failed_login_at</code> records the most recent failure and the account is refused for <code>EDITOR_LOGIN_LOCKOUT_SECS</code> after it.</p>
+<p>The counter also <strong>decays over that window</strong>. Without the decay it is a ratchet: once an account has reached the cap, a single wrong entry after each lockout expires re-locks it for another full window, so an attacker keeps any address they know is registered permanently locked out for one request per window — and mails its owner an unrequested code each time. A failure whose predecessor has aged out starts the count at one, so re-locking costs a fresh budget. NIST is not in the way: it requires that generating a new <em>secret</em> not reset the count, and says nothing about an elapsed throttling window.</p>
+<p>The three strikes are claimed atomically, in the same statement that increments them (<code>UPDATE … WHERE attempts &lt; 3</code>). Reading the count and incrementing it afterwards leaves a window in which every simultaneous submission passes the check — twenty parallel guesses against one code cost three strikes' worth of budget and got twenty comparisons, which is the guessing defence for a sub-20-bit secret failing open.</p>
+<p>A throttled account is told nothing about it. The message for every code-entry failure is the same, because a token that resolves to a live code only exists for an address that has an account — so "too many attempts" would confirm the address to anyone willing to spend ten guesses. The cost is real: a throttled user sees only "that code is not valid". RDU diagnoses it from the auth log and from the per-account "last code issued at", never from an address in a log.</p>
+<h3 id="when-a-correct-code-buys-nothing"><a class="header" href="#when-a-correct-code-buys-nothing">When a correct code buys nothing</a></h3>
+<p>Consuming the code and creating the session are two writes, and the second can fail — a busy writer, a pool checkout timeout. Left alone that spends the code for nothing: the user is told it was invalid, re-entering it fails, and the cooldown refuses them another, so an error that was never theirs locks them out for up to a cooldown. The code is therefore reopened when session creation fails. Nobody was authenticated, so it costs nothing.</p>
+<h3 id="expired-rows"><a class="header" href="#expired-rows">Expired rows</a></h3>
+<p>Codes and sessions are deleted wherever the flow trips over them, but a code nobody ever entered is tripped over by nothing. An hourly sweep removes both, because otherwise every six-digit code ever issued stays in the table in plaintext for the life of the database.</p>
+<h3 id="cookies"><a class="header" href="#cookies">Cookies</a></h3>
+<p>Two, both <code>__Host-</code> prefixed, <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>:</p>
+<ul>
+<li><code>__Host-editor_login</code> — the pre-auth binding, living as long as the code (ten minutes).</li>
+<li><code>__Host-editor_session</code> — the session, living the absolute session lifetime.</li>
+</ul>
+<p><code>SameSite=Lax</code> rather than <code>Strict</code> per REQ-6.3: <code>Strict</code> drops the cookie on the first navigation <em>into</em> the editor from a link in mail or chat, so the user would arrive signed out for no security gain that <code>Sec-Fetch-Site</code> does not already provide.</p>
+<p>The <code>__Host-</code> prefix stops a sibling host <em>setting</em> a cookie of the same name that ours could not be told apart from. It does not stop a sibling host <em>triggering a request that carries</em> the real one — see <a href="./architecture.html#relationship-to-dpe">Architecture</a> for why the editor has its own origin, and the CSRF middleware for what closes that.</p>
+<h3 id="csrf"><a class="header" href="#csrf">CSRF</a></h3>
+<p>Every non-<code>GET</code>/<code>HEAD</code> request must carry <code>Sec-Fetch-Site: same-origin</code>, and fails closed on <code>same-site</code>, <code>cross-site</code>, <code>none</code> and an absent header.</p>
+<p><code>SameSite</code> cannot do this job: it is scoped to the registrable domain, so a request from any other <code>*.dasch.swiss</code> host counts as same-site and carries the cookie. <code>Sec-Fetch-Site</code> distinguishes same-origin from same-site, is a forbidden request header so page script cannot spoof it, and is named by ASVS 3.5.3. <code>Datastar-Request</code> is not a substitute: the no-JavaScript path is a plain form post, which does not send it.</p>
+<p>The consequence of failing closed on absent is that a browser too old to send <code>Sec-Fetch-*</code> cannot use the editor. That is accepted: treating absent as permissive would hand over the bypass, because a cross-site post from such a browser is indistinguishable from a legitimate one.</p>
+<p><code>GET</code> and <code>HEAD</code> are exempt, because a navigation from anywhere is a <code>GET</code>. That is only sound while no <code>GET</code> handler changes state, which is why every state-changing route is a <code>POST</code> and the router tests assert each refuses <code>GET</code>. The one deliberate exception is the session's idle-timeout touch, which advances <code>last_seen_at</code> at most once a minute: it carries nothing the requester supplied, is idempotent, and writes only the requester's own row, so there is nothing for a cross-site request to achieve by triggering it.</p>
+<h3 id="code-generation"><a class="header" href="#code-generation">Code generation</a></h3>
+<p>Six digits from a CSPRNG over the full <code>000000..=999999</code> range, sampled by rejection rather than by a modulus — <code>rng % 1_000_000</code> biases toward low values unless the generator's range is an exact multiple, which is the classic modulo bug and hands an attacker a better-than-uniform guessing order. Compared in constant time, so the time a comparison takes cannot reveal how long a shared prefix is.</p>
+<p>Six digits is ≈19.93 bits, marginally under ASVS 6.5.4's 20-bit floor. Accepted rather than overlooked: the code lives ten minutes, tolerates three wrong entries, and sits behind the account counter and the per-IP limit. Seven digits would clear the floor and cost every user a keystroke on a control they use often.</p>
+<p>The lifetime is ten minutes and is <strong>not configurable</strong>. NIST §3.1.3.2 (<em>"the authentication SHALL be considered invalid unless completed within 10 minutes"</em>) and ASVS 6.5.5 both cap it there, so the only thing a setting could express is a violation of both.</p>
+<p>Codes are stored unhashed, deliberately: a code lives ten minutes, and anyone able to read the <code>login_codes</code> table already holds <code>sessions</code>.</p>
+<h2 id="mail"><a class="header" href="#mail">Mail</a></h2>
+<p><code>lettre</code> over STARTTLS to the Google Workspace relay, sending as <code>noreply@dasch.swiss</code>. A university relay cannot send as <code>dasch.swiss</code>, and a login code arriving from <code>dasch.unibas.ch</code> reads as a phishing attempt.</p>
+<h3 id="relay-prerequisites-not-the-applications-job-but-they-block-delivery"><a class="header" href="#relay-prerequisites-not-the-applications-job-but-they-block-delivery">Relay prerequisites (not the application's job, but they block delivery)</a></h3>
+<ul>
+<li><strong>DKIM</strong> — Google DKIM-signs relayed mail with the envelope sender's domain <em>only if that domain has DKIM enabled in the Workspace Admin Console</em>. Set up for <code>dasch.swiss</code>.</li>
+<li><strong>SPF</strong> — remains the sending domain's responsibility; <code>dasch.swiss</code> must include Google. Set up.</li>
+<li><strong>Quota</strong> — the relay allows 10,000 recipients a day, and whether that is shared with other senders determines where <code>EDITOR_MAIL_DAILY_CAP</code> should sit. The default of 500 is well below the ceiling either way.</li>
+</ul>
+<h3 id="no-address-ever-reaches-a-log-req-610"><a class="header" href="#no-address-ever-reaches-a-log-req-610">No address ever reaches a log (REQ-6.10)</a></h3>
+<p>The claim is precisely "an account holder's address", not "any address": <code>EDITOR_SMTP_FROM</code> is logged once at startup, and it is a service mailbox nobody signs in with. There is also one channel this does not close — see <a href="./observability.html">Observability</a> on <code>url.query</code>.</p>
+<p>Two things make that hold rather than merely be intended:</p>
+<ul>
+<li>Every instrumented function is <code>#[tracing::instrument(skip_all)]</code>, so no argument becomes a span field by default. The correlation id is the account's own UUID, which is already opaque and not derived from the address.</li>
+<li><code>MailError</code> carries a <strong>classification and an SMTP status code, never the relay's reply</strong>. A relay's reply routinely quotes the recipient — <code>550 5.1.1 &lt;someone@example.org&gt; User unknown</code> is the canonical shape — so logging a transport error verbatim would write addresses into the log pipeline on exactly the paths nobody exercises.</li>
+</ul>
+<p>The one place in the service that stringifies a <code>lettre</code> error verbatim is the relay's <em>setup</em>, and it is safe only because it runs before any envelope exists — there is nothing for a reply to quote yet. That reasoning is written at the call site, because it stops holding the moment anything routes a connected transport's error through it.</p>
+<p>A test drives the unknown-address, issued, wrong-code, signed-in, malformed and relay-refused paths under a capturing subscriber and asserts on span fields as well as events.</p>
+<h3 id="when-there-is-no-relay-and-when-the-relay-is-broken"><a class="header" href="#when-there-is-no-relay-and-when-the-relay-is-broken">When there is no relay, and when the relay is broken</a></h3>
+<p>With <code>EDITOR_SMTP_HOST</code> unset, codes are written to the log and the service stays usable (REQ-6.8). That is the development transport, the PR-preview transport, and the break-glass for a broken relay.</p>
+<p><strong><code>EDITOR_ENV=PROD</code> with no relay is refused at startup.</strong> That combination is the dangerous one precisely because nothing goes wrong: the service behaves normally and every login code for the life of the deployment sits in the log pipeline. Development, <code>just dev-editor</code>, <code>just run-docker-editor</code> and the PR preview all run as <code>DEV</code>, where the console transport is the point.</p>
+<p>A <strong>configured</strong> relay that fails is different. By default the code is rolled back — the row and, with it, the cooldown, so the user is not left waiting out a cooldown for a code that never arrived — and the response is unchanged. Setting <code>EDITOR_SMTP_BREAK_GLASS=true</code> instead keeps the code alive and writes it to the log.</p>
+<p>That is off by default on purpose. A transient relay error — a rate limit, a TLS blip — would otherwise write a <strong>live credential</strong> into a log pipeline that retains it for weeks and is readable by everyone with log access. Turning it on is an incident response for a relay broken long enough to lock people out, and the failure log line names the variable so the remedy is found from the error itself. Turn it off again once the relay is back.</p>
+<h2 id="preview-safety"><a class="header" href="#preview-safety">Preview safety</a></h2>
+<p>The Cloud Run PR preview is <code>--allow-unauthenticated</code>, so <code>/login</code> is publicly reachable the moment it deploys. The preview leaves <code>EDITOR_SMTP_*</code> unset, so REQ-6.8's console transport applies: codes go to Cloud Run logs, no mail leaves the Workspace relay, and the shared daily quota is untouched. There is deliberately <strong>no</strong> dev-only "show the code on screen" affordance — read it from the logs.</p>
+<p>Gating the preview URL to GitHub organisation members is not available: Cloud Run IAM gates on <em>Google</em> identity, not GitHub membership, and the two do not connect. The workflow's same-repo and non-dependabot conditions gate who can <em>trigger</em> a deploy, not who can reach the URL.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../editor/architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../editor/observability.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../editor/architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../editor/observability.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

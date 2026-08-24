@@ -296,7 +296,10 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <h2 id="rules-specific-to-an-authenticated-service"><a class="header" href="#rules-specific-to-an-authenticated-service">Rules specific to an authenticated service</a></h2>
 <p>DPE serves public data, so almost nothing it logs is sensitive. The editor holds accounts, so two constraints apply that DPE's guide does not carry:</p>
 <ul>
-<li><strong>No email address may reach a log or a trace, on any path — including error paths.</strong> Auth events are correlated by an opaque per-user id instead. This is a hard requirement, and the test that enforces it lands with authentication — there are no addresses in the service yet, so there is nothing to assert today. Note there is a second capture channel besides explicit logging: <code>axum-tracing-opentelemetry</code> records <code>url.query</code> on every server span, so a query string is exported to Tempo verbatim. Anything address-bearing must therefore stay out of query strings as well as out of log fields.</li>
+<li><strong>No account holder's address may reach a log or a trace, on any path — including error paths.</strong> Auth events are correlated by an opaque per-user id instead. "Account holder's" is the precise claim and it is deliberate: the configured <code>EDITOR_SMTP_FROM</code> <em>is</em> logged, once, at startup, because it is a service mailbox and it is the one line telling an operator which mailbox codes come from. Nobody's account is behind it. This is a hard requirement, enforced by <code>test_no_address_reaches_a_log_or_a_span_on_any_path</code> in <code>editor-server/src/auth/handlers.rs</code>, which drives the unknown-address, issued, wrong-code, signed-in, malformed and relay-refused paths under a capturing subscriber that records span fields as well as events. Two things make it hold rather than be intended: every instrumented function is <code>skip_all</code>, and <code>MailError</code> carries a classification and an SMTP status code rather than the relay's reply, which routinely quotes the recipient. Note there is a second capture channel besides explicit logging: <code>axum-tracing-opentelemetry</code> records <code>url.query</code> on every server span, so a query string is exported to Tempo verbatim. Anything address-bearing must therefore stay out of query strings as well as out of log fields.</li>
+</ul>
+<p>That channel is <strong>not enforced, deliberately</strong>. The editor never generates such a URL — both login forms are <code>method="post"</code>, which a test asserts — but a hand-typed or shared <code>/login?email=someone@example.org</code> would be exported. The obvious guard is a middleware stripping query strings from the login routes, and it was rejected: the next issue adds <code>/login?next=…</code> for redirect-preserving sign-in, so the guard would be built and dismantled in consecutive changes. Whoever adds the first query-bearing route owns this: either keep addresses out of it, or suppress <code>url.query</code> for the service.</p>
+<ul>
 <li><strong>Metric attributes must stay bounded.</strong> Validate against known sets and normalise dynamic values; a project shortcode is bounded, a user identifier or a free-text field is not. High-cardinality data goes to structured logs only.</li>
 </ul>
 <h2 id="logging"><a class="header" href="#logging">Logging</a></h2>
@@ -312,7 +315,7 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../editor/architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../editor/authentication.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
@@ -326,7 +329,7 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../editor/architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../editor/authentication.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 

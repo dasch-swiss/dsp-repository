@@ -3119,7 +3119,7 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 <p>The metadata editor is where depositing project teams edit their project metadata, RDU reviews it field by field, and approved records are collected into a pull request against this repository. Git stays the source of truth.</p>
 <p>This page describes the service as it stands. Surfaces that are not built yet are named where they affect a decision taken now, and marked as such.</p>
 <h2 id="relationship-to-dpe"><a class="header" href="#relationship-to-dpe">Relationship to DPE</a></h2>
-<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>platform-telemetry</code> for the browser-beacon contract, and will share <code>mosaic-tiles</code> for components and <code>dpe-core</code> for the data contract — but not a process, an image, or an origin.</p>
+<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>platform-telemetry</code> for the browser-beacon contract and <code>mosaic-tiles</code> for components, and will share <code>dpe-core</code> for the data contract — but not a process, an image, or an origin.</p>
 <p>The separation is deliberate:</p>
 <ul>
 <li>DPE is public, unauthenticated and read-only. The editor is authenticated and writes state. A host-level compromise of one should not hand over the other's session cookies.</li>
@@ -3134,7 +3134,7 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 <tr><td><code>editor-server</code></td><td><code>editor/server</code></td><td>Composition root: configuration, observability, routing, persistence</td></tr>
 </tbody></table>
 </div>
-<p>Dependency direction is <code>server → web → core</code>. Neither library depends on <code>mosaic-tiles</code> yet: the form widgets are the first surface to render a tile. The Tailwind entry already scans the crate, so component CSS ships regardless of the Cargo dependency.</p>
+<p>Dependency direction is <code>server → web → core</code>. <code>editor-web</code> depends on <code>mosaic-tiles</code>; the login screens' submit buttons are the first surface to render a tile. The Tailwind entry scanned the crate before that dependency existed, so component CSS shipped regardless of it.</p>
 <p>Unlike DPE, the <strong>HTML document shell lives in the view crate</strong> (<code>editor-web/src/view.rs</code>), not the server crate. DPE keeps <code>head()</code> + <code>page()</code> in <code>dpe-server</code>; here the server is a composition root for routing, auth and persistence, and a document shell is a view concern like any other partial.</p>
 <h2 id="persistence"><a class="header" href="#persistence">Persistence</a></h2>
 <p>One SQLite database, <code>rusqlite</code> with the <code>bundled</code> feature — the amalgamation is compiled by <code>cc</code> into the binary, which is what keeps the static musl image self-contained. <code>editor-core</code> owns the records and one repository trait per aggregate; <code>editor-server/src/db/</code> implements all six against SQLite, so handlers depend on the ports and not on the driver.</p>
@@ -3151,23 +3151,25 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 <p>File databases get <code>journal_mode=WAL</code> and <code>synchronous=NORMAL</code>; in-memory databases get neither, WAL being a file-database mode.</p>
 <h3 id="schema"><a class="header" href="#schema">Schema</a></h3>
 <p>A forward-only, append-only list of statement batches guarded by <code>PRAGMA user_version</code>, applied at startup — no migration framework and no added dependency. Everything runs in one <code>BEGIN IMMEDIATE</code> transaction including the version bump, so a crash part-way leaves the database at the version it started from. A database reporting a <em>higher</em> version than the build knows stops startup: that is a rollback to an older image, and running anyway would query columns that do not exist.</p>
-<p>The tables are <code>users</code>, <code>user_shortcodes</code>, <code>sessions</code>, <code>login_codes</code>, <code>drafts</code>, <code>submissions</code> and <code>approved_records</code>, all <code>STRICT</code>. <code>drafts</code>, <code>submissions</code> and <code>approved_records</code> carry their body as an opaque JSON <code>payload</code> string; the permissive draft representation types it later, and this layer never interprets it.</p>
+<p>The tables are <code>users</code>, <code>user_shortcodes</code>, <code>sessions</code>, <code>login_codes</code>, <code>drafts</code>, <code>submissions</code> and <code>approved_records</code>, all <code>STRICT</code>. Migration <code>0002</code> added <code>users.failed_login_at</code> (a lockout has to be measured from somewhere, because the counter it gates resets only on success) and <code>login_codes.browser_token</code> (the pre-auth binding — see <a href="editor/./authentication.html">Authentication</a>). <code>drafts</code>, <code>submissions</code> and <code>approved_records</code> carry their body as an opaque JSON <code>payload</code> string; the permissive draft representation types it later, and this layer never interprets it.</p>
 <h3 id="in-memory-variant"><a class="header" href="#in-memory-variant">In-memory variant</a></h3>
 <p>Selected by leaving <code>EDITOR_DB_DIR</code> unset, which is the default — see <a href="editor/./operations.html#database">Operations</a> for why that is also the preview-safety default. It is a <strong>named shared-cache URI</strong> (<code>file:&lt;name&gt;?mode=memory&amp;cache=shared</code>), never bare <code>:memory:</code>: every <code>:memory:</code> database is distinct and visible only to the connection that opened it, so each pooled connection would get its own empty copy, and with a writer/reader split readers could never see anything the writer wrote. The symptom is <code>no such table</code> that comes and goes with pool timing and test order, which reads exactly like a migration bug. Tests use a distinct name each, because a shared-cache in-memory database is scoped to the process and parallel <code>cargo test</code> threads share one.</p>
 <h2 id="url-scheme"><a class="header" href="#url-scheme">URL scheme</a></h2>
 <p>Paths are <strong>root-mounted</strong>. There is no <code>/editor</code> prefix.</p>
 <p>DPE carries <code>/dpe/…</code> because it shares <code>repository.dasch.swiss</code> with other services. The editor gets its own hostname, so a prefix buys nothing — and adopting one would keep alive the path-routing option this design rejects, for the CSRF reason above.</p>
 <div class="table-wrapper"><table><thead><tr><th>Path</th><th>Method</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>/</code></td><td>GET</td><td>Service root. Offers the way in when signed out.</td></tr>
+<tr><td><code>/login</code></td><td>GET, POST</td><td>The address form, and issuing a one-time code. POST rate-limited per IP.</td></tr>
+<tr><td><code>/login/code</code></td><td>GET, POST</td><td>The code form, and spending the code. POST rate-limited per IP.</td></tr>
+<tr><td><code>/logout</code></td><td>POST</td><td>Delete the session and clear the cookie.</td></tr>
 <tr><td><code>/healthz</code></td><td>GET</td><td>Liveness probe. Untraced.</td></tr>
 <tr><td><code>/telemetry/collect</code></td><td>POST</td><td>Browser telemetry beacon. Untraced, rate-limited per IP.</td></tr>
 </tbody></table>
 </div>
 <p>Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.</p>
+<p>There is deliberately no resend endpoint: asking again is another <code>POST /login</code>, under the same cooldown, which keeps the number of endpoints that can send mail at one. See <a href="editor/./authentication.html">Authentication</a>.</p>
 <p>The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:</p>
-<pre><code>GET  /                                        → redirect to /projects
-GET  /login                                   login form
-POST /login                                   issue a one-time code
-POST /logout
+<pre><code class="language-text">GET  /                                        → redirect to /projects
 GET  /projects                                the depositor's assigned projects
 GET  /projects/{shortcode}                    → redirect to the first section
 GET  /projects/{shortcode}/sections/{section}  one form section
@@ -3180,6 +3182,13 @@ GET  /review/{shortcode}                      the field-by-field diff surface
 <li><strong>Form sections are real URLs</strong>, not fragment swaps. Bookmarkable, Back-friendly, and consistent with the repository's URL-based-navigation principle.</li>
 <li><strong>Review deep-links by shortcode</strong>, not by submission id. A project has at most one pending submission, so the shortcode is unique for the purpose and reads better in a URL shared between reviewers.</li>
 </ul>
+<h2 id="request-middleware"><a class="header" href="#request-middleware">Request middleware</a></h2>
+<p>Two layers wrap the app, in this order from the outside in:</p>
+<ol>
+<li><strong>CSRF</strong> — <code>Sec-Fetch-Site: same-origin</code> is required on every non-<code>GET</code>/<code>HEAD</code> request, failing closed on everything else including an absent header. It is applied <strong>last</strong> in <code>build_app</code>, which makes it outermost and therefore the one layer the positional traced/untraced split cannot route around: inside <code>build_router</code> it would have missed <code>/telemetry/collect</code>, the only pre-auth POST in the app, with no test failing. See <a href="editor/./authentication.html#csrf">Authentication</a> for why <code>SameSite</code> and <code>__Host-</code> do not close this.</li>
+<li><strong>OTel</strong> — the traced/untraced split below.</li>
+</ol>
+<p>Sessions are read per handler rather than by a middleware, because the policy for an unauthenticated request — redirect preserving the requested URL — belongs with the route table that has routes to protect, and there is not yet a route to protect. Today <code>/</code> reads a session to name the viewer in the header, both login screens read one to send an already-signed-in visitor home, and <code>/logout</code> deletes one.</p>
 <h2 id="traced-and-untraced-routes"><a class="header" href="#traced-and-untraced-routes">Traced and untraced routes</a></h2>
 <p>An Axum layer wraps only routes declared <strong>before</strong> it. The router therefore has two halves:</p>
 <ul>
@@ -3199,6 +3208,172 @@ GET  /review/{shortcode}                      the field-by-field diff surface
 <p><code>@import 'tailwindcss' source(none)</code> means classes are collected <strong>only</strong> from the explicit <code>@source</code> globs, which must cover every crate that emits Tailwind classes. A missing glob produces no build error — just markup whose classes resolve to nothing. After a change that adds classes in a new location, grep the built stylesheet for them.</p>
 <p>New Mosaic tiles are added <strong>demand-driven</strong>: a screen that needs a missing primitive adds it to <code>mosaic-tiles</code> with a playground showcase and a unit test at that point, rather than an up-front form kit. Their CSS goes in <code>mosaic-tiles/src/components/components.css</code>, the barrel every consumer imports.</p>
 <p><strong>Check a tile against the surface you are putting it on.</strong> Tiles are styled for light backgrounds — <code>link</code> is <code>text-primary-600</code>, which measures 2.35:1 on the footer's <code>bg-slate-800</code> and fails WCAG 2.1 AA. That is why the footer uses plain anchors inheriting <code>text-gray-300</code> (9.93:1), as DPE's does. A dark-surface variant of a tile is a design-system change, so it belongs in <code>mosaic-tiles</code> with its own showcase rather than being worked around locally.</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="editor-authentication"><a class="header" href="#editor-authentication">Editor Authentication</a></h1>
+<p>Login is an email one-time code. This page records the design, and — first — the standards deviation it rests on, because OWASP ASVS 6.1.1 and 6.3.3 require a deviation and its rationale to be written down. Without this page the design reads as compliant when it is not.</p>
+<h2 id="accepted-deviation-email-as-an-authentication-mechanism"><a class="header" href="#accepted-deviation-email-as-an-authentication-mechanism">Accepted deviation: email as an authentication mechanism</a></h2>
+<p><strong>Two standards prohibit this outright.</strong></p>
+<p>NIST SP 800-63B-4 §3.1.3.1: <em>"Email SHALL NOT be used for out-of-band authentication because it may be vulnerable to: Access using only a password; Interception in transit or at intermediate mail servers; Rerouting attacks…"</em></p>
+<p>OWASP ASVS 5.0 V6.6: <em>"Unsafe out-of-band authentication mechanisms such as e-mail and VOIP are not permitted."</em></p>
+<p><strong>The carve-out does not cover us.</strong> NIST exempts codes sent to <em>verify an address</em> and codes used for <em>account recovery</em>. This is neither: it is the login.</p>
+<p><strong>Why it was accepted anyway.</strong> The editor serves roughly thirty people — RDU staff and depositing project teams at institutions across Switzerland. The alternatives were weighed and each costs more than it buys at this size: passwords need a reset channel, which is email again, plus storage, rotation and breach handling; WebAuthn needs enrolment and a recovery path for a lost authenticator, for users who touch the tool a few times a year; federated identity has no single provider these institutions share. What is being protected is project metadata that is public once approved, held for at most one review cycle, in a service that holds no credential to anything else — it cannot write to <code>dsp-repository</code>, which is why the collection endpoint exists.</p>
+<p><strong>What the deviation actually exposes.</strong> Anyone who can read a user's mailbox, or intercept mail in transit or at a relay, can obtain a live code. Browser binding (below) removes most of the value of holding one, but it does not remove all of it, and it does nothing against an attacker who also controls a browser the user will act in.</p>
+<p><strong>When to revisit.</strong> If the editor gains write access to anything outside itself, holds unpublished data of real sensitivity, or grows past a population where enrolment is a conversation rather than a project, this decision should be reopened rather than inherited.</p>
+<h2 id="the-flow"><a class="header" href="#the-flow">The flow</a></h2>
+<pre><code class="language-text">POST /login        address → a code is sent, and the browser is bound to it
+GET  /login/code   the code form
+POST /login/code   code → session
+POST /logout       session deleted, cookie cleared
+</code></pre>
+<p>There is no resend endpoint. Asking again is another <code>POST /login</code>, governed by the same cooldown, which keeps the number of endpoints that send mail at one.</p>
+<h3 id="what-each-control-defends"><a class="header" href="#what-each-control-defends">What each control defends</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Control</th><th>What it stops</th></tr></thead><tbody>
+<tr><td>Identical response for every outcome (REQ-6.2)</td><td>Learning which addresses have accounts</td></tr>
+<tr><td>Browser binding (<code>login_codes.browser_token</code>)</td><td>A code read from the mailbox by someone else</td></tr>
+<tr><td>Three strikes per code (REQ-6.4)</td><td>Guessing against one code</td></tr>
+<tr><td>Account counter surviving resend</td><td>Guessing across codes — see below</td></tr>
+<tr><td>Single use (<code>consumed_at</code>)</td><td>Replay</td></tr>
+<tr><td>Global daily send cap</td><td>Exhausting the shared relay quota, which locks out everyone (partially — see below)</td></tr>
+<tr><td>Per-IP rate limit</td><td>One host driving either endpoint flat out</td></tr>
+<tr><td>Fresh session id on login</td><td>Fixation</td></tr>
+<tr><td><code>Sec-Fetch-Site: same-origin</code></td><td>CSRF from any other <code>*.dasch.swiss</code> host</td></tr>
+</tbody></table>
+</div>
+<h3 id="anti-enumeration-is-a-property-of-the-response-not-a-branch"><a class="header" href="#anti-enumeration-is-a-property-of-the-response-not-a-branch">Anti-enumeration is a property of the response, not a branch</a></h3>
+<p>Every <code>POST /login</code> answers with the same status and the same <code>Location</code>, whether the address is known, unknown, inside its cooldown, throttled, or blocked by the daily cap. Only the mail differs, and only the address's owner sees that.</p>
+<p>The part that is easy to get wrong is the cookie, and the first version of this got it wrong. It set a fresh binding only when a code had been issued <em>or</em> the browser presented none, reasoning that a browser already holding a binding should be left alone. But the presented cookie is attacker-supplied — any non-empty value is accepted, because at that point it is just a token to look up — so a request carrying an invented cookie was answered with <code>Set-Cookie</code> for an address with an account and without one for an address without. One request per address, no timing needed.</p>
+<p>The rule is therefore simpler and absolute: <strong>a freshly minted token is returned on every request</strong>, whatever the outcome. When no code was issued, a binding the browser already holds is <em>moved</em> onto the new token, so the code it owns stays spendable; when it holds nothing, the new token binds to nothing. The move is authorised by holding the old token, so it cannot be used to acquire the binding of a code on its way to somebody else. Every branch produces a byte-identical response.</p>
+<p><strong>A known limit: timing.</strong> The response is identical; the work behind it is not. A request for an address with an account stores a row and hands a message to the relay, where one for an address without returns almost immediately. In production that is tens to hundreds of milliseconds, which is measurable over a network — so an attacker with a list of candidate addresses can still separate them, REQ-6.2's identical <em>response</em> notwithstanding.</p>
+<p>This is not closed here, and it is stated rather than left implied because a page like this one is worthless if it overclaims. The fix is to hand the send to a background task so the response returns before the relay is contacted, which collapses the difference to a single database write — at the cost of a window in which a process stopped between storing a code and sending it leaves a user waiting out a cooldown for a code that was never sent. That trade deserves to be made deliberately rather than as a side effect. Until it is: the per-IP limit bounds probing, the population is about thirty people at largely guessable addresses, and what enumeration buys is knowing which of a small set of guessable addresses has an account.</p>
+<p>The same reasoning is why a failed send is not reported to the user. REQ-6.9 asks for a generic failure report; REQ-6.2 requires the response not to vary. Where they conflict, REQ-6.2 wins: telling the user "we could not send your code" tells an attacker the address exists. The failure is reported in the log instead.</p>
+<h3 id="browser-binding-and-what-it-is-not"><a class="header" href="#browser-binding-and-what-it-is-not">Browser binding, and what it is not</a></h3>
+<p><code>POST /login</code> sets <code>__Host-editor_login</code>, an opaque 256-bit token stored on the code row. Only a browser presenting that token can spend the code. It is set for <strong>every</strong> request, including for addresses with no account, where it binds to nothing — otherwise its presence would itself be the enumeration oracle.</p>
+<p>This defends interception, which is NIST's stated objection. It does <strong>not</strong> defend attacker-initiated social engineering: an attacker who starts the login holds the binding, so talking a victim into reading a code out still works. Nothing here claims otherwise.</p>
+<p>An outstanding code's binding is never handed to a second browser. A browser inside the cooldown that does not already hold the binding cannot verify, and waits the cooldown out. That is deliberate: returning the live binding to whoever posts the address would let anyone acquire the binding for a code already on its way to its owner.</p>
+<h3 id="what-the-send-cap-does-not-yet-do"><a class="header" href="#what-the-send-cap-does-not-yet-do">What the send cap does not yet do</a></h3>
+<p>Two gaps, both tracked in <a href="https://linear.app/dasch/issue/DEV-7023/editor-make-the-login-code-send-cap-countable-and-cap-it-per-account">DEV-7023</a> and both deliberate rather than overlooked.</p>
+<p>The cap is <strong>global only</strong>. With a 60-second cooldown one address can be sent 1,440 codes a day against a default cap of 500, so a single attacker with a single known address can exhaust the shared budget in about eight hours and stop everyone — RDU included — from signing in. A per-account cap closes it.</p>
+<p>The cap also <strong>counts rows rather than sends</strong>. <code>count_issued_since</code> counts live <code>login_codes</code> rows, which is an inference: codes rolled back after a failed delivery vanish (correctly, nothing was sent) and a user's unspent codes are deleted when they sign in (incorrectly, those were mailed). An append-only send counter is the honest form.</p>
+<p>The code just spent is deliberately <strong>not</strong> deleted on sign-in, which an earlier version did. That row is the resend cooldown's only anchor — REQ-6.5 measures from the last code <em>issued</em> — so deleting it let a user sign in and be sent another code immediately, and made every completed sign-in invisible to the cap.</p>
+<h3 id="throttling-and-why-it-is-time-based"><a class="header" href="#throttling-and-why-it-is-time-based">Throttling, and why it is time-based</a></h3>
+<p>REQ-6.4's three strikes are per <em>code</em>, so each resend hands out a fresh budget. At a sixty-second cooldown that is about 4,320 guesses a day against one address, which is roughly a 12% chance of hitting a six-digit code within a month. NIST SP 800-63B-4 addresses this directly: <em>"Generating a new authentication secret SHALL NOT reset the failed authentication count."</em></p>
+<p>So the counter lives on the account (<code>users.failed_logins</code>) and survives invalidation and resend. It clears only on a successful authentication — which means an account at the cap can never clear it by succeeding, because it cannot succeed. A latch would therefore be a permanent lock needing an unlock control that does not exist. Instead <code>users.failed_login_at</code> records the most recent failure and the account is refused for <code>EDITOR_LOGIN_LOCKOUT_SECS</code> after it.</p>
+<p>The counter also <strong>decays over that window</strong>. Without the decay it is a ratchet: once an account has reached the cap, a single wrong entry after each lockout expires re-locks it for another full window, so an attacker keeps any address they know is registered permanently locked out for one request per window — and mails its owner an unrequested code each time. A failure whose predecessor has aged out starts the count at one, so re-locking costs a fresh budget. NIST is not in the way: it requires that generating a new <em>secret</em> not reset the count, and says nothing about an elapsed throttling window.</p>
+<p>The three strikes are claimed atomically, in the same statement that increments them (<code>UPDATE … WHERE attempts &lt; 3</code>). Reading the count and incrementing it afterwards leaves a window in which every simultaneous submission passes the check — twenty parallel guesses against one code cost three strikes' worth of budget and got twenty comparisons, which is the guessing defence for a sub-20-bit secret failing open.</p>
+<p>A throttled account is told nothing about it. The message for every code-entry failure is the same, because a token that resolves to a live code only exists for an address that has an account — so "too many attempts" would confirm the address to anyone willing to spend ten guesses. The cost is real: a throttled user sees only "that code is not valid". RDU diagnoses it from the auth log and from the per-account "last code issued at", never from an address in a log.</p>
+<h3 id="when-a-correct-code-buys-nothing"><a class="header" href="#when-a-correct-code-buys-nothing">When a correct code buys nothing</a></h3>
+<p>Consuming the code and creating the session are two writes, and the second can fail — a busy writer, a pool checkout timeout. Left alone that spends the code for nothing: the user is told it was invalid, re-entering it fails, and the cooldown refuses them another, so an error that was never theirs locks them out for up to a cooldown. The code is therefore reopened when session creation fails. Nobody was authenticated, so it costs nothing.</p>
+<h3 id="expired-rows"><a class="header" href="#expired-rows">Expired rows</a></h3>
+<p>Codes and sessions are deleted wherever the flow trips over them, but a code nobody ever entered is tripped over by nothing. An hourly sweep removes both, because otherwise every six-digit code ever issued stays in the table in plaintext for the life of the database.</p>
+<h3 id="cookies"><a class="header" href="#cookies">Cookies</a></h3>
+<p>Two, both <code>__Host-</code> prefixed, <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>, <code>Path=/</code>:</p>
+<ul>
+<li><code>__Host-editor_login</code> — the pre-auth binding, living as long as the code (ten minutes).</li>
+<li><code>__Host-editor_session</code> — the session, living the absolute session lifetime.</li>
+</ul>
+<p><code>SameSite=Lax</code> rather than <code>Strict</code> per REQ-6.3: <code>Strict</code> drops the cookie on the first navigation <em>into</em> the editor from a link in mail or chat, so the user would arrive signed out for no security gain that <code>Sec-Fetch-Site</code> does not already provide.</p>
+<p>The <code>__Host-</code> prefix stops a sibling host <em>setting</em> a cookie of the same name that ours could not be told apart from. It does not stop a sibling host <em>triggering a request that carries</em> the real one — see <a href="editor/./architecture.html#relationship-to-dpe">Architecture</a> for why the editor has its own origin, and the CSRF middleware for what closes that.</p>
+<h3 id="csrf"><a class="header" href="#csrf">CSRF</a></h3>
+<p>Every non-<code>GET</code>/<code>HEAD</code> request must carry <code>Sec-Fetch-Site: same-origin</code>, and fails closed on <code>same-site</code>, <code>cross-site</code>, <code>none</code> and an absent header.</p>
+<p><code>SameSite</code> cannot do this job: it is scoped to the registrable domain, so a request from any other <code>*.dasch.swiss</code> host counts as same-site and carries the cookie. <code>Sec-Fetch-Site</code> distinguishes same-origin from same-site, is a forbidden request header so page script cannot spoof it, and is named by ASVS 3.5.3. <code>Datastar-Request</code> is not a substitute: the no-JavaScript path is a plain form post, which does not send it.</p>
+<p>The consequence of failing closed on absent is that a browser too old to send <code>Sec-Fetch-*</code> cannot use the editor. That is accepted: treating absent as permissive would hand over the bypass, because a cross-site post from such a browser is indistinguishable from a legitimate one.</p>
+<p><code>GET</code> and <code>HEAD</code> are exempt, because a navigation from anywhere is a <code>GET</code>. That is only sound while no <code>GET</code> handler changes state, which is why every state-changing route is a <code>POST</code> and the router tests assert each refuses <code>GET</code>. The one deliberate exception is the session's idle-timeout touch, which advances <code>last_seen_at</code> at most once a minute: it carries nothing the requester supplied, is idempotent, and writes only the requester's own row, so there is nothing for a cross-site request to achieve by triggering it.</p>
+<h3 id="code-generation"><a class="header" href="#code-generation">Code generation</a></h3>
+<p>Six digits from a CSPRNG over the full <code>000000..=999999</code> range, sampled by rejection rather than by a modulus — <code>rng % 1_000_000</code> biases toward low values unless the generator's range is an exact multiple, which is the classic modulo bug and hands an attacker a better-than-uniform guessing order. Compared in constant time, so the time a comparison takes cannot reveal how long a shared prefix is.</p>
+<p>Six digits is ≈19.93 bits, marginally under ASVS 6.5.4's 20-bit floor. Accepted rather than overlooked: the code lives ten minutes, tolerates three wrong entries, and sits behind the account counter and the per-IP limit. Seven digits would clear the floor and cost every user a keystroke on a control they use often.</p>
+<p>The lifetime is ten minutes and is <strong>not configurable</strong>. NIST §3.1.3.2 (<em>"the authentication SHALL be considered invalid unless completed within 10 minutes"</em>) and ASVS 6.5.5 both cap it there, so the only thing a setting could express is a violation of both.</p>
+<p>Codes are stored unhashed, deliberately: a code lives ten minutes, and anyone able to read the <code>login_codes</code> table already holds <code>sessions</code>.</p>
+<h2 id="mail"><a class="header" href="#mail">Mail</a></h2>
+<p><code>lettre</code> over STARTTLS to the Google Workspace relay, sending as <code>noreply@dasch.swiss</code>. A university relay cannot send as <code>dasch.swiss</code>, and a login code arriving from <code>dasch.unibas.ch</code> reads as a phishing attempt.</p>
+<h3 id="relay-prerequisites-not-the-applications-job-but-they-block-delivery"><a class="header" href="#relay-prerequisites-not-the-applications-job-but-they-block-delivery">Relay prerequisites (not the application's job, but they block delivery)</a></h3>
+<ul>
+<li><strong>DKIM</strong> — Google DKIM-signs relayed mail with the envelope sender's domain <em>only if that domain has DKIM enabled in the Workspace Admin Console</em>. Set up for <code>dasch.swiss</code>.</li>
+<li><strong>SPF</strong> — remains the sending domain's responsibility; <code>dasch.swiss</code> must include Google. Set up.</li>
+<li><strong>Quota</strong> — the relay allows 10,000 recipients a day, and whether that is shared with other senders determines where <code>EDITOR_MAIL_DAILY_CAP</code> should sit. The default of 500 is well below the ceiling either way.</li>
+</ul>
+<h3 id="no-address-ever-reaches-a-log-req-610"><a class="header" href="#no-address-ever-reaches-a-log-req-610">No address ever reaches a log (REQ-6.10)</a></h3>
+<p>The claim is precisely "an account holder's address", not "any address": <code>EDITOR_SMTP_FROM</code> is logged once at startup, and it is a service mailbox nobody signs in with. There is also one channel this does not close — see <a href="editor/./observability.html">Observability</a> on <code>url.query</code>.</p>
+<p>Two things make that hold rather than merely be intended:</p>
+<ul>
+<li>Every instrumented function is <code>#[tracing::instrument(skip_all)]</code>, so no argument becomes a span field by default. The correlation id is the account's own UUID, which is already opaque and not derived from the address.</li>
+<li><code>MailError</code> carries a <strong>classification and an SMTP status code, never the relay's reply</strong>. A relay's reply routinely quotes the recipient — <code>550 5.1.1 &lt;someone@example.org&gt; User unknown</code> is the canonical shape — so logging a transport error verbatim would write addresses into the log pipeline on exactly the paths nobody exercises.</li>
+</ul>
+<p>The one place in the service that stringifies a <code>lettre</code> error verbatim is the relay's <em>setup</em>, and it is safe only because it runs before any envelope exists — there is nothing for a reply to quote yet. That reasoning is written at the call site, because it stops holding the moment anything routes a connected transport's error through it.</p>
+<p>A test drives the unknown-address, issued, wrong-code, signed-in, malformed and relay-refused paths under a capturing subscriber and asserts on span fields as well as events.</p>
+<h3 id="when-there-is-no-relay-and-when-the-relay-is-broken"><a class="header" href="#when-there-is-no-relay-and-when-the-relay-is-broken">When there is no relay, and when the relay is broken</a></h3>
+<p>With <code>EDITOR_SMTP_HOST</code> unset, codes are written to the log and the service stays usable (REQ-6.8). That is the development transport, the PR-preview transport, and the break-glass for a broken relay.</p>
+<p><strong><code>EDITOR_ENV=PROD</code> with no relay is refused at startup.</strong> That combination is the dangerous one precisely because nothing goes wrong: the service behaves normally and every login code for the life of the deployment sits in the log pipeline. Development, <code>just dev-editor</code>, <code>just run-docker-editor</code> and the PR preview all run as <code>DEV</code>, where the console transport is the point.</p>
+<p>A <strong>configured</strong> relay that fails is different. By default the code is rolled back — the row and, with it, the cooldown, so the user is not left waiting out a cooldown for a code that never arrived — and the response is unchanged. Setting <code>EDITOR_SMTP_BREAK_GLASS=true</code> instead keeps the code alive and writes it to the log.</p>
+<p>That is off by default on purpose. A transient relay error — a rate limit, a TLS blip — would otherwise write a <strong>live credential</strong> into a log pipeline that retains it for weeks and is readable by everyone with log access. Turning it on is an incident response for a relay broken long enough to lock people out, and the failure log line names the variable so the remedy is found from the error itself. Turn it off again once the relay is back.</p>
+<h2 id="preview-safety"><a class="header" href="#preview-safety">Preview safety</a></h2>
+<p>The Cloud Run PR preview is <code>--allow-unauthenticated</code>, so <code>/login</code> is publicly reachable the moment it deploys. The preview leaves <code>EDITOR_SMTP_*</code> unset, so REQ-6.8's console transport applies: codes go to Cloud Run logs, no mail leaves the Workspace relay, and the shared daily quota is untouched. There is deliberately <strong>no</strong> dev-only "show the code on screen" affordance — read it from the logs.</p>
+<p>Gating the preview URL to GitHub organisation members is not available: Cloud Run IAM gates on <em>Google</em> identity, not GitHub membership, and the two do not connect. The workflow's same-repo and non-dependabot conditions gate who can <em>trigger</em> a deploy, not who can reach the URL.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -3320,7 +3495,10 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <h2 id="rules-specific-to-an-authenticated-service"><a class="header" href="#rules-specific-to-an-authenticated-service">Rules specific to an authenticated service</a></h2>
 <p>DPE serves public data, so almost nothing it logs is sensitive. The editor holds accounts, so two constraints apply that DPE's guide does not carry:</p>
 <ul>
-<li><strong>No email address may reach a log or a trace, on any path — including error paths.</strong> Auth events are correlated by an opaque per-user id instead. This is a hard requirement, and the test that enforces it lands with authentication — there are no addresses in the service yet, so there is nothing to assert today. Note there is a second capture channel besides explicit logging: <code>axum-tracing-opentelemetry</code> records <code>url.query</code> on every server span, so a query string is exported to Tempo verbatim. Anything address-bearing must therefore stay out of query strings as well as out of log fields.</li>
+<li><strong>No account holder's address may reach a log or a trace, on any path — including error paths.</strong> Auth events are correlated by an opaque per-user id instead. "Account holder's" is the precise claim and it is deliberate: the configured <code>EDITOR_SMTP_FROM</code> <em>is</em> logged, once, at startup, because it is a service mailbox and it is the one line telling an operator which mailbox codes come from. Nobody's account is behind it. This is a hard requirement, enforced by <code>test_no_address_reaches_a_log_or_a_span_on_any_path</code> in <code>editor-server/src/auth/handlers.rs</code>, which drives the unknown-address, issued, wrong-code, signed-in, malformed and relay-refused paths under a capturing subscriber that records span fields as well as events. Two things make it hold rather than be intended: every instrumented function is <code>skip_all</code>, and <code>MailError</code> carries a classification and an SMTP status code rather than the relay's reply, which routinely quotes the recipient. Note there is a second capture channel besides explicit logging: <code>axum-tracing-opentelemetry</code> records <code>url.query</code> on every server span, so a query string is exported to Tempo verbatim. Anything address-bearing must therefore stay out of query strings as well as out of log fields.</li>
+</ul>
+<p>That channel is <strong>not enforced, deliberately</strong>. The editor never generates such a URL — both login forms are <code>method="post"</code>, which a test asserts — but a hand-typed or shared <code>/login?email=someone@example.org</code> would be exported. The obvious guard is a middleware stripping query strings from the login routes, and it was rejected: the next issue adds <code>/login?next=…</code> for redirect-preserving sign-in, so the guard would be built and dismantled in consecutive changes. Whoever adds the first query-bearing route owns this: either keep addresses out of it, or suppress <code>url.query</code> for the service.</p>
+<ul>
 <li><strong>Metric attributes must stay bounded.</strong> Validate against known sets and normalise dynamic values; a project shortcode is bounded, a user identifier or a free-text field is not. High-cardinality data goes to structured logs only.</li>
 </ul>
 <h2 id="logging-2"><a class="header" href="#logging-2">Logging</a></h2>
@@ -3438,10 +3616,23 @@ image CI publishes, under emulation.</p>
 <tr><td><code>EDITOR_SITE_ADDR</code></td><td>No</td><td><code>127.0.0.1:4100</code></td><td>Listen address and port. The Docker image sets <code>0.0.0.0:8080</code>.</td></tr>
 <tr><td><code>EDITOR_PUBLIC_DIR</code></td><td>No</td><td><code>modules/editor/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, the telemetry module, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
 <tr><td><code>EDITOR_DATA_DIR</code></td><td>Yes, to read records</td><td><em>(none)</em></td><td>Directory holding the published project/person/organization set baked into the image. No default — see <a href="editor/operations.html#data-directory-a-deliberate-build-input">Data directory</a>. Reported at startup, as <code>&lt;unset&gt;</code> when absent.</td></tr>
-<tr><td><code>EDITOR_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="editor/operations.html#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
+<tr><td><code>EDITOR_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="editor/operations.html#logging">Logging</a>). The Docker image sets <code>PROD</code>; <strong><code>PROD</code> requires <code>EDITOR_SMTP_HOST</code></strong> or startup is refused, because a relay-less production writes every login code to the log. The PR preview and <code>just run-docker-editor</code> override it to <code>DEV</code>.</td></tr>
 <tr><td><code>EDITOR_DB_DIR</code></td><td>No</td><td><em>(none — in-memory)</em></td><td>Directory holding the SQLite database. <strong>Unset means in-memory</strong>, not a path — see <a href="editor/operations.html#database">Database</a>. Names the <em>directory</em>, never the database file.</td></tr>
 <tr><td><code>EDITOR_DB_READERS</code></td><td>No</td><td><code>4</code></td><td>Size of the reader connection pool. The writer pool is always one connection.</td></tr>
 <tr><td><code>EDITOR_DB_BUSY_TIMEOUT_MS</code></td><td>No</td><td><code>5000</code></td><td>SQLite <code>busy_timeout</code>, applied per connection.</td></tr>
+<tr><td><code>EDITOR_RDU_EMAILS</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated addresses that always have an RDU account (REQ-7.2). Reconciled on every start: missing accounts are created, an existing depositor listed here is promoted. Removing an address <strong>does not revoke</strong> the account — see <a href="editor/operations.html#login-and-mail">Login and mail</a>.</td></tr>
+<tr><td><code>EDITOR_SMTP_HOST</code></td><td>No</td><td><em>(none — console)</em></td><td>SMTP relay host. <strong>Unset means codes are written to the log</strong> (REQ-6.8) and the service stays usable. That is the development and PR-preview default.</td></tr>
+<tr><td><code>EDITOR_SMTP_PORT</code></td><td>No</td><td><code>587</code></td><td>Submission with STARTTLS, which is what <code>smtp-relay.gmail.com</code> speaks.</td></tr>
+<tr><td><code>EDITOR_SMTP_USERNAME</code></td><td>No</td><td><em>(none)</em></td><td>Relay username. Must be set together with the password.</td></tr>
+<tr><td><code>EDITOR_SMTP_PASSWORD</code></td><td>No</td><td><em>(none)</em></td><td>Relay password. Redacted in any debug rendering of the configuration.</td></tr>
+<tr><td><code>EDITOR_SMTP_FROM</code></td><td>No</td><td><code>noreply@dasch.swiss</code></td><td>Envelope sender. Must be a domain with DKIM enabled in the Workspace Admin Console — see <a href="editor/./authentication.html#relay-prerequisites-not-the-applications-job-but-they-block-delivery">Authentication</a>.</td></tr>
+<tr><td><code>EDITOR_SMTP_BREAK_GLASS</code></td><td>No</td><td><code>false</code></td><td>When a <strong>configured</strong> relay fails, write the undelivered code to the log instead of rolling it back. Off by default: it puts a live credential in the log pipeline. See <a href="editor/operations.html#login-and-mail">Login and mail</a>.</td></tr>
+<tr><td><code>EDITOR_LOGIN_COOLDOWN_SECS</code></td><td>No</td><td><code>60</code></td><td>Before another code may be sent to the same address (REQ-6.5). Must be shorter than the ten-minute code lifetime, which startup validates.</td></tr>
+<tr><td><code>EDITOR_LOGIN_MAX_FAILED</code></td><td>No</td><td><code>10</code></td><td>Consecutive account-level failures before throttling. NIST SP 800-63B-4's ceiling is 100, which startup also validates.</td></tr>
+<tr><td><code>EDITOR_LOGIN_LOCKOUT_SECS</code></td><td>No</td><td><code>900</code></td><td>How long throttling lasts after the cap is reached.</td></tr>
+<tr><td><code>EDITOR_MAIL_DAILY_CAP</code></td><td>No</td><td><code>500</code></td><td>Codes that may be sent across <strong>all</strong> users in 24 hours. Sits below the relay's 10,000/day so a resend loop cannot exhaust a quota shared with other senders.</td></tr>
+<tr><td><code>EDITOR_SESSION_ABSOLUTE_SECS</code></td><td>No</td><td><code>43200</code> (12 h)</td><td>Absolute session lifetime, set at creation and never extended.</td></tr>
+<tr><td><code>EDITOR_SESSION_IDLE_SECS</code></td><td>No</td><td><code>7200</code> (2 h)</td><td>Idle session timeout. Must not exceed the absolute lifetime, which startup validates.</td></tr>
 <tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g. <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
 <tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g. <code>editor</code>)</td></tr>
 <tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g. <code>service.namespace=editor,service.version=0.8.2,deployment.environment=prod</code>)</td></tr>
@@ -3469,7 +3660,26 @@ image CI publishes, under emulation.</p>
 <ul>
 <li>The editor is <strong>not registered as a deployable service in Jenkins</strong>, so the DEV deploy trigger in <code>editor-docker-publish.yml</code> is marked <code>continue-on-error</code> and only warns. Remove that guard once the Jenkins job exists, so a genuinely broken webhook is loud again.</li>
 <li>The writable data volume <code>EDITOR_DB_DIR</code> points at, tracked as <a href="https://linear.app/dasch/issue/INFRA-1378/extend-deploy-volumes">INFRA-1378</a>. Development and tests use the in-memory database, so only production waits on it.</li>
+<li><strong>SMTP relay host, port and credentials</strong>, provisioned as vaulted group vars. Development and the PR previews are unblocked by the console fallback, so only production login waits on it. DKIM and SPF for <code>dasch.swiss</code> are already set up.</li>
 </ul>
+<h2 id="login-and-mail"><a class="header" href="#login-and-mail">Login and mail</a></h2>
+<p>Design and rationale live in <a href="editor/./authentication.html">Authentication</a>. What an operator needs:</p>
+<h3 id="accounts"><a class="header" href="#accounts">Accounts</a></h3>
+<p><code>EDITOR_RDU_EMAILS</code> is reconciled on every start. Adding an address creates or promotes an account on the next deploy. <strong>Removing one does not revoke anything</strong> — startup logs a warning naming any <code>rdu</code> account the configuration no longer lists, and the account has to be removed by hand until account management lands. Treat that warning as a to-do, not as noise.</p>
+<p>A malformed entry stops startup rather than being skipped: every entry becomes an account that administers the service, so a typo is an administrator who can never sign in, and the symptom would otherwise be "my code never arrives" weeks later.</p>
+<h3 id="no-relay-configured"><a class="header" href="#no-relay-configured">No relay configured</a></h3>
+<p>With <code>EDITOR_SMTP_HOST</code> unset, every code is written to the log at <code>WARN</code> and the service stays usable (REQ-6.8). The log line carries the message body and <strong>not</strong> the recipient — whoever is testing knows the address they typed, and REQ-6.10 forbids one in a log.</p>
+<h3 id="a-broken-relay"><a class="header" href="#a-broken-relay">A broken relay</a></h3>
+<p>Default behaviour: the send fails, the code and its cooldown are rolled back, the user's response is unchanged (it has to be — see the anti-enumeration reasoning in <a href="editor/./authentication.html#anti-enumeration-is-a-property-of-the-response-not-a-branch">Authentication</a>), and the failure is logged with a classification and an SMTP status code.</p>
+<p>If the relay is broken long enough that people are locked out:</p>
+<ol>
+<li>Set <code>EDITOR_SMTP_BREAK_GLASS=true</code> and redeploy. Codes are still attempted through the relay, and undelivered ones are written to the log, where an operator can read them out to the person waiting.</li>
+<li>Fix the relay.</li>
+<li><strong>Set it back to <code>false</code>.</strong> While it is on, every relay hiccup writes a live login code into a log pipeline that retains it for weeks and is readable by everyone with log access.</li>
+</ol>
+<p>Unsetting <code>EDITOR_SMTP_HOST</code> entirely is the heavier version of the same escape hatch: it routes everything to the log without trying the relay at all, and needs a second redeploy to undo.</p>
+<h3 id="diagnosing-i-never-got-a-code"><a class="header" href="#diagnosing-i-never-got-a-code">Diagnosing "I never got a code"</a></h3>
+<p>No address appears in any log, so the trail is the opaque <code>auth.subject</code> correlation id (the account's UUID) in the auth events, plus the per-account "last code issued at" that RDU will see once the depositor list lands. A user who is throttled after repeated wrong entries is told only "that code is not valid" — deliberately, because a distinct message would confirm to anyone that the address has an account. Check the auth log for <code>auth.outcome = "locked_out"</code> before assuming a delivery problem.</p>
 <h2 id="database"><a class="header" href="#database">Database</a></h2>
 <p>One SQLite database, holding users, sessions, one-time codes, drafts, submissions and approved records. See <a href="editor/./architecture.html#persistence">Architecture</a> for the pool and PRAGMA design.</p>
 <h3 id="in-memory-is-the-default-deliberately"><a class="header" href="#in-memory-is-the-default-deliberately">In-memory is the default, deliberately</a></h3>
@@ -3482,6 +3692,8 @@ image CI publishes, under emulation.</p>
 <li>Docker Swarm does <strong>not</strong> create missing bind-mount host directories the way <code>docker run -v</code> does, so Ansible must create <em>and</em> chown the directory before the stack starts.</li>
 <li>Keep <code>replicas: 1</code> with <code>order: stop-first</code>, so a rolling update never briefly runs two processes against one database file. Node pinning is unnecessary — there is no multi-node Swarm.</li>
 </ul>
+<h3 id="expired-rows-1"><a class="header" href="#expired-rows-1">Expired rows</a></h3>
+<p>An hourly background sweep deletes expired login codes and sessions. Nothing depends on it succeeding — a failure is logged and the next hour tries again — and the first sweep runs one interval after start, so a restart loop never spends its time sweeping.</p>
 <h3 id="startup-pre-flight"><a class="header" href="#startup-pre-flight">Startup pre-flight</a></h3>
 <p>Before opening the database, startup writes and removes a probe file in <code>EDITOR_DB_DIR</code> and reports the three failures separately: the directory is missing, it is a file rather than a directory, or it cannot be written to. Without the probe all three arrive as SQLite's <code>unable to open database file</code>, which is the same message for a typo in the path, a wrong uid and a root-owned mount. The unwritable-directory message names uid 65532 explicitly.</p>
 <h3 id="storage-type"><a class="header" href="#storage-type">Storage type</a></h3>

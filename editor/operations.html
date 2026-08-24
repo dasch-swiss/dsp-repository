@@ -282,10 +282,23 @@ image CI publishes, under emulation.</p>
 <tr><td><code>EDITOR_SITE_ADDR</code></td><td>No</td><td><code>127.0.0.1:4100</code></td><td>Listen address and port. The Docker image sets <code>0.0.0.0:8080</code>.</td></tr>
 <tr><td><code>EDITOR_PUBLIC_DIR</code></td><td>No</td><td><code>modules/editor/public</code></td><td>Directory served as static assets by <code>ServeDir</code> (favicon, logo, vendored JS, the telemetry module, and the compiled <code>app.&lt;hash&gt;.css</code>).</td></tr>
 <tr><td><code>EDITOR_DATA_DIR</code></td><td>Yes, to read records</td><td><em>(none)</em></td><td>Directory holding the published project/person/organization set baked into the image. No default — see <a href="#data-directory-a-deliberate-build-input">Data directory</a>. Reported at startup, as <code>&lt;unset&gt;</code> when absent.</td></tr>
-<tr><td><code>EDITOR_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="#logging">Logging</a>). The Docker image sets <code>PROD</code>.</td></tr>
+<tr><td><code>EDITOR_ENV</code></td><td>No</td><td><code>DEV</code></td><td>Deployment environment (<code>DEV</code> or <code>PROD</code>). Controls OTLP log export (see <a href="#logging">Logging</a>). The Docker image sets <code>PROD</code>; <strong><code>PROD</code> requires <code>EDITOR_SMTP_HOST</code></strong> or startup is refused, because a relay-less production writes every login code to the log. The PR preview and <code>just run-docker-editor</code> override it to <code>DEV</code>.</td></tr>
 <tr><td><code>EDITOR_DB_DIR</code></td><td>No</td><td><em>(none — in-memory)</em></td><td>Directory holding the SQLite database. <strong>Unset means in-memory</strong>, not a path — see <a href="#database">Database</a>. Names the <em>directory</em>, never the database file.</td></tr>
 <tr><td><code>EDITOR_DB_READERS</code></td><td>No</td><td><code>4</code></td><td>Size of the reader connection pool. The writer pool is always one connection.</td></tr>
 <tr><td><code>EDITOR_DB_BUSY_TIMEOUT_MS</code></td><td>No</td><td><code>5000</code></td><td>SQLite <code>busy_timeout</code>, applied per connection.</td></tr>
+<tr><td><code>EDITOR_RDU_EMAILS</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated addresses that always have an RDU account (REQ-7.2). Reconciled on every start: missing accounts are created, an existing depositor listed here is promoted. Removing an address <strong>does not revoke</strong> the account — see <a href="#login-and-mail">Login and mail</a>.</td></tr>
+<tr><td><code>EDITOR_SMTP_HOST</code></td><td>No</td><td><em>(none — console)</em></td><td>SMTP relay host. <strong>Unset means codes are written to the log</strong> (REQ-6.8) and the service stays usable. That is the development and PR-preview default.</td></tr>
+<tr><td><code>EDITOR_SMTP_PORT</code></td><td>No</td><td><code>587</code></td><td>Submission with STARTTLS, which is what <code>smtp-relay.gmail.com</code> speaks.</td></tr>
+<tr><td><code>EDITOR_SMTP_USERNAME</code></td><td>No</td><td><em>(none)</em></td><td>Relay username. Must be set together with the password.</td></tr>
+<tr><td><code>EDITOR_SMTP_PASSWORD</code></td><td>No</td><td><em>(none)</em></td><td>Relay password. Redacted in any debug rendering of the configuration.</td></tr>
+<tr><td><code>EDITOR_SMTP_FROM</code></td><td>No</td><td><code>noreply@dasch.swiss</code></td><td>Envelope sender. Must be a domain with DKIM enabled in the Workspace Admin Console — see <a href="./authentication.html#relay-prerequisites-not-the-applications-job-but-they-block-delivery">Authentication</a>.</td></tr>
+<tr><td><code>EDITOR_SMTP_BREAK_GLASS</code></td><td>No</td><td><code>false</code></td><td>When a <strong>configured</strong> relay fails, write the undelivered code to the log instead of rolling it back. Off by default: it puts a live credential in the log pipeline. See <a href="#login-and-mail">Login and mail</a>.</td></tr>
+<tr><td><code>EDITOR_LOGIN_COOLDOWN_SECS</code></td><td>No</td><td><code>60</code></td><td>Before another code may be sent to the same address (REQ-6.5). Must be shorter than the ten-minute code lifetime, which startup validates.</td></tr>
+<tr><td><code>EDITOR_LOGIN_MAX_FAILED</code></td><td>No</td><td><code>10</code></td><td>Consecutive account-level failures before throttling. NIST SP 800-63B-4's ceiling is 100, which startup also validates.</td></tr>
+<tr><td><code>EDITOR_LOGIN_LOCKOUT_SECS</code></td><td>No</td><td><code>900</code></td><td>How long throttling lasts after the cap is reached.</td></tr>
+<tr><td><code>EDITOR_MAIL_DAILY_CAP</code></td><td>No</td><td><code>500</code></td><td>Codes that may be sent across <strong>all</strong> users in 24 hours. Sits below the relay's 10,000/day so a resend loop cannot exhaust a quota shared with other senders.</td></tr>
+<tr><td><code>EDITOR_SESSION_ABSOLUTE_SECS</code></td><td>No</td><td><code>43200</code> (12 h)</td><td>Absolute session lifetime, set at creation and never extended.</td></tr>
+<tr><td><code>EDITOR_SESSION_IDLE_SECS</code></td><td>No</td><td><code>7200</code> (2 h)</td><td>Idle session timeout. Must not exceed the absolute lifetime, which startup validates.</td></tr>
 <tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g. <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
 <tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g. <code>editor</code>)</td></tr>
 <tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g. <code>service.namespace=editor,service.version=0.8.2,deployment.environment=prod</code>)</td></tr>
@@ -313,7 +326,26 @@ image CI publishes, under emulation.</p>
 <ul>
 <li>The editor is <strong>not registered as a deployable service in Jenkins</strong>, so the DEV deploy trigger in <code>editor-docker-publish.yml</code> is marked <code>continue-on-error</code> and only warns. Remove that guard once the Jenkins job exists, so a genuinely broken webhook is loud again.</li>
 <li>The writable data volume <code>EDITOR_DB_DIR</code> points at, tracked as <a href="https://linear.app/dasch/issue/INFRA-1378/extend-deploy-volumes">INFRA-1378</a>. Development and tests use the in-memory database, so only production waits on it.</li>
+<li><strong>SMTP relay host, port and credentials</strong>, provisioned as vaulted group vars. Development and the PR previews are unblocked by the console fallback, so only production login waits on it. DKIM and SPF for <code>dasch.swiss</code> are already set up.</li>
 </ul>
+<h2 id="login-and-mail"><a class="header" href="#login-and-mail">Login and mail</a></h2>
+<p>Design and rationale live in <a href="./authentication.html">Authentication</a>. What an operator needs:</p>
+<h3 id="accounts"><a class="header" href="#accounts">Accounts</a></h3>
+<p><code>EDITOR_RDU_EMAILS</code> is reconciled on every start. Adding an address creates or promotes an account on the next deploy. <strong>Removing one does not revoke anything</strong> — startup logs a warning naming any <code>rdu</code> account the configuration no longer lists, and the account has to be removed by hand until account management lands. Treat that warning as a to-do, not as noise.</p>
+<p>A malformed entry stops startup rather than being skipped: every entry becomes an account that administers the service, so a typo is an administrator who can never sign in, and the symptom would otherwise be "my code never arrives" weeks later.</p>
+<h3 id="no-relay-configured"><a class="header" href="#no-relay-configured">No relay configured</a></h3>
+<p>With <code>EDITOR_SMTP_HOST</code> unset, every code is written to the log at <code>WARN</code> and the service stays usable (REQ-6.8). The log line carries the message body and <strong>not</strong> the recipient — whoever is testing knows the address they typed, and REQ-6.10 forbids one in a log.</p>
+<h3 id="a-broken-relay"><a class="header" href="#a-broken-relay">A broken relay</a></h3>
+<p>Default behaviour: the send fails, the code and its cooldown are rolled back, the user's response is unchanged (it has to be — see the anti-enumeration reasoning in <a href="./authentication.html#anti-enumeration-is-a-property-of-the-response-not-a-branch">Authentication</a>), and the failure is logged with a classification and an SMTP status code.</p>
+<p>If the relay is broken long enough that people are locked out:</p>
+<ol>
+<li>Set <code>EDITOR_SMTP_BREAK_GLASS=true</code> and redeploy. Codes are still attempted through the relay, and undelivered ones are written to the log, where an operator can read them out to the person waiting.</li>
+<li>Fix the relay.</li>
+<li><strong>Set it back to <code>false</code>.</strong> While it is on, every relay hiccup writes a live login code into a log pipeline that retains it for weeks and is readable by everyone with log access.</li>
+</ol>
+<p>Unsetting <code>EDITOR_SMTP_HOST</code> entirely is the heavier version of the same escape hatch: it routes everything to the log without trying the relay at all, and needs a second redeploy to undo.</p>
+<h3 id="diagnosing-i-never-got-a-code"><a class="header" href="#diagnosing-i-never-got-a-code">Diagnosing "I never got a code"</a></h3>
+<p>No address appears in any log, so the trail is the opaque <code>auth.subject</code> correlation id (the account's UUID) in the auth events, plus the per-account "last code issued at" that RDU will see once the depositor list lands. A user who is throttled after repeated wrong entries is told only "that code is not valid" — deliberately, because a distinct message would confirm to anyone that the address has an account. Check the auth log for <code>auth.outcome = "locked_out"</code> before assuming a delivery problem.</p>
 <h2 id="database"><a class="header" href="#database">Database</a></h2>
 <p>One SQLite database, holding users, sessions, one-time codes, drafts, submissions and approved records. See <a href="./architecture.html#persistence">Architecture</a> for the pool and PRAGMA design.</p>
 <h3 id="in-memory-is-the-default-deliberately"><a class="header" href="#in-memory-is-the-default-deliberately">In-memory is the default, deliberately</a></h3>
@@ -326,6 +358,8 @@ image CI publishes, under emulation.</p>
 <li>Docker Swarm does <strong>not</strong> create missing bind-mount host directories the way <code>docker run -v</code> does, so Ansible must create <em>and</em> chown the directory before the stack starts.</li>
 <li>Keep <code>replicas: 1</code> with <code>order: stop-first</code>, so a rolling update never briefly runs two processes against one database file. Node pinning is unnecessary — there is no multi-node Swarm.</li>
 </ul>
+<h3 id="expired-rows"><a class="header" href="#expired-rows">Expired rows</a></h3>
+<p>An hourly background sweep deletes expired login codes and sessions. Nothing depends on it succeeding — a failure is logged and the next hour tries again — and the first sweep runs one interval after start, so a restart loop never spends its time sweeping.</p>
 <h3 id="startup-pre-flight"><a class="header" href="#startup-pre-flight">Startup pre-flight</a></h3>
 <p>Before opening the database, startup writes and removes a probe file in <code>EDITOR_DB_DIR</code> and reports the three failures separately: the directory is missing, it is a file rather than a directory, or it cannot be written to. Without the probe all three arrive as SQLite's <code>unable to open database file</code>, which is the same message for a typo in the path, a wrong uid and a root-owned mount. The unwritable-directory message names uid 65532 explicitly.</p>
 <h3 id="storage-type"><a class="header" href="#storage-type">Storage type</a></h3>

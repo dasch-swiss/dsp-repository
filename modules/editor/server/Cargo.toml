@@ -24,6 +24,26 @@ serde.workspace = true
 rusqlite.workspace = true
 deadpool-sqlite.workspace = true
 async-trait.workspace = true
+# Mail (REQ-6.7). `rustls` rather than the default `native-tls`: the release
+# binary is static musl, and `native-tls` would need an OpenSSL to link against.
+# `ring` and `webpki-roots` are chosen explicitly — lettre resolves its own
+# crypto provider from its own features, so it never depends on which provider
+# the rest of the graph happens to have enabled.
+lettre = { version = "0.11.23", default-features = false, features = [
+    "builder",
+    "hostname",
+    "pool",
+    "smtp-transport",
+    "tokio1",
+    "tokio1-rustls",
+    "ring",
+    "webpki-roots",
+] }
+# CSPRNG for the login code and the opaque tokens.
+rand = "0.9"
+# Constant-time comparison of the submitted code against the stored one.
+subtle = "2.6"
+base64.workspace = true
 chrono.workspace = true
 thiserror.workspace = true
 uuid.workspace = true

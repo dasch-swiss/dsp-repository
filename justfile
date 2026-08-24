@@ -450,7 +450,10 @@ build-docker-editor arch="": css-editor-release
 # Run the editor Docker container on port 8080
 [group('editor')]
 run-docker-editor:
-    docker run --rm -p 8080:8080 metadata-editor
+    # DEV overrides the image's PROD default: startup refuses PROD without an
+    # SMTP relay, because that combination writes every login code to the log
+    # while the service looks healthy. Locally the console transport is the point.
+    docker run --rm -p 8080:8080 -e EDITOR_ENV=DEV metadata-editor
 
 # Lint E2E test TypeScript with Biome
 lint-e2e: _check-node

@@ -11,6 +11,19 @@
 //!
 //! Routes are added as their surfaces land. What this module owns from the
 //! start is the layer order and the traced/untraced split.
+//!
+//! ## Method discipline
+//!
+//! Every route that changes state is `POST`. That is not tidiness: the
+//! `Sec-Fetch-Site` CSRF control exempts `GET` and `HEAD` by necessity, because
+//! a navigation from anywhere is a `GET` — so a `GET` that changes state is a
+//! `GET` nothing protects. The tests below assert each state-changing route
+//! refuses `GET`.
+//!
+//! Rust cannot check the converse — that no handler reached through `get(...)`
+//! writes — because the route table is not introspectable. The one deliberate
+//! exception is the session's idle-timeout touch, and it is argued for where it
+//! happens, in [`crate::auth::session`].
 
 use std::net::{IpAddr, SocketAddr};
 
@@ -83,8 +96,11 @@ pub(crate) fn build_app(state: AppState, public_dir: &std::path::Path) -> Router
 /// Deliberately a copy of `dpe-server`'s extractor rather than a shared
 /// dependency: it is stateless, both services sit behind the same ingress, and a
 /// shared home for fifteen lines is not worth a crate today. Both copies carry
-/// the same tests, and `grep RightmostXffKeyExtractor` finds both — extract it
-/// once a third call site appears (the login endpoints will be one).
+/// the same tests, and `grep RightmostXffKeyExtractor` finds both.
+///
+/// The login endpoints reuse this one rather than adding a third copy, so the
+/// count of copies is still two and the case for extracting it into a shared
+/// crate has not moved. It moves when a third *service* needs it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct RightmostXffKeyExtractor;
 
@@ -102,6 +118,47 @@ impl KeyExtractor for RightmostXffKeyExtractor {
     }
 }
 
+/// Per-IP budget for `POST /login`, the endpoint that sends mail.
+///
+/// Deliberately generous. DaSCH staff and a depositing project team can share
+/// one NAT address, so a tight bucket denies sign-in to a whole office — a
+/// self-inflicted outage in exchange for very little, because this is not the
+/// control that protects the relay quota (the global daily cap is) or bounds
+/// guessing (the per-account counter is). What it stops is one host driving the
+/// endpoint flat out.
+const ISSUE_BURST: u32 = 20;
+const ISSUE_REPLENISH_SECS: u64 = 30;
+
+/// Per-IP budget for `POST /login/code`. Higher than the issue budget: entering
+/// a code is a thing a legitimate user does repeatedly and a thing that sends no
+/// mail.
+const VERIFY_BURST: u32 = 30;
+const VERIFY_REPLENISH_SECS: u64 = 5;
+
+/// A per-IP rate limit keyed by [`RightmostXffKeyExtractor`].
+///
+/// A macro rather than a function because the layer's type parameters come from
+/// the `governor` crate, which `tower_governor` re-exports only in part — naming
+/// the return type would mean taking a direct dependency on `governor` for a
+/// signature. The beacon route builds its config inline for the same reason.
+///
+/// `replenish_secs` is the interval at which one unit of the burst comes back,
+/// so the sustained rate is `1 / replenish_secs` per second per IP.
+macro_rules! per_ip_limit {
+    ($replenish_secs:expr, $burst:expr, $what:literal) => {{
+        use tower_governor::governor::GovernorConfigBuilder;
+        use tower_governor::GovernorLayer;
+
+        let config = GovernorConfigBuilder::default()
+            .per_second($replenish_secs)
+            .burst_size($burst)
+            .key_extractor(RightmostXffKeyExtractor)
+            .finish()
+            .expect(concat!($what, " GovernorConfig should build from its constants"));
+        GovernorLayer { config: std::sync::Arc::new(config) }
+    }};
+}
+
 /// Assemble the traced app router. Static assets are served from `public_dir`,
 /// falling back to the app's 404.
 ///
@@ -109,7 +166,7 @@ impl KeyExtractor for RightmostXffKeyExtractor {
 /// stay **untraced** — `/healthz` and the telemetry beacon — are added by
 /// [`build_app`] after this returns.
 fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
-    use axum::routing::get;
+    use axum::routing::{get, post};
     use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
     use tower_http::services::ServeDir;
 
@@ -122,6 +179,28 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
         // The service root. The shell's header links here from every page, so
         // without it the 404 page's own header led to another 404.
         .route("/", get(crate::root))
+        // The two login endpoints. The rate limit is on the POST alone, merged
+        // in rather than layered over the whole route: a limit that counted page
+        // loads would spend an office's budget on people reading the form.
+        .route(
+            "/login",
+            get(crate::auth::login_form).merge(post(crate::auth::login_submit).layer(per_ip_limit!(
+                ISSUE_REPLENISH_SECS,
+                ISSUE_BURST,
+                "login"
+            ))),
+        )
+        .route(
+            "/login/code",
+            get(crate::auth::code_form).merge(post(crate::auth::code_submit).layer(per_ip_limit!(
+                VERIFY_REPLENISH_SECS,
+                VERIFY_BURST,
+                "code"
+            ))),
+        )
+        // Not rate-limited: signing out costs nothing and refusing it would
+        // strand a user in a session they asked to end.
+        .route("/logout", post(crate::auth::logout))
         // Static assets + 404 fallback.
         .fallback_service(serve_dir)
         // --- OTel layers ---
@@ -140,16 +219,12 @@ mod tests {
     use axum::http::StatusCode;
     use tower::ServiceExt;
 
-    use super::{build_app, build_router};
-    use crate::AppState;
+    use super::{build_app, build_router, ISSUE_BURST};
+    use crate::test_support::test_state;
 
     // Static assets come from a nonexistent dir: these tests target the
     // fallback and /healthz, never a real static file.
     const NO_PUBLIC_DIR: &str = "nonexistent-test-dir";
-
-    fn test_state() -> AppState {
-        AppState { css_href: "/assets/app.css".to_string() }
-    }
 
     async fn status_of(app: axum::Router, uri: &str) -> StatusCode {
         let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
@@ -159,7 +234,7 @@ mod tests {
     #[tokio::test]
     async fn unknown_path_falls_back_to_not_found() {
         assert_eq!(
-            status_of(build_app(test_state(), NO_PUBLIC_DIR.as_ref()), "/no-such-page").await,
+            status_of(build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref()), "/no-such-page").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -169,7 +244,7 @@ mod tests {
         // Every page's header links to `/`. Without this route the 404 page's own
         // header led straight back to another 404.
         assert_eq!(
-            status_of(build_app(test_state(), NO_PUBLIC_DIR.as_ref()), "/").await,
+            status_of(build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref()), "/").await,
             StatusCode::OK
         );
     }
@@ -177,7 +252,7 @@ mod tests {
     #[tokio::test]
     async fn healthz_is_ok() {
         assert_eq!(
-            status_of(build_app(test_state(), NO_PUBLIC_DIR.as_ref()), "/healthz").await,
+            status_of(build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref()), "/healthz").await,
             StatusCode::OK
         );
     }
@@ -195,7 +270,7 @@ mod tests {
         // `OtelInResponseLayer` injects: that header only appears once the OTel
         // subscriber is installed, which is `serve()`'s job, not a unit test's.
         assert_eq!(
-            status_of(build_router(test_state(), NO_PUBLIC_DIR.as_ref()), "/healthz").await,
+            status_of(build_router(test_state("router").await.0, NO_PUBLIC_DIR.as_ref()), "/healthz").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -224,7 +299,7 @@ mod tests {
     async fn telemetry_beacon_is_wired_and_untraced() {
         // Same positional invariant as /healthz: the beacon must sit after the
         // OTel layers, or every page's telemetry upload mints a server span.
-        let app = build_app(test_state(), NO_PUBLIC_DIR.as_ref());
+        let app = build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
         let status = app.oneshot(beacon_request("POST")).await.unwrap().status();
         assert_eq!(status, StatusCode::NO_CONTENT);
 
@@ -232,7 +307,7 @@ mod tests {
         // `.layer()` calls. An unmatched POST lands on the `ServeDir` fallback's
         // not-found service, which is GET-only and so answers 405 rather than
         // 404 — the point is that it is not the beacon's 204.
-        let traced = build_router(test_state(), NO_PUBLIC_DIR.as_ref());
+        let traced = build_router(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
         let status = traced.oneshot(beacon_request("POST")).await.unwrap().status();
         assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
         assert_ne!(status, StatusCode::NO_CONTENT);
@@ -242,7 +317,7 @@ mod tests {
     async fn telemetry_beacon_rejects_get() {
         // The beacon mutates nothing, but method discipline is the invariant the
         // no-state-change-on-GET rule rests on; a GET must not reach it.
-        let app = build_app(test_state(), NO_PUBLIC_DIR.as_ref());
+        let app = build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
         let status = app.oneshot(beacon_request("GET")).await.unwrap().status();
         assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
     }
@@ -252,7 +327,7 @@ mod tests {
         // Burst is 10 at 1/s; the 11th back-to-back request from one IP must be
         // throttled. Without this the beacon is the one endpoint an anonymous
         // client can drive without limit.
-        let app = build_app(test_state(), NO_PUBLIC_DIR.as_ref());
+        let app = build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
         let mut statuses = Vec::new();
         for _ in 0..12 {
             statuses.push(app.clone().oneshot(beacon_request("POST")).await.unwrap().status());
@@ -277,6 +352,66 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn the_login_rate_limit_counts_submissions_and_not_page_loads() {
+        // The limit is merged onto the POST alone rather than layered over the
+        // whole route, and that is not decoration: DaSCH staff and a depositing
+        // project team can share one NAT address, so a limiter that counted GETs
+        // would spend an office's entire budget on people reading the form and
+        // lock all of them out of signing in.
+        //
+        // Pins both halves, because the mechanism — `MethodRouter::merge` of a
+        // layered `post(...)` into an unlayered `get(...)` — is invisible in the
+        // route table and would silently start covering GET if someone replaced
+        // the merge with a `.layer()` on the whole route.
+        let (state, _) = test_state("rate-limit").await;
+        let app = build_app(state, NO_PUBLIC_DIR.as_ref());
+
+        let mut form_loads = Vec::new();
+        for _ in 0..(ISSUE_BURST + 10) {
+            let request = Request::builder()
+                .method("GET")
+                .uri("/login")
+                .header("x-forwarded-for", "198.51.100.77")
+                .body(Body::empty())
+                .unwrap();
+            form_loads.push(app.clone().oneshot(request).await.unwrap().status());
+        }
+        assert!(
+            !form_loads.contains(&StatusCode::TOO_MANY_REQUESTS),
+            "reading the form must never be throttled, got {form_loads:?}"
+        );
+
+        let mut submissions = Vec::new();
+        for _ in 0..(ISSUE_BURST + 5) {
+            let request = Request::builder()
+                .method("POST")
+                .uri("/login")
+                .header("x-forwarded-for", "198.51.100.77")
+                .header("sec-fetch-site", "same-origin")
+                .header("content-type", "application/x-www-form-urlencoded")
+                .body(Body::from("email=nobody@example.test"))
+                .unwrap();
+            submissions.push(app.clone().oneshot(request).await.unwrap().status());
+        }
+        assert!(
+            submissions.contains(&StatusCode::TOO_MANY_REQUESTS),
+            "submitting must be throttled past the burst, got {submissions:?}"
+        );
+
+        // A different address has its own bucket, so one noisy client cannot
+        // deny sign-in to everyone behind a different egress.
+        let other = Request::builder()
+            .method("POST")
+            .uri("/login")
+            .header("x-forwarded-for", "203.0.113.201")
+            .header("sec-fetch-site", "same-origin")
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(Body::from("email=nobody@example.test"))
+            .unwrap();
+        assert_eq!(app.oneshot(other).await.unwrap().status(), StatusCode::SEE_OTHER);
+    }
+
+    #[tokio::test]
     async fn csrf_middleware_covers_the_untraced_routes_too() {
         // The CSRF layer is applied last in `build_app`, which makes it
         // outermost and therefore the one layer the positional traced/untraced
@@ -284,7 +419,7 @@ mod tests {
         // beacon is declared *after* the OTel layers, so a CSRF layer added
         // inside `build_router` would have left it — the only pre-auth POST in
         // the app — unprotected, with no test failing.
-        let app = build_app(test_state(), NO_PUBLIC_DIR.as_ref());
+        let app = build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
         let unprotected = Request::builder()
             .method("POST")
             .uri("/telemetry/collect")
@@ -305,7 +440,7 @@ mod tests {
         // `Sec-Fetch-*`. A CSRF check that applied to GET would fail every
         // probe and take the service out of rotation.
         assert_eq!(
-            status_of(build_app(test_state(), NO_PUBLIC_DIR.as_ref()), "/healthz").await,
+            status_of(build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref()), "/healthz").await,
             StatusCode::OK
         );
     }

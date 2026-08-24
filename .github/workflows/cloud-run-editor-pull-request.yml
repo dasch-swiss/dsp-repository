@@ -96,6 +96,21 @@ jobs:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ secrets.GCP_REGION }}
           image: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/editor:${{ env.IMAGE_TAG }}
+          # An RDU account so the login flow can actually be signed in to, and
+          # nothing else. `EDITOR_SMTP_*` stays unset on purpose: with no relay
+          # the code is written to the Cloud Run log (REQ-6.8), which is not
+          # public, so a publicly reachable preview cannot send mail through the
+          # shared Workspace relay, cannot spend its daily quota, and cannot hand
+          # a code to anyone who is not already able to read our logs.
+          # `EDITOR_DB_DIR` stays unset too, so the preview's database is
+          # in-memory and dies with the revision.
+          # DEV, not the image's PROD default: a preview with no relay is
+          # exactly REQ-6.8's console transport, and startup refuses PROD
+          # without one because that combination silently writes every login
+          # code to the log while the service looks healthy.
+          env_vars: |-
+            EDITOR_ENV=DEV
+            EDITOR_RDU_EMAILS=editor-preview@dasch.swiss
           flags: >-
             --port=8080
             --allow-unauthenticated

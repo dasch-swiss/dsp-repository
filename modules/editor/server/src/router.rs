@@ -22,12 +22,19 @@ use tower_governor::GovernorError;
 
 use crate::AppState;
 
-/// The whole app: the traced router plus the routes that must stay untraced.
+/// The whole app: the traced router plus the routes that must stay untraced,
+/// with the CSRF middleware wrapped around all of them.
 ///
 /// `serve()` uses this so the untraced routes cannot drift apart from the ones
 /// the tests assemble — the traced/untraced split is positional (an Axum layer
 /// wraps only routes declared before it), so it is invisible in the route table
 /// and silently reversible by moving one line.
+///
+/// [`crate::csrf::require_same_origin`] is applied **last, and therefore
+/// outermost**, so it covers every route this function returns — including the
+/// untraced ones, and including any route added later. Putting it inside
+/// `build_router` would have left `/telemetry/collect` unprotected, since that
+/// route is declared after `build_router`'s layers.
 pub(crate) fn build_app(state: AppState, public_dir: &std::path::Path) -> Router {
     use axum::http::StatusCode;
     use axum::routing::get;
@@ -57,6 +64,8 @@ pub(crate) fn build_app(state: AppState, public_dir: &std::path::Path) -> Router
                 GovernorLayer { config: std::sync::Arc::new(config) }
             }),
         )
+        // --- CSRF, outermost so nothing declared above can escape it ---
+        .layer(axum::middleware::from_fn(crate::csrf::require_same_origin))
 }
 
 /// Rate-limit key extractor that keys on the **rightmost** `X-Forwarded-For`
@@ -195,12 +204,17 @@ mod tests {
     /// not optional decoration: the rate limiter keys on it, and with neither an
     /// XFF header nor `ConnectInfo` the extractor cannot produce a key and
     /// `tower_governor` answers 500. In production Traefik always appends one.
+    ///
+    /// `sec-fetch-site` is not decoration either: the CSRF middleware wraps the
+    /// beacon too, and `navigator.sendBeacon` to the page's own origin sends
+    /// exactly this value.
     fn beacon_request(method: &str) -> Request<Body> {
         Request::builder()
             .method(method)
             .uri("/telemetry/collect")
             .header("x-forwarded-for", "203.0.113.7")
             .header("origin", "https://edit.dasch.swiss")
+            .header("sec-fetch-site", "same-origin")
             .header("content-type", "application/json")
             .body(Body::from(r#"{"signals":[],"connection":null}"#))
             .unwrap()
@@ -255,10 +269,45 @@ mod tests {
             .uri("/telemetry/collect")
             .header("x-forwarded-for", "198.51.100.4")
             .header("origin", "https://edit.dasch.swiss")
+            .header("sec-fetch-site", "same-origin")
             .header("content-type", "application/json")
             .body(Body::from(r#"{"signals":[],"connection":null}"#))
             .unwrap();
         assert_eq!(app.oneshot(other).await.unwrap().status(), StatusCode::NO_CONTENT);
+    }
+
+    #[tokio::test]
+    async fn csrf_middleware_covers_the_untraced_routes_too() {
+        // The CSRF layer is applied last in `build_app`, which makes it
+        // outermost and therefore the one layer the positional traced/untraced
+        // split cannot route around. Pinning it on the beacon specifically: the
+        // beacon is declared *after* the OTel layers, so a CSRF layer added
+        // inside `build_router` would have left it — the only pre-auth POST in
+        // the app — unprotected, with no test failing.
+        let app = build_app(test_state(), NO_PUBLIC_DIR.as_ref());
+        let unprotected = Request::builder()
+            .method("POST")
+            .uri("/telemetry/collect")
+            .header("x-forwarded-for", "203.0.113.7")
+            .header("content-type", "application/json")
+            .body(Body::from(r#"{"signals":[],"connection":null}"#))
+            .unwrap();
+        assert_eq!(
+            app.oneshot(unprotected).await.unwrap().status(),
+            StatusCode::FORBIDDEN,
+            "a POST with no Sec-Fetch-Site must be refused before it reaches the beacon"
+        );
+    }
+
+    #[tokio::test]
+    async fn healthz_stays_reachable_without_sec_fetch_site() {
+        // The liveness probe is a GET from Traefik, which sends no
+        // `Sec-Fetch-*`. A CSRF check that applied to GET would fail every
+        // probe and take the service out of rotation.
+        assert_eq!(
+            status_of(build_app(test_state(), NO_PUBLIC_DIR.as_ref()), "/healthz").await,
+            StatusCode::OK
+        );
     }
 
     /// The rate-limit key extractor: keys on the rightmost (Traefik-appended)

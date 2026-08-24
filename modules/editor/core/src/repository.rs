@@ -6,9 +6,13 @@
 //!
 //! Every method is `async` and boxed via `async_trait` rather than left as a
 //! bare `async fn` in a trait: the futures have to be `Send` to be awaited
-//! inside an Axum handler, and the traits have to stay dyn-compatible so state
-//! can hold `Arc<dyn UserRepository>`. Native `async fn` in traits gives neither
-//! without spelling out `-> impl Future + Send` on every signature.
+//! inside an Axum handler. Native `async fn` in traits gives that only by
+//! spelling out `-> impl Future + Send` on every signature.
+//!
+//! It also keeps the traits dyn-compatible. Nothing needs that yet — `AppState`
+//! holds a concrete `Database` and every call site is UFCS on it — but a boxed
+//! `Arc<dyn UserRepository>` is what a fault-injecting fake would need, and the
+//! paths that swallow a storage error are currently untestable for want of one.
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -19,8 +23,14 @@ use crate::records::{ApprovedRecord, DraftRecord, LoginCode, Session, Submission
 /// What can go wrong in a repository call.
 ///
 /// [`Self::Backend`] keeps the driver error as a `source` without naming its
-/// type, so the error chain survives into the logs while this crate stays free
-/// of a database dependency.
+/// type, so this crate stays free of a database dependency.
+///
+/// Its `Display` includes that source. It has to: every call site logs with
+/// `%error`, and `Display` on a thiserror type is exactly the format string — so
+/// without the `{0}` every storage failure in the service logged the words
+/// "storage backend failed" and nothing whatever about which one. The driver's
+/// message names tables, columns and SQL parameter *names*, never bound values,
+/// so this does not reopen the channel REQ-6.10 closes.
 #[derive(Debug, thiserror::Error)]
 pub enum RepositoryError {
     /// The row addressed by an update or delete does not exist.
@@ -38,7 +48,7 @@ pub enum RepositoryError {
     Corrupt(String),
 
     /// Anything the storage backend itself reported.
-    #[error("storage backend failed")]
+    #[error("storage backend failed: {0}")]
     Backend(#[source] Box<dyn std::error::Error + Send + Sync>),
 }
 
@@ -81,12 +91,24 @@ pub trait UserRepository: Send + Sync {
     /// Every user, for the RDU depositor list.
     async fn list(&self) -> Result<Vec<User>>;
 
-    /// Increment the account-level consecutive-failure counter and return its
-    /// new value. Survives code invalidation and resend by construction: it
-    /// lives on the user, not on the code.
-    async fn record_failed_login(&self, id: Uuid) -> Result<u32>;
+    /// Record a failed authentication and return the account's new consecutive-
+    /// failure count. Survives code invalidation and resend by construction: the
+    /// counter lives on the user, not on the code.
+    ///
+    /// `decay_before` makes the counter a rolling window rather than a ratchet.
+    /// A failure whose predecessor is older than that instant starts the count at
+    /// one; otherwise it adds to it. Without the decay the counter only ever
+    /// rises, so once an account has reached its cap a *single* wrong entry after
+    /// each lockout expires re-locks it — a permanent, cheap denial of service
+    /// against any address an attacker knows is registered.
+    ///
+    /// NIST SP 800-63B-4 is not in the way: it requires that generating a new
+    /// authentication secret not reset the count, and says nothing about an
+    /// elapsed throttling window.
+    async fn record_failed_login(&self, id: Uuid, at: DateTime<Utc>, decay_before: DateTime<Utc>) -> Result<u32>;
 
-    /// Clear the counter. Only a successful authentication may call this.
+    /// Clear the counter and the instant. Only a successful authentication may
+    /// call this.
     async fn clear_failed_logins(&self, id: Uuid) -> Result<()>;
 
     /// Stamp when a code was last issued to this user (REQ-6.10 diagnosis
@@ -107,13 +129,39 @@ pub trait SessionRepository: Send + Sync {
     /// Delete one session (REQ-6.6). `false` if it was already gone.
     async fn delete(&self, id: &str) -> Result<bool>;
 
-    /// Delete every session belonging to a user, for logout-everywhere and for
-    /// session rotation on login. Account removal does not need this — the
-    /// foreign key cascades — but rotation does.
-    async fn delete_for_user(&self, user_id: Uuid) -> Result<u64>;
-
     /// Drop sessions past their absolute expiry. Returns how many went.
     async fn delete_expired(&self, now: DateTime<Utc>) -> Result<u64>;
+}
+
+/// What [`LoginCodeRepository::claim_attempt`] found.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Attempt {
+    /// One of the code's attempts is now spent, and the caller may compare.
+    Claimed,
+    /// The code has no attempts left (REQ-6.4).
+    Exhausted,
+    /// The code was already consumed — by an earlier request, or by one racing
+    /// this one.
+    AlreadySpent,
+    /// There is no such code.
+    Unknown,
+}
+
+/// What [`LoginCodeRepository::create_unless_issued_since`] did.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Issued {
+    /// The code was inserted. The caller must now deliver it — and delete it if
+    /// delivery fails, or a code nobody received sits behind an active cooldown.
+    New,
+    /// A code was issued to this user too recently, so nothing was stored.
+    ///
+    /// Carries nothing on purpose. Returning the outstanding code — or its
+    /// browser binding — would be the obvious convenience and a hole: anyone who
+    /// can post an address could then ask for the binding of a code already on
+    /// its way to that address's owner, which is precisely what the binding
+    /// exists to prevent. A browser that already holds the right token keeps it
+    /// by being left alone, not by being handed it again.
+    Cooled,
 }
 
 /// One-time login codes (REQ-6.1, REQ-6.4, REQ-6.5).
@@ -121,24 +169,80 @@ pub trait SessionRepository: Send + Sync {
 pub trait LoginCodeRepository: Send + Sync {
     async fn create(&self, code: &LoginCode) -> Result<()>;
 
+    /// Insert `code` unless this user was already issued one at or after
+    /// `not_before` — the resend cooldown (REQ-6.5), applied as a
+    /// compare-and-set.
+    ///
+    /// Atomic rather than a read followed by [`Self::create`]: reads go to the
+    /// reader pool, so two simultaneous requests for one address would both see
+    /// no recent code, both insert, and both send. That is two live codes and
+    /// two mails against a relay quota the global daily cap exists to protect.
+    async fn create_unless_issued_since(&self, code: &LoginCode, not_before: DateTime<Utc>) -> Result<Issued>;
+
+    /// The code a browser is bound to, by the token it holds. `None` for a token
+    /// that matches nothing — which is the ordinary case for an address that was
+    /// never known, since REQ-6.2 requires the browser be handed a token anyway.
+    async fn find_by_browser_token(&self, token: &str) -> Result<Option<LoginCode>>;
+
+    /// Delete one code. `false` if it was already gone. This is the rollback for
+    /// a send that failed after the code was reserved.
+    async fn delete(&self, id: Uuid) -> Result<bool>;
+
     /// The user's newest code that has not expired and has not been consumed.
     async fn find_active_for_user(&self, user_id: Uuid, now: DateTime<Utc>) -> Result<Option<LoginCode>>;
 
-    /// The user's newest code whatever its state, so the resend cooldown can be
-    /// measured against it (REQ-6.5).
-    async fn find_latest_for_user(&self, user_id: Uuid) -> Result<Option<LoginCode>>;
+    /// Claim one of this code's three attempts (REQ-6.4), and report what
+    /// happened.
+    ///
+    /// The check and the increment are one statement on purpose. Reading
+    /// `attempts` and then incrementing it leaves a window in which every
+    /// simultaneous submission passes the check, and REQ-6.4 is one of exactly
+    /// two controls standing between a ~19.93-bit secret and a guesser — so the
+    /// limit has to *be* the increment. Anything but [`Attempt::Claimed`] means
+    /// the caller must not compare.
+    ///
+    /// The outcomes are distinguished because they are different events for an
+    /// operator: [`Attempt::Exhausted`] is REQ-6.4 doing its job, while
+    /// [`Attempt::AlreadySpent`] is usually one person with two tabs open, and
+    /// telling the second one it used up its guesses sends support down the
+    /// wrong path.
+    async fn claim_attempt(&self, id: Uuid, max_attempts: u32) -> Result<Attempt>;
 
-    /// Increment this code's wrong-entry count and return the new value. Three
-    /// invalidates it (REQ-6.4).
-    async fn record_attempt(&self, id: Uuid) -> Result<u32>;
+    /// Move a live code's binding from `presented` to `replacement`, and report
+    /// whether one moved.
+    ///
+    /// The `WHERE browser_token = presented` is the authorisation: only a browser
+    /// that already holds the binding can move it, so this cannot be used to
+    /// acquire the binding of a code on its way to somebody else. It exists so
+    /// that every `POST /login` can hand back a fresh token — which is what makes
+    /// the response identical for an address with an account and one without —
+    /// without stranding the code the requesting browser already owns.
+    async fn rebind_browser_token(&self, presented: &str, replacement: &str) -> Result<bool>;
 
     /// Mark a code used, once. `false` means it was already consumed — a replay,
     /// which must not authenticate (NIST SP 800-63B-4 §3.1.3.2).
     async fn consume(&self, id: Uuid, at: DateTime<Utc>) -> Result<bool>;
 
-    /// Delete every outstanding code for a user, for the three-strike
-    /// invalidation and before issuing a replacement.
-    async fn delete_for_user(&self, user_id: Uuid) -> Result<u64>;
+    /// Delete a user's codes that were never spent, leaving any consumed one in
+    /// place.
+    ///
+    /// Called after a successful sign-in, to invalidate codes still live in
+    /// browsers nobody is using. It deliberately does **not** take the consumed
+    /// code with it, which an earlier version did: that row is the only anchor
+    /// the resend cooldown has (REQ-6.5 measures from the last code *issued*)
+    /// and the only evidence the global daily cap counts. Deleting it let a user
+    /// sign in and immediately be sent another code, and made every completed
+    /// sign-in invisible to the send cap.
+    async fn delete_unconsumed_for_user(&self, user_id: Uuid) -> Result<u64>;
+
+    /// Undo [`Self::consume`], returning the code to a spendable state.
+    ///
+    /// For the window between consuming a correct code and having a session to
+    /// show for it: if session creation fails, the code has been spent, the user
+    /// is told it was invalid, and the cooldown refuses them another — locked out
+    /// by an error that was never theirs. Reopening it costs nothing, because
+    /// nobody was authenticated.
+    async fn unconsume(&self, id: Uuid) -> Result<bool>;
 
     /// How many codes were issued across all users since `since`, for the global
     /// daily send cap — without it, looping resend exhausts the relay quota and

@@ -12,7 +12,8 @@ use super::Database;
 
 const ENTITY: &str = "user";
 
-const SELECT: &str = "SELECT id, email, name, role, failed_logins, last_code_at, created_at FROM users";
+const SELECT: &str =
+    "SELECT id, email, name, role, failed_logins, failed_login_at, last_code_at, created_at FROM users";
 
 fn map_row(row: &Row<'_>) -> rusqlite::Result<User> {
     Ok(User {
@@ -25,8 +26,9 @@ fn map_row(row: &Row<'_>) -> rusqlite::Result<User> {
         // assignment.
         shortcodes: Vec::new(),
         failed_logins: counter(row.get::<_, i64>(4)?),
-        last_code_at: row.get(5)?,
-        created_at: row.get(6)?,
+        failed_login_at: row.get(5)?,
+        last_code_at: row.get(6)?,
+        created_at: row.get(7)?,
     })
 }
 
@@ -58,8 +60,8 @@ impl UserRepository for Database {
         let email_normalized = user.email_normalized();
         self.write(move |tx| {
             tx.execute(
-                "INSERT INTO users (id, email, email_normalized, name, role, failed_logins, last_code_at, \
-                 created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                "INSERT INTO users (id, email, email_normalized, name, role, failed_logins, failed_login_at, \
+                 last_code_at, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
                 params![
                     user.id.to_string(),
                     user.email,
@@ -67,6 +69,7 @@ impl UserRepository for Database {
                     user.name,
                     user.role.as_str(),
                     i64::from(user.failed_logins),
+                    user.failed_login_at,
                     user.last_code_at,
                     user.created_at,
                 ],
@@ -186,14 +189,23 @@ impl UserRepository for Database {
             .await?)
     }
 
-    async fn record_failed_login(&self, id: Uuid) -> Result<u32> {
+    async fn record_failed_login(&self, id: Uuid, at: DateTime<Utc>, decay_before: DateTime<Utc>) -> Result<u32> {
         // Incremented and read back in one transaction, so two simultaneous wrong
         // codes cannot both read the old value and count as one.
+        //
+        // The CASE is the rolling window. Without it the counter only ever rises,
+        // so an account that has once reached its cap is re-locked by a *single*
+        // wrong entry after every lockout expires — a permanent denial of service
+        // against any address an attacker knows is registered, for one request
+        // per window. A failure whose predecessor has aged out starts over at one.
         let failed = self
             .write(move |tx| {
                 let updated = tx.execute(
-                    "UPDATE users SET failed_logins = failed_logins + 1 WHERE id = ?1",
-                    params![id.to_string()],
+                    "UPDATE users SET failed_logins = CASE \
+                       WHEN failed_login_at IS NULL OR failed_login_at <= ?3 THEN 1 \
+                       ELSE failed_logins + 1 END, \
+                     failed_login_at = ?2 WHERE id = ?1",
+                    params![id.to_string(), at, decay_before],
                 )?;
                 if updated == 0 {
                     return Ok(None);
@@ -211,7 +223,12 @@ impl UserRepository for Database {
 
     async fn clear_failed_logins(&self, id: Uuid) -> Result<()> {
         let cleared = self
-            .write(move |tx| tx.execute("UPDATE users SET failed_logins = 0 WHERE id = ?1", params![id.to_string()]))
+            .write(move |tx| {
+                tx.execute(
+                    "UPDATE users SET failed_logins = 0, failed_login_at = NULL WHERE id = ?1",
+                    params![id.to_string()],
+                )
+            })
             .await?;
         if cleared == 0 {
             return Err(editor_core::repository::RepositoryError::NotFound { entity: ENTITY });
@@ -252,6 +269,7 @@ mod tests {
             role: Role::Depositor,
             shortcodes: shortcodes.iter().map(|s| (*s).to_string()).collect(),
             failed_logins: 0,
+            failed_login_at: None,
             last_code_at: None,
             created_at: at(10),
         }
@@ -392,15 +410,54 @@ mod tests {
         let user = depositor("a@x.test", &[]);
         db.create(&user).await.unwrap();
 
-        assert_eq!(db.record_failed_login(user.id).await.unwrap(), 1);
-        assert_eq!(db.record_failed_login(user.id).await.unwrap(), 2);
+        assert_eq!(db.record_failed_login(user.id, at(10), at(9)).await.unwrap(), 1);
+        assert_eq!(db.record_failed_login(user.id, at(11), at(9)).await.unwrap(), 2);
 
         // Issuing a new code must not touch it.
         db.record_code_issued(user.id, at(11)).await.unwrap();
-        assert_eq!(db.find_by_id(user.id).await.unwrap().unwrap().failed_logins, 2);
+        let after_resend = db.find_by_id(user.id).await.unwrap().unwrap();
+        assert_eq!(after_resend.failed_logins, 2);
+        // The instant tracks the newest failure, so a lockout window is measured
+        // from the last attempt rather than the first.
+        assert_eq!(after_resend.failed_login_at, Some(at(11)));
 
         db.clear_failed_logins(user.id).await.unwrap();
-        assert_eq!(db.find_by_id(user.id).await.unwrap().unwrap().failed_logins, 0);
+        let after_success = db.find_by_id(user.id).await.unwrap().unwrap();
+        assert_eq!(after_success.failed_logins, 0);
+        // Cleared with the counter: a stale instant left behind would keep a
+        // freshly successful account inside a lockout window.
+        assert_eq!(after_success.failed_login_at, None);
+    }
+
+    #[tokio::test]
+    async fn test_a_failure_after_the_window_starts_the_count_over() {
+        // Otherwise the counter is a ratchet: an account that once reached its
+        // cap is re-locked by one wrong entry after every lockout expires, so an
+        // attacker keeps a known address locked out forever for one request per
+        // window.
+        let db = test_db("users-failed-decay").await;
+        let user = depositor("a@x.test", &[]);
+        db.create(&user).await.unwrap();
+
+        // Three failures inside the window accumulate. `decay_before` stays well
+        // behind the stored instant, so none of them is on the boundary.
+        assert_eq!(db.record_failed_login(user.id, at(10), at(9)).await.unwrap(), 1);
+        assert_eq!(db.record_failed_login(user.id, at(10), at(9)).await.unwrap(), 2);
+        assert_eq!(db.record_failed_login(user.id, at(11), at(9)).await.unwrap(), 3);
+
+        // A failure whose predecessor has aged out starts over, so re-locking
+        // costs a full budget again rather than one attempt.
+        assert_eq!(db.record_failed_login(user.id, at(14), at(13)).await.unwrap(), 1);
+
+        // Exactly on the boundary counts as aged out, matching `locked_out`,
+        // which treats the window as over at `failed_login_at + lockout`. The
+        // previous call stamped `at(14)`, so this one sits on it precisely.
+        assert_eq!(db.record_failed_login(user.id, at(15), at(14)).await.unwrap(), 1);
+        assert_eq!(
+            db.find_by_id(user.id).await.unwrap().unwrap().failed_login_at,
+            Some(at(15)),
+            "and the instant always advances to the newest failure"
+        );
     }
 
     #[tokio::test]
@@ -415,7 +472,7 @@ mod tests {
         for _ in 0..16 {
             let db = db.clone();
             let id = user.id;
-            handles.push(tokio::spawn(async move { db.record_failed_login(id).await }));
+            handles.push(tokio::spawn(async move { db.record_failed_login(id, at(10), at(9)).await }));
         }
         for handle in handles {
             handle.await.unwrap().unwrap();

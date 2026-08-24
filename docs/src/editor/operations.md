@@ -51,10 +51,23 @@ Locally the default is `127.0.0.1:4100`, deliberately not DPE's 4000, so `just d
 | `EDITOR_SITE_ADDR` | No | `127.0.0.1:4100` | Listen address and port. The Docker image sets `0.0.0.0:8080`. |
 | `EDITOR_PUBLIC_DIR` | No | `modules/editor/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, the telemetry module, and the compiled `app.<hash>.css`). |
 | `EDITOR_DATA_DIR` | Yes, to read records | *(none)* | Directory holding the published project/person/organization set baked into the image. No default — see [Data directory](#data-directory-a-deliberate-build-input). Reported at startup, as `<unset>` when absent. |
-| `EDITOR_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`. |
+| `EDITOR_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`; **`PROD` requires `EDITOR_SMTP_HOST`** or startup is refused, because a relay-less production writes every login code to the log. The PR preview and `just run-docker-editor` override it to `DEV`. |
 | `EDITOR_DB_DIR` | No | *(none — in-memory)* | Directory holding the SQLite database. **Unset means in-memory**, not a path — see [Database](#database). Names the *directory*, never the database file. |
 | `EDITOR_DB_READERS` | No | `4` | Size of the reader connection pool. The writer pool is always one connection. |
 | `EDITOR_DB_BUSY_TIMEOUT_MS` | No | `5000` | SQLite `busy_timeout`, applied per connection. |
+| `EDITOR_RDU_EMAILS` | No | *(none)* | Comma-separated addresses that always have an RDU account (REQ-7.2). Reconciled on every start: missing accounts are created, an existing depositor listed here is promoted. Removing an address **does not revoke** the account — see [Login and mail](#login-and-mail). |
+| `EDITOR_SMTP_HOST` | No | *(none — console)* | SMTP relay host. **Unset means codes are written to the log** (REQ-6.8) and the service stays usable. That is the development and PR-preview default. |
+| `EDITOR_SMTP_PORT` | No | `587` | Submission with STARTTLS, which is what `smtp-relay.gmail.com` speaks. |
+| `EDITOR_SMTP_USERNAME` | No | *(none)* | Relay username. Must be set together with the password. |
+| `EDITOR_SMTP_PASSWORD` | No | *(none)* | Relay password. Redacted in any debug rendering of the configuration. |
+| `EDITOR_SMTP_FROM` | No | `noreply@dasch.swiss` | Envelope sender. Must be a domain with DKIM enabled in the Workspace Admin Console — see [Authentication](./authentication.md#relay-prerequisites-not-the-applications-job-but-they-block-delivery). |
+| `EDITOR_SMTP_BREAK_GLASS` | No | `false` | When a **configured** relay fails, write the undelivered code to the log instead of rolling it back. Off by default: it puts a live credential in the log pipeline. See [Login and mail](#login-and-mail). |
+| `EDITOR_LOGIN_COOLDOWN_SECS` | No | `60` | Before another code may be sent to the same address (REQ-6.5). Must be shorter than the ten-minute code lifetime, which startup validates. |
+| `EDITOR_LOGIN_MAX_FAILED` | No | `10` | Consecutive account-level failures before throttling. NIST SP 800-63B-4's ceiling is 100, which startup also validates. |
+| `EDITOR_LOGIN_LOCKOUT_SECS` | No | `900` | How long throttling lasts after the cap is reached. |
+| `EDITOR_MAIL_DAILY_CAP` | No | `500` | Codes that may be sent across **all** users in 24 hours. Sits below the relay's 10,000/day so a resend loop cannot exhaust a quota shared with other senders. |
+| `EDITOR_SESSION_ABSOLUTE_SECS` | No | `43200` (12 h) | Absolute session lifetime, set at creation and never extended. |
+| `EDITOR_SESSION_IDLE_SECS` | No | `7200` (2 h) | Idle session timeout. Must not exceed the absolute lifetime, which startup validates. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | *(none)* | OTLP gRPC endpoint (e.g. `http://alloy:4317`). When unset, OTel falls back to no-op export. |
 | `OTEL_SERVICE_NAME` | No | *(none)* | Service name for OTel resource attributes (e.g. `editor`) |
 | `OTEL_RESOURCE_ATTRIBUTES` | No | *(none)* | Comma-separated OTel resource attributes (e.g. `service.namespace=editor,service.version=0.8.2,deployment.environment=prod`) |
@@ -84,6 +97,37 @@ Not yet in place, and blocking production deployment only:
 
 - The editor is **not registered as a deployable service in Jenkins**, so the DEV deploy trigger in `editor-docker-publish.yml` is marked `continue-on-error` and only warns. Remove that guard once the Jenkins job exists, so a genuinely broken webhook is loud again.
 - The writable data volume `EDITOR_DB_DIR` points at, tracked as [INFRA-1378](https://linear.app/dasch/issue/INFRA-1378/extend-deploy-volumes). Development and tests use the in-memory database, so only production waits on it.
+- **SMTP relay host, port and credentials**, provisioned as vaulted group vars. Development and the PR previews are unblocked by the console fallback, so only production login waits on it. DKIM and SPF for `dasch.swiss` are already set up.
+
+## Login and mail
+
+Design and rationale live in [Authentication](./authentication.md). What an operator needs:
+
+### Accounts
+
+`EDITOR_RDU_EMAILS` is reconciled on every start. Adding an address creates or promotes an account on the next deploy. **Removing one does not revoke anything** — startup logs a warning naming any `rdu` account the configuration no longer lists, and the account has to be removed by hand until account management lands. Treat that warning as a to-do, not as noise.
+
+A malformed entry stops startup rather than being skipped: every entry becomes an account that administers the service, so a typo is an administrator who can never sign in, and the symptom would otherwise be "my code never arrives" weeks later.
+
+### No relay configured
+
+With `EDITOR_SMTP_HOST` unset, every code is written to the log at `WARN` and the service stays usable (REQ-6.8). The log line carries the message body and **not** the recipient — whoever is testing knows the address they typed, and REQ-6.10 forbids one in a log.
+
+### A broken relay
+
+Default behaviour: the send fails, the code and its cooldown are rolled back, the user's response is unchanged (it has to be — see the anti-enumeration reasoning in [Authentication](./authentication.md#anti-enumeration-is-a-property-of-the-response-not-a-branch)), and the failure is logged with a classification and an SMTP status code.
+
+If the relay is broken long enough that people are locked out:
+
+1. Set `EDITOR_SMTP_BREAK_GLASS=true` and redeploy. Codes are still attempted through the relay, and undelivered ones are written to the log, where an operator can read them out to the person waiting.
+2. Fix the relay.
+3. **Set it back to `false`.** While it is on, every relay hiccup writes a live login code into a log pipeline that retains it for weeks and is readable by everyone with log access.
+
+Unsetting `EDITOR_SMTP_HOST` entirely is the heavier version of the same escape hatch: it routes everything to the log without trying the relay at all, and needs a second redeploy to undo.
+
+### Diagnosing "I never got a code"
+
+No address appears in any log, so the trail is the opaque `auth.subject` correlation id (the account's UUID) in the auth events, plus the per-account "last code issued at" that RDU will see once the depositor list lands. A user who is throttled after repeated wrong entries is told only "that code is not valid" — deliberately, because a distinct message would confirm to anyone that the address has an account. Check the auth log for `auth.outcome = "locked_out"` before assuming a delivery problem.
 
 ## Database
 
@@ -101,6 +145,10 @@ The Docker image deliberately does **not** set `EDITOR_DB_DIR`, for the same rea
 - It must be **writable by uid 65532**. Chowning to 65534 produces `unable to open database file`, which reads like a wrong mount path and sends the reader hunting for a typo in a path that is perfectly correct.
 - Docker Swarm does **not** create missing bind-mount host directories the way `docker run -v` does, so Ansible must create *and* chown the directory before the stack starts.
 - Keep `replicas: 1` with `order: stop-first`, so a rolling update never briefly runs two processes against one database file. Node pinning is unnecessary — there is no multi-node Swarm.
+
+### Expired rows
+
+An hourly background sweep deletes expired login codes and sessions. Nothing depends on it succeeding — a failure is logged and the next hour tries again — and the first sweep runs one interval after start, so a restart loop never spends its time sweeping.
 
 ### Startup pre-flight
 

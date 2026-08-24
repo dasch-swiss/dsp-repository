@@ -15,7 +15,9 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 - [ ] `dpe-core` has no framework dependencies
 - [ ] CLI subcommands documented in help text
 - [ ] Documentation updated when patterns change
-- [ ] New env vars documented in `docs/src/dpe/operations.md`
+- [ ] New env vars documented in `docs/src/dpe/operations.md` (editor: `docs/src/editor/operations.md`)
+- [ ] Every state-changing editor route is a `POST` and has a test asserting it refuses `GET` — the `Sec-Fetch-Site` CSRF control exempts `GET` by necessity, so a state-changing `GET` is one nothing protects
+- [ ] No email address reaches a log or a span: `#[instrument(skip_all)]` on anything taking one, and no transport error logged verbatim (an SMTP reply quotes the recipient)
 - [ ] Commits follow conventional commits — one of the eight types, mandatory scope (`docs/src/git-conventions.md`)
 - [ ] Single commit, or `allow-many-commits` ticked with a reason
 - [ ] One topic per commit — apply the "and" test

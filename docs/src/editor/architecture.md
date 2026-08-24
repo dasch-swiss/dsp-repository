@@ -6,7 +6,7 @@ This page describes the service as it stands. Surfaces that are not built yet ar
 
 ## Relationship to DPE
 
-The editor is a **separate service** from DPE, not a section of it. They share `platform-telemetry` for the browser-beacon contract, and will share `mosaic-tiles` for components and `dpe-core` for the data contract — but not a process, an image, or an origin.
+The editor is a **separate service** from DPE, not a section of it. They share `platform-telemetry` for the browser-beacon contract and `mosaic-tiles` for components, and will share `dpe-core` for the data contract — but not a process, an image, or an origin.
 
 The separation is deliberate:
 
@@ -25,7 +25,7 @@ Same as DPE: server-rendered HTML with **Maud**, served by **Axum**, with **Data
 | `editor-web` | `editor/web` | Maud view library — the document shell, pages and components |
 | `editor-server` | `editor/server` | Composition root: configuration, observability, routing, persistence |
 
-Dependency direction is `server → web → core`. Neither library depends on `mosaic-tiles` yet: the form widgets are the first surface to render a tile. The Tailwind entry already scans the crate, so component CSS ships regardless of the Cargo dependency.
+Dependency direction is `server → web → core`. `editor-web` depends on `mosaic-tiles`; the login screens' submit buttons are the first surface to render a tile. The Tailwind entry scanned the crate before that dependency existed, so component CSS shipped regardless of it.
 
 Unlike DPE, the **HTML document shell lives in the view crate** (`editor-web/src/view.rs`), not the server crate. DPE keeps `head()` + `page()` in `dpe-server`; here the server is a composition root for routing, auth and persistence, and a document shell is a view concern like any other partial.
 
@@ -54,7 +54,7 @@ File databases get `journal_mode=WAL` and `synchronous=NORMAL`; in-memory databa
 
 A forward-only, append-only list of statement batches guarded by `PRAGMA user_version`, applied at startup — no migration framework and no added dependency. Everything runs in one `BEGIN IMMEDIATE` transaction including the version bump, so a crash part-way leaves the database at the version it started from. A database reporting a *higher* version than the build knows stops startup: that is a rollback to an older image, and running anyway would query columns that do not exist.
 
-The tables are `users`, `user_shortcodes`, `sessions`, `login_codes`, `drafts`, `submissions` and `approved_records`, all `STRICT`. `drafts`, `submissions` and `approved_records` carry their body as an opaque JSON `payload` string; the permissive draft representation types it later, and this layer never interprets it.
+The tables are `users`, `user_shortcodes`, `sessions`, `login_codes`, `drafts`, `submissions` and `approved_records`, all `STRICT`. Migration `0002` added `users.failed_login_at` (a lockout has to be measured from somewhere, because the counter it gates resets only on success) and `login_codes.browser_token` (the pre-auth binding — see [Authentication](./authentication.md)). `drafts`, `submissions` and `approved_records` carry their body as an opaque JSON `payload` string; the permissive draft representation types it later, and this layer never interprets it.
 
 ### In-memory variant
 
@@ -68,18 +68,21 @@ DPE carries `/dpe/…` because it shares `repository.dasch.swiss` with other ser
 
 | Path | Method | Purpose |
 |------|--------|---------|
+| `/` | GET | Service root. Offers the way in when signed out. |
+| `/login` | GET, POST | The address form, and issuing a one-time code. POST rate-limited per IP. |
+| `/login/code` | GET, POST | The code form, and spending the code. POST rate-limited per IP. |
+| `/logout` | POST | Delete the session and clear the cookie. |
 | `/healthz` | GET | Liveness probe. Untraced. |
 | `/telemetry/collect` | POST | Browser telemetry beacon. Untraced, rate-limited per IP. |
 
 Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.
 
+There is deliberately no resend endpoint: asking again is another `POST /login`, under the same cooldown, which keeps the number of endpoints that can send mail at one. See [Authentication](./authentication.md).
+
 The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:
 
-```
+```text
 GET  /                                        → redirect to /projects
-GET  /login                                   login form
-POST /login                                   issue a one-time code
-POST /logout
 GET  /projects                                the depositor's assigned projects
 GET  /projects/{shortcode}                    → redirect to the first section
 GET  /projects/{shortcode}/sections/{section}  one form section
@@ -92,6 +95,15 @@ Two decisions inside that:
 
 - **Form sections are real URLs**, not fragment swaps. Bookmarkable, Back-friendly, and consistent with the repository's URL-based-navigation principle.
 - **Review deep-links by shortcode**, not by submission id. A project has at most one pending submission, so the shortcode is unique for the purpose and reads better in a URL shared between reviewers.
+
+## Request middleware
+
+Two layers wrap the app, in this order from the outside in:
+
+1. **CSRF** — `Sec-Fetch-Site: same-origin` is required on every non-`GET`/`HEAD` request, failing closed on everything else including an absent header. It is applied **last** in `build_app`, which makes it outermost and therefore the one layer the positional traced/untraced split cannot route around: inside `build_router` it would have missed `/telemetry/collect`, the only pre-auth POST in the app, with no test failing. See [Authentication](./authentication.md#csrf) for why `SameSite` and `__Host-` do not close this.
+2. **OTel** — the traced/untraced split below.
+
+Sessions are read per handler rather than by a middleware, because the policy for an unauthenticated request — redirect preserving the requested URL — belongs with the route table that has routes to protect, and there is not yet a route to protect. Today `/` reads a session to name the viewer in the header, both login screens read one to send an already-signed-in visitor home, and `/logout` deletes one.
 
 ## Traced and untraced routes
 

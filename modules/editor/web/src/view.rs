@@ -5,6 +5,19 @@ use maud::{html, Markup, DOCTYPE};
 
 use crate::components;
 
+/// Who a page is rendered for, when anyone is signed in.
+///
+/// A named type rather than a second `Option<&str>` parameter beside
+/// `traceparent`: two adjacent `Option<&str>` arguments are silently
+/// interchangeable, and the swap would put a trace id in the header where a
+/// name belongs and leave the correlation meta tag holding a person's name.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Viewer<'a> {
+    /// The signed-in user's display name. Never the address — the header is on
+    /// every page and in every screenshot of one.
+    pub name: &'a str,
+}
+
 /// The `<head>`: charset/viewport, the conditional `traceparent` correlation
 /// meta tag, Google Fonts (Lora/Lato, matching the Mosaic design tokens), the
 /// compiled stylesheet, and the document title.
@@ -40,15 +53,23 @@ fn head(title: &str, traceparent: Option<&str>, css_href: &str) -> Markup {
 ///
 /// `traceparent` is the current server span, rendered as a meta tag for
 /// client-side trace correlation. `css_href` is resolved once at startup —
-/// unhashed in dev, content-hashed in release.
-pub fn page(title: &str, traceparent: Option<&str>, css_href: &str, content: Markup) -> Markup {
+/// unhashed in dev, content-hashed in release. `viewer` is `None` on every page
+/// reachable without a session, which is what keeps the sign-out control off
+/// the login screens.
+pub fn page(
+    title: &str,
+    traceparent: Option<&str>,
+    css_href: &str,
+    viewer: Option<Viewer<'_>>,
+    content: Markup,
+) -> Markup {
     html! {
         (DOCTYPE)
         html lang="en" {
             (head(title, traceparent, css_href))
             body class="font-body" {
                 div class="bg-gray-50 min-h-screen flex flex-col gap-4" {
-                    (components::header())
+                    (components::header(viewer))
                     main class="flex-1 max-w-[1536px] mx-auto px-4 w-full" { (content) }
                     (components::footer())
                 }
@@ -70,7 +91,7 @@ mod tests {
         let content = html! {
             p { "content" }
         };
-        let out = page("My Title", None, "/assets/app.css", content).into_string();
+        let out = page("My Title", None, "/assets/app.css", None, content).into_string();
         assert!(out.starts_with("<!DOCTYPE html><html lang=\"en\">"), "{out}");
         assert!(out.contains("<title>My Title</title>"), "{out}");
         assert!(out.contains(r#"<link rel="stylesheet" href="/assets/app.css">"#), "{out}");
@@ -83,7 +104,7 @@ mod tests {
         let content = html! {
             p { "content" }
         };
-        let out = page("t", None, "/assets/app.css", content).into_string();
+        let out = page("t", None, "/assets/app.css", None, content).into_string();
         let header_at = out.find("DaSCH Metadata Editor").expect("header renders");
         let main_at = out.find("<main").expect("main renders");
         let footer_at = out.find("<footer").expect("footer renders");
@@ -92,9 +113,9 @@ mod tests {
 
     #[test]
     fn emits_traceparent_meta_only_when_present() {
-        let with = page("t", Some("00-abc-def-01"), "/assets/app.css", html! {}).into_string();
+        let with = page("t", Some("00-abc-def-01"), "/assets/app.css", None, html! {}).into_string();
         assert!(with.contains(r#"<meta name="traceparent" content="00-abc-def-01">"#), "{with}");
-        let without = page("t", None, "/assets/app.css", html! {}).into_string();
+        let without = page("t", None, "/assets/app.css", None, html! {}).into_string();
         assert!(!without.contains("traceparent"), "{without}");
     }
 
@@ -102,7 +123,7 @@ mod tests {
     fn uses_the_href_it_is_given_so_the_hashed_stylesheet_is_not_bypassed() {
         // The release stylesheet is content-hashed and discovered at startup; a
         // hardcoded /assets/app.css here would serve a 404 in production.
-        let out = page("t", None, "/assets/app.1a2b3c4d.css", html! {}).into_string();
+        let out = page("t", None, "/assets/app.1a2b3c4d.css", None, html! {}).into_string();
         assert!(out.contains(r#"href="/assets/app.1a2b3c4d.css""#), "{out}");
         assert!(!out.contains(r#"href="/assets/app.css""#), "{out}");
     }
@@ -111,14 +132,27 @@ mod tests {
     fn loads_datastar_and_the_telemetry_beacon_as_modules() {
         // Both are vendored, so the paths are local; `type="module"` matters
         // because telemetry.js imports web-vitals relatively.
-        let out = page("t", None, "/assets/app.css", html! {}).into_string();
+        let out = page("t", None, "/assets/app.css", None, html! {}).into_string();
         assert!(out.contains(r#"<script type="module" src="/vendor/datastar.js">"#), "{out}");
         assert!(out.contains(r#"<script type="module" src="/telemetry.js">"#), "{out}");
     }
 
     #[test]
+    fn the_shell_carries_the_viewer_into_the_header() {
+        // The sign-out control lives in the header, so `page` is where a signed-in
+        // session becomes visible — and where a login screen stays anonymous.
+        let signed_in =
+            page("t", None, "/assets/app.css", Some(Viewer { name: "A Depositor" }), html! {}).into_string();
+        assert!(signed_in.contains("A Depositor"), "{signed_in}");
+        assert!(signed_in.contains("/logout"), "{signed_in}");
+
+        let anonymous = page("t", None, "/assets/app.css", None, html! {}).into_string();
+        assert!(!anonymous.contains("/logout"), "{anonymous}");
+    }
+
+    #[test]
     fn escapes_the_title() {
-        let out = page("<script>alert(1)</script>", None, "/assets/app.css", html! {}).into_string();
+        let out = page("<script>alert(1)</script>", None, "/assets/app.css", None, html! {}).into_string();
         assert!(!out.contains("<script>alert(1)</script>"), "{out}");
         assert!(out.contains("&lt;script&gt;"), "{out}");
     }

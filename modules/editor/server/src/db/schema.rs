@@ -23,7 +23,10 @@ use super::{Database, DbError};
 
 /// Ordered and append-only: index `i` is migration `i + 1`, and how many have
 /// been applied is `PRAGMA user_version`.
-const MIGRATIONS: &[&str] = &[include_str!("migrations/0001_initial.sql")];
+const MIGRATIONS: &[&str] = &[
+    include_str!("migrations/0001_initial.sql"),
+    include_str!("migrations/0002_auth.sql"),
+];
 
 /// The version a fully migrated database reports.
 pub(crate) const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
@@ -130,7 +133,6 @@ mod tests {
         // `open` already migrated, so the fresh count is observable only through
         // the version it left behind.
         assert_eq!(db.schema_version().await.unwrap(), SCHEMA_VERSION);
-        assert!(SCHEMA_VERSION >= 1, "there is at least one migration");
     }
 
     #[tokio::test]
@@ -166,6 +168,51 @@ mod tests {
         assert_eq!(count, 1);
 
         drop(second);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[tokio::test]
+    async fn test_a_database_at_the_previous_version_is_upgraded_in_place() {
+        // The upgrade path, which the empty-database test cannot cover: a
+        // database that already ran 0001 must gain 0002's columns without
+        // losing its rows. Building it by hand rather than by rolling back,
+        // because a released migration is never edited and there is nothing to
+        // roll back with.
+        let dir = std::env::temp_dir().join(format!("editor-db-upgrade-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("editor.sqlite3");
+        {
+            let conn = rusqlite::Connection::open(&file).expect("opening a raw connection should succeed");
+            conn.execute_batch(MIGRATIONS[0]).expect("0001 should apply");
+            conn.pragma_update(None, "user_version", 1u32).unwrap();
+            conn.execute(
+                "INSERT INTO users (id, email, email_normalized, name, role, created_at) \
+                 VALUES ('u1', 'a@x.test', 'a@x.test', 'A', 'rdu', '2026-08-21 10:00:00+00:00')",
+                [],
+            )
+            .expect("the pre-upgrade row should insert");
+        }
+
+        let db = Database::open(Source::Directory(dir.clone()), 2, Duration::from_secs(5))
+            .await
+            .expect("opening a version-1 database should upgrade it");
+        assert_eq!(db.schema_version().await.unwrap(), SCHEMA_VERSION);
+        assert_eq!(db.migrate().await.unwrap(), 0, "the upgrade must not run twice");
+
+        // The row survived, and the columns 0002 added read as unset on it —
+        // which is the fail-closed value for both: no lockout in progress, and
+        // no browser bound.
+        let (users, unset_failed_at): (i64, i64) = db
+            .read(|conn| {
+                conn.query_row("SELECT count(*), sum(failed_login_at IS NULL) FROM users", [], |row| {
+                    Ok((row.get(0)?, row.get(1)?))
+                })
+            })
+            .await
+            .expect("reading the upgraded table should succeed");
+        assert_eq!((users, unset_failed_at), (1, 1));
+
+        drop(db);
         std::fs::remove_dir_all(&dir).ok();
     }
 

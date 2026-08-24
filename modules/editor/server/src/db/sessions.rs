@@ -5,7 +5,6 @@ use chrono::{DateTime, Utc};
 use editor_core::records::Session;
 use editor_core::repository::{RepositoryError, Result, SessionRepository};
 use rusqlite::{params, Row};
-use uuid::Uuid;
 
 use super::mapping::{uuid_column, OptionalRow};
 use super::Database;
@@ -74,13 +73,6 @@ impl SessionRepository for Database {
         Ok(deleted > 0)
     }
 
-    async fn delete_for_user(&self, user_id: Uuid) -> Result<u64> {
-        let deleted = self
-            .write(move |tx| tx.execute("DELETE FROM sessions WHERE user_id = ?1", params![user_id.to_string()]))
-            .await?;
-        Ok(deleted as u64)
-    }
-
     async fn delete_expired(&self, now: DateTime<Utc>) -> Result<u64> {
         let deleted = self
             .write(move |tx| tx.execute("DELETE FROM sessions WHERE expires_at <= ?1", params![now]))
@@ -94,6 +86,7 @@ mod tests {
     use chrono::TimeZone;
     use editor_core::records::{Role, User};
     use editor_core::repository::UserRepository;
+    use uuid::Uuid;
 
     use super::super::tests::{count, test_db};
     use super::*;
@@ -110,6 +103,7 @@ mod tests {
             role: Role::Depositor,
             shortcodes: vec![],
             failed_logins: 0,
+            failed_login_at: None,
             last_code_at: None,
             created_at: at(9),
         };
@@ -188,36 +182,6 @@ mod tests {
             !SessionRepository::delete(&db, "token-1").await.unwrap(),
             "the second finds nothing"
         );
-    }
-
-    #[tokio::test]
-    async fn test_delete_for_user_clears_every_session_of_that_user_only() {
-        // Session rotation on login depends on this, and so does logging out
-        // everywhere. Taking another user's sessions with it would log out
-        // bystanders.
-        let db = test_db("sessions-delete-for-user").await;
-        let first = a_user(&db).await;
-        let second = {
-            let user = User {
-                id: Uuid::new_v4(),
-                email: "b@x.test".to_string(),
-                name: "B".to_string(),
-                role: Role::Depositor,
-                shortcodes: vec![],
-                failed_logins: 0,
-                last_code_at: None,
-                created_at: at(9),
-            };
-            UserRepository::create(&db, &user).await.unwrap();
-            user.id
-        };
-        SessionRepository::create(&db, &session("a-1", first, at(18))).await.unwrap();
-        SessionRepository::create(&db, &session("a-2", first, at(18))).await.unwrap();
-        SessionRepository::create(&db, &session("b-1", second, at(18))).await.unwrap();
-
-        assert_eq!(db.delete_for_user(first).await.unwrap(), 2);
-        assert_eq!(count(&db, "sessions").await, 1);
-        assert!(db.find("b-1").await.unwrap().is_some());
     }
 
     #[tokio::test]

@@ -87,6 +87,12 @@ pub struct User {
     /// reset the failed authentication count" — so this survives code
     /// invalidation and resend, and only a successful login clears it.
     pub failed_logins: u32,
+    /// When [`Self::failed_logins`] last went up, and therefore when a lockout
+    /// started. The counter alone cannot express a lockout that ends: it resets
+    /// only on success, and a locked-out account cannot succeed. Throttling is
+    /// time-based for that reason, and this is what it measures from. Cleared
+    /// with the counter.
+    pub failed_login_at: Option<DateTime<Utc>>,
     /// When a login code was last issued, so RDU can answer "I never got a
     /// code" without an address reaching a log (REQ-6.10).
     pub last_code_at: Option<DateTime<Utc>>,
@@ -145,6 +151,15 @@ pub struct LoginCode {
     /// Set when the code is accepted. A code is usable once, for replay
     /// resistance (NIST SP 800-63B-4 §3.1.3.2).
     pub consumed_at: Option<DateTime<Utc>>,
+    /// The opaque token held by the browser that asked for this code, and the
+    /// only browser that may spend it.
+    ///
+    /// This is what blocks the attack email one-time codes are most exposed to:
+    /// an attacker triggers a login for the victim, talks them into reading the
+    /// code out, and spends it from their own machine. `None` binds to no
+    /// browser and so can never be verified — the fail-closed reading, which
+    /// matters because a row predating the column has it.
+    pub browser_token: Option<String>,
 }
 
 /// Work in progress on one project (REQ-1.10).

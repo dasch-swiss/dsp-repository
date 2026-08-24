@@ -99,6 +99,7 @@ mod tests {
             role: Role::Depositor,
             shortcodes: vec!["0801".to_string()],
             failed_logins: 0,
+            failed_login_at: None,
             last_code_at: None,
             created_at: at(9),
         };

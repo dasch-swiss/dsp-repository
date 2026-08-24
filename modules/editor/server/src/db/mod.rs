@@ -91,6 +91,14 @@ pub(crate) enum Source {
     Directory(PathBuf),
     /// A named, shared-cache, in-memory database.
     ///
+    /// **Its locking is not production's.** Shared cache means SQLite takes
+    /// *table*-level locks, so a reader transaction can make a concurrent write
+    /// return `SQLITE_LOCKED` — which `busy_timeout` does not retry, since that
+    /// needs `sqlite3_unlock_notify`. A file database gets WAL, where readers
+    /// never block writers and the situation cannot arise. A concurrency test
+    /// that occasionally loses a write here is seeing the test source, not a
+    /// defect in the code under test.
+    ///
     /// Never bare `:memory:`. Every `:memory:` database is distinct and visible
     /// only to the connection that opened it, so each pooled connection would
     /// get its own empty copy — and with a writer/reader split that is
@@ -479,6 +487,26 @@ mod tests {
             .await
             .expect("counting rows should succeed");
         super::mapping::row_count(counted)
+    }
+
+    #[tokio::test]
+    async fn test_a_backend_error_names_its_cause_in_display() {
+        // Every auth call site logs `%error`; `Display` on a thiserror type is
+        // exactly its format string, so without `{0}` the operator got the words
+        // "storage backend failed" and nothing else.
+        let db = test_db("error-chain").await;
+        let error = db
+            .read(|conn| conn.query_row("SELECT nonexistent FROM nothing", [], |row| row.get::<_, i64>(0)))
+            .await
+            .expect_err("the query should fail");
+        let repository: editor_core::repository::RepositoryError = error.into();
+        let rendered = repository.to_string();
+        assert!(rendered.contains("storage backend failed"), "{rendered}");
+        assert!(
+            rendered.len() > "storage backend failed".len() + 2,
+            "the cause must be rendered: {rendered}"
+        );
+        assert!(rendered.contains("nothing") || rendered.contains("nonexistent"), "{rendered}");
     }
 
     #[tokio::test]

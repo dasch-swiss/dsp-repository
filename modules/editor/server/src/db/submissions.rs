@@ -143,6 +143,7 @@ mod tests {
             role,
             shortcodes: vec![],
             failed_logins: 0,
+            failed_login_at: None,
             last_code_at: None,
             created_at: at(9),
         };

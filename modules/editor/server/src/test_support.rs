@@ -113,12 +113,76 @@ pub(crate) async fn state_with(
     (state, mailer)
 }
 
+/// The whole app over `state`, as `serve()` assembles it.
+///
+/// Static assets come from a directory that does not exist: these tests are
+/// about handlers and the route table, never about a file on disk.
+pub(crate) fn test_app(state: &AppState) -> axum::Router {
+    crate::router::build_app(state.clone(), "nonexistent-test-dir".as_ref())
+}
+
+/// Insert an account and return it.
+pub(crate) async fn a_user(
+    state: &AppState,
+    email: &str,
+    name: &str,
+    role: editor_core::records::Role,
+    shortcodes: &[&str],
+) -> editor_core::records::User {
+    use editor_core::repository::UserRepository;
+
+    let user = editor_core::records::User {
+        id: uuid::Uuid::new_v4(),
+        email: email.to_string(),
+        name: name.to_string(),
+        role,
+        shortcodes: shortcodes.iter().map(|s| (*s).to_string()).collect(),
+        failed_logins: 0,
+        failed_login_at: None,
+        last_code_at: None,
+        created_at: chrono::Utc::now(),
+    };
+    UserRepository::create(&state.db, &user)
+        .await
+        .expect("the fixture user should insert");
+    user
+}
+
+/// A live session for `user_id`, as the session cookie's value.
+///
+/// Minted directly rather than by driving the login flow: a test about who may
+/// reach a page should fail when authorization breaks, not when the mail
+/// transport does.
+pub(crate) async fn a_session(state: &AppState, user_id: uuid::Uuid) -> String {
+    crate::auth::session::begin(&state.db, &state.auth, user_id, chrono::Utc::now())
+        .await
+        .expect("the fixture session should insert")
+        .id
+}
+
 /// Rows in one table, so a test can assert on state no repository method
 /// returns — what a rollback left behind, and what a cascade took.
 pub(crate) async fn count_rows(db: &Database, table: &'static str) -> i64 {
     db.read(move |conn| conn.query_row(&format!("SELECT count(*) FROM {table}"), [], |row| row.get(0)))
         .await
         .expect("counting rows should succeed")
+}
+
+/// Enough percent-encoding for the values these tests put in a form body.
+///
+/// Deliberately not a general encoder: it covers exactly the characters the
+/// fixtures use. It lives here because the alternative was two copies escaping
+/// different sets — the auth tests escaped `@` and `+`, the account tests also
+/// `%`, space, comma and `/` — which is a difference that only ever shows up as
+/// one suite passing on input the other would mangle.
+pub(crate) fn urlencode(value: &str) -> String {
+    value
+        .replace('%', "%25")
+        .replace('@', "%40")
+        .replace(' ', "%20")
+        .replace(',', "%2C")
+        .replace('+', "%2B")
+        .replace('/', "%2F")
 }
 
 /// A `GET` as a browser sends it.
@@ -217,7 +281,26 @@ impl tracing::field::Visit for TextVisitor {
     }
 }
 
-impl<S: tracing::Subscriber> tracing_subscriber::Layer<S> for LogCapture {
+thread_local! {
+    /// Where this thread's capture, if any, collects. `None` on every thread
+    /// that is not inside [`capture_logs`].
+    static SINK: std::cell::RefCell<Option<LogCapture>> = const { std::cell::RefCell::new(None) };
+}
+
+fn to_sink(line: String) {
+    SINK.with(|sink| {
+        if let Some(capture) = sink.borrow().as_ref() {
+            capture.push(line);
+        }
+    });
+}
+
+/// The one subscriber layer, installed globally and once. Routes each record to
+/// the calling thread's sink, so tests on different threads cannot see each
+/// other's output.
+struct ThreadLocalCapture;
+
+impl<S: tracing::Subscriber> tracing_subscriber::Layer<S> for ThreadLocalCapture {
     fn on_new_span(
         &self,
         attrs: &tracing::span::Attributes<'_>,
@@ -226,7 +309,7 @@ impl<S: tracing::Subscriber> tracing_subscriber::Layer<S> for LogCapture {
     ) {
         let mut visitor = TextVisitor(format!("span {}", attrs.metadata().name()));
         attrs.record(&mut visitor);
-        self.push(visitor.0);
+        to_sink(visitor.0);
     }
 
     fn on_record(
@@ -237,27 +320,82 @@ impl<S: tracing::Subscriber> tracing_subscriber::Layer<S> for LogCapture {
     ) {
         let mut visitor = TextVisitor("span-field".to_string());
         values.record(&mut visitor);
-        self.push(visitor.0);
+        to_sink(visitor.0);
     }
 
     fn on_event(&self, event: &tracing::Event<'_>, _ctx: tracing_subscriber::layer::Context<'_, S>) {
         let mut visitor = TextVisitor(format!("event {} {}", event.metadata().level(), event.metadata().target()));
         event.record(&mut visitor);
-        self.push(visitor.0);
+        to_sink(visitor.0);
+    }
+}
+
+/// Stops the capture and detaches this thread's sink.
+pub(crate) struct CaptureGuard;
+
+impl Drop for CaptureGuard {
+    fn drop(&mut self) {
+        SINK.with(|sink| *sink.borrow_mut() = None);
     }
 }
 
 /// Capture everything logged on this thread until the guard is dropped.
 ///
-/// `set_default` is thread-local, which is why these tests run on the
-/// single-threaded runtime `#[tokio::test]` gives by default: on a multi-thread
-/// runtime the future could resume on a thread with no subscriber and the
-/// capture would silently come back empty.
-pub(crate) fn capture_logs() -> (LogCapture, tracing::subscriber::DefaultGuard) {
+/// ## Why this installs a *global* subscriber rather than a thread-local one
+///
+/// The obvious shape — `tracing::subscriber::set_default` per test — is racy in
+/// a way that is invisible until it bites, and it bit: a test asserting a
+/// refusal is logged passed sixty times alone and failed twice in forty runs of
+/// the whole suite.
+///
+/// `tracing` caches each callsite's *interest* **process-globally**, while
+/// `set_default` is thread-local. So when any test on any other thread reaches a
+/// callsite while its own thread has no subscriber, that callsite is evaluated
+/// against `NoSubscriber`, cached as `Interest::never()`, and then emits nothing
+/// for **anyone** — including the thread that does have a capture installed.
+/// `rebuild_interest_cache()` does not close it either: the poisoning can happen
+/// again between the rebuild and the emit.
+///
+/// The failure mode is worse than flakiness for the tests asserting an address
+/// is *absent*, because a capture that comes back empty passes. Those were
+/// silently at risk of proving nothing.
+///
+/// So there is exactly one subscriber, installed once for the process, and it is
+/// always enabled — no callsite can ever be cached as `never`. Routing to a
+/// thread-local sink is what keeps parallel tests from seeing each other.
+///
+/// ## The sink is per-thread, so the runtime flavour still matters
+///
+/// A test has to stay on the thread that installed the sink. `#[tokio::test]`
+/// gives a current-thread runtime by default, which is what makes that hold —
+/// adding `flavor = "multi_thread"` lets the future resume on a thread with no
+/// sink and the capture comes back empty. Nothing logged from a `deadpool`
+/// `interact` closure is captured either, for the same reason.
+///
+/// An empty capture makes a "no address reached a log" assertion pass while
+/// proving nothing, so **every negative test here pairs one with a positive
+/// canary** — `assert!(!lines.is_empty())`, or an assertion that the account id
+/// *is* present. That canary is what fails first if the sink ever detaches.
+/// Keep the pairing on any new one.
+pub(crate) fn capture_logs() -> (LogCapture, CaptureGuard) {
     use tracing_subscriber::layer::SubscriberExt;
 
+    static INSTALLED: std::sync::Once = std::sync::Once::new();
+    INSTALLED.call_once(|| {
+        // Rebuilding the interest cache is what un-poisons any callsite already
+        // evaluated against `NoSubscriber` — and it happens inside
+        // `Dispatch::new`, not in `set_global_default` itself, which only stores
+        // the dispatch. That same rebuild lifts the global max level off its
+        // `OFF` default, so without it nothing would be recorded at all.
+        //
+        // `expect`, not a swallowed error: nothing else in this binary installs
+        // a global subscriber, so a failure here means one appeared and every
+        // capture is silently dead.
+        tracing::subscriber::set_global_default(tracing_subscriber::registry().with(ThreadLocalCapture))
+            .expect("no other global tracing subscriber should be installed in the test binary");
+    });
+
     let capture = LogCapture::default();
-    let subscriber = tracing_subscriber::registry().with(capture.clone());
-    let guard = tracing::subscriber::set_default(subscriber);
-    (capture, guard)
+    SINK.with(|sink| *sink.borrow_mut() = Some(capture.clone()));
+    (capture, CaptureGuard)
 }

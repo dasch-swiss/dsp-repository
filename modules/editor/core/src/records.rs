@@ -99,7 +99,64 @@ pub struct User {
     pub created_at: DateTime<Utc>,
 }
 
+/// Whether `candidate` could be a project shortcode.
+///
+/// Non-empty, ASCII alphanumeric, and at most [`MAX_SHORTCODE_LEN`] characters.
+///
+/// A deliberate copy of `dpe_core::project::is_valid_shortcode` rather than a
+/// dependency on it: `editor-core` takes no dependency on `dpe-core` yet, and
+/// pulling the whole data contract in for one predicate would invert the order
+/// in which the two crates are meant to meet. They converge when the draft model
+/// lands and `dpe-core` arrives for real; until then `grep is_valid_shortcode`
+/// finds both, and both carry their own tests. The same reasoning kept
+/// `RightmostXffKeyExtractor` local to each service.
+///
+/// Alphanumeric rather than four hex digits, which is what the published set
+/// looks like at a glance: `0801a` through `0801e` are real projects, so a
+/// hex-only rule would answer 404 for five of them.
+///
+/// The length bound is this copy's one divergence from DPE's, and it is here
+/// because this predicate also gates a hand-typed form field whose value becomes
+/// half a primary key. DPE's only ever sees a path segment.
+#[must_use]
+pub fn is_valid_shortcode(candidate: &str) -> bool {
+    !candidate.is_empty()
+        && candidate.len() <= MAX_SHORTCODE_LEN
+        && candidate.chars().all(|c| c.is_ascii_alphanumeric())
+}
+
+/// The longest shortcode [`is_valid_shortcode`] accepts. The published set runs
+/// to five characters; this leaves room without letting a paste become a row.
+pub const MAX_SHORTCODE_LEN: usize = 16;
+
 impl User {
+    /// Whether this user may reach the project identified by `shortcode`.
+    ///
+    /// RDU is unconditional: REQ-4.2 makes RDU access role-based rather than
+    /// per-project, which is also why an RDU account's `shortcodes` is empty. A
+    /// depositor is scoped to their assignments (REQ-1.2), and anything else is
+    /// REQ-1.3's 403.
+    ///
+    /// The comparison ignores ASCII case. The published set mixes `080C` with
+    /// `0801a`, so which half of a shortcode is capitalised is not something an
+    /// RDU member typing an assignment can be expected to get right — and
+    /// getting it wrong would deny a depositor their own project with no visible
+    /// cause. Two projects differing only in case would make this too generous;
+    /// no such pair exists in the published set.
+    #[must_use]
+    pub fn may_reach(&self, shortcode: &str) -> bool {
+        match self.role {
+            Role::Rdu => true,
+            Role::Depositor => self.shortcodes.iter().any(|assigned| assigned.eq_ignore_ascii_case(shortcode)),
+        }
+    }
+
+    /// Whether this account administers the service.
+    #[must_use]
+    pub fn is_rdu(&self) -> bool {
+        self.role == Role::Rdu
+    }
+
     /// The lookup and uniqueness key: `email` lowercased.
     ///
     /// `to_lowercase` rather than `to_ascii_lowercase` so a non-ASCII address
@@ -292,5 +349,77 @@ mod tests {
     #[test]
     fn test_normalize_email_folds_case_and_trims() {
         assert_eq!(User::normalize_email("  A.User@Example.TEST "), "a.user@example.test");
+    }
+
+    fn user(role: Role, shortcodes: &[&str]) -> User {
+        User {
+            id: Uuid::nil(),
+            email: "a@x.test".to_string(),
+            name: "A".to_string(),
+            role,
+            shortcodes: shortcodes.iter().map(|s| (*s).to_string()).collect(),
+            failed_logins: 0,
+            failed_login_at: None,
+            last_code_at: None,
+            created_at: DateTime::<Utc>::MIN_UTC,
+        }
+    }
+
+    #[test]
+    fn test_a_depositor_reaches_only_the_projects_assigned_to_them() {
+        // REQ-1.2, and REQ-1.3's 403 is the other half.
+        let depositor = user(Role::Depositor, &["0801", "0812"]);
+        assert!(depositor.may_reach("0801"));
+        assert!(depositor.may_reach("0812"));
+        assert!(!depositor.may_reach("0803"));
+    }
+
+    #[test]
+    fn test_a_depositor_with_no_assignments_reaches_nothing() {
+        assert!(!user(Role::Depositor, &[]).may_reach("0801"));
+    }
+
+    #[test]
+    fn test_an_assignment_matches_however_it_is_capitalised() {
+        // The published set mixes `080C` with `0801a`, so an RDU member typing
+        // an assignment cannot be expected to get the case right — and getting
+        // it wrong would deny a depositor their own project with no visible
+        // cause.
+        let depositor = user(Role::Depositor, &["080c"]);
+        assert!(depositor.may_reach("080C"));
+        assert!(depositor.may_reach("080c"));
+        assert!(!depositor.may_reach("080E"));
+    }
+
+    #[test]
+    fn test_rdu_reaches_every_project_without_an_assignment() {
+        // REQ-4.2: RDU access is role-based, not per-project, which is why an
+        // RDU account's `shortcodes` is empty.
+        let rdu = user(Role::Rdu, &[]);
+        assert!(rdu.may_reach("0801"));
+        assert!(rdu.may_reach("anything"));
+        assert!(rdu.is_rdu());
+        assert!(!user(Role::Depositor, &[]).is_rdu());
+    }
+
+    #[test]
+    fn test_a_real_shortcode_from_the_published_set_is_valid() {
+        // `080C` and `080E` are hex; `0801a` through `0801e` are not, and are
+        // real projects — a four-hex-digit rule would 404 five of them.
+        for shortcode in ["0101", "0801", "080C", "080E", "0801a", "0801e"] {
+            assert!(is_valid_shortcode(shortcode), "{shortcode}");
+        }
+    }
+
+    #[test]
+    fn test_what_cannot_be_a_shortcode_is_refused() {
+        // Path traversal, separators and the percent sign matter: this predicate
+        // gates a path segment and a form field, and the value becomes half a
+        // primary key.
+        for candidate in ["", "..", "08 01", "0801/", "0801-a", "08%30", "../etc", "0801\n"] {
+            assert!(!is_valid_shortcode(candidate), "{candidate:?}");
+        }
+        assert!(!is_valid_shortcode(&"a".repeat(MAX_SHORTCODE_LEN + 1)));
+        assert!(is_valid_shortcode(&"a".repeat(MAX_SHORTCODE_LEN)));
     }
 }

@@ -34,6 +34,7 @@
 //!    become the authenticated session.
 
 pub(crate) mod cookie;
+pub(crate) mod guard;
 mod handlers;
 pub(crate) mod secret;
 pub(crate) mod session;

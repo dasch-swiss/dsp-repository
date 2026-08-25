@@ -10,6 +10,12 @@
 //! carried in a hidden field, and a page with no address on it cannot leak one
 //! through a screenshot, a shared URL or a cached response.
 //!
+//! Both take `next` — where the reader was going when they were sent here. It
+//! is rendered into form actions and one link, never into a field the reader can
+//! see or edit. The caller has already checked that it is a path inside this
+//! service; these pages add HTML escaping on top, so the worst a bad value could
+//! do here is produce a link that goes nowhere.
+//!
 //! The error strings are the caller's, deliberately. Whether a message may say
 //! "that address is not registered" is an anti-enumeration decision (REQ-6.2)
 //! and belongs with the handler that knows, not with the template.
@@ -35,8 +41,21 @@ fn error_banner(message: &str) -> Markup {
 const FIELD_CLASS: &str =
     "border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500";
 
+/// `path`, carrying `next` as a query parameter when there is one.
+///
+/// The value is interpolated rather than encoded, which is sound only because
+/// the caller restricts it to unreserved characters — see `safe_next` in
+/// `editor-server`. Maud escapes it into the attribute regardless, so a value
+/// that slipped through that check cannot break out of the `href`.
+fn with_next(path: &str, next: Option<&str>) -> String {
+    match next {
+        Some(next) => format!("{path}?next={next}"),
+        None => path.to_string(),
+    }
+}
+
 /// `GET /login` — ask for the address.
-pub fn request_code(error: Option<&str>) -> Markup {
+pub fn request_code(next: Option<&str>, error: Option<&str>) -> Markup {
     html! {
         div class="max-w-md mx-auto py-12" {
             h1 class="font-display text-2xl mb-2" { "Sign in" }
@@ -45,7 +64,7 @@ pub fn request_code(error: Option<&str>) -> Markup {
                  minutes and can be used once."
             }
             @if let Some(message) = error { (error_banner(message)) }
-            form method="post" action="/login" class="flex flex-col gap-4" {
+            form method="post" action=(with_next("/login", next)) class="flex flex-col gap-4" {
                 div class="flex flex-col gap-1" {
                     label for="email" class="font-bold" { "Email address" }
                     input
@@ -74,7 +93,7 @@ pub fn request_code(error: Option<&str>) -> Markup {
 /// out-of-band code, which is what lets a browser or phone keyboard offer the
 /// code directly. It is documented here rather than beside the attribute because
 /// `maudfmt` strips comments from inside an `html!` attribute list.
-pub fn enter_code(error: Option<&str>) -> Markup {
+pub fn enter_code(next: Option<&str>, error: Option<&str>) -> Markup {
     html! {
         div class="max-w-md mx-auto py-12" {
             h1 class="font-display text-2xl mb-2" { "Enter your code" }
@@ -83,7 +102,7 @@ pub fn enter_code(error: Option<&str>) -> Markup {
                  code below."
             }
             @if let Some(message) = error { (error_banner(message)) }
-            form method="post" action="/login/code" class="flex flex-col gap-4" {
+            form method="post" action=(with_next("/login/code", next)) class="flex flex-col gap-4" {
                 div class="flex flex-col gap-1" {
                     label for="code" class="font-bold" { "Six-digit code" }
                     input
@@ -102,7 +121,7 @@ pub fn enter_code(error: Option<&str>) -> Markup {
             }
             p class="text-gray-600 mt-6" {
                 "Code not arrived, or expired? "
-                a href="/login" class="underline" { "Start again" }
+                a href=(with_next("/login", next)) class="underline" { "Start again" }
                 "."
             }
         }
@@ -115,7 +134,7 @@ mod tests {
 
     #[test]
     fn test_request_code_posts_the_address_to_login() {
-        let out = request_code(None).into_string();
+        let out = request_code(None, None).into_string();
         assert!(out.contains(r#"<form method="post" action="/login""#), "{out}");
         assert!(out.contains(r#"name="email""#), "{out}");
         assert!(out.contains(r#"type="email""#), "{out}");
@@ -126,7 +145,7 @@ mod tests {
     fn test_enter_code_constrains_the_field_to_six_digits() {
         // Not validation — the server does that — but it keeps a mistyped
         // seven-digit paste from costing an attempt against the account counter.
-        let out = enter_code(None).into_string();
+        let out = enter_code(None, None).into_string();
         assert!(out.contains(r#"<form method="post" action="/login/code""#), "{out}");
         assert!(out.contains(r#"pattern="[0-9]{6}""#), "{out}");
         assert!(out.contains(r#"maxlength="6""#), "{out}");
@@ -138,7 +157,10 @@ mod tests {
     fn test_both_forms_are_plain_posts_without_datastar() {
         // Login has to work before any script does. A `data-on:` control here
         // would put the whole authentication flow behind a bundle load.
-        for out in [request_code(None).into_string(), enter_code(None).into_string()] {
+        for out in [
+            request_code(None, None).into_string(),
+            enter_code(None, None).into_string(),
+        ] {
             assert!(!out.contains("data-on"), "{out}");
             assert!(!out.contains("data-bind"), "{out}");
             assert!(out.contains(r#"method="post""#), "{out}");
@@ -147,15 +169,15 @@ mod tests {
 
     #[test]
     fn test_an_error_renders_as_an_alert_and_is_absent_otherwise() {
-        let with = request_code(Some("Enter a valid email address.")).into_string();
+        let with = request_code(None, Some("Enter a valid email address.")).into_string();
         assert!(with.contains(r#"role="alert""#), "{with}");
         assert!(with.contains("Enter a valid email address."), "{with}");
-        assert!(!request_code(None).into_string().contains(r#"role="alert""#));
+        assert!(!request_code(None, None).into_string().contains(r#"role="alert""#));
     }
 
     #[test]
     fn test_an_error_message_is_escaped() {
-        let out = enter_code(Some("<script>alert(1)</script>")).into_string();
+        let out = enter_code(None, Some("<script>alert(1)</script>")).into_string();
         assert!(!out.contains("<script>alert(1)</script>"), "{out}");
         assert!(out.contains("&lt;script&gt;"), "{out}");
     }
@@ -165,7 +187,7 @@ mod tests {
         // The browser is bound to its code by an HttpOnly cookie, so the address
         // never has to be carried forward. A hidden field would put it in the
         // markup, in the back/forward cache and in any screenshot of the page.
-        let out = enter_code(None).into_string();
+        let out = enter_code(None, None).into_string();
         assert!(!out.contains(r#"type="hidden""#), "{out}");
         assert!(!out.contains(r#"name="email""#), "{out}");
     }
@@ -174,7 +196,38 @@ mod tests {
     fn test_the_way_back_from_the_code_page_is_a_get_link() {
         // Not a resend button: a resend needs the address, and the only places to
         // keep it are a hidden field or a third endpoint.
-        let out = enter_code(None).into_string();
+        let out = enter_code(None, None).into_string();
         assert!(out.contains(r#"<a href="/login""#), "{out}");
+    }
+
+    #[test]
+    fn test_a_destination_survives_both_screens_and_the_way_back() {
+        // Without it, someone who follows a link into a project and is sent to
+        // sign in lands on the root afterwards and has to find their way again.
+        let first = request_code(Some("/projects/0801"), None).into_string();
+        assert!(first.contains(r#"action="/login?next=/projects/0801""#), "{first}");
+
+        let second = enter_code(Some("/projects/0801"), None).into_string();
+        assert!(second.contains(r#"action="/login/code?next=/projects/0801""#), "{second}");
+        assert!(second.contains(r#"<a href="/login?next=/projects/0801""#), "{second}");
+    }
+
+    #[test]
+    fn test_the_destination_never_becomes_a_field_the_reader_can_edit() {
+        // It belongs in the action, not in the form body: a visible or editable
+        // field invites a reader to change where signing in sends them, and puts
+        // one more thing in the markup of the page that must work.
+        let out = request_code(Some("/projects/0801"), None).into_string();
+        assert!(!out.contains(r#"name="next""#), "{out}");
+        assert!(!out.contains(r#"type="hidden""#), "{out}");
+    }
+
+    #[test]
+    fn test_a_destination_cannot_break_out_of_the_attribute_it_is_rendered_into() {
+        // The server validates it before it gets here; this is the second layer,
+        // so a widening of that check cannot become an injection in one step.
+        let out = request_code(Some(r#"/x" onmouseover="alert(1)"#), None).into_string();
+        assert!(!out.contains(r#"onmouseover="alert(1)""#), "{out}");
+        assert!(out.contains("&quot;"), "{out}");
     }
 }

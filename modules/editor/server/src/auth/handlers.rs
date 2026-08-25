@@ -7,7 +7,7 @@
 
 use axum::extract::State;
 use axum::http::header::SET_COOKIE;
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::{HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
 use chrono::{DateTime, TimeDelta, Utc};
@@ -17,6 +17,7 @@ use maud::Markup;
 use serde::Deserialize;
 use uuid::Uuid;
 
+use super::guard::{destination_or_root, login_url, next_from, NEXT};
 use super::{cookie, delta, is_plausible_address, locked_out, secret, session};
 use crate::config::CODE_TTL;
 use crate::mail::Mail;
@@ -53,11 +54,22 @@ pub(crate) struct CodeForm {
 }
 
 /// Render a login screen. Always anonymous: the shell's signed-in header has no
-/// business on a page reached without a session.
+/// business on a page reached without a session, which is what the `None`
+/// viewer says.
 fn render(state: &AppState, title: &str, status: StatusCode, content: Markup) -> Response {
-    let traceparent = crate::traceparent::extract_traceparent();
-    let body = editor_web::view::page(title, traceparent.as_deref(), &state.css_href, None, content);
-    (status, axum::response::Html(body.into_string())).into_response()
+    crate::render(state, title, status, None, content)
+}
+
+/// `/login/code`, carrying the destination on to the second screen.
+///
+/// Built here rather than in [`super::guard`] beside [`login_url`] because it is
+/// a step inside this flow rather than a way into it. The same no-encoding
+/// argument applies: `safe_next` admits only unreserved characters.
+fn code_url(next: Option<&str>) -> String {
+    match next {
+        Some(next) => format!("/login/code?{NEXT}={next}"),
+        None => "/login/code".to_string(),
+    }
 }
 
 /// Attach a `Set-Cookie` to a response already built.
@@ -80,24 +92,34 @@ fn mail_body(code: &str) -> String {
 }
 
 /// `GET /login` — the address form.
-pub(crate) async fn login_form(State(state): State<AppState>, headers: HeaderMap) -> Response {
+///
+/// `next` is where the reader was going when the guard sent them here. It is
+/// carried on the form's action rather than in a field, and re-validated at
+/// every step it crosses.
+pub(crate) async fn login_form(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
+    let next = next_from(&uri);
     if session::current(&state.db, &state.auth, &headers, Utc::now()).await.is_some() {
-        return Redirect::to("/").into_response();
+        // Already signed in: honour the destination rather than dropping them on
+        // the root, so a link followed in a browser that still has a session
+        // behaves the same as one followed in a browser that does not.
+        return Redirect::to(destination_or_root(next)).into_response();
     }
     render(
         &state,
         SIGN_IN_TITLE,
         StatusCode::OK,
-        editor_web::pages::login::request_code(None),
+        editor_web::pages::login::request_code(next, None),
     )
 }
 
 /// `POST /login` — issue a code, or convincingly appear to.
 pub(crate) async fn login_submit(
     State(state): State<AppState>,
+    uri: Uri,
     headers: HeaderMap,
     Form(form): Form<EmailForm>,
 ) -> Response {
+    let next = next_from(&uri);
     let email = form.email.trim();
     if !is_plausible_address(email) {
         // Worth a line: this is the only `POST /login` that answers differently
@@ -111,7 +133,7 @@ pub(crate) async fn login_submit(
             &state,
             SIGN_IN_TITLE,
             StatusCode::BAD_REQUEST,
-            editor_web::pages::login::request_code(Some(EMAIL_REJECTED)),
+            editor_web::pages::login::request_code(next, Some(EMAIL_REJECTED)),
         );
     }
 
@@ -119,38 +141,42 @@ pub(crate) async fn login_submit(
     let token = issue(&state, email, presented.as_deref(), Utc::now()).await;
 
     // Unconditional. Whether a cookie comes back must not depend on anything the
-    // request revealed about the address — see [`issue`].
+    // request revealed about the address — see [`issue`]. The destination is
+    // taken from the request, never from the outcome, so it cannot vary either.
     with_cookie(
-        Redirect::to("/login/code").into_response(),
+        Redirect::to(&code_url(next)).into_response(),
         cookie::set(cookie::LOGIN, &token, CODE_TTL),
     )
 }
 
 /// `GET /login/code` — the code form.
-pub(crate) async fn code_form(State(state): State<AppState>, headers: HeaderMap) -> Response {
+pub(crate) async fn code_form(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
+    let next = next_from(&uri);
     if session::current(&state.db, &state.auth, &headers, Utc::now()).await.is_some() {
-        return Redirect::to("/").into_response();
+        return Redirect::to(destination_or_root(next)).into_response();
     }
     if cookie::read(&headers, cookie::LOGIN).is_none() {
         // Nothing has been asked for in this browser, so there is nothing to
         // enter. Sending the user to the form they skipped reveals nothing: the
         // cookie is set for every address, known or not.
-        return Redirect::to("/login").into_response();
+        return Redirect::to(&login_url(next)).into_response();
     }
     render(
         &state,
         ENTER_CODE_TITLE,
         StatusCode::OK,
-        editor_web::pages::login::enter_code(None),
+        editor_web::pages::login::enter_code(next, None),
     )
 }
 
 /// `POST /login/code` — spend the code.
 pub(crate) async fn code_submit(
     State(state): State<AppState>,
+    uri: Uri,
     headers: HeaderMap,
     Form(form): Form<CodeForm>,
 ) -> Response {
+    let next = next_from(&uri);
     let Some(token) = cookie::read(&headers, cookie::LOGIN) else {
         // Silent until now, and this is exactly the symptom of the `__Host-`
         // cookie being refused — a proxy stripping `Set-Cookie`, a browser
@@ -160,12 +186,15 @@ pub(crate) async fn code_submit(
             auth.outcome = "no_binding",
             "a code was submitted by a browser carrying no binding"
         );
-        return Redirect::to("/login").into_response();
+        return Redirect::to(&login_url(next)).into_response();
     };
 
     match verify(&state, &headers, &token, form.code.trim(), Utc::now()).await {
         Ok(session) => {
-            let response = Redirect::to("/").into_response();
+            // Re-validated at the point of use rather than trusted from the
+            // query it crossed: this is the one redirect a signed-in browser
+            // follows, so it is the one worth checking twice.
+            let response = Redirect::to(destination_or_root(next)).into_response();
             let response =
                 with_cookie(response, cookie::set(cookie::SESSION, &session.id, state.auth.session_absolute));
             // The binding has done its job, and a login cookie left behind would
@@ -179,7 +208,7 @@ pub(crate) async fn code_submit(
             &state,
             ENTER_CODE_TITLE,
             StatusCode::OK,
-            editor_web::pages::login::enter_code(Some(CODE_REJECTED)),
+            editor_web::pages::login::enter_code(next, Some(CODE_REJECTED)),
         ),
     }
 }
@@ -610,45 +639,24 @@ mod tests {
     use axum::body::Body;
     use axum::http::Request;
     use axum::Router;
-    use chrono::TimeZone;
-    use editor_core::records::{Role, User};
+    use editor_core::records::Role;
     use editor_core::repository::SessionRepository;
     use tower::ServiceExt;
 
     use super::*;
     use crate::auth::cookie;
     use crate::test_support::{
-        body_string, capture_logs, cookie_set, count_rows, get, location, post, state_with, test_state, with_cookie,
-        RecordingMailer,
+        body_string, capture_logs, cookie_set, count_rows, get, location, post, state_with, test_app, test_state,
+        urlencode, with_cookie, RecordingMailer,
     };
-
-    /// Static assets come from a directory that does not exist: these tests are
-    /// about handlers, never about a file on disk.
-    const NO_PUBLIC_DIR: &str = "nonexistent-test-dir";
 
     const KNOWN: &str = "depositor@example.test";
     const UNKNOWN: &str = "nobody@example.test";
 
-    fn test_app(state: &AppState) -> Router {
-        crate::router::build_app(state.clone(), NO_PUBLIC_DIR.as_ref())
-    }
-
     async fn a_user(state: &AppState, email: &str) -> Uuid {
-        let user = User {
-            id: Uuid::new_v4(),
-            email: email.to_string(),
-            name: "A Depositor".to_string(),
-            role: Role::Depositor,
-            shortcodes: vec![],
-            failed_logins: 0,
-            failed_login_at: None,
-            last_code_at: None,
-            created_at: Utc.with_ymd_and_hms(2026, 8, 1, 9, 0, 0).unwrap(),
-        };
-        UserRepository::create(&state.db, &user)
+        crate::test_support::a_user(state, email, "A Depositor", Role::Depositor, &[])
             .await
-            .expect("the fixture user should insert");
-        user.id
+            .id
     }
 
     /// `POST /login` for `email`, carrying `binding` as the login cookie if given.
@@ -665,11 +673,6 @@ mod tests {
     async fn submit_code(app: &Router, code: &str, binding: &str) -> Response {
         let request = with_cookie(post("/login/code", &format!("code={code}")), cookie::LOGIN, binding);
         app.clone().oneshot(request).await.expect("the request should complete")
-    }
-
-    /// Enough of one for an address in a form body.
-    fn urlencode(value: &str) -> String {
-        value.replace('@', "%40").replace('+', "%2B")
     }
 
     /// Drive a full sign-in and return the session cookie.
@@ -884,13 +887,121 @@ mod tests {
             "the binding has done its job and must not outlive the code it addressed"
         );
 
-        // And the session actually works.
-        let home = app
+        // And the session actually works: `/projects` is behind the guard, so
+        // reaching it at all is the proof, and the header names the account.
+        let projects = app
             .clone()
-            .oneshot(with_cookie(get("/"), cookie::SESSION, &session))
+            .oneshot(with_cookie(get("/projects"), cookie::SESSION, &session))
             .await
             .unwrap();
-        assert!(body_string(home).await.contains("A Depositor"));
+        assert_eq!(projects.status(), StatusCode::OK);
+        assert!(body_string(projects).await.contains("A Depositor"));
+    }
+
+    #[tokio::test]
+    async fn test_the_destination_survives_the_whole_sign_in_and_is_where_the_user_lands() {
+        // The point of `next`: someone who follows a link into a project and is
+        // sent to sign in ends up on the project, not on the root wondering
+        // where they were going.
+        let (state, mailer) = test_state("sign-in-next").await;
+        let _ = crate::test_support::a_user(&state, KNOWN, "A Depositor", Role::Depositor, &["0801"]).await;
+        let app = test_app(&state);
+
+        // The guard names the destination.
+        let guarded = app.clone().oneshot(get("/projects/0801")).await.unwrap();
+        assert_eq!(location(&guarded).as_deref(), Some("/login?next=/projects/0801"));
+
+        // The address form carries it on its action.
+        let form = app.clone().oneshot(get("/login?next=/projects/0801")).await.unwrap();
+        assert!(body_string(form).await.contains(r#"action="/login?next=/projects/0801""#));
+
+        // Issuing carries it on to the code screen.
+        let issued = app
+            .clone()
+            .oneshot(post("/login?next=/projects/0801", &format!("email={}", urlencode(KNOWN))))
+            .await
+            .unwrap();
+        assert_eq!(location(&issued).as_deref(), Some("/login/code?next=/projects/0801"));
+        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let code = mailer.last_code().expect("a code");
+
+        // And spending the code lands on it.
+        let signed_in = app
+            .clone()
+            .oneshot(with_cookie(
+                post("/login/code?next=/projects/0801", &format!("code={code}")),
+                cookie::LOGIN,
+                &binding,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(location(&signed_in).as_deref(), Some("/projects/0801"));
+        let session = cookie_set(&signed_in, cookie::SESSION).expect("a session");
+
+        let arrived = app
+            .clone()
+            .oneshot(with_cookie(get("/projects/0801"), cookie::SESSION, &session))
+            .await
+            .unwrap();
+        assert_eq!(arrived.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_a_destination_pointing_off_site_is_dropped_rather_than_followed() {
+        // The reachable form of the open redirect: the query is whatever a link
+        // in a phishing mail put there, and this is the one redirect a browser
+        // that has just authenticated will follow.
+        let (state, mailer) = test_state("sign-in-open-redirect").await;
+        a_user(&state, KNOWN).await;
+        let app = test_app(&state);
+
+        let issued = app
+            .clone()
+            .oneshot(post("/login?next=https://evil.example", &format!("email={}", urlencode(KNOWN))))
+            .await
+            .unwrap();
+        assert_eq!(
+            location(&issued).as_deref(),
+            Some("/login/code"),
+            "a destination outside the service must not be carried"
+        );
+        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let code = mailer.last_code().expect("a code");
+
+        let signed_in = app
+            .clone()
+            .oneshot(with_cookie(
+                post("/login/code?next=https://evil.example", &format!("code={code}")),
+                cookie::LOGIN,
+                &binding,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(
+            location(&signed_in).as_deref(),
+            Some("/"),
+            "and must not be followed even when it survives to the last step"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_an_already_signed_in_visitor_is_sent_to_the_destination_rather_than_the_root() {
+        // A link followed in a browser that still has a session should behave
+        // like one followed in a browser that does not.
+        let (state, mailer) = test_state("already-signed-in").await;
+        a_user(&state, KNOWN).await;
+        let app = test_app(&state);
+        let session = sign_in(&app, &mailer, KNOWN).await;
+
+        for uri in ["/login?next=/projects/0801", "/login/code?next=/projects/0801"] {
+            let response = app
+                .clone()
+                .oneshot(with_cookie(get(uri), cookie::SESSION, &session))
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::SEE_OTHER, "{uri}");
+            assert_eq!(location(&response).as_deref(), Some("/projects/0801"), "{uri}");
+        }
     }
 
     #[tokio::test]
@@ -1304,15 +1415,17 @@ mod tests {
             .await
             .unwrap();
 
-        let home = app
+        let refused = app
             .clone()
-            .oneshot(with_cookie(get("/"), cookie::SESSION, &session))
+            .oneshot(with_cookie(get("/projects"), cookie::SESSION, &session))
             .await
             .unwrap();
-        assert!(
-            !body_string(home).await.contains("A Depositor"),
-            "an expired session must not identify anyone"
+        assert_eq!(
+            refused.status(),
+            StatusCode::SEE_OTHER,
+            "an expired session must not reach a guarded page"
         );
+        assert_eq!(location(&refused).as_deref(), Some("/login?next=/projects"));
         assert_eq!(
             SessionRepository::find(&state.db, &session).await.unwrap(),
             None,
@@ -1346,12 +1459,13 @@ mod tests {
             .await
             .unwrap();
 
-        let home = app
+        let refused = app
             .clone()
-            .oneshot(with_cookie(get("/"), cookie::SESSION, &session))
+            .oneshot(with_cookie(get("/projects"), cookie::SESSION, &session))
             .await
             .unwrap();
-        assert!(!body_string(home).await.contains("A Depositor"));
+        assert_eq!(refused.status(), StatusCode::SEE_OTHER);
+        assert_eq!(location(&refused).as_deref(), Some("/login?next=/projects"));
         assert_eq!(SessionRepository::find(&state.db, &session).await.unwrap(), None);
     }
 

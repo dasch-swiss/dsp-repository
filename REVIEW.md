@@ -17,6 +17,8 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 - [ ] Documentation updated when patterns change
 - [ ] New env vars documented in `docs/src/dpe/operations.md` (editor: `docs/src/editor/operations.md`)
 - [ ] Every state-changing editor route is a `POST` and has a test asserting it refuses `GET` — the `Sec-Fetch-Site` CSRF control exempts `GET` by necessity, so a state-changing `GET` is one nothing protects
+- [ ] Every new editor route takes `Authenticated` or `Rdu`, or is deliberately public — the guard is an extractor, so a handler that names neither is open, and the route table does not say so
+- [ ] Any new redirect target that comes from a request goes through `auth::guard::safe_next` — an unchecked one is an open redirect on a page reached mid-authentication
 - [ ] No email address reaches a log or a span: `#[instrument(skip_all)]` on anything taking one, and no transport error logged verbatim (an SMTP reply quotes the recipient)
 - [ ] Commits follow conventional commits — one of the eight types, mandatory scope (`docs/src/git-conventions.md`)
 - [ ] Single commit, or `allow-many-commits` ticked with a reason

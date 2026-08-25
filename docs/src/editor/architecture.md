@@ -66,24 +66,26 @@ Paths are **root-mounted**. There is no `/editor` prefix.
 
 DPE carries `/dpe/…` because it shares `repository.dasch.swiss` with other services. The editor gets its own hostname, so a prefix buys nothing — and adopting one would keep alive the path-routing option this design rejects, for the CSRF reason above.
 
-| Path | Method | Purpose |
-|------|--------|---------|
-| `/` | GET | Service root. Offers the way in when signed out. |
-| `/login` | GET, POST | The address form, and issuing a one-time code. POST rate-limited per IP. |
-| `/login/code` | GET, POST | The code form, and spending the code. POST rate-limited per IP. |
-| `/logout` | POST | Delete the session and clear the cookie. |
-| `/healthz` | GET | Liveness probe. Untraced. |
-| `/telemetry/collect` | POST | Browser telemetry beacon. Untraced, rate-limited per IP. |
+| Path | Method | Access | Purpose |
+|------|--------|--------|---------|
+| `/` | GET | public | 303 to `/projects`. |
+| `/login` | GET, POST | public | The address form, and issuing a one-time code. POST rate-limited per IP. |
+| `/login/code` | GET, POST | public | The code form, and spending the code. POST rate-limited per IP. |
+| `/logout` | POST | public | Delete the session and clear the cookie. |
+| `/projects` | GET | signed in | The shortcodes this account may edit. |
+| `/projects/{shortcode}` | GET | signed in + assigned | One project. 403 otherwise (REQ-1.3). |
+| `/healthz` | GET | public | Liveness probe. Untraced. |
+| `/telemetry/collect` | POST | public | Browser telemetry beacon. Untraced, rate-limited per IP. |
 
 Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.
 
+`/` is a redirect rather than a page so that exactly one place decides what a signed-out visitor gets. It is therefore absent from `page_url.rs`'s `KNOWN_ROUTES`: a redirect renders no beacon script, so no beacon can report it.
+
 There is deliberately no resend endpoint: asking again is another `POST /login`, under the same cooldown, which keeps the number of endpoints that can send mail at one. See [Authentication](./authentication.md).
 
-The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:
+`/projects` and `/projects/{shortcode}` exist but render placeholders: what they carry today is the **scope** (REQ-1.2, REQ-1.3), not the editing surface. The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:
 
 ```text
-GET  /                                        → redirect to /projects
-GET  /projects                                the depositor's assigned projects
 GET  /projects/{shortcode}                    → redirect to the first section
 GET  /projects/{shortcode}/sections/{section}  one form section
 POST /projects/{shortcode}/sections/{section}
@@ -103,7 +105,7 @@ Two layers wrap the app, in this order from the outside in:
 1. **CSRF** — `Sec-Fetch-Site: same-origin` is required on every non-`GET`/`HEAD` request, failing closed on everything else including an absent header. It is applied **last** in `build_app`, which makes it outermost and therefore the one layer the positional traced/untraced split cannot route around: inside `build_router` it would have missed `/telemetry/collect`, the only pre-auth POST in the app, with no test failing. See [Authentication](./authentication.md#csrf) for why `SameSite` and `__Host-` do not close this.
 2. **OTel** — the traced/untraced split below.
 
-Sessions are read per handler rather than by a middleware, because the policy for an unauthenticated request — redirect preserving the requested URL — belongs with the route table that has routes to protect, and there is not yet a route to protect. Today `/` reads a session to name the viewer in the header, both login screens read one to send an already-signed-in visitor home, and `/logout` deletes one.
+Access control is **not** a third layer. It is an extractor, `Authenticated`, and that is the design rather than an omission: a handler that names one cannot run without the check, because the argument is what runs it, and a handler that names neither is visibly public at the point anyone reads its signature. A middleware over a sub-router would have added a second positional invariant of exactly the shape this module already regrets — the traced/untraced split is invisible in the route table and reversible by moving one line — and here the failure mode is an unauthenticated route rather than a missing span. See [Authentication](./authentication.md#authorization).
 
 ## Traced and untraced routes
 

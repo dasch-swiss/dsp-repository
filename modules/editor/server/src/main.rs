@@ -19,6 +19,7 @@ mod csrf;
 mod db;
 mod mail;
 mod page_url;
+mod projects;
 mod router;
 #[cfg(test)]
 mod test_support;
@@ -48,59 +49,84 @@ pub(crate) struct AppState {
     auth: auth::AuthConfig,
 }
 
-/// `GET /` — the service root.
+/// Render a page inside the document shell.
 ///
-/// Exists now because the page shell's header links here from every page: without
-/// a route, clicking the logo on the 404 page produced another 404, so every
-/// navigation the shell offered was a dead end. Once the project list lands this
-/// becomes the redirect to `/projects` that the URL scheme specifies.
+/// The one place a `Markup` becomes a `Response`, so the traceparent meta tag,
+/// the resolved stylesheet href and the signed-in header cannot be forgotten by
+/// one handler and remembered by the rest.
 ///
-/// Signed out it offers the way in, because otherwise `/login` is reachable only
-/// by typing it.
-pub(crate) async fn root(
-    axum::extract::State(state): axum::extract::State<AppState>,
-    headers: axum::http::HeaderMap,
-) -> axum::response::Html<String> {
-    let tp = traceparent::extract_traceparent();
-    let name = auth::session::current(&state.db, &state.auth, &headers, chrono::Utc::now())
-        .await
-        .map(|user| user.name);
-    let content = maud::html! {
-        h1 class="font-display text-2xl mb-2" { "DaSCH Metadata Editor" }
-        p { "Editing your project metadata is not available yet. This service is being built." }
-        @if name.is_none() {
-            p class="mt-4" {
-                a href="/login" class="underline" { "Sign in" }
-            }
-        }
-    };
-    let viewer = name.as_deref().map(|name| editor_web::view::Viewer { name });
-    axum::response::Html(
-        editor_web::view::page("DaSCH Metadata Editor", tp.as_deref(), &state.css_href, viewer, content).into_string(),
+/// `viewer` is the signed-in account or `None`, and it is a `&User` rather than
+/// a pre-built [`editor_web::view::Viewer`] so that no call site has to decide
+/// which field of an account belongs in a header. That decision is here, once:
+/// the **name**, never the address. The header is on every page and in every
+/// screenshot of one.
+pub(crate) fn render(
+    state: &AppState,
+    title: &str,
+    status: axum::http::StatusCode,
+    viewer: Option<&editor_core::records::User>,
+    content: maud::Markup,
+) -> axum::response::Response {
+    use axum::response::IntoResponse;
+
+    let traceparent = traceparent::extract_traceparent();
+    let viewer = viewer.map(|user| editor_web::view::Viewer { name: &user.name });
+    let body = editor_web::view::page(title, traceparent.as_deref(), &state.css_href, viewer, content);
+    (status, axum::response::Html(body.into_string())).into_response()
+}
+
+/// A 403 rendered as a page (REQ-1.3).
+///
+/// The status is what the requirement asks for; the page is because a bare 403
+/// is a dead end in a browser. Everything that reaches this is authenticated —
+/// an unauthenticated request is redirected to login by the extractor — so the
+/// header renders signed in and its links are a way out.
+pub(crate) fn forbidden(
+    state: &AppState,
+    user: &editor_core::records::User,
+    message: &str,
+) -> axum::response::Response {
+    render(
+        state,
+        "No access — DaSCH Metadata Editor",
+        axum::http::StatusCode::FORBIDDEN,
+        Some(user),
+        editor_web::pages::forbidden::forbidden(message),
     )
 }
 
-/// 404 fallback, reached after `ServeDir` finds no matching static file.
-pub(crate) async fn not_found(
-    axum::extract::State(state): axum::extract::State<AppState>,
-) -> (axum::http::StatusCode, axum::response::Html<String>) {
-    let tp = traceparent::extract_traceparent();
+/// `GET /` — a redirect to the project list.
+///
+/// Public, and the only public route that is not part of signing in. It reads no
+/// session and renders nothing: `/projects` decides what this account may see,
+/// and redirects to login if there is no account. Answering here instead would
+/// mean two places that know what a signed-out visitor gets.
+///
+/// It exists because the shell's header links here from every page — without the
+/// route, the logo on the 404 page led to another 404.
+pub(crate) async fn root() -> axum::response::Redirect {
+    axum::response::Redirect::to("/projects")
+}
+
+/// 404 fallback, reached after `ServeDir` finds no matching static file, by a
+/// project path that could never name a project, and by an account id that
+/// names none.
+///
+/// Deliberately renders signed out even for a signed-in reader. It is reached
+/// from `ServeDir`'s not-found service, which has no session in hand, and a 404
+/// that showed a name on one route and not another would be stranger than one
+/// that never does.
+pub(crate) async fn not_found(axum::extract::State(state): axum::extract::State<AppState>) -> axum::response::Response {
     let content = maud::html! {
         h1 class="font-display text-2xl mb-2" { "Page not found" }
         p { "The page you asked for does not exist." }
     };
-    (
+    render(
+        &state,
+        "Page not found — DaSCH Metadata Editor",
         axum::http::StatusCode::NOT_FOUND,
-        axum::response::Html(
-            editor_web::view::page(
-                "Page not found — DaSCH Metadata Editor",
-                tp.as_deref(),
-                &state.css_href,
-                None,
-                content,
-            )
-            .into_string(),
-        ),
+        None,
+        content,
     )
 }
 
@@ -550,6 +576,8 @@ fn healthcheck(url: &str) -> ExitCode {
 
 #[cfg(test)]
 mod tests {
+    use axum::response::IntoResponse;
+
     use super::*;
 
     #[test]
@@ -592,13 +620,53 @@ mod tests {
     #[tokio::test]
     async fn not_found_renders_the_page_shell_with_a_404() {
         let (state, _) = test_support::test_state("not-found").await;
-        let (status, body) = not_found(axum::extract::State(state)).await;
-        assert_eq!(status, axum::http::StatusCode::NOT_FOUND);
+        let response = not_found(axum::extract::State(state)).await;
+        assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
         // A 404 that is a bare status string is a dead end in a browser; it has
         // to arrive inside the shell, with the header's route back.
-        assert!(body.0.starts_with("<!DOCTYPE html>"), "{}", body.0);
-        assert!(body.0.contains("DaSCH Metadata Editor"), "{}", body.0);
-        assert!(body.0.contains("Page not found"), "{}", body.0);
+        let body = test_support::body_string(response).await;
+        assert!(body.starts_with("<!DOCTYPE html>"), "{body}");
+        assert!(body.contains("DaSCH Metadata Editor"), "{body}");
+        assert!(body.contains("Page not found"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn forbidden_renders_the_page_shell_with_a_403_and_a_way_out() {
+        // REQ-1.3 asks for the status; the page is what stops it being a dead
+        // end. The reader is signed in, so the shell's header renders their name
+        // and its links are a route out.
+        let (state, _) = test_support::test_state("forbidden").await;
+        let user = editor_core::records::User {
+            id: uuid::Uuid::new_v4(),
+            email: "a.depositor@example.test".to_string(),
+            name: "A Depositor".to_string(),
+            role: editor_core::records::Role::Depositor,
+            shortcodes: vec!["0801".to_string()],
+            failed_logins: 0,
+            failed_login_at: None,
+            last_code_at: None,
+            created_at: chrono::Utc::now(),
+        };
+
+        let response = forbidden(&state, &user, "This project is not assigned to your account.");
+        assert_eq!(response.status(), axum::http::StatusCode::FORBIDDEN);
+        let body = test_support::body_string(response).await;
+        assert!(body.starts_with("<!DOCTYPE html>"), "{body}");
+        assert!(body.contains("This project is not assigned to your account."), "{body}");
+        assert!(body.contains(r#"<a href="/projects""#), "{body}");
+        assert!(body.contains("A Depositor"), "{body}");
+        // The header shows the name, never the address — it is on every page and
+        // in every screenshot of one.
+        assert!(!body.contains("a.depositor@example.test"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn the_root_redirects_to_the_project_list() {
+        // One place decides what a signed-out visitor gets, and it is
+        // `/projects`. Answering here as well would be a second.
+        let response = root().await.into_response();
+        assert_eq!(response.status(), axum::http::StatusCode::SEE_OTHER);
+        assert_eq!(test_support::location(&response).as_deref(), Some("/projects"));
     }
 
     #[test]

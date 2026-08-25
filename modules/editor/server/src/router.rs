@@ -176,8 +176,9 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
 
     Router::new()
         // --- Traced routes (declared BEFORE .layer()) ---
-        // The service root. The shell's header links here from every page, so
-        // without it the 404 page's own header led to another 404.
+        // The service root: a redirect to `/projects`. The shell's header links
+        // here from every page, so without it the 404 page's own header led to
+        // another 404.
         .route("/", get(crate::root))
         // The two login endpoints. The rate limit is on the POST alone, merged
         // in rather than layered over the whole route: a limit that counted page
@@ -201,6 +202,13 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
         // Not rate-limited: signing out costs nothing and refusing it would
         // strand a user in a session they asked to end.
         .route("/logout", post(crate::auth::logout))
+        // --- Authenticated routes ---
+        // Every handler below takes `Authenticated`, which is what performs the
+        // check: a handler that omits it is public, visibly, in its signature.
+        // See [`crate::auth::guard`] for why that is an extractor and not a
+        // middleware over a sub-router.
+        .route("/projects", get(crate::projects::list))
+        .route("/projects/{shortcode}", get(crate::projects::detail))
         // Static assets + 404 fallback.
         .fallback_service(serve_dir)
         // --- OTel layers ---
@@ -242,11 +250,48 @@ mod tests {
     #[tokio::test]
     async fn root_is_served_so_the_shell_header_is_not_a_dead_end() {
         // Every page's header links to `/`. Without this route the 404 page's own
-        // header led straight back to another 404.
+        // header led straight back to another 404. It is a redirect rather than a
+        // page, so the project list is the single place that decides what a
+        // signed-out visitor gets.
+        let app = build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
+        let response = app
+            .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(
-            status_of(build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref()), "/").await,
-            StatusCode::OK
+            response
+                .headers()
+                .get(axum::http::header::LOCATION)
+                .and_then(|v| v.to_str().ok()),
+            Some("/projects")
         );
+    }
+
+    #[tokio::test]
+    async fn the_project_routes_are_closed_to_a_request_with_no_session() {
+        // The guard is an extractor, so this is what "closed by default" looks
+        // like from outside: no session, no page, and the destination is kept.
+        let app = build_app(test_state("router").await.0, NO_PUBLIC_DIR.as_ref());
+        for (uri, expected) in [
+            ("/projects", "/login?next=/projects"),
+            ("/projects/0801", "/login?next=/projects/0801"),
+        ] {
+            let response = app
+                .clone()
+                .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::SEE_OTHER, "{uri}");
+            assert_eq!(
+                response
+                    .headers()
+                    .get(axum::http::header::LOCATION)
+                    .and_then(|v| v.to_str().ok()),
+                Some(expected),
+                "{uri}"
+            );
+        }
     }
 
     #[tokio::test]

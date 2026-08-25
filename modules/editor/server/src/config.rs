@@ -461,6 +461,32 @@ impl EditorConfig {
         Ok(())
     }
 
+    /// Whether this deployment may show a login code on screen instead of
+    /// requiring it to be read out of the log.
+    ///
+    /// **All three conditions, and each is load-bearing.** The predicate is
+    /// deliberately self-contained rather than leaning on
+    /// [`Self::validate`]'s `PROD`-requires-a-relay rule: a guard you can read
+    /// in one place is a guard nobody has to reconstruct.
+    ///
+    /// - **Not `PROD`.** The published image sets `EDITOR_ENV=PROD`, so a production container is
+    ///   excluded by its own default before anything else is considered.
+    /// - **No relay.** With one unset every code is already written to the log in plaintext
+    ///   (REQ-6.8), so showing it to the browser that just asked for it discloses nothing the
+    ///   deployment is not already doing. With a relay configured the code goes to a mailbox and
+    ///   the screen must not be a second channel.
+    /// - **In-memory database.** `EDITOR_DB_DIR` unset means every account, session and code dies
+    ///   with the process. This is the condition that separates a throwaway deployment from a real
+    ///   one: an environment holding accounts people actually use has to mount a volume, or it
+    ///   loses them on every restart.
+    ///
+    /// Together they describe exactly one thing — a deployment with no relay,
+    /// no durable state and no production flag — which is the PR preview, a
+    /// local run, and nothing else. See `docs/src/editor/authentication.md`.
+    pub fn reveals_login_code(&self) -> bool {
+        self.env != "PROD" && self.smtp_host.is_none() && self.db_dir.is_none()
+    }
+
     /// The configured RDU addresses, split and trimmed.
     pub fn rdu_addresses(&self) -> Vec<String> {
         self.rdu_emails
@@ -846,5 +872,75 @@ mod tests {
             assert!(config.exports_otlp_logs());
             Ok(())
         });
+    }
+}
+
+#[cfg(test)]
+mod reveal_tests {
+    use super::*;
+
+    /// A preview-shaped configuration: no relay, no volume, `DEV`.
+    fn preview() -> EditorConfig {
+        EditorConfig { env: "DEV".to_string(), ..EditorConfig::default() }
+    }
+
+    #[test]
+    fn test_a_throwaway_deployment_may_show_the_code() {
+        // The PR preview and a local run: nothing here survives the process and
+        // the code is already going to the log in plaintext.
+        assert!(preview().reveals_login_code());
+    }
+
+    #[test]
+    fn test_a_configured_relay_turns_it_off() {
+        // The code now goes to a mailbox. The screen must not be a second
+        // channel for it.
+        let config = EditorConfig {
+            smtp_host: Some("smtp-relay.gmail.com".to_string()),
+            ..preview()
+        };
+        assert!(!config.reveals_login_code());
+    }
+
+    #[test]
+    fn test_a_durable_database_turns_it_off() {
+        // This is the condition that separates a throwaway deployment from a
+        // real one. An environment holding accounts people use must mount a
+        // volume, and that alone withdraws the reveal — even with no relay, and
+        // even outside PROD.
+        let config = EditorConfig { db_dir: Some(std::path::PathBuf::from("/data")), ..preview() };
+        assert!(!config.reveals_login_code());
+    }
+
+    #[test]
+    fn test_production_never_shows_it_whatever_else_is_set() {
+        // Belt and braces. `validate` already refuses `PROD` without a relay, so
+        // two of these three cannot even start — the predicate still answers
+        // false, so it does not depend on that rule holding.
+        for config in [
+            EditorConfig { env: "PROD".to_string(), ..EditorConfig::default() },
+            EditorConfig {
+                env: "PROD".to_string(),
+                smtp_host: Some("smtp-relay.gmail.com".to_string()),
+                ..EditorConfig::default()
+            },
+            EditorConfig {
+                env: "PROD".to_string(),
+                smtp_host: Some("smtp-relay.gmail.com".to_string()),
+                db_dir: Some(std::path::PathBuf::from("/data")),
+                ..EditorConfig::default()
+            },
+        ] {
+            assert!(!config.reveals_login_code(), "{:?}", config.env);
+        }
+    }
+
+    #[test]
+    fn test_the_published_image_is_excluded_by_its_own_default() {
+        // `modules/editor/Dockerfile` sets EDITOR_ENV=PROD and leaves
+        // EDITOR_DB_DIR unset. That combination refuses to start without a
+        // relay, but the reveal is off regardless of how it is resolved.
+        let image = EditorConfig { env: "PROD".to_string(), ..EditorConfig::default() };
+        assert!(!image.reveals_login_code());
     }
 }

@@ -222,8 +222,34 @@ A **configured** relay that fails is different. By default the code is rolled ba
 
 That is off by default on purpose. A transient relay error — a rate limit, a TLS blip — would otherwise write a **live credential** into a log pipeline that retains it for weeks and is readable by everyone with log access. Turning it on is an incident response for a relay broken long enough to lock people out, and the failure log line names the variable so the remedy is found from the error itself. Turn it off again once the relay is back.
 
-## Preview safety
+## Showing the code instead of sending it
 
-The Cloud Run PR preview is `--allow-unauthenticated`, so `/login` is publicly reachable the moment it deploys. What keeps that safe is that the preview leaves `EDITOR_SMTP_*` unset, so REQ-6.8's console transport applies and codes go to logs only we can read — there is deliberately **no** dev-only "show the code on screen" affordance, and gating the preview URL by GitHub membership is not possible (Cloud Run IAM gates on Google identity).
+**An earlier version of this page said there is "deliberately no dev-only show-the-code affordance — read it from the logs". That was reversed, and the reason it was reversed matters more than the change itself: the premise was never checked.** The argument rested on log access being the thing that gated a public preview. Nobody on the team has that access — it is not configured in the organisation's Google Cloud profile — so the preview was not gated, it was simply impossible to sign into. A control that nobody can exercise is not a control.
 
-How to actually sign in to one, including the seeded address and where to read the code, is in [Operations](./operations.md#signing-in-to-a-pr-preview).
+The code-entry screen therefore shows the code when **all three** of these hold, resolved once at startup by `EditorConfig::reveals_login_code`:
+
+| Condition | Why it is in the predicate |
+|---|---|
+| `EDITOR_ENV` is not `PROD` | The published image sets `PROD`, so a production container is excluded by its own default before anything else is read. |
+| No `EDITOR_SMTP_HOST` | With no relay the code is **already** written to the log in plaintext (REQ-6.8). Showing it to the browser that just asked for it discloses nothing the deployment is not already doing. With a relay, the code goes to a mailbox and the screen must not become a second channel. |
+| No `EDITOR_DB_DIR` | Everything dies with the process. This is the condition separating a throwaway deployment from a real one: an environment holding accounts people actually use has to mount a volume, or it loses them on every restart. |
+
+Together they describe a deployment with no relay, no durable state and no production flag — the PR preview, a local run, and nothing else. Startup logs a `warn` naming the state, so an operator sees it asserted rather than inferring it from three unset variables.
+
+The predicate is deliberately **self-contained** rather than leaning on the `PROD`-requires-a-relay rule in `validate`. That rule does make two of these combinations unbootable, but a guard you can read in one place is one nobody has to reconstruct.
+
+### What it costs, stated rather than left to be found
+
+- **A real disclosure, not a token one.** The code shown is the genuine CSPRNG value bound to the requesting browser's token. Anyone who can reach such a deployment can start a sign-in for any address and read that address's code. What makes it acceptable is not the size of the disclosure but where it can happen: no relay, no durable accounts, nothing that outlives the process.
+- **REQ-6.2 does not hold on this page in this mode.** The code-entry screen now differs between an address with an account and one without, because a binding that resolves to nothing shows nothing. That is inherent to showing a code at all. Everywhere else — including every `POST /login` — the identical-response property is untouched.
+- **A spent or expired code is never shown**, and a browser only ever sees the code its own binding owns.
+
+### What was rejected, and why
+
+A **fixed code known to the team upfront** — for example from a repository secret — was considered and rejected. On the preview the outcome is the same, so the objection is not about that deployment:
+
+- It changes **code generation** rather than only the disclosure channel. If such a flag ever reached production, every account would be open silently, with the flow looking entirely normal.
+- The "secret" would not be one. A value injected as an environment variable into an `--allow-unauthenticated` service, known to the whole team and living in CI configuration, is published — and permanent across every future preview, rather than dying with one.
+- It needs a **new** guard written for it. The reveal rides conditions that already exist and are already tested.
+- It is worse for the reader it is meant to help: a fixed code has to be communicated out of band, where an on-screen one has to be communicated not at all.
+

@@ -148,7 +148,9 @@ EDITOR_RDU_EMAILS=you@dasch.swiss just dev-editor
 
 That account is created at startup (REQ-7.2) and is an RDU member, so it can reach `/depositors` and create depositors to test against.
 
-With `EDITOR_SMTP_HOST` unset the code is written to the log rather than sent (REQ-6.8). `just dev-editor` runs under bacon, so it appears in the output pane — read it there. To grep for it instead, run the binary directly:
+With no relay and no `EDITOR_DB_DIR`, **the code is shown on the code-entry page** — nothing has to be read from anywhere. It is also written to the log (REQ-6.8); `just dev-editor` runs under bacon, so it appears in the output pane.
+
+Setting `EDITOR_DB_DIR` to keep accounts across restarts **turns the on-screen code off** — a durable database is one of the three conditions, because it is what separates a throwaway deployment from a real one. In that case read the code from the log instead:
 
 ```bash
 EDITOR_RDU_EMAILS=you@dasch.swiss \
@@ -164,25 +166,19 @@ grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
 Two knobs worth setting while testing:
 
 - `EDITOR_LOGIN_COOLDOWN_SECS=1` — otherwise a second code for the same address waits out the 60-second cooldown (REQ-6.5).
-- `EDITOR_DB_DIR=<dir>` — unset means in-memory, so every restart begins with no depositors and no sessions. Set it when you want state to survive.
+- `EDITOR_DB_DIR=<dir>` — unset means in-memory, so every restart begins with no depositors and no sessions. Set it when you want state to survive, and expect the on-screen code to disappear when you do.
 
 If you run the binary from outside the repository root, set `EDITOR_PUBLIC_DIR` to an absolute path as well: its default is relative, and a wrong working directory serves no stylesheet, which makes every page render unstyled rather than fail.
 
 ### Signing in to a PR preview
 
-The preview seeds one account, so the login flow can actually be exercised: `EDITOR_RDU_EMAILS=editor-preview@dasch.swiss`, set in `.github/workflows/cloud-run-editor-pull-request.yml`. Sign in with that address.
+1. Open the preview URL from the PR comment.
+2. Enter **`editor-preview@dasch.swiss`** — the account the workflow seeds (`.github/workflows/cloud-run-editor-pull-request.yml`), an RDU member, so it can reach `/depositors` too.
+3. **The code is shown on the next page.** The preview has no mail relay and no persistent database, which is the condition under which the editor displays it rather than sending it — see [Authentication](./authentication.md#showing-the-code-instead-of-sending-it).
 
-The code is **not** shown on screen and never will be. `EDITOR_SMTP_*` is unset on the preview, so REQ-6.8's console transport applies and the code goes to the Cloud Run log:
+Nothing has to be read from Cloud Run logs, and nothing has to be known in advance. An earlier version of this page said to find the code in the log; that procedure required project log access nobody on the team has, so it could not be followed.
 
-1. Open the Logs Explorer for the project and filter to the preview's service — `editor-pr-<number>`, named in the workflow's PR comment.
-2. Find the `WARN` line `no SMTP relay is configured — writing the message to the log instead of sending it`.
-3. The six digits are in its `mail.body` field.
-
-Reading the code out of a six-digit run elsewhere on the line will not work: the log record carries a `timestamp` field with six-digit runs of its own. Match on the message body.
-
-**Needing log access is the access control, not an oversight.** The preview is deployed `--allow-unauthenticated` and is publicly reachable, and Cloud Run IAM gates on Google identity rather than GitHub membership, so the two cannot be connected. What keeps a public preview from being signable-in by anyone who finds the URL is precisely that the code goes somewhere only we can read. A fixed code, or one rendered on the page, would remove that and would also put a reveal-the-code path into a binary that production runs.
-
-For functional testing without GCP access, run the service locally — `just dev-editor`, or the binary with `EDITOR_RDU_EMAILS` set to your own address — and read the code from your own terminal. The preview's job is to prove the image boots and serves.
+Everything in a preview dies with it: the database is in-memory, no mail can leave (there is no relay), and the service is deleted when the PR closes.
 
 ## Database
 

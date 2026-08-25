@@ -109,6 +109,9 @@ pub(crate) async fn state_with(
         db,
         mailer: Arc::new(mailer.clone()),
         auth,
+        // Off by default: the reveal is the exception, so a test that wants it
+        // has to say so, and every other test proves the ordinary path.
+        reveal_login_code: false,
     };
     (state, mailer)
 }

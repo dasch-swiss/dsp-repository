@@ -10,6 +10,15 @@ use super::utils::is_placeholder;
 pub const VALID_TABS: &[&str] = &["overview", "publications", "contributors"];
 
 /// Returns true if the string is a valid project shortcode (alphanumeric only).
+///
+/// **A second implementation exists**: `editor_core::records::is_valid_shortcode`
+/// applies the same rule plus a 16-character bound, because it also gates a
+/// hand-typed form field whose value becomes half a primary key. The two are
+/// deliberately independent — `editor-core` takes no dependency on `dpe-core`
+/// yet — so **relaxing this one silently diverges the editor**: a shortcode DPE
+/// starts publishing that the editor's copy rejects cannot be assigned to a
+/// depositor, and no editor test fails. Change both, or converge them when the
+/// editor's draft model brings `dpe-core` in for real.
 pub fn is_valid_shortcode(s: &str) -> bool {
     !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric())
 }

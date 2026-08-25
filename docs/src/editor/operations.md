@@ -105,9 +105,22 @@ Design and rationale live in [Authentication](./authentication.md). What an oper
 
 ### Accounts
 
-`EDITOR_RDU_EMAILS` is reconciled on every start. Adding an address creates or promotes an account on the next deploy. **Removing one does not revoke anything** — startup logs a warning naming any `rdu` account the configuration no longer lists, and the account has to be removed by hand until account management lands. Treat that warning as a to-do, not as noise.
+**Depositors** are managed in the product, at `/depositors`, by any RDU member: create with a name, an address and a set of project shortcodes; edit any of the three; remove. See [Authentication](./authentication.md#accounts) for what a removal takes with it and what it leaves behind.
+
+**RDU members** come from `EDITOR_RDU_EMAILS`, which is reconciled on every start. Adding an address creates or promotes an account on the next deploy. **Removing one does not revoke anything** — startup logs a warning naming any `rdu` account the configuration no longer lists, and the account has to be removed by hand. Treat that warning as a to-do, not as noise.
+
+RDU accounts are deliberately **not** editable at `/depositors`: they appear in the list, without controls. Configuration is the source of truth for them, so a change made in the product would be undone by the next restart, or would leave the product and the configuration disagreeing with nothing to say so.
 
 A malformed entry stops startup rather than being skipped: every entry becomes an account that administers the service, so a typo is an administrator who can never sign in, and the symptom would otherwise be "my code never arrives" weeks later.
+
+### Diagnosing "I never got a code"
+
+No address appears in any log, so the trail is the account list's **last code sent** column plus the opaque `auth.subject` correlation id (the account's UUID) in the auth events. That column is the only diagnosis there is: REQ-6.8 covers an unconfigured relay and REQ-6.9 a failed send, but neither covers a code the relay accepted and never delivered, and REQ-6.10 forbids the address in a log.
+
+- **"never"** — no code was ever handed to the relay for that account. Either they have not tried, or they typed a different address, or the send failed and was rolled back (which the log will say, with a status code).
+- **a timestamp** — a code went out. The problem is downstream: spam filtering, greylisting, or a mailbox they do not read.
+
+Before assuming a delivery problem, check the auth log for `auth.outcome = "locked_out"`. A user throttled after repeated wrong entries is told only "that code is not valid" — deliberately, because a distinct message would confirm to anyone that the address has an account.
 
 ### No relay configured
 
@@ -125,9 +138,51 @@ If the relay is broken long enough that people are locked out:
 
 Unsetting `EDITOR_SMTP_HOST` entirely is the heavier version of the same escape hatch: it routes everything to the log without trying the relay at all, and needs a second redeploy to undo.
 
-### Diagnosing "I never got a code"
+### Signing in locally
 
-No address appears in any log, so the trail is the opaque `auth.subject` correlation id (the account's UUID) in the auth events, plus the per-account "last code issued at" that RDU will see once the depositor list lands. A user who is throttled after repeated wrong entries is told only "that code is not valid" — deliberately, because a distinct message would confirm to anyone that the address has an account. Check the auth log for `auth.outcome = "locked_out"` before assuming a delivery problem.
+A fresh database has **no accounts**, and `POST /login` answers identically whether an address is known or not (REQ-6.2) — so with none configured you reach the code screen and no mail is sent, which looks like a broken relay and is not. Name an address first:
+
+```bash
+EDITOR_RDU_EMAILS=you@dasch.swiss just dev-editor
+```
+
+That account is created at startup (REQ-7.2) and is an RDU member, so it can reach `/depositors` and create depositors to test against.
+
+With `EDITOR_SMTP_HOST` unset the code is written to the log rather than sent (REQ-6.8). `just dev-editor` runs under bacon, so it appears in the output pane — read it there. To grep for it instead, run the binary directly:
+
+```bash
+EDITOR_RDU_EMAILS=you@dasch.swiss \
+EDITOR_DATA_DIR=modules/dpe/server/data \
+cargo run --bin editor-server -- serve > editor.log 2>&1 &
+
+# after submitting the address at /login:
+grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
+```
+
+**Anchor the match on the message body.** The log record is JSON carrying `"timestamp":"   9.427448833s"`, which holds six-digit runs of its own — an unanchored `grep -o '[0-9]\{6\}'` returns one of those, and the sign-in then fails as `a wrong code was submitted`, which reads like a code-generation bug.
+
+Two knobs worth setting while testing:
+
+- `EDITOR_LOGIN_COOLDOWN_SECS=1` — otherwise a second code for the same address waits out the 60-second cooldown (REQ-6.5).
+- `EDITOR_DB_DIR=<dir>` — unset means in-memory, so every restart begins with no depositors and no sessions. Set it when you want state to survive.
+
+If you run the binary from outside the repository root, set `EDITOR_PUBLIC_DIR` to an absolute path as well: its default is relative, and a wrong working directory serves no stylesheet, which makes every page render unstyled rather than fail.
+
+### Signing in to a PR preview
+
+The preview seeds one account, so the login flow can actually be exercised: `EDITOR_RDU_EMAILS=editor-preview@dasch.swiss`, set in `.github/workflows/cloud-run-editor-pull-request.yml`. Sign in with that address.
+
+The code is **not** shown on screen and never will be. `EDITOR_SMTP_*` is unset on the preview, so REQ-6.8's console transport applies and the code goes to the Cloud Run log:
+
+1. Open the Logs Explorer for the project and filter to the preview's service — `editor-pr-<number>`, named in the workflow's PR comment.
+2. Find the `WARN` line `no SMTP relay is configured — writing the message to the log instead of sending it`.
+3. The six digits are in its `mail.body` field.
+
+Reading the code out of a six-digit run elsewhere on the line will not work: the log record carries a `timestamp` field with six-digit runs of its own. Match on the message body.
+
+**Needing log access is the access control, not an oversight.** The preview is deployed `--allow-unauthenticated` and is publicly reachable, and Cloud Run IAM gates on Google identity rather than GitHub membership, so the two cannot be connected. What keeps a public preview from being signable-in by anyone who finds the URL is precisely that the code goes somewhere only we can read. A fixed code, or one rendered on the page, would remove that and would also put a reveal-the-code path into a binary that production runs.
+
+For functional testing without GCP access, run the service locally — `just dev-editor`, or the binary with `EDITOR_RDU_EMAILS` set to your own address — and read the code from your own terminal. The preview's job is to prove the image boots and serves.
 
 ## Database
 

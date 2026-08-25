@@ -114,7 +114,7 @@ Every non-`GET`/`HEAD` request must carry `Sec-Fetch-Site: same-origin`, and fai
 
 The consequence of failing closed on absent is that a browser too old to send `Sec-Fetch-*` cannot use the editor. That is accepted: treating absent as permissive would hand over the bypass, because a cross-site post from such a browser is indistinguishable from a legitimate one.
 
-`GET` and `HEAD` are exempt, because a navigation from anywhere is a `GET`. That is only sound while no `GET` handler changes state, which is why every state-changing route is a `POST` and the router tests assert each refuses `GET`. The one deliberate exception is the session's idle-timeout touch, which advances `last_seen_at` at most once a minute: it carries nothing the requester supplied, is idempotent, and writes only the requester's own row, so there is nothing for a cross-site request to achieve by triggering it.
+`GET` and `HEAD` are exempt, because a navigation from anywhere is a `GET`. That is only sound while no `GET` handler changes state, which is why every state-changing route is a `POST`, with a test beside each handler asserting it refuses `GET`. The one deliberate exception is the session's idle-timeout touch, which advances `last_seen_at` at most once a minute: it carries nothing the requester supplied, is idempotent, and writes only the requester's own row, so there is nothing for a cross-site request to achieve by triggering it.
 
 ### Code generation
 
@@ -125,6 +125,69 @@ Six digits is ≈19.93 bits, marginally under ASVS 6.5.4's 20-bit floor. Accepte
 The lifetime is ten minutes and is **not configurable**. NIST §3.1.3.2 (*"the authentication SHALL be considered invalid unless completed within 10 minutes"*) and ASVS 6.5.5 both cap it there, so the only thing a setting could express is a violation of both.
 
 Codes are stored unhashed, deliberately: a code lives ten minutes, and anyone able to read the `login_codes` table already holds `sessions`.
+
+## Authorization
+
+Authentication says who is asking. Authorization says what they may reach, and it is two roles (REQ-7.1) and one predicate.
+
+### Two extractors, and why not a middleware
+
+`Authenticated` yields the signed-in account or refuses; `Rdu` composes it and additionally requires the `rdu` role. Both are Axum extractors, so a handler that names one **cannot** run without the check — the argument is what performs it — and a handler that names neither is public, visibly, in its signature.
+
+A middleware layered over a group of routes was the alternative and was rejected. The router already carries one positional invariant of that shape: the traced/untraced split wraps only routes declared before the `.layer()` calls, which is invisible in the route table and reversible by moving one line. That one costs a missing span when it goes wrong. A second one would cost an unauthenticated route.
+
+### What each refusal is
+
+| Situation | Answer | Why not the other one |
+|---|---|---|
+| No session, `GET` | 303 to `/login?next=<path>` | A 401 without `WWW-Authenticate` is not conformant, and a browser shows nothing useful for one. |
+| No session, `POST` | 303 to `/login`, no destination | A write's destination is a side effect, not a page. |
+| Session, wrong role or wrong project | 403 rendered as a page | Signing in again will not help — it is the same account — so a login screen would read as a bug. |
+| A path that could never name a project | 404 | A 403 would assert the project exists and is merely closed to this account. |
+
+REQ-1.3 asks for a status and nothing else. It is rendered inside the page shell because a bare 403 is a dead end in a browser: the reader is signed in, has done nothing wrong, and has no control to press. The page links back to `/projects`, which every signed-in account can reach.
+
+### Per-project scope
+
+`User::may_reach` is the whole rule. RDU is unconditional, because REQ-4.2 makes RDU access role-based rather than per-project — which is also why an RDU account's assignment set is empty. A depositor is confined to their assignments (REQ-1.2).
+
+The comparison **ignores ASCII case**. The published set mixes `080C` with `0801a`, so which half of a shortcode is capitalised is not something an RDU member typing an assignment can be expected to get right, and getting it wrong would deny a depositor their own project with no visible cause. It would be too generous if two projects differed only in case; none do.
+
+A shortcode is validated for shape before the assignment is consulted, and the rule is **ASCII alphanumeric**, not four hex digits: `0801a` through `0801e` are real projects, so a hex-only rule would answer 404 for five of them. `editor-core` carries its own copy of `dpe_core::project::is_valid_shortcode` rather than depending on `dpe-core` for one predicate; they converge when the draft model brings `dpe-core` in for real, and both carry tests.
+
+### Landing where you were going
+
+An unauthenticated `GET` is redirected to `/login?next=<path>`, and the destination is carried on the form actions of both login screens through to the redirect that follows a successful sign-in. Without it, following a link into a project means signing in and arriving at the root.
+
+**The destination is an open-redirect surface**, because it arrives from a query string and is therefore attacker-chosen: a link carrying `next=https://evil.example` would turn the editor's own sign-in page into a redirector, reachable from the real origin with a real certificate and following a real authentication. `safe_next` is an allowlist rather than a list of things to reject, because the reject list is not knowable — `//evil.example` is protocol-relative, `/\evil.example` is normalised to it by browsers that treat a backslash as a separator, and `%2f%2fevil.example` becomes it after one decode. What is admitted is a leading `/` followed by ASCII alphanumerics and `/`, `-`, `_`, `.`, with no `..` segment and not the login screens themselves.
+
+Two consequences of that character set, both deliberate:
+
+- Nothing is percent-**encoded** when the value is put back into a URL, because nothing it admits needs escaping. A test pins the two together, since widening one without the other would be header injection in a `Location`.
+- Nothing is percent-**decoded** when it is read back out. An encoded value is dropped and the reader lands on the root, which is fail-closed; decoding first would hand the check a value that already looks like a path.
+
+The value is re-validated at each step it crosses rather than trusted from the last one.
+
+### Accounts
+
+RDU membership comes from `EDITOR_RDU_EMAILS` and is reconciled at every start (REQ-7.2). Depositors are rows RDU creates, edits and removes at `/depositors` (US-7).
+
+RDU accounts appear in that list but carry no controls. Configuration is the source of truth for them, so an edit made in the product would be undone by the next restart, and a removal would either be undone the same way or leave the product and the configuration disagreeing with nothing to say so. Startup's warning about an `rdu` account the configuration no longer lists stays the channel for that case.
+
+Removal is REQ-7.5 exactly — the row and every session belonging to it, through `ON DELETE CASCADE` — but it goes through a confirmation, because two of its consequences are irreversible and neither is visible from the list:
+
+- The **address** is deleted with the row, and it is RDU's only channel to its owner. The confirmation shows it to be copied first.
+- A **submission** the account made stays pending with no author. The schema nulls the author rather than cascading, so the work survives and the review queue's "last editor" reads as unknown rather than dangling — but REQ-4.5's "return to the depositor" then has no recipient, so it can be approved or rejected and nothing else.
+
+Removing a **shortcode** from an account is not in that category. A draft is keyed by shortcode, not by user, so it belongs to the project: the assignment change takes away access and nothing else, RDU still sees the draft (REQ-1.11), and another assigned depositor can continue it.
+
+**Update is not a requirement.** US-7 has create and remove only. It exists because without it, correcting a misspelled name means deleting the account — destroying its sessions, its assignments and the authorship of everything it touched — to fix a typo. The updated record is rebuilt from the stored one, so the role, the failure counter and its instant, the last-code stamp and the creation time survive an edit by construction.
+
+### Addresses on screen, and REQ-6.10
+
+The account screens are the only pages in the editor that render an email address, and they are RDU-only. That is not in tension with REQ-6.10, which is about logs and traces: RDU has to know which address an account signs in with, because it is the only channel to its owner. The page shell's header shows a **name** and never an address, everywhere including these screens.
+
+The list also carries **last code sent** per account. REQ-6.8 covers an unconfigured relay and REQ-6.9 a failed send, but neither covers accepted-then-undelivered — spam filtering, greylisting — where the user sees success and no code. With REQ-6.10 forbidding the address in a log, this column is the only answer to "I never got a code". It is stamped when a code is handed to the relay successfully, so "never" and a timestamp are genuinely different diagnoses.
 
 ## Mail
 
@@ -161,6 +224,6 @@ That is off by default on purpose. A transient relay error — a rate limit, a T
 
 ## Preview safety
 
-The Cloud Run PR preview is `--allow-unauthenticated`, so `/login` is publicly reachable the moment it deploys. The preview leaves `EDITOR_SMTP_*` unset, so REQ-6.8's console transport applies: codes go to Cloud Run logs, no mail leaves the Workspace relay, and the shared daily quota is untouched. There is deliberately **no** dev-only "show the code on screen" affordance — read it from the logs.
+The Cloud Run PR preview is `--allow-unauthenticated`, so `/login` is publicly reachable the moment it deploys. What keeps that safe is that the preview leaves `EDITOR_SMTP_*` unset, so REQ-6.8's console transport applies and codes go to logs only we can read — there is deliberately **no** dev-only "show the code on screen" affordance, and gating the preview URL by GitHub membership is not possible (Cloud Run IAM gates on Google identity).
 
-Gating the preview URL to GitHub organisation members is not available: Cloud Run IAM gates on *Google* identity, not GitHub membership, and the two do not connect. The workflow's same-repo and non-dependabot conditions gate who can *trigger* a deploy, not who can reach the URL.
+How to actually sign in to one, including the seeded address and where to read the code, is in [Operations](./operations.md#signing-in-to-a-pr-preview).

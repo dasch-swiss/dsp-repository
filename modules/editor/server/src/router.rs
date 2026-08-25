@@ -17,8 +17,13 @@
 //! Every route that changes state is `POST`. That is not tidiness: the
 //! `Sec-Fetch-Site` CSRF control exempts `GET` and `HEAD` by necessity, because
 //! a navigation from anywhere is a `GET` — so a `GET` that changes state is a
-//! `GET` nothing protects. The tests below assert each state-changing route
-//! refuses `GET`.
+//! `GET` nothing protects.
+//!
+//! The assertions live with the handlers rather than here: the beacon's is
+//! below, `/logout`'s is in [`crate::auth`], and the account routes' is in
+//! [`crate::depositors`], which also pins that every write URL answers `GET` —
+//! a write posting to a path with no `GET` strands a rejected submission on a
+//! bare 405.
 //!
 //! Rust cannot check the converse — that no handler reached through `get(...)`
 //! writes — because the route table is not introspectable. The one deliberate
@@ -209,6 +214,30 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
         // middleware over a sub-router.
         .route("/projects", get(crate::projects::list))
         .route("/projects/{shortcode}", get(crate::projects::detail))
+        // --- RDU-only routes ---
+        // `Rdu` composes `Authenticated`, so these are closed twice over: no
+        // session redirects to login, and a depositor's session gets the 403
+        // page. Every write here is a `POST` for the same reason as everywhere
+        // else — a state-changing `GET` is one the CSRF control cannot cover.
+        // Each write shares a URL with the `GET` that renders its form, so a
+        // rejected submission re-renders at a path that still answers `GET`.
+        // `POST /depositors/{id}` existed briefly and was the counter-example:
+        // it had no `GET`, so reloading or sharing a rejected edit produced a
+        // bare 405 with no body and no way back — the dead end this service
+        // renders a 403 as a page precisely to avoid.
+        .route("/depositors", get(crate::depositors::list).post(crate::depositors::create))
+        .route("/depositors/new", get(crate::depositors::create_form))
+        .route(
+            "/depositors/{id}/edit",
+            get(crate::depositors::edit_form).post(crate::depositors::update),
+        )
+        .route(
+            "/depositors/{id}/remove",
+            get(crate::depositors::remove_form).post(crate::depositors::remove),
+        )
+        // REVIEW: a new full-page route needs a matching entry in `page_url.rs`,
+        // or its page views collapse into `other` — and no test fails, because
+        // that module's tests are a closed list of routes that already exist.
         // Static assets + 404 fallback.
         .fallback_service(serve_dir)
         // --- OTel layers ---

@@ -17,6 +17,7 @@ mod auth;
 mod config;
 mod csrf;
 mod db;
+mod depositors;
 mod mail;
 mod page_url;
 mod projects;

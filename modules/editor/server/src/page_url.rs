@@ -8,40 +8,58 @@
 //! → Shared Crates).
 //!
 //! The editor is root-mounted, unlike DPE's `/dpe/…` prefix, since it runs on
-//! its own hostname. `/depositors`, `/review`, `/review/{shortcode}` and
+//! its own hostname. `/review`, `/review/{shortcode}` and
 //! `/projects/{shortcode}/sections/{section}` join this list as those surfaces
-//! land.
+//! land — and `/projects/{shortcode}` **leaves** it at the same moment, because
+//! the scheme in `architecture.md` turns it into a redirect to the first
+//! section, and a redirect renders no beacon.
 //!
 //! `/` is deliberately absent. It is a redirect, so it never renders the beacon
 //! script and no beacon can report it — the same reason `/` and `/dpe` are
 //! absent from DPE's list. The normalizer still answers sanely if one somehow
 //! did.
 //!
-//! The beacon reports `location.pathname`, so a value never carries a query.
-//! `/login?next=…` therefore does not reach here, and the login pages stay
-//! attributed to `/login` rather than falling into `other` — pinned by a test
-//! below, because the day the beacon starts sending a full URL is the day every
-//! login page view silently becomes `other`.
+//! A query string is stripped before matching. The beacon reports
+//! `location.pathname` today, so nothing arrives with one — but `/login?next=…`
+//! exists now, and an earlier version of this module relied on the beacon's
+//! shape instead of handling the query, with a test that asserted the *broken*
+//! outcome. Stripping is what actually survives the beacon one day sending
+//! `location.href`; asserting that it currently does not is not a guard.
+//!
+//! DPE's normalizer does not strip, and does not need to: it has no route that
+//! navigates by query.
 //!
 //! REVIEW: new full-page routes in `router.rs` need a matching entry here —
 //! see `REVIEW.md`.
-const KNOWN_ROUTES: &[&str] = &["/login", "/login/code", "/projects"];
+const KNOWN_ROUTES: &[&str] = &["/login", "/login/code", "/projects", "/depositors", "/depositors/new"];
 
 /// Normalize a page URL to a known editor route pattern.
 /// Returns "other" for unrecognized paths to prevent metric cardinality explosion.
 pub fn normalize_page_url(url: &str) -> &'static str {
+    // Everything below matches on a whole path, so a query or a fragment has to
+    // come off first or it turns every page view into `other`.
+    let url = url.split(['?', '#']).next().unwrap_or(url);
     for &route in KNOWN_ROUTES {
         if route == url {
             return route;
         }
     }
-    // Pattern match for `/projects/{shortcode}`, without allocating. A shortcode
-    // is an unbounded set, so letting one through verbatim is the cardinality
-    // explosion this module exists to prevent.
+    // Pattern matches for the routes with a variable segment, without
+    // allocating — `split_once` rather than `split().collect::<Vec<_>>()`, which
+    // an earlier version used while this comment claimed otherwise. A shortcode
+    // and an account id are both unbounded sets, so letting either through
+    // verbatim is the cardinality explosion this module exists to prevent.
     if let Some(rest) = url.strip_prefix("/projects/") {
         if !rest.is_empty() && !rest.contains('/') {
             return "/projects/{shortcode}";
         }
+    }
+    if let Some(rest) = url.strip_prefix("/depositors/") {
+        return match rest.split_once('/') {
+            Some((id, "edit")) if !id.is_empty() => "/depositors/{id}/edit",
+            Some((id, "remove")) if !id.is_empty() => "/depositors/{id}/remove",
+            _ => "other",
+        };
     }
     "other"
 }
@@ -55,14 +73,23 @@ mod tests {
         assert_eq!(normalize_page_url("/login"), "/login");
         assert_eq!(normalize_page_url("/login/code"), "/login/code");
         assert_eq!(normalize_page_url("/projects"), "/projects");
+        assert_eq!(normalize_page_url("/depositors"), "/depositors");
+        assert_eq!(normalize_page_url("/depositors/new"), "/depositors/new");
     }
 
     #[test]
-    fn the_shortcode_segment_collapses_to_its_pattern() {
-        // A shortcode is an unbounded set. Letting one through verbatim is
-        // exactly the cardinality explosion this module exists to prevent.
+    fn variable_segments_collapse_to_their_pattern() {
+        // A shortcode and an account id are both unbounded sets. Letting either
+        // through verbatim is exactly the cardinality explosion this module
+        // exists to prevent.
         assert_eq!(normalize_page_url("/projects/0801"), "/projects/{shortcode}");
         assert_eq!(normalize_page_url("/projects/0801a"), "/projects/{shortcode}");
+        let id = "0c1cd9ff-9a9f-4b0e-9b0a-3f2f8f0b7a11";
+        assert_eq!(normalize_page_url(&format!("/depositors/{id}/edit")), "/depositors/{id}/edit");
+        assert_eq!(
+            normalize_page_url(&format!("/depositors/{id}/remove")),
+            "/depositors/{id}/remove"
+        );
     }
 
     #[test]
@@ -76,20 +103,33 @@ mod tests {
     fn unrelated_paths_return_other() {
         assert_eq!(normalize_page_url("/healthz"), "other");
         assert_eq!(normalize_page_url("/admin/secret"), "other");
-        // Near misses stay bounded: the match is on the whole path, so a query
-        // string or a trailing segment does not mint a new attribute value.
-        assert_eq!(normalize_page_url("/login?next=/projects"), "other");
+        // Near misses stay bounded: a trailing segment does not mint a new
+        // attribute value.
         assert_eq!(normalize_page_url("/login/code/extra"), "other");
+        // No longer a page: the edit form posts to `/depositors/{id}/edit`, so
+        // nothing renders here and a beacon cannot report it.
+        assert_eq!(normalize_page_url("/depositors/0c1cd9ff-9a9f-4b0e"), "other");
         assert_eq!(normalize_page_url("/projects/0801/sections/general"), "other");
         assert_eq!(normalize_page_url("/projects/"), "other");
+        assert_eq!(normalize_page_url("/depositors/abc/delete"), "other");
+        assert_eq!(normalize_page_url("/depositors//edit"), "other");
+        // An empty id is not an id: the guards keep `/depositors//…` out of
+        // every pattern rather than minting one with a blank segment.
+        assert_eq!(normalize_page_url("/depositors/"), "other");
     }
 
     #[test]
-    fn a_beacon_never_carries_a_query_so_login_keeps_its_own_attribution() {
-        // `telemetry.js` sends `location.pathname`. If that ever becomes a full
-        // URL, `/login?next=…` starts arriving here and every login page view
-        // silently becomes `other` — this is the test that would fail first.
-        assert_eq!(normalize_page_url("/login"), "/login");
-        assert_ne!(normalize_page_url("/login?next=/projects"), "/login");
+    fn a_query_is_stripped_rather_than_collapsing_the_page_into_other() {
+        // `telemetry.js` sends `location.pathname`, so nothing arrives with a
+        // query today. The previous version of this test asserted that fact —
+        // `assert_ne!(normalize_page_url("/login?next=…"), "/login")` — and
+        // called itself the guard against the beacon one day sending
+        // `location.href`. It was the opposite: it pinned the broken outcome as
+        // expected, and would have stayed green through exactly that change
+        // while every login page view collapsed into `other`.
+        assert_eq!(normalize_page_url("/login?next=/projects"), "/login");
+        assert_eq!(normalize_page_url("/projects/0801?x=1"), "/projects/{shortcode}");
+        assert_eq!(normalize_page_url("/projects#section"), "/projects");
+        assert_eq!(normalize_page_url("/nope?x=1"), "other");
     }
 }

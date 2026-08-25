@@ -149,23 +149,58 @@ pub(crate) async fn login_submit(
     )
 }
 
+/// The code this browser's binding owns, when this deployment may show it.
+///
+/// Returns `None` unless [`AppState::reveal_login_code`] is set — resolved once
+/// at startup from three conditions, all of which have to hold: no mail relay,
+/// no database that outlives the process, and not `PROD`. See
+/// [`crate::config::EditorConfig::reveals_login_code`].
+///
+/// Only ever the code bound to the token the request carries, so a browser sees
+/// what it asked for and nothing else. That is still a real disclosure — an
+/// attacker who starts a sign-in for somebody else's address sees the code for
+/// it — which is why the gate is what it is and not a convenience flag.
+///
+/// **It costs REQ-6.2 on this page.** The code-entry screen now differs between
+/// an address with an account and one without, because a binding that resolves
+/// to nothing shows nothing. That is inherent to showing a code at all, it is
+/// confined to the same throwaway condition, and it is recorded in
+/// `docs/src/editor/authentication.md` rather than left to be discovered.
+///
+/// A storage failure yields `None`: a screen that cannot show the code is a
+/// nuisance on a preview, and guessing is not an option for a credential.
+async fn revealed_code(state: &AppState, token: &str, now: DateTime<Utc>) -> Option<String> {
+    if !state.reveal_login_code {
+        return None;
+    }
+    match LoginCodeRepository::find_by_browser_token(&state.db, token).await {
+        Ok(Some(code)) if code.consumed_at.is_none() && now < code.expires_at => Some(code.code),
+        Ok(_) => None,
+        Err(error) => {
+            tracing::warn!(error = %error, "could not read the code to show on screen");
+            None
+        }
+    }
+}
+
 /// `GET /login/code` — the code form.
 pub(crate) async fn code_form(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
     let next = next_from(&uri);
     if session::current(&state.db, &state.auth, &headers, Utc::now()).await.is_some() {
         return Redirect::to(destination_or_root(next)).into_response();
     }
-    if cookie::read(&headers, cookie::LOGIN).is_none() {
+    let Some(token) = cookie::read(&headers, cookie::LOGIN) else {
         // Nothing has been asked for in this browser, so there is nothing to
         // enter. Sending the user to the form they skipped reveals nothing: the
         // cookie is set for every address, known or not.
         return Redirect::to(&login_url(next)).into_response();
-    }
+    };
+    let revealed = revealed_code(&state, &token, Utc::now()).await;
     render(
         &state,
         ENTER_CODE_TITLE,
         StatusCode::OK,
-        editor_web::pages::login::enter_code(next, None),
+        editor_web::pages::login::enter_code(next, None, revealed.as_deref()),
     )
 }
 
@@ -204,12 +239,17 @@ pub(crate) async fn code_submit(
         // 200 rather than 401: this is a form being redisplayed, and a 401
         // without `WWW-Authenticate` is not a conformant response. The outcome
         // is in the log, which is where alerting reads it from.
-        Err(()) => render(
-            &state,
-            ENTER_CODE_TITLE,
-            StatusCode::OK,
-            editor_web::pages::login::enter_code(next, Some(CODE_REJECTED)),
-        ),
+        // Shown again on a rejected entry: the reader mistyped a code they can
+        // see, and hiding it now would be the one moment it is actually needed.
+        Err(()) => {
+            let revealed = revealed_code(&state, &token, Utc::now()).await;
+            render(
+                &state,
+                ENTER_CODE_TITLE,
+                StatusCode::OK,
+                editor_web::pages::login::enter_code(next, Some(CODE_REJECTED), revealed.as_deref()),
+            )
+        }
     }
 }
 
@@ -1002,6 +1042,151 @@ mod tests {
             assert_eq!(response.status(), StatusCode::SEE_OTHER, "{uri}");
             assert_eq!(location(&response).as_deref(), Some("/projects/0801"), "{uri}");
         }
+    }
+
+    // ---- The development code reveal ---------------------------------------
+
+    /// App state shaped like the PR preview: no relay, no volume, reveal on.
+    async fn revealing_state(label: &str) -> (AppState, RecordingMailer) {
+        let (mut state, mailer) = test_state(label).await;
+        state.reveal_login_code = true;
+        (state, mailer)
+    }
+
+    #[tokio::test]
+    async fn test_a_throwaway_deployment_shows_the_code_on_the_page() {
+        // The whole point: a reviewer opens the preview, types the address, and
+        // the code is in front of them. No log access, nothing to be told.
+        let (state, mailer) = revealing_state("reveal-on").await;
+        a_user(&state, KNOWN).await;
+        let app = test_app(&state);
+
+        let issued = request_code(&app, KNOWN, None).await;
+        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let code = mailer.last_code().expect("a code");
+
+        let page = app
+            .clone()
+            .oneshot(with_cookie(get("/login/code"), cookie::LOGIN, &binding))
+            .await
+            .unwrap();
+        let body = body_string(page).await;
+        assert!(body.contains(&code), "the code must be on the page: {body}");
+        assert!(body.contains("no mail relay"), "and it must say why: {body}");
+
+        // And it is the real code, not a fixed one — it still signs the user in.
+        let signed_in = submit_code(&app, &code, &binding).await;
+        assert_eq!(signed_in.status(), StatusCode::SEE_OTHER);
+        assert!(cookie_set(&signed_in, cookie::SESSION).is_some());
+    }
+
+    #[tokio::test]
+    async fn test_the_ordinary_deployment_shows_nothing() {
+        // Every deployment that mails a code renders this same page. The block
+        // appearing where it should not is the failure that matters.
+        let (state, mailer) = test_state("reveal-off").await;
+        a_user(&state, KNOWN).await;
+        let app = test_app(&state);
+
+        let issued = request_code(&app, KNOWN, None).await;
+        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let code = mailer.last_code().expect("a code");
+
+        let page = app
+            .clone()
+            .oneshot(with_cookie(get("/login/code"), cookie::LOGIN, &binding))
+            .await
+            .unwrap();
+        let body = body_string(page).await;
+        assert!(!body.contains(&code), "the code must not reach the page: {body}");
+        assert!(!body.contains("no mail relay"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn test_a_browser_sees_only_the_code_its_own_binding_owns() {
+        // The lookup is by the token the request carries, so one browser cannot
+        // read another's code by visiting the page.
+        let (state, mailer) = revealing_state("reveal-scope").await;
+        a_user(&state, KNOWN).await;
+        let app = test_app(&state);
+
+        let issued = request_code(&app, KNOWN, None).await;
+        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let code = mailer.last_code().expect("a code");
+
+        // A second browser inventing a token sees nothing.
+        let other = app
+            .clone()
+            .oneshot(with_cookie(get("/login/code"), cookie::LOGIN, "a-token-that-binds-to-nothing"))
+            .await
+            .unwrap();
+        let body = body_string(other).await;
+        assert!(!body.contains(&code), "another browser must not see it: {body}");
+    }
+
+    #[tokio::test]
+    async fn test_a_spent_or_expired_code_is_not_shown() {
+        // Once used, it authenticates nobody — putting it back on a page would
+        // be a credential on screen that buys nothing.
+        let (state, mailer) = revealing_state("reveal-spent").await;
+        a_user(&state, KNOWN).await;
+        let app = test_app(&state);
+
+        let issued = request_code(&app, KNOWN, None).await;
+        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let code = mailer.last_code().expect("a code");
+        submit_code(&app, &code, &binding).await;
+
+        let page = app
+            .clone()
+            .oneshot(with_cookie(get("/login/code"), cookie::LOGIN, &binding))
+            .await
+            .unwrap();
+        assert!(!body_string(page).await.contains(&code));
+    }
+
+    #[tokio::test]
+    async fn test_a_rejected_entry_shows_the_code_again() {
+        // The reader mistyped a code they can see; hiding it now is the one
+        // moment it is actually needed.
+        let (state, mailer) = revealing_state("reveal-retry").await;
+        a_user(&state, KNOWN).await;
+        let app = test_app(&state);
+
+        let issued = request_code(&app, KNOWN, None).await;
+        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let code = mailer.last_code().expect("a code");
+
+        let wrong = submit_code(&app, "000000", &binding).await;
+        assert_eq!(wrong.status(), StatusCode::OK);
+        let body = body_string(wrong).await;
+        assert!(body.contains(&code), "{body}");
+        assert!(body.contains(CODE_REJECTED), "{body}");
+    }
+
+    #[tokio::test]
+    async fn test_the_reveal_puts_no_address_in_a_log() {
+        // REQ-6.10 is unaffected by any of this: the code reaches the page, the
+        // address reaches neither the page nor a log.
+        let (state, _) = revealing_state("reveal-no-address").await;
+        a_user(&state, KNOWN).await;
+        let app = test_app(&state);
+
+        let (logs, guard) = capture_logs();
+        let issued = request_code(&app, KNOWN, None).await;
+        let binding = cookie_set(&issued, cookie::LOGIN).expect("a binding");
+        let page = app
+            .clone()
+            .oneshot(with_cookie(get("/login/code"), cookie::LOGIN, &binding))
+            .await
+            .unwrap();
+        let body = body_string(page).await;
+        drop(guard);
+
+        let lines = logs.lines();
+        assert!(!lines.is_empty(), "the capture itself must be working");
+        assert!(!lines.iter().any(|line| line.contains(KNOWN)), "{lines:?}");
+        assert!(!body.contains(KNOWN), "the address stays off the page too: {body}");
     }
 
     #[tokio::test]

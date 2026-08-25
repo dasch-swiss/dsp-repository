@@ -48,6 +48,11 @@ pub(crate) struct AppState {
     /// rollback and the break-glass decision live.
     mailer: std::sync::Arc<dyn mail::Mailer>,
     auth: auth::AuthConfig,
+    /// Whether the code-entry screen may show the login code instead of
+    /// requiring it to be read out of the log. Resolved once at startup from
+    /// [`config::EditorConfig::reveals_login_code`] — never re-derived, so there
+    /// is one answer per process and one place that decides it.
+    reveal_login_code: bool,
 }
 
 /// Render a page inside the document shell.
@@ -401,11 +406,23 @@ async fn serve() -> ExitCode {
         .parse()
         .unwrap_or_else(|e| panic!("invalid site address (EDITOR_SITE_ADDR) {:?}: {e}", config.site_addr));
 
+    // Loud, and at `warn`. This deployment puts a live credential on a page, and
+    // an operator scanning startup should see that stated rather than infer it
+    // from three unset variables.
+    if config.reveals_login_code() {
+        tracing::warn!(
+            "showing login codes on screen: no mail relay, no persistent database, and EDITOR_ENV is not PROD. \
+             Intended for the PR preview and local runs. Setting EDITOR_SMTP_HOST or EDITOR_DB_DIR turns it off, \
+             and EDITOR_ENV=PROD can never turn it on"
+        );
+    }
+
     let state = AppState {
         css_href: resolve_css_href(&config.public_dir),
         db,
         mailer,
         auth: auth::AuthConfig::from(&config),
+        reveal_login_code: config.reveals_login_code(),
     };
     let app = router::build_app(state, &config.public_dir);
 

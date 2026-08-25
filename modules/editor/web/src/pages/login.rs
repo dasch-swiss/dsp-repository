@@ -82,6 +82,27 @@ pub fn request_code(next: Option<&str>, error: Option<&str>) -> Markup {
     }
 }
 
+/// The login code, shown on the page instead of being sent.
+///
+/// Rendered only where the caller has established that this deployment has no
+/// mail relay, no durable database and is not production — see
+/// `EditorConfig::reveals_login_code`. It is styled as a warning rather than a
+/// convenience because a page that shows a live credential should not look
+/// ordinary, and it names the reason so nobody has to guess whether the
+/// deployment is misconfigured or deliberately throwaway.
+fn revealed_code(code: &str) -> Markup {
+    html! {
+        div class="border border-warning-300 bg-warning-50 rounded px-3 py-2 mb-4" {
+            p class="font-bold" { "Development deployment — no mail was sent" }
+            p class="mt-1" {
+                "This service has no mail relay and no database that outlives it, so your code is shown here \
+                 instead of being emailed:"
+            }
+            p class="font-mono text-2xl tracking-widest mt-2" { (code) }
+        }
+    }
+}
+
 /// `GET /login/code` — take the six digits.
 ///
 /// The way back is a link to `/login`, not a resend button: a resend needs the
@@ -93,7 +114,7 @@ pub fn request_code(next: Option<&str>, error: Option<&str>) -> Markup {
 /// out-of-band code, which is what lets a browser or phone keyboard offer the
 /// code directly. It is documented here rather than beside the attribute because
 /// `maudfmt` strips comments from inside an `html!` attribute list.
-pub fn enter_code(next: Option<&str>, error: Option<&str>) -> Markup {
+pub fn enter_code(next: Option<&str>, error: Option<&str>, revealed: Option<&str>) -> Markup {
     html! {
         div class="max-w-md mx-auto py-12" {
             h1 class="font-display text-2xl mb-2" { "Enter your code" }
@@ -102,6 +123,7 @@ pub fn enter_code(next: Option<&str>, error: Option<&str>) -> Markup {
                  code below."
             }
             @if let Some(message) = error { (error_banner(message)) }
+            @if let Some(code) = revealed { (revealed_code(code)) }
             form method="post" action=(with_next("/login/code", next)) class="flex flex-col gap-4" {
                 div class="flex flex-col gap-1" {
                     label for="code" class="font-bold" { "Six-digit code" }
@@ -145,7 +167,7 @@ mod tests {
     fn test_enter_code_constrains_the_field_to_six_digits() {
         // Not validation — the server does that — but it keeps a mistyped
         // seven-digit paste from costing an attempt against the account counter.
-        let out = enter_code(None, None).into_string();
+        let out = enter_code(None, None, None).into_string();
         assert!(out.contains(r#"<form method="post" action="/login/code""#), "{out}");
         assert!(out.contains(r#"pattern="[0-9]{6}""#), "{out}");
         assert!(out.contains(r#"maxlength="6""#), "{out}");
@@ -159,7 +181,7 @@ mod tests {
         // would put the whole authentication flow behind a bundle load.
         for out in [
             request_code(None, None).into_string(),
-            enter_code(None, None).into_string(),
+            enter_code(None, None, None).into_string(),
         ] {
             assert!(!out.contains("data-on"), "{out}");
             assert!(!out.contains("data-bind"), "{out}");
@@ -177,7 +199,37 @@ mod tests {
 
     #[test]
     fn test_an_error_message_is_escaped() {
-        let out = enter_code(None, Some("<script>alert(1)</script>")).into_string();
+        let out = enter_code(None, Some("<script>alert(1)</script>"), None).into_string();
+        assert!(!out.contains("<script>alert(1)</script>"), "{out}");
+        assert!(out.contains("&lt;script&gt;"), "{out}");
+    }
+
+    #[test]
+    fn test_the_code_is_absent_unless_the_caller_passes_one() {
+        // The default is no reveal. Every deployment that mails a code renders
+        // this page, so the block appearing by accident is the failure that
+        // matters.
+        let out = enter_code(None, None, None).into_string();
+        assert!(!out.contains("no mail was sent"), "{out}");
+        assert!(!out.contains("bg-warning-50"), "{out}");
+    }
+
+    #[test]
+    fn test_a_revealed_code_says_why_it_is_on_the_page() {
+        // A page showing a live credential must not look ordinary, and it has to
+        // distinguish "deliberately throwaway" from "misconfigured relay".
+        let out = enter_code(None, None, Some("482917")).into_string();
+        assert!(out.contains("482917"), "{out}");
+        assert!(out.contains("no mail relay"), "{out}");
+        assert!(out.contains("bg-warning-50"), "{out}");
+    }
+
+    #[test]
+    fn test_a_revealed_code_is_escaped() {
+        // It comes from the database rather than the request, so this is the
+        // second layer rather than the first — but a credential rendered into a
+        // page is the last place to rely on someone else's validation.
+        let out = enter_code(None, None, Some("<script>alert(1)</script>")).into_string();
         assert!(!out.contains("<script>alert(1)</script>"), "{out}");
         assert!(out.contains("&lt;script&gt;"), "{out}");
     }
@@ -187,7 +239,7 @@ mod tests {
         // The browser is bound to its code by an HttpOnly cookie, so the address
         // never has to be carried forward. A hidden field would put it in the
         // markup, in the back/forward cache and in any screenshot of the page.
-        let out = enter_code(None, None).into_string();
+        let out = enter_code(None, None, None).into_string();
         assert!(!out.contains(r#"type="hidden""#), "{out}");
         assert!(!out.contains(r#"name="email""#), "{out}");
     }
@@ -196,7 +248,7 @@ mod tests {
     fn test_the_way_back_from_the_code_page_is_a_get_link() {
         // Not a resend button: a resend needs the address, and the only places to
         // keep it are a hidden field or a third endpoint.
-        let out = enter_code(None, None).into_string();
+        let out = enter_code(None, None, None).into_string();
         assert!(out.contains(r#"<a href="/login""#), "{out}");
     }
 
@@ -207,7 +259,7 @@ mod tests {
         let first = request_code(Some("/projects/0801"), None).into_string();
         assert!(first.contains(r#"action="/login?next=/projects/0801""#), "{first}");
 
-        let second = enter_code(Some("/projects/0801"), None).into_string();
+        let second = enter_code(Some("/projects/0801"), None, None).into_string();
         assert!(second.contains(r#"action="/login/code?next=/projects/0801""#), "{second}");
         assert!(second.contains(r#"<a href="/login?next=/projects/0801""#), "{second}");
     }

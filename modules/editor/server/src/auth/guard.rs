@@ -63,6 +63,43 @@ impl FromRequestParts<AppState> for Authenticated {
     }
 }
 
+/// A live session belonging to an RDU member, or the request never reaches the
+/// handler.
+///
+/// Composed from [`Authenticated`] rather than repeating the session lookup, so
+/// there is one place that decides what "signed in" means and one that decides
+/// what "RDU" means.
+///
+/// The two refusals are deliberately different. No session is a redirect to
+/// login, because signing in fixes it. A session that is not RDU's is a 403
+/// page, because signing in again will not: it is the same account, and sending
+/// them to a login screen they are already past reads as a bug.
+#[derive(Debug, Clone)]
+pub(crate) struct Rdu(pub(crate) User);
+
+impl FromRequestParts<AppState> for Rdu {
+    type Rejection = Response;
+
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+        let Authenticated(user) = Authenticated::from_request_parts(parts, state).await?;
+        if !user.is_rdu() {
+            // Worth a line: a depositor reaching an administration URL is either
+            // a stale bookmark or someone trying doors, and both are things an
+            // operator should be able to see. The only identifier is the
+            // account's own opaque id.
+            // No `http.route` here on purpose. The enclosing server span
+            // already carries it, set from `MatchedPath` by the OTel layer, so
+            // an event field would be a second value for one semconv attribute
+            // in a single trace — and the concrete path is the wrong one of the
+            // two, since semconv defines `http.route` as the matched template.
+            // `auth.subject` is what makes this line useful.
+            tracing::info!("refused an RDU-only page to an account that is not RDU");
+            return Err(crate::forbidden(state, &user, crate::depositors::RDU_ONLY));
+        }
+        Ok(Self(user))
+    }
+}
+
 /// Where to send this request back to once its owner has signed in.
 ///
 /// `GET` only, deliberately. `next` exists to land someone where they were
@@ -83,8 +120,13 @@ fn destination(parts: &Parts) -> Option<&str> {
 ///
 /// No percent-encoding, and that is a property of [`safe_next`] rather than an
 /// omission: the characters it admits are all legal, unreserved query
-/// characters. A test pins the two together, because widening `safe_next` later
-/// without encoding here would be a header-injection bug in a `Location`.
+/// characters. Widening `safe_next` without adding encoding here would be a
+/// header-injection bug in a `Location`, and what stops that are the *negative*
+/// tests — admitting `?` fails `test_a_query_is_not_carried`, admitting `%`
+/// fails `test_the_shapes_that_become_an_absolute_url_after_one_transformation_are_refused`.
+/// `test_every_admitted_destination_is_safe_to_embed_without_encoding` documents
+/// the pairing but iterates a fixed list, so it would not catch a widening on
+/// its own.
 pub(crate) fn login_url(next: Option<&str>) -> String {
     match next {
         Some(next) => format!("/login?{NEXT}={next}"),

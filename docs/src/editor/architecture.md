@@ -74,10 +74,16 @@ DPE carries `/dpe/…` because it shares `repository.dasch.swiss` with other ser
 | `/logout` | POST | public | Delete the session and clear the cookie. |
 | `/projects` | GET | signed in | The shortcodes this account may edit. |
 | `/projects/{shortcode}` | GET | signed in + assigned | One project. 403 otherwise (REQ-1.3). |
+| `/depositors` | GET, POST | RDU | The account list, and creating a depositor. |
+| `/depositors/new` | GET | RDU | The create form. |
+| `/depositors/{id}/edit` | GET, POST | RDU | The edit form, and the change it makes. |
+| `/depositors/{id}/remove` | GET, POST | RDU | The removal confirmation, and the removal. |
 | `/healthz` | GET | public | Liveness probe. Untraced. |
 | `/telemetry/collect` | POST | public | Browser telemetry beacon. Untraced, rate-limited per IP. |
 
 Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.
+
+Every write shares a URL with the `GET` that renders its form, so a rejected submission re-renders somewhere that still answers `GET`. `POST /depositors/{id}` briefly did not, and reloading a rejected edit produced a bare 405 — the same dead end REQ-1.3's 403 is rendered as a page to avoid.
 
 `/` is a redirect rather than a page so that exactly one place decides what a signed-out visitor gets. It is therefore absent from `page_url.rs`'s `KNOWN_ROUTES`: a redirect renders no beacon script, so no beacon can report it.
 
@@ -105,7 +111,7 @@ Two layers wrap the app, in this order from the outside in:
 1. **CSRF** — `Sec-Fetch-Site: same-origin` is required on every non-`GET`/`HEAD` request, failing closed on everything else including an absent header. It is applied **last** in `build_app`, which makes it outermost and therefore the one layer the positional traced/untraced split cannot route around: inside `build_router` it would have missed `/telemetry/collect`, the only pre-auth POST in the app, with no test failing. See [Authentication](./authentication.md#csrf) for why `SameSite` and `__Host-` do not close this.
 2. **OTel** — the traced/untraced split below.
 
-Access control is **not** a third layer. It is an extractor, `Authenticated`, and that is the design rather than an omission: a handler that names one cannot run without the check, because the argument is what runs it, and a handler that names neither is visibly public at the point anyone reads its signature. A middleware over a sub-router would have added a second positional invariant of exactly the shape this module already regrets — the traced/untraced split is invisible in the route table and reversible by moving one line — and here the failure mode is an unauthenticated route rather than a missing span. See [Authentication](./authentication.md#authorization).
+Access control is **not** a third layer. It is two extractors, `Authenticated` and `Rdu`, and that is the design rather than an omission: a handler that names one cannot run without the check, because the argument is what runs it, and a handler that names neither is visibly public at the point anyone reads its signature. A middleware over a sub-router would have added a second positional invariant of exactly the shape this module already regrets — the traced/untraced split is invisible in the route table and reversible by moving one line — and here the failure mode is an unauthenticated route rather than a missing span. See [Authentication](./authentication.md#authorization).
 
 ## Traced and untraced routes
 

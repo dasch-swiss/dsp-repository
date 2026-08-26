@@ -45,6 +45,7 @@
 mod approved_records;
 mod drafts;
 mod login_codes;
+mod mail_sends;
 mod mapping;
 mod schema;
 mod sessions;

@@ -7,7 +7,7 @@ use editor_core::repository::{Attempt, Issued, LoginCodeRepository, Result};
 use rusqlite::{params, Row};
 use uuid::Uuid;
 
-use super::mapping::{counter, row_count, uuid_column, OptionalRow};
+use super::mapping::{counter, uuid_column, OptionalRow};
 use super::Database;
 
 const ENTITY: &str = "login code";
@@ -194,8 +194,10 @@ impl LoginCodeRepository for Database {
 
     async fn delete_unconsumed_for_user(&self, user_id: Uuid) -> Result<u64> {
         // `consumed_at IS NULL` is the whole point: the spent code stays, because
-        // it is the resend cooldown's only anchor and the daily cap's only
-        // evidence that a mail went out.
+        // it is the resend cooldown's only anchor — REQ-6.5 measures from the
+        // last code issued, and that row is the only thing recording it. The
+        // send caps do not read this table at all; they count `mail_sends`,
+        // which is why deleting the mailed siblings below no longer hides them.
         let deleted = self
             .write(move |tx| {
                 tx.execute(
@@ -217,21 +219,6 @@ impl LoginCodeRepository for Database {
             })
             .await?;
         Ok(reopened > 0)
-    }
-
-    async fn count_issued_since(&self, since: DateTime<Utc>) -> Result<u64> {
-        // Across all users: the cap exists because the relay quota is shared, so
-        // a per-user count would not see the loop that exhausts it.
-        let counted: i64 = self
-            .read(move |conn| {
-                conn.query_row(
-                    "SELECT count(*) FROM login_codes WHERE created_at >= ?1",
-                    params![since],
-                    |row| row.get(0),
-                )
-            })
-            .await?;
-        Ok(row_count(counted))
     }
 
     async fn delete_expired(&self, now: DateTime<Utc>) -> Result<u64> {
@@ -642,8 +629,9 @@ mod tests {
     #[tokio::test]
     async fn test_delete_unconsumed_spares_the_spent_code_and_other_users() {
         // The spent code has to survive: it is the resend cooldown's only anchor
-        // (REQ-6.5 measures from the last code issued) and the only evidence the
-        // daily send cap counts.
+        // (REQ-6.5 measures from the last code issued). What the send caps count
+        // is `mail_sends`, which this does not touch at all — which is the point
+        // of the split, since the sibling deleted here was mailed.
         let db = test_db("codes-delete-unconsumed").await;
         let first = a_user(&db, "a@x.test").await;
         let second = a_user(&db, "b@x.test").await;
@@ -659,7 +647,6 @@ mod tests {
 
         assert_eq!(db.delete_unconsumed_for_user(first).await.unwrap(), 1);
         assert_eq!(count(&db, "login_codes").await, 2, "the spent code and the other user's remain");
-        assert_eq!(db.count_issued_since(at(9)).await.unwrap(), 2, "and the cap can still see it");
         assert!(db.find_active_for_user(second, at(10)).await.unwrap().is_some());
     }
 

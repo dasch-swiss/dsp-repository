@@ -27,9 +27,12 @@
 //!    day against one address — around a 12% chance of hitting a six-digit code inside a month.
 //! 4. **Replay.** A code authenticates once; the single-use check is the `WHERE consumed_at IS
 //!    NULL` in the update, so two simultaneous submissions cannot both win.
-//! 5. **Quota exhaustion.** A global daily cap across all users, because the relay quota is shared:
-//!    an attacker looping resend across the known addresses would otherwise lock out everyone, RDU
-//!    included.
+//! 5. **Quota exhaustion.** Two daily send caps. A global one across all users, because the relay
+//!    quota is shared: an attacker looping resend across the known addresses would otherwise lock
+//!    out everyone, RDU included. And a per-account one, because the global cap alone is
+//!    exhaustible from a single address — the cooldown is per address, so 1,440 codes a day fit
+//!    inside it against a global default of 500. Both count messages actually sent
+//!    ([`editor_core::repository::MailSendRepository`]), not live code rows.
 //! 6. **Fixation.** The session id is a fresh token, so nothing held before authentication can
 //!    become the authenticated session.
 
@@ -58,6 +61,9 @@ pub(crate) struct AuthConfig {
     pub lockout: Duration,
     /// Codes that may be sent across all users in 24 hours.
     pub daily_cap: u64,
+    /// Codes that may be sent to one account in 24 hours. Without it the global
+    /// cap is exhaustible from a single known address.
+    pub account_daily_cap: u64,
     /// Absolute session lifetime, never extended.
     pub session_absolute: Duration,
     /// Idle session timeout.
@@ -74,6 +80,7 @@ impl From<&EditorConfig> for AuthConfig {
             max_failed: config.login_max_failed,
             lockout: Duration::from_secs(config.login_lockout_secs),
             daily_cap: config.mail_daily_cap,
+            account_daily_cap: config.mail_account_daily_cap,
             session_absolute: Duration::from_secs(config.session_absolute_secs),
             session_idle: Duration::from_secs(config.session_idle_secs),
             break_glass: config.smtp_break_glass,
@@ -86,7 +93,10 @@ impl From<&EditorConfig> for AuthConfig {
 /// Saturates rather than unwrapping: every value here comes from config that
 /// validation has already bounded, and a panic in an auth path is a worse
 /// failure than an implausibly distant deadline.
-fn delta(duration: Duration) -> chrono::TimeDelta {
+///
+/// `pub(crate)` because the hourly sweep converts [`crate::config::SEND_WINDOW`]
+/// the same way, and two copies of the saturation policy is one too many.
+pub(crate) fn delta(duration: Duration) -> chrono::TimeDelta {
     chrono::TimeDelta::from_std(duration).unwrap_or(chrono::TimeDelta::MAX)
 }
 
@@ -150,6 +160,7 @@ mod tests {
         assert_eq!(auth.max_failed, config.login_max_failed);
         assert_eq!(auth.lockout, Duration::from_secs(config.login_lockout_secs));
         assert_eq!(auth.daily_cap, config.mail_daily_cap);
+        assert_eq!(auth.account_daily_cap, config.mail_account_daily_cap);
         assert_eq!(auth.session_absolute, Duration::from_secs(config.session_absolute_secs));
         assert_eq!(auth.session_idle, Duration::from_secs(config.session_idle_secs));
         assert!(!auth.break_glass, "the break-glass log fallback must be off unless asked for");

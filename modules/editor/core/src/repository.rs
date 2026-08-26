@@ -1,7 +1,7 @@
 //! The persistence ports, one trait per aggregate.
 //!
 //! Framework-free: the traits name domain records and [`RepositoryError`], never
-//! a `rusqlite` type. `editor-server` implements all six against SQLite, so the
+//! a `rusqlite` type. `editor-server` implements all seven against SQLite, so the
 //! handlers Phase 3 onwards writes depend on these and not on the driver.
 //!
 //! Every method is `async` and boxed via `async_trait` rather than left as a
@@ -229,10 +229,13 @@ pub trait LoginCodeRepository: Send + Sync {
     /// Called after a successful sign-in, to invalidate codes still live in
     /// browsers nobody is using. It deliberately does **not** take the consumed
     /// code with it, which an earlier version did: that row is the only anchor
-    /// the resend cooldown has (REQ-6.5 measures from the last code *issued*)
-    /// and the only evidence the global daily cap counts. Deleting it let a user
-    /// sign in and immediately be sent another code, and made every completed
-    /// sign-in invisible to the send cap.
+    /// the resend cooldown has (REQ-6.5 measures from the last code *issued*),
+    /// so deleting it let a user sign in and immediately be sent another code.
+    ///
+    /// The send caps no longer depend on any of this. They count
+    /// [`MailSendRepository`] rows, which is why the siblings this deletes —
+    /// codes that were mailed and then abandoned — no longer vanish from the
+    /// count along with the rows.
     async fn delete_unconsumed_for_user(&self, user_id: Uuid) -> Result<u64>;
 
     /// Undo [`Self::consume`], returning the code to a spendable state.
@@ -244,13 +247,50 @@ pub trait LoginCodeRepository: Send + Sync {
     /// nobody was authenticated.
     async fn unconsume(&self, id: Uuid) -> Result<bool>;
 
-    /// How many codes were issued across all users since `since`, for the global
-    /// daily send cap — without it, looping resend exhausts the relay quota and
-    /// locks out every user including RDU.
-    async fn count_issued_since(&self, since: DateTime<Utc>) -> Result<u64>;
-
     /// Drop expired codes. Returns how many went.
     async fn delete_expired(&self, now: DateTime<Utc>) -> Result<u64>;
+}
+
+/// An append-only record of the mail that went out, and the only thing the
+/// daily send caps count.
+///
+/// Separate from [`LoginCodeRepository`] because it records a different fact. A
+/// login code is state with a ten-minute life that is rolled back, spent and
+/// swept; a send is an event that already happened and cannot be taken back.
+/// Counting the former to bound the latter is what made the cap read low:
+/// delivery failures remove rows for sends that never happened (correct), and a
+/// successful sign-in removes the user's other unspent codes, which *were*
+/// mailed (not correct).
+///
+/// Nothing here identifies a message beyond who it went to and when. The
+/// recipient is the account id, never the address (REQ-6.10).
+#[async_trait]
+pub trait MailSendRepository: Send + Sync {
+    /// Record one message as sent. Append-only: there is no update and no
+    /// delete-by-id, only [`Self::delete_before`].
+    async fn record(&self, user_id: Uuid, sent_at: DateTime<Utc>) -> Result<()>;
+
+    /// Sends across all users since `since`, for the global daily cap — without
+    /// it, looping resend exhausts the shared relay quota and locks out every
+    /// user including RDU.
+    async fn count_since(&self, since: DateTime<Utc>) -> Result<u64>;
+
+    /// Sends to one account since `since`, for the per-account daily cap.
+    ///
+    /// The global cap alone does not bound this: the resend cooldown is per
+    /// address, so at its sixty-second default one address can be sent 1,440
+    /// codes a day against a global default of 500. One attacker with one known
+    /// address could therefore spend the whole shared budget and stop everyone
+    /// signing in, which is the outage the global cap exists to prevent,
+    /// reached about twenty times more cheaply than exhausting the relay.
+    async fn count_for_user_since(&self, user_id: Uuid, since: DateTime<Utc>) -> Result<u64>;
+
+    /// Drop sends older than `cutoff`. Returns how many went.
+    ///
+    /// The caller passes the caps' own window, so retention and the count are
+    /// the same span by construction: pruning anything the count still reads
+    /// would silently free budget.
+    async fn delete_before(&self, cutoff: DateTime<Utc>) -> Result<u64>;
 }
 
 /// Drafts (REQ-1.10, REQ-1.11).

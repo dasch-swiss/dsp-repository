@@ -361,7 +361,8 @@ async fn serve() -> ExitCode {
     // Expired rows are deleted wherever the flow trips over them, but a code
     // nobody ever entered is tripped over by nothing: without a sweep, every
     // six-digit code ever issued stays in the table, in plaintext, for the life
-    // of the database. Sessions accumulate the same way.
+    // of the database. Sessions accumulate the same way, and the send log is
+    // append-only, so this is the only thing that bounds it at all.
     //
     // Detached rather than awaited on shutdown: it holds no state worth
     // draining, and the next start sweeps whatever a stopped process left.
@@ -369,7 +370,7 @@ async fn serve() -> ExitCode {
         const CLEANUP_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60 * 60);
         let db = db.clone();
         tokio::spawn(async move {
-            use editor_core::repository::{LoginCodeRepository, SessionRepository};
+            use editor_core::repository::{LoginCodeRepository, MailSendRepository, SessionRepository};
 
             let mut ticker = tokio::time::interval(CLEANUP_INTERVAL);
             // The first tick completes immediately; the sweep is for what has
@@ -378,15 +379,21 @@ async fn serve() -> ExitCode {
             loop {
                 ticker.tick().await;
                 let now = chrono::Utc::now();
+                // The send log is pruned at the caps' own window, from the same
+                // constant the caps measure with. A shorter retention would
+                // silently hand back budget that was spent; a longer one would
+                // keep rows nothing reads.
+                let window_start = now - auth::delta(config::SEND_WINDOW);
                 match (
                     LoginCodeRepository::delete_expired(&db, now).await,
                     SessionRepository::delete_expired(&db, now).await,
+                    MailSendRepository::delete_before(&db, window_start).await,
                 ) {
-                    (Ok(codes), Ok(sessions)) if codes > 0 || sessions > 0 => {
-                        tracing::info!(codes, sessions, "swept expired login codes and sessions");
+                    (Ok(codes), Ok(sessions), Ok(sends)) if codes > 0 || sessions > 0 || sends > 0 => {
+                        tracing::info!(codes, sessions, sends, "swept expired login codes, sessions and send records");
                     }
-                    (Ok(_), Ok(_)) => {}
-                    (codes, sessions) => {
+                    (Ok(_), Ok(_), Ok(_)) => {}
+                    (codes, sessions, sends) => {
                         // Not fatal — nothing depends on the sweep succeeding,
                         // and it runs again in an hour.
                         if let Err(error) = codes {
@@ -394,6 +401,9 @@ async fn serve() -> ExitCode {
                         }
                         if let Err(error) = sessions {
                             tracing::warn!(error = %error, "could not sweep expired sessions");
+                        }
+                        if let Err(error) = sends {
+                            tracing::warn!(error = %error, "could not prune the mail send log");
                         }
                     }
                 }

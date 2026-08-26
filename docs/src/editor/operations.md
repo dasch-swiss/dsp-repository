@@ -66,6 +66,7 @@ Locally the default is `127.0.0.1:4100`, deliberately not DPE's 4000, so `just d
 | `EDITOR_LOGIN_MAX_FAILED` | No | `10` | Consecutive account-level failures before throttling. NIST SP 800-63B-4's ceiling is 100, which startup also validates. |
 | `EDITOR_LOGIN_LOCKOUT_SECS` | No | `900` | How long throttling lasts after the cap is reached. |
 | `EDITOR_MAIL_DAILY_CAP` | No | `500` | Codes that may be sent across **all** users in 24 hours. Sits below the relay's 10,000/day so a resend loop cannot exhaust a quota shared with other senders. |
+| `EDITOR_MAIL_ACCOUNT_DAILY_CAP` | No | `20` | Codes that may be sent to a **single account** in 24 hours. The global cap alone does not bound one address: at a 60-second cooldown one address fits 1,440 codes a day. Must not exceed `EDITOR_MAIL_DAILY_CAP`, which startup validates. |
 | `EDITOR_SESSION_ABSOLUTE_SECS` | No | `43200` (12 h) | Absolute session lifetime, set at creation and never extended. |
 | `EDITOR_SESSION_IDLE_SECS` | No | `7200` (2 h) | Idle session timeout. Must not exceed the absolute lifetime, which startup validates. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | *(none)* | OTLP gRPC endpoint (e.g. `http://alloy:4317`). When unset, OTel falls back to no-op export. |
@@ -120,7 +121,11 @@ No address appears in any log, so the trail is the account list's **last code se
 - **"never"** — no code was ever handed to the relay for that account. Either they have not tried, or they typed a different address, or the send failed and was rolled back (which the log will say, with a status code).
 - **a timestamp** — a code went out. The problem is downstream: spam filtering, greylisting, or a mailbox they do not read.
 
-Before assuming a delivery problem, check the auth log for `auth.outcome = "locked_out"`. A user throttled after repeated wrong entries is told only "that code is not valid" — deliberately, because a distinct message would confirm to anyone that the address has an account.
+Before assuming a delivery problem, check the auth log for the outcome recorded against that `auth.subject`. Three refuse silently, because REQ-6.2 requires the response not to vary:
+
+- `auth.outcome = "locked_out"` — throttled after repeated wrong entries, and told only "that code is not valid".
+- `auth.outcome = "account_daily_cap"` — this account has had `EDITOR_MAIL_ACCOUNT_DAILY_CAP` codes in the last 24 hours. Logged at `WARN`: one account being driven that hard is the early warning for the global cap.
+- `auth.outcome = "daily_cap"` — the whole service is at `EDITOR_MAIL_DAILY_CAP` and **nobody** can be sent a code. Logged at `ERROR`, and it means an outage is in progress rather than one user having a bad day.
 
 ### No relay configured
 
@@ -199,7 +204,7 @@ The Docker image deliberately does **not** set `EDITOR_DB_DIR`, for the same rea
 
 ### Expired rows
 
-An hourly background sweep deletes expired login codes and sessions. Nothing depends on it succeeding — a failure is logged and the next hour tries again — and the first sweep runs one interval after start, so a restart loop never spends its time sweeping.
+An hourly background sweep deletes expired login codes and sessions, and prunes `mail_sends` — the append-only send log the daily caps count — at the caps' own 24-hour window, which is the only thing bounding that table. Nothing depends on the sweep succeeding — a failure is logged and the next hour tries again — and the first sweep runs one interval after start, so a restart loop never spends its time sweeping.
 
 ### Startup pre-flight
 

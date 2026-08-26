@@ -26,6 +26,7 @@ use super::{Database, DbError};
 const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0001_initial.sql"),
     include_str!("migrations/0002_auth.sql"),
+    include_str!("migrations/0003_mail_sends.sql"),
 ];
 
 /// The version a fully migrated database reports.
@@ -91,6 +92,7 @@ mod tests {
         "approved_records",
         "drafts",
         "login_codes",
+        "mail_sends",
         "sessions",
         "submissions",
         "user_shortcodes",

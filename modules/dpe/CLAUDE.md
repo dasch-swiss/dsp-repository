@@ -1,6 +1,6 @@
 # AI Agent Guide for DPE
 
-This document provides DPE-specific guidance for AI coding assistants. For project-wide guidance, see the top-level `CLAUDE.md`.
+DPE-specific guidance; project-wide guidance is in the top-level `CLAUDE.md`.
 
 ## Project Overview
 
@@ -12,15 +12,6 @@ DPE is a server-side rendered web application. Pages are rendered on the server 
 - **Architecture, rendering model, and Datastar conventions**: See `docs/src/dpe/architecture.md`
 - **Testing strategy and conventions**: See `docs/src/dpe/testing-strategy.md`
 - **Operations (Docker, env vars, CLI)**: See `docs/src/dpe/operations.md`
-
-## Key Technologies and Versions
-
-- **Maud**: compile-time HTML templates (`html!` → `Markup`)
-- **Axum**: native routing, `ServeDir` static serving, SSE
-- **Datastar**: SSE-based interactivity via the `datastar` crate (0.3)
-- **Tailwind CSS**: 4.x (single invocation, no DaisyUI)
-- **Rust Edition**: 2021
-- **Runtime**: Tokio
 
 ## Code Organization Patterns
 
@@ -46,25 +37,7 @@ Fragment handlers live in `server/src/fragments.rs`. Each renders a Maud view to
 
 ## Running Tests
 
-```bash
-just test                              # All workspace tests
-cargo test -p dpe-server               # Single crate
-cargo test -p dpe-server test_name     # Specific test
-```
-
-### Snapshot tests (insta)
-
-```bash
-cargo test -p dpe-server               # Run tests — failing snapshots produce .snap.new files
-cargo insta review                     # Interactive review of new/changed snapshots
-cargo insta accept                     # Accept all pending snapshots
-```
-
-### E2E tests (Playwright)
-
-```bash
-cd modules/dpe/web-e2e-tests && npx playwright test
-```
+Snapshot tests use **insta**: a failing snapshot writes a `.snap.new` file — review with `cargo insta review`, accept with `cargo insta accept`. Playwright E2E: `cd modules/dpe/web-e2e-tests && npx playwright test`.
 
 ## When Making Changes
 
@@ -142,12 +115,9 @@ DPE uses OpenTelemetry for distributed tracing, metrics, and structured logging.
 
 ## Best Practices for AI Agents
 
-1. **Read existing code first** before making changes to understand patterns
-2. **Maintain consistency** with the existing partial/file structure
-3. **Follow Rust conventions**: snake_case for functions/variables, PascalCase for types
-4. **Use `just check`** (fmt + clippy) and `just test` to verify before considering work done
-5. **Use `mosaic-tiles` components** where appropriate for consistent UI
-6. **Format with `just fmt`** — runs `maudfmt` (formats `maud::html!` macro contents; stock rustfmt does not) then `cargo +nightly fmt`. Run at the end of your work
+1. **Use `just check`** (fmt + clippy) and `just test` to verify before considering work done
+2. **Use `mosaic-tiles` components** where appropriate for consistent UI
+3. **Format with `just fmt`** — runs `maudfmt` (formats `maud::html!` macro contents; stock rustfmt does not) then `cargo +nightly fmt`. Run at the end of your work
 
 ## Note on the Mosaic Playground
 

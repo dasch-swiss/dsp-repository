@@ -21,7 +21,13 @@ default:
 install-requirements: install-e2e-requirements
     #!/usr/bin/env sh
     rustup show
+    # Nightly rustfmt: .rustfmt.toml sets nightly-only options and `just fmt` runs `cargo +nightly fmt`.
+    # rust-toolchain.toml pins stable, so `rustup show` alone never provisions it.
+    rustup toolchain install nightly --component rustfmt
     brew install cargo-binstall
+    # Native build deps the Nix devShell provides via flake.nix buildInputs; without them this path
+    # has no cmake for aws-lc-sys.
+    brew install cmake pkg-config
     # commitlint-rs powers the commit-message gate in `just commit-lint`
     cargo binstall -y commitlint-rs@0.2.4
     cargo binstall -y cargo-watch@8.5.3
@@ -34,8 +40,12 @@ install-requirements: install-e2e-requirements
 
 # Install Playwright browsers for E2E tests
 install-e2e-requirements: _check-node
-    cd modules/mosaic/playground-e2e-tests && npx playwright install
-    cd modules/dpe/web-e2e-tests && npx playwright install
+    # `npm ci` first: the suites run via `npx playwright test`, which resolves the runner from
+    # node_modules. With none, npx re-resolves the `^1.44.1` range on every run and can land on a
+    # version that mismatches the installed browsers ("Executable doesn't exist"). Both packages
+    # track a package-lock.json, so `ci` pins the runner to the same version the browsers match.
+    cd modules/mosaic/playground-e2e-tests && npm ci && npx playwright install
+    cd modules/dpe/web-e2e-tests && npm ci && npx playwright install
 
 # Verify Node is on PATH. just runs recipes in sh, which does NOT see shell-function version managers (e.g. lazy nvm) — only real binaries on PATH. (DEV-6642)
 [private]

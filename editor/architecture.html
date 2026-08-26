@@ -284,21 +284,27 @@
 <h2 id="url-scheme"><a class="header" href="#url-scheme">URL scheme</a></h2>
 <p>Paths are <strong>root-mounted</strong>. There is no <code>/editor</code> prefix.</p>
 <p>DPE carries <code>/dpe/…</code> because it shares <code>repository.dasch.swiss</code> with other services. The editor gets its own hostname, so a prefix buys nothing — and adopting one would keep alive the path-routing option this design rejects, for the CSRF reason above.</p>
-<div class="table-wrapper"><table><thead><tr><th>Path</th><th>Method</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><code>/</code></td><td>GET</td><td>Service root. Offers the way in when signed out.</td></tr>
-<tr><td><code>/login</code></td><td>GET, POST</td><td>The address form, and issuing a one-time code. POST rate-limited per IP.</td></tr>
-<tr><td><code>/login/code</code></td><td>GET, POST</td><td>The code form, and spending the code. POST rate-limited per IP.</td></tr>
-<tr><td><code>/logout</code></td><td>POST</td><td>Delete the session and clear the cookie.</td></tr>
-<tr><td><code>/healthz</code></td><td>GET</td><td>Liveness probe. Untraced.</td></tr>
-<tr><td><code>/telemetry/collect</code></td><td>POST</td><td>Browser telemetry beacon. Untraced, rate-limited per IP.</td></tr>
+<div class="table-wrapper"><table><thead><tr><th>Path</th><th>Method</th><th>Access</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>/</code></td><td>GET</td><td>public</td><td>303 to <code>/projects</code>.</td></tr>
+<tr><td><code>/login</code></td><td>GET, POST</td><td>public</td><td>The address form, and issuing a one-time code. POST rate-limited per IP.</td></tr>
+<tr><td><code>/login/code</code></td><td>GET, POST</td><td>public</td><td>The code form, and spending the code. POST rate-limited per IP.</td></tr>
+<tr><td><code>/logout</code></td><td>POST</td><td>public</td><td>Delete the session and clear the cookie.</td></tr>
+<tr><td><code>/projects</code></td><td>GET</td><td>signed in</td><td>The shortcodes this account may edit.</td></tr>
+<tr><td><code>/projects/{shortcode}</code></td><td>GET</td><td>signed in + assigned</td><td>One project. 403 otherwise (REQ-1.3).</td></tr>
+<tr><td><code>/depositors</code></td><td>GET, POST</td><td>RDU</td><td>The account list, and creating a depositor.</td></tr>
+<tr><td><code>/depositors/new</code></td><td>GET</td><td>RDU</td><td>The create form.</td></tr>
+<tr><td><code>/depositors/{id}/edit</code></td><td>GET, POST</td><td>RDU</td><td>The edit form, and the change it makes.</td></tr>
+<tr><td><code>/depositors/{id}/remove</code></td><td>GET, POST</td><td>RDU</td><td>The removal confirmation, and the removal.</td></tr>
+<tr><td><code>/healthz</code></td><td>GET</td><td>public</td><td>Liveness probe. Untraced.</td></tr>
+<tr><td><code>/telemetry/collect</code></td><td>POST</td><td>public</td><td>Browser telemetry beacon. Untraced, rate-limited per IP.</td></tr>
 </tbody></table>
 </div>
 <p>Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.</p>
+<p>Every write shares a URL with the <code>GET</code> that renders its form, so a rejected submission re-renders somewhere that still answers <code>GET</code>. <code>POST /depositors/{id}</code> briefly did not, and reloading a rejected edit produced a bare 405 — the same dead end REQ-1.3's 403 is rendered as a page to avoid.</p>
+<p><code>/</code> is a redirect rather than a page so that exactly one place decides what a signed-out visitor gets. It is therefore absent from <code>page_url.rs</code>'s <code>KNOWN_ROUTES</code>: a redirect renders no beacon script, so no beacon can report it.</p>
 <p>There is deliberately no resend endpoint: asking again is another <code>POST /login</code>, under the same cooldown, which keeps the number of endpoints that can send mail at one. See <a href="./authentication.html">Authentication</a>.</p>
-<p>The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:</p>
-<pre><code class="language-text">GET  /                                        → redirect to /projects
-GET  /projects                                the depositor's assigned projects
-GET  /projects/{shortcode}                    → redirect to the first section
+<p><code>/projects</code> and <code>/projects/{shortcode}</code> exist but render placeholders: what they carry today is the <strong>scope</strong> (REQ-1.2, REQ-1.3), not the editing surface. The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:</p>
+<pre><code class="language-text">GET  /projects/{shortcode}                    → redirect to the first section
 GET  /projects/{shortcode}/sections/{section}  one form section
 POST /projects/{shortcode}/sections/{section}
 GET  /review                                  the review queue, oldest first
@@ -315,7 +321,7 @@ GET  /review/{shortcode}                      the field-by-field diff surface
 <li><strong>CSRF</strong> — <code>Sec-Fetch-Site: same-origin</code> is required on every non-<code>GET</code>/<code>HEAD</code> request, failing closed on everything else including an absent header. It is applied <strong>last</strong> in <code>build_app</code>, which makes it outermost and therefore the one layer the positional traced/untraced split cannot route around: inside <code>build_router</code> it would have missed <code>/telemetry/collect</code>, the only pre-auth POST in the app, with no test failing. See <a href="./authentication.html#csrf">Authentication</a> for why <code>SameSite</code> and <code>__Host-</code> do not close this.</li>
 <li><strong>OTel</strong> — the traced/untraced split below.</li>
 </ol>
-<p>Sessions are read per handler rather than by a middleware, because the policy for an unauthenticated request — redirect preserving the requested URL — belongs with the route table that has routes to protect, and there is not yet a route to protect. Today <code>/</code> reads a session to name the viewer in the header, both login screens read one to send an already-signed-in visitor home, and <code>/logout</code> deletes one.</p>
+<p>Access control is <strong>not</strong> a third layer. It is two extractors, <code>Authenticated</code> and <code>Rdu</code>, and that is the design rather than an omission: a handler that names one cannot run without the check, because the argument is what runs it, and a handler that names neither is visibly public at the point anyone reads its signature. A middleware over a sub-router would have added a second positional invariant of exactly the shape this module already regrets — the traced/untraced split is invisible in the route table and reversible by moving one line — and here the failure mode is an unauthenticated route rather than a missing span. See <a href="./authentication.html#authorization">Authentication</a>.</p>
 <h2 id="traced-and-untraced-routes"><a class="header" href="#traced-and-untraced-routes">Traced and untraced routes</a></h2>
 <p>An Axum layer wraps only routes declared <strong>before</strong> it. The router therefore has two halves:</p>
 <ul>

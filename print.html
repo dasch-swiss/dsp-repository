@@ -3157,21 +3157,27 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 <h2 id="url-scheme"><a class="header" href="#url-scheme">URL scheme</a></h2>
 <p>Paths are <strong>root-mounted</strong>. There is no <code>/editor</code> prefix.</p>
 <p>DPE carries <code>/dpe/…</code> because it shares <code>repository.dasch.swiss</code> with other services. The editor gets its own hostname, so a prefix buys nothing — and adopting one would keep alive the path-routing option this design rejects, for the CSRF reason above.</p>
-<div class="table-wrapper"><table><thead><tr><th>Path</th><th>Method</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><code>/</code></td><td>GET</td><td>Service root. Offers the way in when signed out.</td></tr>
-<tr><td><code>/login</code></td><td>GET, POST</td><td>The address form, and issuing a one-time code. POST rate-limited per IP.</td></tr>
-<tr><td><code>/login/code</code></td><td>GET, POST</td><td>The code form, and spending the code. POST rate-limited per IP.</td></tr>
-<tr><td><code>/logout</code></td><td>POST</td><td>Delete the session and clear the cookie.</td></tr>
-<tr><td><code>/healthz</code></td><td>GET</td><td>Liveness probe. Untraced.</td></tr>
-<tr><td><code>/telemetry/collect</code></td><td>POST</td><td>Browser telemetry beacon. Untraced, rate-limited per IP.</td></tr>
+<div class="table-wrapper"><table><thead><tr><th>Path</th><th>Method</th><th>Access</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>/</code></td><td>GET</td><td>public</td><td>303 to <code>/projects</code>.</td></tr>
+<tr><td><code>/login</code></td><td>GET, POST</td><td>public</td><td>The address form, and issuing a one-time code. POST rate-limited per IP.</td></tr>
+<tr><td><code>/login/code</code></td><td>GET, POST</td><td>public</td><td>The code form, and spending the code. POST rate-limited per IP.</td></tr>
+<tr><td><code>/logout</code></td><td>POST</td><td>public</td><td>Delete the session and clear the cookie.</td></tr>
+<tr><td><code>/projects</code></td><td>GET</td><td>signed in</td><td>The shortcodes this account may edit.</td></tr>
+<tr><td><code>/projects/{shortcode}</code></td><td>GET</td><td>signed in + assigned</td><td>One project. 403 otherwise (REQ-1.3).</td></tr>
+<tr><td><code>/depositors</code></td><td>GET, POST</td><td>RDU</td><td>The account list, and creating a depositor.</td></tr>
+<tr><td><code>/depositors/new</code></td><td>GET</td><td>RDU</td><td>The create form.</td></tr>
+<tr><td><code>/depositors/{id}/edit</code></td><td>GET, POST</td><td>RDU</td><td>The edit form, and the change it makes.</td></tr>
+<tr><td><code>/depositors/{id}/remove</code></td><td>GET, POST</td><td>RDU</td><td>The removal confirmation, and the removal.</td></tr>
+<tr><td><code>/healthz</code></td><td>GET</td><td>public</td><td>Liveness probe. Untraced.</td></tr>
+<tr><td><code>/telemetry/collect</code></td><td>POST</td><td>public</td><td>Browser telemetry beacon. Untraced, rate-limited per IP.</td></tr>
 </tbody></table>
 </div>
 <p>Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.</p>
+<p>Every write shares a URL with the <code>GET</code> that renders its form, so a rejected submission re-renders somewhere that still answers <code>GET</code>. <code>POST /depositors/{id}</code> briefly did not, and reloading a rejected edit produced a bare 405 — the same dead end REQ-1.3's 403 is rendered as a page to avoid.</p>
+<p><code>/</code> is a redirect rather than a page so that exactly one place decides what a signed-out visitor gets. It is therefore absent from <code>page_url.rs</code>'s <code>KNOWN_ROUTES</code>: a redirect renders no beacon script, so no beacon can report it.</p>
 <p>There is deliberately no resend endpoint: asking again is another <code>POST /login</code>, under the same cooldown, which keeps the number of endpoints that can send mail at one. See <a href="editor/./authentication.html">Authentication</a>.</p>
-<p>The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:</p>
-<pre><code class="language-text">GET  /                                        → redirect to /projects
-GET  /projects                                the depositor's assigned projects
-GET  /projects/{shortcode}                    → redirect to the first section
+<p><code>/projects</code> and <code>/projects/{shortcode}</code> exist but render placeholders: what they carry today is the <strong>scope</strong> (REQ-1.2, REQ-1.3), not the editing surface. The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:</p>
+<pre><code class="language-text">GET  /projects/{shortcode}                    → redirect to the first section
 GET  /projects/{shortcode}/sections/{section}  one form section
 POST /projects/{shortcode}/sections/{section}
 GET  /review                                  the review queue, oldest first
@@ -3188,7 +3194,7 @@ GET  /review/{shortcode}                      the field-by-field diff surface
 <li><strong>CSRF</strong> — <code>Sec-Fetch-Site: same-origin</code> is required on every non-<code>GET</code>/<code>HEAD</code> request, failing closed on everything else including an absent header. It is applied <strong>last</strong> in <code>build_app</code>, which makes it outermost and therefore the one layer the positional traced/untraced split cannot route around: inside <code>build_router</code> it would have missed <code>/telemetry/collect</code>, the only pre-auth POST in the app, with no test failing. See <a href="editor/./authentication.html#csrf">Authentication</a> for why <code>SameSite</code> and <code>__Host-</code> do not close this.</li>
 <li><strong>OTel</strong> — the traced/untraced split below.</li>
 </ol>
-<p>Sessions are read per handler rather than by a middleware, because the policy for an unauthenticated request — redirect preserving the requested URL — belongs with the route table that has routes to protect, and there is not yet a route to protect. Today <code>/</code> reads a session to name the viewer in the header, both login screens read one to send an already-signed-in visitor home, and <code>/logout</code> deletes one.</p>
+<p>Access control is <strong>not</strong> a third layer. It is two extractors, <code>Authenticated</code> and <code>Rdu</code>, and that is the design rather than an omission: a handler that names one cannot run without the check, because the argument is what runs it, and a handler that names neither is visibly public at the point anyone reads its signature. A middleware over a sub-router would have added a second positional invariant of exactly the shape this module already regrets — the traced/untraced split is invisible in the route table and reversible by moving one line — and here the failure mode is an unauthenticated route rather than a missing span. See <a href="editor/./authentication.html#authorization">Authentication</a>.</p>
 <h2 id="traced-and-untraced-routes"><a class="header" href="#traced-and-untraced-routes">Traced and untraced routes</a></h2>
 <p>An Axum layer wraps only routes declared <strong>before</strong> it. The router therefore has two halves:</p>
 <ul>
@@ -3343,12 +3349,52 @@ POST /logout       session deleted, cookie cleared
 <p>Every non-<code>GET</code>/<code>HEAD</code> request must carry <code>Sec-Fetch-Site: same-origin</code>, and fails closed on <code>same-site</code>, <code>cross-site</code>, <code>none</code> and an absent header.</p>
 <p><code>SameSite</code> cannot do this job: it is scoped to the registrable domain, so a request from any other <code>*.dasch.swiss</code> host counts as same-site and carries the cookie. <code>Sec-Fetch-Site</code> distinguishes same-origin from same-site, is a forbidden request header so page script cannot spoof it, and is named by ASVS 3.5.3. <code>Datastar-Request</code> is not a substitute: the no-JavaScript path is a plain form post, which does not send it.</p>
 <p>The consequence of failing closed on absent is that a browser too old to send <code>Sec-Fetch-*</code> cannot use the editor. That is accepted: treating absent as permissive would hand over the bypass, because a cross-site post from such a browser is indistinguishable from a legitimate one.</p>
-<p><code>GET</code> and <code>HEAD</code> are exempt, because a navigation from anywhere is a <code>GET</code>. That is only sound while no <code>GET</code> handler changes state, which is why every state-changing route is a <code>POST</code> and the router tests assert each refuses <code>GET</code>. The one deliberate exception is the session's idle-timeout touch, which advances <code>last_seen_at</code> at most once a minute: it carries nothing the requester supplied, is idempotent, and writes only the requester's own row, so there is nothing for a cross-site request to achieve by triggering it.</p>
+<p><code>GET</code> and <code>HEAD</code> are exempt, because a navigation from anywhere is a <code>GET</code>. That is only sound while no <code>GET</code> handler changes state, which is why every state-changing route is a <code>POST</code>, with a test beside each handler asserting it refuses <code>GET</code>. The one deliberate exception is the session's idle-timeout touch, which advances <code>last_seen_at</code> at most once a minute: it carries nothing the requester supplied, is idempotent, and writes only the requester's own row, so there is nothing for a cross-site request to achieve by triggering it.</p>
 <h3 id="code-generation"><a class="header" href="#code-generation">Code generation</a></h3>
 <p>Six digits from a CSPRNG over the full <code>000000..=999999</code> range, sampled by rejection rather than by a modulus — <code>rng % 1_000_000</code> biases toward low values unless the generator's range is an exact multiple, which is the classic modulo bug and hands an attacker a better-than-uniform guessing order. Compared in constant time, so the time a comparison takes cannot reveal how long a shared prefix is.</p>
 <p>Six digits is ≈19.93 bits, marginally under ASVS 6.5.4's 20-bit floor. Accepted rather than overlooked: the code lives ten minutes, tolerates three wrong entries, and sits behind the account counter and the per-IP limit. Seven digits would clear the floor and cost every user a keystroke on a control they use often.</p>
 <p>The lifetime is ten minutes and is <strong>not configurable</strong>. NIST §3.1.3.2 (<em>"the authentication SHALL be considered invalid unless completed within 10 minutes"</em>) and ASVS 6.5.5 both cap it there, so the only thing a setting could express is a violation of both.</p>
 <p>Codes are stored unhashed, deliberately: a code lives ten minutes, and anyone able to read the <code>login_codes</code> table already holds <code>sessions</code>.</p>
+<h2 id="authorization"><a class="header" href="#authorization">Authorization</a></h2>
+<p>Authentication says who is asking. Authorization says what they may reach, and it is two roles (REQ-7.1) and one predicate.</p>
+<h3 id="two-extractors-and-why-not-a-middleware"><a class="header" href="#two-extractors-and-why-not-a-middleware">Two extractors, and why not a middleware</a></h3>
+<p><code>Authenticated</code> yields the signed-in account or refuses; <code>Rdu</code> composes it and additionally requires the <code>rdu</code> role. Both are Axum extractors, so a handler that names one <strong>cannot</strong> run without the check — the argument is what performs it — and a handler that names neither is public, visibly, in its signature.</p>
+<p>A middleware layered over a group of routes was the alternative and was rejected. The router already carries one positional invariant of that shape: the traced/untraced split wraps only routes declared before the <code>.layer()</code> calls, which is invisible in the route table and reversible by moving one line. That one costs a missing span when it goes wrong. A second one would cost an unauthenticated route.</p>
+<h3 id="what-each-refusal-is"><a class="header" href="#what-each-refusal-is">What each refusal is</a></h3>
+<div class="table-wrapper"><table><thead><tr><th>Situation</th><th>Answer</th><th>Why not the other one</th></tr></thead><tbody>
+<tr><td>No session, <code>GET</code></td><td>303 to <code>/login?next=&lt;path&gt;</code></td><td>A 401 without <code>WWW-Authenticate</code> is not conformant, and a browser shows nothing useful for one.</td></tr>
+<tr><td>No session, <code>POST</code></td><td>303 to <code>/login</code>, no destination</td><td>A write's destination is a side effect, not a page.</td></tr>
+<tr><td>Session, wrong role or wrong project</td><td>403 rendered as a page</td><td>Signing in again will not help — it is the same account — so a login screen would read as a bug.</td></tr>
+<tr><td>A path that could never name a project</td><td>404</td><td>A 403 would assert the project exists and is merely closed to this account.</td></tr>
+</tbody></table>
+</div>
+<p>REQ-1.3 asks for a status and nothing else. It is rendered inside the page shell because a bare 403 is a dead end in a browser: the reader is signed in, has done nothing wrong, and has no control to press. The page links back to <code>/projects</code>, which every signed-in account can reach.</p>
+<h3 id="per-project-scope"><a class="header" href="#per-project-scope">Per-project scope</a></h3>
+<p><code>User::may_reach</code> is the whole rule. RDU is unconditional, because REQ-4.2 makes RDU access role-based rather than per-project — which is also why an RDU account's assignment set is empty. A depositor is confined to their assignments (REQ-1.2).</p>
+<p>The comparison <strong>ignores ASCII case</strong>. The published set mixes <code>080C</code> with <code>0801a</code>, so which half of a shortcode is capitalised is not something an RDU member typing an assignment can be expected to get right, and getting it wrong would deny a depositor their own project with no visible cause. It would be too generous if two projects differed only in case; none do.</p>
+<p>A shortcode is validated for shape before the assignment is consulted, and the rule is <strong>ASCII alphanumeric</strong>, not four hex digits: <code>0801a</code> through <code>0801e</code> are real projects, so a hex-only rule would answer 404 for five of them. <code>editor-core</code> carries its own copy of <code>dpe_core::project::is_valid_shortcode</code> rather than depending on <code>dpe-core</code> for one predicate; they converge when the draft model brings <code>dpe-core</code> in for real, and both carry tests.</p>
+<h3 id="landing-where-you-were-going"><a class="header" href="#landing-where-you-were-going">Landing where you were going</a></h3>
+<p>An unauthenticated <code>GET</code> is redirected to <code>/login?next=&lt;path&gt;</code>, and the destination is carried on the form actions of both login screens through to the redirect that follows a successful sign-in. Without it, following a link into a project means signing in and arriving at the root.</p>
+<p><strong>The destination is an open-redirect surface</strong>, because it arrives from a query string and is therefore attacker-chosen: a link carrying <code>next=https://evil.example</code> would turn the editor's own sign-in page into a redirector, reachable from the real origin with a real certificate and following a real authentication. <code>safe_next</code> is an allowlist rather than a list of things to reject, because the reject list is not knowable — <code>//evil.example</code> is protocol-relative, <code>/\evil.example</code> is normalised to it by browsers that treat a backslash as a separator, and <code>%2f%2fevil.example</code> becomes it after one decode. What is admitted is a leading <code>/</code> followed by ASCII alphanumerics and <code>/</code>, <code>-</code>, <code>_</code>, <code>.</code>, with no <code>..</code> segment and not the login screens themselves.</p>
+<p>Two consequences of that character set, both deliberate:</p>
+<ul>
+<li>Nothing is percent-<strong>encoded</strong> when the value is put back into a URL, because nothing it admits needs escaping. A test pins the two together, since widening one without the other would be header injection in a <code>Location</code>.</li>
+<li>Nothing is percent-<strong>decoded</strong> when it is read back out. An encoded value is dropped and the reader lands on the root, which is fail-closed; decoding first would hand the check a value that already looks like a path.</li>
+</ul>
+<p>The value is re-validated at each step it crosses rather than trusted from the last one.</p>
+<h3 id="accounts"><a class="header" href="#accounts">Accounts</a></h3>
+<p>RDU membership comes from <code>EDITOR_RDU_EMAILS</code> and is reconciled at every start (REQ-7.2). Depositors are rows RDU creates, edits and removes at <code>/depositors</code> (US-7).</p>
+<p>RDU accounts appear in that list but carry no controls. Configuration is the source of truth for them, so an edit made in the product would be undone by the next restart, and a removal would either be undone the same way or leave the product and the configuration disagreeing with nothing to say so. Startup's warning about an <code>rdu</code> account the configuration no longer lists stays the channel for that case.</p>
+<p>Removal is REQ-7.5 exactly — the row and every session belonging to it, through <code>ON DELETE CASCADE</code> — but it goes through a confirmation, because two of its consequences are irreversible and neither is visible from the list:</p>
+<ul>
+<li>The <strong>address</strong> is deleted with the row, and it is RDU's only channel to its owner. The confirmation shows it to be copied first.</li>
+<li>A <strong>submission</strong> the account made stays pending with no author. The schema nulls the author rather than cascading, so the work survives and the review queue's "last editor" reads as unknown rather than dangling — but REQ-4.5's "return to the depositor" then has no recipient, so it can be approved or rejected and nothing else.</li>
+</ul>
+<p>Removing a <strong>shortcode</strong> from an account is not in that category. A draft is keyed by shortcode, not by user, so it belongs to the project: the assignment change takes away access and nothing else, RDU still sees the draft (REQ-1.11), and another assigned depositor can continue it.</p>
+<p><strong>Update is not a requirement.</strong> US-7 has create and remove only. It exists because without it, correcting a misspelled name means deleting the account — destroying its sessions, its assignments and the authorship of everything it touched — to fix a typo. The updated record is rebuilt from the stored one, so the role, the failure counter and its instant, the last-code stamp and the creation time survive an edit by construction.</p>
+<h3 id="addresses-on-screen-and-req-610"><a class="header" href="#addresses-on-screen-and-req-610">Addresses on screen, and REQ-6.10</a></h3>
+<p>The account screens are the only pages in the editor that render an email address, and they are RDU-only. That is not in tension with REQ-6.10, which is about logs and traces: RDU has to know which address an account signs in with, because it is the only channel to its owner. The page shell's header shows a <strong>name</strong> and never an address, everywhere including these screens.</p>
+<p>The list also carries <strong>last code sent</strong> per account. REQ-6.8 covers an unconfigured relay and REQ-6.9 a failed send, but neither covers accepted-then-undelivered — spam filtering, greylisting — where the user sees success and no code. With REQ-6.10 forbidding the address in a log, this column is the only answer to "I never got a code". It is stamped when a code is handed to the relay successfully, so "never" and a timestamp are genuinely different diagnoses.</p>
 <h2 id="mail"><a class="header" href="#mail">Mail</a></h2>
 <p><code>lettre</code> over STARTTLS to the Google Workspace relay, sending as <code>noreply@dasch.swiss</code>. A university relay cannot send as <code>dasch.swiss</code>, and a login code arriving from <code>dasch.unibas.ch</code> reads as a phishing attempt.</p>
 <h3 id="relay-prerequisites-not-the-applications-job-but-they-block-delivery"><a class="header" href="#relay-prerequisites-not-the-applications-job-but-they-block-delivery">Relay prerequisites (not the application's job, but they block delivery)</a></h3>
@@ -3371,9 +3417,31 @@ POST /logout       session deleted, cookie cleared
 <p><strong><code>EDITOR_ENV=PROD</code> with no relay is refused at startup.</strong> That combination is the dangerous one precisely because nothing goes wrong: the service behaves normally and every login code for the life of the deployment sits in the log pipeline. Development, <code>just dev-editor</code>, <code>just run-docker-editor</code> and the PR preview all run as <code>DEV</code>, where the console transport is the point.</p>
 <p>A <strong>configured</strong> relay that fails is different. By default the code is rolled back — the row and, with it, the cooldown, so the user is not left waiting out a cooldown for a code that never arrived — and the response is unchanged. Setting <code>EDITOR_SMTP_BREAK_GLASS=true</code> instead keeps the code alive and writes it to the log.</p>
 <p>That is off by default on purpose. A transient relay error — a rate limit, a TLS blip — would otherwise write a <strong>live credential</strong> into a log pipeline that retains it for weeks and is readable by everyone with log access. Turning it on is an incident response for a relay broken long enough to lock people out, and the failure log line names the variable so the remedy is found from the error itself. Turn it off again once the relay is back.</p>
-<h2 id="preview-safety"><a class="header" href="#preview-safety">Preview safety</a></h2>
-<p>The Cloud Run PR preview is <code>--allow-unauthenticated</code>, so <code>/login</code> is publicly reachable the moment it deploys. The preview leaves <code>EDITOR_SMTP_*</code> unset, so REQ-6.8's console transport applies: codes go to Cloud Run logs, no mail leaves the Workspace relay, and the shared daily quota is untouched. There is deliberately <strong>no</strong> dev-only "show the code on screen" affordance — read it from the logs.</p>
-<p>Gating the preview URL to GitHub organisation members is not available: Cloud Run IAM gates on <em>Google</em> identity, not GitHub membership, and the two do not connect. The workflow's same-repo and non-dependabot conditions gate who can <em>trigger</em> a deploy, not who can reach the URL.</p>
+<h2 id="showing-the-code-instead-of-sending-it"><a class="header" href="#showing-the-code-instead-of-sending-it">Showing the code instead of sending it</a></h2>
+<p><strong>An earlier version of this page said there is "deliberately no dev-only show-the-code affordance — read it from the logs". That was reversed, and the reason it was reversed matters more than the change itself: the premise was never checked.</strong> The argument rested on log access being the thing that gated a public preview. Nobody on the team has that access — it is not configured in the organisation's Google Cloud profile — so the preview was not gated, it was simply impossible to sign into. A control that nobody can exercise is not a control.</p>
+<p>The code-entry screen therefore shows the code when <strong>all three</strong> of these hold, resolved once at startup by <code>EditorConfig::reveals_login_code</code>:</p>
+<div class="table-wrapper"><table><thead><tr><th>Condition</th><th>Why it is in the predicate</th></tr></thead><tbody>
+<tr><td><code>EDITOR_ENV</code> is not <code>PROD</code></td><td>The published image sets <code>PROD</code>, so a production container is excluded by its own default before anything else is read.</td></tr>
+<tr><td>No <code>EDITOR_SMTP_HOST</code></td><td>With no relay the code is <strong>already</strong> written to the log in plaintext (REQ-6.8). Showing it to the browser that just asked for it discloses nothing the deployment is not already doing. With a relay, the code goes to a mailbox and the screen must not become a second channel.</td></tr>
+<tr><td>No <code>EDITOR_DB_DIR</code></td><td>Everything dies with the process. This is the condition separating a throwaway deployment from a real one: an environment holding accounts people actually use has to mount a volume, or it loses them on every restart.</td></tr>
+</tbody></table>
+</div>
+<p>Together they describe a deployment with no relay, no durable state and no production flag — the PR preview, a local run, and nothing else. Startup logs a <code>warn</code> naming the state, so an operator sees it asserted rather than inferring it from three unset variables.</p>
+<p>The predicate is deliberately <strong>self-contained</strong> rather than leaning on the <code>PROD</code>-requires-a-relay rule in <code>validate</code>. That rule does make two of these combinations unbootable, but a guard you can read in one place is one nobody has to reconstruct.</p>
+<h3 id="what-it-costs-stated-rather-than-left-to-be-found"><a class="header" href="#what-it-costs-stated-rather-than-left-to-be-found">What it costs, stated rather than left to be found</a></h3>
+<ul>
+<li><strong>A real disclosure, not a token one.</strong> The code shown is the genuine CSPRNG value bound to the requesting browser's token. Anyone who can reach such a deployment can start a sign-in for any address and read that address's code. What makes it acceptable is not the size of the disclosure but where it can happen: no relay, no durable accounts, nothing that outlives the process.</li>
+<li><strong>REQ-6.2 does not hold on this page in this mode.</strong> The code-entry screen now differs between an address with an account and one without, because a binding that resolves to nothing shows nothing. That is inherent to showing a code at all. Everywhere else — including every <code>POST /login</code> — the identical-response property is untouched.</li>
+<li><strong>A spent or expired code is never shown</strong>, and a browser only ever sees the code its own binding owns.</li>
+</ul>
+<h3 id="what-was-rejected-and-why"><a class="header" href="#what-was-rejected-and-why">What was rejected, and why</a></h3>
+<p>A <strong>fixed code known to the team upfront</strong> — for example from a repository secret — was considered and rejected. On the preview the outcome is the same, so the objection is not about that deployment:</p>
+<ul>
+<li>It changes <strong>code generation</strong> rather than only the disclosure channel. If such a flag ever reached production, every account would be open silently, with the flow looking entirely normal.</li>
+<li>The "secret" would not be one. A value injected as an environment variable into an <code>--allow-unauthenticated</code> service, known to the whole team and living in CI configuration, is published — and permanent across every future preview, rather than dying with one.</li>
+<li>It needs a <strong>new</strong> guard written for it. The reveal rides conditions that already exist and are already tested.</li>
+<li>It is worse for the reader it is meant to help: a fixed code has to be communicated out of band, where an on-screen one has to be communicated not at all.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -3497,7 +3565,9 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <ul>
 <li><strong>No account holder's address may reach a log or a trace, on any path — including error paths.</strong> Auth events are correlated by an opaque per-user id instead. "Account holder's" is the precise claim and it is deliberate: the configured <code>EDITOR_SMTP_FROM</code> <em>is</em> logged, once, at startup, because it is a service mailbox and it is the one line telling an operator which mailbox codes come from. Nobody's account is behind it. This is a hard requirement, enforced by <code>test_no_address_reaches_a_log_or_a_span_on_any_path</code> in <code>editor-server/src/auth/handlers.rs</code>, which drives the unknown-address, issued, wrong-code, signed-in, malformed and relay-refused paths under a capturing subscriber that records span fields as well as events. Two things make it hold rather than be intended: every instrumented function is <code>skip_all</code>, and <code>MailError</code> carries a classification and an SMTP status code rather than the relay's reply, which routinely quotes the recipient. Note there is a second capture channel besides explicit logging: <code>axum-tracing-opentelemetry</code> records <code>url.query</code> on every server span, so a query string is exported to Tempo verbatim. Anything address-bearing must therefore stay out of query strings as well as out of log fields.</li>
 </ul>
-<p>That channel is <strong>not enforced, deliberately</strong>. The editor never generates such a URL — both login forms are <code>method="post"</code>, which a test asserts — but a hand-typed or shared <code>/login?email=someone@example.org</code> would be exported. The obvious guard is a middleware stripping query strings from the login routes, and it was rejected: the next issue adds <code>/login?next=…</code> for redirect-preserving sign-in, so the guard would be built and dismantled in consecutive changes. Whoever adds the first query-bearing route owns this: either keep addresses out of it, or suppress <code>url.query</code> for the service.</p>
+<p>That channel is <strong>not enforced, deliberately</strong>. The editor never generates an address-bearing URL — both login forms are <code>method="post"</code>, which a test asserts — but a hand-typed or shared <code>/login?email=someone@example.org</code> would be exported. A middleware stripping query strings from the login routes was rejected because the next issue would need a query there.</p>
+<p><strong>That issue has landed, and this is its answer.</strong> <code>/login?next=…</code> and <code>/login/code?next=…</code> now exist, and the guard is <code>safe_next</code> (<code>editor-server/src/auth/guard.rs</code>) rather than a middleware: it admits only ASCII alphanumerics and <code>/ - _ .</code>, so neither <code>@</code> nor <code>%</code> can survive into <code>next</code>. An address therefore cannot reach <code>url.query</code> through any URL the editor generates or accepts as a destination — the check that exists for open-redirect reasons closes this channel as a side effect, and both are pinned by the same negative tests.</p>
+<p>The residual is unchanged and still unenforced: a hand-typed <code>/login?email=…</code> is exported to Tempo verbatim, because nothing suppresses <code>url.query</code> at the span. Whoever adds a route that must accept a free-form query owns that decision again.</p>
 <ul>
 <li><strong>Metric attributes must stay bounded.</strong> Validate against known sets and normalise dynamic values; a project shortcode is bounded, a user identifier or a free-text field is not. High-cardinality data goes to structured logs only.</li>
 </ul>
@@ -3664,9 +3734,18 @@ image CI publishes, under emulation.</p>
 </ul>
 <h2 id="login-and-mail"><a class="header" href="#login-and-mail">Login and mail</a></h2>
 <p>Design and rationale live in <a href="editor/./authentication.html">Authentication</a>. What an operator needs:</p>
-<h3 id="accounts"><a class="header" href="#accounts">Accounts</a></h3>
-<p><code>EDITOR_RDU_EMAILS</code> is reconciled on every start. Adding an address creates or promotes an account on the next deploy. <strong>Removing one does not revoke anything</strong> — startup logs a warning naming any <code>rdu</code> account the configuration no longer lists, and the account has to be removed by hand until account management lands. Treat that warning as a to-do, not as noise.</p>
+<h3 id="accounts-1"><a class="header" href="#accounts-1">Accounts</a></h3>
+<p><strong>Depositors</strong> are managed in the product, at <code>/depositors</code>, by any RDU member: create with a name, an address and a set of project shortcodes; edit any of the three; remove. See <a href="editor/./authentication.html#accounts">Authentication</a> for what a removal takes with it and what it leaves behind.</p>
+<p><strong>RDU members</strong> come from <code>EDITOR_RDU_EMAILS</code>, which is reconciled on every start. Adding an address creates or promotes an account on the next deploy. <strong>Removing one does not revoke anything</strong> — startup logs a warning naming any <code>rdu</code> account the configuration no longer lists, and the account has to be removed by hand. Treat that warning as a to-do, not as noise.</p>
+<p>RDU accounts are deliberately <strong>not</strong> editable at <code>/depositors</code>: they appear in the list, without controls. Configuration is the source of truth for them, so a change made in the product would be undone by the next restart, or would leave the product and the configuration disagreeing with nothing to say so.</p>
 <p>A malformed entry stops startup rather than being skipped: every entry becomes an account that administers the service, so a typo is an administrator who can never sign in, and the symptom would otherwise be "my code never arrives" weeks later.</p>
+<h3 id="diagnosing-i-never-got-a-code"><a class="header" href="#diagnosing-i-never-got-a-code">Diagnosing "I never got a code"</a></h3>
+<p>No address appears in any log, so the trail is the account list's <strong>last code sent</strong> column plus the opaque <code>auth.subject</code> correlation id (the account's UUID) in the auth events. That column is the only diagnosis there is: REQ-6.8 covers an unconfigured relay and REQ-6.9 a failed send, but neither covers a code the relay accepted and never delivered, and REQ-6.10 forbids the address in a log.</p>
+<ul>
+<li><strong>"never"</strong> — no code was ever handed to the relay for that account. Either they have not tried, or they typed a different address, or the send failed and was rolled back (which the log will say, with a status code).</li>
+<li><strong>a timestamp</strong> — a code went out. The problem is downstream: spam filtering, greylisting, or a mailbox they do not read.</li>
+</ul>
+<p>Before assuming a delivery problem, check the auth log for <code>auth.outcome = "locked_out"</code>. A user throttled after repeated wrong entries is told only "that code is not valid" — deliberately, because a distinct message would confirm to anyone that the address has an account.</p>
 <h3 id="no-relay-configured"><a class="header" href="#no-relay-configured">No relay configured</a></h3>
 <p>With <code>EDITOR_SMTP_HOST</code> unset, every code is written to the log at <code>WARN</code> and the service stays usable (REQ-6.8). The log line carries the message body and <strong>not</strong> the recipient — whoever is testing knows the address they typed, and REQ-6.10 forbids one in a log.</p>
 <h3 id="a-broken-relay"><a class="header" href="#a-broken-relay">A broken relay</a></h3>
@@ -3678,8 +3757,35 @@ image CI publishes, under emulation.</p>
 <li><strong>Set it back to <code>false</code>.</strong> While it is on, every relay hiccup writes a live login code into a log pipeline that retains it for weeks and is readable by everyone with log access.</li>
 </ol>
 <p>Unsetting <code>EDITOR_SMTP_HOST</code> entirely is the heavier version of the same escape hatch: it routes everything to the log without trying the relay at all, and needs a second redeploy to undo.</p>
-<h3 id="diagnosing-i-never-got-a-code"><a class="header" href="#diagnosing-i-never-got-a-code">Diagnosing "I never got a code"</a></h3>
-<p>No address appears in any log, so the trail is the opaque <code>auth.subject</code> correlation id (the account's UUID) in the auth events, plus the per-account "last code issued at" that RDU will see once the depositor list lands. A user who is throttled after repeated wrong entries is told only "that code is not valid" — deliberately, because a distinct message would confirm to anyone that the address has an account. Check the auth log for <code>auth.outcome = "locked_out"</code> before assuming a delivery problem.</p>
+<h3 id="signing-in-locally"><a class="header" href="#signing-in-locally">Signing in locally</a></h3>
+<p>A fresh database has <strong>no accounts</strong>, and <code>POST /login</code> answers identically whether an address is known or not (REQ-6.2) — so with none configured you reach the code screen and no mail is sent, which looks like a broken relay and is not. Name an address first:</p>
+<pre><code class="language-bash">EDITOR_RDU_EMAILS=you@dasch.swiss just dev-editor
+</code></pre>
+<p>That account is created at startup (REQ-7.2) and is an RDU member, so it can reach <code>/depositors</code> and create depositors to test against.</p>
+<p>With no relay and no <code>EDITOR_DB_DIR</code>, <strong>the code is shown on the code-entry page</strong> — nothing has to be read from anywhere. It is also written to the log (REQ-6.8); <code>just dev-editor</code> runs under bacon, so it appears in the output pane.</p>
+<p>Setting <code>EDITOR_DB_DIR</code> to keep accounts across restarts <strong>turns the on-screen code off</strong> — a durable database is one of the three conditions, because it is what separates a throwaway deployment from a real one. In that case read the code from the log instead:</p>
+<pre><code class="language-bash">EDITOR_RDU_EMAILS=you@dasch.swiss \
+EDITOR_DATA_DIR=modules/dpe/server/data \
+cargo run --bin editor-server -- serve &gt; editor.log 2&gt;&amp;1 &amp;
+
+# after submitting the address at /login:
+grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
+</code></pre>
+<p><strong>Anchor the match on the message body.</strong> The log record is JSON carrying <code>"timestamp":"   9.427448833s"</code>, which holds six-digit runs of its own — an unanchored <code>grep -o '[0-9]\{6\}'</code> returns one of those, and the sign-in then fails as <code>a wrong code was submitted</code>, which reads like a code-generation bug.</p>
+<p>Two knobs worth setting while testing:</p>
+<ul>
+<li><code>EDITOR_LOGIN_COOLDOWN_SECS=1</code> — otherwise a second code for the same address waits out the 60-second cooldown (REQ-6.5).</li>
+<li><code>EDITOR_DB_DIR=&lt;dir&gt;</code> — unset means in-memory, so every restart begins with no depositors and no sessions. Set it when you want state to survive, and expect the on-screen code to disappear when you do.</li>
+</ul>
+<p>If you run the binary from outside the repository root, set <code>EDITOR_PUBLIC_DIR</code> to an absolute path as well: its default is relative, and a wrong working directory serves no stylesheet, which makes every page render unstyled rather than fail.</p>
+<h3 id="signing-in-to-a-pr-preview"><a class="header" href="#signing-in-to-a-pr-preview">Signing in to a PR preview</a></h3>
+<ol>
+<li>Open the preview URL from the PR comment.</li>
+<li>Enter <strong><code>editor-preview@dasch.swiss</code></strong> — the account the workflow seeds (<code>.github/workflows/cloud-run-editor-pull-request.yml</code>), an RDU member, so it can reach <code>/depositors</code> too.</li>
+<li><strong>The code is shown on the next page.</strong> The preview has no mail relay and no persistent database, which is the condition under which the editor displays it rather than sending it — see <a href="editor/./authentication.html#showing-the-code-instead-of-sending-it">Authentication</a>.</li>
+</ol>
+<p>Nothing has to be read from Cloud Run logs, and nothing has to be known in advance. An earlier version of this page said to find the code in the log; that procedure required project log access nobody on the team has, so it could not be followed.</p>
+<p>Everything in a preview dies with it: the database is in-memory, no mail can leave (there is no relay), and the service is deleted when the PR closes.</p>
 <h2 id="database"><a class="header" href="#database">Database</a></h2>
 <p>One SQLite database, holding users, sessions, one-time codes, drafts, submissions and approved records. See <a href="editor/./architecture.html#persistence">Architecture</a> for the pool and PRAGMA design.</p>
 <h3 id="in-memory-is-the-default-deliberately"><a class="header" href="#in-memory-is-the-default-deliberately">In-memory is the default, deliberately</a></h3>

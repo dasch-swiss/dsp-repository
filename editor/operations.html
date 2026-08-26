@@ -331,8 +331,17 @@ image CI publishes, under emulation.</p>
 <h2 id="login-and-mail"><a class="header" href="#login-and-mail">Login and mail</a></h2>
 <p>Design and rationale live in <a href="./authentication.html">Authentication</a>. What an operator needs:</p>
 <h3 id="accounts"><a class="header" href="#accounts">Accounts</a></h3>
-<p><code>EDITOR_RDU_EMAILS</code> is reconciled on every start. Adding an address creates or promotes an account on the next deploy. <strong>Removing one does not revoke anything</strong> — startup logs a warning naming any <code>rdu</code> account the configuration no longer lists, and the account has to be removed by hand until account management lands. Treat that warning as a to-do, not as noise.</p>
+<p><strong>Depositors</strong> are managed in the product, at <code>/depositors</code>, by any RDU member: create with a name, an address and a set of project shortcodes; edit any of the three; remove. See <a href="./authentication.html#accounts">Authentication</a> for what a removal takes with it and what it leaves behind.</p>
+<p><strong>RDU members</strong> come from <code>EDITOR_RDU_EMAILS</code>, which is reconciled on every start. Adding an address creates or promotes an account on the next deploy. <strong>Removing one does not revoke anything</strong> — startup logs a warning naming any <code>rdu</code> account the configuration no longer lists, and the account has to be removed by hand. Treat that warning as a to-do, not as noise.</p>
+<p>RDU accounts are deliberately <strong>not</strong> editable at <code>/depositors</code>: they appear in the list, without controls. Configuration is the source of truth for them, so a change made in the product would be undone by the next restart, or would leave the product and the configuration disagreeing with nothing to say so.</p>
 <p>A malformed entry stops startup rather than being skipped: every entry becomes an account that administers the service, so a typo is an administrator who can never sign in, and the symptom would otherwise be "my code never arrives" weeks later.</p>
+<h3 id="diagnosing-i-never-got-a-code"><a class="header" href="#diagnosing-i-never-got-a-code">Diagnosing "I never got a code"</a></h3>
+<p>No address appears in any log, so the trail is the account list's <strong>last code sent</strong> column plus the opaque <code>auth.subject</code> correlation id (the account's UUID) in the auth events. That column is the only diagnosis there is: REQ-6.8 covers an unconfigured relay and REQ-6.9 a failed send, but neither covers a code the relay accepted and never delivered, and REQ-6.10 forbids the address in a log.</p>
+<ul>
+<li><strong>"never"</strong> — no code was ever handed to the relay for that account. Either they have not tried, or they typed a different address, or the send failed and was rolled back (which the log will say, with a status code).</li>
+<li><strong>a timestamp</strong> — a code went out. The problem is downstream: spam filtering, greylisting, or a mailbox they do not read.</li>
+</ul>
+<p>Before assuming a delivery problem, check the auth log for <code>auth.outcome = "locked_out"</code>. A user throttled after repeated wrong entries is told only "that code is not valid" — deliberately, because a distinct message would confirm to anyone that the address has an account.</p>
 <h3 id="no-relay-configured"><a class="header" href="#no-relay-configured">No relay configured</a></h3>
 <p>With <code>EDITOR_SMTP_HOST</code> unset, every code is written to the log at <code>WARN</code> and the service stays usable (REQ-6.8). The log line carries the message body and <strong>not</strong> the recipient — whoever is testing knows the address they typed, and REQ-6.10 forbids one in a log.</p>
 <h3 id="a-broken-relay"><a class="header" href="#a-broken-relay">A broken relay</a></h3>
@@ -344,8 +353,35 @@ image CI publishes, under emulation.</p>
 <li><strong>Set it back to <code>false</code>.</strong> While it is on, every relay hiccup writes a live login code into a log pipeline that retains it for weeks and is readable by everyone with log access.</li>
 </ol>
 <p>Unsetting <code>EDITOR_SMTP_HOST</code> entirely is the heavier version of the same escape hatch: it routes everything to the log without trying the relay at all, and needs a second redeploy to undo.</p>
-<h3 id="diagnosing-i-never-got-a-code"><a class="header" href="#diagnosing-i-never-got-a-code">Diagnosing "I never got a code"</a></h3>
-<p>No address appears in any log, so the trail is the opaque <code>auth.subject</code> correlation id (the account's UUID) in the auth events, plus the per-account "last code issued at" that RDU will see once the depositor list lands. A user who is throttled after repeated wrong entries is told only "that code is not valid" — deliberately, because a distinct message would confirm to anyone that the address has an account. Check the auth log for <code>auth.outcome = "locked_out"</code> before assuming a delivery problem.</p>
+<h3 id="signing-in-locally"><a class="header" href="#signing-in-locally">Signing in locally</a></h3>
+<p>A fresh database has <strong>no accounts</strong>, and <code>POST /login</code> answers identically whether an address is known or not (REQ-6.2) — so with none configured you reach the code screen and no mail is sent, which looks like a broken relay and is not. Name an address first:</p>
+<pre><code class="language-bash">EDITOR_RDU_EMAILS=you@dasch.swiss just dev-editor
+</code></pre>
+<p>That account is created at startup (REQ-7.2) and is an RDU member, so it can reach <code>/depositors</code> and create depositors to test against.</p>
+<p>With no relay and no <code>EDITOR_DB_DIR</code>, <strong>the code is shown on the code-entry page</strong> — nothing has to be read from anywhere. It is also written to the log (REQ-6.8); <code>just dev-editor</code> runs under bacon, so it appears in the output pane.</p>
+<p>Setting <code>EDITOR_DB_DIR</code> to keep accounts across restarts <strong>turns the on-screen code off</strong> — a durable database is one of the three conditions, because it is what separates a throwaway deployment from a real one. In that case read the code from the log instead:</p>
+<pre><code class="language-bash">EDITOR_RDU_EMAILS=you@dasch.swiss \
+EDITOR_DATA_DIR=modules/dpe/server/data \
+cargo run --bin editor-server -- serve &gt; editor.log 2&gt;&amp;1 &amp;
+
+# after submitting the address at /login:
+grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
+</code></pre>
+<p><strong>Anchor the match on the message body.</strong> The log record is JSON carrying <code>"timestamp":"   9.427448833s"</code>, which holds six-digit runs of its own — an unanchored <code>grep -o '[0-9]\{6\}'</code> returns one of those, and the sign-in then fails as <code>a wrong code was submitted</code>, which reads like a code-generation bug.</p>
+<p>Two knobs worth setting while testing:</p>
+<ul>
+<li><code>EDITOR_LOGIN_COOLDOWN_SECS=1</code> — otherwise a second code for the same address waits out the 60-second cooldown (REQ-6.5).</li>
+<li><code>EDITOR_DB_DIR=&lt;dir&gt;</code> — unset means in-memory, so every restart begins with no depositors and no sessions. Set it when you want state to survive, and expect the on-screen code to disappear when you do.</li>
+</ul>
+<p>If you run the binary from outside the repository root, set <code>EDITOR_PUBLIC_DIR</code> to an absolute path as well: its default is relative, and a wrong working directory serves no stylesheet, which makes every page render unstyled rather than fail.</p>
+<h3 id="signing-in-to-a-pr-preview"><a class="header" href="#signing-in-to-a-pr-preview">Signing in to a PR preview</a></h3>
+<ol>
+<li>Open the preview URL from the PR comment.</li>
+<li>Enter <strong><code>editor-preview@dasch.swiss</code></strong> — the account the workflow seeds (<code>.github/workflows/cloud-run-editor-pull-request.yml</code>), an RDU member, so it can reach <code>/depositors</code> too.</li>
+<li><strong>The code is shown on the next page.</strong> The preview has no mail relay and no persistent database, which is the condition under which the editor displays it rather than sending it — see <a href="./authentication.html#showing-the-code-instead-of-sending-it">Authentication</a>.</li>
+</ol>
+<p>Nothing has to be read from Cloud Run logs, and nothing has to be known in advance. An earlier version of this page said to find the code in the log; that procedure required project log access nobody on the team has, so it could not be followed.</p>
+<p>Everything in a preview dies with it: the database is in-memory, no mail can leave (there is no relay), and the service is deleted when the PR closes.</p>
 <h2 id="database"><a class="header" href="#database">Database</a></h2>
 <p>One SQLite database, holding users, sessions, one-time codes, drafts, submissions and approved records. See <a href="./architecture.html#persistence">Architecture</a> for the pool and PRAGMA design.</p>
 <h3 id="in-memory-is-the-default-deliberately"><a class="header" href="#in-memory-is-the-default-deliberately">In-memory is the default, deliberately</a></h3>

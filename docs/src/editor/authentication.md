@@ -38,14 +38,15 @@ There is no resend endpoint. Asking again is another `POST /login`, governed by 
 | Three strikes per code (REQ-6.4) | Guessing against one code |
 | Account counter surviving resend | Guessing across codes — see below |
 | Single use (`consumed_at`) | Replay |
-| Global daily send cap | Exhausting the shared relay quota, which locks out everyone (partially — see below) |
+| Global daily send cap | Exhausting the shared relay quota, which locks out everyone |
+| Per-account daily send cap | One address spending that shared budget on its own |
 | Per-IP rate limit | One host driving either endpoint flat out |
 | Fresh session id on login | Fixation |
 | `Sec-Fetch-Site: same-origin` | CSRF from any other `*.dasch.swiss` host |
 
 ### Anti-enumeration is a property of the response, not a branch
 
-Every `POST /login` answers with the same status and the same `Location`, whether the address is known, unknown, inside its cooldown, throttled, or blocked by the daily cap. Only the mail differs, and only the address's owner sees that.
+Every `POST /login` answers with the same status and the same `Location`, whether the address is known, unknown, inside its cooldown, throttled, or blocked by either send cap. Only the mail differs, and only the address's owner sees that.
 
 The part that is easy to get wrong is the cookie, and the first version of this got it wrong. It set a fresh binding only when a code had been issued *or* the browser presented none, reasoning that a browser already holding a binding should be left alone. But the presented cookie is attacker-supplied — any non-empty value is accepted, because at that point it is just a token to look up — so a request carrying an invented cookie was answered with `Set-Cookie` for an address with an account and without one for an address without. One request per address, no timing needed.
 
@@ -65,15 +66,19 @@ This defends interception, which is NIST's stated objection. It does **not** def
 
 An outstanding code's binding is never handed to a second browser. A browser inside the cooldown that does not already hold the binding cannot verify, and waits the cooldown out. That is deliberate: returning the live binding to whoever posts the address would let anyone acquire the binding for a code already on its way to its owner.
 
-### What the send cap does not yet do
+### The two send caps, and what they count
 
-Two gaps, both tracked in [DEV-7023](https://linear.app/dasch/issue/DEV-7023/editor-make-the-login-code-send-cap-countable-and-cap-it-per-account) and both deliberate rather than overlooked.
+There are two, and both are needed. `EDITOR_MAIL_DAILY_CAP` (500) bounds sends across **all** users, because the Workspace relay quota is shared with other senders: an attacker looping resend across the known addresses would otherwise exhaust it and lock out everyone, RDU included.
 
-The cap is **global only**. With a 60-second cooldown one address can be sent 1,440 codes a day against a default cap of 500, so a single attacker with a single known address can exhaust the shared budget in about eight hours and stop everyone — RDU included — from signing in. A per-account cap closes it.
+`EDITOR_MAIL_ACCOUNT_DAILY_CAP` (20) bounds sends to **one** account, and the global cap alone does not imply it. The resend cooldown is per address and defaults to 60 seconds, so one address fits 1,440 codes a day — nearly three times the global budget — and the per-IP limit on `POST /login` (burst 20, one token per 30 seconds, so 2,880 a day) does not bind first. Without the per-account cap, one attacker from one IP using one address they know is registered exhausts the shared budget in about eight hours, which is the outage the global cap exists to prevent, reached about twenty times more cheaply than exhausting the relay itself. Startup refuses a per-account cap above the global one: the global cap would always refuse first, so the value would be dead configuration.
 
-The cap also **counts rows rather than sends**. `count_issued_since` counts live `login_codes` rows, which is an inference: codes rolled back after a failed delivery vanish (correctly, nothing was sent) and a user's unspent codes are deleted when they sign in (incorrectly, those were mailed). An append-only send counter is the honest form.
+Both count rows in `mail_sends`, an **append-only** record written when a message is actually delivered. The earlier form counted live `login_codes` rows, which is an inference and read low: codes rolled back after a failed delivery vanish (correctly — nothing was sent), but a user's unspent codes are deleted when they sign in, and those *were* mailed. So real send volume could exceed a cap named for sends.
 
-The code just spent is deliberately **not** deleted on sign-in, which an earlier version did. That row is the resend cooldown's only anchor — REQ-6.5 measures from the last code *issued* — so deleting it let a user sign in and be sent another code immediately, and made every completed sign-in invisible to the cap.
+A message that the relay refused is not recorded, because nothing was delivered and the code is rolled back with it. A message written to the log under `EDITOR_SMTP_BREAK_GLASS` **is** recorded: break-glass makes the log the delivery channel, the code stays live, and leaving it uncounted would take both caps off at exactly the moment the relay is broken and every live credential is going to the logs.
+
+`mail_sends` holds nothing but an account id and an instant — never an address (REQ-6.10) — and the hourly sweep prunes it at the caps' own 24-hour window, so retention and the count are the same span by construction.
+
+The code just spent is deliberately **not** deleted on sign-in, which an earlier version did. That row is the resend cooldown's only anchor — REQ-6.5 measures from the last code *issued* — so deleting it let a user sign in and be sent another code immediately.
 
 ### Throttling, and why it is time-based
 
@@ -93,7 +98,7 @@ Consuming the code and creating the session are two writes, and the second can f
 
 ### Expired rows
 
-Codes and sessions are deleted wherever the flow trips over them, but a code nobody ever entered is tripped over by nothing. An hourly sweep removes both, because otherwise every six-digit code ever issued stays in the table in plaintext for the life of the database.
+Codes and sessions are deleted wherever the flow trips over them, but a code nobody ever entered is tripped over by nothing. An hourly sweep removes both, because otherwise every six-digit code ever issued stays in the table in plaintext for the life of the database. The same sweep prunes `mail_sends` at the send caps' window — that table is append-only, so nothing else bounds it.
 
 ### Cookies
 
@@ -197,7 +202,7 @@ The list also carries **last code sent** per account. REQ-6.8 covers an unconfig
 
 - **DKIM** — Google DKIM-signs relayed mail with the envelope sender's domain *only if that domain has DKIM enabled in the Workspace Admin Console*. Set up for `dasch.swiss`.
 - **SPF** — remains the sending domain's responsibility; `dasch.swiss` must include Google. Set up.
-- **Quota** — the relay allows 10,000 recipients a day, and whether that is shared with other senders determines where `EDITOR_MAIL_DAILY_CAP` should sit. The default of 500 is well below the ceiling either way.
+- **Quota** — the relay allows 10,000 recipients a day, and whether that is shared with other senders determines where `EDITOR_MAIL_DAILY_CAP` should sit. The default of 500 is well below the ceiling either way, and `EDITOR_MAIL_ACCOUNT_DAILY_CAP` must stay below it.
 
 ### No address ever reaches a log (REQ-6.10)
 

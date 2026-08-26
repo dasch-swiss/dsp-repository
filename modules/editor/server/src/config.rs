@@ -22,6 +22,16 @@ use serde::{Deserialize, Serialize};
 /// knob here could express is a violation of both.
 pub const CODE_TTL: Duration = Duration::from_secs(600);
 
+/// The window both daily send caps measure over, and the retention of the
+/// `mail_sends` rows they count.
+///
+/// One constant rather than two, because the two have to be the same span: a
+/// retention shorter than the window silently hands budget back, and a longer
+/// one keeps rows nothing reads. "Daily" is a rolling 24 hours, not a calendar
+/// day — a midnight reset would give an attacker a fresh budget at a time they
+/// choose.
+pub const SEND_WINDOW: Duration = Duration::from_secs(24 * 60 * 60);
+
 /// A configured value that must never reach a log.
 ///
 /// The `Debug` implementation is the point: `EditorConfig` derives `Debug`, and
@@ -263,6 +273,22 @@ pub struct EditorConfig {
     /// costs nothing to mount.
     pub mail_daily_cap: u64,
 
+    /// The most codes that may be sent to a **single account** in 24 hours, set
+    /// via `EDITOR_MAIL_ACCOUNT_DAILY_CAP`.
+    ///
+    /// [`Self::mail_daily_cap`] alone does not bound this. The resend cooldown
+    /// is per address, so at its sixty-second default one address can be sent
+    /// 1,440 codes a day against a global default of 500, and the per-IP limit
+    /// on `POST /login` (2,880 a day) does not bind first. One attacker, from
+    /// one address they know is registered, could therefore spend the entire
+    /// shared budget in about eight hours and stop everyone signing in, RDU
+    /// included — which is the outage the global cap exists to prevent, reached
+    /// about twenty times more cheaply than exhausting the relay.
+    ///
+    /// Twenty is far above any legitimate use: a person who cannot sign in
+    /// after twenty codes in a day has a problem no further code solves.
+    pub mail_account_daily_cap: u64,
+
     /// Absolute session lifetime in seconds, set via
     /// `EDITOR_SESSION_ABSOLUTE_SECS`. Set at creation and never extended.
     pub session_absolute_secs: u64,
@@ -303,6 +329,7 @@ impl Default for EditorConfig {
             login_max_failed: 10,
             login_lockout_secs: 900,
             mail_daily_cap: 500,
+            mail_account_daily_cap: 20,
             // Twelve hours: long enough that a working day needs one sign-in,
             // short enough that a session left open overnight is gone by morning.
             session_absolute_secs: 12 * 60 * 60,
@@ -377,6 +404,20 @@ impl EditorConfig {
             return invalid(
                 "EDITOR_MAIL_DAILY_CAP must be at least 1 — zero refuses every code and no one can sign in".to_string(),
             );
+        }
+        if self.mail_account_daily_cap == 0 {
+            return invalid(
+                "EDITOR_MAIL_ACCOUNT_DAILY_CAP must be at least 1 — zero refuses every code and no one can sign in"
+                    .to_string(),
+            );
+        }
+        if self.mail_account_daily_cap > self.mail_daily_cap {
+            return invalid(format!(
+                "EDITOR_MAIL_ACCOUNT_DAILY_CAP ({}) is above EDITOR_MAIL_DAILY_CAP ({}), so the global cap always \
+                 refuses first and the per-account cap is dead configuration — an operator who set it believes one \
+                 address is bounded when nothing bounds it",
+                self.mail_account_daily_cap, self.mail_daily_cap
+            ));
         }
         if self.session_absolute_secs == 0 || self.session_idle_secs == 0 {
             return invalid(
@@ -755,6 +796,46 @@ mod tests {
             assert!(error.to_string().contains("dead configuration"), "{error}");
             Ok(())
         });
+    }
+
+    #[test]
+    fn a_per_account_cap_above_the_global_one_is_refused() {
+        // Same shape as the idle/absolute rule: the global cap always refuses
+        // first, so the per-account value can never bind. An operator who sets
+        // it believes one address is bounded when nothing bounds it, which is
+        // the exact gap the per-account cap exists to close.
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EDITOR_MAIL_DAILY_CAP", "100");
+            jail.set_env("EDITOR_MAIL_ACCOUNT_DAILY_CAP", "500");
+            let error = EditorConfig::load().expect_err("dead configuration must be refused");
+            assert!(error.to_string().contains("dead configuration"), "{error}");
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn a_zero_per_account_cap_is_refused() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EDITOR_MAIL_ACCOUNT_DAILY_CAP", "0");
+            let error = EditorConfig::load().expect_err("a zero cap must be refused");
+            assert!(error.to_string().contains("EDITOR_MAIL_ACCOUNT_DAILY_CAP"), "{error}");
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn the_default_per_account_cap_leaves_the_global_budget_out_of_one_addresss_reach() {
+        // The numbers this issue turns on: the cooldown lets one address be sent
+        // 1,440 codes a day, which is nearly three times the global budget. The
+        // per-account default has to be far below the global one or the global
+        // cap stays exhaustible from a single address.
+        let config = EditorConfig::default();
+        assert!(
+            config.mail_account_daily_cap * 10 < config.mail_daily_cap,
+            "one address must not be able to spend a meaningful share of the shared budget: {} vs {}",
+            config.mail_account_daily_cap,
+            config.mail_daily_cap
+        );
     }
 
     #[test]

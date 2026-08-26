@@ -10,16 +10,16 @@ use axum::http::header::SET_COOKIE;
 use axum::http::{HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
-use chrono::{DateTime, TimeDelta, Utc};
+use chrono::{DateTime, Utc};
 use editor_core::records::{LoginCode, Session};
-use editor_core::repository::{Attempt, Issued, LoginCodeRepository, UserRepository};
+use editor_core::repository::{Attempt, Issued, LoginCodeRepository, MailSendRepository, UserRepository};
 use maud::Markup;
 use serde::Deserialize;
 use uuid::Uuid;
 
 use super::guard::{destination_or_root, login_url, next_from, NEXT};
 use super::{cookie, delta, is_plausible_address, locked_out, secret, session};
-use crate::config::CODE_TTL;
+use crate::config::{CODE_TTL, SEND_WINDOW};
 use crate::mail::Mail;
 use crate::AppState;
 
@@ -389,7 +389,9 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
         return false;
     }
 
-    match LoginCodeRepository::count_issued_since(&state.db, now - TimeDelta::hours(24)).await {
+    let window = now - delta(SEND_WINDOW);
+
+    match MailSendRepository::count_since(&state.db, window).await {
         Ok(sent) if sent >= state.auth.daily_cap => {
             // Alarmed, not silent. This is either an attack looping resend
             // across the known addresses or a genuine surge, and both need
@@ -409,6 +411,35 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
             // enforced, and sending anyway is how a quota gets drained.
             outcome("cap_unreadable");
             tracing::error!(error = %error, "could not read the daily send count; refusing to issue a code");
+            return false;
+        }
+    }
+
+    // The per-account cap, and it has to be checked as well as the global one
+    // rather than instead of it. The cooldown is per address, so one address
+    // fits 1,440 codes a day inside a global budget of 500: without this, one
+    // attacker with one known address exhausts the shared budget in about eight
+    // hours and nobody can sign in.
+    match MailSendRepository::count_for_user_since(&state.db, user.id, window).await {
+        Ok(sent) if sent >= state.auth.account_daily_cap => {
+            // `warn`, where the global cap is `error`: this is one account being
+            // driven, which is the early warning, not the outage. The account id
+            // is already on the span, and the address is not in either (REQ-6.10).
+            outcome("account_daily_cap");
+            tracing::warn!(
+                // Not `mail.sent_24h`: that name carries the count across all
+                // users on the global-cap event, and one attribute meaning two
+                // populations is a query that silently mixes them.
+                mail.account_sent_24h = sent,
+                mail.account_daily_cap = state.auth.account_daily_cap,
+                "refused to issue a login code: this account's daily send cap is reached"
+            );
+            return false;
+        }
+        Ok(_) => {}
+        Err(error) => {
+            outcome("cap_unreadable");
+            tracing::error!(error = %error, "could not read the account send count; refusing to issue a code");
             return false;
         }
     }
@@ -445,6 +476,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
     };
     match state.mailer.send(&mail).await {
         Ok(()) => {
+            record_send(state, user.id, now).await;
             stamp_issued(state, user.id, now).await;
             outcome("issued");
             tracing::info!("issued a login code");
@@ -465,6 +497,14 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
                     login.code = %code.code,
                     "EDITOR_SMTP_BREAK_GLASS is on: writing an undelivered login code to the log"
                 );
+                // Counted, even though the relay refused it. Break-glass makes
+                // the log the delivery channel, so the code is live and reached
+                // its recipient by another route — and leaving it uncounted
+                // would take both caps off exactly when the relay is broken and
+                // every live credential is going to the logs. The rollback
+                // branch below records nothing, which is the case that is
+                // already correct: nothing was delivered.
+                record_send(state, user.id, now).await;
                 stamp_issued(state, user.id, now).await;
                 outcome("send_failed_break_glass");
                 true
@@ -479,6 +519,20 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
                 false
             }
         }
+    }
+}
+
+/// Add one row to the append-only send log, which is what both daily caps
+/// count.
+///
+/// A failure here is logged and swallowed, because the message has already
+/// gone: there is nothing to roll back, and refusing the request now would deny
+/// a user a code they are about to receive. The cost is a cap that under-counts
+/// by one until the window rolls, which is strictly smaller than the accounting
+/// error this table replaced.
+async fn record_send(state: &AppState, user_id: Uuid, now: DateTime<Utc>) {
+    if let Err(error) = MailSendRepository::record(&state.db, user_id, now).await {
+        tracing::error!(error = %error, "a login code was sent but could not be recorded against the daily send caps");
     }
 }
 
@@ -637,8 +691,9 @@ async fn verify(
     }
     // The account's *unspent* codes are now noise bound to browsers nobody is
     // using. The one just consumed stays: it is the resend cooldown's only
-    // anchor and the daily send cap's only evidence, and deleting it let a user
-    // sign in and immediately be sent another code.
+    // anchor, and deleting it let a user sign in and immediately be sent another
+    // code. The send caps are unaffected either way — they count `mail_sends`,
+    // and the siblings deleted here were mailed.
     if let Err(error) = LoginCodeRepository::delete_unconsumed_for_user(&state.db, user.id).await {
         tracing::warn!(error = %error, "could not clear the account's remaining login codes");
     }
@@ -1194,7 +1249,7 @@ mod tests {
         // NIST SP 800-63B-4: only a success may reset it.
         let (state, mailer) = test_state("clear-counter").await;
         let user_id = a_user(&state, KNOWN).await;
-        UserRepository::record_failed_login(&state.db, user_id, Utc::now(), Utc::now() - TimeDelta::hours(1))
+        UserRepository::record_failed_login(&state.db, user_id, Utc::now(), Utc::now() - chrono::TimeDelta::hours(1))
             .await
             .unwrap();
         let app = test_app(&state);
@@ -1408,9 +1463,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_spent_code_still_counts_against_the_daily_cap() {
-        // The cap counts rows in `login_codes`. Deleting them on sign-in made
-        // every completed login invisible to the control protecting the shared
-        // relay quota.
+        // A completed sign-in must not hand back send budget. It used to: the
+        // cap counted `login_codes` rows and sign-in deleted every one of them,
+        // including the code just spent. The cap counts `mail_sends` now, so
+        // this holds by construction — pinned here because it is the property,
+        // not the mechanism, that must survive.
         let (state, mailer) = state_with("cap-after-signin", RecordingMailer::new(), |auth| {
             auth.cooldown = Duration::ZERO;
             auth.daily_cap = 2;
@@ -1460,6 +1517,148 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_one_address_cannot_spend_the_whole_global_budget() {
+        // The outage this closes: the cooldown is per address and defaults to
+        // sixty seconds, so one address fits 1,440 codes a day inside a global
+        // budget of 500. Without a per-account cap, one attacker with one known
+        // address stops everyone signing in — RDU included — in about eight
+        // hours.
+        let (state, mailer) = state_with("account-cap", RecordingMailer::new(), |auth| {
+            auth.cooldown = Duration::ZERO;
+            auth.daily_cap = 100;
+            auth.account_daily_cap = 2;
+        })
+        .await;
+        a_user(&state, KNOWN).await;
+        a_user(&state, "second@example.test").await;
+        let app = test_app(&state);
+
+        let (logs, _guard) = capture_logs();
+        for _ in 0..4 {
+            request_code(&app, KNOWN, None).await;
+        }
+        assert_eq!(mailer.sent().len(), 2, "the hammered address is bounded by its own cap");
+
+        // And the shared budget it did not get to spend is still there for
+        // everyone else, which is the whole point.
+        let other = request_code(&app, "second@example.test", None).await;
+        assert_eq!(mailer.sent().len(), 3, "another account can still sign in");
+        assert_eq!(other.status(), StatusCode::SEE_OTHER, "and is told nothing either way");
+        assert_eq!(location(&other).as_deref(), Some("/login/code"));
+
+        assert!(
+            logs.lines().iter().any(|line| line.contains("this account's daily send cap")),
+            "hitting the per-account cap is the early warning and must be logged: {:?}",
+            logs.lines()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_the_per_account_cap_refuses_indistinguishably() {
+        // REQ-6.2. A capped account and an address with no account must answer
+        // byte for byte the same, or the cap becomes an enumeration oracle for
+        // any address an attacker is willing to spend its budget on.
+        let (state, _mailer) = state_with("account-cap-enumerate", RecordingMailer::new(), |auth| {
+            auth.cooldown = Duration::ZERO;
+            auth.account_daily_cap = 1;
+        })
+        .await;
+        a_user(&state, KNOWN).await;
+        let app = test_app(&state);
+
+        request_code(&app, KNOWN, None).await;
+        let capped = request_code(&app, KNOWN, None).await;
+        let unknown = request_code(&app, UNKNOWN, None).await;
+
+        assert_eq!(capped.status(), unknown.status());
+        assert_eq!(location(&capped), location(&unknown));
+        assert_eq!(
+            cookie_set(&capped, cookie::LOGIN).map(|value| value.len()),
+            cookie_set(&unknown, cookie::LOGIN).map(|value| value.len()),
+        );
+    }
+
+    #[tokio::test]
+    async fn test_a_mailed_code_abandoned_at_sign_in_still_counts_against_the_cap() {
+        // The under-count. Signing in deletes the user's *unconsumed* codes —
+        // correctly, they are live secrets nobody is using — but those codes
+        // were mailed. While the cap counted `login_codes` rows, that deletion
+        // handed the budget back, so real send volume could exceed the cap.
+        let (state, mailer) = state_with("cap-counts-sends", RecordingMailer::new(), |auth| {
+            auth.cooldown = Duration::ZERO;
+            auth.daily_cap = 3;
+        })
+        .await;
+        a_user(&state, KNOWN).await;
+        let app = test_app(&state);
+
+        // Two codes go out. The browser that completes the sign-in holds the
+        // second, so the first is an abandoned-but-mailed sibling.
+        request_code(&app, KNOWN, None).await;
+        sign_in(&app, &mailer, KNOWN).await;
+        assert_eq!(mailer.sent().len(), 2, "two codes were mailed");
+        assert_eq!(
+            count_rows(&state.db, "login_codes").await,
+            1,
+            "and only the spent one is still a row, which is why counting rows under-counted"
+        );
+
+        request_code(&app, KNOWN, None).await;
+        assert_eq!(mailer.sent().len(), 3, "the third is still inside a cap of three");
+        request_code(&app, KNOWN, None).await;
+        assert_eq!(mailer.sent().len(), 3, "and the fourth is not");
+    }
+
+    #[tokio::test]
+    async fn test_a_rolled_back_code_does_not_spend_the_cap() {
+        // The other half of counting sends rather than rows, and the half that
+        // was already right: a delivery that failed sent nothing, so it must
+        // not consume anyone's budget. The user gets their code once the relay
+        // is back, rather than being refused for a failure that was never
+        // theirs.
+        let (state, mailer) = state_with("cap-ignores-failures", RecordingMailer::failing(), |auth| {
+            auth.cooldown = Duration::ZERO;
+            auth.daily_cap = 1;
+        })
+        .await;
+        a_user(&state, KNOWN).await;
+        let app = test_app(&state);
+
+        request_code(&app, KNOWN, None).await;
+        assert_eq!(mailer.sent().len(), 1, "the transport was asked");
+        assert_eq!(
+            count_rows(&state.db, "mail_sends").await,
+            0,
+            "but nothing was delivered, so nothing is counted"
+        );
+
+        request_code(&app, KNOWN, None).await;
+        assert_eq!(mailer.sent().len(), 2, "so the budget is untouched and the retry is allowed");
+    }
+
+    #[tokio::test]
+    async fn test_break_glass_spends_the_cap_like_any_other_send() {
+        // Break-glass makes the log the delivery channel: the code stays live
+        // and reaches its recipient by another route. Leaving it uncounted would
+        // take both caps off at exactly the moment the relay is broken and every
+        // live credential is being written to the logs.
+        let (state, mailer) = state_with("cap-break-glass", RecordingMailer::failing(), |auth| {
+            auth.cooldown = Duration::ZERO;
+            auth.daily_cap = 1;
+            auth.break_glass = true;
+        })
+        .await;
+        a_user(&state, KNOWN).await;
+        let app = test_app(&state);
+
+        request_code(&app, KNOWN, None).await;
+        assert_eq!(count_rows(&state.db, "mail_sends").await, 1);
+
+        request_code(&app, KNOWN, None).await;
+        assert_eq!(mailer.sent().len(), 1, "the cap holds while the relay is broken");
+    }
+
+    #[tokio::test]
     async fn test_a_throttled_account_gets_no_further_codes() {
         // Issuing to a locked-out account spends relay quota on someone who
         // cannot use it, which is exactly what an attacker driving the counter
@@ -1471,10 +1670,10 @@ mod tests {
         })
         .await;
         let user_id = a_user(&state, KNOWN).await;
-        UserRepository::record_failed_login(&state.db, user_id, Utc::now(), Utc::now() - TimeDelta::hours(1))
+        UserRepository::record_failed_login(&state.db, user_id, Utc::now(), Utc::now() - chrono::TimeDelta::hours(1))
             .await
             .unwrap();
-        UserRepository::record_failed_login(&state.db, user_id, Utc::now(), Utc::now() - TimeDelta::hours(1))
+        UserRepository::record_failed_login(&state.db, user_id, Utc::now(), Utc::now() - chrono::TimeDelta::hours(1))
             .await
             .unwrap();
         let app = test_app(&state);
@@ -1838,9 +2037,10 @@ mod tests {
         app.clone().oneshot(post("/login", "email=nobody")).await.unwrap();
         app.clone().oneshot(post("/login/code", "code=123456")).await.unwrap();
 
-        // A relay that refuses, on the same capture. The two branches this test
-        // still cannot reach are `claim_failed` and the rebind failure: both need
-        // an injected database error, and nothing here injects one.
+        // A relay that refuses, on the same capture. The branches this test still
+        // cannot reach are `claim_failed`, the rebind failure and the send-record
+        // failure: each needs an injected database error, and nothing here
+        // injects one.
         let (failing_state, _) = state_with("no-address-in-logs-failing", RecordingMailer::failing(), |auth| {
             auth.cooldown = Duration::ZERO;
         })

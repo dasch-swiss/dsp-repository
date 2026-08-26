@@ -30,12 +30,7 @@ The `/add-mosaic-component` skill walks through this. In short:
 
 ## Testing and Verification
 
-```bash
-just watch-mosaic-playground    # Run the playground with hot reload
-cargo test -p mosaic-tiles      # Tile unit tests
-just check                      # Clippy and formatting for the whole repo
-just test                       # All workspace tests
-```
+`cargo test -p mosaic-tiles` for tile unit tests; `just check` and `just test` for the whole repo.
 
 ## Design Tokens
 
@@ -50,16 +45,10 @@ just test                       # All workspace tests
 - Prefer CSS-only interactions where possible.
 - Icons use the `icondata` crate for compile-time tree-shaking.
 - Keep each component's CSS next to its Rust source.
-- Components: badge, breadcrumb, button, card, copy_button, icon, link, loading, tabs. The theme provider is just `tokens.css`, not a Rust component.
+- The theme provider is just `tokens.css`, not a Rust component.
 
 ## Formatting
 
-Run `just fmt` for all code in this module at the end of your work:
-
-```bash
-just fmt
-```
-
-`just fmt` runs `maudfmt` (which formats the contents of `maud::html!` macros — stock rustfmt does not) followed by `cargo +nightly fmt` for the surrounding Rust. `just check` verifies both.
+Run `just fmt` at the end of your work. It runs `maudfmt` (which formats the contents of `maud::html!` macros — stock rustfmt does not) followed by `cargo +nightly fmt` for the surrounding Rust. `just check` verifies both.
 
 Because tiles take content as `impl Render`, don't pass a non-trivial `html!` block directly as an argument (`card(html! { … })`) — `maudfmt` skips nested-as-argument blocks and `cargo fmt` then mangles them. Bind the inner markup to a Rust `let` (`let body = html! { … }; card(body)`) or extract a `fn … -> Markup` helper. Trivial one-liners like `html! { (label) }` are fine inline.

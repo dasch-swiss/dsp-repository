@@ -245,7 +245,7 @@
 <h1 id="dpe-project-structure"><a class="header" href="#dpe-project-structure">DPE Project Structure</a></h1>
 <h2 id="workspace-layout"><a class="header" href="#workspace-layout">Workspace Layout</a></h2>
 <pre><code>modules/dpe/
-├── core/             dpe-core          Pure domain (serde only)
+├── core/             dpe-core          DPE's view model, caches, repositories (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Maud view library (pages + components)
 ├── server/           dpe-server        Axum binary (composition root)
@@ -254,7 +254,10 @@
 └── style/                              Tailwind CSS
 </code></pre>
 <h2 id="dependency-graph"><a class="header" href="#dependency-graph">Dependency Graph</a></h2>
-<pre><code>dpe-core              ← pure domain, no framework deps
+<pre><code>platform-metadata     ← the wire contract, shared with the editor;
+  ↑                     lives in `modules/platform/`
+  │
+dpe-core              ← DPE's view model, caches, repositories; no framework deps
   ↑
   ├── dpe-api-oai     ← OAI-PMH endpoint
   ├── dpe-web         ← Maud pages + components
@@ -263,20 +266,31 @@
        platform-telemetry  ← beacon contract + collector endpoint, shared with
                              editor-server; lives in `modules/platform/`
 </code></pre>
+<p><code>dpe-api-oai</code>, <code>dpe-web</code> and <code>dpe-server</code> depend on <code>platform-metadata</code> directly
+as well as through <code>dpe-core</code> — the contract types are theirs to import, not
+<code>dpe-core</code>'s to re-export.</p>
 <h2 id="crate-responsibilities"><a class="header" href="#crate-responsibilities">Crate Responsibilities</a></h2>
+<h3 id="platform-metadata-modulesplatformmetadata"><a class="header" href="#platform-metadata-modulesplatformmetadata"><code>platform-metadata</code> (<code>modules/platform/metadata/</code>)</a></h3>
+<p>Not a DPE crate: the research-metadata wire contract, shared with the editor.
+Holds the types a data file deserializes into (<code>ProjectRaw</code>, <code>Person</code>,
+<code>Organization</code>, <code>Record</code>, <code>AuthorityFileReference</code>, …) and the rules for reading
+a value out of one — <code>is_placeholder</code>, the deterministic <code>multilingual_value</code>
+lookup key, <code>is_valid_shortcode</code>, W3CDTF formatting and temporal-coverage
+resolution. Table loading is exposed as <code>load_from(data_dir)</code> so each service
+supplies its own directory. See <code>modules/platform/README.md</code>.</p>
 <h3 id="dpe-core-core"><a class="header" href="#dpe-core-core"><code>dpe-core</code> (core/)</a></h3>
-<p>Framework-free domain layer. Contains:</p>
+<p>Framework-free domain layer — what only DPE needs. Contains:</p>
 <ul>
-<li><strong>Domain types</strong>: <code>Project</code>, <code>Record</code>, <code>Person</code>, <code>Organization</code>, <code>Attribution</code>, etc.</li>
+<li><strong>View model</strong>: <code>Project</code> and the conversions to and from <code>ProjectRaw</code> (lossy, DPE-only), <code>Page</code>, <code>ClusterRef</code>, <code>CollectionRef</code>, <code>ResolvedContributor</code></li>
 <li><strong>Repository traits</strong>: <code>ProjectRepository</code>, <code>RecordRepository</code></li>
 <li><strong>Fs implementations</strong>: <code>FsProjectRepository</code>, <code>FsRecordRepository</code> (backed by in-memory caches)</li>
-<li><strong>Data loading</strong>: Project and record caches (<code>OnceLock&lt;Vec&lt;T&gt;&gt;</code>) loaded from JSON on first access</li>
-<li><strong>Utilities</strong>: <code>lang_value()</code>, <code>get_data_dir()</code></li>
+<li><strong>Data loading</strong>: project, record, person, organization, cluster and the two temporal caches (<code>OnceLock&lt;…&gt;</code>) loaded from <code>DPE_DATA_DIR</code> on first access</li>
+<li><strong>Utilities</strong>: <code>lang_value()</code>, <code>language_display_name()</code>, <code>get_data_dir()</code></li>
 </ul>
-<p>Dependencies: <code>serde</code>, <code>serde_json</code> only.</p>
+<p>Dependencies: <code>platform-metadata</code>, <code>serde</code>, <code>serde_json</code>, <code>tracing</code>, <code>ureq</code>.</p>
 <h3 id="dpe-api-oai-api-oai"><a class="header" href="#dpe-api-oai-api-oai"><code>dpe-api-oai</code> (api-oai/)</a></h3>
 <p>OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord). Usage is documented in <a href="./oai-pmh.html">OAI-PMH Endpoint</a>.</p>
-<p>Depends on <code>dpe-core</code> for domain types — no web framework dependency.</p>
+<p>Depends on <code>platform-metadata</code> for the contract types and <code>dpe-core</code> for the view model — no web framework dependency.</p>
 <h3 id="dpe-web-web"><a class="header" href="#dpe-web-web"><code>dpe-web</code> (web/)</a></h3>
 <p>Maud view library — a plain <code>lib</code> crate of page and component functions returning <code>maud::Markup</code>. Contains:</p>
 <ul>
@@ -284,7 +298,7 @@
 <li><strong>Components</strong>: navbar, footer, project cards, tab panels, search input — small <code>fn -&gt; Markup</code> partials</li>
 <li><strong>Data access</strong>: loaders and resolvers (<code>get_project</code>, <code>list_projects</code>, <code>get_contributors</code>) as plain functions over <code>dpe-core</code></li>
 </ul>
-<p>Imports <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
+<p>Imports <code>platform-metadata</code> and <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
 <h3 id="browser-telemetry"><a class="header" href="#browser-telemetry">Browser telemetry</a></h3>
 <p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>platform-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>modules/platform/telemetry</code>. See <code>modules/platform/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>modules/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold.</p>
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
@@ -299,8 +313,8 @@
 </ul>
 <h2 id="key-patterns"><a class="header" href="#key-patterns">Key Patterns</a></h2>
 <ul>
-<li><strong>Domain types in <code>dpe-core</code></strong>, not in web or API crates</li>
-<li><strong>API crates depend on <code>dpe-core</code> only</strong>, never on each other or on <code>dpe-web</code></li>
+<li><strong>The wire contract in <code>platform-metadata</code>, DPE's view model in <code>dpe-core</code></strong> — never in web or API crates</li>
+<li><strong>API crates depend on <code>platform-metadata</code> and <code>dpe-core</code> only</strong>, never on each other or on <code>dpe-web</code></li>
 <li><strong><code>dpe-server</code> contains no business logic</strong> — only route composition, the head/page shell, and fragment rendering</li>
 <li><strong>Fragment handlers</strong> call dpe-web view functions and render their <code>Markup</code> with <code>.into_string()</code>, then wrap it in Datastar <code>PatchElements</code>/<code>ExecuteScript</code> SSE events</li>
 </ul>

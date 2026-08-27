@@ -247,9 +247,9 @@
 projects and their context as a hierarchy of entities. The model originated in
 the now-retired <code>dsp-meta</code> repository, where it was designed as the successor to
 the earlier v1 model. The metadata has since been migrated to this repository
-and converted to v2; the model is implemented as Rust types in the <code>dpe-core</code>
-crate (<code>modules/dpe/core/src/</code>) and the data lives under
-<code>modules/dpe/server/data/</code>.</p>
+and converted to v2; the model is implemented as Rust types in the
+<code>platform-metadata</code> crate (<code>modules/platform/metadata/src/</code>), shared with the
+editor, and the data lives under <code>modules/dpe/server/data/</code>.</p>
 <div class="mdbook-alerts mdbook-alerts-note">
 <p class="mdbook-alerts-title">
   <span class="mdbook-alerts-icon"></span>
@@ -257,7 +257,7 @@ crate (<code>modules/dpe/core/src/</code>) and the data lives under
 </p>
 <p><strong>Conceptual model vs. implementation.</strong>
 This page documents the <em>conceptual</em> v2 model — the full design as it was
-worked out. The implementation in <code>dpe-core</code> is a pragmatic subset: some
+worked out. The implementation in <code>platform-metadata</code> is a pragmatic subset: some
 entities and fields are not (yet) implemented, and a few differ in shape from
 the design. Each section carries an <strong>As implemented</strong> callout describing the
 current state. Treat the conceptual tables as the design intent and the

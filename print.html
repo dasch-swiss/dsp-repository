@@ -585,7 +585,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <p><strong>A scope is mandatory.</strong> Every commit is <code>type(scope): subject</code>, so every release-notes line reads <code>concern: subject</code>. There is no scopeless form.</p>
 <p>The scope names the <strong>concern the change serves</strong> — the crate or area whose responsibility it belongs to, not the directory the edited files happen to sit in. Use one of these names, lowercase:</p>
 <ul>
-<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>platform-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code></li>
+<li><strong>Crate scopes:</strong> <code>dpe-core</code>, <code>dpe-server</code>, <code>dpe-web</code>, <code>dpe-api-oai</code>, <code>platform-metadata</code>, <code>platform-telemetry</code>, <code>editor-core</code>, <code>editor-web</code>, <code>editor-server</code>, <code>mosaic-tiles</code>, <code>mosaic-playground</code></li>
 <li><strong>Cross-cutting scopes</strong> (changes not tied to one crate):
 <ul>
 <li><code>dpe-data</code> — project metadata files under <code>modules/dpe/server/data/</code></li>
@@ -731,7 +731,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <p>This repository is a Rust workspace structured as a monorepo. All Rust crates are organized as subdirectories within the <code>modules/</code> directory.</p>
 <pre><code class="language-txt">modules/
 ├── dpe/                       # Discovery and Presentation Environment
-│   ├── core/                  # Pure domain types, repositories, data loading (crate: dpe-core)
+│   ├── core/                  # DPE's view model, caches, repositories (crate: dpe-core)
 │   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
 │   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
 │   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
@@ -747,6 +747,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 │   ├── style/                 # CSS / Tailwind
 │   └── Dockerfile             # Production container image
 ├── platform/                  # Crates shared by more than one service
+│   ├── metadata/              # Research-metadata wire contract (crate: platform-metadata)
 │   └── telemetry/             # Browser beacon contract + collector endpoint (crate: platform-telemetry)
 └── mosaic/                    # Mosaic component library (design system)
     ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
@@ -756,10 +757,11 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <h2 id="crate-and-folder-naming-convention"><a class="header" href="#crate-and-folder-naming-convention">Crate and Folder Naming Convention</a></h2>
 <p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part.</p>
 <div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
-<tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>Pure domain types and data access (zero framework deps)</td></tr>
-<tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> only)</td></tr>
+<tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>DPE's view model, caches and repositories over the shared contract (zero framework deps)</td></tr>
+<tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> and <code>platform-metadata</code> only)</td></tr>
 <tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
 <tr><td><code>dpe-server</code></td><td><code>dpe/server</code></td><td>Server binary — composes all routes</td></tr>
+<tr><td><code>platform-metadata</code></td><td><code>platform/metadata</code></td><td>The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor</td></tr>
 <tr><td><code>platform-telemetry</code></td><td><code>platform/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>
 <tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types for the editor (zero framework deps)</td></tr>
 <tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Editor view layer, including the HTML document shell</td></tr>
@@ -778,12 +780,13 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <li><strong>The dependency direction.</strong> <code>platform-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead.</li>
 </ul>
 <p><code>mosaic-*</code> predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.</p>
+<p><strong>The rule covers the shareable part of a crate, not necessarily the whole crate.</strong> <code>dpe-core</code> was not moved wholesale when the editor came to need the data contract: it mixes the contract with DPE's caches, repositories, cluster logic and a DSP-API HTTP client, and moving all of it would have made every one of those a platform concern. What moved is the contract — <code>platform-metadata</code> — and <code>dpe-core</code> now depends on it like any other consumer. Read the rule as <em>the shared thing lives under <code>modules/platform/</code></em>; where the shared thing is a subset of a crate, extract the subset.</p>
 <p><strong>The rule covers crates, not content.</strong> <code>modules/dpe/server/data</code> stays under DPE even though the editor consumes it: DPE owns it, and the editor reads an image-baked snapshot through an explicit <code>EDITOR_DATA_DIR</code> seam rather than a compiled-in path — see <a href="./editor/operations.html#data-directory-a-deliberate-build-input">Editor Operations</a>. Two of the four signals do have analogues there, accepted knowingly: a data-only change matches <code>modules/dpe/**</code>, so it deploys a DPE preview but no editor preview, and <code>serve-editor</code>'s watch list does not restart the editor on a data edit. Both become visible only once the editor reads records, and both are cheaper to fix in place than a wholesale move would be.</p>
 <h2 id="api-crate-pattern"><a class="header" href="#api-crate-pattern">API Crate Pattern</a></h2>
 <p>Each API is a separate crate under <code>modules/dpe/</code>:</p>
 <ul>
 <li><strong>Naming</strong>: <code>dpe-api-{name}</code> (e.g., <code>dpe-api-oai</code>)</li>
-<li><strong>Dependencies</strong>: <code>dpe-core</code> for domain types; never depends on other API crates or <code>dpe-web</code></li>
+<li><strong>Dependencies</strong>: <code>platform-metadata</code> for the contract, <code>dpe-core</code> for the view model; never depends on other API crates or <code>dpe-web</code></li>
 <li><strong>Entry point</strong>: Exports a handler function (e.g., <code>pub async fn oai_handler(...)</code>)</li>
 <li><strong>Composition</strong>: <code>dpe-server</code> wires the handler into the Axum router</li>
 </ul>
@@ -1146,8 +1149,10 @@ are detected</li>
 <h1 id="dpe-architecture"><a class="header" href="#dpe-architecture">DPE Architecture</a></h1>
 <p>The Discovery and Presentation Environment (DPE) serves research project metadata as a web application.</p>
 <h2 id="crate-structure"><a class="header" href="#crate-structure">Crate Structure</a></h2>
-<pre><code>dpe-core          Pure domain types, repositories, data loading
-                  Dependencies: serde, serde_json only
+<pre><code>platform-metadata The wire contract, shared with the editor
+                       │
+dpe-core          DPE's view model, repositories, data loading
+                  Dependencies: platform-metadata, serde, serde_json
                        │
           ┌────────────┼────────────┐
           │            │            │
@@ -1163,9 +1168,10 @@ are detected</li>
            (binary: dpe-server)
 </code></pre>
 <ul>
-<li><strong>dpe-core</strong>: Framework-free domain layer. All types, repository traits, Fs implementations, and data loading.</li>
-<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="dpe/./oai-pmh.html">OAI-PMH Endpoint</a>). Depends only on dpe-core.</li>
-<li><strong>dpe-web</strong>: A native library of <a href="https://maud.lambda.xyz/">Maud</a> page and component functions (<code>fn -&gt; Markup</code>). Imports dpe-core types directly.</li>
+<li><strong>platform-metadata</strong>: The research-metadata wire contract, shared with the editor and living in <code>modules/platform/</code> rather than under <code>modules/dpe/</code>.</li>
+<li><strong>dpe-core</strong>: Framework-free domain layer. DPE's view model, repository traits, Fs implementations, and data loading over the shared contract.</li>
+<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="dpe/./oai-pmh.html">OAI-PMH Endpoint</a>). Depends only on platform-metadata and dpe-core.</li>
+<li><strong>dpe-web</strong>: A native library of <a href="https://maud.lambda.xyz/">Maud</a> page and component functions (<code>fn -&gt; Markup</code>). Imports platform-metadata and dpe-core types directly.</li>
 <li><strong>dpe-server</strong>: Thin composition root. Wires the native Axum router, the <code>&lt;head&gt;</code>/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers into a single Axum server.</li>
 </ul>
 <h2 id="hypermedia-driven-architecture"><a class="header" href="#hypermedia-driven-architecture">Hypermedia-Driven Architecture</a></h2>
@@ -1308,9 +1314,9 @@ GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
 projects and their context as a hierarchy of entities. The model originated in
 the now-retired <code>dsp-meta</code> repository, where it was designed as the successor to
 the earlier v1 model. The metadata has since been migrated to this repository
-and converted to v2; the model is implemented as Rust types in the <code>dpe-core</code>
-crate (<code>modules/dpe/core/src/</code>) and the data lives under
-<code>modules/dpe/server/data/</code>.</p>
+and converted to v2; the model is implemented as Rust types in the
+<code>platform-metadata</code> crate (<code>modules/platform/metadata/src/</code>), shared with the
+editor, and the data lives under <code>modules/dpe/server/data/</code>.</p>
 <div class="mdbook-alerts mdbook-alerts-note">
 <p class="mdbook-alerts-title">
   <span class="mdbook-alerts-icon"></span>
@@ -1318,7 +1324,7 @@ crate (<code>modules/dpe/core/src/</code>) and the data lives under
 </p>
 <p><strong>Conceptual model vs. implementation.</strong>
 This page documents the <em>conceptual</em> v2 model — the full design as it was
-worked out. The implementation in <code>dpe-core</code> is a pragmatic subset: some
+worked out. The implementation in <code>platform-metadata</code> is a pragmatic subset: some
 entities and fields are not (yet) implemented, and a few differ in shape from
 the design. Each section carries an <strong>As implemented</strong> callout describing the
 current state. Treat the conceptual tables as the design intent and the
@@ -2083,7 +2089,7 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 <h1 id="dpe-project-structure"><a class="header" href="#dpe-project-structure">DPE Project Structure</a></h1>
 <h2 id="workspace-layout"><a class="header" href="#workspace-layout">Workspace Layout</a></h2>
 <pre><code>modules/dpe/
-├── core/             dpe-core          Pure domain (serde only)
+├── core/             dpe-core          DPE's view model, caches, repositories (serde only)
 ├── api-oai/          dpe-api-oai       OAI-PMH 2.0 endpoint
 ├── web/              dpe-web           Maud view library (pages + components)
 ├── server/           dpe-server        Axum binary (composition root)
@@ -2092,7 +2098,10 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 └── style/                              Tailwind CSS
 </code></pre>
 <h2 id="dependency-graph"><a class="header" href="#dependency-graph">Dependency Graph</a></h2>
-<pre><code>dpe-core              ← pure domain, no framework deps
+<pre><code>platform-metadata     ← the wire contract, shared with the editor;
+  ↑                     lives in `modules/platform/`
+  │
+dpe-core              ← DPE's view model, caches, repositories; no framework deps
   ↑
   ├── dpe-api-oai     ← OAI-PMH endpoint
   ├── dpe-web         ← Maud pages + components
@@ -2101,20 +2110,31 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
        platform-telemetry  ← beacon contract + collector endpoint, shared with
                              editor-server; lives in `modules/platform/`
 </code></pre>
+<p><code>dpe-api-oai</code>, <code>dpe-web</code> and <code>dpe-server</code> depend on <code>platform-metadata</code> directly
+as well as through <code>dpe-core</code> — the contract types are theirs to import, not
+<code>dpe-core</code>'s to re-export.</p>
 <h2 id="crate-responsibilities"><a class="header" href="#crate-responsibilities">Crate Responsibilities</a></h2>
+<h3 id="platform-metadata-modulesplatformmetadata"><a class="header" href="#platform-metadata-modulesplatformmetadata"><code>platform-metadata</code> (<code>modules/platform/metadata/</code>)</a></h3>
+<p>Not a DPE crate: the research-metadata wire contract, shared with the editor.
+Holds the types a data file deserializes into (<code>ProjectRaw</code>, <code>Person</code>,
+<code>Organization</code>, <code>Record</code>, <code>AuthorityFileReference</code>, …) and the rules for reading
+a value out of one — <code>is_placeholder</code>, the deterministic <code>multilingual_value</code>
+lookup key, <code>is_valid_shortcode</code>, W3CDTF formatting and temporal-coverage
+resolution. Table loading is exposed as <code>load_from(data_dir)</code> so each service
+supplies its own directory. See <code>modules/platform/README.md</code>.</p>
 <h3 id="dpe-core-core"><a class="header" href="#dpe-core-core"><code>dpe-core</code> (core/)</a></h3>
-<p>Framework-free domain layer. Contains:</p>
+<p>Framework-free domain layer — what only DPE needs. Contains:</p>
 <ul>
-<li><strong>Domain types</strong>: <code>Project</code>, <code>Record</code>, <code>Person</code>, <code>Organization</code>, <code>Attribution</code>, etc.</li>
+<li><strong>View model</strong>: <code>Project</code> and the conversions to and from <code>ProjectRaw</code> (lossy, DPE-only), <code>Page</code>, <code>ClusterRef</code>, <code>CollectionRef</code>, <code>ResolvedContributor</code></li>
 <li><strong>Repository traits</strong>: <code>ProjectRepository</code>, <code>RecordRepository</code></li>
 <li><strong>Fs implementations</strong>: <code>FsProjectRepository</code>, <code>FsRecordRepository</code> (backed by in-memory caches)</li>
-<li><strong>Data loading</strong>: Project and record caches (<code>OnceLock&lt;Vec&lt;T&gt;&gt;</code>) loaded from JSON on first access</li>
-<li><strong>Utilities</strong>: <code>lang_value()</code>, <code>get_data_dir()</code></li>
+<li><strong>Data loading</strong>: project, record, person, organization, cluster and the two temporal caches (<code>OnceLock&lt;…&gt;</code>) loaded from <code>DPE_DATA_DIR</code> on first access</li>
+<li><strong>Utilities</strong>: <code>lang_value()</code>, <code>language_display_name()</code>, <code>get_data_dir()</code></li>
 </ul>
-<p>Dependencies: <code>serde</code>, <code>serde_json</code> only.</p>
+<p>Dependencies: <code>platform-metadata</code>, <code>serde</code>, <code>serde_json</code>, <code>tracing</code>, <code>ureq</code>.</p>
 <h3 id="dpe-api-oai-api-oai"><a class="header" href="#dpe-api-oai-api-oai"><code>dpe-api-oai</code> (api-oai/)</a></h3>
 <p>OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord). Usage is documented in <a href="dpe/./oai-pmh.html">OAI-PMH Endpoint</a>.</p>
-<p>Depends on <code>dpe-core</code> for domain types — no web framework dependency.</p>
+<p>Depends on <code>platform-metadata</code> for the contract types and <code>dpe-core</code> for the view model — no web framework dependency.</p>
 <h3 id="dpe-web-web"><a class="header" href="#dpe-web-web"><code>dpe-web</code> (web/)</a></h3>
 <p>Maud view library — a plain <code>lib</code> crate of page and component functions returning <code>maud::Markup</code>. Contains:</p>
 <ul>
@@ -2122,7 +2142,7 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 <li><strong>Components</strong>: navbar, footer, project cards, tab panels, search input — small <code>fn -&gt; Markup</code> partials</li>
 <li><strong>Data access</strong>: loaders and resolvers (<code>get_project</code>, <code>list_projects</code>, <code>get_contributors</code>) as plain functions over <code>dpe-core</code></li>
 </ul>
-<p>Imports <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
+<p>Imports <code>platform-metadata</code> and <code>dpe-core</code> types directly; depends on <code>maud</code> and <code>mosaic-tiles</code>. No Leptos, no WASM, no <code>cdylib</code>/<code>hydrate</code>/<code>ssr</code> features.</p>
 <h3 id="browser-telemetry"><a class="header" href="#browser-telemetry">Browser telemetry</a></h3>
 <p><code>dpe-server</code> wires <code>POST /telemetry/collect</code> from <strong><code>platform-telemetry</code></strong>, which is not a DPE crate — it is shared with <code>editor-server</code> and lives in <code>modules/platform/telemetry</code>. See <code>modules/platform/README.md</code>, and <code>docs/src/repo_structure.md</code> → <em>Shared Crates</em> for why it sits outside <code>modules/dpe/</code>. <code>page_url.rs</code> (below) is the one part of the pipeline that stays in <code>dpe-server</code>: <code>page.url</code> normalization needs DPE's own route table, which a shared crate cannot hold.</p>
 <h3 id="dpe-server-server"><a class="header" href="#dpe-server-server"><code>dpe-server</code> (server/)</a></h3>
@@ -2137,8 +2157,8 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 </ul>
 <h2 id="key-patterns"><a class="header" href="#key-patterns">Key Patterns</a></h2>
 <ul>
-<li><strong>Domain types in <code>dpe-core</code></strong>, not in web or API crates</li>
-<li><strong>API crates depend on <code>dpe-core</code> only</strong>, never on each other or on <code>dpe-web</code></li>
+<li><strong>The wire contract in <code>platform-metadata</code>, DPE's view model in <code>dpe-core</code></strong> — never in web or API crates</li>
+<li><strong>API crates depend on <code>platform-metadata</code> and <code>dpe-core</code> only</strong>, never on each other or on <code>dpe-web</code></li>
 <li><strong><code>dpe-server</code> contains no business logic</strong> — only route composition, the head/page shell, and fragment rendering</li>
 <li><strong>Fragment handlers</strong> call dpe-web view functions and render their <code>Markup</code> with <code>.into_string()</code>, then wrap it in Datastar <code>PatchElements</code>/<code>ExecuteScript</code> SSE events</li>
 </ul>
@@ -2230,7 +2250,7 @@ implemented</strong> callouts above (e.g. the legacy <code>url</code> array form
 <li><strong>Location</strong>: <code>#[cfg(test)]</code> modules in each crate</li>
 <li><strong>Runner</strong>: <code>cargo test --workspace</code></li>
 <li><strong>Scope</strong>: Fragment handlers, OAI protocol, domain types, data loading, filtering/pagination</li>
-<li><strong>Crate</strong>: dpe-core tests run independently — <code>cargo test -p dpe-core</code></li>
+<li><strong>Crate</strong>: dpe-core and platform-metadata tests run independently — <code>cargo test -p dpe-core</code>, <code>cargo test -p platform-metadata</code></li>
 </ul>
 <h2 id="layer-2-snapshot-tests-insta"><a class="header" href="#layer-2-snapshot-tests-insta">Layer 2: Snapshot Tests (insta)</a></h2>
 <ul>
@@ -2509,7 +2529,7 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <li>JSON schema validity for all data file types (projects, persons, organizations, records, clusters, collections)</li>
 <li>Cross-references between projects, persons, and organizations</li>
 <li>Orphaned files that are not referenced by any parent entity</li>
-<li>Project roles misplaced in a person's <code>jobTitles</code> (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's <code>attributions</code> (<code>contributorType</code>), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is <code>JOB_TITLE_ROLE_WORDS</code> in <code>dpe-core</code>.</li>
+<li>Project roles misplaced in a person's <code>jobTitles</code> (e.g. "Project Leader", "Project staff", "Creator"). Such a role belongs in the project's <code>attributions</code> (<code>contributorType</code>), where the OAI-PMH creator/contributor logic can read it. The role vocabulary is <code>JOB_TITLE_ROLE_WORDS</code> in <code>platform-metadata</code>.</li>
 <li>Every distinct <code>temporalCoverage</code> name resolves to a structured date (ChronOntology or the offline enrichment table), or is explicitly marked <code>source: "unresolved"</code>. See <code>docs/src/dpe/oai-pmh.md</code> → <em>Temporal coverage</em>.</li>
 </ul>
 <p><strong>Exit codes:</strong></p>
@@ -2907,7 +2927,7 @@ RUST_LOG=debug
 <li><strong>Everything else</strong> — free-text names resolve against <code>modules/dpe/server/data/temporal-coverage-enrichment.json</code>, a reviewed lookup table built by <code>scripts/build-temporal-coverage-enrichment.py</code>. The tool does not parse names itself; it collects each distinct name and assigns a range one of two ways. A name that carries a ChronOntology URL with a known timespan is resolved from the periods file (<code>source: "chronontology"</code>). Any other name is emitted as a skeleton row (<code>date: null</code>, <code>source: "unresolved"</code>) for an operator or LLM agent to fill with a W3CDTF range and re-tag <code>source: "llm"</code>. Names that are not time periods at all (e.g. a cultural style like "Swiss") keep <code>date: null</code> and stay <code>source: "unresolved"</code>. Re-running is merge-preserving — existing rows are never overwritten, so reviewed rows survive; <code>--check</code> fails if a distinct dataset name has no row yet.</li>
 </ol>
 <p>When no range resolves (a <code>date: null</code> row, or a name absent from both sources), the element is emitted with the <code>dateInformation</code> attribute only and an empty body, so the original label is never dropped.</p>
-<p>Resolution lives in <code>dpe_core::temporal_coverage</code>, shared by the OAI-PMH mapping above, <code>dpe-server validate</code> (<code>just validate-data</code>), and the <code>every_committed_temporal_coverage_resolves</code> test — a distinct <code>temporalCoverage</code> name with no resolvable range fails <code>validate</code> (and CI) rather than only surfacing as a name-only DataCite date at request time.</p>
+<p>Resolution lives in <code>platform_metadata::temporal_coverage</code>, shared by the OAI-PMH mapping above, <code>dpe-server validate</code> (<code>just validate-data</code>), and the <code>every_committed_temporal_coverage_resolves</code> test — a distinct <code>temporalCoverage</code> name with no resolvable range fails <code>validate</code> (and CI) rather than only surfacing as a name-only DataCite date at request time.</p>
 <h3 id="record-files"><a class="header" href="#record-files">Record files</a></h3>
 <p>A bitstream Record may carry a single <code>file</code> (its MIME type and a direct download link, served by dsp-ingest). When present it is exposed in both formats:</p>
 <ul>
@@ -3119,7 +3139,7 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 <p>The metadata editor is where depositing project teams edit their project metadata, RDU reviews it field by field, and approved records are collected into a pull request against this repository. Git stays the source of truth.</p>
 <p>This page describes the service as it stands. Surfaces that are not built yet are named where they affect a decision taken now, and marked as such.</p>
 <h2 id="relationship-to-dpe"><a class="header" href="#relationship-to-dpe">Relationship to DPE</a></h2>
-<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>platform-telemetry</code> for the browser-beacon contract and <code>mosaic-tiles</code> for components, and will share <code>dpe-core</code> for the data contract — but not a process, an image, or an origin.</p>
+<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>platform-telemetry</code> for the browser-beacon contract, <code>platform-metadata</code> for the research-metadata contract and <code>mosaic-tiles</code> for components — but not a process, an image, or an origin.</p>
 <p>The separation is deliberate:</p>
 <ul>
 <li>DPE is public, unauthenticated and read-only. The editor is authenticated and writes state. A host-level compromise of one should not hand over the other's session cookies.</li>
@@ -3375,7 +3395,7 @@ POST /logout       session deleted, cookie cleared
 <h3 id="per-project-scope"><a class="header" href="#per-project-scope">Per-project scope</a></h3>
 <p><code>User::may_reach</code> is the whole rule. RDU is unconditional, because REQ-4.2 makes RDU access role-based rather than per-project — which is also why an RDU account's assignment set is empty. A depositor is confined to their assignments (REQ-1.2).</p>
 <p>The comparison <strong>ignores ASCII case</strong>. The published set mixes <code>080C</code> with <code>0801a</code>, so which half of a shortcode is capitalised is not something an RDU member typing an assignment can be expected to get right, and getting it wrong would deny a depositor their own project with no visible cause. It would be too generous if two projects differed only in case; none do.</p>
-<p>A shortcode is validated for shape before the assignment is consulted, and the rule is <strong>ASCII alphanumeric</strong>, not four hex digits: <code>0801a</code> through <code>0801e</code> are real projects, so a hex-only rule would answer 404 for five of them. <code>editor-core</code> carries its own copy of <code>dpe_core::project::is_valid_shortcode</code> rather than depending on <code>dpe-core</code> for one predicate; they converge when the draft model brings <code>dpe-core</code> in for real, and both carry tests.</p>
+<p>A shortcode is validated for shape before the assignment is consulted by <code>platform_metadata::is_valid_shortcode</code>, the single copy DPE and the editor share. The rule is <strong>ASCII alphanumeric with a 16-character bound</strong>, not DSP-API's four hex digits (<code>KnoraProject.scala</code>): <code>0801a</code> through <code>0801e</code> are published projects — a temporary split of BEOL, which is one VRE project represented as several in the metadata — so a hex-only rule would answer 404 for five of them.</p>
 <h3 id="landing-where-you-were-going"><a class="header" href="#landing-where-you-were-going">Landing where you were going</a></h3>
 <p>An unauthenticated <code>GET</code> is redirected to <code>/login?next=&lt;path&gt;</code>, and the destination is carried on the form actions of both login screens through to the redirect that follows a successful sign-in. Without it, following a link into a project means signing in and arriving at the root.</p>
 <p><strong>The destination is an open-redirect surface</strong>, because it arrives from a query string and is therefore attacker-chosen: a link carrying <code>next=https://evil.example</code> would turn the editor's own sign-in page into a redirector, reachable from the real origin with a real certificate and following a real authentication. <code>safe_next</code> is an allowlist rather than a list of things to reject, because the reject list is not knowable — <code>//evil.example</code> is protocol-relative, <code>/\evil.example</code> is normalised to it by browsers that treat a backslash as a separator, and <code>%2f%2fevil.example</code> becomes it after one decode. What is admitted is a leading <code>/</code> followed by ASCII alphanumerics and <code>/</code>, <code>-</code>, <code>_</code>, <code>.</code>, with no <code>..</code> segment and not the login screens themselves.</p>
@@ -4475,8 +4495,9 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 </ul>
 <p><strong>Architecture</strong></p>
 <ul>
-<li>New API crates follow the <code>dpe-api-{name}</code> pattern with <code>dpe-core</code> as only domain dependency (see <a href="fundamentals/../repo_structure.html">Project Structure</a>)</li>
-<li><code>dpe-core</code> has no framework dependencies (no axum, no maud)</li>
+<li>New API crates follow the <code>dpe-api-{name}</code> pattern with <code>platform-metadata</code> and <code>dpe-core</code> as only domain dependencies (see <a href="fundamentals/../repo_structure.html">Project Structure</a>)</li>
+<li><code>dpe-core</code> and <code>platform-metadata</code> have no framework dependencies (no axum, no maud)</li>
+<li><code>platform-metadata</code> takes no dependency on a service crate, and no path into a service's data directory</li>
 <li>Validate command covers all data file types (DPE)</li>
 <li>E2E test directory naming: <code>web-e2e-tests/</code> for DPE, <code>playground-e2e-tests/</code> for Mosaic</li>
 </ul>
@@ -4505,7 +4526,7 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 <ul>
 <li>Follow existing Datastar attribute patterns (signal naming with <code>_</code> prefix) — see <a href="fundamentals/../dpe/architecture.html">DPE Architecture</a></li>
 <li>Fragment handlers in <code>fragments/</code> module, not inline in <code>main.rs</code></li>
-<li>Domain types belong in <code>dpe-core</code>, not in web or API crates</li>
+<li>Contract types belong in <code>platform-metadata</code> and DPE's view model in <code>dpe-core</code>, not in web or API crates</li>
 <li>API crate exposes a handler function (e.g., <code>pub async fn oai_handler(...)</code>) for composition in dpe-server</li>
 <li>View functions return <code>maud::Markup</code> via the <code>html!</code> macro</li>
 <li>No non-trivial <code>html!</code> block passed directly as a function argument — bind it to a Rust <code>let</code> or extract a <code>fn -&gt; Markup</code> helper (nested-as-argument <code>html!</code> is skipped by <code>maudfmt</code> and mangled by <code>cargo fmt</code>; trivial one-liners like <code>html! { (label) }</code> are fine)</li>

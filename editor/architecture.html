@@ -246,7 +246,7 @@
 <p>The metadata editor is where depositing project teams edit their project metadata, RDU reviews it field by field, and approved records are collected into a pull request against this repository. Git stays the source of truth.</p>
 <p>This page describes the service as it stands. Surfaces that are not built yet are named where they affect a decision taken now, and marked as such.</p>
 <h2 id="relationship-to-dpe"><a class="header" href="#relationship-to-dpe">Relationship to DPE</a></h2>
-<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>platform-telemetry</code> for the browser-beacon contract and <code>mosaic-tiles</code> for components, and will share <code>dpe-core</code> for the data contract — but not a process, an image, or an origin.</p>
+<p>The editor is a <strong>separate service</strong> from DPE, not a section of it. They share <code>platform-telemetry</code> for the browser-beacon contract, <code>platform-metadata</code> for the research-metadata contract and <code>mosaic-tiles</code> for components — but not a process, an image, or an origin.</p>
 <p>The separation is deliberate:</p>
 <ul>
 <li>DPE is public, unauthenticated and read-only. The editor is authenticated and writes state. A host-level compromise of one should not hand over the other's session cookies.</li>

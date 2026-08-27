@@ -245,8 +245,10 @@
 <h1 id="dpe-architecture"><a class="header" href="#dpe-architecture">DPE Architecture</a></h1>
 <p>The Discovery and Presentation Environment (DPE) serves research project metadata as a web application.</p>
 <h2 id="crate-structure"><a class="header" href="#crate-structure">Crate Structure</a></h2>
-<pre><code>dpe-core          Pure domain types, repositories, data loading
-                  Dependencies: serde, serde_json only
+<pre><code>platform-metadata The wire contract, shared with the editor
+                       │
+dpe-core          DPE's view model, repositories, data loading
+                  Dependencies: platform-metadata, serde, serde_json
                        │
           ┌────────────┼────────────┐
           │            │            │
@@ -262,9 +264,10 @@
            (binary: dpe-server)
 </code></pre>
 <ul>
-<li><strong>dpe-core</strong>: Framework-free domain layer. All types, repository traits, Fs implementations, and data loading.</li>
-<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="./oai-pmh.html">OAI-PMH Endpoint</a>). Depends only on dpe-core.</li>
-<li><strong>dpe-web</strong>: A native library of <a href="https://maud.lambda.xyz/">Maud</a> page and component functions (<code>fn -&gt; Markup</code>). Imports dpe-core types directly.</li>
+<li><strong>platform-metadata</strong>: The research-metadata wire contract, shared with the editor and living in <code>modules/platform/</code> rather than under <code>modules/dpe/</code>.</li>
+<li><strong>dpe-core</strong>: Framework-free domain layer. DPE's view model, repository traits, Fs implementations, and data loading over the shared contract.</li>
+<li><strong>dpe-api-oai</strong>: OAI-PMH 2.0 endpoint (see <a href="./oai-pmh.html">OAI-PMH Endpoint</a>). Depends only on platform-metadata and dpe-core.</li>
+<li><strong>dpe-web</strong>: A native library of <a href="https://maud.lambda.xyz/">Maud</a> page and component functions (<code>fn -&gt; Markup</code>). Imports platform-metadata and dpe-core types directly.</li>
 <li><strong>dpe-server</strong>: Thin composition root. Wires the native Axum router, the <code>&lt;head&gt;</code>/page shell, config, and the Datastar fragment handlers, mounting dpe-web's views and dpe-api-oai's handlers into a single Axum server.</li>
 </ul>
 <h2 id="hypermedia-driven-architecture"><a class="header" href="#hypermedia-driven-architecture">Hypermedia-Driven Architecture</a></h2>

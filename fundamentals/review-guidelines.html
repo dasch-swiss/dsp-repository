@@ -260,8 +260,9 @@
 </ul>
 <p><strong>Architecture</strong></p>
 <ul>
-<li>New API crates follow the <code>dpe-api-{name}</code> pattern with <code>dpe-core</code> as only domain dependency (see <a href="../repo_structure.html">Project Structure</a>)</li>
-<li><code>dpe-core</code> has no framework dependencies (no axum, no maud)</li>
+<li>New API crates follow the <code>dpe-api-{name}</code> pattern with <code>platform-metadata</code> and <code>dpe-core</code> as only domain dependencies (see <a href="../repo_structure.html">Project Structure</a>)</li>
+<li><code>dpe-core</code> and <code>platform-metadata</code> have no framework dependencies (no axum, no maud)</li>
+<li><code>platform-metadata</code> takes no dependency on a service crate, and no path into a service's data directory</li>
 <li>Validate command covers all data file types (DPE)</li>
 <li>E2E test directory naming: <code>web-e2e-tests/</code> for DPE, <code>playground-e2e-tests/</code> for Mosaic</li>
 </ul>
@@ -290,7 +291,7 @@
 <ul>
 <li>Follow existing Datastar attribute patterns (signal naming with <code>_</code> prefix) — see <a href="../dpe/architecture.html">DPE Architecture</a></li>
 <li>Fragment handlers in <code>fragments/</code> module, not inline in <code>main.rs</code></li>
-<li>Domain types belong in <code>dpe-core</code>, not in web or API crates</li>
+<li>Contract types belong in <code>platform-metadata</code> and DPE's view model in <code>dpe-core</code>, not in web or API crates</li>
 <li>API crate exposes a handler function (e.g., <code>pub async fn oai_handler(...)</code>) for composition in dpe-server</li>
 <li>View functions return <code>maud::Markup</code> via the <code>html!</code> macro</li>
 <li>No non-trivial <code>html!</code> block passed directly as a function argument — bind it to a Rust <code>let</code> or extract a <code>fn -&gt; Markup</code> helper (nested-as-argument <code>html!</code> is skipped by <code>maudfmt</code> and mangled by <code>cargo fmt</code>; trivial one-liners like <code>html! { (label) }</code> are fine)</li>

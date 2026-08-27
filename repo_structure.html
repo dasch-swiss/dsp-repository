@@ -247,7 +247,7 @@
 <p>This repository is a Rust workspace structured as a monorepo. All Rust crates are organized as subdirectories within the <code>modules/</code> directory.</p>
 <pre><code class="language-txt">modules/
 ├── dpe/                       # Discovery and Presentation Environment
-│   ├── core/                  # Pure domain types, repositories, data loading (crate: dpe-core)
+│   ├── core/                  # DPE's view model, caches, repositories (crate: dpe-core)
 │   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
 │   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
 │   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
@@ -263,6 +263,7 @@
 │   ├── style/                 # CSS / Tailwind
 │   └── Dockerfile             # Production container image
 ├── platform/                  # Crates shared by more than one service
+│   ├── metadata/              # Research-metadata wire contract (crate: platform-metadata)
 │   └── telemetry/             # Browser beacon contract + collector endpoint (crate: platform-telemetry)
 └── mosaic/                    # Mosaic component library (design system)
     ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
@@ -272,10 +273,11 @@
 <h2 id="crate-and-folder-naming-convention"><a class="header" href="#crate-and-folder-naming-convention">Crate and Folder Naming Convention</a></h2>
 <p><strong>Crate names</strong> follow the <code>{module}-{role}</code> pattern. <strong>Folder names</strong> strip the module prefix, keeping only the role part.</p>
 <div class="table-wrapper"><table><thead><tr><th>Crate</th><th>Folder</th><th>Role</th></tr></thead><tbody>
-<tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>Pure domain types and data access (zero framework deps)</td></tr>
-<tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> only)</td></tr>
+<tr><td><code>dpe-core</code></td><td><code>dpe/core</code></td><td>DPE's view model, caches and repositories over the shared contract (zero framework deps)</td></tr>
+<tr><td><code>dpe-api-oai</code></td><td><code>dpe/api-oai</code></td><td>OAI-PMH 2.0 API (depends on <code>dpe-core</code> and <code>platform-metadata</code> only)</td></tr>
 <tr><td><code>dpe-web</code></td><td><code>dpe/web</code></td><td>Maud pages and components (<code>fn -&gt; Markup</code>)</td></tr>
 <tr><td><code>dpe-server</code></td><td><code>dpe/server</code></td><td>Server binary — composes all routes</td></tr>
+<tr><td><code>platform-metadata</code></td><td><code>platform/metadata</code></td><td>The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor</td></tr>
 <tr><td><code>platform-telemetry</code></td><td><code>platform/telemetry</code></td><td>Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor</td></tr>
 <tr><td><code>editor-core</code></td><td><code>editor/core</code></td><td>Pure domain types for the editor (zero framework deps)</td></tr>
 <tr><td><code>editor-web</code></td><td><code>editor/web</code></td><td>Editor view layer, including the HTML document shell</td></tr>
@@ -294,12 +296,13 @@
 <li><strong>The dependency direction.</strong> <code>platform-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead.</li>
 </ul>
 <p><code>mosaic-*</code> predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.</p>
+<p><strong>The rule covers the shareable part of a crate, not necessarily the whole crate.</strong> <code>dpe-core</code> was not moved wholesale when the editor came to need the data contract: it mixes the contract with DPE's caches, repositories, cluster logic and a DSP-API HTTP client, and moving all of it would have made every one of those a platform concern. What moved is the contract — <code>platform-metadata</code> — and <code>dpe-core</code> now depends on it like any other consumer. Read the rule as <em>the shared thing lives under <code>modules/platform/</code></em>; where the shared thing is a subset of a crate, extract the subset.</p>
 <p><strong>The rule covers crates, not content.</strong> <code>modules/dpe/server/data</code> stays under DPE even though the editor consumes it: DPE owns it, and the editor reads an image-baked snapshot through an explicit <code>EDITOR_DATA_DIR</code> seam rather than a compiled-in path — see <a href="./editor/operations.html#data-directory-a-deliberate-build-input">Editor Operations</a>. Two of the four signals do have analogues there, accepted knowingly: a data-only change matches <code>modules/dpe/**</code>, so it deploys a DPE preview but no editor preview, and <code>serve-editor</code>'s watch list does not restart the editor on a data edit. Both become visible only once the editor reads records, and both are cheaper to fix in place than a wholesale move would be.</p>
 <h2 id="api-crate-pattern"><a class="header" href="#api-crate-pattern">API Crate Pattern</a></h2>
 <p>Each API is a separate crate under <code>modules/dpe/</code>:</p>
 <ul>
 <li><strong>Naming</strong>: <code>dpe-api-{name}</code> (e.g., <code>dpe-api-oai</code>)</li>
-<li><strong>Dependencies</strong>: <code>dpe-core</code> for domain types; never depends on other API crates or <code>dpe-web</code></li>
+<li><strong>Dependencies</strong>: <code>platform-metadata</code> for the contract, <code>dpe-core</code> for the view model; never depends on other API crates or <code>dpe-web</code></li>
 <li><strong>Entry point</strong>: Exports a handler function (e.g., <code>pub async fn oai_handler(...)</code>)</li>
 <li><strong>Composition</strong>: <code>dpe-server</code> wires the handler into the Axum router</li>
 </ul>

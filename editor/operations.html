@@ -297,6 +297,7 @@ image CI publishes, under emulation.</p>
 <tr><td><code>EDITOR_LOGIN_MAX_FAILED</code></td><td>No</td><td><code>10</code></td><td>Consecutive account-level failures before throttling. NIST SP 800-63B-4's ceiling is 100, which startup also validates.</td></tr>
 <tr><td><code>EDITOR_LOGIN_LOCKOUT_SECS</code></td><td>No</td><td><code>900</code></td><td>How long throttling lasts after the cap is reached.</td></tr>
 <tr><td><code>EDITOR_MAIL_DAILY_CAP</code></td><td>No</td><td><code>500</code></td><td>Codes that may be sent across <strong>all</strong> users in 24 hours. Sits below the relay's 10,000/day so a resend loop cannot exhaust a quota shared with other senders.</td></tr>
+<tr><td><code>EDITOR_MAIL_ACCOUNT_DAILY_CAP</code></td><td>No</td><td><code>20</code></td><td>Codes that may be sent to a <strong>single account</strong> in 24 hours. The global cap alone does not bound one address: at a 60-second cooldown one address fits 1,440 codes a day. Must not exceed <code>EDITOR_MAIL_DAILY_CAP</code>, which startup validates.</td></tr>
 <tr><td><code>EDITOR_SESSION_ABSOLUTE_SECS</code></td><td>No</td><td><code>43200</code> (12 h)</td><td>Absolute session lifetime, set at creation and never extended.</td></tr>
 <tr><td><code>EDITOR_SESSION_IDLE_SECS</code></td><td>No</td><td><code>7200</code> (2 h)</td><td>Idle session timeout. Must not exceed the absolute lifetime, which startup validates.</td></tr>
 <tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g. <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
@@ -341,7 +342,12 @@ image CI publishes, under emulation.</p>
 <li><strong>"never"</strong> — no code was ever handed to the relay for that account. Either they have not tried, or they typed a different address, or the send failed and was rolled back (which the log will say, with a status code).</li>
 <li><strong>a timestamp</strong> — a code went out. The problem is downstream: spam filtering, greylisting, or a mailbox they do not read.</li>
 </ul>
-<p>Before assuming a delivery problem, check the auth log for <code>auth.outcome = "locked_out"</code>. A user throttled after repeated wrong entries is told only "that code is not valid" — deliberately, because a distinct message would confirm to anyone that the address has an account.</p>
+<p>Before assuming a delivery problem, check the auth log for the outcome recorded against that <code>auth.subject</code>. Three refuse silently, because REQ-6.2 requires the response not to vary:</p>
+<ul>
+<li><code>auth.outcome = "locked_out"</code> — throttled after repeated wrong entries, and told only "that code is not valid".</li>
+<li><code>auth.outcome = "account_daily_cap"</code> — this account has had <code>EDITOR_MAIL_ACCOUNT_DAILY_CAP</code> codes in the last 24 hours. Logged at <code>WARN</code>: one account being driven that hard is the early warning for the global cap.</li>
+<li><code>auth.outcome = "daily_cap"</code> — the whole service is at <code>EDITOR_MAIL_DAILY_CAP</code> and <strong>nobody</strong> can be sent a code. Logged at <code>ERROR</code>, and it means an outage is in progress rather than one user having a bad day.</li>
+</ul>
 <h3 id="no-relay-configured"><a class="header" href="#no-relay-configured">No relay configured</a></h3>
 <p>With <code>EDITOR_SMTP_HOST</code> unset, every code is written to the log at <code>WARN</code> and the service stays usable (REQ-6.8). The log line carries the message body and <strong>not</strong> the recipient — whoever is testing knows the address they typed, and REQ-6.10 forbids one in a log.</p>
 <h3 id="a-broken-relay"><a class="header" href="#a-broken-relay">A broken relay</a></h3>
@@ -395,7 +401,7 @@ grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
 <li>Keep <code>replicas: 1</code> with <code>order: stop-first</code>, so a rolling update never briefly runs two processes against one database file. Node pinning is unnecessary — there is no multi-node Swarm.</li>
 </ul>
 <h3 id="expired-rows"><a class="header" href="#expired-rows">Expired rows</a></h3>
-<p>An hourly background sweep deletes expired login codes and sessions. Nothing depends on it succeeding — a failure is logged and the next hour tries again — and the first sweep runs one interval after start, so a restart loop never spends its time sweeping.</p>
+<p>An hourly background sweep deletes expired login codes and sessions, and prunes <code>mail_sends</code> — the append-only send log the daily caps count — at the caps' own 24-hour window, which is the only thing bounding that table. Nothing depends on the sweep succeeding — a failure is logged and the next hour tries again — and the first sweep runs one interval after start, so a restart loop never spends its time sweeping.</p>
 <h3 id="startup-pre-flight"><a class="header" href="#startup-pre-flight">Startup pre-flight</a></h3>
 <p>Before opening the database, startup writes and removes a probe file in <code>EDITOR_DB_DIR</code> and reports the three failures separately: the directory is missing, it is a file rather than a directory, or it cannot be written to. Without the probe all three arrive as SQLite's <code>unable to open database file</code>, which is the same message for a typo in the path, a wrong uid and a root-owned mount. The unwritable-directory message names uid 65532 explicitly.</p>
 <h3 id="storage-type"><a class="header" href="#storage-type">Storage type</a></h3>

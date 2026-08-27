@@ -36,13 +36,17 @@ static SUBSCRIBER_READY: AtomicBool = AtomicBool::new(false);
 /// Shared state for the handlers.
 ///
 /// Cheap to clone: the stylesheet href is a short string resolved once at
-/// startup, `Database` is a pair of pool handles, and the mailer is behind an
-/// `Arc` because a transport holds a connection pool of its own.
+/// startup, and both the store and the mailer are behind an `Arc`.
 #[derive(Clone)]
 pub(crate) struct AppState {
     /// Unhashed in dev, content-hashed in release.
     css_href: String,
-    db: db::Database,
+    /// Behind the ports rather than the concrete [`db::Database`], so a test can
+    /// make a chosen storage call fail. Several branches in the auth flow exist
+    /// only to handle exactly that, and with a concrete `Database` here none of
+    /// them could be driven. Call sites still go through the port that declares
+    /// the method, so this widens nothing.
+    db: std::sync::Arc<dyn editor_core::repository::Repositories>,
     /// Behind a trait rather than the concrete transport, so a test can watch
     /// what was sent and make sending fail — the failure path is where the code
     /// rollback and the break-glass decision live.
@@ -316,7 +320,10 @@ async fn serve() -> ExitCode {
     // shared-cache in-memory database exists only while a connection to it is
     // open.
     let db = match db::Database::open(config.db_source(), config.db_readers, config.db_busy_timeout()).await {
-        Ok(db) => db,
+        // Behind an `Arc` from here on: `AppState` holds the ports rather than
+        // the concrete store, and the cleanup task below needs a handle of its
+        // own. One allocation at startup, and every call site is a deref.
+        Ok(db) => std::sync::Arc::new(db),
         Err(e) => {
             tracing::error!(error = %e, "failed to open the database");
             return ExitCode::FAILURE;
@@ -327,7 +334,7 @@ async fn serve() -> ExitCode {
     // are created or promoted on every start. Fatal if it fails: an
     // administrator who cannot exist means nobody can administer the service,
     // and carrying on would hide that until someone tried to sign in.
-    match accounts::ensure_rdu(&db, &config.rdu_addresses(), chrono::Utc::now()).await {
+    match accounts::ensure_rdu(&*db, &config.rdu_addresses(), chrono::Utc::now()).await {
         Ok(changed) => tracing::info!(
             rdu.configured = config.rdu_addresses().len(),
             rdu.changed = changed,
@@ -368,7 +375,7 @@ async fn serve() -> ExitCode {
     // draining, and the next start sweeps whatever a stopped process left.
     {
         const CLEANUP_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60 * 60);
-        let db = db.clone();
+        let db = std::sync::Arc::clone(&db);
         tokio::spawn(async move {
             use editor_core::repository::{LoginCodeRepository, MailSendRepository, SessionRepository};
 
@@ -385,9 +392,9 @@ async fn serve() -> ExitCode {
                 // keep rows nothing reads.
                 let window_start = now - auth::delta(config::SEND_WINDOW);
                 match (
-                    LoginCodeRepository::delete_expired(&db, now).await,
-                    SessionRepository::delete_expired(&db, now).await,
-                    MailSendRepository::delete_before(&db, window_start).await,
+                    LoginCodeRepository::delete_expired(&*db, now).await,
+                    SessionRepository::delete_expired(&*db, now).await,
+                    MailSendRepository::delete_before(&*db, window_start).await,
                 ) {
                     (Ok(codes), Ok(sessions), Ok(sends)) if codes > 0 || sessions > 0 || sends > 0 => {
                         tracing::info!(codes, sessions, sends, "swept expired login codes, sessions and send records");

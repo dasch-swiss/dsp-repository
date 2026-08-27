@@ -6,11 +6,10 @@ use std::time::Duration;
 use axum::http::HeaderMap;
 use chrono::{DateTime, Utc};
 use editor_core::records::{Session, User};
-use editor_core::repository::{RepositoryError, SessionRepository, UserRepository};
+use editor_core::repository::{Repositories, RepositoryError, SessionRepository, UserRepository};
 use uuid::Uuid;
 
 use super::{cookie, delta, secret, AuthConfig};
-use crate::db::Database;
 
 /// How stale `last_seen_at` may get before a request writes it forward.
 ///
@@ -35,7 +34,7 @@ const TOUCH_INTERVAL: Duration = Duration::from_secs(60);
 /// can become the authenticated session id, so a fixated pre-auth value has
 /// nowhere to go.
 pub(crate) async fn begin(
-    db: &Database,
+    db: &dyn SessionRepository,
     auth: &AuthConfig,
     user_id: Uuid,
     now: DateTime<Utc>,
@@ -64,7 +63,12 @@ pub(crate) async fn begin(
 /// once it has been checked — the id is in the cookie and the timestamps have
 /// already been acted on — and returning it would invite a caller to make a
 /// decision from a value this function has finished with.
-pub(crate) async fn current(db: &Database, auth: &AuthConfig, headers: &HeaderMap, now: DateTime<Utc>) -> Option<User> {
+pub(crate) async fn current(
+    db: &dyn Repositories,
+    auth: &AuthConfig,
+    headers: &HeaderMap,
+    now: DateTime<Utc>,
+) -> Option<User> {
     let id = cookie::read(headers, cookie::SESSION)?;
 
     let session = match SessionRepository::find(db, &id).await {
@@ -130,7 +134,7 @@ pub(crate) enum Ended {
 }
 
 /// Delete the session the request carries.
-pub(crate) async fn end(db: &Database, headers: &HeaderMap) -> Ended {
+pub(crate) async fn end(db: &dyn SessionRepository, headers: &HeaderMap) -> Ended {
     let Some(id) = cookie::read(headers, cookie::SESSION) else {
         return Ended::NoSession;
     };

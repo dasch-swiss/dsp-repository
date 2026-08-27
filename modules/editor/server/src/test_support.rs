@@ -11,6 +11,13 @@ use async_trait::async_trait;
 use axum::body::Body;
 use axum::http::header::{COOKIE, SET_COOKIE};
 use axum::http::{Request, Response};
+use chrono::{DateTime, Utc};
+use editor_core::records::{ApprovedRecord, DraftRecord, LoginCode, Session, Submission, User};
+use editor_core::repository::{
+    ApprovedRecordRepository, Attempt, DraftRepository, Issued, LoginCodeRepository, MailSendRepository, Repositories,
+    RepositoryError, Result, SessionRepository, SubmissionRepository, UserRepository,
+};
+use uuid::Uuid;
 
 use crate::auth::AuthConfig;
 use crate::config::EditorConfig;
@@ -63,7 +70,10 @@ impl RecordingMailer {
 
 #[async_trait]
 impl Mailer for RecordingMailer {
-    async fn send(&self, mail: &Mail) -> Result<(), MailError> {
+    // `std::result::Result` spelled out: this file imports `editor_core`'s
+    // one-parameter `Result` alias for the 44 port methods below, which is what
+    // the sibling `db/*.rs` implementations do too.
+    async fn send(&self, mail: &Mail) -> std::result::Result<(), MailError> {
         // Recorded even when the send fails, so a test can assert what would
         // have gone out and to whom.
         self.sent
@@ -99,21 +109,40 @@ pub(crate) async fn state_with(
     mailer: RecordingMailer,
     adjust: impl FnOnce(&mut AuthConfig),
 ) -> (AppState, RecordingMailer) {
-    let db = Database::open(Source::memory_for_test(label), 4, Duration::from_secs(5))
+    let db = Arc::new(open_test_db(label).await);
+    (state_over(db, mailer.clone(), adjust), mailer)
+}
+
+/// A fresh in-memory database for one test.
+pub(crate) async fn open_test_db(label: &str) -> Database {
+    Database::open(Source::memory_for_test(label), 4, Duration::from_secs(5))
         .await
-        .expect("the test database should open");
+        .expect("the test database should open")
+}
+
+/// App state over a store the caller built.
+///
+/// [`state_with`] covers every test that just needs a working database. This is
+/// for the two kinds that need the handle as well: one that reads a table
+/// directly (see [`count_rows`] — `AppState` has erased the concrete
+/// [`Database`] behind the ports), and one that puts a [`FaultyDatabase`] in
+/// front of it while keeping the real store to seed and to assert against.
+pub(crate) fn state_over(
+    db: Arc<dyn Repositories>,
+    mailer: RecordingMailer,
+    adjust: impl FnOnce(&mut AuthConfig),
+) -> AppState {
     let mut auth = AuthConfig::from(&EditorConfig::default());
     adjust(&mut auth);
-    let state = AppState {
+    AppState {
         css_href: "/assets/app.css".to_string(),
         db,
-        mailer: Arc::new(mailer.clone()),
+        mailer: Arc::new(mailer),
         auth,
         // Off by default: the reveal is the exception, so a test that wants it
         // has to say so, and every other test proves the ordinary path.
         reveal_login_code: false,
-    };
-    (state, mailer)
+    }
 }
 
 /// The whole app over `state`, as `serve()` assembles it.
@@ -145,7 +174,7 @@ pub(crate) async fn a_user(
         last_code_at: None,
         created_at: chrono::Utc::now(),
     };
-    UserRepository::create(&state.db, &user)
+    UserRepository::create(&*state.db, &user)
         .await
         .expect("the fixture user should insert");
     user
@@ -157,7 +186,7 @@ pub(crate) async fn a_user(
 /// reach a page should fail when authorization breaks, not when the mail
 /// transport does.
 pub(crate) async fn a_session(state: &AppState, user_id: uuid::Uuid) -> String {
-    crate::auth::session::begin(&state.db, &state.auth, user_id, chrono::Utc::now())
+    crate::auth::session::begin(&*state.db, &state.auth, user_id, chrono::Utc::now())
         .await
         .expect("the fixture session should insert")
         .id
@@ -401,4 +430,257 @@ pub(crate) fn capture_logs() -> (LogCapture, CaptureGuard) {
     let capture = LogCapture::default();
     SINK.with(|sink| *sink.borrow_mut() = Some(capture.clone()));
     (capture, CaptureGuard)
+}
+
+/// Which storage calls a [`FaultyDatabase`] must fail.
+///
+/// One field per injectable call, named after the port method, so the compiler
+/// checks the name and a new branch adds a field rather than a string. All false
+/// by default: a test sets exactly the one branch it is driving.
+#[derive(Default)]
+pub(crate) struct Faults {
+    pub claim_attempt: bool,
+    pub rebind_browser_token: bool,
+    pub record_failed_login: bool,
+    /// `MailSendRepository::record` — named for the port, since `record` alone
+    /// would not say which one.
+    pub record_mail_send: bool,
+}
+
+/// A store that delegates every call to a real [`Database`] and fails the ones
+/// [`Faults`] names.
+///
+/// Delegation rather than a store built from scratch, because the branches this
+/// exists for are deep in a flow: reaching the failing `claim_attempt` means an
+/// account, a live code and a browser binding all had to be found first. A fake
+/// answering everything from nothing would have to reimplement the store to get
+/// there, and would then be proving things about the reimplementation.
+pub(crate) struct FaultyDatabase {
+    inner: Arc<Database>,
+    faults: Faults,
+}
+
+impl FaultyDatabase {
+    pub(crate) fn new(inner: Arc<Database>, faults: Faults) -> Self {
+        Self { inner, faults }
+    }
+}
+
+/// The error an injected failure reports.
+///
+/// [`RepositoryError::Backend`] specifically: it is the variant a driver failure
+/// arrives as, so the handler takes the same branch it would in production. The
+/// message says it was injected, so a capture of a test that fails for another
+/// reason does not read like a real storage fault.
+fn injected(call: &'static str) -> RepositoryError {
+    RepositoryError::Backend(format!("injected failure in {call} (test)").into())
+}
+
+#[async_trait]
+impl UserRepository for FaultyDatabase {
+    async fn create(&self, user: &User) -> Result<()> {
+        UserRepository::create(&*self.inner, user).await
+    }
+
+    async fn update(&self, user: &User) -> Result<()> {
+        UserRepository::update(&*self.inner, user).await
+    }
+
+    async fn delete(&self, id: Uuid) -> Result<()> {
+        UserRepository::delete(&*self.inner, id).await
+    }
+
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<User>> {
+        UserRepository::find_by_id(&*self.inner, id).await
+    }
+
+    async fn find_by_email(&self, email: &str) -> Result<Option<User>> {
+        UserRepository::find_by_email(&*self.inner, email).await
+    }
+
+    async fn list(&self) -> Result<Vec<User>> {
+        UserRepository::list(&*self.inner).await
+    }
+
+    async fn record_failed_login(&self, id: Uuid, at: DateTime<Utc>, decay_before: DateTime<Utc>) -> Result<u32> {
+        if self.faults.record_failed_login {
+            return Err(injected("UserRepository::record_failed_login"));
+        }
+        UserRepository::record_failed_login(&*self.inner, id, at, decay_before).await
+    }
+
+    async fn clear_failed_logins(&self, id: Uuid) -> Result<()> {
+        UserRepository::clear_failed_logins(&*self.inner, id).await
+    }
+
+    async fn record_code_issued(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
+        UserRepository::record_code_issued(&*self.inner, id, at).await
+    }
+}
+
+#[async_trait]
+impl SessionRepository for FaultyDatabase {
+    async fn create(&self, session: &Session) -> Result<()> {
+        SessionRepository::create(&*self.inner, session).await
+    }
+
+    async fn find(&self, id: &str) -> Result<Option<Session>> {
+        SessionRepository::find(&*self.inner, id).await
+    }
+
+    async fn touch(&self, id: &str, at: DateTime<Utc>) -> Result<()> {
+        SessionRepository::touch(&*self.inner, id, at).await
+    }
+
+    async fn delete(&self, id: &str) -> Result<bool> {
+        SessionRepository::delete(&*self.inner, id).await
+    }
+
+    async fn delete_expired(&self, now: DateTime<Utc>) -> Result<u64> {
+        SessionRepository::delete_expired(&*self.inner, now).await
+    }
+}
+
+#[async_trait]
+impl LoginCodeRepository for FaultyDatabase {
+    async fn create(&self, code: &LoginCode) -> Result<()> {
+        LoginCodeRepository::create(&*self.inner, code).await
+    }
+
+    async fn create_unless_issued_since(&self, code: &LoginCode, not_before: DateTime<Utc>) -> Result<Issued> {
+        LoginCodeRepository::create_unless_issued_since(&*self.inner, code, not_before).await
+    }
+
+    async fn find_by_browser_token(&self, token: &str) -> Result<Option<LoginCode>> {
+        LoginCodeRepository::find_by_browser_token(&*self.inner, token).await
+    }
+
+    async fn delete(&self, id: Uuid) -> Result<bool> {
+        LoginCodeRepository::delete(&*self.inner, id).await
+    }
+
+    async fn find_active_for_user(&self, user_id: Uuid, now: DateTime<Utc>) -> Result<Option<LoginCode>> {
+        LoginCodeRepository::find_active_for_user(&*self.inner, user_id, now).await
+    }
+
+    async fn claim_attempt(&self, id: Uuid, max_attempts: u32) -> Result<Attempt> {
+        if self.faults.claim_attempt {
+            return Err(injected("LoginCodeRepository::claim_attempt"));
+        }
+        LoginCodeRepository::claim_attempt(&*self.inner, id, max_attempts).await
+    }
+
+    async fn rebind_browser_token(&self, presented: &str, replacement: &str) -> Result<bool> {
+        if self.faults.rebind_browser_token {
+            return Err(injected("LoginCodeRepository::rebind_browser_token"));
+        }
+        LoginCodeRepository::rebind_browser_token(&*self.inner, presented, replacement).await
+    }
+
+    async fn consume(&self, id: Uuid, at: DateTime<Utc>) -> Result<bool> {
+        LoginCodeRepository::consume(&*self.inner, id, at).await
+    }
+
+    async fn delete_unconsumed_for_user(&self, user_id: Uuid) -> Result<u64> {
+        LoginCodeRepository::delete_unconsumed_for_user(&*self.inner, user_id).await
+    }
+
+    async fn unconsume(&self, id: Uuid) -> Result<bool> {
+        LoginCodeRepository::unconsume(&*self.inner, id).await
+    }
+
+    async fn delete_expired(&self, now: DateTime<Utc>) -> Result<u64> {
+        LoginCodeRepository::delete_expired(&*self.inner, now).await
+    }
+}
+
+#[async_trait]
+impl MailSendRepository for FaultyDatabase {
+    async fn record(&self, user_id: Uuid, sent_at: DateTime<Utc>) -> Result<()> {
+        if self.faults.record_mail_send {
+            return Err(injected("MailSendRepository::record"));
+        }
+        MailSendRepository::record(&*self.inner, user_id, sent_at).await
+    }
+
+    async fn count_since(&self, since: DateTime<Utc>) -> Result<u64> {
+        MailSendRepository::count_since(&*self.inner, since).await
+    }
+
+    async fn count_for_user_since(&self, user_id: Uuid, since: DateTime<Utc>) -> Result<u64> {
+        MailSendRepository::count_for_user_since(&*self.inner, user_id, since).await
+    }
+
+    async fn delete_before(&self, cutoff: DateTime<Utc>) -> Result<u64> {
+        MailSendRepository::delete_before(&*self.inner, cutoff).await
+    }
+}
+
+#[async_trait]
+impl DraftRepository for FaultyDatabase {
+    async fn upsert(&self, draft: &DraftRecord) -> Result<()> {
+        DraftRepository::upsert(&*self.inner, draft).await
+    }
+
+    async fn find(&self, shortcode: &str) -> Result<Option<DraftRecord>> {
+        DraftRepository::find(&*self.inner, shortcode).await
+    }
+
+    async fn list(&self) -> Result<Vec<DraftRecord>> {
+        DraftRepository::list(&*self.inner).await
+    }
+
+    async fn delete(&self, shortcode: &str) -> Result<bool> {
+        DraftRepository::delete(&*self.inner, shortcode).await
+    }
+}
+
+#[async_trait]
+impl SubmissionRepository for FaultyDatabase {
+    async fn create(&self, submission: &Submission) -> Result<()> {
+        SubmissionRepository::create(&*self.inner, submission).await
+    }
+
+    async fn update(&self, submission: &Submission) -> Result<()> {
+        SubmissionRepository::update(&*self.inner, submission).await
+    }
+
+    async fn find(&self, id: Uuid) -> Result<Option<Submission>> {
+        SubmissionRepository::find(&*self.inner, id).await
+    }
+
+    async fn find_by_shortcode(&self, shortcode: &str) -> Result<Option<Submission>> {
+        SubmissionRepository::find_by_shortcode(&*self.inner, shortcode).await
+    }
+
+    async fn list(&self) -> Result<Vec<Submission>> {
+        SubmissionRepository::list(&*self.inner).await
+    }
+
+    async fn delete(&self, id: Uuid) -> Result<bool> {
+        SubmissionRepository::delete(&*self.inner, id).await
+    }
+}
+
+#[async_trait]
+impl ApprovedRecordRepository for FaultyDatabase {
+    async fn create(&self, record: &ApprovedRecord) -> Result<()> {
+        ApprovedRecordRepository::create(&*self.inner, record).await
+    }
+
+    async fn list_uncollected(&self) -> Result<Vec<ApprovedRecord>> {
+        ApprovedRecordRepository::list_uncollected(&*self.inner).await
+    }
+
+    async fn find_by_shortcode(&self, shortcode: &str) -> Result<Vec<ApprovedRecord>> {
+        ApprovedRecordRepository::find_by_shortcode(&*self.inner, shortcode).await
+    }
+
+    async fn mark_collected(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
+        ApprovedRecordRepository::mark_collected(&*self.inner, id, at).await
+    }
+
+    async fn delete(&self, id: Uuid) -> Result<bool> {
+        ApprovedRecordRepository::delete(&*self.inner, id).await
+    }
 }

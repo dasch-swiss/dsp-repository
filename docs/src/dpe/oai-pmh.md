@@ -123,7 +123,7 @@ Ranges are resolved offline (no network or LLM calls at request time), in two ti
 
 When no range resolves (a `date: null` row, or a name absent from both sources), the element is emitted with the `dateInformation` attribute only and an empty body, so the original label is never dropped.
 
-Resolution lives in `dpe_core::temporal_coverage`, shared by the OAI-PMH mapping above, `dpe-server validate` (`just validate-data`), and the `every_committed_temporal_coverage_resolves` test — a distinct `temporalCoverage` name with no resolvable range fails `validate` (and CI) rather than only surfacing as a name-only DataCite date at request time.
+Resolution lives in `platform_metadata::temporal_coverage`, shared by the OAI-PMH mapping above, `dpe-server validate` (`just validate-data`), and the `every_committed_temporal_coverage_resolves` test — a distinct `temporalCoverage` name with no resolvable range fails `validate` (and CI) rather than only surfacing as a name-only DataCite date at request time.
 
 ### Record files
 

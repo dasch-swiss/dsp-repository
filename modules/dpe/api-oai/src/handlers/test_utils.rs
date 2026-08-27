@@ -2,12 +2,14 @@
 
 use std::collections::HashMap;
 
-use dpe_core::models::AuthorityFileReference;
-use dpe_core::project::{
-    AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, Project,
-    ProjectStatus, TemporalCoverage,
+use dpe_core::project::Project;
+use dpe_core::{ClusterRaw, ContributorLookup, ProjectRepository, RecordRepository};
+use platform_metadata::models::AuthorityFileReference;
+use platform_metadata::project::{
+    AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, ProjectStatus,
+    TemporalCoverage,
 };
-use dpe_core::{ClusterRaw, ContributorLookup, Organization, Person, ProjectRepository, Record, RecordRepository};
+use platform_metadata::{Organization, Person, Record};
 
 /// In-memory contributor lookup for testing.
 #[derive(Default)]
@@ -252,7 +254,7 @@ pub fn cluster_fixture(id: &str, name: &str, projects: &[&str]) -> ClusterRaw {
 
 /// Loads the first record from the 0803-records.json fixture.
 pub fn first_0803_record() -> Record {
-    let json = include_str!("../../../server/data/records_test/0803-records.json");
+    let json = include_str!("../../../../platform/metadata/testdata/0803-records.json");
     let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0803-records.json");
     record
 }

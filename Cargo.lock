@@ -633,6 +633,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "dpe-core",
+ "platform-metadata",
  "quick-xml",
  "serde",
  "serde_json",
@@ -644,6 +645,7 @@ dependencies = [
 name = "dpe-core"
 version = "0.8.2"
 dependencies = [
+ "platform-metadata",
  "serde",
  "serde_json",
  "tracing",
@@ -673,6 +675,7 @@ dependencies = [
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
+ "platform-metadata",
  "platform-telemetry",
  "pyroscope",
  "serde",
@@ -696,6 +699,7 @@ dependencies = [
  "dpe-core",
  "maud",
  "mosaic-tiles",
+ "platform-metadata",
  "serde",
  "serde_json",
  "urlencoding",
@@ -738,6 +742,7 @@ dependencies = [
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
+ "platform-metadata",
  "platform-telemetry",
  "pyroscope",
  "rand",
@@ -2415,6 +2420,15 @@ name = "pkg-config"
 version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
+
+[[package]]
+name = "platform-metadata"
+version = "0.8.2"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tracing",
+]
 
 [[package]]
 name = "platform-telemetry"

@@ -6,7 +6,9 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use super::project::{Project, ProjectRaw};
+use platform_metadata::ProjectRaw;
+
+use super::project::Project;
 use super::utils::get_data_dir;
 
 static PROJECTS: OnceLock<Vec<Project>> = OnceLock::new();

@@ -3,9 +3,9 @@
 //!
 //! Deliberately a separate service from `dpe-server`: the editor is
 //! authenticated and writes state, DPE is public and read-only. They share the
-//! `platform-telemetry` beacon contract, and will share `mosaic-tiles` for components
-//! and `dpe-core` for the data contract — but not a process, an image or an
-//! origin.
+//! `platform-telemetry` beacon contract, `platform-metadata` for the research
+//! metadata contract, and `mosaic-tiles` for components — but not a process, an
+//! image or an origin.
 
 use std::process::ExitCode;
 use std::sync::atomic::{AtomicBool, Ordering};

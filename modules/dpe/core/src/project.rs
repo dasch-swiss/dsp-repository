@@ -1,27 +1,26 @@
+//! DPE's project view model and the conversions between it and the wire
+//! contract.
+//!
+//! The contract types themselves (`ProjectRaw` and everything it is built from)
+//! live in `platform-metadata`, shared with the editor. `Project` is DPE's
+//! rendering shape and stays here: both conversions are lossy in ways only DPE
+//! can accept — `From<&Project>` writes `url` back in the object form
+//! regardless of how it was read, and drops `clusters` — so the editor works
+//! `ProjectRaw` -> draft -> `ProjectRaw` and never passes through this type.
+
+use platform_metadata::models::AuthorityFileReference;
+use platform_metadata::project::{
+    AccessRights, Attribution, Discipline, Funding, LegalInfo, ProjectRaw, ProjectStatus, Publication, TemporalCoverage,
+};
+use platform_metadata::utils::is_placeholder;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::cluster::ClusterRef;
 use super::collection::CollectionRef;
-use super::models::AuthorityFileReference;
-use super::utils::is_placeholder;
 
 /// Valid tab names for project detail pages.
 pub const VALID_TABS: &[&str] = &["overview", "publications", "contributors"];
-
-/// Returns true if the string is a valid project shortcode (alphanumeric only).
-///
-/// **A second implementation exists**: `editor_core::records::is_valid_shortcode`
-/// applies the same rule plus a 16-character bound, because it also gates a
-/// hand-typed form field whose value becomes half a primary key. The two are
-/// deliberately independent — `editor-core` takes no dependency on `dpe-core`
-/// yet — so **relaxing this one silently diverges the editor**: a shortcode DPE
-/// starts publishing that the editor's copy rejects cannot be assigned to a
-/// depositor, and no editor test fails. Change both, or converge them when the
-/// editor's draft model brings `dpe-core` in for real.
-pub fn is_valid_shortcode(s: &str) -> bool {
-    !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric())
-}
 
 fn make_ref(url: String) -> AuthorityFileReference {
     AuthorityFileReference { type_: "URL".to_string(), url, text: None }
@@ -48,102 +47,6 @@ fn parse_url_value(value: Option<Value>) -> (Option<AuthorityFileReference>, Opt
         }
         _ => (None, None),
     }
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProjectRaw {
-    pub id: String,
-    pub pid: String,
-    pub name: String,
-    pub shortcode: String,
-    pub official_name: String,
-    pub status: ProjectStatus,
-    pub short_description: String,
-    pub description: std::collections::HashMap<String, String>,
-    pub start_date: String,
-    pub end_date: String,
-    /// Raw value — either a structured object or a legacy string array.
-    #[serde(default)]
-    pub url: Option<Value>,
-    /// New-format secondary URL (absent in legacy files).
-    pub secondary_url: Option<AuthorityFileReference>,
-    pub how_to_cite: String,
-    pub access_rights: AccessRights,
-    pub legal_info: Vec<LegalInfo>,
-    pub data_management_plan: Option<String>,
-    pub data_publication_year: Option<String>,
-    pub type_of_data: Option<Vec<String>>,
-    pub data_language: Option<Vec<String>>,
-    #[serde(default)]
-    #[allow(dead_code)]
-    pub clusters: Option<Vec<String>>,
-    #[serde(default)]
-    #[allow(dead_code)]
-    pub collections: Option<Vec<String>>,
-    #[serde(default)]
-    pub records: Option<Vec<String>>,
-    pub keywords: Vec<std::collections::HashMap<String, String>>,
-    pub disciplines: Vec<Discipline>,
-    pub temporal_coverage: Vec<TemporalCoverage>,
-    pub spatial_coverage: Vec<AuthorityFileReference>,
-    pub attributions: Vec<Attribution>,
-    #[serde(rename = "abstract", default)]
-    pub abstract_text: Option<std::collections::HashMap<String, String>>,
-    pub contact_point: Option<Vec<String>>,
-    #[serde(default)]
-    pub publications: Option<Vec<Publication>>,
-    pub funding: Funding,
-    pub alternative_names: Option<Vec<std::collections::HashMap<String, String>>>,
-    pub documentation_material: Option<Vec<String>>,
-    #[serde(default)]
-    pub provenance: Option<String>,
-    pub additional_material: Option<Vec<String>>,
-    /// Optional credit line for the project's cover image (e.g. a photographer
-    /// copyright). Stored verbatim; distinct from `legal_info` (dataset rights).
-    pub image_credit: Option<String>,
-}
-
-pub const ACCESS_RIGHTS_VALUES: &[&str] = &[
-    "Full Open Access",
-    "Open Access with Restrictions",
-    "Embargoed Access",
-    "Metadata only Access",
-];
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub enum ProjectStatus {
-    Ongoing,
-    Finished,
-}
-
-impl ProjectStatus {
-    pub fn is_ongoing(&self) -> bool {
-        *self == ProjectStatus::Ongoing
-    }
-
-    pub fn is_finished(&self) -> bool {
-        *self == ProjectStatus::Finished
-    }
-
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            ProjectStatus::Ongoing => "ongoing",
-            ProjectStatus::Finished => "finished",
-        }
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub enum AccessRightsType {
-    #[serde(rename = "Full Open Access")]
-    FullOpenAccess,
-    #[serde(rename = "Open Access with Restrictions")]
-    OpenAccessWithRestrictions,
-    #[serde(rename = "Embargoed Access")]
-    EmbargoedAccess,
-    #[serde(rename = "Metadata only Access")]
-    MetadataOnlyAccess,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -279,85 +182,6 @@ impl From<&Project> for ProjectRaw {
             image_credit: p.image_credit.clone(),
         }
     }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum TemporalCoverage {
-    Reference(AuthorityFileReference),
-    Text(std::collections::HashMap<String, String>),
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum Discipline {
-    Reference(AuthorityFileReference),
-    Text(std::collections::HashMap<String, String>),
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum Funding {
-    Grants(Vec<Grant>),
-    Text(String),
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AccessRights {
-    #[serde(rename = "accessRights")]
-    pub access_rights: AccessRightsType,
-    #[serde(rename = "embargoDate", default)]
-    pub embargo_date: Option<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct LegalInfo {
-    pub license: License,
-    #[serde(rename = "copyrightHolder")]
-    pub copyright_holder: String,
-    pub authorship: Vec<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct License {
-    #[serde(rename = "licenseIdentifier")]
-    pub license_identifier: String,
-    #[serde(rename = "licenseDate")]
-    pub license_date: String,
-    #[serde(rename = "licenseURI")]
-    pub license_uri: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Attribution {
-    pub contributor: String,
-    #[serde(rename = "contributorType")]
-    pub contributor_type: Vec<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Publication {
-    pub text: String,
-    #[serde(default)]
-    pub pid: Option<Pid>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Pid {
-    pub url: String,
-    #[serde(default)]
-    pub text: Option<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Grant {
-    pub funders: Vec<String>,
-    #[serde(default)]
-    pub number: Option<String>,
-    #[serde(default)]
-    pub name: Option<String>,
-    #[serde(default)]
-    pub url: Option<String>,
 }
 
 #[cfg(test)]
@@ -510,5 +334,31 @@ mod tests {
             "temporal/spatial coverage inversions found:\n{}",
             violations.join("\n")
         );
+    }
+
+    /// Every published shortcode must pass the shared shape predicate — the
+    /// five BEOL sub-codes (`0801a`–`0801e`) included, since they are the reason
+    /// it is looser than DSP-API's four-hex-digit rule.
+    #[test]
+    fn every_committed_shortcode_passes_the_shape_check() {
+        let projects_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../server/data/projects");
+        let entries = std::fs::read_dir(projects_dir).expect("projects data directory should be readable");
+        let mut checked = 0;
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let json = std::fs::read_to_string(&path).expect("project file should be readable");
+            let raw: ProjectRaw = serde_json::from_str(&json).expect("parses");
+            assert!(
+                platform_metadata::is_valid_shortcode(&raw.shortcode),
+                "{:?} has a shortcode the shape check rejects: {:?}",
+                path.file_name(),
+                raw.shortcode
+            );
+            checked += 1;
+        }
+        assert!(checked > 0, "no project files were checked");
     }
 }

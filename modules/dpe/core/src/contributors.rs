@@ -1,7 +1,5 @@
+use platform_metadata::{Organization, Person};
 use serde::{Deserialize, Serialize};
-
-use super::organization::Organization;
-use super::person::Person;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ResolvedContributor {

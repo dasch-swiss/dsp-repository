@@ -2,21 +2,21 @@
 
 use std::collections::HashMap;
 
-use dpe_core::AccessRightsType;
+use platform_metadata::AccessRightsType;
 
 /// Extracts a value from a multilingual HashMap, preferring English.
 ///
-/// Delegates to `dpe_core::multilingual_value` — kept as a local alias since
+/// Delegates to `platform_metadata::multilingual_value` — kept as a local alias since
 /// it is imported throughout this module tree. See that function's docs for
 /// the deterministic-fallback rationale (it backs the temporal-coverage
 /// enrichment lookup key, where collection and lookup must agree).
 pub fn get_multilingual_value(map: &HashMap<String, String>) -> Option<String> {
-    dpe_core::multilingual_value(map)
+    platform_metadata::multilingual_value(map)
 }
 
 /// Extracts the year from a date string (YYYY-MM-DD or YYYY).
 pub fn extract_year(date: &str) -> String {
-    if date.len() >= 4 && !dpe_core::is_placeholder(date) {
+    if date.len() >= 4 && !platform_metadata::is_placeholder(date) {
         date[..4].to_string()
     } else {
         "2015".to_string() // Default fallback year
@@ -65,8 +65,8 @@ pub fn map_contributor_type(contributor_type: &str) -> &'static str {
 /// Formats a date range from startDate and endDate.
 /// Returns "startDate/endDate" when both are valid, or just the valid one.
 pub fn format_date_range(start: &str, end: &str) -> Option<String> {
-    let has_start = !dpe_core::is_placeholder(start) && !start.is_empty();
-    let has_end = !dpe_core::is_placeholder(end) && !end.is_empty();
+    let has_start = !platform_metadata::is_placeholder(start) && !start.is_empty();
+    let has_end = !platform_metadata::is_placeholder(end) && !end.is_empty();
     match (has_start, has_end) {
         (true, true) => Some(format!("{}/{}", start, end)),
         (true, false) => Some(start.to_string()),

@@ -1,6 +1,6 @@
-use dpe_core::{AccessRightsType, ProjectStatus};
 use maud::{html, Markup};
 use mosaic_tiles::icon::{icon, Clock, Flag, LockClosed, LockOpen};
+use platform_metadata::{AccessRightsType, ProjectStatus};
 
 /// Status + access-rights indicator badges overlaid on a project card image.
 pub fn project_card_indicators(status: &ProjectStatus, access_rights: &AccessRightsType) -> Markup {

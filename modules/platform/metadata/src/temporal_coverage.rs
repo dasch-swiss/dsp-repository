@@ -1,17 +1,17 @@
 //! Resolution of a `temporalCoverage` entry to a W3CDTF date range.
 //!
-//! Shared by `dpe-api-oai` (DataCite `Coverage` dates) and `dpe-server`'s
-//! `validate` command, over the same ChronOntology period cache and offline
-//! enrichment table, so the two can never disagree about what counts as
-//! "resolved".
+//! Shared by `dpe-api-oai` (DataCite `Coverage` dates), `dpe-server`'s
+//! `validate` command and the editor, over the same ChronOntology period table
+//! and offline enrichment table, so they can never disagree about what counts
+//! as "resolved".
 
 use std::collections::HashMap;
 
-use super::chronontology_cache;
-use super::project::TemporalCoverage;
-use super::temporal_enrichment_cache::{self, EnrichedDate};
-use super::utils::multilingual_value;
-use super::w3cdtf::W3cdtfRange;
+use crate::chronontology;
+use crate::project::TemporalCoverage;
+use crate::temporal_enrichment::{self, EnrichedDate};
+use crate::utils::multilingual_value;
+use crate::w3cdtf::W3cdtfRange;
 
 /// The outcome of resolving one `temporalCoverage` entry.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -62,7 +62,7 @@ pub fn resolve_in(
     // 1. ChronOntology URL -> timespan.
     if let TemporalCoverage::Reference(ref_data) = tc {
         if !ref_data.url.is_empty() {
-            if let Some(range) = chronontology_cache::timespan_for_in(periods, &ref_data.url) {
+            if let Some(range) = chronontology::timespan_for_in(periods, &ref_data.url) {
                 return Some(Resolution { date: range.into(), date_information: name });
             }
         }
@@ -70,7 +70,7 @@ pub fn resolve_in(
 
     // 2. Enrichment table, keyed by the display name.
     if let Some(ref key) = name {
-        if let Some(enriched) = temporal_enrichment_cache::enriched_for_in(enrichment, key) {
+        if let Some(enriched) = temporal_enrichment::enriched_for_in(enrichment, key) {
             return Some(Resolution {
                 date: enriched.date.unwrap_or_default(),
                 date_information: Some(enriched.original_name),

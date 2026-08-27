@@ -1,5 +1,5 @@
-use dpe_core::project::Discipline;
 use maud::{html, Markup};
+use platform_metadata::project::Discipline;
 
 use super::CHIP_PRIMARY;
 
@@ -41,7 +41,7 @@ pub fn disciplines_section(disciplines: &[Discipline]) -> Markup {
 mod tests {
     use std::collections::HashMap;
 
-    use dpe_core::models::AuthorityFileReference;
+    use platform_metadata::models::AuthorityFileReference;
 
     use super::*;
 

@@ -5,7 +5,8 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use super::organization::Organization;
+use platform_metadata::Organization;
+
 use super::utils::get_data_dir;
 
 static ORGANIZATIONS: OnceLock<HashMap<String, Organization>> = OnceLock::new();

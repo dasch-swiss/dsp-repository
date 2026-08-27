@@ -7,7 +7,7 @@ This repository is a Rust workspace structured as a monorepo. All Rust crates ar
 ```txt
 modules/
 ├── dpe/                       # Discovery and Presentation Environment
-│   ├── core/                  # Pure domain types, repositories, data loading (crate: dpe-core)
+│   ├── core/                  # DPE's view model, caches, repositories (crate: dpe-core)
 │   ├── api-oai/               # OAI-PMH 2.0 API (crate: dpe-api-oai)
 │   ├── web/                   # Web layer: Maud pages and components (crate: dpe-web)
 │   ├── server/                # Server binary: route composition, Datastar fragments (crate: dpe-server)
@@ -23,6 +23,7 @@ modules/
 │   ├── style/                 # CSS / Tailwind
 │   └── Dockerfile             # Production container image
 ├── platform/                  # Crates shared by more than one service
+│   ├── metadata/              # Research-metadata wire contract (crate: platform-metadata)
 │   └── telemetry/             # Browser beacon contract + collector endpoint (crate: platform-telemetry)
 └── mosaic/                    # Mosaic component library (design system)
     ├── tiles/                 # Reusable Maud UI components (crate: mosaic-tiles)
@@ -36,10 +37,11 @@ modules/
 
 | Crate | Folder | Role |
 |-------|--------|------|
-| `dpe-core` | `dpe/core` | Pure domain types and data access (zero framework deps) |
-| `dpe-api-oai` | `dpe/api-oai` | OAI-PMH 2.0 API (depends on `dpe-core` only) |
+| `dpe-core` | `dpe/core` | DPE's view model, caches and repositories over the shared contract (zero framework deps) |
+| `dpe-api-oai` | `dpe/api-oai` | OAI-PMH 2.0 API (depends on `dpe-core` and `platform-metadata` only) |
 | `dpe-web` | `dpe/web` | Maud pages and components (`fn -> Markup`) |
 | `dpe-server` | `dpe/server` | Server binary — composes all routes |
+| `platform-metadata` | `platform/metadata` | The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor |
 | `platform-telemetry` | `platform/telemetry` | Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor |
 | `editor-core` | `editor/core` | Pure domain types for the editor (zero framework deps) |
 | `editor-web` | `editor/web` | Editor view layer, including the HTML document shell |
@@ -60,6 +62,8 @@ The directory is the ownership signal, and four things read it:
 
 `mosaic-*` predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.
 
+**The rule covers the shareable part of a crate, not necessarily the whole crate.** `dpe-core` was not moved wholesale when the editor came to need the data contract: it mixes the contract with DPE's caches, repositories, cluster logic and a DSP-API HTTP client, and moving all of it would have made every one of those a platform concern. What moved is the contract — `platform-metadata` — and `dpe-core` now depends on it like any other consumer. Read the rule as *the shared thing lives under `modules/platform/`*; where the shared thing is a subset of a crate, extract the subset.
+
 **The rule covers crates, not content.** `modules/dpe/server/data` stays under DPE even though the editor consumes it: DPE owns it, and the editor reads an image-baked snapshot through an explicit `EDITOR_DATA_DIR` seam rather than a compiled-in path — see [Editor Operations](./editor/operations.md#data-directory-a-deliberate-build-input). Two of the four signals do have analogues there, accepted knowingly: a data-only change matches `modules/dpe/**`, so it deploys a DPE preview but no editor preview, and `serve-editor`'s watch list does not restart the editor on a data edit. Both become visible only once the editor reads records, and both are cheaper to fix in place than a wholesale move would be.
 
 ## API Crate Pattern
@@ -67,7 +71,7 @@ The directory is the ownership signal, and four things read it:
 Each API is a separate crate under `modules/dpe/`:
 
 - **Naming**: `dpe-api-{name}` (e.g., `dpe-api-oai`)
-- **Dependencies**: `dpe-core` for domain types; never depends on other API crates or `dpe-web`
+- **Dependencies**: `platform-metadata` for the contract, `dpe-core` for the view model; never depends on other API crates or `dpe-web`
 - **Entry point**: Exports a handler function (e.g., `pub async fn oai_handler(...)`)
 - **Composition**: `dpe-server` wires the handler into the Axum router
 

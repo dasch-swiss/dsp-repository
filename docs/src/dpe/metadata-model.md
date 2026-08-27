@@ -4,14 +4,14 @@ This is the metadata model that the DPE serves. It describes DaSCH research
 projects and their context as a hierarchy of entities. The model originated in
 the now-retired `dsp-meta` repository, where it was designed as the successor to
 the earlier v1 model. The metadata has since been migrated to this repository
-and converted to v2; the model is implemented as Rust types in the `dpe-core`
-crate (`modules/dpe/core/src/`) and the data lives under
-`modules/dpe/server/data/`.
+and converted to v2; the model is implemented as Rust types in the
+`platform-metadata` crate (`modules/platform/metadata/src/`), shared with the
+editor, and the data lives under `modules/dpe/server/data/`.
 
 > [!NOTE]
 > **Conceptual model vs. implementation.**
 > This page documents the *conceptual* v2 model — the full design as it was
-> worked out. The implementation in `dpe-core` is a pragmatic subset: some
+> worked out. The implementation in `platform-metadata` is a pragmatic subset: some
 > entities and fields are not (yet) implemented, and a few differ in shape from
 > the design. Each section carries an **As implemented** callout describing the
 > current state. Treat the conceptual tables as the design intent and the

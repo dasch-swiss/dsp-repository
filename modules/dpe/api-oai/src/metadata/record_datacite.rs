@@ -1,6 +1,6 @@
 //! Transformation of Records into DataCite 4.6 metadata.
 
-use dpe_core::Record;
+use platform_metadata::Record;
 
 use super::helpers::{extract_year, get_multilingual_value, license_identifier_to_label};
 use super::types::{
@@ -184,8 +184,8 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
 mod tests {
     use std::collections::HashMap;
 
-    use dpe_core::record::Pid;
-    use dpe_core::{RecordFile, RecordLegalInfo, RecordLicense};
+    use platform_metadata::record::Pid;
+    use platform_metadata::{RecordFile, RecordLegalInfo, RecordLicense};
 
     use super::*;
 

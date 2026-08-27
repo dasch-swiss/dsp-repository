@@ -1,5 +1,5 @@
-use dpe_core::project::{AccessRights, AccessRightsType};
 use maud::{html, Markup};
+use platform_metadata::project::{AccessRights, AccessRightsType};
 
 /// The data-access block: access-rights label and (if present) embargo date.
 pub fn access_rights_section(access_rights: &AccessRights) -> Markup {

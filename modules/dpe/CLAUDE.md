@@ -17,7 +17,7 @@ DPE is a server-side rendered web application. Pages are rendered on the server 
 
 ### Views (`dpe-web`)
 
-`dpe-web` is a plain library crate of view functions. Components live in `web/src/components/` and pages in `web/src/pages/`; each is a `fn(...) -> maud::Markup`. Split aggressively into small partials. Subdirectories group related pieces (e.g., `pages/project/components/`). There is no component macro and no re-export shim — import `dpe-core` types directly.
+`dpe-web` is a plain library crate of view functions. Components live in `web/src/components/` and pages in `web/src/pages/`; each is a `fn(...) -> maud::Markup`. Split aggressively into small partials. Subdirectories group related pieces (e.g., `pages/project/components/`). There is no component macro and no re-export shim — import `platform-metadata` (contract) and `dpe-core` (view model) types directly.
 
 ### Routing, head, and the page shell (`dpe-server`)
 
@@ -46,7 +46,7 @@ Snapshot tests use **insta**: a failing snapshot writes a `.snap.new` file — r
 Project descriptive metadata lives as JSON under `modules/dpe/server/data/`.
 
 1. Add `<shortcode>_<slug>.json` under `projects/` (and any new `persons/person-NNN.json` / `organizations/organization-NNN.json`); pick new person/org ids by scanning existing internal `"id"` values, and reuse existing organizations rather than duplicating them.
-2. **Every `temporalCoverage` value must resolve to a structured date for OAI-PMH.** Free-text values (e.g. `{"en": "11th-15th centuries"}`) resolve against `modules/dpe/server/data/temporal-coverage-enrichment.json`, keyed by the display text. Add a row with a W3CDTF range and `"source": "llm"` (e.g. `"11th-15th centuries": {"date": "1001/1500", "original_name": "11th-15th centuries", "source": "llm"}`); if the value is not a time period, use `"date": null, "source": "unresolved"`. Both `just validate-data` (`dpe-server validate`) and the `every_committed_temporal_coverage_resolves` test enforce this, over the same `dpe_core::temporal_coverage` resolution logic — so the two can't disagree. See `docs/src/dpe/oai-pmh.md` → *Temporal coverage*.
+2. **Every `temporalCoverage` value must resolve to a structured date for OAI-PMH.** Free-text values (e.g. `{"en": "11th-15th centuries"}`) resolve against `modules/dpe/server/data/temporal-coverage-enrichment.json`, keyed by the display text. Add a row with a W3CDTF range and `"source": "llm"` (e.g. `"11th-15th centuries": {"date": "1001/1500", "original_name": "11th-15th centuries", "source": "llm"}`); if the value is not a time period, use `"date": null, "source": "unresolved"`. Both `just validate-data` (`dpe-server validate`) and the `every_committed_temporal_coverage_resolves` test enforce this, over the same `platform_metadata::temporal_coverage` resolution logic — so the two can't disagree. See `docs/src/dpe/oai-pmh.md` → *Temporal coverage*.
 3. Run `just validate-data` (cross-references, temporal-coverage resolution) and `just test`.
 
 ### Adding a New Component

@@ -1,6 +1,7 @@
 //! Handler for the OAI-PMH GetRecord verb.
 
-use dpe_core::{ClusterRaw, ContributorLookup, Project, ProjectRepository, Record, RecordRepository};
+use dpe_core::{ClusterRaw, ContributorLookup, Project, ProjectRepository, RecordRepository};
+use platform_metadata::Record;
 
 use super::{build_error_response, OaiParams, SUPPORTED_PREFIXES};
 use crate::error::OaiError;
@@ -98,7 +99,7 @@ fn build_response(
 
 #[cfg(test)]
 mod tests {
-    use dpe_core::Record;
+    use platform_metadata::Record;
 
     use super::super::test_utils::{
         golden, incunabula_lookup, incunabula_project, normalize, InMemoryProjectRepository, InMemoryRecordRepository,
@@ -106,7 +107,7 @@ mod tests {
     use super::*;
 
     fn first_0803_record() -> Record {
-        let json = include_str!("../../../server/data/records_test/0803-records.json");
+        let json = include_str!("../../../../platform/metadata/testdata/0803-records.json");
         let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0803-records.json");
         record
     }

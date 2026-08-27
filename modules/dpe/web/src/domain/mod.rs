@@ -1,8 +1,10 @@
 // dpe-web domain logic: the projects-list query/filter state (`ProjectQuery`),
 // the project-list and single-project loaders, and the contributor resolver.
 //
-// Domain *types* (Project, Person, Record, …) live in dpe-core and are imported
-// directly by consumers — there is no re-export shim here.
+// Domain *types* live in the crates that own them — the wire contract
+// (ProjectRaw, Person, Record, …) in platform-metadata, DPE's `Project` view
+// model in dpe-core — and are imported directly by consumers. There is no
+// re-export shim here.
 
 pub mod contributors;
 pub mod project;

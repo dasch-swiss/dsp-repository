@@ -1,6 +1,6 @@
-use dpe_core::project::LegalInfo as LegalInfoData;
 use maud::{html, Markup};
 use mosaic_tiles::link::link;
+use platform_metadata::project::LegalInfo as LegalInfoData;
 
 use super::super::info_card::info_card;
 use super::super::person::{affiliation_name, person};
@@ -35,9 +35,9 @@ fn entity_name(id: &str) -> Markup {
 pub fn legal_info(legal_info: &[LegalInfoData]) -> Markup {
     html! {
         @for info in legal_info {
-            @let license_is_placeholder = dpe_core::is_placeholder(
+            @let license_is_placeholder = platform_metadata::is_placeholder(
                 &info.license.license_identifier,
-            ) || dpe_core::is_placeholder(&info.license.license_uri);
+            ) || platform_metadata::is_placeholder(&info.license.license_uri);
             @if license_is_placeholder {
                 @if should_render_value(&info.license.license_identifier) {
                     div {
@@ -81,7 +81,7 @@ pub fn legal_info(legal_info: &[LegalInfoData]) -> Markup {
                 }
             }
 
-            @if dpe_core::is_placeholder(&info.copyright_holder) {
+            @if platform_metadata::is_placeholder(&info.copyright_holder) {
                 @if should_render_value(&info.copyright_holder) {
                     div {
                         h3 class="dpe-subtitle" { "Copyright" }
@@ -106,7 +106,7 @@ pub fn legal_info(legal_info: &[LegalInfoData]) -> Markup {
                     div class="dpe-subtitle" { "Authorship" }
                     div {
                         @for id in ids {
-                            @if dpe_core::is_placeholder(id) {
+                            @if platform_metadata::is_placeholder(id) {
                                 div { (placeholder_value(id)) }
                             } @else {
                                 div { (entity_name(id)) }
@@ -198,7 +198,7 @@ fn extract_cc_license_type(license_uri: &str, license_identifier: &str) -> Optio
 
 #[cfg(test)]
 mod tests {
-    use dpe_core::project::License;
+    use platform_metadata::project::License;
 
     use super::*;
 

@@ -12,7 +12,8 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 - [ ] axe-core scan passes on affected pages
 - [ ] Unit tests for edge cases (invalid input, missing data)
 - [ ] New API crates follow `dpe-api-{name}` pattern (`docs/src/repo_structure.md`)
-- [ ] `dpe-core` has no framework dependencies
+- [ ] `dpe-core` and `platform-metadata` have no framework dependencies
+- [ ] `platform-metadata` takes no dependency on a service crate, and no path into a service's data directory
 - [ ] CLI subcommands documented in help text
 - [ ] Documentation updated when patterns change
 - [ ] New env vars documented in `docs/src/dpe/operations.md` (editor: `docs/src/editor/operations.md`)
@@ -36,7 +37,7 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 
 - [ ] Datastar attribute patterns match conventions (`_` prefix for signals)
 - [ ] Fragment handlers in `fragments/` module, not inline
-- [ ] Domain types in `dpe-core`, not in web or API crates
+- [ ] Contract types in `platform-metadata`, DPE's view model in `dpe-core` — not in web or API crates
 - [ ] No non-trivial `html!` block passed directly as a function argument — bind to a `let` or extract a `fn -> Markup` helper (nested-as-arg `html!` gets mangled by `just fmt`)
 - [ ] Test files: `{feature}_tests.rs` (Rust), `{feature}.spec.ts` (Playwright)
 

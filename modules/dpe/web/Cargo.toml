@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 dpe-core = { path = "../core" }
+platform-metadata = { path = "../../platform/metadata" }
 mosaic-tiles = { path = "../../mosaic/tiles" }
 maud.workspace = true
 serde.workspace = true

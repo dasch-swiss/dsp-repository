@@ -450,8 +450,8 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
     // Temporal-coverage resolution: the same ChronOntology period cache and
     // offline enrichment table the OAI-PMH `every_committed_temporal_coverage_resolves`
     // test loads, so the two can never disagree about what counts as resolved.
-    let temporal_periods = dpe_core::chronontology_cache::load_from(data_dir);
-    let temporal_enrichment = dpe_core::temporal_enrichment_cache::load_from(data_dir);
+    let temporal_periods = platform_metadata::chronontology::load_from(data_dir);
+    let temporal_enrichment = platform_metadata::temporal_enrichment::load_from(data_dir);
     let mut seen_temporal_coverage: std::collections::HashSet<String> = std::collections::HashSet::new();
     if projects_dir.is_dir() {
         if let Ok(entries) = fs::read_dir(&projects_dir) {
@@ -463,7 +463,7 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                 let filename = path.display().to_string();
                 match fs::read_to_string(&path) {
                     Ok(json) => {
-                        match serde_json::from_str::<dpe_core::ProjectRaw>(&json) {
+                        match serde_json::from_str::<platform_metadata::ProjectRaw>(&json) {
                             Ok(raw) => {
                                 // Collect contributor IDs for cross-reference checks
                                 for attr in &raw.attributions {
@@ -479,7 +479,7 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                                 let project: dpe_core::Project = raw.into();
 
                                 for tc in &project.temporal_coverage {
-                                    let Some(name) = dpe_core::temporal_coverage::coverage_name(tc) else {
+                                    let Some(name) = platform_metadata::temporal_coverage::coverage_name(tc) else {
                                         continue; // no name to key on; nothing to resolve.
                                     };
                                     if !seen_temporal_coverage.insert(name) {
@@ -490,7 +490,7 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                                     // unresolved / genuine gap) the
                                     // `every_committed_temporal_coverage_resolves` test
                                     // applies, so the two can't drift apart.
-                                    if let Some(name) = dpe_core::temporal_coverage::completeness_gap(
+                                    if let Some(name) = platform_metadata::temporal_coverage::completeness_gap(
                                         tc,
                                         &temporal_periods,
                                         &temporal_enrichment,
@@ -525,7 +525,7 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                 }
                 let filename = path.display().to_string();
                 match fs::read_to_string(&path) {
-                    Ok(json) => match serde_json::from_str::<Vec<dpe_core::Record>>(&json) {
+                    Ok(json) => match serde_json::from_str::<Vec<platform_metadata::Record>>(&json) {
                         Ok(recs) => record_count += recs.len(),
                         Err(e) => errors.push(format!("{filename}: {e}")),
                     },
@@ -547,14 +547,14 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                 }
                 let filename = path.display().to_string();
                 match fs::read_to_string(&path) {
-                    Ok(json) => match serde_json::from_str::<dpe_core::Person>(&json) {
+                    Ok(json) => match serde_json::from_str::<platform_metadata::Person>(&json) {
                         Ok(p) => {
                             // Guard against project roles drifting into jobTitles.
                             // A role belongs in a project's attributions
                             // (contributorType), not in a person's jobTitles, or
                             // it becomes invisible to the OAI-PMH creator logic.
                             for title in &p.job_titles {
-                                if dpe_core::is_role_job_title(title) {
+                                if platform_metadata::is_role_job_title(title) {
                                     errors.push(format!(
                                         "{filename}: jobTitle '{title}' on {} is a project role; \
                                          move it to the project's attributions (contributorType)",
@@ -585,7 +585,7 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                 }
                 let filename = path.display().to_string();
                 match fs::read_to_string(&path) {
-                    Ok(json) => match serde_json::from_str::<dpe_core::Organization>(&json) {
+                    Ok(json) => match serde_json::from_str::<platform_metadata::Organization>(&json) {
                         Ok(o) => {
                             known_org_ids.insert(o.id.clone());
                             org_count += 1;

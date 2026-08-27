@@ -9,10 +9,11 @@
 //! inside an Axum handler. Native `async fn` in traits gives that only by
 //! spelling out `-> impl Future + Send` on every signature.
 //!
-//! It also keeps the traits dyn-compatible. Nothing needs that yet — `AppState`
-//! holds a concrete `Database` and every call site is UFCS on it — but a boxed
-//! `Arc<dyn UserRepository>` is what a fault-injecting fake would need, and the
-//! paths that swallow a storage error are currently untestable for want of one.
+//! It also keeps the traits dyn-compatible, which [`Repositories`] and
+//! `AppState` depend on: the state holds an `Arc<dyn Repositories>`, so a test
+//! can put a fake behind it and make a chosen call fail. That is the only way to
+//! reach the paths that log a storage error and carry on, and they are where the
+//! non-obvious correctness arguments live.
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -352,4 +353,42 @@ pub trait ApprovedRecordRepository: Send + Sync {
     /// `false` if there was no record to delete. Used when the change goes
     /// Online and the local record is discarded (REQ-2.4).
     async fn delete(&self, id: Uuid) -> Result<bool>;
+}
+
+/// Every port at once, so one handle can serve all of them.
+///
+/// The seven traits above are the units of dependency — a function that only
+/// looks up accounts should say `&dyn UserRepository` and mean it. This is for
+/// the callers that cannot, because Rust has no way to spell a trait object over
+/// several traits at once: `AppState`, which every handler shares and which
+/// therefore needs all seven, and the few functions that genuinely need more than
+/// one port (the session lookup reads a session *and* its account).
+///
+/// The blanket impl is what keeps this free: anything implementing the seven
+/// ports is a `Repositories` without saying so, so neither the SQLite
+/// implementation nor a test fake ever writes `impl Repositories`.
+///
+/// A method is still called through the port that declares it —
+/// `UserRepository::find_by_email(&*state.db, …)` — because `dyn Repositories`
+/// implements each supertrait. Nothing here widens what a call site can reach.
+pub trait Repositories:
+    UserRepository
+    + SessionRepository
+    + LoginCodeRepository
+    + MailSendRepository
+    + DraftRepository
+    + SubmissionRepository
+    + ApprovedRecordRepository
+{
+}
+
+impl<T> Repositories for T where
+    T: UserRepository
+        + SessionRepository
+        + LoginCodeRepository
+        + MailSendRepository
+        + DraftRepository
+        + SubmissionRepository
+        + ApprovedRecordRepository
+{
 }

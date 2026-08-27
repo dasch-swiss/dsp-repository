@@ -56,7 +56,7 @@ impl FromRequestParts<AppState> for Authenticated {
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
-        match session::current(&state.db, &state.auth, &parts.headers, Utc::now()).await {
+        match session::current(&*state.db, &state.auth, &parts.headers, Utc::now()).await {
             Some(user) => Ok(Self(user)),
             None => Err(Redirect::to(&login_url(destination(parts))).into_response()),
         }

@@ -21,14 +21,12 @@ use editor_core::records::{Role, User};
 use editor_core::repository::{RepositoryError, UserRepository};
 use uuid::Uuid;
 
-use crate::db::Database;
-
 /// Create or promote an account for every configured RDU address, and report
 /// any `rdu` account the configuration no longer names.
 ///
 /// Returns how many accounts were created or promoted.
 pub(crate) async fn ensure_rdu(
-    db: &Database,
+    db: &dyn UserRepository,
     addresses: &[String],
     now: DateTime<Utc>,
 ) -> Result<usize, RepositoryError> {
@@ -83,7 +81,7 @@ fn default_name(address: &str) -> String {
 /// Warn about every `rdu` account the configuration no longer lists.
 ///
 /// Deliberately a report and not a revocation — see the module docs.
-async fn report_unlisted(db: &Database, addresses: &[String]) -> Result<(), RepositoryError> {
+async fn report_unlisted(db: &dyn UserRepository, addresses: &[String]) -> Result<(), RepositoryError> {
     let listed: Vec<String> = addresses.iter().map(|address| User::normalize_email(address)).collect();
     for user in UserRepository::list(db).await? {
         if user.role == Role::Rdu && !listed.contains(&user.email_normalized()) {
@@ -104,7 +102,7 @@ mod tests {
     use chrono::TimeZone;
 
     use super::*;
-    use crate::db::Source;
+    use crate::db::{Database, Source};
 
     async fn test_db(label: &str) -> Database {
         Database::open(Source::memory_for_test(label), 2, Duration::from_secs(5))

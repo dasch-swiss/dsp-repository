@@ -99,36 +99,6 @@ pub struct User {
     pub created_at: DateTime<Utc>,
 }
 
-/// Whether `candidate` could be a project shortcode.
-///
-/// Non-empty, ASCII alphanumeric, and at most [`MAX_SHORTCODE_LEN`] characters.
-///
-/// A deliberate copy of `dpe_core::project::is_valid_shortcode` rather than a
-/// dependency on it: `editor-core` takes no dependency on `dpe-core` yet, and
-/// pulling the whole data contract in for one predicate would invert the order
-/// in which the two crates are meant to meet. They converge when the draft model
-/// lands and `dpe-core` arrives for real; until then `grep is_valid_shortcode`
-/// finds both, and both carry their own tests. The same reasoning kept
-/// `RightmostXffKeyExtractor` local to each service.
-///
-/// Alphanumeric rather than four hex digits, which is what the published set
-/// looks like at a glance: `0801a` through `0801e` are real projects, so a
-/// hex-only rule would answer 404 for five of them.
-///
-/// The length bound is this copy's one divergence from DPE's, and it is here
-/// because this predicate also gates a hand-typed form field whose value becomes
-/// half a primary key. DPE's only ever sees a path segment.
-#[must_use]
-pub fn is_valid_shortcode(candidate: &str) -> bool {
-    !candidate.is_empty()
-        && candidate.len() <= MAX_SHORTCODE_LEN
-        && candidate.chars().all(|c| c.is_ascii_alphanumeric())
-}
-
-/// The longest shortcode [`is_valid_shortcode`] accepts. The published set runs
-/// to five characters; this leaves room without letting a paste become a row.
-pub const MAX_SHORTCODE_LEN: usize = 16;
-
 impl User {
     /// Whether this user may reach the project identified by `shortcode`.
     ///
@@ -400,26 +370,5 @@ mod tests {
         assert!(rdu.may_reach("anything"));
         assert!(rdu.is_rdu());
         assert!(!user(Role::Depositor, &[]).is_rdu());
-    }
-
-    #[test]
-    fn test_a_real_shortcode_from_the_published_set_is_valid() {
-        // `080C` and `080E` are hex; `0801a` through `0801e` are not, and are
-        // real projects — a four-hex-digit rule would 404 five of them.
-        for shortcode in ["0101", "0801", "080C", "080E", "0801a", "0801e"] {
-            assert!(is_valid_shortcode(shortcode), "{shortcode}");
-        }
-    }
-
-    #[test]
-    fn test_what_cannot_be_a_shortcode_is_refused() {
-        // Path traversal, separators and the percent sign matter: this predicate
-        // gates a path segment and a form field, and the value becomes half a
-        // primary key.
-        for candidate in ["", "..", "08 01", "0801/", "0801-a", "08%30", "../etc", "0801\n"] {
-            assert!(!is_valid_shortcode(candidate), "{candidate:?}");
-        }
-        assert!(!is_valid_shortcode(&"a".repeat(MAX_SHORTCODE_LEN + 1)));
-        assert!(is_valid_shortcode(&"a".repeat(MAX_SHORTCODE_LEN)));
     }
 }

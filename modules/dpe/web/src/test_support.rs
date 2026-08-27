@@ -8,12 +8,12 @@
 use std::collections::HashMap;
 
 use dpe_core::contributors::ResolvedContributor;
-use dpe_core::models::AuthorityFileReference;
-use dpe_core::organization::Organization;
-use dpe_core::person::Person;
-use dpe_core::project::{
-    AccessRights, AccessRightsType, Attribution, Funding, Grant, LegalInfo, License, Pid, Project, ProjectStatus,
-    Publication,
+use dpe_core::project::Project;
+use platform_metadata::models::AuthorityFileReference;
+use platform_metadata::organization::Organization;
+use platform_metadata::person::Person;
+use platform_metadata::project::{
+    AccessRights, AccessRightsType, Attribution, Funding, Grant, LegalInfo, License, Pid, ProjectStatus, Publication,
 };
 
 fn lang_map(value: &str) -> HashMap<String, String> {

@@ -6,7 +6,7 @@ Server-side rendered web application built with [Maud](https://maud.lambda.xyz/)
 
 ```
 dpe/
-├── core/             # Pure domain types and data loading (crate: dpe-core)
+├── core/             # DPE's view model, caches and repositories (crate: dpe-core)
 ├── api-oai/          # OAI-PMH 2.0 API (crate: dpe-api-oai)
 ├── web/              # Maud pages and components, `fn -> Markup` (crate: dpe-web)
 ├── server/           # Server binary, routing, head, fragment handlers (crate: dpe-server)

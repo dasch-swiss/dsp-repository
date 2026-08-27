@@ -14,7 +14,7 @@
 
 use axum::extract::{Path, State};
 use axum::response::Response;
-use editor_core::records::is_valid_shortcode;
+use platform_metadata::is_valid_shortcode;
 
 use crate::auth::guard::Authenticated;
 use crate::AppState;

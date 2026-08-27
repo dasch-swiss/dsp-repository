@@ -84,7 +84,7 @@ Corollary: if you discover a genuine pre-existing `main` bug while doing unrelat
 
 The scope names the **concern the change serves** — the crate or area whose responsibility it belongs to, not the directory the edited files happen to sit in. Use one of these names, lowercase:
 
-- **Crate scopes:** `dpe-core`, `dpe-server`, `dpe-web`, `dpe-api-oai`, `platform-telemetry`, `editor-core`, `editor-web`, `editor-server`, `mosaic-tiles`, `mosaic-playground`
+- **Crate scopes:** `dpe-core`, `dpe-server`, `dpe-web`, `dpe-api-oai`, `platform-metadata`, `platform-telemetry`, `editor-core`, `editor-web`, `editor-server`, `mosaic-tiles`, `mosaic-playground`
 - **Cross-cutting scopes** (changes not tied to one crate):
   - `dpe-data` — project metadata files under `modules/dpe/server/data/`
   - `ci` — workflows, the justfile, CI scripts

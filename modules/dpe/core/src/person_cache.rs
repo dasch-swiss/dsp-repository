@@ -5,7 +5,8 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use super::person::Person;
+use platform_metadata::Person;
+
 use super::utils::get_data_dir;
 
 static PERSONS: OnceLock<HashMap<String, Person>> = OnceLock::new();

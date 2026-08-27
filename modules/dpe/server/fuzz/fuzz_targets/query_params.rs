@@ -42,6 +42,6 @@ fuzz_target!(|data: &[u8]| {
     // Also try parsing as JSON (in case of malformed Content-Type)
     let _ = serde_json::from_str::<ProjectQuery>(input);
 
-    // Fuzz the raw ProjectRaw JSON deserialization from dpe-core
-    let _ = serde_json::from_str::<dpe_core::ProjectRaw>(input);
+    // Fuzz the raw ProjectRaw JSON deserialization from platform-metadata
+    let _ = serde_json::from_str::<platform_metadata::ProjectRaw>(input);
 });

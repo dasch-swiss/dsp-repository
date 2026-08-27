@@ -3,7 +3,7 @@
 // fragment handler.
 
 pub use dpe_core::contributors::ResolvedContributor;
-use dpe_core::project::Attribution;
+use platform_metadata::project::Attribution;
 
 pub fn get_contributors(attributions: Vec<Attribution>) -> Vec<ResolvedContributor> {
     use dpe_core::contributors::{is_organization_id, load_organization, load_person};

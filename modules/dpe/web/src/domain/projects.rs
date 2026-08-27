@@ -76,7 +76,7 @@ pub fn list_projects(
 }
 
 pub fn filter_and_paginate(projects: &[Project], query: &super::project::ProjectQuery, page_size: Option<i32>) -> Page {
-    use dpe_core::{AccessRightsType, ProjectStatus};
+    use platform_metadata::{AccessRightsType, ProjectStatus};
 
     let items_per_page = page_size.unwrap_or(9).clamp(1, 100) as usize;
     let search_lower = query.search().to_lowercase();
@@ -200,7 +200,8 @@ pub fn get_project(shortcode: &str) -> Option<Project> {
 mod tests {
     use std::collections::HashMap;
 
-    use dpe_core::{AccessRights, AccessRightsType, Attribution, Funding, Project, ProjectStatus};
+    use dpe_core::Project;
+    use platform_metadata::{AccessRights, AccessRightsType, Attribution, Funding, ProjectStatus};
 
     use super::super::project::ProjectQuery;
     use super::filter_and_paginate;

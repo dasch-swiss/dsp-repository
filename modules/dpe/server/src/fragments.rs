@@ -13,13 +13,14 @@ use axum::response::sse::{Event, Sse};
 use axum::response::IntoResponse;
 use datastar::axum::ReadSignals;
 use datastar::prelude::{ExecuteScript, PatchElements};
-use dpe_core::project::{is_valid_shortcode, VALID_TABS};
+use dpe_core::project::VALID_TABS;
 use dpe_core::Page;
 use dpe_web::domain::{get_contributors, get_project, list_projects};
 use dpe_web::pages::project::components::project_details_tabs::{has_publications, project_tabs};
 use futures::stream::{self, Stream};
 use maud::html;
 use mosaic_tiles::icon::{icon, IconSearch};
+use platform_metadata::project::is_valid_shortcode;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -184,8 +185,8 @@ fn render_search_results(query: &str, results: &Page) -> String {
 }
 
 pub async fn projects_json_handler() -> impl IntoResponse {
-    use dpe_core::project::ProjectRaw;
     use dpe_core::project_repository::{FsProjectRepository, ProjectRepository};
+    use platform_metadata::project::ProjectRaw;
 
     let repo = FsProjectRepository::new();
     let projects: Vec<ProjectRaw> = repo.get_all().iter().map(ProjectRaw::from).collect();
@@ -193,8 +194,8 @@ pub async fn projects_json_handler() -> impl IntoResponse {
 }
 
 pub async fn project_json_handler(Path(id): Path<String>) -> impl IntoResponse {
-    use dpe_core::project::is_valid_shortcode;
     use dpe_core::project_repository::{FsProjectRepository, ProjectRepository};
+    use platform_metadata::project::is_valid_shortcode;
 
     if !is_valid_shortcode(&id) {
         return StatusCode::BAD_REQUEST.into_response();
@@ -202,7 +203,7 @@ pub async fn project_json_handler(Path(id): Path<String>) -> impl IntoResponse {
 
     let repo = FsProjectRepository::new();
     match repo.get_by_shortcode(&id) {
-        Some(proj) => axum::Json(dpe_core::project::ProjectRaw::from(proj)).into_response(),
+        Some(proj) => axum::Json(platform_metadata::project::ProjectRaw::from(proj)).into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
     }
 }
@@ -218,36 +219,6 @@ mod tests {
     use tower::ServiceExt;
 
     use super::*;
-
-    // --- Unit tests: is_valid_shortcode ---
-
-    #[test]
-    fn valid_shortcode_alphanumeric() {
-        assert!(is_valid_shortcode("0803"));
-        assert!(is_valid_shortcode("080C"));
-        assert!(is_valid_shortcode("abc123"));
-    }
-
-    #[test]
-    fn invalid_shortcode_empty() {
-        assert!(!is_valid_shortcode(""));
-    }
-
-    #[test]
-    fn invalid_shortcode_special_chars() {
-        assert!(!is_valid_shortcode("08/03"));
-        assert!(!is_valid_shortcode("../etc"));
-        assert!(!is_valid_shortcode("<script>"));
-        assert!(!is_valid_shortcode("ab cd"));
-        assert!(!is_valid_shortcode("ab-cd"));
-        assert!(!is_valid_shortcode("ab_cd"));
-    }
-
-    #[test]
-    fn invalid_shortcode_xss_attempt() {
-        assert!(!is_valid_shortcode("0803'OR'1'='1"));
-        assert!(!is_valid_shortcode("0803&tab=overview"));
-    }
 
     // --- Unit tests: render_search_results ---
 
@@ -277,7 +248,7 @@ mod tests {
             name: "Test".to_string(),
             shortcode: "0001".to_string(),
             official_name: "Test".to_string(),
-            status: dpe_core::ProjectStatus::Ongoing,
+            status: platform_metadata::ProjectStatus::Ongoing,
             short_description: "desc".to_string(),
             description: std::collections::HashMap::new(),
             start_date: "2020".to_string(),
@@ -285,8 +256,8 @@ mod tests {
             url: None,
             secondary_url: None,
             how_to_cite: "cite".to_string(),
-            access_rights: dpe_core::AccessRights {
-                access_rights: dpe_core::AccessRightsType::FullOpenAccess,
+            access_rights: platform_metadata::AccessRights {
+                access_rights: platform_metadata::AccessRightsType::FullOpenAccess,
                 embargo_date: None,
             },
             legal_info: vec![],
@@ -306,7 +277,7 @@ mod tests {
             abstract_text: None,
             contact_point: None,
             publications: None,
-            funding: dpe_core::project::Funding::Text("None".to_string()),
+            funding: platform_metadata::project::Funding::Text("None".to_string()),
             alternative_names: None,
             documentation_material: None,
             provenance: None,
@@ -574,7 +545,7 @@ mod tests {
     /// `entity_name`'s person and organization branches.
     #[test]
     fn snapshot_project_sidebar_with_entity_ids() {
-        use dpe_core::{AccessRights, AccessRightsType, Funding, ProjectStatus};
+        use platform_metadata::{AccessRights, AccessRightsType, Funding, ProjectStatus};
 
         init_test_data();
         let project = Project {
@@ -595,8 +566,8 @@ mod tests {
                 access_rights: AccessRightsType::FullOpenAccess,
                 embargo_date: None,
             },
-            legal_info: vec![dpe_core::LegalInfo {
-                license: dpe_core::License {
+            legal_info: vec![platform_metadata::LegalInfo {
+                license: platform_metadata::License {
                     license_identifier: "CC BY 4.0".to_string(),
                     license_uri: "https://creativecommons.org/licenses/by/4.0/".to_string(),
                     license_date: "2024-01-01".to_string(),

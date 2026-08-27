@@ -16,8 +16,9 @@ Review checklist for the DSP Repository. Organized by priority.
 - Unit tests for fragment handler edge cases (invalid tab, missing project, etc.)
 
 **Architecture**
-- New API crates follow the `dpe-api-{name}` pattern with `dpe-core` as only domain dependency (see [Project Structure](../repo_structure.md))
-- `dpe-core` has no framework dependencies (no axum, no maud)
+- New API crates follow the `dpe-api-{name}` pattern with `platform-metadata` and `dpe-core` as only domain dependencies (see [Project Structure](../repo_structure.md))
+- `dpe-core` and `platform-metadata` have no framework dependencies (no axum, no maud)
+- `platform-metadata` takes no dependency on a service crate, and no path into a service's data directory
 - Validate command covers all data file types (DPE)
 - E2E test directory naming: `web-e2e-tests/` for DPE, `playground-e2e-tests/` for Mosaic
 
@@ -42,7 +43,7 @@ Review checklist for the DSP Repository. Organized by priority.
 
 - Follow existing Datastar attribute patterns (signal naming with `_` prefix) — see [DPE Architecture](../dpe/architecture.md)
 - Fragment handlers in `fragments/` module, not inline in `main.rs`
-- Domain types belong in `dpe-core`, not in web or API crates
+- Contract types belong in `platform-metadata` and DPE's view model in `dpe-core`, not in web or API crates
 - API crate exposes a handler function (e.g., `pub async fn oai_handler(...)`) for composition in dpe-server
 - View functions return `maud::Markup` via the `html!` macro
 - No non-trivial `html!` block passed directly as a function argument — bind it to a Rust `let` or extract a `fn -> Markup` helper (nested-as-argument `html!` is skipped by `maudfmt` and mangled by `cargo fmt`; trivial one-liners like `html! { (label) }` are fine)

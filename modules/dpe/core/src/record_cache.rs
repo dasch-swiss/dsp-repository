@@ -6,7 +6,8 @@ use std::collections::HashMap;
 use std::sync::OnceLock;
 use std::time::Instant;
 
-use super::record::Record;
+use platform_metadata::Record;
+
 use super::utils::get_data_dir;
 
 static BEARER: &str = "Bearer eyJ0eXAiO...";

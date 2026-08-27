@@ -2,7 +2,8 @@
 //! `organization-001`) to person and organization details for
 //! metadata output.
 
-use dpe_core::{is_organization_id, ContributorLookup, Person};
+use dpe_core::{is_organization_id, ContributorLookup};
+use platform_metadata::Person;
 
 use super::types::DataCiteNameIdentifier;
 
@@ -108,8 +109,8 @@ fn non_empty(s: String) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use dpe_core::models::AuthorityFileReference;
-    use dpe_core::{Organization, Person};
+    use platform_metadata::models::AuthorityFileReference;
+    use platform_metadata::{Organization, Person};
 
     use super::*;
     use crate::handlers::test_utils::InMemoryContributorLookup;

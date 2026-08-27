@@ -13,7 +13,7 @@ pub fn placeholder_value(value: &str) -> Markup {
 /// Returns true if the value should be rendered — either it is not a placeholder,
 /// or placeholders are currently visible.
 pub fn should_render_value(value: &str) -> bool {
-    !dpe_core::is_placeholder(value) || dpe_core::show_placeholder_values()
+    !platform_metadata::is_placeholder(value) || dpe_core::show_placeholder_values()
 }
 
 #[cfg(test)]

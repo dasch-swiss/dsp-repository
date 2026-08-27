@@ -36,9 +36,10 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
 use chrono::{DateTime, Utc};
-use editor_core::records::{is_valid_shortcode, Role, SubmissionState, User};
+use editor_core::records::{Role, SubmissionState, User};
 use editor_core::repository::{DraftRepository, RepositoryError, SubmissionRepository, UserRepository};
 use editor_web::pages::depositors as page;
+use platform_metadata::is_valid_shortcode;
 use serde::Deserialize;
 use uuid::Uuid;
 

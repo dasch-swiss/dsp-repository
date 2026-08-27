@@ -24,7 +24,7 @@ The DPE follows a 4-layer testing pyramid, adapted from the [Sipi testing strate
 - **Location**: `#[cfg(test)]` modules in each crate
 - **Runner**: `cargo test --workspace`
 - **Scope**: Fragment handlers, OAI protocol, domain types, data loading, filtering/pagination
-- **Crate**: dpe-core tests run independently — `cargo test -p dpe-core`
+- **Crate**: dpe-core and platform-metadata tests run independently — `cargo test -p dpe-core`, `cargo test -p platform-metadata`
 
 ## Layer 2: Snapshot Tests (insta)
 

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::models::AuthorityFileReference;
+use crate::models::AuthorityFileReference;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Organization {

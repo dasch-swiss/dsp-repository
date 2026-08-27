@@ -1,6 +1,6 @@
-use dpe_core::project::{Funding, Grant};
 use maud::{html, Markup};
 use mosaic_tiles::icon::{icon, LinkExternal};
+use platform_metadata::project::{Funding, Grant};
 
 use super::super::info_card::info_card;
 use super::super::organization_name::organization_name;
@@ -47,7 +47,7 @@ pub fn funding_section(funding: &Funding) -> Markup {
                     }
                 }
                 Funding::Text(text) => {
-                    @if dpe_core::is_placeholder(text) { (placeholder_value(text)) } @else {
+                    @if platform_metadata::is_placeholder(text) { (placeholder_value(text)) } @else {
                         div class="text-neutral-500" { (text) }
                     }
                 }
@@ -58,7 +58,7 @@ pub fn funding_section(funding: &Funding) -> Markup {
 
 #[cfg(test)]
 mod tests {
-    use dpe_core::project::Grant;
+    use platform_metadata::project::Grant;
 
     use super::*;
 

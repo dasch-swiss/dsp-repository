@@ -1,0 +1,108 @@
+//! The offline-enriched temporal-coverage table: loading it from a data
+//! directory, and looking a normalized name up in it.
+//!
+//! Some `temporalCoverage` entries cannot be resolved through ChronOntology
+//! (free-text names, or periods without a timespan). An offline tool produces
+//! `temporal-coverage-enrichment.json`, a reviewed lookup table mapping a
+//! normalized name to a W3CDTF date range, the original name, and the source of
+//! the range (`chronontology`, `llm`, or `unresolved`).
+//!
+//! The table is keyed by the same value the OAI mapping computes at request time
+//! ([`crate::utils::multilingual_value`]), so collection and lookup agree.
+//!
+//! Everything here is pure over an explicit `data_dir` or an explicit map. The
+//! process-global `OnceLock` that reads DPE's data directory lives in
+//! `dpe_core::temporal_enrichment_cache`.
+use std::collections::HashMap;
+
+use serde::Deserialize;
+
+const ENRICHMENT_FILE: &str = "temporal-coverage-enrichment.json";
+
+/// One enriched temporal-coverage entry.
+#[derive(Clone, Debug, Deserialize)]
+pub struct EnrichedDate {
+    /// W3CDTF date range, or `None` when the name is known but no range could be
+    /// determined (the entry is then emitted with `dateInformation` only).
+    #[serde(default)]
+    pub date: Option<String>,
+    /// The original human-readable period name.
+    pub original_name: String,
+    /// Provenance of the range (`"chronontology"`, `"llm"`, or `"unresolved"`).
+    /// Retained for round-trip fidelity and debugging; the OAI mapping does not
+    /// read it.
+    #[serde(default)]
+    pub source: String,
+}
+
+/// Look up an enriched entry in `entries` by its normalized key. Pure over the
+/// given map so it can be unit-tested without a process cache.
+pub fn enriched_for_in(entries: &HashMap<String, EnrichedDate>, key: &str) -> Option<EnrichedDate> {
+    entries.get(key).cloned()
+}
+
+/// Load and parse the enrichment table from `data_dir`. Shared by the cache
+/// initialiser and tests so both go through identical read/parse logic.
+pub fn load_from(data_dir: &std::path::Path) -> HashMap<String, EnrichedDate> {
+    let path = data_dir.join(ENRICHMENT_FILE);
+
+    // A missing enrichment file is normal (e.g. before the tool is first run);
+    // callers fall back to a name-only date. Only a present-but-broken file warns.
+    let json = match std::fs::read_to_string(&path) {
+        Ok(json) => json,
+        Err(_) => return HashMap::new(),
+    };
+
+    match serde_json::from_str(&json) {
+        Ok(entries) => entries,
+        Err(e) => {
+            tracing::warn!(file = ?path, error = %e, "failed to parse temporal coverage enrichment file");
+            HashMap::new()
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn entry(date: Option<&str>, name: &str, source: &str) -> EnrichedDate {
+        EnrichedDate {
+            date: date.map(str::to_string),
+            original_name: name.to_string(),
+            source: source.to_string(),
+        }
+    }
+
+    fn fixtures() -> HashMap<String, EnrichedDate> {
+        let mut map = HashMap::new();
+        map.insert(
+            "Early Christianity".to_string(),
+            entry(Some("0030/0451"), "Early Christianity", "llm"),
+        );
+        map.insert("Mysterious Era".to_string(), entry(None, "Mysterious Era", "llm"));
+        map
+    }
+
+    #[test]
+    fn returns_entry_with_range() {
+        let entries = fixtures();
+        let got = enriched_for_in(&entries, "Early Christianity").unwrap();
+        assert_eq!(got.date.as_deref(), Some("0030/0451"));
+        assert_eq!(got.original_name, "Early Christianity");
+    }
+
+    #[test]
+    fn returns_entry_without_range() {
+        let entries = fixtures();
+        let got = enriched_for_in(&entries, "Mysterious Era").unwrap();
+        assert_eq!(got.date, None);
+        assert_eq!(got.original_name, "Mysterious Era");
+    }
+
+    #[test]
+    fn unknown_key_is_none() {
+        let entries = fixtures();
+        assert!(enriched_for_in(&entries, "Unknown").is_none());
+    }
+}

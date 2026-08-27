@@ -1,8 +1,9 @@
-// Domain types (Project, ProjectRaw, etc.) live in dpe-core. This file retains
+// Domain types live elsewhere: `ProjectRaw` in platform-metadata, `Project` in
+// dpe-core. This file retains
 // ProjectQuery: the projects-list query/filter state, deserialized from the URL
 // query string via Axum's `Query` extractor.
 
-use dpe_core::ACCESS_RIGHTS_VALUES;
+use platform_metadata::ACCESS_RIGHTS_VALUES;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]

@@ -1,6 +1,7 @@
 //! Transformation of Research Projects into Dublin Core metadata.
 
-use dpe_core::{ContributorLookup, Discipline, Project, TemporalCoverage};
+use dpe_core::{ContributorLookup, Project};
+use platform_metadata::{Discipline, TemporalCoverage};
 
 use super::helpers::{access_rights_to_string, get_multilingual_value, is_creator};
 use super::resolve::resolve_agent;
@@ -12,7 +13,7 @@ pub fn project_to_dublin_core(project: &Project, lookup: &dyn ContributorLookup)
     let mut record = DublinCoreRecord::default();
 
     // dc:title - prefer officialName, fallback to name
-    let title = if !dpe_core::is_placeholder(&project.official_name) && !project.official_name.is_empty() {
+    let title = if !platform_metadata::is_placeholder(&project.official_name) && !project.official_name.is_empty() {
         &project.official_name
     } else {
         &project.name
@@ -85,7 +86,7 @@ pub fn project_to_dublin_core(project: &Project, lookup: &dyn ContributorLookup)
     record.publisher = PUBLISHER.to_string();
 
     // dc:date from startDate
-    if !dpe_core::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
+    if !platform_metadata::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
         record.dates.push(project.start_date.clone());
     }
 
@@ -93,7 +94,7 @@ pub fn project_to_dublin_core(project: &Project, lookup: &dyn ContributorLookup)
     record.resource_type = "Project".to_string();
 
     // dc:identifier - canonical ARK URL from pid, or derived from shortcode as fallback
-    if !dpe_core::is_placeholder(&project.pid) && !project.pid.is_empty() {
+    if !platform_metadata::is_placeholder(&project.pid) && !project.pid.is_empty() {
         record.identifiers.push(project.pid.clone());
     } else {
         record
@@ -137,7 +138,7 @@ pub fn project_to_dublin_core(project: &Project, lookup: &dyn ContributorLookup)
         .rights
         .push(access_rights_to_string(&project.access_rights.access_rights).to_string());
     for legal in &project.legal_info {
-        if !dpe_core::is_placeholder(&legal.license.license_uri) && !legal.license.license_uri.is_empty() {
+        if !platform_metadata::is_placeholder(&legal.license.license_uri) && !legal.license.license_uri.is_empty() {
             record.rights.push(legal.license.license_uri.clone());
         }
     }

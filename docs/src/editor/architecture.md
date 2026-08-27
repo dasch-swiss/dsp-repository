@@ -6,7 +6,7 @@ This page describes the service as it stands. Surfaces that are not built yet ar
 
 ## Relationship to DPE
 
-The editor is a **separate service** from DPE, not a section of it. They share `platform-telemetry` for the browser-beacon contract and `mosaic-tiles` for components, and will share `dpe-core` for the data contract — but not a process, an image, or an origin.
+The editor is a **separate service** from DPE, not a section of it. They share `platform-telemetry` for the browser-beacon contract, `platform-metadata` for the research-metadata contract and `mosaic-tiles` for components — but not a process, an image, or an origin.
 
 The separation is deliberate:
 

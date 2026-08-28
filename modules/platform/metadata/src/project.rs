@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::models::AuthorityFileReference;
+use crate::utils::Multilingual;
 
 /// Whether `candidate` could be a project shortcode.
 ///
@@ -49,7 +50,7 @@ pub struct ProjectRaw {
     pub official_name: String,
     pub status: ProjectStatus,
     pub short_description: String,
-    pub description: std::collections::HashMap<String, String>,
+    pub description: Multilingual,
     pub start_date: String,
     pub end_date: String,
     /// Raw value — either a structured object or a legacy string array.
@@ -70,18 +71,18 @@ pub struct ProjectRaw {
     pub collections: Option<Vec<String>>,
     #[serde(default)]
     pub records: Option<Vec<String>>,
-    pub keywords: Vec<std::collections::HashMap<String, String>>,
+    pub keywords: Vec<Multilingual>,
     pub disciplines: Vec<Discipline>,
     pub temporal_coverage: Vec<TemporalCoverage>,
     pub spatial_coverage: Vec<AuthorityFileReference>,
     pub attributions: Vec<Attribution>,
     #[serde(rename = "abstract", default)]
-    pub abstract_text: Option<std::collections::HashMap<String, String>>,
+    pub abstract_text: Option<Multilingual>,
     pub contact_point: Option<Vec<String>>,
     #[serde(default)]
     pub publications: Option<Vec<Publication>>,
     pub funding: Funding,
-    pub alternative_names: Option<Vec<std::collections::HashMap<String, String>>>,
+    pub alternative_names: Option<Vec<Multilingual>>,
     pub documentation_material: Option<Vec<String>>,
     #[serde(default)]
     pub provenance: Option<String>,
@@ -137,14 +138,14 @@ pub enum AccessRightsType {
 #[serde(untagged)]
 pub enum TemporalCoverage {
     Reference(AuthorityFileReference),
-    Text(std::collections::HashMap<String, String>),
+    Text(Multilingual),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Discipline {
     Reference(AuthorityFileReference),
-    Text(std::collections::HashMap<String, String>),
+    Text(Multilingual),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

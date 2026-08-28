@@ -1,16 +1,15 @@
 //! Shared helper functions for metadata transformation.
 
-use std::collections::HashMap;
-
+use platform_metadata::utils::Multilingual;
 use platform_metadata::AccessRightsType;
 
-/// Extracts a value from a multilingual HashMap, preferring English.
+/// Extracts a value from a [`Multilingual`] map, preferring English.
 ///
 /// Delegates to `platform_metadata::multilingual_value` — kept as a local alias since
 /// it is imported throughout this module tree. See that function's docs for
 /// the deterministic-fallback rationale (it backs the temporal-coverage
 /// enrichment lookup key, where collection and lookup must agree).
-pub fn get_multilingual_value(map: &HashMap<String, String>) -> Option<String> {
+pub fn get_multilingual_value(map: &Multilingual) -> Option<String> {
     platform_metadata::multilingual_value(map)
 }
 

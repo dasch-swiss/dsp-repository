@@ -35,4 +35,4 @@ pub use project::{
 pub use record::{
     record_datestamp, Pid as RecordPid, Record, RecordFile, RecordLegalInfo, RecordLicense, ARK_PATH_PREFIX,
 };
-pub use utils::{is_placeholder, multilingual_value};
+pub use utils::{is_placeholder, multilingual_value, Multilingual};

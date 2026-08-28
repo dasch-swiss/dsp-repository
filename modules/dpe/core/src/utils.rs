@@ -1,12 +1,13 @@
-use std::collections::HashMap;
 use std::sync::OnceLock;
+
+use platform_metadata::utils::Multilingual;
 
 /// Returns the value for the first available language in the priority order: en -> de -> fr -> it.
 /// Falls back to any available value if none of the preferred languages are present.
 ///
 /// Display-only. For a value used as a lookup key, use
 /// [`platform_metadata::multilingual_value`], which is deterministic.
-pub fn lang_value(map: &HashMap<String, String>) -> Option<&String> {
+pub fn lang_value(map: &Multilingual) -> Option<&String> {
     ["en", "de", "fr", "it"]
         .iter()
         .find_map(|lang| map.get(*lang))

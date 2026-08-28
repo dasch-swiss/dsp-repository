@@ -5,8 +5,6 @@
 //! clearer. Tests that need a variant (e.g. no publications) clone and override
 //! the relevant field: `Project { publications: None, ..sample_project() }`.
 
-use std::collections::HashMap;
-
 use dpe_core::contributors::ResolvedContributor;
 use dpe_core::project::Project;
 use platform_metadata::models::AuthorityFileReference;
@@ -15,9 +13,10 @@ use platform_metadata::person::Person;
 use platform_metadata::project::{
     AccessRights, AccessRightsType, Attribution, Funding, Grant, LegalInfo, License, Pid, ProjectStatus, Publication,
 };
+use platform_metadata::utils::Multilingual;
 
-fn lang_map(value: &str) -> HashMap<String, String> {
-    HashMap::from([("en".to_string(), value.to_string())])
+fn lang_map(value: &str) -> Multilingual {
+    Multilingual::from([("en".to_string(), value.to_string())])
 }
 
 fn url_ref(url: &str) -> AuthorityFileReference {

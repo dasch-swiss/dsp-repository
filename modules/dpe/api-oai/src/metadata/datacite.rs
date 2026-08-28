@@ -330,9 +330,10 @@ mod temporal_tests {
     }
 
     fn text(en: &str) -> TemporalCoverage {
-        let mut map = HashMap::new();
-        map.insert("en".to_string(), en.to_string());
-        TemporalCoverage::Text(map)
+        TemporalCoverage::Text(platform_metadata::utils::Multilingual::from([(
+            "en".to_string(),
+            en.to_string(),
+        )]))
     }
 
     /// A period cache keyed by bare id (as the real one is), so tests exercise the

@@ -129,7 +129,7 @@ pub fn incunabula_project() -> Project {
         status: ProjectStatus::Finished,
         short_description: "An art-scientific monograph of the richly illustrated early prints in Basel.".to_string(),
         description: {
-            let mut map = std::collections::HashMap::new();
+            let mut map = platform_metadata::utils::Multilingual::new();
             map.insert("en".to_string(), "A description of early prints in Basel.".to_string());
             map
         },
@@ -164,17 +164,17 @@ pub fn incunabula_project() -> Project {
         collection_ids: vec![],
         records: None,
         keywords: vec![{
-            let mut map = std::collections::HashMap::new();
+            let mut map = platform_metadata::utils::Multilingual::new();
             map.insert("en".to_string(), "Letterpress Printing".to_string());
             map
         }],
         disciplines: vec![Discipline::Text({
-            let mut map = std::collections::HashMap::new();
+            let mut map = platform_metadata::utils::Multilingual::new();
             map.insert("en".to_string(), "10404 Visual arts and Art history".to_string());
             map
         })],
         temporal_coverage: vec![TemporalCoverage::Text({
-            let mut map = std::collections::HashMap::new();
+            let mut map = platform_metadata::utils::Multilingual::new();
             map.insert("en".to_string(), "Late Middle Ages".to_string());
             map
         })],
@@ -198,7 +198,7 @@ pub fn incunabula_project() -> Project {
             },
         ],
         abstract_text: Some({
-            let mut map = std::collections::HashMap::new();
+            let mut map = platform_metadata::utils::Multilingual::new();
             map.insert(
                 "en".to_string(),
                 "An interdisciplinary research project on image sequences of Basel's early prints.".to_string(),
@@ -214,7 +214,7 @@ pub fn incunabula_project() -> Project {
             url: Some("https://data.snf.ch/grants/grant/120378".to_string()),
         }]),
         alternative_names: Some(vec![{
-            let mut map = std::collections::HashMap::new();
+            let mut map = platform_metadata::utils::Multilingual::new();
             map.insert("en".to_string(), "Incunabula".to_string());
             map
         }]),

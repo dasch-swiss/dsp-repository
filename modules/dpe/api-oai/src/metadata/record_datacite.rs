@@ -182,9 +182,8 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use platform_metadata::record::Pid;
+    use platform_metadata::utils::Multilingual;
     use platform_metadata::{RecordFile, RecordLegalInfo, RecordLicense};
 
     use super::*;
@@ -205,7 +204,7 @@ mod tests {
             id: "record-0001".to_string(),
             pid: Pid::new("https://ark.dasch.swiss", "0001", "record-0001"),
             label: {
-                let mut m = HashMap::new();
+                let mut m = Multilingual::new();
                 m.insert("en".to_string(), "Survey Responses on Rural Land Use, 1920–1950".to_string());
                 m.insert(
                     "de".to_string(),
@@ -227,7 +226,7 @@ mod tests {
             publisher: "DaSCH".to_string(),
             source: String::new(),
             description: {
-                let mut m = HashMap::new();
+                let mut m = Multilingual::new();
                 m.insert("en".to_string(), "A collection of survey responses.".to_string());
                 m
             },

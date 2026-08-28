@@ -34,7 +34,13 @@ datastar = { version = "0.3", features = ["axum"] }
 maud = { version = "0.27", features = ["axum"] }
 log = "0.4.30"
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# `preserve_order` makes `serde_json::Value` order-preserving (IndexMap) instead of
+# alphabetising (BTreeMap). The canonical project writer round-trips `ProjectRaw`
+# through `Value` to strip null members, and must emit keys in the struct's
+# declaration order — which is what the 85 committed project files hold. Without
+# this every key in every file would be reordered alphabetically. Note that under
+# this feature `Map::remove` is swap-remove: use `retain` to drop members in place.
+serde_json = { version = "1", features = ["preserve_order"] }
 tokio = { version = "1", features = ["full"] }
 tower = "0.5.3"
 tower_governor = "0.6"

@@ -1,6 +1,5 @@
 {
     "id": "0810",
-    "imageCredit": "© DaSCH. Design: Rebecca Sigloch (2022), CC BY 4.0",
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0810",
     "name": "DaSCH – Swiss National Data and Service Center for the Humanities",
     "shortcode": "0810",
@@ -105,6 +104,9 @@
     "abstract": {
         "en": "This dataset contains material (visuals, slides, posters, videos, tutorials, reports) prepared by members of DaSCH as well as material contributed by researchers at events organised by DaSCH."
     },
+    "contactPoint": [
+        "organization-032"
+    ],
     "funding": [
         {
             "funders": [
@@ -120,7 +122,5 @@
             "en": "DaSCH"
         }
     ],
-    "contactPoint": [
-        "organization-032"
-    ]
+    "imageCredit": "© DaSCH. Design: Rebecca Sigloch (2022), CC BY 4.0"
 }

@@ -1,6 +1,5 @@
 {
     "id": "0862",
-    "imageCredit": "Author: Christian von Zimmermann.",
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0862",
     "name": "(digitale) Historisch-Kritische Gesamtausgabe der Werke und Briefe von Jeremias Gotthelf, HKG und dHKG",
     "shortcode": "0862",
@@ -186,5 +185,6 @@
                 "organization-028"
             ]
         }
-    ]
+    ],
+    "imageCredit": "Author: Christian von Zimmermann."
 }

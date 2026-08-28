@@ -1,6 +1,5 @@
 {
     "id": "0120",
-    "imageCredit": "https://creativecommons.org/licenses/by-sa/4.0/ - CC BY-SA 4.0.",
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0120",
     "name": "Prendre une position épistémique dans l’interaction. Les marqueurs du savoir, du non-savoir et du doute en français",
     "shortcode": "0120",
@@ -145,5 +144,6 @@
         {
             "en": "posepi"
         }
-    ]
+    ],
+    "imageCredit": "https://creativecommons.org/licenses/by-sa/4.0/ - CC BY-SA 4.0."
 }

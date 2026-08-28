@@ -1,6 +1,5 @@
 {
     "id": "0117",
-    "imageCredit": "René Sigrist, 2023, Collaborations les plus significatives entre chimistes de la période 1810-1860, CC BY-SA 4.0.",
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0117",
     "name": "Promoting Knowledge. The Origins of the Science System and the Making of Professional Structures in European States, 1700-1870",
     "shortcode": "0117",
@@ -208,5 +207,6 @@
         {
             "en": "prom-know"
         }
-    ]
+    ],
+    "imageCredit": "René Sigrist, 2023, Collaborations les plus significatives entre chimistes de la période 1810-1860, CC BY-SA 4.0."
 }

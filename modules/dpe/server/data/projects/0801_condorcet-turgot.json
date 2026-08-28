@@ -1,8 +1,17 @@
 {
     "id": "0801b",
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0801",
+    "name": "Briefwechsel von Leonhard Euler mit Condorcet und Turgot",
     "shortcode": "0801b",
     "officialName": "Briefwechsel von Euler mit Condorcet und Turgot",
+    "status": "Finished",
+    "shortDescription": "Edition of the French-language correspondence between Leonhard Euler, the Marquis de Condorcet, and the statesman Turgot.",
+    "description": {
+        "de": "Dieses Teilprojekt von BEOL präsentiert den Briefwechsel zwischen Leonhard Euler, dem Marquis de Condorcet und Anne Robert Jacques Turgot. Condorcet, Mathematiker und Sekretär der Académie royale des Sciences, und Turgot, Ökonom und französischer Staatsmann, waren beide herausragende Figuren der französischen Aufklärung. Die Edition macht ihren Austausch mit Euler zu mathematischen und wissenschaftlichen Themen zugänglich, verfasst in französischer Sprache.",
+        "en": "This sub-project of BEOL presents the correspondence between Leonhard Euler, the Marquis de Condorcet, and Anne Robert Jacques Turgot. Condorcet, a mathematician and secretary of the Académie royale des Sciences, and Turgot, an economist and French statesman, were both prominent figures of the French Enlightenment. The edition provides access to their exchange with Euler on mathematical and scientific topics, written in French."
+    },
+    "startDate": "2016-07-01",
+    "endDate": "MISSING",
     "url": [
         "https://app.dasch.swiss/project/yTerZGyxjZVqFMNNKXCDPF",
         "https://bernoulli-euler.dhlab.unibas.ch/"
@@ -25,49 +34,6 @@
         }
     ],
     "dataManagementPlan": "not accessible",
-    "disciplines": [
-        {
-            "type": "Skos",
-            "url": "http://skos.um.es/unesco6/12",
-            "text": "Mathematics"
-        }
-    ],
-    "temporalCoverage": [
-        {
-            "en": "17th century and 18th century CE"
-        }
-    ],
-    "spatialCoverage": [
-        {
-            "type": "Geonames",
-            "url": "https://www.geonames.org/2658434",
-            "text": "Switzerland"
-        },
-        {
-            "type": "Geonames",
-            "url": "https://www.geonames.org/3017382",
-            "text": "France"
-        }
-    ],
-    "funding": [
-        {
-            "funders": [
-                "organization-002"
-            ],
-            "number": "166072",
-            "name": "Project funding",
-            "url": "https://data.snf.ch/grants/grant/166072"
-        }
-    ],
-    "name": "Briefwechsel von Leonhard Euler mit Condorcet und Turgot",
-    "shortDescription": "Edition of the French-language correspondence between Leonhard Euler, the Marquis de Condorcet, and the statesman Turgot.",
-    "description": {
-        "de": "Dieses Teilprojekt von BEOL präsentiert den Briefwechsel zwischen Leonhard Euler, dem Marquis de Condorcet und Anne Robert Jacques Turgot. Condorcet, Mathematiker und Sekretär der Académie royale des Sciences, und Turgot, Ökonom und französischer Staatsmann, waren beide herausragende Figuren der französischen Aufklärung. Die Edition macht ihren Austausch mit Euler zu mathematischen und wissenschaftlichen Themen zugänglich, verfasst in französischer Sprache.",
-        "en": "This sub-project of BEOL presents the correspondence between Leonhard Euler, the Marquis de Condorcet, and Anne Robert Jacques Turgot. Condorcet, a mathematician and secretary of the Académie royale des Sciences, and Turgot, an economist and French statesman, were both prominent figures of the French Enlightenment. The edition provides access to their exchange with Euler on mathematical and scientific topics, written in French."
-    },
-    "status": "Finished",
-    "startDate": "2016-07-01",
-    "endDate": "MISSING",
     "typeOfData": [
         "Image",
         "Text"
@@ -92,6 +58,30 @@
             "en": "Mathematics"
         }
     ],
+    "disciplines": [
+        {
+            "type": "Skos",
+            "url": "http://skos.um.es/unesco6/12",
+            "text": "Mathematics"
+        }
+    ],
+    "temporalCoverage": [
+        {
+            "en": "17th century and 18th century CE"
+        }
+    ],
+    "spatialCoverage": [
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/2658434",
+            "text": "Switzerland"
+        },
+        {
+            "type": "Geonames",
+            "url": "https://www.geonames.org/3017382",
+            "text": "France"
+        }
+    ],
     "attributions": [
         {
             "contributor": "person-069",
@@ -109,6 +99,16 @@
     "abstract": {
         "en": "Edition of the French-language correspondence between Leonhard Euler, the Marquis de Condorcet, and the statesman Anne Robert Jacques Turgot."
     },
+    "funding": [
+        {
+            "funders": [
+                "organization-002"
+            ],
+            "number": "166072",
+            "name": "Project funding",
+            "url": "https://data.snf.ch/grants/grant/166072"
+        }
+    ],
     "alternativeNames": [
         {
             "en": "Condorcet-Turgot"

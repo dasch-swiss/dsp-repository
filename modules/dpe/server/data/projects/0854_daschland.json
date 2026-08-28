@@ -1,6 +1,5 @@
 {
     "id": "0854",
-    "imageCredit": "Authorship: AI-Generated.",
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0854",
     "name": "Alice in DaSCHland",
     "shortcode": "0854",
@@ -150,6 +149,9 @@
             ]
         }
     ],
+    "abstract": {
+        "en": "This dataset comprises the data structures, metadata, and character data used in the Alice in DaSCHland showcase project. It offers an exploratory environment where users interact with narrative data, data visualization elements, and metadata anomalies through Alice’s adventures."
+    },
     "contactPoint": [
         "organization-032"
     ],
@@ -162,7 +164,5 @@
             "url": "https://www.dasch.swiss/"
         }
     ],
-    "abstract": {
-        "en": "This dataset comprises the data structures, metadata, and character data used in the Alice in DaSCHland showcase project. It offers an exploratory environment where users interact with narrative data, data visualization elements, and metadata anomalies through Alice’s adventures."
-    }
+    "imageCredit": "Authorship: AI-Generated."
 }

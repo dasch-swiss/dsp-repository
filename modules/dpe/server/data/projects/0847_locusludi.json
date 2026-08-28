@@ -1,6 +1,5 @@
 {
     "id": "0847",
-    "imageCredit": "Tombe du Plongeur, fresque décorative du mur nord, Paestum, 480-470 av. J.-C., Paestum, Museo Archeologico Nazionale. Wikimedia Commons, photo by Velvet. CC BY-SA 3.0.",
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0847",
     "name": "Locus Ludi database: The Kottabos in the Greek World",
     "shortcode": "0847",
@@ -147,5 +146,6 @@
         {
             "en": "Locus Ludi"
         }
-    ]
+    ],
+    "imageCredit": "Tombe du Plongeur, fresque décorative du mur nord, Paestum, 480-470 av. J.-C., Paestum, Museo Archeologico Nazionale. Wikimedia Commons, photo by Velvet. CC BY-SA 3.0."
 }

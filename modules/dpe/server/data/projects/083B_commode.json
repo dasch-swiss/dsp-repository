@@ -114,6 +114,12 @@
             ]
         }
     ],
+    "abstract": {
+        "en": "This dataset provides basic bibliographic information for the key primary texts used for the COMMode project. These texts range from fifteenth-century manuscripts to twenty-first-century ebooks, and include various types of Chaucerian publications, such as print editions, children’s adaptations, Chaucer-inspired ballads, modernizations, and anthologies."
+    },
+    "contactPoint": [
+        "person-260"
+    ],
     "funding": [
         {
             "funders": [
@@ -128,11 +134,5 @@
         {
             "en": "COMMode"
         }
-    ],
-    "contactPoint": [
-        "person-260"
-    ],
-    "abstract": {
-        "en": "This dataset provides basic bibliographic information for the key primary texts used for the COMMode project. These texts range from fifteenth-century manuscripts to twenty-first-century ebooks, and include various types of Chaucerian publications, such as print editions, children’s adaptations, Chaucer-inspired ballads, modernizations, and anthologies."
-    }
+    ]
 }

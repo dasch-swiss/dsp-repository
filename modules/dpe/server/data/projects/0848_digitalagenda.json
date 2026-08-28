@@ -144,6 +144,9 @@
     "abstract": {
         "en": "The dataset maps political initiatives and actors involved in education in the context of digital change during the period 1970–2000 in four political entities: Germany (FRG, GDR and unified Germany), Sweden, Switzerland, and Europe (European Communities [EC]/European Union [EU]). It consists of two sub-datasets:\r 1.\tThe first sub-dataset contains information on the various political initiatives that were undertaken in these political entities to address the challenges posed by digital change in education. \r 2.\tThe second sub-dataset includes information on the actors and platforms that played a role in the framing of these initiatives.\r Together, these two sub-datasets aim to provide an overview of the political initiatives and actors involved in addressing the challenges of digital change in education in Germany, Sweden, Switzerland, and the EC/EU. The database can be used to analyse and compare the different approaches taken by these political entities and to identify key stakeholders."
     },
+    "contactPoint": [
+        "person-291"
+    ],
     "publications": [
         {
             "text": "1. Flury, Carmen and Michael Geiss, eds., How Computers Entered the Classroom, 1960–2000: Historical Perspectives. Oldenbourg, De Gruyter, 2023.",
@@ -235,8 +238,5 @@
         {
             "en": "Digital Agenda"
         }
-    ],
-    "contactPoint": [
-        "person-291"
     ]
 }

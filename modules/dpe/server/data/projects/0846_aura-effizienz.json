@@ -1,6 +1,5 @@
 {
     "id": "0846",
-    "imageCredit": "The Wheel of Motion (1920-1928). Source: Frank Bunker Gilbreth, Lilliane Moller Gilbreth: DieMagie des Bewegungsstudiums, hg. von Bernd Stiegler. München: Wilhelm Fink 2012, S. 185f.",
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0846",
     "name": "Aura und Effizienz. Leistungsorientierte Materialisierung und Spiritualisierung in der Literatur der 1920-30er-Jahre: Emmy Hennings, Marieluise Fleisser, Friedrich Glauser und Bruno Goetz",
     "shortcode": "0846",
@@ -182,5 +181,6 @@
             "name": "Project funding",
             "url": "https://data.snf.ch/grants/grant/179010"
         }
-    ]
+    ],
+    "imageCredit": "The Wheel of Motion (1920-1928). Source: Frank Bunker Gilbreth, Lilliane Moller Gilbreth: DieMagie des Bewegungsstudiums, hg. von Bernd Stiegler. München: Wilhelm Fink 2012, S. 185f."
 }

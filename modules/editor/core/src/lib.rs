@@ -9,8 +9,9 @@
 //! `server → web → core` direction intact and the driver out of the domain. And
 //! the project representation: the permissive draft ([`draft`]) that a
 //! `drafts.payload` holds, the multilingual editing view ([`multilingual`]) a
-//! form renders, and the canonical writer ([`canonical`]) that turns an approved
-//! draft back into a `projects/*.json` file byte-for-byte.
+//! form renders, the checks a draft must pass to be submitted
+//! ([`submission`]), and the canonical writer ([`canonical`]) that turns an
+//! approved draft back into a `projects/*.json` file byte-for-byte.
 
 pub mod canonical;
 pub mod draft;
@@ -18,6 +19,7 @@ pub mod json;
 pub mod multilingual;
 pub mod records;
 pub mod repository;
+pub mod submission;
 
 #[cfg(test)]
 mod test_support;

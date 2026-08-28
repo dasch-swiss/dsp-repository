@@ -13,6 +13,7 @@
 //! `load_from(data_dir)` so each service supplies its own directory rather than
 //! this crate reaching for one.
 
+pub mod checks;
 pub mod chronontology;
 pub mod models;
 pub mod organization;
@@ -25,6 +26,7 @@ pub mod utils;
 pub mod w3cdtf;
 
 // Re-exports for convenience
+pub use checks::{check_project, contributor_refs, ContributorRef, Finding};
 pub use models::AuthorityFileReference;
 pub use organization::{Address, Organization};
 pub use person::{is_role_job_title, Person, JOB_TITLE_ROLE_WORDS};

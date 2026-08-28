@@ -4,11 +4,13 @@
 //! column mapping lives in `editor-server`, behind the ports in
 //! [`crate::repository`].
 //!
-//! Three of these carry their body as an opaque `payload: String` of JSON. The
-//! permissive draft representation is Phase 4's work (`ProjectRaw` requires
-//! fields a draft must be allowed to omit), and inventing a type for it here
-//! would mean inventing it twice. The persistence layer never interprets the
-//! payload, so typing it later changes these structs and nothing else.
+//! Three of these carry their body as an opaque `payload: String` of JSON,
+//! which is a [`ProjectDraft`](crate::draft::ProjectDraft) serialized: that type
+//! is `#[serde(transparent)]` over the project's members, so the column holds
+//! the project object itself and needs no migration to become typed. It stays a
+//! `String` here because this layer never interprets it, and the caller that
+//! does (the form's save and submit path) is the one that should decide when to
+//! parse.
 
 use std::fmt;
 use std::str::FromStr;
@@ -196,7 +198,7 @@ pub struct LoginCode {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DraftRecord {
     pub shortcode: String,
-    /// JSON. Typed in Phase 4; see the module docs.
+    /// A serialized [`ProjectDraft`](crate::draft::ProjectDraft); see the module docs.
     pub payload: String,
     /// The last editor, `None` once that user is removed — the row survives so
     /// the depositor's work is not destroyed by an account deletion, and the
@@ -259,7 +261,7 @@ impl FromStr for SubmissionState {
 pub struct Submission {
     pub id: Uuid,
     pub shortcode: String,
-    /// JSON. Typed in Phase 4; see the module docs.
+    /// A serialized [`ProjectDraft`](crate::draft::ProjectDraft); see the module docs.
     pub payload: String,
     pub state: SubmissionState,
     /// `None` once the submitter is removed; see [`DraftRecord::updated_by`].
@@ -276,7 +278,7 @@ pub struct Submission {
 pub struct ApprovedRecord {
     pub id: Uuid,
     pub shortcode: String,
-    /// JSON. Typed in Phase 4; see the module docs.
+    /// A serialized [`ProjectDraft`](crate::draft::ProjectDraft); see the module docs.
     pub payload: String,
     /// `None` once the approver is removed; see [`DraftRecord::updated_by`].
     pub approved_by: Option<Uuid>,

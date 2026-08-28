@@ -54,11 +54,38 @@ File databases get `journal_mode=WAL` and `synchronous=NORMAL`; in-memory databa
 
 A forward-only, append-only list of statement batches guarded by `PRAGMA user_version`, applied at startup — no migration framework and no added dependency. Everything runs in one `BEGIN IMMEDIATE` transaction including the version bump, so a crash part-way leaves the database at the version it started from. A database reporting a *higher* version than the build knows stops startup: that is a rollback to an older image, and running anyway would query columns that do not exist.
 
-The tables are `users`, `user_shortcodes`, `sessions`, `login_codes`, `mail_sends`, `drafts`, `submissions` and `approved_records`, all `STRICT`. Migration `0002` added `users.failed_login_at` (a lockout has to be measured from somewhere, because the counter it gates resets only on success) and `login_codes.browser_token` (the pre-auth binding — see [Authentication](./authentication.md)). Migration `0003` added `mail_sends`, the append-only send log the daily caps count; it replaced counting live `login_codes` rows, which under-reported because a sign-in deletes codes that were mailed. `drafts`, `submissions` and `approved_records` carry their body as an opaque JSON `payload` string; the permissive draft representation types it later, and this layer never interprets it.
+The tables are `users`, `user_shortcodes`, `sessions`, `login_codes`, `mail_sends`, `drafts`, `submissions` and `approved_records`, all `STRICT`. Migration `0002` added `users.failed_login_at` (a lockout has to be measured from somewhere, because the counter it gates resets only on success) and `login_codes.browser_token` (the pre-auth binding — see [Authentication](./authentication.md)). Migration `0003` added `mail_sends`, the append-only send log the daily caps count; it replaced counting live `login_codes` rows, which under-reported because a sign-in deletes codes that were mailed. `drafts`, `submissions` and `approved_records` carry their body as an opaque JSON `payload` string. It holds a serialized `editor_core::draft::ProjectDraft`, which is `#[serde(transparent)]` over the project's members, so the column already contains the project object and needs no migration to become typed; the persistence layer never interprets it.
 
 ### In-memory variant
 
 Selected by leaving `EDITOR_DB_DIR` unset, which is the default — see [Operations](./operations.md#database) for why that is also the preview-safety default. It is a **named shared-cache URI** (`file:<name>?mode=memory&cache=shared`), never bare `:memory:`: every `:memory:` database is distinct and visible only to the connection that opened it, so each pooled connection would get its own empty copy, and with a writer/reader split readers could never see anything the writer wrote. The symptom is `no such table` that comes and goes with pool timing and test order, which reads exactly like a migration bug. Tests use a distinct name each, because a shared-cache in-memory database is scoped to the process and parallel `cargo test` threads share one.
+
+## Project representation
+
+The editor's path is `ProjectRaw` -> draft -> `ProjectRaw`, never through DPE's `Project` view model: `impl From<&Project> for ProjectRaw` rewrites `url` into the object form and hardcodes `clusters: None`, both lossy in exactly the places REQ-1.7 requires the editor to preserve.
+
+`editor_core::draft::ProjectDraft` is the project's JSON members rather than a struct mirroring `ProjectRaw` with 36 `Option` fields. Three requirements pull that way at once: a draft must hold a field the depositor has not filled in and a value that is present but invalid (REQ-1.9), it must carry every field the editor does not manage unchanged (REQ-1.7), and it must survive a field being added to the contract without an editor change (REQ-1.8). An absent key is a missing field, any value is retained whether it validates or not, and validity is decided once, at `to_raw`, which is the submission boundary.
+
+The three `#[serde(untagged)]` enums therefore need no stored variant tag. Untagged deserialization takes the first variant that fits, but a value that keeps its JSON kind verbatim cannot be forced into the wrong one: a string can only be `Funding::Text`, because `Grants` needs an array. `funding_shape` and the two `*_shapes` accessors derive the variant in serde's own attempt order, so what they report can never disagree with what the written file is built from.
+
+`url` keeps the form it was read in. Zero of the 85 committed files use the structured object form (36 hold a one-element string array, 38 a two-element array, 11 omit `url`), so writing the object form would rewrite 74 files. It is used only where there was no prior value: new projects, and those 11 files.
+
+### Canonical form
+
+`editor_core::canonical::write_project` is the single decision about what a `projects/*.json` file looks like: members in `ProjectRaw`'s declaration order at every depth, `null` members dropped recursively, language keys alphabetical, four-space indent, a trailing newline, non-ASCII unescaped. An approved submission is then byte-comparable with what is committed, so a review diff shows only what the depositor changed.
+
+Two things make that work and are easy to undo by accident:
+
+- The workspace enables `serde_json`'s **`preserve_order`**. The writer round-trips through `serde_json::Value` to strip nulls, and `Value` is `BTreeMap`-backed without that feature, which would alphabetise every key in every file. Under the feature, `Map::remove` is swap-remove: use `retain` or `shift_remove`.
+- Multilingual fields are `platform_metadata::utils::Multilingual` (a `BTreeMap`), not `HashMap`. Under `preserve_order` a `HashMap` field serializes in its own randomised iteration order, which would make the round-trip test flaky.
+
+`ProjectRaw` deliberately carries no `skip_serializing_if`: `dpe-server`'s `fragments.rs` serializes it through `axum::Json`, so the attribute would drop null members from DPE's API responses too. Stripping happens in the writer instead.
+
+The 85-file round-trip test (`editor-core/tests/canonical_round_trip.rs`) asserts `load -> draft -> write` is byte-identical for the whole published corpus, and regenerates it under `CANONICALIZE_PROJECT_FILES=1`. Generating the corpus from the writer rather than a sibling script is the point: a script has to agree with the writer by inspection, and a near-miss surfaces later as a failing round-trip that looks like a writer bug.
+
+### Submission checks
+
+`editor_core::submission::unresolved_temporal_coverage` applies REQ-1.14: every `temporalCoverage` entry must resolve to a structured date, which `dpe-server validate` does not block on and OAI-PMH needs. It reuses `platform_metadata::temporal_coverage::completeness_gap`, the same decision `validate` and `dpe-api-oai`'s `every_committed_temporal_coverage_resolves` apply, and adds the entry index so the form can mark a row rather than the whole field. REQ-1.15 is settled as refusal: a depositor who needs a period the enrichment table does not know uses the `Reference` variant, which always resolves.
 
 ## URL scheme
 

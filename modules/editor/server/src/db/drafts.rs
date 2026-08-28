@@ -153,8 +153,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_payload_is_stored_verbatim() {
-        // This layer never interprets the payload — Phase 4 gives it a type. A
-        // byte-exact round trip is what lets that happen without a migration.
+        // This layer never interprets the payload, which is a serialized
+        // `ProjectDraft`. A byte-exact round trip is what lets the caller parse
+        // it without this layer or a migration having to change.
         let db = test_db("drafts-payload").await;
         let payload = "{\"ar\":\"مرحبا\",\"nested\":{\"a\":[1,2,null]},\"quote\":\"he said \\\"hi\\\"\"}";
         db.upsert(&draft("0820", payload, None, at(11))).await.unwrap();

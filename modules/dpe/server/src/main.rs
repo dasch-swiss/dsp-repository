@@ -446,13 +446,21 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
 
     // Validate projects
     let projects_dir = data_dir.join("projects");
-    let mut contributor_ids: Vec<String> = Vec::new();
+    // Every contributor id every project references, cross-referenced against
+    // `persons/` and `organizations/` once the whole corpus has been read.
+    let mut contributor_refs: Vec<platform_metadata::ContributorRef> = Vec::new();
     // Temporal-coverage resolution: the same ChronOntology period cache and
     // offline enrichment table the OAI-PMH `every_committed_temporal_coverage_resolves`
     // test loads, so the two can never disagree about what counts as resolved.
     let temporal_periods = platform_metadata::chronontology::load_from(data_dir);
     let temporal_enrichment = platform_metadata::temporal_enrichment::load_from(data_dir);
-    let mut seen_temporal_coverage: std::collections::HashSet<String> = std::collections::HashSet::new();
+    // Each distinct offending value is reported once for the whole corpus: an
+    // unenriched period name shared by twenty projects is one thing to fix, not
+    // twenty. Keyed on the value rather than the project, so the first file to
+    // carry it is the one named — and on the member too, so a value that is
+    // wrong in two different members is still reported for each. A finding
+    // carrying no value is per project and is never folded away.
+    let mut reported_values: std::collections::HashSet<(&str, String)> = std::collections::HashSet::new();
     if projects_dir.is_dir() {
         if let Ok(entries) = fs::read_dir(&projects_dir) {
             for entry in entries.flatten() {
@@ -463,44 +471,26 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                 let filename = path.display().to_string();
                 match fs::read_to_string(&path) {
                     Ok(json) => {
+                        // Parsing is the one project rule the shared checker cannot
+                        // hold: it takes a `&ProjectRaw`, so it is downstream of this.
                         match serde_json::from_str::<platform_metadata::ProjectRaw>(&json) {
                             Ok(raw) => {
-                                // Collect contributor IDs for cross-reference checks
-                                for attr in &raw.attributions {
-                                    contributor_ids.push(attr.contributor.clone());
-                                }
-                                if let Some(contacts) = &raw.contact_point {
-                                    for c in contacts {
-                                        contributor_ids.push(c.clone());
-                                    }
-                                }
                                 project_count += 1;
-                                // Validate conversion from raw to domain
-                                let project: dpe_core::Project = raw.into();
+                                contributor_refs.extend(platform_metadata::contributor_refs(&raw));
 
-                                for tc in &project.temporal_coverage {
-                                    let Some(name) = platform_metadata::temporal_coverage::coverage_name(tc) else {
-                                        continue; // no name to key on; nothing to resolve.
-                                    };
-                                    if !seen_temporal_coverage.insert(name) {
-                                        continue; // already checked this distinct name.
+                                for finding in
+                                    platform_metadata::check_project(&raw, &temporal_periods, &temporal_enrichment)
+                                {
+                                    if let Some(value) = &finding.value {
+                                        if !reported_values.insert((finding.field, value.clone())) {
+                                            continue;
+                                        }
                                     }
-
-                                    // The same gap decision (resolved / intentionally
-                                    // unresolved / genuine gap) the
-                                    // `every_committed_temporal_coverage_resolves` test
-                                    // applies, so the two can't drift apart.
-                                    if let Some(name) = platform_metadata::temporal_coverage::completeness_gap(
-                                        tc,
-                                        &temporal_periods,
-                                        &temporal_enrichment,
-                                    ) {
-                                        errors.push(format!(
-                                            "{filename}: temporalCoverage '{name}' has no resolved date \
-                                             (add a W3CDTF range to temporal-coverage-enrichment.json, \
-                                             or mark source=\"unresolved\" if not a time period)"
-                                        ));
-                                    }
+                                    // The checker's message carries no file prefix, so
+                                    // that a per-field consumer is not handed a path it
+                                    // has no use for. This is the consumer that wants
+                                    // one.
+                                    errors.push(format!("{filename}: {}", finding.message));
                                 }
                             }
                             Err(e) => errors.push(format!("{filename}: {e}")),
@@ -598,8 +588,12 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
         }
     }
 
-    // Cross-reference checks: verify contributor IDs resolve to known persons or organizations
-    for id in &contributor_ids {
+    // Cross-reference checks: verify contributor IDs resolve to known persons or
+    // organizations. Which ids a project references is the shared checker's
+    // question; what counts as known is this corpus's, and the editor answers it
+    // differently — published entities plus its own pending proposals.
+    for reference in &contributor_refs {
+        let id = &reference.id;
         if !known_person_ids.contains(id) && !known_org_ids.contains(id) {
             errors.push(format!(
                 "broken reference: contributor '{id}' not found in persons/ or organizations/"
@@ -872,6 +866,46 @@ mod validate_tests {
                 "expected an error prefixed {prefix:?}, got: {errors:?}"
             );
         }
+    }
+
+    #[test]
+    fn a_name_resolved_in_one_project_no_longer_masks_a_gap_in_another() {
+        // Two projects share the coverage name "Trajanic": one carries it as a
+        // ChronOntology reference that resolves, the other as unenriched free
+        // text, which is a genuine gap.
+        //
+        // The corpus-wide de-duplication used to be keyed on every *named* entry
+        // rather than every *reported* one, so reading the resolving project
+        // first marked the name checked and the real gap went unreported —
+        // `validate` printed "All data files are valid." and exited 0. Reported
+        // values are now what de-duplicates, so the gap is reported once no
+        // matter which file is read first.
+        let fixture = Fixture::new()
+            .with(
+                "projects/0000_resolves.json",
+                &project_json(
+                    r#"[{"type": "Chronontology",
+                         "url": "https://chronontology.dainst.org/period/0vGXxVln724L",
+                         "text": "Trajanic"}]"#,
+                    "[]",
+                ),
+            )
+            .with("projects/0001_gap.json", &project_json(r#"[{"en": "Trajanic"}]"#, "[]"))
+            .with(
+                "chronontology-periods.json",
+                r#"{"0vGXxVln724L": {"hasTimespan": [{"begin": {"at": "98"}, "end": {"at": "117"}}]}}"#,
+            );
+        let errors = fixture.errors();
+        assert_eq!(errors.len(), 1, "expected the gap reported exactly once, got: {errors:?}");
+        assert_eq!(
+            errors[0],
+            format!(
+                "{}: temporalCoverage 'Trajanic' has no resolved date \
+                 (add a W3CDTF range to temporal-coverage-enrichment.json, \
+                 or mark source=\"unresolved\" if not a time period)",
+                fixture.path_of("projects/0001_gap.json")
+            )
+        );
     }
 
     #[test]

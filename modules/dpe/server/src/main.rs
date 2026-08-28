@@ -614,9 +614,9 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
 mod validate_tests {
     use super::collect_validation_errors;
 
-    /// A minimal `ProjectRaw`, valid except for its `temporalCoverage`, which
-    /// the caller supplies as a raw JSON array literal.
-    fn project_json(temporal_coverage: &str) -> String {
+    /// A minimal `ProjectRaw`, valid except for its `temporalCoverage` and
+    /// `attributions`, which the caller supplies as raw JSON array literals.
+    fn project_json(temporal_coverage: &str, attributions: &str) -> String {
         format!(
             r#"{{
                 "id": "0000", "pid": "MISSING", "name": "Test Project", "shortcode": "0000",
@@ -624,7 +624,7 @@ mod validate_tests {
                 "description": {{}}, "startDate": "MISSING", "endDate": "MISSING",
                 "howToCite": "test", "accessRights": {{ "accessRights": "Full Open Access" }},
                 "legalInfo": [], "keywords": [], "disciplines": [],
-                "temporalCoverage": {temporal_coverage}, "spatialCoverage": [], "attributions": [],
+                "temporalCoverage": {temporal_coverage}, "spatialCoverage": [], "attributions": {attributions},
                 "funding": "No funding"
             }}"#
         )
@@ -644,7 +644,7 @@ mod validate_tests {
         let dir = std::env::temp_dir().join(format!("dpe_validate_temporal_{}_{call_id}", std::process::id()));
         let projects_dir = dir.join("projects");
         std::fs::create_dir_all(&projects_dir).unwrap();
-        std::fs::write(projects_dir.join("0000_test.json"), project_json(temporal_coverage)).unwrap();
+        std::fs::write(projects_dir.join("0000_test.json"), project_json(temporal_coverage, "[]")).unwrap();
         if let Some(enrichment) = enrichment_json {
             std::fs::write(dir.join("temporal-coverage-enrichment.json"), enrichment).unwrap();
         }
@@ -683,6 +683,222 @@ mod validate_tests {
             Some(r#"{"Swiss": {"date": null, "original_name": "Swiss", "source": "unresolved"}}"#),
         );
         assert!(errors.is_empty(), "expected no errors, got: {errors:?}");
+    }
+
+    /// A data directory assembled for one test.
+    ///
+    /// [`validate_with`] covers the temporal rule over a single project file;
+    /// the tests below pin the exact *wording* of every error
+    /// [`collect_validation_errors`] emits, so each needs a different corner of
+    /// the corpus populated — a person, an organization, a records file, or no
+    /// `projects/` at all.
+    ///
+    /// The wording is a contract in two directions: `just validate-data` is read
+    /// by a human deciding what to fix, and `modules/dpe/CLAUDE.md` quotes the
+    /// temporal-coverage message as the instruction for adding an enrichment
+    /// row. Snapshotting the recipe's output does not protect it — the committed
+    /// corpus is valid, so that output is two lines and exercises no error
+    /// branch at all.
+    struct Fixture {
+        dir: std::path::PathBuf,
+    }
+
+    impl Fixture {
+        /// A data dir holding an empty `projects/`. Every rule except
+        /// [`reports_a_missing_projects_directory`] wants it: absent, its own
+        /// error joins the list and the assertion under test is no longer about
+        /// one rule.
+        fn new() -> Self {
+            let fixture = Self::bare();
+            std::fs::create_dir_all(fixture.dir.join("projects")).unwrap();
+            fixture
+        }
+
+        /// A data dir with nothing in it.
+        fn bare() -> Self {
+            // Same reasoning as `validate_with`: an atomic counter rather than
+            // anything derived from the contents, so two same-shaped fixtures
+            // cannot collide and let one test's cleanup race another's write.
+            static CALL_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+            let call_id = CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let dir = std::env::temp_dir().join(format!("dpe_validate_wording_{}_{call_id}", std::process::id()));
+            std::fs::create_dir_all(&dir).unwrap();
+            Self { dir }
+        }
+
+        /// Writes `contents` at `relative`, creating parent directories.
+        fn with(self, relative: &str, contents: &str) -> Self {
+            let path = self.dir.join(relative);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, contents).unwrap();
+            self
+        }
+
+        /// The path `collect_validation_errors` names in an error. Errors are
+        /// keyed by the full path, not the bare filename, so a test cannot
+        /// assemble the expected message without it.
+        fn path_of(&self, relative: &str) -> String {
+            self.dir.join(relative).display().to_string()
+        }
+
+        fn report(&self) -> super::ValidationReport {
+            collect_validation_errors(&self.dir)
+        }
+
+        fn errors(&self) -> Vec<String> {
+            self.report().errors
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            std::fs::remove_dir_all(&self.dir).ok();
+        }
+    }
+
+    /// A minimal `Record`. `pid` deserializes from the ARK URL string, not an
+    /// object, so it cannot be assembled field by field.
+    fn record_json(record_id: &str) -> String {
+        format!(
+            r#"{{
+                "id": "http://rdfh.ch/0000/{record_id}",
+                "pid": "https://ark.dasch.swiss/ark:/72163/1/0000/{record_id}",
+                "label": {{ "en": "Record {record_id}" }},
+                "accessRights": "Full Open Access",
+                "legalInfo": {{
+                    "license": {{ "licenseIdentifier": "public domain", "licenseDate": "2023-01-01",
+                                  "licenseURI": "https://creativecommons.org/publicdomain/zero/1.0/" }},
+                    "copyrightHolder": "DaSCH",
+                    "authorship": ["DaSCH"]
+                }}
+            }}"#
+        )
+    }
+
+    /// A person, valid except for the `jobTitles` the caller supplies.
+    fn person_json(id: &str, job_titles: &str) -> String {
+        format!(
+            r#"{{
+                "id": "{id}", "givenNames": ["Ada"], "familyNames": ["Lovelace"],
+                "jobTitles": {job_titles}
+            }}"#
+        )
+    }
+
+    #[test]
+    fn unresolved_temporal_coverage_message_is_unchanged() {
+        let fixture =
+            Fixture::new().with("projects/0000_test.json", &project_json(r#"[{"en": "Mysterious Era"}]"#, "[]"));
+        assert_eq!(
+            fixture.errors(),
+            vec![format!(
+                "{}: temporalCoverage 'Mysterious Era' has no resolved date \
+                 (add a W3CDTF range to temporal-coverage-enrichment.json, \
+                 or mark source=\"unresolved\" if not a time period)",
+                fixture.path_of("projects/0000_test.json")
+            )]
+        );
+    }
+
+    #[test]
+    fn role_job_title_message_is_unchanged() {
+        let fixture = Fixture::new().with("persons/ada.json", &person_json("ada", r#"["Project Leader"]"#));
+        assert_eq!(
+            fixture.errors(),
+            vec![format!(
+                "{}: jobTitle 'Project Leader' on ada is a project role; \
+                 move it to the project's attributions (contributorType)",
+                fixture.path_of("persons/ada.json")
+            )]
+        );
+    }
+
+    #[test]
+    fn broken_contributor_reference_message_is_unchanged() {
+        let fixture = Fixture::new().with(
+            "projects/0000_test.json",
+            &project_json("[]", r#"[{"contributor": "ghost", "contributorType": ["Project Leader"]}]"#),
+        );
+        assert_eq!(
+            fixture.errors(),
+            vec!["broken reference: contributor 'ghost' not found in persons/ or organizations/".to_string()]
+        );
+    }
+
+    #[test]
+    fn a_contributor_resolves_against_organizations_as_well_as_persons() {
+        let fixture = Fixture::new()
+            .with(
+                "projects/0000_test.json",
+                &project_json("[]", r#"[{"contributor": "unibas", "contributorType": ["Project Leader"]}]"#),
+            )
+            .with(
+                "organizations/unibas.json",
+                r#"{"id": "unibas", "name": "University of Basel", "url": "https://unibas.ch"}"#,
+            );
+        assert!(fixture.errors().is_empty(), "expected no errors, got: {:?}", fixture.errors());
+    }
+
+    #[test]
+    fn reports_a_missing_projects_directory() {
+        let fixture = Fixture::bare();
+        assert_eq!(
+            fixture.errors(),
+            vec![format!("projects directory not found: {}", fixture.path_of("projects"))]
+        );
+    }
+
+    #[test]
+    fn a_malformed_file_is_reported_against_its_own_path() {
+        let fixture = Fixture::new()
+            .with("projects/0000_test.json", "{ not json")
+            .with("records/0000.json", "{ not json")
+            .with("persons/ada.json", "{ not json")
+            .with("organizations/unibas.json", "{ not json");
+        let errors = fixture.errors();
+        assert_eq!(errors.len(), 4, "expected one error per malformed file, got: {errors:?}");
+        // Each error is `"{path}: {serde message}"`. The prefix is ours and is
+        // asserted; serde's own wording is not, so a serde bump cannot fail this
+        // test for a reason that has nothing to do with the rules.
+        for relative in [
+            "projects/0000_test.json",
+            "records/0000.json",
+            "persons/ada.json",
+            "organizations/unibas.json",
+        ] {
+            let prefix = format!("{}: ", fixture.path_of(relative));
+            assert!(
+                errors.iter().any(|e| e.starts_with(&prefix)),
+                "expected an error prefixed {prefix:?}, got: {errors:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn counts_feed_the_validated_summary_line() {
+        let fixture = Fixture::new()
+            .with(
+                "projects/0000_test.json",
+                &project_json("[]", r#"[{"contributor": "ada", "contributorType": ["Project Leader"]}]"#),
+            )
+            .with("persons/ada.json", &person_json("ada", "[]"))
+            .with(
+                "organizations/unibas.json",
+                r#"{"id": "unibas", "name": "University of Basel", "url": "https://unibas.ch"}"#,
+            )
+            // Records are counted per entry, not per file: the summary line says
+            // "50994 records" over 85 files.
+            .with("records/0000.json", "[]")
+            .with(
+                "records/0001.json",
+                &format!("[{}, {}]", record_json("one"), record_json("two")),
+            );
+        let report = fixture.report();
+        assert!(report.errors.is_empty(), "expected no errors, got: {:?}", report.errors);
+        assert_eq!(report.project_count, 1);
+        assert_eq!(report.record_count, 2);
+        assert_eq!(report.person_count, 1);
+        assert_eq!(report.org_count, 1);
     }
 }
 

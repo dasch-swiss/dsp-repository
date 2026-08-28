@@ -1,6 +1,5 @@
 {
     "id": "0868",
-    "imageCredit": "CC BY / \"When did the Sun darken in antiquity? Discover calculated solar eclipses and their traces in ancient historical sources.\"",
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0868",
     "name": "Canon of solar eclipses from 2501 BCE to 1000 CE",
     "shortcode": "0868",
@@ -152,5 +151,6 @@
         {
             "en": "solec"
         }
-    ]
+    ],
+    "imageCredit": "CC BY / \"When did the Sun darken in antiquity? Discover calculated solar eclipses and their traces in ancient historical sources.\""
 }

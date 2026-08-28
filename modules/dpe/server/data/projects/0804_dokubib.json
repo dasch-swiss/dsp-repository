@@ -106,8 +106,8 @@
     "abstract": {
         "en": "Bilddatenbank makes accessible the collection of historic photographs and other graphical representation of St. Moritz Dokumentationsbibliothek"
     },
-    "funding": "No funding",
     "contactPoint": [
         "organization-008"
-    ]
+    ],
+    "funding": "No funding"
 }

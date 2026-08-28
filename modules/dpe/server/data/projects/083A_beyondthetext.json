@@ -222,6 +222,9 @@
     "abstract": {
         "en": "Philological and archaeological project exploring the emergence and evolution of the funerary literature of the Graeco-Roman Period and contextualizing its development within the Theban social and religious landscape"
     },
+    "contactPoint": [
+        "person-255"
+    ],
     "funding": [
         {
             "funders": [
@@ -239,8 +242,5 @@
         {
             "de": "Jenseits des Textes. Neue funeräre Texte aus der griechisch-römischen Zeit: Textualitäten und Archäologie in Theben"
         }
-    ],
-    "contactPoint": [
-        "person-255"
     ]
 }

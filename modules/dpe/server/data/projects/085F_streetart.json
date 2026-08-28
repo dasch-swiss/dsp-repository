@@ -11,7 +11,6 @@
     },
     "startDate": "2020-10-01",
     "endDate": "2025-08-25",
-    "dataPublicationYear": "2026",
     "secondaryUrl": {
         "type": "URL",
         "url": "https://dgw.philhist.unibas.ch/de/doktorat/mitglieder/doktorierende/migeon-marie/"
@@ -34,6 +33,7 @@
         }
     ],
     "dataManagementPlan": "not accessible",
+    "dataPublicationYear": "2026",
     "typeOfData": [
         "Image"
     ],

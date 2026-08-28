@@ -1,6 +1,5 @@
 {
     "id": "0813",
-    "imageCredit": "Foto: Alberto Venzago.",
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0813",
     "name": "Annotating Media of Bruno Manser",
     "shortcode": "0813",
@@ -126,6 +125,9 @@
     "abstract": {
         "en": "The dataset contains data of digitized diaries, video footage, photographs and other media of Bruno Manser"
     },
+    "contactPoint": [
+        "organization-052"
+    ],
     "funding": [
         {
             "funders": [
@@ -138,7 +140,5 @@
             "en": "Annotating Bruno Manser's Diaries"
         }
     ],
-    "contactPoint": [
-        "organization-052"
-    ]
+    "imageCredit": "Foto: Alberto Venzago."
 }

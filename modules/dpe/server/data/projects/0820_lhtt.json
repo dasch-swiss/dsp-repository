@@ -605,6 +605,9 @@
             ]
         }
     ],
+    "abstract": {
+        "en": "AU1000 – AU1080 from Debris Hill (above K555); All Data from AU6000; All Data from K85; All Data from TT95"
+    },
     "contactPoint": [
         "person-076"
     ],
@@ -654,8 +657,5 @@
         {
             "en": "LHTT"
         }
-    ],
-    "abstract": {
-        "en": "AU1000 – AU1080 from Debris Hill (above K555); All Data from AU6000; All Data from K85; All Data from TT95"
-    }
+    ]
 }

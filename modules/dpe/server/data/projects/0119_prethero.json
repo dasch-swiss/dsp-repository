@@ -1,6 +1,5 @@
 {
     "id": "0119",
-    "imageCredit": "Jehan qui de tout se mesle [page de titre, détail], s.l. s.n., début XVIe s. @ Archives de l'État de Fribourg; AEF, Littérature 2.1.",
     "pid": "https://ark.dasch.swiss/ark:/72163/1/0119",
     "name": "Premiers théâtres romands",
     "shortcode": "0119",
@@ -125,5 +124,6 @@
             "name": "Project funding",
             "url": "https://data.snf.ch/grants/grant/192400"
         }
-    ]
+    ],
+    "imageCredit": "Jehan qui de tout se mesle [page de titre, détail], s.l. s.n., début XVIe s. @ Archives de l'État de Fribourg; AEF, Littérature 2.1."
 }

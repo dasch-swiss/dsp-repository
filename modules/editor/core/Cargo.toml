@@ -21,3 +21,6 @@ thiserror.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
+# The 85-file round-trip test reads the published corpus directly.
+platform-metadata = { path = "../../platform/metadata" }
+serde_json.workspace = true

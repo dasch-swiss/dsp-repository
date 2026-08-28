@@ -717,6 +717,9 @@ version = "0.8.3"
 dependencies = [
  "async-trait",
  "chrono",
+ "platform-metadata",
+ "serde",
+ "serde_json",
  "thiserror 2.0.18",
  "uuid",
 ]

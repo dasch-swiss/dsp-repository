@@ -10,6 +10,13 @@ publish = false
 # these traits.
 async-trait.workspace = true
 chrono.workspace = true
+# The wire contract the draft converts to and from. `serde_json` is a real
+# dependency of the domain here, not a serialization detail: a permissive draft
+# is JSON members, since that is the only representation that can hold a missing
+# or invalid value and still carry a field the editor has never heard of.
+platform-metadata = { path = "../../platform/metadata" }
+serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
 

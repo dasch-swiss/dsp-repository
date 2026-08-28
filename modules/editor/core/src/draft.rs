@@ -314,10 +314,12 @@ mod tests {
         assert!(draft.to_raw().is_err());
     }
 
-    /// REQ-1.8: the draft carries a field it has never heard of, so adding one
-    /// to `ProjectRaw` needs no editor change.
+    /// A key the editor has never heard of survives being stored and reloaded,
+    /// so a payload written by a newer schema is not truncated by an older
+    /// binary. What reaches the published file is a separate question, decided
+    /// by `ProjectRaw` in `canonical`.
     #[test]
-    fn an_unknown_field_survives_the_draft_round_trip() {
+    fn an_unknown_field_survives_the_draft_payload_round_trip() {
         let mut draft = ProjectDraft::from_raw(&sample_raw());
         draft.set("fieldAddedNextYear", json!({"nested": ["value"]}));
         let payload = serde_json::to_string(&draft).expect("a draft serializes");

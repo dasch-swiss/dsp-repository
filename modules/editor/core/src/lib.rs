@@ -8,9 +8,11 @@
 //! implementations of those ports live in `editor-server`, which keeps the
 //! `server → web → core` direction intact and the driver out of the domain. And
 //! the project representation: the permissive draft ([`draft`]) that a
-//! `drafts.payload` holds and the multilingual editing view ([`multilingual`])
-//! a form renders.
+//! `drafts.payload` holds, the multilingual editing view ([`multilingual`]) a
+//! form renders, and the canonical writer ([`canonical`]) that turns an approved
+//! draft back into a `projects/*.json` file byte-for-byte.
 
+pub mod canonical;
 pub mod draft;
 pub mod json;
 pub mod multilingual;

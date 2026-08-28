@@ -122,6 +122,7 @@ pub fn completeness_gap(
 mod tests {
     use super::*;
     use crate::models::AuthorityFileReference;
+    use crate::utils::Multilingual;
 
     fn reference(url: &str, text: Option<&str>) -> TemporalCoverage {
         TemporalCoverage::Reference(AuthorityFileReference {
@@ -132,9 +133,7 @@ mod tests {
     }
 
     fn text(en: &str) -> TemporalCoverage {
-        let mut map = HashMap::new();
-        map.insert("en".to_string(), en.to_string());
-        TemporalCoverage::Text(map)
+        TemporalCoverage::Text(Multilingual::from([("en".to_string(), en.to_string())]))
     }
 
     fn periods() -> HashMap<String, W3cdtfRange> {

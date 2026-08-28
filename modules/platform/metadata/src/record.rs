@@ -8,9 +8,9 @@
 /// `72163` is DaSCH's NAAN (Name Assigning Authority Number).
 pub const ARK_PATH_PREFIX: &str = "ark:/72163/1/";
 
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
+
+use crate::utils::Multilingual;
 
 /// A parsed ARK persistent identifier for a DaSCH record.
 ///
@@ -107,7 +107,7 @@ pub struct RecordFile {
 pub struct Record {
     pub id: String,
     pub pid: Pid,
-    pub label: HashMap<String, String>,
+    pub label: Multilingual,
     #[serde(rename = "accessRights")]
     pub access_rights: String,
     #[serde(rename = "legalInfo")]
@@ -119,7 +119,7 @@ pub struct Record {
     #[serde(default)]
     pub source: String,
     #[serde(default)]
-    pub description: HashMap<String, String>,
+    pub description: Multilingual,
     #[serde(rename = "dateCreated", default)]
     pub date_created: String,
     #[serde(rename = "dateModified", default)]
@@ -131,7 +131,7 @@ pub struct Record {
     #[serde(default)]
     pub size: String,
     #[serde(default)]
-    pub keywords: Vec<HashMap<String, String>>,
+    pub keywords: Vec<Multilingual>,
     /// The record's file (MIME type + direct download link), present only for bitstream records.
     #[serde(default)]
     pub file: Option<RecordFile>,
@@ -158,7 +158,6 @@ pub fn record_datestamp(record: &Record) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
 
     use super::*;
 
@@ -183,7 +182,7 @@ mod tests {
         );
         assert_eq!(
             record.label,
-            HashMap::from([("en".to_string(), "Seitenbezeichnung : o2r".to_string())])
+            Multilingual::from([("en".to_string(), "Seitenbezeichnung : o2r".to_string())])
         );
         assert_eq!(record.access_rights, "Full Open Access");
         assert_eq!(record.legal_info.license.license_identifier, "public domain");
@@ -192,7 +191,7 @@ mod tests {
         assert_eq!(record.legal_info.authorship, vec!["DaSCH"]);
         assert_eq!(record.publisher, "DaSCH");
         assert_eq!(record.type_of_data, "Text");
-        assert_eq!(record.keywords, Vec::<HashMap<String, String>>::new());
+        assert_eq!(record.keywords, Vec::<Multilingual>::new());
         let file = record.file.expect("0803 record should carry a file");
         assert_eq!(file.mime_type, "application/pdf");
         assert_eq!(

@@ -1,8 +1,7 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 
 use crate::models::AuthorityFileReference;
+use crate::utils::Multilingual;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Organization {
@@ -16,7 +15,7 @@ pub struct Organization {
     #[serde(default)]
     pub email: Option<String>,
     #[serde(rename = "alternativeName", default)]
-    pub alternative_name: Option<HashMap<String, String>>,
+    pub alternative_name: Option<Multilingual>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

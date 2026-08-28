@@ -12,7 +12,7 @@ use platform_metadata::models::AuthorityFileReference;
 use platform_metadata::project::{
     AccessRights, Attribution, Discipline, Funding, LegalInfo, ProjectRaw, ProjectStatus, Publication, TemporalCoverage,
 };
-use platform_metadata::utils::is_placeholder;
+use platform_metadata::utils::{is_placeholder, Multilingual};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -58,7 +58,7 @@ pub struct Project {
     pub official_name: String,
     pub status: ProjectStatus,
     pub short_description: String,
-    pub description: std::collections::HashMap<String, String>,
+    pub description: Multilingual,
     pub start_date: String,
     pub end_date: String,
     pub url: Option<AuthorityFileReference>,
@@ -75,16 +75,16 @@ pub struct Project {
     /// Raw collection IDs from JSON, used to resolve `collections` on demand.
     pub collection_ids: Vec<String>,
     pub records: Option<Vec<String>>,
-    pub keywords: Vec<std::collections::HashMap<String, String>>,
+    pub keywords: Vec<Multilingual>,
     pub disciplines: Vec<Discipline>,
     pub temporal_coverage: Vec<TemporalCoverage>,
     pub spatial_coverage: Vec<AuthorityFileReference>,
     pub attributions: Vec<Attribution>,
-    pub abstract_text: Option<std::collections::HashMap<String, String>>,
+    pub abstract_text: Option<Multilingual>,
     pub contact_point: Option<Vec<String>>,
     pub publications: Option<Vec<Publication>>,
     pub funding: Funding,
-    pub alternative_names: Option<Vec<std::collections::HashMap<String, String>>>,
+    pub alternative_names: Option<Vec<Multilingual>>,
     pub documentation_material: Option<Vec<String>>,
     pub provenance: Option<String>,
     pub additional_material: Option<Vec<String>>,

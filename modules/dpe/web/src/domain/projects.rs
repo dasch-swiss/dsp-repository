@@ -198,9 +198,8 @@ pub fn get_project(shortcode: &str) -> Option<Project> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use dpe_core::Project;
+    use platform_metadata::utils::Multilingual;
     use platform_metadata::{AccessRights, AccessRightsType, Attribution, Funding, ProjectStatus};
 
     use super::super::project::ProjectQuery;
@@ -223,7 +222,7 @@ mod tests {
             official_name: name.to_string(),
             status,
             short_description: format!("desc of {name}"),
-            description: HashMap::new(),
+            description: Multilingual::new(),
             start_date: "2020-01-01".to_string(),
             end_date: "2021-01-01".to_string(),
             url: None,

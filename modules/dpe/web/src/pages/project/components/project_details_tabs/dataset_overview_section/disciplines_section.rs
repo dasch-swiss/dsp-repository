@@ -39,15 +39,14 @@ pub fn disciplines_section(disciplines: &[Discipline]) -> Markup {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use platform_metadata::models::AuthorityFileReference;
+    use platform_metadata::utils::Multilingual;
 
     use super::*;
 
     #[test]
     fn text_discipline_is_a_plain_chip() {
-        let d = vec![Discipline::Text(HashMap::from([(
+        let d = vec![Discipline::Text(Multilingual::from([(
             "en".to_string(),
             "History".to_string(),
         )]))];

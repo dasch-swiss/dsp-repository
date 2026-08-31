@@ -98,7 +98,8 @@ mod tests {
 
     #[test]
     fn oai_rate_limit_burst_env_override() {
-        // Jail isolates env + cwd so DPE_* overrides are tested without touching the real environment.
+        // Jail isolates env + cwd so DPE_* overrides are tested without touching the real
+        // environment.
         figment::Jail::expect_with(|jail| {
             jail.set_env("DPE_OAI_RATE_LIMIT_BURST", 5);
             let config = DpeConfig::load().expect("config should load");

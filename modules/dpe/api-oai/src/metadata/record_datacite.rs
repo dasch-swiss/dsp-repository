@@ -137,7 +137,8 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
         rights_identifier_scheme: if has_identifier { Some("SPDX".to_string()) } else { None },
     }];
 
-    // RelatedIdentifiers — link to parent project via IsPartOf, and to the file download via HasPart.
+    // RelatedIdentifiers — link to parent project via IsPartOf, and to the file download via
+    // HasPart.
     let mut related_identifiers = vec![DataCiteRelatedIdentifier {
         identifier: record.project_ark(),
         related_identifier_type: "ARK".to_string(),

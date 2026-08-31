@@ -1,5 +1,68 @@
 # Changelog
 
+## [0.8.3](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.2...v0.8.3) (2026-08-31)
+
+
+### Features
+
+* **dpe-data:** Add project URL for 0863 (Samaria Ivories) ([afe7ab9](https://github.com/dasch-swiss/dsp-repository/commit/afe7ab98301680f37410f7c9d2dd0bc5f7585932))
+* **dpe-server:** Add temporal-coverage resolution check to validate ([4efbbc2](https://github.com/dasch-swiss/dsp-repository/commit/4efbbc26604ac05e74489c1012eb7f223bfcc6f9))
+* **editor-server:** Add email one-time-code login and sessions ([b1b2e22](https://github.com/dasch-swiss/dsp-repository/commit/b1b2e224ce1703f62bd3049d7e71b2bd1416fa88))
+* **editor-server:** Add RDU depositor account management ([5fe85e5](https://github.com/dasch-swiss/dsp-repository/commit/5fe85e5cf3b02f2d7f3bd836cf4e46d49a74d446))
+* **editor-server:** Add the SQLite persistence layer ([caae102](https://github.com/dasch-swiss/dsp-repository/commit/caae102afe309a90914d67ca3ebe42410c776982))
+* **editor-server:** Extend the auth persistence for lockout and browser binding ([ff96b32](https://github.com/dasch-swiss/dsp-repository/commit/ff96b3255666394357b4bc8e29e12caabd8b75f5))
+* **editor-server:** Require Sec-Fetch-Site same-origin on state-changing requests ([800e86b](https://github.com/dasch-swiss/dsp-repository/commit/800e86b668378599f81d3e8396710387d7a540de))
+* **editor-server:** Scaffold the metadata editor service ([c0b7acd](https://github.com/dasch-swiss/dsp-repository/commit/c0b7acd81d3b76e24d1b6eec11077f92f870281c))
+* **editor-server:** Scope project access to a depositor's assigned shortcodes ([49c2b88](https://github.com/dasch-swiss/dsp-repository/commit/49c2b88bcf5cb031ee95728196a3bb817e45345f))
+* **editor-web:** Add the login and code-entry screens ([0e358c8](https://github.com/dasch-swiss/dsp-repository/commit/0e358c8eb3a34ba8672c1dd7e54746656539ac8c))
+
+
+### Bug Fixes
+
+* **ci:** Provision the full non-Nix toolchain in the install recipes ([5520b7b](https://github.com/dasch-swiss/dsp-repository/commit/5520b7be1233ef466ab3b73f342b89397173076e))
+* **dpe-data:** Correct solec (0868) data link and contact email ([e4a1575](https://github.com/dasch-swiss/dsp-repository/commit/e4a1575b42f851a35eb407e1b5cd117be0edae74))
+* **dpe-data:** Point 0101 project URL at app.dasch.swiss after server move ([7bdfcce](https://github.com/dasch-swiss/dsp-repository/commit/7bdfcce63ebdae112873a2f491c5a25c7a0ee5c2))
+* **dpe-data:** Point 0114 project URL at app.dasch.swiss after server move ([c696082](https://github.com/dasch-swiss/dsp-repository/commit/c696082b1d82cef995dfe8cce527feace9857533))
+* **dpe-data:** Stop advertising external websites as DSP data ([8fbfac3](https://github.com/dasch-swiss/dsp-repository/commit/8fbfac3f9c179d80912b2741416b187361e353ad))
+* **dpe-server:** Require delimiter after host in healthcheck loopback guard ([8ea36f1](https://github.com/dasch-swiss/dsp-repository/commit/8ea36f16e5e82d256c069fb6c6a2a9b84979d24d))
+* **dpe-web:** Open external links in a new tab ([909a122](https://github.com/dasch-swiss/dsp-repository/commit/909a1221d2136ed7c98a3fac09c930c04ee53d48))
+* **editor-server:** Make the login-code send cap countable and per-account ([7571e94](https://github.com/dasch-swiss/dsp-repository/commit/7571e94c4252ff2823931a632b83eb29ccc710c3))
+* **editor-server:** Show the login code where no mail can be sent ([322550f](https://github.com/dasch-swiss/dsp-repository/commit/322550fa58f619a15de834461c78219929e71f2c))
+* **platform-telemetry:** Normalize page_url per-service instead of one shared route table ([6622573](https://github.com/dasch-swiss/dsp-repository/commit/6622573579736c5ca88fbc7b96c8e74ae6df422e))
+
+
+### Code Refactoring
+
+* **dpe-telemetry:** Move the browser beacon collector into the crate ([73d667e](https://github.com/dasch-swiss/dsp-repository/commit/73d667e8b25c76567fb25814143f1020d4085d88))
+* **editor-server:** Hold the repository ports in AppState ([62ed13f](https://github.com/dasch-swiss/dsp-repository/commit/62ed13f2967652f44f772795b426253682a0a018))
+* **editor-server:** Make the data directory an explicit, unset-by-default seam ([104b1b8](https://github.com/dasch-swiss/dsp-repository/commit/104b1b89b96de3b33caddd8b459b238208c241fd))
+* **mosaic-tiles:** Extract a component-CSS barrel ([f35de37](https://github.com/dasch-swiss/dsp-repository/commit/f35de376bafbccd0e3a09e446687de7831ec0774))
+* **platform-metadata,dpe-core:** Extract the shared metadata contract ([c78459a](https://github.com/dasch-swiss/dsp-repository/commit/c78459a9d27427241523cc5b770f996617be7f75))
+* **platform-telemetry:** Move the shared telemetry crate under modules/platform ([5b09cbd](https://github.com/dasch-swiss/dsp-repository/commit/5b09cbdd68cc82d2f72b9c9cfcfe7a1ab2a70dc6))
+
+
+### Documentation
+
+* **docs:** Trim derivable content from the CLAUDE.md guidance files ([74f53a3](https://github.com/dasch-swiss/dsp-repository/commit/74f53a3949bfcbe277440bfdb613d12b8877fe4c))
+* **dpe-core:** Name the editor's copy of is_valid_shortcode ([857412f](https://github.com/dasch-swiss/dsp-repository/commit/857412f448c1b16a5822ff424171c08130bca301))
+* **dpe-server:** Correct the distroless uid in the operations guide ([3eae258](https://github.com/dasch-swiss/dsp-repository/commit/3eae2583e5a4a12094c87d723249dae15126d452))
+* **editor-server:** Record the email-authentication deviation ([518fe21](https://github.com/dasch-swiss/dsp-repository/commit/518fe212d82b791e6799d1e6a1a64d0224fe5d66))
+
+
+### Miscellaneous Chores
+
+* **ci:** Add just recipe for updating record dumps (DEV-6838) ([b28d161](https://github.com/dasch-swiss/dsp-repository/commit/b28d1617547651611fbccc9b0b3724e46268a3f7))
+* **ci:** Bound job runtime and harden network fetches ([aaf3d24](https://github.com/dasch-swiss/dsp-repository/commit/aaf3d240c74f24377e2ec39bf6de43900909b26b))
+* **ci:** Update the path-keyed automation for the new module layout ([ad83a72](https://github.com/dasch-swiss/dsp-repository/commit/ad83a725cc755f8ae06c00f327f7912a27303f13))
+* **dpe-api-oai,dpe-server:** Wrap over-long comments to satisfy rustfmt ([6d17ca8](https://github.com/dasch-swiss/dsp-repository/commit/6d17ca81c8bde4b2df41f99236209bf1d81fa1df))
+* **dpe-data:** Normalise language-key order in project files ([acfb409](https://github.com/dasch-swiss/dsp-repository/commit/acfb409b27b3c15a86d52bd4a75b8a868ea2c870))
+* **dpe-data:** Point 0107 stardom at the migrated server ([43e5c5a](https://github.com/dasch-swiss/dsp-repository/commit/43e5c5a447a79522e7e637b3967eb16487a32fd2))
+* **dpe-data:** Point 0110 h-steiner at the migrated server ([3cfe78d](https://github.com/dasch-swiss/dsp-repository/commit/3cfe78d7aa00b846466303e979ccc85fc99f4a08))
+* **dpe-data:** Update record dumps (DEV-6838) ([b3f9be7](https://github.com/dasch-swiss/dsp-repository/commit/b3f9be7ea9fcb9427fa54b77a43c87b6f0e4d5a0))
+* **dpe-data:** Update the demo URL for 0854 (Alice in DaSCHland) ([f95ab4c](https://github.com/dasch-swiss/dsp-repository/commit/f95ab4cd4b5ae1671c8772ec6c4d21208455bd0e))
+* **dpe-data:** Update the demo URL for 0854 (Alice in DaSCHland) ([aea9023](https://github.com/dasch-swiss/dsp-repository/commit/aea9023962b61a5aaa50187ecca58b0a1a688775))
+* **mosaic:** Rename add-mosaic-component skill file to SKILL.md ([ab27d14](https://github.com/dasch-swiss/dsp-repository/commit/ab27d1483105ec0712041b0dd3eacea9edf47c6e))
+
 ## [0.8.2](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.1...v0.8.2) (2026-07-29)
 
 

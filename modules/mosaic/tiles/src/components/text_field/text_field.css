@@ -1,0 +1,31 @@
+@layer components {
+  /*
+   * `field-*` rather than `text-field-*`: a textarea and a select want the same
+   * label, border and hint treatment and will share these classes.
+   *
+   * The border is neutral-500, not the neutral-300 that reads as the obvious
+   * choice: with no fill of its own, an input's border is the only thing marking
+   * where the control is, which WCAG 2.1 SC 1.4.11 puts at 3:1. Measured against
+   * white, neutral-300 is 1.80:1 and neutral-400 2.67:1; neutral-500 is the
+   * lightest stop that passes, at 4.10:1 (3.99:1 on the neutral-50 page).
+   *
+   * Focus is an outline rather than a ring, matching `btn` and `link`. A ring is
+   * a box-shadow, and box-shadows are dropped in forced-colors mode, which is
+   * where a focus indicator matters most.
+   */
+  .field {
+    @apply flex flex-col gap-1;
+  }
+
+  .field-label {
+    @apply font-bold;
+  }
+
+  .field-input {
+    @apply rounded border border-neutral-500 px-3 py-2 focus-visible:outline-2 focus-visible:outline-primary-600;
+  }
+
+  .field-hint {
+    @apply text-sm text-neutral-600;
+  }
+}

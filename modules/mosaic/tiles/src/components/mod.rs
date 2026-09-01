@@ -8,3 +8,4 @@ pub mod icon;
 pub mod link;
 pub mod loading;
 pub mod tabs;
+pub mod text_field;

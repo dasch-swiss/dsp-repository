@@ -14,6 +14,7 @@ pub mod icon;
 pub mod link;
 pub mod loading;
 pub mod tabs;
+pub mod text_field;
 pub mod theme;
 
 use maud::{html, Markup};
@@ -73,6 +74,7 @@ mod tests {
             ("Link", link::page().into_string()),
             ("Loading", loading::page().into_string()),
             ("Tabs", tabs::page().into_string()),
+            ("Text Field", text_field::page().into_string()),
             ("Design Tokens", theme::page().into_string()),
         ];
         for (name, html) in pages {

@@ -25,6 +25,7 @@ const COMPONENT_NAV: &[(&str, &str)] = &[
     ("/link", "Link"),
     ("/loading", "Loading"),
     ("/tabs", "Tabs"),
+    ("/text-field", "Text Field"),
 ];
 
 /// Build the Axum router. Static assets (logos, the compiled stylesheet) are
@@ -58,6 +59,10 @@ pub fn router(public_dir: PathBuf) -> Router {
             get(|| async { render("/loading", "Loading", showcase::loading::page()) }),
         )
         .route("/tabs", get(|| async { render("/tabs", "Tabs", showcase::tabs::page()) }))
+        .route(
+            "/text-field",
+            get(|| async { render("/text-field", "Text Field", showcase::text_field::page()) }),
+        )
         .fallback_service(ServeDir::new(public_dir))
 }
 

@@ -21,13 +21,8 @@ fn type_of_data_to_dc_type(type_of_data: &str) -> String {
 pub fn record_to_dublin_core(record: &Record) -> DublinCoreRecord {
     let mut dc = DublinCoreRecord::default();
 
-    // dc:identifier - use pid, plus the direct file download link when present
+    // The ARK only — no file download URL: see docs/src/dpe/oai-pmh.md.
     dc.identifiers.push(record.pid.as_url());
-    if let Some(file) = &record.file {
-        if !file.url.is_empty() {
-            dc.identifiers.push(file.url.clone());
-        }
-    }
 
     // dc:title - prefer "en", fallback to first available
     if let Some(title) = get_multilingual_value(&record.label) {
@@ -91,6 +86,7 @@ mod tests {
             file: Some(RecordFile {
                 mime_type: "image/jp2".to_string(),
                 url: "https://ingest.dasch.swiss/projects/0001/assets/5RMOnH7RmAY-qKzgr431bg7/original".to_string(),
+                ..RecordFile::default()
             }),
             ..test_record()
         }
@@ -221,12 +217,21 @@ mod tests {
     }
 
     #[test]
-    fn bitstream_file_url_is_an_additional_identifier() {
-        let dc = record_to_dublin_core(&bitstream_record());
-        assert!(dc
-            .identifiers
-            .contains(&"https://ingest.dasch.swiss/projects/0001/assets/5RMOnH7RmAY-qKzgr431bg7/original".to_string()));
-        // The pid identifier must still be present alongside the file link.
-        assert!(dc.identifiers.contains(&bitstream_record().pid.as_url()));
+    fn bitstream_file_url_is_not_an_identifier() {
+        let record = bitstream_record();
+        let dc = record_to_dublin_core(&record);
+
+        assert_eq!(dc.identifiers, vec![record.pid.as_url()]);
+        let file_url = record.file.as_ref().expect("bitstream record has a file").url.clone();
+        assert!(!dc.identifiers.contains(&file_url));
+        assert!(!dc.identifiers.iter().any(|i| i.contains("ingest.")));
+        assert!(!dc.identifiers.iter().any(|i| i.contains("/dpe/records/")));
+    }
+
+    #[test]
+    fn record_without_file_has_the_same_single_identifier() {
+        let record = test_record();
+        let dc = record_to_dublin_core(&record);
+        assert_eq!(dc.identifiers, vec![record.pid.as_url()]);
     }
 }

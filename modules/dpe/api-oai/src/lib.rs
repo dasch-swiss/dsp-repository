@@ -19,19 +19,21 @@ const DEFAULT_BASE_URL: &str = "https://repository.dasch.swiss/dpe/oai";
 
 static BASE_URL: OnceLock<String> = OnceLock::new();
 
-/// Resolves the base URL from an optional explicit value, falling back to the default.
+/// Strips any trailing slash so callers can concatenate a path unconditionally.
 /// Pure helper so the precedence is unit-testable without touching the process-global.
-fn resolve_base_url(explicit: Option<String>) -> String {
+fn resolve_url(explicit: Option<String>, default: &str) -> String {
     explicit
         .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| DEFAULT_BASE_URL.to_string())
+        .unwrap_or_else(|| default.to_string())
+        .trim_end_matches('/')
+        .to_string()
 }
 
 /// Sets the public OAI-PMH base URL at startup. Must be called before the first request.
 /// Thread-safe: uses OnceLock (first call wins, subsequent calls are no-ops), matching
 /// `dpe_core::set_data_dir`.
 pub fn set_base_url(url: &str) {
-    if BASE_URL.set(resolve_base_url(Some(url.to_string()))).is_err() {
+    if BASE_URL.set(resolve_url(Some(url.to_string()), DEFAULT_BASE_URL)).is_err() {
         tracing::warn!(new = url, current = %base_url(), "set_base_url called again but base URL is already set");
     }
 }
@@ -42,30 +44,38 @@ pub fn set_base_url(url: &str) {
 /// [`DEFAULT_BASE_URL`]. The env fallback keeps the value correct in contexts that do not
 /// call [`set_base_url`] (e.g. tests).
 pub(crate) fn base_url() -> &'static str {
-    BASE_URL.get_or_init(|| resolve_base_url(std::env::var("DPE_OAI_BASE_URL").ok()))
+    BASE_URL.get_or_init(|| resolve_url(std::env::var("DPE_OAI_BASE_URL").ok(), DEFAULT_BASE_URL))
 }
 
 #[cfg(test)]
 mod base_url_tests {
-    use super::{resolve_base_url, DEFAULT_BASE_URL};
+    use super::{resolve_url, DEFAULT_BASE_URL};
 
     #[test]
     fn explicit_value_is_used() {
         assert_eq!(
-            resolve_base_url(Some("https://api.dev.dasch.swiss/dpe/oai".to_string())),
+            resolve_url(Some("https://api.dev.dasch.swiss/dpe/oai".to_string()), DEFAULT_BASE_URL),
             "https://api.dev.dasch.swiss/dpe/oai"
         );
     }
 
     #[test]
     fn empty_or_absent_falls_back_to_default() {
-        assert_eq!(resolve_base_url(None), DEFAULT_BASE_URL);
-        assert_eq!(resolve_base_url(Some(String::new())), DEFAULT_BASE_URL);
+        assert_eq!(resolve_url(None, DEFAULT_BASE_URL), DEFAULT_BASE_URL);
+        assert_eq!(resolve_url(Some(String::new()), DEFAULT_BASE_URL), DEFAULT_BASE_URL);
     }
 
     #[test]
     fn default_is_the_production_endpoint_not_meta() {
         assert_eq!(DEFAULT_BASE_URL, "https://repository.dasch.swiss/dpe/oai");
         assert!(!DEFAULT_BASE_URL.contains("meta.dasch.swiss"));
+    }
+
+    #[test]
+    fn trailing_slash_is_stripped() {
+        assert_eq!(
+            resolve_url(Some("https://repository.dasch.swiss/dpe/oai/".to_string()), DEFAULT_BASE_URL),
+            "https://repository.dasch.swiss/dpe/oai"
+        );
     }
 }

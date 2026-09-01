@@ -102,6 +102,12 @@ pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, oai_ro
         .route("/dpe/projects", get(projects_page_handler))
         .route("/dpe/about", get(about_page_handler))
         .route("/dpe/projects/{id}", get(project_page_handler))
+        // Not under /dpe/oai: that is `?verb=`-dispatched, and its limiter must
+        // not apply here.
+        .route(
+            "/dpe/records/{shortcode}/{record_id}/file",
+            get(crate::downloads::record_file_handler),
+        )
         // OAI-PMH (note: /dpe/oai, not /oai) — XML, must stay unbroken.
         // Rate-limited per-IP; the limiter is scoped to this route only (see `oai_router`).
         .merge(oai_router)
@@ -213,6 +219,14 @@ mod tests {
             assert_eq!(status_of(app.clone(), "/dpe/oai").await, StatusCode::TOO_MANY_REQUESTS);
             assert_eq!(status_of(app, "/dpe").await, StatusCode::PERMANENT_REDIRECT);
         }
+
+        /// Pins the scope: widening the limiter here would throttle downloads.
+        #[tokio::test]
+        async fn does_not_gate_the_record_file_route() {
+            let app = build_router(test_state(), NO_PUBLIC_DIR.as_ref(), oai_router_with(DenyAll));
+            let status = status_of(app, "/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file").await;
+            assert_ne!(status, StatusCode::TOO_MANY_REQUESTS);
+        }
     }
 
     /// `AllowAll` — a fake limiter that lets every request through unchanged.
@@ -267,6 +281,47 @@ mod tests {
             let app = build_router(test_state(), NO_PUBLIC_DIR.as_ref(), oai_router_with(AllowAll));
             assert_ne!(status_of(app, "/dpe/oai").await, StatusCode::TOO_MANY_REQUESTS);
         }
+    }
+
+    #[tokio::test]
+    async fn record_file_route_is_registered_and_does_not_shadow_the_project_route() {
+        use axum::routing::get;
+        use http_body_util::BodyExt;
+
+        use crate::router::build_router;
+
+        dpe_core::set_data_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/data"));
+
+        let app = build_router(
+            test_state(),
+            NO_PUBLIC_DIR.as_ref(),
+            axum::Router::new().route("/dpe/oai", get(dpe_api_oai::oai_handler)),
+        );
+
+        let body_of = |uri: &str| {
+            let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
+            let app = app.clone();
+            async move {
+                let response = app.oneshot(req).await.unwrap();
+                let status = response.status();
+                let bytes = response.into_body().collect().await.unwrap().to_bytes();
+                (status, String::from_utf8_lossy(&bytes).into_owned())
+            }
+        };
+
+        // Any record with a file, taken from the cache: the populated-metadata
+        // record lives in records_test/ and is not part of the served data.
+        let record = dpe_core::record_cache::all_records()
+            .iter()
+            .find(|r| r.file.is_some())
+            .expect("the committed data has records with files");
+        let (status, _) =
+            body_of(&format!("/dpe/records/{}/{}/file", record.pid.shortcode, record.pid.record_id)).await;
+        assert_eq!(status, StatusCode::OK, "the record file route should resolve");
+
+        let (status, body) = body_of("/dpe/projects/0862").await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(!body.contains("Page not found."), "the project page route should still render");
     }
 
     #[tokio::test]

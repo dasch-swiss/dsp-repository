@@ -21,6 +21,7 @@ const ROUTES = [
   "link",
   "loading",
   "tabs",
+  "text-field",
 ];
 
 test.describe("Mosaic playground showcase", () => {

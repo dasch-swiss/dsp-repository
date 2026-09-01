@@ -1,0 +1,28 @@
+@layer components {
+  /*
+   * `data-table-*` rather than `table-*`: `table` and `table-cell` are both
+   * Tailwind display utilities, and a component class sharing a utility's name
+   * is a collision waiting to be debugged.
+   *
+   * The scroll wrapper is a tab stop (see the tile's module docs), so it needs a
+   * focus indicator of its own — the same outline `btn`, `link` and `field-input`
+   * use. Row separators are decorative: the table's structure is carried by the
+   * markup, so SC 1.4.11's 3:1 does not apply to them the way it does to an
+   * input's border.
+   */
+  .data-table-scroll {
+    @apply overflow-x-auto focus-visible:outline-2 focus-visible:outline-primary-600;
+  }
+
+  .data-table {
+    @apply w-full text-left;
+  }
+
+  .data-table-head-cell {
+    @apply border-b-2 border-neutral-300 px-3 py-2 text-left font-bold;
+  }
+
+  .data-table-cell {
+    @apply border-b border-neutral-200 px-3 py-2 align-top;
+  }
+}

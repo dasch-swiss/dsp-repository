@@ -127,29 +127,93 @@ Resolution lives in `platform_metadata::temporal_coverage`, shared by the OAI-PM
 
 ### Record files
 
-A bitstream Record may carry a single `file` (its MIME type and a direct download link, served by dsp-ingest). When present it is exposed in both formats:
+A bitstream Record carries at most one `file`, stored by dsp-ingest. In the metadata payloads the only thing it contributes is its MIME type:
 
-- **`oai_datacite`** — the MIME type becomes a `format`, and the download link becomes a `relatedIdentifier` with `relatedIdentifierType="URL"` and `relationType="HasPart"` (alongside the existing `IsPartOf` link to the parent project):
+- **`oai_datacite`** — a `format`:
 
   ```xml
-  <relatedIdentifiers>
-    <relatedIdentifier relatedIdentifierType="URL" relationType="IsPartOf">https://ark.dasch.swiss/ark:/72163/1/0803</relatedIdentifier>
-    <relatedIdentifier relatedIdentifierType="URL" relationType="HasPart">https://ingest.dasch.swiss/projects/0803/assets/{assetId}/original</relatedIdentifier>
-  </relatedIdentifiers>
   <formats>
     <format>application/pdf</format>
   </formats>
   ```
 
-- **`oai_dc`** — the MIME type becomes a `dc:format`, and the download link is added as a second `dc:identifier` (after the record's ARK):
+- **`oai_dc`** — a `dc:format`, alongside the record's single ARK `dc:identifier`:
 
   ```xml
   <dc:format>application/pdf</dc:format>
   <dc:identifier>https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh</dc:identifier>
-  <dc:identifier>https://ingest.dasch.swiss/projects/0803/assets/{assetId}/original</dc:identifier>
   ```
 
-Records without a file (e.g. project-metadata entries, or text-only records) omit all of the above.
+Records without a file (e.g. project-metadata entries, or text-only records) omit the format.
+
+**The payloads carry no link to the file.** They previously published dsp-ingest's own download URL — as a second `dc:identifier` in `oai_dc` and as a `relationType="HasPart"` `relatedIdentifier` in `oai_datacite`. Both are gone: neither field fits. `dc:identifier` identifies the described resource, not a retrieval location for one of its parts, and `HasPart` relates one described resource to another, not a bitstream.
+
+DataCite's `<sizes>` is not emitted either, for the same reason: it describes the bitstream, not the resource. The file's byte size, and the rest of its technical metadata, come from the endpoint below.
+
+#### File-metadata endpoint
+
+```
+GET /dpe/records/{shortcode}/{record_id}/file  →  200, application/json
+```
+
+One URL, one representation. There is no content negotiation and no `?format=` parameter: the response is the JSON document below regardless of `Accept`.
+
+DPE serves metadata only. It does not serve the file's bytes and does not redirect to them — the download URL is a *field* of the document, which a consumer reads and then fetches from dsp-ingest itself.
+
+`404` covers both a record that does not exist and a record that carries no file. The two are not distinguished, and both return the standard DPE 404 page so a human following a stale link lands somewhere sensible. `POST` and friends get `405`.
+
+**Constructing the URL from a harvested record.** The two path segments are exactly the two components of the record's OAI identifier. Strip the `oai:dasch.swiss:ark:/72163/1/` prefix and append `/file`:
+
+```
+oai:dasch.swiss:ark:/72163/1/0862/RMgW_EICR3OLcMi7LNE=Sgu
+                             └─────────┬──────────────────┘
+https://repository.dasch.swiss/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file
+```
+
+Record ids contain `=` (the ARK check character). It is a valid path-segment character and needs no percent-encoding, though `%3D` resolves identically. Note the `id` field (`http://rdfh.ch/0862/RMgW_EICR3OLcMi7LNE-Sg`) uses a different `-`-suffixed form and is **not** the routing key — only `pid` is.
+
+#### File-metadata document
+
+```json
+{
+  "fileId": "RMgW_EICR3OLcMi7LNE=Sgu",
+  "fileName": "Screenshot 2026-08-19 at 16.40.02.png",
+  "downloadUrl": "https://ingest.dev-03.dasch.swiss/projects/0862/assets/6YAAMJfR7sz-RWPTwYppGb7/original",
+  "fileSize": 377685,
+  "checksum": "9ab438922efe5c31f0a862e10891789d6934685bb6d146afc8a3c67c54e622c9",
+  "checksumAlgorithm": "SHA-256",
+  "mimeType": "image/png",
+  "version": 1,
+  "dateCreated": "2026-08-25T10:25:33.455394630Z",
+  "dateModified": "2026-08-25T10:25:33.455394630Z"
+}
+```
+
+| Field | Notes |
+|---|---|
+| `fileId` | The **record** id, echoing the `{record_id}` path segment — not dsp-ingest's asset id. See below. |
+| `fileName` | |
+| `downloadUrl` | The dsp-ingest URL, verbatim — where the bytes are. See below. |
+| `fileSize` | Bytes, as a JSON integer. |
+| `checksum`, `checksumAlgorithm` | Two fields, as the source has them. |
+| `mimeType` | |
+| `version` | **Derived**, always `1`. See below. |
+| `dateCreated` | |
+| `dateModified` | **Derived**, mirrors `dateCreated`. See below. |
+
+Every value is copied verbatim from the stored `file` object or synthesised. Nothing is parsed out of `downloadUrl`, so ingest's internal path shape is never matched against — a URL of an unexpected shape still yields a complete document.
+
+Values with no source are emitted as explicit `null` rather than omitted, so the shape is stable and a consumer can tell "we have no value" from "this build predates the field". Exports predating the technical-metadata fields carry only `mimeType` and `url`, so `fileName`, `fileSize`, `checksum`, `checksumAlgorithm`, `dateCreated` and `dateModified` can all be `null` today; those exports are to be regenerated.
+
+**On `downloadUrl`'s durability.** It is a service-internal address, environment-specific (`ingest.dev-03…`, `ingest.stage…`, `ingest.dasch.swiss`) with `/projects/{shortcode}/assets/{assetId}/original` as its internal path shape, and nothing pins that host or shape. Serving it here rather than in the harvested payloads means a consumer fetches it fresh per request and gets whatever is current, instead of holding a copy cached indefinitely at harvest time — but it does not make the URL itself stable. A DPE-owned URL redirecting to ingest would decouple the two entirely; it is deliberately not built, since it would make DPE a participant in the download path. If ingest URL instability becomes a problem, that indirection can be added later and `downloadUrl` repointed at it without changing this document's shape.
+
+`version` and `dateModified` are **derived, not stored**. Assets are immutable once ingested — the URL always ends `/original`, and there is no mechanism to replace a file in place — so every asset is its own first and only version, and its modification date is its creation date. Do not treat `version` as a revision counter or diff `dateModified` for change detection. `version` is an integer so a real version sequence can land later without a shape change, and `dateModified` follows `dateCreated` even when that is `null` (the two are always equal). The *record* also has a top-level `dateModified`; it is deliberately not used here, as it describes the record rather than the file.
+
+**On `fileId`.** It is the record id — the same value as the `{record_id}` path segment — and **not** dsp-ingest's asset id. A record carries at most one file, so the record id identifies that file unambiguously. The asset id (`6YAAMJfR7sz-RWPTwYppGb7` in the example above) exists nowhere in the stored `file` object; it appears only inside `downloadUrl`, so emitting it would mean parsing ingest's internal path shape — the one coupling this document otherwise avoids everywhere. A consumer that needs the asset id can parse `downloadUrl` itself, accepting that coupling explicitly. `fileId` is never `null`: it comes from the route, not from the file object, so it is populated even for records whose `file` carries only `mimeType` and `url`.
+
+One field is **absent entirely**, not `null`: **a relative path**. Assets are flat under `/projects/{shortcode}/assets/`, so there is no directory structure for a path to describe. An always-`null` field would imply a hierarchy that does not exist. Adding it later is a backward-compatible change.
+
+The endpoint is **not** rate-limited: the limiter is scoped to `/dpe/oai` alone (see *Rate limiting*). It sits beside `/dpe/projects/{id}` rather than under `/dpe/oai`, which is strictly `?verb=`-dispatched per the protocol — a REST path under it would break that contract.
 
 ## Identifiers
 

@@ -6,6 +6,7 @@ use clap::{Parser, Subcommand};
 mod config;
 #[cfg(feature = "dev")]
 mod dev_reload;
+pub(crate) mod downloads;
 pub(crate) mod fragments;
 mod page_url;
 mod router;

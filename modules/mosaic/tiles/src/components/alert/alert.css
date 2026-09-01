@@ -1,0 +1,31 @@
+@layer components {
+  /*
+   * Colours are the -50 surface with -800 text and a -300 border, the pairing the
+   * editor's hand-rolled banners already used. Each -800/-50 pair measures above
+   * 11:1, and the `link` tile's own text-primary-600 clears AA (4.5:1) on every
+   * one of these surfaces, so a link inside an alert needs no variant of its own.
+   */
+  .alert {
+    @apply rounded border px-3 py-2;
+  }
+
+  .alert-title {
+    @apply font-bold;
+  }
+
+  .alert-info {
+    @apply border-info-300 bg-info-50 text-info-800;
+  }
+
+  .alert-success {
+    @apply border-success-300 bg-success-50 text-success-800;
+  }
+
+  .alert-warning {
+    @apply border-warning-300 bg-warning-50 text-warning-800;
+  }
+
+  .alert-danger {
+    @apply border-danger-300 bg-danger-50 text-danger-800;
+  }
+}

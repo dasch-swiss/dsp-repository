@@ -15,6 +15,7 @@ use crate::showcase;
 
 /// Sidebar entries under the "Components" heading: (path, label).
 const COMPONENT_NAV: &[(&str, &str)] = &[
+    ("/alert", "Alert"),
     ("/badge", "Badge"),
     ("/breadcrumb", "Breadcrumb"),
     ("/button", "Button"),
@@ -35,6 +36,7 @@ pub fn router(public_dir: PathBuf) -> Router {
             "/theme",
             get(|| async { render("/theme", "Design Tokens", showcase::theme::page()) }),
         )
+        .route("/alert", get(|| async { render("/alert", "Alert", showcase::alert::page()) }))
         .route("/badge", get(|| async { render("/badge", "Badge", showcase::badge::page()) }))
         .route(
             "/breadcrumb",

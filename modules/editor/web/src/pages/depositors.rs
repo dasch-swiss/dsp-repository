@@ -22,29 +22,17 @@
 //! `Viewer` is a struct: three adjacent strings are silently interchangeable,
 //! and a swap here would put an address where a name belongs.
 //!
-//! Form primitives are hand-styled, as on the login screens. Text inputs and
-//! tables are `mosaic-tiles`' next primitives and get proper tiles with
-//! playground showcases then, rather than being guessed at from one surface.
+//! The banner, the fields and the table are Mosaic tiles, shared with the login
+//! screens. The table tile is where the caption, the `scope="col"` headers and
+//! the keyboard-reachable scroll region come from — none of which this page had
+//! while it hand-rolled its own.
 
 use maud::{html, Markup};
+use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::link::link;
-
-/// Shared field styling, matching the login screens.
-const FIELD_CLASS: &str =
-    "border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500";
-
-const CELL_CLASS: &str = "px-3 py-2 align-top border-b border-gray-200";
-const HEAD_CLASS: &str = "px-3 py-2 text-left font-bold border-b-2 border-gray-300";
-
-/// A form-level error, above the fields it is about.
-fn error_banner(message: &str) -> Markup {
-    html! {
-        p   role="alert"
-            class="border border-danger-300 bg-danger-50 text-danger-800 rounded px-3 py-2 mb-4"
-        { (message) }
-    }
-}
+use mosaic_tiles::table::{table, table_cell, table_cell_with_class, table_head_cell};
+use mosaic_tiles::text_field::{text_field, InputType};
 
 /// One account, as the list renders it.
 pub struct DepositorRow<'a> {
@@ -83,61 +71,68 @@ pub fn list(rows: &[DepositorRow<'_>]) -> Markup {
             }
             @if rows.is_empty() {
                 p class="text-gray-600" { "There are no accounts yet." }
-            } @else {
-                div class="overflow-x-auto" {
-                    table class="w-full text-left" {
-                        thead {
-                            tr {
-                                th class=(HEAD_CLASS) { "Name" }
-                                th class=(HEAD_CLASS) { "Email" }
-                                th class=(HEAD_CLASS) { "Role" }
-                                th class=(HEAD_CLASS) { "Projects" }
-                                th class=(HEAD_CLASS) { "Last code sent" }
-                                th class=(HEAD_CLASS) {
-                                    span class="sr-only" { "Actions" }
-                                }
-                            }
-                        }
-                        tbody {
-                            @for row in rows { (list_row(row)) }
-                        }
-                    }
-                }
-            }
+            } @else { (accounts_table(rows)) }
         }
     }
 }
 
-/// One `<tr>` of [`list`].
+/// The accounts table of [`list`]. "Actions" is a heading a screen reader needs
+/// and a sighted reader does not, so it is present but visually hidden — an
+/// unlabelled column is one a screen reader announces as nothing at all.
+fn accounts_table(rows: &[DepositorRow<'_>]) -> Markup {
+    let actions = html! {
+        span class="sr-only" { "Actions" }
+    };
+    let head = html! {
+        tr {
+            (table_head_cell("Name"))
+            (table_head_cell("Email"))
+            (table_head_cell("Role"))
+            (table_head_cell("Projects"))
+            (table_head_cell("Last code sent"))
+            (table_head_cell(actions))
+        }
+    };
+    let body = html! {
+        @for row in rows { (list_row(row)) }
+    };
+    html! {
+        (table("Accounts").head(head).body(body))
+    }
+}
+
+/// One `<tr>` of [`accounts_table`].
 fn list_row(row: &DepositorRow<'_>) -> Markup {
+    let projects = html! {
+        @if row.shortcodes.is_empty() {
+            span class="text-gray-500" { "—" }
+        } @else { (row.shortcodes.join(", ")) }
+    };
+    // The answer to "I never got a code" that does not need an address in a log
+    // (REQ-6.10). Absent means none was ever handed to the relay, which is a
+    // different problem from one that was sent and did not arrive.
+    let last_code = html! {
+        @match row.last_code_at {
+            Some(at) => span class="text-sm" { (at) }
+            None => span class="text-gray-500" { "never" }
+        }
+    };
+    let controls = html! {
+        @if row.manageable {
+            a href={ "/depositors/" (row.id) "/edit" } class="underline mr-3" { "Edit" }
+            a href={ "/depositors/" (row.id) "/remove" } class="underline" { "Remove" }
+        } @else {
+            span class="text-gray-500 text-sm" { "from configuration" }
+        }
+    };
     html! {
         tr {
-            td class=(CELL_CLASS) { (row.name) }
-            td class={ (CELL_CLASS) " font-mono text-sm" } { (row.email) }
-            td class=(CELL_CLASS) { (row.role) }
-            td class=(CELL_CLASS) {
-                @if row.shortcodes.is_empty() {
-                    span class="text-gray-500" { "—" }
-                } @else { (row.shortcodes.join(", ")) }
-            }
-            td class=(CELL_CLASS) {
-                // The answer to "I never got a code" that does not need an
-                // address in a log (REQ-6.10). Absent means none was ever handed
-                // to the relay, which is a different problem from one that was
-                // sent and did not arrive.
-                @match row.last_code_at {
-                    Some(at) => span class="text-sm" { (at) }
-                    None => span class="text-gray-500" { "never" }
-                }
-            }
-            td class={ (CELL_CLASS) " whitespace-nowrap" } {
-                @if row.manageable {
-                    a href={ "/depositors/" (row.id) "/edit" } class="underline mr-3" { "Edit" }
-                    a href={ "/depositors/" (row.id) "/remove" } class="underline" { "Remove" }
-                } @else {
-                    span class="text-gray-500 text-sm" { "from configuration" }
-                }
-            }
+            (table_cell(row.name))
+            (table_cell_with_class("font-mono text-sm", row.email))
+            (table_cell(row.role))
+            (table_cell(projects))
+            (table_cell(last_code))
+            (table_cell_with_class("whitespace-nowrap", controls))
         }
     }
 }
@@ -189,45 +184,29 @@ pub fn edit(id: &str, fields: &DepositorFields<'_>, error: Option<&str>) -> Mark
 /// The create and edit forms, which differ only in where they post and what the
 /// submit button says.
 fn depositor_form(action: &str, submit_label: &str, fields: &DepositorFields<'_>, error: Option<&str>) -> Markup {
+    let shortcodes_hint = html! {
+        "Separated by commas, for example "
+        code class="font-mono" { "0801, 080C" }
+        ". Leave empty to assign none."
+    };
+    let name_field = text_field("name", "Name").value(fields.name).required();
+    // `autocomplete("off")` deliberately: whoever fills this in is entering
+    // somebody else's address, so offering their own is a wrong answer one
+    // keystroke away from being submitted.
+    let email_field = text_field("email", "Email address")
+        .input_type(InputType::Email)
+        .autocomplete("off")
+        .value(fields.email)
+        .required();
+    let shortcodes_field = text_field("shortcodes", "Project shortcodes")
+        .value(fields.shortcodes)
+        .hint(shortcodes_hint);
     html! {
-        @if let Some(message) = error { (error_banner(message)) }
+        @if let Some(message) = error { (alert(message).variant(AlertVariant::Danger).class("mb-4")) }
         form method="post" action=(action) class="flex flex-col gap-4" {
-            div class="flex flex-col gap-1" {
-                label for="name" class="font-bold" { "Name" }
-                input
-                    id="name"
-                    name="name"
-                    type="text"
-                    value=(fields.name)
-                    required
-                    class=(FIELD_CLASS);
-            }
-            div class="flex flex-col gap-1" {
-                label for="email" class="font-bold" { "Email address" }
-                input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autocomplete="off"
-                    value=(fields.email)
-                    required
-                    class=(FIELD_CLASS);
-            }
-            div class="flex flex-col gap-1" {
-                label for="shortcodes" class="font-bold" { "Project shortcodes" }
-                input
-                    id="shortcodes"
-                    name="shortcodes"
-                    type="text"
-                    value=(fields.shortcodes)
-                    aria-describedby="shortcodes-help"
-                    class=(FIELD_CLASS);
-                p id="shortcodes-help" class="text-gray-600 text-sm" {
-                    "Separated by commas, for example "
-                    code class="font-mono" { "0801, 080C" }
-                    ". Leave empty to assign none."
-                }
-            }
+            (name_field)
+            (email_field)
+            (shortcodes_field)
             div class="flex items-center gap-3" {
                 (button(submit_label).button_type(ButtonType::Submit))
                 a href="/depositors" class="underline" { "Cancel" }
@@ -298,28 +277,38 @@ fn removal_impact(impact: &RemovalImpact<'_>) -> Markup {
             p class="mb-6 text-gray-600" {
                 "This account has no drafts and no submission awaiting review."
             }
-        } @else {
-            div class="border border-warning-300 bg-warning-50 rounded p-4 mb-6" {
-                p class="font-bold mb-2" { "What this leaves behind" }
-                ul class="flex flex-col gap-2 list-disc pl-5" {
-                    @if !impact.draft_shortcodes.is_empty() {
-                        li {
-                            "Drafts on "
-                            (impact.draft_shortcodes.join(", "))
-                            ". The work is kept; the last editor becomes unknown."
-                        }
-                    }
-                    @if !impact.submission_shortcodes.is_empty() {
-                        li {
-                            "A submission awaiting review on "
-                            (impact.submission_shortcodes.join(", "))
-                            ". It can still be approved or rejected, but it can no longer be returned to its \
-                             depositor for changes."
-                        }
-                    }
+        } @else { (leaves_behind(impact)) }
+    }
+}
+
+/// The consequences block of [`removal_impact`].
+fn leaves_behind(impact: &RemovalImpact<'_>) -> Markup {
+    let items = html! {
+        ul class="flex flex-col gap-2 list-disc pl-5" {
+            @if !impact.draft_shortcodes.is_empty() {
+                li {
+                    "Drafts on "
+                    (impact.draft_shortcodes.join(", "))
+                    ". The work is kept; the last editor becomes unknown."
+                }
+            }
+            @if !impact.submission_shortcodes.is_empty() {
+                li {
+                    "A submission awaiting review on "
+                    (impact.submission_shortcodes.join(", "))
+                    ". It can still be approved or rejected, but it can no longer be returned to its depositor \
+                     for changes."
                 }
             }
         }
+    };
+    html! {
+        ({
+            alert(items)
+                .variant(AlertVariant::Warning)
+                .title("What this leaves behind")
+                .class("mb-6")
+        })
     }
 }
 
@@ -383,6 +372,30 @@ mod tests {
         let sent = list(&[depositor_row("a", &[], Some("2026-08-25 09:14 UTC"))]).into_string();
         assert!(sent.contains("2026-08-25 09:14 UTC"), "{sent}");
         assert!(!sent.contains(">never<"), "{sent}");
+    }
+
+    #[test]
+    fn test_the_accounts_table_says_what_it_lists_and_what_its_columns_are() {
+        // What the Mosaic table tile brought that the hand-rolled markup did
+        // not: a name for the table and its scroll region, and headers that
+        // declare the cells they govern instead of leaving it to be inferred.
+        let out = list(&[depositor_row("abc", &[], None)]).into_string();
+        assert!(out.contains(r#"<caption class="sr-only">Accounts</caption>"#), "{out}");
+        assert!(out.contains(r#"aria-label="Accounts""#), "{out}");
+        assert!(out.contains(r#"scope="col""#), "{out}");
+        // The controls column is headed for a screen reader and blank for everyone else.
+        assert!(out.contains(r#"<span class="sr-only">Actions</span>"#), "{out}");
+    }
+
+    #[test]
+    fn test_the_shortcodes_hint_is_announced_with_the_field_it_explains() {
+        // Loose prose under an input is prose a screen reader reaches after the
+        // field it was meant to explain, if at all.
+        let fields = DepositorFields { name: "", email: "", shortcodes: "" };
+        let out = create(&fields, None).into_string();
+        assert!(out.contains(r#"aria-describedby="shortcodes-hint""#), "{out}");
+        assert!(out.contains(r#"id="shortcodes-hint""#), "{out}");
+        assert!(out.contains("Leave empty to assign none."), "{out}");
     }
 
     #[test]

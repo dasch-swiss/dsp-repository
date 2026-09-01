@@ -204,11 +204,19 @@ to a builder.
 
 ## Status
 
-Convergence is complete. The builders — `button`, `card`, `link`, `badge`, `tab`
-— follow these conventions; `button`, `card`, `link`, and `badge` implement the
-`ComponentBuilder` trait in `tiles/src/builder.rs`, while `tab` is a builder
-without it (a 3-element compound with no single id target).
-`breadcrumb`/`breadcrumb_current` and the container `tabs`/`breadcrumb` take
+Convergence is complete. The builders — `alert`, `badge`, `button`, `card`,
+`link`, `tab`, `table`, `text_field` — follow these conventions; all of them
+except `tab` implement the `ComponentBuilder` trait in `tiles/src/builder.rs`
+(`tab` is a 3-element compound with no single id target).
+`breadcrumb`/`breadcrumb_current`, the container `tabs`/`breadcrumb`, and the
+table's `table_head_cell`/`table_cell`/`table_cell_with_class` partials take
 `impl Render`. The trivial tiles (`icon`, `copy_button`, `loading`) intentionally
 remain plain functions — they have no variant or optional axes. No tile carries a
 `*Props` struct anymore. New tiles should follow this shape from the start.
+
+### The one place a slot is not `impl Render`
+
+`table(caption)` takes `impl Into<String>`. The caption is reused verbatim as the
+scroll region's `aria-label`, and an icon or nested markup in an accessible name
+means nothing. A slot that must survive as plain text is the exception the rule
+allows for; a slot that is only rendered is not.

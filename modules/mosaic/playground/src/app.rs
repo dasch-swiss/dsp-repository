@@ -24,6 +24,7 @@ const COMPONENT_NAV: &[(&str, &str)] = &[
     ("/icon", "Icon"),
     ("/link", "Link"),
     ("/loading", "Loading"),
+    ("/table", "Table"),
     ("/tabs", "Tabs"),
     ("/text-field", "Text Field"),
 ];
@@ -58,6 +59,7 @@ pub fn router(public_dir: PathBuf) -> Router {
             "/loading",
             get(|| async { render("/loading", "Loading", showcase::loading::page()) }),
         )
+        .route("/table", get(|| async { render("/table", "Table", showcase::table::page()) }))
         .route("/tabs", get(|| async { render("/tabs", "Tabs", showcase::tabs::page()) }))
         .route(
             "/text-field",

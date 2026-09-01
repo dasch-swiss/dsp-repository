@@ -13,6 +13,7 @@ pub mod copy_button;
 pub mod icon;
 pub mod link;
 pub mod loading;
+pub mod table;
 pub mod tabs;
 pub mod text_field;
 pub mod theme;
@@ -73,6 +74,7 @@ mod tests {
             ("Icon", icon::page().into_string()),
             ("Link", link::page().into_string()),
             ("Loading", loading::page().into_string()),
+            ("Table", table::page().into_string()),
             ("Tabs", tabs::page().into_string()),
             ("Text Field", text_field::page().into_string()),
             ("Design Tokens", theme::page().into_string()),

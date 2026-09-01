@@ -7,5 +7,6 @@ pub mod copy_button;
 pub mod icon;
 pub mod link;
 pub mod loading;
+pub mod table;
 pub mod tabs;
 pub mod text_field;

@@ -20,6 +20,7 @@ const ROUTES = [
   "icon",
   "link",
   "loading",
+  "table",
   "tabs",
   "text-field",
 ];

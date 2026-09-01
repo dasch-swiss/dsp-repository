@@ -95,12 +95,24 @@ pub struct RecordLegalInfo {
     pub authorship: Vec<String>,
 }
 
-/// A downloadable file belonging to a Record: its MIME type and a direct download link.
+/// `url` is dsp-ingest's own address — see `docs/src/dpe/oai-pmh.md` for why it is
+/// never published. The `Option`s are transitional: most exports carry only
+/// `mimeType` + `url`. Make them required once the exports are regenerated.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct RecordFile {
     #[serde(rename = "mimeType")]
     pub mime_type: String,
     pub url: String,
+    #[serde(default)]
+    pub checksum: Option<String>,
+    #[serde(rename = "checksumAlgorithm", default)]
+    pub checksum_algorithm: Option<String>,
+    #[serde(rename = "fileName", default)]
+    pub file_name: Option<String>,
+    #[serde(rename = "fileSize", default)]
+    pub file_size: Option<u64>,
+    #[serde(rename = "dateCreated", default)]
+    pub date_created: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -162,8 +174,17 @@ mod tests {
     use super::*;
 
     fn first_0803_record() -> Record {
-        let json = include_str!("../testdata/0803-records.json");
+        let json = include_str!("../../../dpe/server/data/records_test/0803-records.json");
         let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0803-records.json");
+        record
+    }
+
+    /// The one committed record carrying the full technical file metadata. The
+    /// production exports still predate those fields, so this fixture is the only
+    /// place the populated shape is exercised.
+    fn first_0862_record() -> Record {
+        let json = include_str!("../../../dpe/server/data/records_test/0862-records.json");
+        let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0862-records.json");
         record
     }
 
@@ -242,5 +263,38 @@ mod tests {
         record.date_published = String::new();
         record.date_created = String::new();
         assert_eq!(record_datestamp(&record), "2015-01-01");
+    }
+
+    #[test]
+    fn file_with_full_technical_metadata_deserialises() {
+        let record = first_0862_record();
+        let file = record.file.expect("the 0862 fixture carries a file");
+
+        assert_eq!(file.mime_type, "image/png");
+        assert_eq!(
+            file.checksum.as_deref(),
+            Some("9ab438922efe5c31f0a862e10891789d6934685bb6d146afc8a3c67c54e622c9")
+        );
+        assert_eq!(file.checksum_algorithm.as_deref(), Some("SHA-256"));
+        assert_eq!(file.file_name.as_deref(), Some("Screenshot 2026-08-19 at 16.40.02.png"));
+        assert_eq!(file.file_size, Some(377685));
+        assert_eq!(file.date_created.as_deref(), Some("2026-08-25T10:25:33.455394630Z"));
+    }
+
+    /// Delete this once the exports are regenerated and the fields are required.
+    #[test]
+    fn file_without_technical_metadata_still_deserialises() {
+        let json = r#"{
+            "mimeType": "application/pdf",
+            "url": "https://ingest.dasch.swiss/projects/0803/assets/lklK7rVuVOmpBZYWrF8o-g/original"
+        }"#;
+        let file: RecordFile = serde_json::from_str(json).expect("parse minimal file object");
+
+        assert_eq!(file.mime_type, "application/pdf");
+        assert_eq!(file.checksum, None);
+        assert_eq!(file.checksum_algorithm, None);
+        assert_eq!(file.file_name, None);
+        assert_eq!(file.file_size, None);
+        assert_eq!(file.date_created, None);
     }
 }

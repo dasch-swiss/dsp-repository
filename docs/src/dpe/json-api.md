@@ -13,6 +13,14 @@ Read-only JSON endpoints that expose DaSCH research project metadata. They serve
 - **Response**: `Content-Type: application/json`.
 - **Authentication**: none.
 
+One further endpoint serves JSON but is documented with the OAI-PMH endpoint, since it exists to expose metadata the harvested payloads do not carry:
+
+| Method | Path | Returns |
+|--------|------|---------|
+| GET | `/dpe/records/{shortcode}/{record_id}/file` | A record file's metadata: name, size, checksum, MIME type, dates, and the download URL |
+
+It is not under `/dpe/api/v2/` and describes a *record* rather than a project. See [OAI-PMH → File-metadata document](./oai-pmh.md#file-metadata-document).
+
 | Environment | Base URL |
 |-------------|----------|
 | Local development (`just dev`) | `http://localhost:4000` |

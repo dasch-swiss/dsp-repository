@@ -1,0 +1,36 @@
+[
+  {
+    "id": "http://rdfh.ch/0862/RMgW_EICR3OLcMi7LNE-Sg",
+    "pid": "https://ark.stage.dasch.swiss/ark:/72163/1/0862/RMgW_EICR3OLcMi7LNE=Sgu",
+    "label": {
+      "en": "XXXX"
+    },
+    "accessRights": "Full Open Access",
+    "legalInfo": {
+      "license": {
+        "licenseIdentifier": "public domain",
+        "licenseDate": "2023-01-01",
+        "licenseURI": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      "copyrightHolder": "DaSCH",
+      "authorship": [
+        "DaSCH"
+      ]
+    },
+    "howToCite": "XXXX",
+    "publisher": "DaSCH",
+    "dateCreated": "2026-08-25T10:25:33.455394630Z",
+    "datePublished": "2026-08-25T10:25:33.455394630Z",
+    "typeOfData": "Image",
+    "keywords": [],
+    "file": {
+      "mimeType": "image/png",
+      "url": "https://ingest.dev-03.dasch.swiss/projects/0862/assets/6YAAMJfR7sz-RWPTwYppGb7/original",
+      "checksum": "9ab438922efe5c31f0a862e10891789d6934685bb6d146afc8a3c67c54e622c9",
+      "checksumAlgorithm": "SHA-256",
+      "fileName": "Screenshot 2026-08-19 at 16.40.02.png",
+      "fileSize": 377685,
+      "dateCreated": "2026-08-25T10:25:33.455394630Z"
+    }
+  }
+]

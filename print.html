@@ -4164,14 +4164,20 @@ selector, add <code>data-testid</code> in the surrounding markup at the call sit
 genuinely needs several configurable attributes, that is the signal to promote it
 to a builder.</p>
 <h2 id="status"><a class="header" href="#status">Status</a></h2>
-<p>Convergence is complete. The builders — <code>button</code>, <code>card</code>, <code>link</code>, <code>badge</code>, <code>tab</code>
-— follow these conventions; <code>button</code>, <code>card</code>, <code>link</code>, and <code>badge</code> implement the
-<code>ComponentBuilder</code> trait in <code>tiles/src/builder.rs</code>, while <code>tab</code> is a builder
-without it (a 3-element compound with no single id target).
-<code>breadcrumb</code>/<code>breadcrumb_current</code> and the container <code>tabs</code>/<code>breadcrumb</code> take
+<p>Convergence is complete. The builders — <code>alert</code>, <code>badge</code>, <code>button</code>, <code>card</code>,
+<code>link</code>, <code>tab</code>, <code>table</code>, <code>text_field</code> — follow these conventions; all of them
+except <code>tab</code> implement the <code>ComponentBuilder</code> trait in <code>tiles/src/builder.rs</code>
+(<code>tab</code> is a 3-element compound with no single id target).
+<code>breadcrumb</code>/<code>breadcrumb_current</code>, the container <code>tabs</code>/<code>breadcrumb</code>, and the
+table's <code>table_head_cell</code>/<code>table_cell</code>/<code>table_cell_with_class</code> partials take
 <code>impl Render</code>. The trivial tiles (<code>icon</code>, <code>copy_button</code>, <code>loading</code>) intentionally
 remain plain functions — they have no variant or optional axes. No tile carries a
 <code>*Props</code> struct anymore. New tiles should follow this shape from the start.</p>
+<h3 id="the-one-place-a-slot-is-not-impl-render"><a class="header" href="#the-one-place-a-slot-is-not-impl-render">The one place a slot is not <code>impl Render</code></a></h3>
+<p><code>table(caption)</code> takes <code>impl Into&lt;String&gt;</code>. The caption is reused verbatim as the
+scroll region's <code>aria-label</code>, and an icon or nested markup in an accessible name
+means nothing. A slot that must survive as plain text is the exception the rule
+allows for; a slot that is only rendered is not.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;

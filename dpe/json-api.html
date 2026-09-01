@@ -255,6 +255,12 @@
 <li><strong>Response</strong>: <code>Content-Type: application/json</code>.</li>
 <li><strong>Authentication</strong>: none.</li>
 </ul>
+<p>One further endpoint serves JSON but is documented with the OAI-PMH endpoint, since it exists to expose metadata the harvested payloads do not carry:</p>
+<div class="table-wrapper"><table><thead><tr><th>Method</th><th>Path</th><th>Returns</th></tr></thead><tbody>
+<tr><td>GET</td><td><code>/dpe/records/{shortcode}/{record_id}/file</code></td><td>A record file's metadata: name, size, checksum, MIME type, dates, and the download URL</td></tr>
+</tbody></table>
+</div>
+<p>It is not under <code>/dpe/api/v2/</code> and describes a <em>record</em> rather than a project. See <a href="./oai-pmh.html#file-metadata-document">OAI-PMH → File-metadata document</a>.</p>
 <div class="table-wrapper"><table><thead><tr><th>Environment</th><th>Base URL</th></tr></thead><tbody>
 <tr><td>Local development (<code>just dev</code>)</td><td><code>http://localhost:4000</code></td></tr>
 <tr><td>DEV</td><td><code>https://api.dev.dasch.swiss</code></td></tr>

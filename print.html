@@ -2700,6 +2700,12 @@ RUST_LOG=debug
 <li><strong>Response</strong>: <code>Content-Type: application/json</code>.</li>
 <li><strong>Authentication</strong>: none.</li>
 </ul>
+<p>One further endpoint serves JSON but is documented with the OAI-PMH endpoint, since it exists to expose metadata the harvested payloads do not carry:</p>
+<div class="table-wrapper"><table><thead><tr><th>Method</th><th>Path</th><th>Returns</th></tr></thead><tbody>
+<tr><td>GET</td><td><code>/dpe/records/{shortcode}/{record_id}/file</code></td><td>A record file's metadata: name, size, checksum, MIME type, dates, and the download URL</td></tr>
+</tbody></table>
+</div>
+<p>It is not under <code>/dpe/api/v2/</code> and describes a <em>record</em> rather than a project. See <a href="dpe/./oai-pmh.html#file-metadata-document">OAI-PMH → File-metadata document</a>.</p>
 <div class="table-wrapper"><table><thead><tr><th>Environment</th><th>Base URL</th></tr></thead><tbody>
 <tr><td>Local development (<code>just dev</code>)</td><td><code>http://localhost:4000</code></td></tr>
 <tr><td>DEV</td><td><code>https://api.dev.dasch.swiss</code></td></tr>
@@ -2929,28 +2935,70 @@ RUST_LOG=debug
 <p>When no range resolves (a <code>date: null</code> row, or a name absent from both sources), the element is emitted with the <code>dateInformation</code> attribute only and an empty body, so the original label is never dropped.</p>
 <p>Resolution lives in <code>platform_metadata::temporal_coverage</code>, shared by the OAI-PMH mapping above, <code>dpe-server validate</code> (<code>just validate-data</code>), and the <code>every_committed_temporal_coverage_resolves</code> test — a distinct <code>temporalCoverage</code> name with no resolvable range fails <code>validate</code> (and CI) rather than only surfacing as a name-only DataCite date at request time.</p>
 <h3 id="record-files"><a class="header" href="#record-files">Record files</a></h3>
-<p>A bitstream Record may carry a single <code>file</code> (its MIME type and a direct download link, served by dsp-ingest). When present it is exposed in both formats:</p>
+<p>A bitstream Record carries at most one <code>file</code>, stored by dsp-ingest. In the metadata payloads the only thing it contributes is its MIME type:</p>
 <ul>
 <li>
-<p><strong><code>oai_datacite</code></strong> — the MIME type becomes a <code>format</code>, and the download link becomes a <code>relatedIdentifier</code> with <code>relatedIdentifierType="URL"</code> and <code>relationType="HasPart"</code> (alongside the existing <code>IsPartOf</code> link to the parent project):</p>
-<pre><code class="language-xml">&lt;relatedIdentifiers&gt;
-  &lt;relatedIdentifier relatedIdentifierType="URL" relationType="IsPartOf"&gt;https://ark.dasch.swiss/ark:/72163/1/0803&lt;/relatedIdentifier&gt;
-  &lt;relatedIdentifier relatedIdentifierType="URL" relationType="HasPart"&gt;https://ingest.dasch.swiss/projects/0803/assets/{assetId}/original&lt;/relatedIdentifier&gt;
-&lt;/relatedIdentifiers&gt;
-&lt;formats&gt;
+<p><strong><code>oai_datacite</code></strong> — a <code>format</code>:</p>
+<pre><code class="language-xml">&lt;formats&gt;
   &lt;format&gt;application/pdf&lt;/format&gt;
 &lt;/formats&gt;
 </code></pre>
 </li>
 <li>
-<p><strong><code>oai_dc</code></strong> — the MIME type becomes a <code>dc:format</code>, and the download link is added as a second <code>dc:identifier</code> (after the record's ARK):</p>
+<p><strong><code>oai_dc</code></strong> — a <code>dc:format</code>, alongside the record's single ARK <code>dc:identifier</code>:</p>
 <pre><code class="language-xml">&lt;dc:format&gt;application/pdf&lt;/dc:format&gt;
 &lt;dc:identifier&gt;https://ark.dasch.swiss/ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh&lt;/dc:identifier&gt;
-&lt;dc:identifier&gt;https://ingest.dasch.swiss/projects/0803/assets/{assetId}/original&lt;/dc:identifier&gt;
 </code></pre>
 </li>
 </ul>
-<p>Records without a file (e.g. project-metadata entries, or text-only records) omit all of the above.</p>
+<p>Records without a file (e.g. project-metadata entries, or text-only records) omit the format.</p>
+<p><strong>The payloads carry no link to the file.</strong> They previously published dsp-ingest's own download URL — as a second <code>dc:identifier</code> in <code>oai_dc</code> and as a <code>relationType="HasPart"</code> <code>relatedIdentifier</code> in <code>oai_datacite</code>. Both are gone: neither field fits. <code>dc:identifier</code> identifies the described resource, not a retrieval location for one of its parts, and <code>HasPart</code> relates one described resource to another, not a bitstream.</p>
+<p>DataCite's <code>&lt;sizes&gt;</code> is not emitted either, for the same reason: it describes the bitstream, not the resource. The file's byte size, and the rest of its technical metadata, come from the endpoint below.</p>
+<h4 id="file-metadata-endpoint"><a class="header" href="#file-metadata-endpoint">File-metadata endpoint</a></h4>
+<pre><code>GET /dpe/records/{shortcode}/{record_id}/file  →  200, application/json
+</code></pre>
+<p>One URL, one representation. There is no content negotiation and no <code>?format=</code> parameter: the response is the JSON document below regardless of <code>Accept</code>.</p>
+<p>DPE serves metadata only. It does not serve the file's bytes and does not redirect to them — the download URL is a <em>field</em> of the document, which a consumer reads and then fetches from dsp-ingest itself.</p>
+<p><code>404</code> covers both a record that does not exist and a record that carries no file. The two are not distinguished, and both return the standard DPE 404 page so a human following a stale link lands somewhere sensible. <code>POST</code> and friends get <code>405</code>.</p>
+<p><strong>Constructing the URL from a harvested record.</strong> The two path segments are exactly the two components of the record's OAI identifier. Strip the <code>oai:dasch.swiss:ark:/72163/1/</code> prefix and append <code>/file</code>:</p>
+<pre><code>oai:dasch.swiss:ark:/72163/1/0862/RMgW_EICR3OLcMi7LNE=Sgu
+                             └─────────┬──────────────────┘
+https://repository.dasch.swiss/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file
+</code></pre>
+<p>Record ids contain <code>=</code> (the ARK check character). It is a valid path-segment character and needs no percent-encoding, though <code>%3D</code> resolves identically. Note the <code>id</code> field (<code>http://rdfh.ch/0862/RMgW_EICR3OLcMi7LNE-Sg</code>) uses a different <code>-</code>-suffixed form and is <strong>not</strong> the routing key — only <code>pid</code> is.</p>
+<h4 id="file-metadata-document"><a class="header" href="#file-metadata-document">File-metadata document</a></h4>
+<pre><code class="language-json">{
+  "fileId": "RMgW_EICR3OLcMi7LNE=Sgu",
+  "fileName": "Screenshot 2026-08-19 at 16.40.02.png",
+  "downloadUrl": "https://ingest.dev-03.dasch.swiss/projects/0862/assets/6YAAMJfR7sz-RWPTwYppGb7/original",
+  "fileSize": 377685,
+  "checksum": "9ab438922efe5c31f0a862e10891789d6934685bb6d146afc8a3c67c54e622c9",
+  "checksumAlgorithm": "SHA-256",
+  "mimeType": "image/png",
+  "version": 1,
+  "dateCreated": "2026-08-25T10:25:33.455394630Z",
+  "dateModified": "2026-08-25T10:25:33.455394630Z"
+}
+</code></pre>
+<div class="table-wrapper"><table><thead><tr><th>Field</th><th>Notes</th></tr></thead><tbody>
+<tr><td><code>fileId</code></td><td>The <strong>record</strong> id, echoing the <code>{record_id}</code> path segment — not dsp-ingest's asset id. See below.</td></tr>
+<tr><td><code>fileName</code></td><td></td></tr>
+<tr><td><code>downloadUrl</code></td><td>The dsp-ingest URL, verbatim — where the bytes are. See below.</td></tr>
+<tr><td><code>fileSize</code></td><td>Bytes, as a JSON integer.</td></tr>
+<tr><td><code>checksum</code>, <code>checksumAlgorithm</code></td><td>Two fields, as the source has them.</td></tr>
+<tr><td><code>mimeType</code></td><td></td></tr>
+<tr><td><code>version</code></td><td><strong>Derived</strong>, always <code>1</code>. See below.</td></tr>
+<tr><td><code>dateCreated</code></td><td></td></tr>
+<tr><td><code>dateModified</code></td><td><strong>Derived</strong>, mirrors <code>dateCreated</code>. See below.</td></tr>
+</tbody></table>
+</div>
+<p>Every value is copied verbatim from the stored <code>file</code> object or synthesised. Nothing is parsed out of <code>downloadUrl</code>, so ingest's internal path shape is never matched against — a URL of an unexpected shape still yields a complete document.</p>
+<p>Values with no source are emitted as explicit <code>null</code> rather than omitted, so the shape is stable and a consumer can tell "we have no value" from "this build predates the field". Exports predating the technical-metadata fields carry only <code>mimeType</code> and <code>url</code>, so <code>fileName</code>, <code>fileSize</code>, <code>checksum</code>, <code>checksumAlgorithm</code>, <code>dateCreated</code> and <code>dateModified</code> can all be <code>null</code> today; those exports are to be regenerated.</p>
+<p><strong>On <code>downloadUrl</code>'s durability.</strong> It is a service-internal address, environment-specific (<code>ingest.dev-03…</code>, <code>ingest.stage…</code>, <code>ingest.dasch.swiss</code>) with <code>/projects/{shortcode}/assets/{assetId}/original</code> as its internal path shape, and nothing pins that host or shape. Serving it here rather than in the harvested payloads means a consumer fetches it fresh per request and gets whatever is current, instead of holding a copy cached indefinitely at harvest time — but it does not make the URL itself stable. A DPE-owned URL redirecting to ingest would decouple the two entirely; it is deliberately not built, since it would make DPE a participant in the download path. If ingest URL instability becomes a problem, that indirection can be added later and <code>downloadUrl</code> repointed at it without changing this document's shape.</p>
+<p><code>version</code> and <code>dateModified</code> are <strong>derived, not stored</strong>. Assets are immutable once ingested — the URL always ends <code>/original</code>, and there is no mechanism to replace a file in place — so every asset is its own first and only version, and its modification date is its creation date. Do not treat <code>version</code> as a revision counter or diff <code>dateModified</code> for change detection. <code>version</code> is an integer so a real version sequence can land later without a shape change, and <code>dateModified</code> follows <code>dateCreated</code> even when that is <code>null</code> (the two are always equal). The <em>record</em> also has a top-level <code>dateModified</code>; it is deliberately not used here, as it describes the record rather than the file.</p>
+<p><strong>On <code>fileId</code>.</strong> It is the record id — the same value as the <code>{record_id}</code> path segment — and <strong>not</strong> dsp-ingest's asset id. A record carries at most one file, so the record id identifies that file unambiguously. The asset id (<code>6YAAMJfR7sz-RWPTwYppGb7</code> in the example above) exists nowhere in the stored <code>file</code> object; it appears only inside <code>downloadUrl</code>, so emitting it would mean parsing ingest's internal path shape — the one coupling this document otherwise avoids everywhere. A consumer that needs the asset id can parse <code>downloadUrl</code> itself, accepting that coupling explicitly. <code>fileId</code> is never <code>null</code>: it comes from the route, not from the file object, so it is populated even for records whose <code>file</code> carries only <code>mimeType</code> and <code>url</code>.</p>
+<p>One field is <strong>absent entirely</strong>, not <code>null</code>: <strong>a relative path</strong>. Assets are flat under <code>/projects/{shortcode}/assets/</code>, so there is no directory structure for a path to describe. An always-<code>null</code> field would imply a hierarchy that does not exist. Adding it later is a backward-compatible change.</p>
+<p>The endpoint is <strong>not</strong> rate-limited: the limiter is scoped to <code>/dpe/oai</code> alone (see <em>Rate limiting</em>). It sits beside <code>/dpe/projects/{id}</code> rather than under <code>/dpe/oai</code>, which is strictly <code>?verb=</code>-dispatched per the protocol — a REST path under it would break that contract.</p>
 <h2 id="identifiers"><a class="header" href="#identifiers">Identifiers</a></h2>
 <p>OAI identifiers are derived from DaSCH <a href="https://arks.org/">ARK</a> identifiers:</p>
 <div class="table-wrapper"><table><thead><tr><th>Item type</th><th>Pattern</th><th>Example</th></tr></thead><tbody>

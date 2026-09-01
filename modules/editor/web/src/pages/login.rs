@@ -19,27 +19,16 @@
 //! The error strings are the caller's, deliberately. Whether a message may say
 //! "that address is not registered" is an anti-enumeration decision (REQ-6.2)
 //! and belongs with the handler that knows, not with the template.
+//!
+//! The banner and the two fields are Mosaic tiles. `alert` renders `role="alert"`
+//! for its `Danger` variant, so a screen reader announces the message on
+//! arrival: these pages re-render on failure, so it is present at load rather
+//! than injected.
 
 use maud::{html, Markup};
+use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::button::{button, ButtonType};
-
-/// A form-level error, above the field it is about.
-///
-/// `role="alert"` so a screen reader announces it on arrival: these pages
-/// re-render on failure, so the message is present at load rather than injected.
-fn error_banner(message: &str) -> Markup {
-    html! {
-        p   role="alert"
-            class="border border-danger-300 bg-danger-50 text-danger-800 rounded px-3 py-2 mb-4"
-        { (message) }
-    }
-}
-
-/// Shared field styling. A one-line helper rather than a Mosaic tile: text
-/// inputs are `mosaic-tiles`' next form primitive and get a proper tile with a
-/// playground showcase then, rather than being guessed at from two fields.
-const FIELD_CLASS: &str =
-    "border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500";
+use mosaic_tiles::text_field::{text_field, InputType};
 
 /// `path`, carrying `next` as a query parameter when there is one.
 ///
@@ -63,19 +52,11 @@ pub fn request_code(next: Option<&str>, error: Option<&str>) -> Markup {
                 "Enter your email address and we will send you a six-digit code. The code is valid for ten \
                  minutes and can be used once."
             }
-            @if let Some(message) = error { (error_banner(message)) }
+            @if let Some(message) = error {
+                (alert(message).variant(AlertVariant::Danger).class("mb-4"))
+            }
             form method="post" action=(with_next("/login", next)) class="flex flex-col gap-4" {
-                div class="flex flex-col gap-1" {
-                    label for="email" class="font-bold" { "Email address" }
-                    input
-                        id="email"
-                        name="email"
-                        type="email"
-                        autocomplete="email"
-                        autofocus
-                        required
-                        class=(FIELD_CLASS);
-                }
+                (email_field())
                 div { (button("Send me a code").button_type(ButtonType::Submit)) }
             }
         }
@@ -91,15 +72,42 @@ pub fn request_code(next: Option<&str>, error: Option<&str>) -> Markup {
 /// ordinary, and it names the reason so nobody has to guess whether the
 /// deployment is misconfigured or deliberately throwaway.
 fn revealed_code(code: &str) -> Markup {
-    html! {
-        div class="border border-warning-300 bg-warning-50 rounded px-3 py-2 mb-4" {
-            p class="font-bold" { "Development deployment — no mail was sent" }
-            p class="mt-1" {
-                "This service has no mail relay and no database that outlives it, so your code is shown here \
-                 instead of being emailed:"
-            }
-            p class="font-mono text-2xl tracking-widest mt-2" { (code) }
+    let body = html! {
+        p class="mt-1" {
+            "This service has no mail relay and no database that outlives it, so your code is shown here instead \
+             of being emailed:"
         }
+        p class="font-mono text-2xl tracking-widest mt-2" { (code) }
+    };
+    html! {
+        ({
+            alert(body)
+                .variant(AlertVariant::Warning)
+                .title("Development deployment — no mail was sent")
+                .class("mb-4")
+        })
+    }
+}
+
+/// The address field, named so the form body reads as a list of fields rather
+/// than a wall of builder calls.
+fn email_field() -> Markup {
+    html! {
+        ({
+            text_field("email", "Email address")
+                .input_type(InputType::Email)
+                .autocomplete("email")
+                .autofocus()
+                .required()
+        })
+    }
+}
+
+/// The six-digit code field. `one_time_code` is what makes a phone offer the
+/// code from the message it arrived in.
+fn code_field() -> Markup {
+    html! {
+        (text_field("code", "Six-digit code").one_time_code(6).autofocus().required())
     }
 }
 
@@ -110,10 +118,9 @@ fn revealed_code(code: &str) -> Markup {
 /// endpoint. Retyping it costs a legitimate user a few seconds and keeps the
 /// address off the page.
 ///
-/// The field carries `autocomplete="one-time-code"`, the token for an
-/// out-of-band code, which is what lets a browser or phone keyboard offer the
-/// code directly. It is documented here rather than beside the attribute because
-/// `maudfmt` strips comments from inside an `html!` attribute list.
+/// The field is `text_field(...).one_time_code(6)`, which sets
+/// `autocomplete="one-time-code"`, `inputmode="numeric"`, the pattern and the
+/// length together — see the tile for why those four only work as a set.
 pub fn enter_code(next: Option<&str>, error: Option<&str>, revealed: Option<&str>) -> Markup {
     html! {
         div class="max-w-md mx-auto py-12" {
@@ -122,23 +129,12 @@ pub fn enter_code(next: Option<&str>, error: Option<&str>, revealed: Option<&str
                 "If the address you gave belongs to an account, a six-digit code is on its way to it. Enter the \
                  code below."
             }
-            @if let Some(message) = error { (error_banner(message)) }
+            @if let Some(message) = error {
+                (alert(message).variant(AlertVariant::Danger).class("mb-4"))
+            }
             @if let Some(code) = revealed { (revealed_code(code)) }
             form method="post" action=(with_next("/login/code", next)) class="flex flex-col gap-4" {
-                div class="flex flex-col gap-1" {
-                    label for="code" class="font-bold" { "Six-digit code" }
-                    input
-                        id="code"
-                        name="code"
-                        type="text"
-                        inputmode="numeric"
-                        pattern="[0-9]{6}"
-                        maxlength="6"
-                        autocomplete="one-time-code"
-                        autofocus
-                        required
-                        class=(FIELD_CLASS);
-                }
+                (code_field())
                 div { (button("Sign in").button_type(ButtonType::Submit)) }
             }
             p class="text-gray-600 mt-6" {
@@ -211,7 +207,7 @@ mod tests {
         // matters.
         let out = enter_code(None, None, None).into_string();
         assert!(!out.contains("no mail was sent"), "{out}");
-        assert!(!out.contains("bg-warning-50"), "{out}");
+        assert!(!out.contains("alert-warning"), "{out}");
     }
 
     #[test]
@@ -221,7 +217,7 @@ mod tests {
         let out = enter_code(None, None, Some("482917")).into_string();
         assert!(out.contains("482917"), "{out}");
         assert!(out.contains("no mail relay"), "{out}");
-        assert!(out.contains("bg-warning-50"), "{out}");
+        assert!(out.contains("alert-warning"), "{out}");
     }
 
     #[test]

@@ -1,3 +1,4 @@
+pub mod alert;
 pub mod badge;
 pub mod breadcrumb;
 pub mod button;

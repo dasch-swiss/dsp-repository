@@ -4,6 +4,7 @@
 //! `data-example-key="{component}-{example}"` — a stable anchor that lets
 //! tests and visual tooling address each rendered example in isolation.
 
+pub mod alert;
 pub mod badge;
 pub mod breadcrumb;
 pub mod button;
@@ -62,6 +63,7 @@ mod tests {
     #[test]
     fn pages_render_with_example_keys() {
         let pages: &[(&str, String)] = &[
+            ("Alert", alert::page().into_string()),
             ("Badge", badge::page().into_string()),
             ("Breadcrumb", breadcrumb::page().into_string()),
             ("Button", button::page().into_string()),

@@ -11,6 +11,7 @@
  * and must be imported first by the consumer, ahead of this barrel.
  */
 
+@import './alert/alert.css';
 @import './button/button.css';
 @import './card/card.css';
 @import './badge/badge.css';

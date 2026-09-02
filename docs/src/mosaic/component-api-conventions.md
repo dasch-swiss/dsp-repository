@@ -153,6 +153,17 @@ is only about *inline `html!` blocks* — a builder or a pre-bound variable pass
 into an `impl Render` slot needs no such care. See also the formatting note in
 `CONVENTIONS.md`.
 
+## Where a tile's files live
+
+One directory per tile under `tiles/src/components/`, holding `mod.rs` and the tile's own `.css`. The form tiles are grouped one level deeper, in `components/form/`, because they share the `field-*` shell — the label, border, hint and error treatment in `form/text_field/text_field.css` — and a reader looking for "how does a field look" should have one place to go.
+
+That grouping is a **directory**, not a public path. `components/mod.rs` does `mod form; pub use form::*;`, so the import path is `mosaic_tiles::text_field::text_field` whether or not the tile sits in a subdirectory, and moving a tile into or out of the group is not a breaking change. Two consequences worth stating, because both are the reason the grouping was affordable at all:
+
+- The public API stays flat for **every** tile, so the form tiles having a directory is not an inconsistency the other tiles are now obliged to follow. Group a family when it shares something concrete; leave the rest flat.
+- Nothing outside `components/` may name `form::`. A `use crate::components::form::text_field` would reintroduce the path dependency the re-export exists to prevent.
+
+The CSS barrel (`components/components.css`) imports by real path, so a grouped tile's stylesheet is `@import './form/<tile>/<tile>.css'`. Every consuming Tailwind entry globs `tiles/src/**/*.rs` recursively, so nesting does not need a new `@source` entry — but a glob that was ever narrowed to one level would silently drop a grouped tile's classes with no build error.
+
 ## CSS classes
 
 - Variant enums expose `css_class(self) -> &'static str` returning **complete

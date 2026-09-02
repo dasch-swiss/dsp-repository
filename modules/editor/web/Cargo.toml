@@ -15,3 +15,9 @@ maud.workspace = true
 # which is what earns the dependency. The Tailwind entry already scanned the
 # crate before this, so its component CSS shipped regardless.
 mosaic-tiles = { path = "../../mosaic/tiles" }
+
+[dev-dependencies]
+# The registry's completeness test reads the contract's field list off a real
+# committed project, so a field added to `ProjectRaw` has to be placed or
+# explicitly omitted.
+serde_json.workspace = true

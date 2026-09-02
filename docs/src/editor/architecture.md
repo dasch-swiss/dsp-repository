@@ -82,6 +82,29 @@ Three properties of the committed corpus decide the shape, each measured over al
 
 `get` returning `None` does **not** mean the project does not exist. REQ-2.3 allows a project that exists only locally, whose form opens blank and whose REQ-1.1 pre-fill is empty, so a 404 needs the draft and submission records too — which is why `/projects/{shortcode}` answers 200 for an unpublished shortcode.
 
+### The form
+
+`editor_core::form` reads a posted body back into a draft; `editor_web::form::registry` says what the form knows about each field. The split is deliberate: the decoder knows *shapes* (a scalar, a language map, a list of strings, rows of language maps) and has no idea which field is which, so choosing a shape per field belongs with the registry, keyed by the same field ids as the renderers. A field's control and its decoder are then declared together and cannot drift, and the audience check — which fields a depositor may write at all — has one home rather than one in the view and one in the handler.
+
+The body is read as `Form<Vec<(String, String)>>`, not as a struct. `axum::Form` deserializes with `serde_urlencoded` 0.7 (via axum 0.8), which **errors** on a repeated key rather than collecting it into a `Vec`, and cannot deserialize a struct containing a `Vec` at all — so a checkbox group and a repeatable list's row keys have no struct representation. The pair list gives body order with duplicates intact, which is what opaque row keys plus DOM order need, and adds no second urlencoded parser. `serde_html_form` (which does decode repeated keys) is not in this tree; the plan assumed it was.
+
+Three rules make an untouched save a no-op, all three found by `editor-core/tests/untouched_form_round_trip.rs` rather than by reasoning:
+
+- A stored `MISSING`/`CALCULATED` placeholder survives an empty submit. Those sentinels are filtered out of DPE's UI and of OAI-PMH's output, so a control holding one renders empty and an untouched form posts empty for it. 131 across the 85 files, 24 of them `endDate`.
+- A value differing from the stored one only in surrounding whitespace is left alone; a genuinely new value is stored trimmed.
+- Newlines are normalised to `\n` — a native submit posts CRLF where `FormData` posts LF, so the no-JS and enhanced paths would otherwise write different bytes for the same value in 26 of the 85 files. Normalisation applies to **both sides of the comparison but only to a value being stored**, because 10 committed abstracts hold a bare `\r` that a `<textarea>` converts to `\n` before any submit.
+
+> [!NOTE]
+> **Open: where a field's *shape* is declared.** The decoder knows shapes but not fields, and the registry knows fields but not shapes — so nothing yet says which applier a given field uses. The only per-field mapping that exists is the table in `untouched_form_round_trip.rs`, which covers 9 of ~30 fields and is a test's opinion rather than the product's. `Obligation` is not that mapping and cannot become it: it is a UI encouragement tier, on a different axis from the contract's `String`-versus-`Option` shape (`officialName` is `Recommended` yet needs the placeholder treatment). Add the shape to `registry::Field` alongside the first handler that calls an applier, and derive the test's table from it rather than duplicating it a third time in the handler layer.
+>
+> The same applies to **where a field's empty state is declared.** `WhenCleared` tells the decoder whether clearing a field drops the member or writes the `MISSING` placeholder, and it is currently passed per call. That is a second writer waiting to happen: the registry already says whether a field is required, and a handler that disagrees with it — `Drop` on a field the contract types as a required `String` — makes every ongoing project unpublishable until an end date it does not have is entered, with no test failing. It belongs on `registry::Field`, so the registry is the single place a field's shape is declared, and the form-dispatch work is where to put it. Until then the only declaration of it is the table in `untouched_form_round_trip.rs`, which is a test's opinion rather than the product's.
+
+> [!NOTE]
+> **Open: a depositor who types the word `MISSING`.** The placeholder sentinels are recognised by an exact string match and a submitted value is stored verbatim, so typing `MISSING` into a text field stores something the rest of the platform reads as "no value": it is filtered out of DPE and of OAI-PMH, and because a recognised placeholder renders as an empty control, the next empty submit leaves it alone rather than clearing it. The field is then only editable by typing some other value first. Rare, and harmless to the file, but a dead end for whoever hits it. The fix is a submission-time check refusing a literal sentinel with a field-level error, which belongs with the rest of submit validation.
+
+> [!NOTE]
+> **Open: no per-field cap on a posted body.** The decoders are linear in the number of pairs, but nothing bounds that number except Axum's 2 MB body limit — roughly 100,000 short pairs under one field name. A cap on rows per field and values per group is the other half of that, and its value depends on what the built form actually renders, so it belongs with the routes.
+
 ### Canonical form
 
 `editor_core::canonical::write_project` is the single decision about what a `projects/*.json` file looks like: members in `ProjectRaw`'s declaration order at every depth, `null` members dropped recursively, language keys alphabetical, four-space indent, a trailing newline, non-ASCII unescaped. An approved submission is then byte-comparable with what is committed, so a review diff shows only what the depositor changed.

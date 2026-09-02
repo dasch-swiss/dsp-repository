@@ -216,14 +216,26 @@ to a builder.
 ## Status
 
 Convergence is complete. The builders — `alert`, `badge`, `button`, `card`,
-`link`, `tab`, `table`, `text_field` — follow these conventions; all of them
-except `tab` implement the `ComponentBuilder` trait in `tiles/src/builder.rs`
-(`tab` is a 3-element compound with no single id target).
+`link`, `tab`, `table`, and the form tiles `text_field`, `textarea`, `select`,
+`checkbox_group`, `radio_group` and `repeatable_list` — follow these conventions;
+all of them except `tab` implement the `ComponentBuilder` trait in
+`tiles/src/builder.rs` (`tab` is a 3-element compound with no single id target).
 `breadcrumb`/`breadcrumb_current`, the container `tabs`/`breadcrumb`, and the
 table's `table_head_cell`/`table_cell`/`table_cell_with_class` partials take
 `impl Render`. The trivial tiles (`icon`, `copy_button`, `loading`) intentionally
 remain plain functions — they have no variant or optional axes. No tile carries a
 `*Props` struct anymore. New tiles should follow this shape from the start.
+
+Two of the form tiles take a **required** argument the others do not, and both
+are constructor arguments rather than builder options because the tile is wrong
+without them: `repeatable_list(name, legend, rows_action)` needs somewhere to
+post an add or a remove — a list with no way to change it is a list, not this
+tile — and every grouped field needs its `legend`, which is its accessible name.
+
+The form tiles also share two private helpers under `components/form/`, neither
+of which is a tile: `shell.rs` (the label/hint/error wrapper and its derived
+ids) and `choice.rs` (what a checkbox group and a radio group have in common).
+Nothing outside `components/form/` may name them.
 
 ### The one place a slot is not `impl Render`
 

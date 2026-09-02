@@ -17,11 +17,17 @@
 //! case where one page renders the same field name twice.
 //!
 //! The `field-*` classes are deliberately not `text-field-*`: a textarea and a
-//! select want the same label, border and hint treatment, and will share this
-//! shell when a screen needs them.
+//! select want the same label, border, hint and error treatment, and share this
+//! shell.
+//!
+//! The label, hint and error around the input are
+//! [`FieldShell`](super::shell::FieldShell), shared by every form tile — see its
+//! module docs for why the error region is rendered even when the field is
+//! valid.
 
 use maud::{html, Markup, Render};
 
+use super::shell::FieldShell;
 use crate::builder::ComponentBuilder;
 
 /// The `type` attribute values this tile renders. Arms are added when a screen
@@ -31,6 +37,18 @@ pub enum InputType {
     #[default]
     Text,
     Email,
+    /// A calendar date, `YYYY-MM-DD`. Gives the native picker, and on a phone
+    /// the platform's own.
+    ///
+    /// Two things it cannot hold, both deliberate: a date of lesser precision
+    /// (`2019`, `2019-07`) and a string that is not a date at all. Either
+    /// renders as an **empty** control rather than as itself, so a field whose
+    /// stored value is one of those has to be handled before it reaches here —
+    /// see the caller's field registry. In this repo's project corpus every
+    /// committed `startDate` and `endDate` is either a full `YYYY-MM-DD` or the
+    /// `MISSING` placeholder, which is a field's empty state anyway, so no
+    /// committed value is lost by the choice.
+    Date,
 }
 
 impl InputType {
@@ -39,6 +57,7 @@ impl InputType {
         match self {
             InputType::Text => "text",
             InputType::Email => "email",
+            InputType::Date => "date",
         }
     }
 }
@@ -51,6 +70,7 @@ pub struct TextFieldBuilder {
     input_type: InputType,
     value: Option<String>,
     hint: Option<Markup>,
+    error: Option<Markup>,
     autocomplete: Option<String>,
     inputmode: Option<&'static str>,
     pattern: Option<String>,
@@ -72,6 +92,7 @@ pub fn text_field(name: impl Into<String>, label: impl Render) -> TextFieldBuild
         input_type: InputType::default(),
         value: None,
         hint: None,
+        error: None,
         autocomplete: None,
         inputmode: None,
         pattern: None,
@@ -99,6 +120,19 @@ impl TextFieldBuilder {
     /// Add help text below the input, announced with it via `aria-describedby`.
     pub fn hint(mut self, hint: impl Render) -> Self {
         self.hint = Some(hint.render());
+        self
+    }
+
+    /// Mark the field invalid and say why.
+    ///
+    /// One method rather than a separate `.invalid()` flag and `.message()`,
+    /// because the two only make sense together: `aria-invalid` with no
+    /// description tells a screen reader something is wrong and not what, and a
+    /// message with no `aria-invalid` leaves the field announcing as valid. The
+    /// message also lands in the field's `aria-describedby`, so it is read out
+    /// with the input rather than only being visible.
+    pub fn error(mut self, message: impl Render) -> Self {
+        self.error = Some(message.render());
         self
     }
 
@@ -141,6 +175,25 @@ impl TextFieldBuilder {
         self
     }
 
+    /// Configure the field as a four-digit year.
+    ///
+    /// One intent method rather than three knobs, on the `one_time_code`
+    /// precedent: `inputmode="numeric"` raises a number keypad, the pattern
+    /// refuses a wrong-length entry before it is posted, and `maxlength` stops
+    /// one being typed. Setting two of the three is a field that looks right
+    /// and validates nothing.
+    ///
+    /// Deliberately not `type="number"`: a spinner on a year is a control that
+    /// changes the value on a stray scroll-wheel or arrow key while the field
+    /// has focus, and its thousands separator and step semantics are wrong for
+    /// a year in several locales.
+    pub fn year(mut self) -> Self {
+        self.inputmode = Some("numeric");
+        self.pattern = Some("[0-9]{4}".to_string());
+        self.maxlength = Some(4);
+        self
+    }
+
     /// The id the label and hint point at: the explicit one if set, else the name.
     fn resolved_id(&self) -> &str {
         self.id.as_deref().unwrap_or(&self.name)
@@ -148,29 +201,31 @@ impl TextFieldBuilder {
 
     fn markup(&self) -> Markup {
         let id = self.resolved_id();
-        let hint_id = self.hint.as_ref().map(|_| format!("{id}-hint"));
-        html! {
-            div class="field" {
-                label class="field-label" for=(id) { (self.label) }
-                input
-                    class="field-input"
-                    id=(id)
-                    name=(self.name)
-                    type=(self.input_type.as_str())
-                    value=[self.value.as_deref()]
-                    autocomplete=[self.autocomplete.as_deref()]
-                    inputmode=[self.inputmode]
-                    pattern=[self.pattern.as_deref()]
-                    maxlength=[self.maxlength]
-                    aria-describedby=[hint_id.as_deref()]
-                    data-testid=[self.test_id.as_deref()]
-                    required[self.required]
-                    autofocus[self.autofocus];
-                @if let Some(hint) = &self.hint {
-                    p class="field-hint" id=[hint_id.as_deref()] { (hint) }
-                }
-            }
-        }
+        let shell = FieldShell {
+            id,
+            label: &self.label,
+            hint: self.hint.as_ref(),
+            error: self.error.as_ref(),
+        };
+        let described_by = shell.described_by();
+        let control = html! {
+            input
+                class="field-input"
+                id=(id)
+                name=(self.name)
+                type=(self.input_type.as_str())
+                value=[self.value.as_deref()]
+                autocomplete=[self.autocomplete.as_deref()]
+                inputmode=[self.inputmode]
+                pattern=[self.pattern.as_deref()]
+                maxlength=[self.maxlength]
+                aria-describedby=[described_by.as_deref()]
+                aria-invalid=[shell.aria_invalid()]
+                data-testid=[self.test_id.as_deref()]
+                required[self.required]
+                autofocus[self.autofocus];
+        };
+        shell.render(control)
     }
 }
 
@@ -202,6 +257,7 @@ mod tests {
     fn input_type_mapping() {
         assert_eq!(InputType::Text.as_str(), "text");
         assert_eq!(InputType::Email.as_str(), "email");
+        assert_eq!(InputType::Date.as_str(), "date");
     }
 
     #[test]
@@ -260,6 +316,104 @@ mod tests {
         assert!(out.contains(r#"inputmode="numeric""#), "{out}");
         assert!(out.contains(r#"pattern="[0-9]{6}""#), "{out}");
         assert!(out.contains(r#"maxlength="6""#), "{out}");
+    }
+
+    #[test]
+    fn an_error_marks_the_input_invalid_and_describes_it_by_the_message() {
+        // Either half alone is a defect: `aria-invalid` with no description says
+        // something is wrong and not what; a message with no `aria-invalid`
+        // leaves the field announcing as valid.
+        let out = text_field("shortcodes", "Project shortcodes")
+            .error("\"nope!\" is not a project shortcode.")
+            .build()
+            .into_string();
+        assert!(out.contains(r#"aria-invalid="true""#), "{out}");
+        assert!(out.contains(r#"aria-describedby="shortcodes-error""#), "{out}");
+        assert!(out.contains(r#"id="shortcodes-error""#), "{out}");
+        assert!(out.contains("is not a project shortcode."), "{out}");
+    }
+
+    #[test]
+    fn a_hint_and_an_error_are_both_announced_with_the_input() {
+        // A rejected field keeps its hint — the reader needs the rule as well as
+        // the complaint — so the description has to name both regions.
+        let out = text_field("shortcodes", "Project shortcodes")
+            .hint("Separated by commas.")
+            .error("\"nope!\" is not a project shortcode.")
+            .build()
+            .into_string();
+        assert!(out.contains(r#"aria-describedby="shortcodes-hint shortcodes-error""#), "{out}");
+    }
+
+    #[test]
+    fn the_error_region_is_rendered_empty_when_valid_so_a_live_update_announces() {
+        // The editor re-renders the whole form on a rejected submit and Datastar
+        // morphs it in. An `aria-live` region inserted together with its text is
+        // widely reported not to announce, so the region has to pre-exist.
+        let out = text_field("name", "Name").build().into_string();
+        assert!(
+            out.contains(r#"<p class="field-error" id="name-error" aria-live="polite"></p>"#),
+            "{out}"
+        );
+        // Empty, so nothing describes the field and nothing claims it is invalid.
+        assert!(!out.contains("aria-describedby"), "{out}");
+        assert!(!out.contains("aria-invalid"), "{out}");
+    }
+
+    #[test]
+    fn an_explicit_id_moves_the_error_region_with_the_label_and_hint() {
+        // Two forms on one page share a field name; a duplicate id would point
+        // one field's description at the other field's error.
+        let out = text_field("email", "Email address")
+            .with_id("invite-email")
+            .error("Enter a valid email address.")
+            .build()
+            .into_string();
+        assert!(out.contains(r#"id="invite-email-error""#), "{out}");
+        assert!(out.contains(r#"aria-describedby="invite-email-error""#), "{out}");
+    }
+
+    #[test]
+    fn an_error_message_accepts_markup() {
+        let message = html! {
+            "See the "
+            a href="/help" { "shortcode rules" }
+            "."
+        };
+        let out = text_field("shortcodes", "Codes").error(message).build().into_string();
+        assert!(out.contains(r#"<a href="/help">shortcode rules</a>"#), "{out}");
+    }
+
+    #[test]
+    fn a_date_field_renders_the_native_date_control() {
+        let out = text_field("startDate", "Start date")
+            .input_type(InputType::Date)
+            .value("2016-08-01")
+            .build()
+            .into_string();
+        assert!(out.contains(r#"type="date""#), "{out}");
+        assert!(out.contains(r#"value="2016-08-01""#), "{out}");
+    }
+
+    #[test]
+    fn year_sets_all_three_attributes_together() {
+        // Two of the three is a field that looks right and validates nothing.
+        let out = text_field("dataPublicationYear", "Data publication year")
+            .year()
+            .build()
+            .into_string();
+        assert!(out.contains(r#"inputmode="numeric""#), "{out}");
+        assert!(out.contains(r#"pattern="[0-9]{4}""#), "{out}");
+        assert!(out.contains(r#"maxlength="4""#), "{out}");
+    }
+
+    #[test]
+    fn a_year_is_a_text_field_not_a_number_spinner() {
+        // A spinner changes the value on a stray scroll or arrow key while the
+        // field has focus.
+        let out = text_field("dataPublicationYear", "Year").year().build().into_string();
+        assert!(out.contains(r#"type="text""#), "{out}");
+        assert!(!out.contains(r#"type="number""#), "{out}");
     }
 
     #[test]

@@ -1,0 +1,16 @@
+@layer components {
+  /*
+   * The box is `field-input`, shared with the text field and textarea. What a
+   * `<select>` needs on top is a background of its own: `field-input` sets none,
+   * and a select rendered on a tinted surface would otherwise show the surface
+   * through the control, which reads as disabled.
+   *
+   * The native disclosure arrow is kept. Replacing it means `appearance: none`
+   * plus a background image, and the native control is the one that renders
+   * correctly in forced-colors mode and on a phone, where the picker is the
+   * platform's own.
+   */
+  .field-select {
+    @apply max-w-full bg-white;
+  }
+}

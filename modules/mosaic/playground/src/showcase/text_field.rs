@@ -52,10 +52,30 @@ fn examples() -> Markup {
         })
         ({
             example(
+                "text_field-dates_and_years",
+                "Dates and years",
+                "`InputType::Date` is the native date control — it holds a full `YYYY-MM-DD` and renders empty \
+                 for anything else, so a lesser precision or a placeholder value has to be handled before it \
+                 gets here. `year` bundles the three attributes a four-digit year needs; it is deliberately \
+                 not `type=\"number\"`, whose spinner changes the value on a stray scroll.",
+                dates_and_years(),
+            )
+        })
+        ({
+            example(
                 "text_field-prefilled",
                 "Holding a rejected entry",
                 "A rejected form comes back showing what was typed, including the part that was wrong.",
                 prefilled(),
+            )
+        })
+        ({
+            example(
+                "text_field-error",
+                "Rejected, with the reason",
+                "`error` sets `aria-invalid` and the description together, and the message keeps the hint \
+                 rather than replacing it — the reader needs the rule as well as the complaint.",
+                error_state(),
             )
         })
         ({
@@ -123,10 +143,58 @@ fn one_time_code() -> Markup {
     })
 }
 
+fn dates_and_years() -> Markup {
+    let fields = html! {
+        ({
+            text_field("startDate", "Start date")
+                .input_type(InputType::Date)
+                .value("2016-08-01")
+                .required()
+        })
+        ({
+            text_field("endDate", "End date")
+                .input_type(InputType::Date)
+                .hint("Leave empty while the project is ongoing.")
+        })
+        ({
+            text_field("dataPublicationYear", "Data publication year")
+                .year()
+                .value("2026")
+                .hint("Four digits.")
+        })
+    };
+    form_column(fields)
+}
+
 fn prefilled() -> Markup {
     let fields = html! {
         (text_field("depositor_name", "Name").value("A Depositor").required())
         (text_field("codes", "Project shortcodes").value("0801, nope!"))
+    };
+    form_column(fields)
+}
+
+fn error_state() -> Markup {
+    let fields = html! {
+        ({
+            text_field("codes", "Project shortcodes")
+                .value("0801, nope!")
+                .hint("Separated by commas.")
+                .error(
+                    r#""nope!" is not a project shortcode. Shortcodes are letters and digits only."#,
+                )
+        })
+        ({
+            text_field("contact", "Email address")
+                .input_type(InputType::Email)
+                .error("Enter a valid email address.")
+                .required()
+        })
+        ({
+            text_field("valid", "Name")
+                .value("A Depositor")
+                .hint("Nothing wrong with this one.")
+        })
     };
     form_column(fields)
 }

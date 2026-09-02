@@ -1,0 +1,16 @@
+@layer components {
+  /*
+   * The box only: the label, border, hint and error come from the `field-*`
+   * classes in `../text_field/text_field.css`, which a textarea shares with a
+   * single-line input so a multi-line field is the same control with a
+   * different shape rather than a second look.
+   *
+   * `resize-y` rather than the browser default `resize: both`: horizontal
+   * dragging can push a textarea past its container, and nothing puts it back.
+   * `field-sizing-content` is deliberately not used — it grows the control as
+   * the text does, which moves everything below it while someone is typing.
+   */
+  .field-textarea {
+    @apply resize-y leading-relaxed;
+  }
+}

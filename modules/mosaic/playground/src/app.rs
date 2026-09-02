@@ -20,13 +20,18 @@ const COMPONENT_NAV: &[(&str, &str)] = &[
     ("/breadcrumb", "Breadcrumb"),
     ("/button", "Button"),
     ("/card", "Card"),
+    ("/checkbox-group", "Checkbox Group"),
     ("/copy-button", "Copy Button"),
     ("/icon", "Icon"),
     ("/link", "Link"),
     ("/loading", "Loading"),
+    ("/radio-group", "Radio Group"),
+    ("/repeatable-list", "Repeatable List"),
+    ("/select", "Select"),
     ("/table", "Table"),
     ("/tabs", "Tabs"),
     ("/text-field", "Text Field"),
+    ("/textarea", "Textarea"),
 ];
 
 /// Build the Axum router. Static assets (logos, the compiled stylesheet) are
@@ -50,6 +55,10 @@ pub fn router(public_dir: PathBuf) -> Router {
         )
         .route("/card", get(|| async { render("/card", "Card", showcase::card::page()) }))
         .route(
+            "/checkbox-group",
+            get(|| async { render("/checkbox-group", "Checkbox Group", showcase::checkbox_group::page()) }),
+        )
+        .route(
             "/copy-button",
             get(|| async { render("/copy-button", "Copy Button", showcase::copy_button::page()) }),
         )
@@ -59,11 +68,27 @@ pub fn router(public_dir: PathBuf) -> Router {
             "/loading",
             get(|| async { render("/loading", "Loading", showcase::loading::page()) }),
         )
+        .route(
+            "/radio-group",
+            get(|| async { render("/radio-group", "Radio Group", showcase::radio_group::page()) }),
+        )
+        .route(
+            "/repeatable-list",
+            get(|| async { render("/repeatable-list", "Repeatable List", showcase::repeatable_list::page()) }),
+        )
+        .route(
+            "/select",
+            get(|| async { render("/select", "Select", showcase::select::page()) }),
+        )
         .route("/table", get(|| async { render("/table", "Table", showcase::table::page()) }))
         .route("/tabs", get(|| async { render("/tabs", "Tabs", showcase::tabs::page()) }))
         .route(
             "/text-field",
             get(|| async { render("/text-field", "Text Field", showcase::text_field::page()) }),
+        )
+        .route(
+            "/textarea",
+            get(|| async { render("/textarea", "Textarea", showcase::textarea::page()) }),
         )
         .fallback_service(ServeDir::new(public_dir))
 }

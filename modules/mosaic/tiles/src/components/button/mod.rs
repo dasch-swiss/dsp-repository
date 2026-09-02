@@ -62,6 +62,8 @@ pub struct ButtonBuilder {
     label: Markup,
     variant: ButtonVariant,
     button_type: ButtonType,
+    form_action: Option<String>,
+    aria_label: Option<String>,
     disabled: bool,
     extra_classes: String,
     id: Option<String>,
@@ -75,6 +77,8 @@ pub fn button(label: impl Render) -> ButtonBuilder {
         label: label.render(),
         variant: ButtonVariant::default(),
         button_type: ButtonType::default(),
+        form_action: None,
+        aria_label: None,
         disabled: false,
         extra_classes: String::new(),
         id: None,
@@ -92,6 +96,35 @@ impl ButtonBuilder {
     /// Set the HTML `type` attribute (default `Button`).
     pub fn button_type(mut self, button_type: ButtonType) -> Self {
         self.button_type = button_type;
+        self
+    }
+
+    /// Submit the enclosing form to `url` instead of the form's own action.
+    ///
+    /// The mechanism behind a form with more than one thing to do — an "add a
+    /// row" beside a "save" — without either of them losing what is typed: the
+    /// whole form body is still posted, only the destination differs.
+    ///
+    /// Implies [`ButtonType::Submit`] and `formmethod="post"`. The method is set
+    /// rather than inherited on purpose: a `formaction` button in a `GET` form
+    /// would send a mutating request as a `GET`, which is the one thing the
+    /// same-origin CSRF control cannot cover, and inheriting would make that
+    /// depend on a form the tile cannot see.
+    pub fn form_action(mut self, url: impl Into<String>) -> Self {
+        self.form_action = Some(url.into());
+        self.button_type = ButtonType::Submit;
+        self
+    }
+
+    /// Give the button an accessible name other than its visible label.
+    ///
+    /// For a control whose visible text is only meaningful in context — several
+    /// "Remove" buttons in a list, where "Remove, button" five times says
+    /// nothing about what each removes. WCAG 2.5.3 requires the accessible name
+    /// to contain the visible label, so extend the label rather than replacing
+    /// it: "Remove keyword 2", not "Delete the second keyword".
+    pub fn aria_label(mut self, label: impl Into<String>) -> Self {
+        self.aria_label = Some(label.into());
         self
     }
 
@@ -117,6 +150,9 @@ impl ButtonBuilder {
             button
                 class=(class)
                 type=(self.button_type.as_str())
+                formaction=[self.form_action.as_deref()]
+                formmethod=[self.form_action.as_ref().map(|_| "post")]
+                aria-label=[self.aria_label.as_deref()]
                 id=[self.id.as_deref()]
                 data-testid=[self.test_id.as_deref()]
                 disabled[self.disabled]
@@ -148,6 +184,38 @@ impl Render for ButtonBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn form_action_implies_a_submit_button_posting_to_that_url() {
+        // A `formaction` button in a GET form would send a mutating request as
+        // a GET, which the same-origin CSRF control cannot cover.
+        let out = button("Add a keyword")
+            .form_action("/projects/0801/sections/dataset/rows/keywords/add")
+            .build()
+            .into_string();
+        assert!(out.contains(r#"type="submit""#), "{out}");
+        assert!(
+            out.contains(r#"formaction="/projects/0801/sections/dataset/rows/keywords/add""#),
+            "{out}"
+        );
+        assert!(out.contains(r#"formmethod="post""#), "{out}");
+    }
+
+    #[test]
+    fn a_button_without_a_form_action_carries_neither_attribute() {
+        let out = button("Save").build().into_string();
+        assert!(out.contains("<button"), "{out}");
+        assert!(!out.contains("formaction"), "{out}");
+        assert!(!out.contains("formmethod"), "{out}");
+    }
+
+    #[test]
+    fn an_aria_label_names_a_control_whose_visible_text_needs_context() {
+        let out = button("Remove").aria_label("Remove keyword 2").build().into_string();
+        assert!(out.contains(r#"aria-label="Remove keyword 2""#), "{out}");
+        // WCAG 2.5.3: the accessible name has to contain the visible label.
+        assert!(out.contains(">Remove</button>"), "{out}");
+    }
 
     #[test]
     fn variant_class_mapping_is_complete_and_literal() {

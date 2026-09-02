@@ -13,4 +13,12 @@
 //! every input here renders. A reader looking for "how does a field look" has
 //! one place to go.
 
+mod choice;
+mod shell;
+
+pub mod checkbox_group;
+pub mod radio_group;
+pub mod repeatable_list;
+pub mod select;
 pub mod text_field;
+pub mod textarea;

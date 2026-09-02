@@ -771,6 +771,7 @@ dependencies = [
  "editor-core",
  "maud",
  "mosaic-tiles",
+ "serde_json",
 ]
 
 [[package]]

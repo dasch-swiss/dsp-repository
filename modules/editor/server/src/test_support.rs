@@ -4,7 +4,7 @@
 //! written once rather than per test module, and so the fakes are as visible as
 //! the code they stand in for.
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -12,6 +12,7 @@ use axum::body::Body;
 use axum::http::header::{COOKIE, SET_COOKIE};
 use axum::http::{Request, Response};
 use chrono::{DateTime, Utc};
+use editor_core::published::PublishedProjects;
 use editor_core::records::{ApprovedRecord, DraftRecord, LoginCode, Session, Submission, User};
 use editor_core::repository::{
     ApprovedRecordRepository, Attempt, DraftRepository, Issued, LoginCodeRepository, MailSendRepository, Repositories,
@@ -142,7 +143,30 @@ pub(crate) fn state_over(
         // Off by default: the reveal is the exception, so a test that wants it
         // has to say so, and every other test proves the ordinary path.
         reveal_login_code: false,
+        // The real committed corpus, not a fixture. Every project page renders
+        // from it, and a fixture of two invented projects would let a change
+        // that only works for invented data pass — the 85 real ones carry the
+        // mixed-case shortcodes, the `MISSING` placeholders and the five
+        // filenames that disagree with their shortcode.
+        published: published_corpus(),
     }
+}
+
+/// The committed project corpus, loaded once for the whole test binary.
+///
+/// Parsing 85 files per `test_state()` call would be paid by every handler test,
+/// and most never look at a project. Behind a `OnceLock` and shared by `Arc`,
+/// which the set's immutability makes safe.
+pub(crate) fn published_corpus() -> Arc<PublishedProjects> {
+    static CORPUS: OnceLock<Arc<PublishedProjects>> = OnceLock::new();
+    CORPUS
+        .get_or_init(|| {
+            let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
+            let (published, errors) = PublishedProjects::load_from(&dir);
+            assert!(errors.is_empty(), "the committed corpus should load cleanly: {errors:?}");
+            Arc::new(published)
+        })
+        .clone()
 }
 
 /// The whole app over `state`, as `serve()` assembles it.

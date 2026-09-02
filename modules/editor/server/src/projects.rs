@@ -2,7 +2,8 @@
 //!
 //! The editing surface is the project form's work. What lands here is the
 //! **scope**: REQ-1.2 confines a depositor to the shortcodes assigned to them,
-//! and REQ-1.3 makes anything else a 403. Both routes take
+//! and REQ-1.3 makes anything else a 403. Both routes now read the published
+//! set for the projects' names, so the list is a real list. Both take
 //! [`Authenticated`](crate::auth::guard::Authenticated), so an unauthenticated
 //! request never reaches this module.
 //!
@@ -33,9 +34,16 @@ pub(crate) async fn list(State(state): State<AppState>, Authenticated(user): Aut
     // empty by design (REQ-4.2), so rendering it through the depositor's list
     // would tell an administrator they have no projects.
     let content = if user.is_rdu() {
-        editor_web::pages::projects::rdu_overview()
+        let rows: Vec<_> = state.published.summaries().collect();
+        editor_web::pages::projects::rdu_overview(&rows)
     } else {
-        editor_web::pages::projects::assigned(&user.shortcodes)
+        // The rows are the intersection of the assignments and the published
+        // set; the count is the assignments themselves. Both are passed because
+        // the difference is a distinct state with a distinct message — a
+        // depositor whose projects are merely unpublished must not be told
+        // nobody assigned them anything.
+        let rows: Vec<_> = state.published.summaries_for(&user.shortcodes).collect();
+        editor_web::pages::projects::assigned(&rows, user.shortcodes.len())
     };
     crate::render(
         &state,
@@ -58,12 +66,15 @@ pub(crate) async fn detail(
     if !is_valid_shortcode(&shortcode) {
         return crate::not_found(State(state)).await;
     }
-    // Nothing checks that the project *exists* — the published set is not
-    // readable here yet, so a well-formed shortcode naming no project renders
-    // the placeholder. The record lookup, and the 404 that goes with it, arrive
-    // with the form. Ordering is what matters and it is already right: the
-    // lookup goes after this check, or the gap between 403 and 404 becomes an
-    // oracle for which projects exist.
+    // The authorization check runs before the published set is consulted, and
+    // has to: answering 404 for a shortcode that is not published and 403 for
+    // one that is would make the pair an oracle for which projects exist, to a
+    // reader who is not allowed to know.
+    //
+    // Nothing here answers 404 for an unknown shortcode either, and that is not
+    // an oversight: REQ-2.3 allows a project that exists only locally, so
+    // "absent from the published set" is not "does not exist". Deciding that
+    // needs the draft and submission records, which arrive with the form.
     if !user.may_reach(&shortcode) {
         // REQ-1.3. Logged because a depositor repeatedly reaching for projects
         // that are not theirs is worth seeing, and the two identifiers here are
@@ -75,12 +86,21 @@ pub(crate) async fn detail(
         );
         return crate::forbidden(&state, &user, NOT_ASSIGNED);
     }
+    let published = state.published.get(&shortcode);
+    let name = published.map(|project| project.name.as_str());
+    // The published name in the tab title where there is one: a browser with
+    // eleven tabs open shows about twenty characters, and five of them being
+    // "Proje" helps nobody.
+    let title = match name {
+        Some(name) => format!("{name} — DaSCH Metadata Editor"),
+        None => format!("Project {shortcode} — DaSCH Metadata Editor"),
+    };
     crate::render(
         &state,
-        &format!("Project {shortcode} — DaSCH Metadata Editor"),
+        &title,
         axum::http::StatusCode::OK,
         Some(&user),
-        editor_web::pages::projects::project(&shortcode),
+        editor_web::pages::projects::project(&shortcode, name),
     )
 }
 
@@ -179,15 +199,99 @@ mod tests {
 
     #[tokio::test]
     async fn test_the_list_shows_a_depositor_their_assignments_and_nothing_else() {
+        // `0801d` and `080C` are real published shortcodes, so both are rows.
         let (state, _) = test_state("list-depositor").await;
-        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801", "080C"]).await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d", "080C"]).await;
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
 
         let body = body_string(as_session(&app, "/projects", &session).await).await;
-        assert!(body.contains(r#"href="/projects/0801""#), "{body}");
+        assert!(body.contains(r#"href="/projects/0801d""#), "{body}");
         assert!(body.contains(r#"href="/projects/080C""#), "{body}");
         assert!(!body.contains("/projects/0803"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn test_the_list_names_each_project_rather_than_only_its_shortcode() {
+        // The reason the published set is read at all: a depositor recognises
+        // their project by name, not by a four-character code.
+        let (state, _) = test_state("list-names").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let expected = state
+            .published
+            .get("0801d")
+            .expect("0801d is in the committed corpus")
+            .name
+            .clone();
+        let body = body_string(as_session(&app, "/projects", &session).await).await;
+        assert!(body.contains(&expected), "the list should name the project: {body}");
+    }
+
+    #[tokio::test]
+    async fn test_an_assignment_with_no_published_project_is_not_a_blank_row() {
+        // A project assigned before it is published, and REQ-2.3's local-only
+        // project, are both this state. It has to be distinguishable from
+        // having no assignments at all, or the depositor asks the wrong person.
+        let (state, _) = test_state("list-unpublished").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["9999"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let body = body_string(as_session(&app, "/projects", &session).await).await;
+        assert!(body.contains("none of them is in the published set"), "{body}");
+        assert!(!body.contains("No projects are assigned"), "{body}");
+        assert!(!body.contains("<table"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn test_the_rdu_overview_lists_the_whole_published_set() {
+        let (state, _) = test_state("list-rdu-set").await;
+        let user = a_user(&state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let body = body_string(as_session(&app, "/projects", &session).await).await;
+        // Every project in the corpus is a row, not just the reader's own.
+        for shortcode in ["0801a", "0801d", "080C"] {
+            assert!(
+                body.contains(&format!(r#"href="/projects/{shortcode}""#)),
+                "{shortcode}: {body}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_a_published_project_page_leads_with_its_name() {
+        let (state, _) = test_state("detail-name").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let expected = state.published.get("0801d").expect("0801d").name.clone();
+        let body = body_string(as_session(&app, "/projects/0801d", &session).await).await;
+        assert!(body.contains(&expected), "{body}");
+        assert!(
+            body.contains(&format!("<title>{expected} — DaSCH Metadata Editor</title>")),
+            "{body}"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_an_unpublished_project_page_opens_rather_than_404ing() {
+        // REQ-2.3: absent from the published set is not "does not exist", and
+        // deciding that needs the draft records, which the form brings.
+        let (state, _) = test_state("detail-unpublished").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["9999"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let response = as_session(&app, "/projects/9999", &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = body_string(response).await;
+        assert!(body.contains("nothing to pre-fill"), "{body}");
     }
 
     #[tokio::test]
@@ -202,6 +306,7 @@ mod tests {
         let body = body_string(as_session(&app, "/projects", &session).await).await;
         assert!(body.contains("role-based"), "{body}");
         assert!(!body.contains("No projects are assigned"), "{body}");
+        assert!(!body.contains("none of them is in the published set"), "{body}");
     }
 
     #[tokio::test]

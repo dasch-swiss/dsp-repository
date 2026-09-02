@@ -5,6 +5,11 @@ edition = "2021"
 publish = false
 
 [dependencies]
+# The project representation the views render: the published set's summaries and
+# the draft a form is built from. `server -> web -> core` is the dependency
+# direction the architecture doc states, so a view naming a domain type is the
+# intended shape rather than a shortcut.
+editor-core = { path = "../core" }
 maud.workspace = true
 # The login screens are the first surface to render a tile (the submit buttons),
 # which is what earns the dependency. The Tailwind entry already scanned the

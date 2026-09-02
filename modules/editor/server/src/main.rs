@@ -57,6 +57,14 @@ pub(crate) struct AppState {
     /// [`config::EditorConfig::reveals_login_code`] — never re-derived, so there
     /// is one answer per process and one place that decides it.
     reveal_login_code: bool,
+    /// The published project set, read once at startup from `EDITOR_DATA_DIR`.
+    ///
+    /// Behind an `Arc` because `AppState` is cloned per request and this holds
+    /// 85 whole projects. Not behind a port: it is an immutable snapshot that
+    /// cannot change without a redeployment, so there is nothing for a test to
+    /// make fail — a test that wants a different set loads a different
+    /// directory.
+    published: std::sync::Arc<editor_core::published::PublishedProjects>,
 }
 
 /// Render a page inside the document shell.
@@ -103,6 +111,43 @@ pub(crate) fn forbidden(
         Some(user),
         editor_web::pages::forbidden::forbidden(message),
     )
+}
+
+/// Read the published project set, reporting what did not load.
+///
+/// Deliberately not fatal, in either direction. An unset `EDITOR_DATA_DIR` is a
+/// configured state — the PR preview and a bare `cargo run` have no snapshot —
+/// and a malformed file among 85 is an operational problem with the image, not a
+/// reason to refuse every request including the ones that never touch the
+/// projects. Both are reported at `warn` with the count, which is the thing an
+/// operator can act on: "84 of 85" is a specific, findable problem where a
+/// process that exited says only that it exited.
+fn load_published(data_dir: Option<&std::path::Path>) -> editor_core::published::PublishedProjects {
+    use editor_core::published::PublishedProjects;
+
+    let Some(data_dir) = data_dir else {
+        tracing::warn!(
+            "no EDITOR_DATA_DIR: the published project set is empty, so the project list shows nothing and no \
+             form can be pre-filled"
+        );
+        return PublishedProjects::default();
+    };
+    let (published, errors) = PublishedProjects::load_from(&data_dir.join("projects"));
+    // One line per failure, so a bad file is findable by name rather than by
+    // subtracting counts.
+    for error in &errors {
+        tracing::warn!(error = %error, "a published project could not be read");
+    }
+    if errors.is_empty() {
+        tracing::info!(projects = published.len(), "published project set loaded");
+    } else {
+        tracing::warn!(
+            projects = published.len(),
+            failed = errors.len(),
+            "published project set loaded with failures"
+        );
+    }
+    published
 }
 
 /// `GET /` — a redirect to the project list.
@@ -287,9 +332,11 @@ async fn serve() -> ExitCode {
         None
     };
 
-    // An unset data directory is a legitimate state today (nothing reads
-    // records yet), so report it rather than failing — but report it as unset,
-    // not as some path the editor invented.
+    // An unset data directory is reported as unset rather than as some path the
+    // editor invented. It is no longer harmless: with no published set the
+    // project list is empty and no form can be pre-filled (REQ-1.1), so the
+    // load below says how many projects it found and every failure names its
+    // file.
     let data_dir = config
         .data_dir
         .as_deref()
@@ -440,6 +487,7 @@ async fn serve() -> ExitCode {
         mailer,
         auth: auth::AuthConfig::from(&config),
         reveal_login_code: config.reveals_login_code(),
+        published: std::sync::Arc::new(load_published(config.data_dir.as_deref())),
     };
     let app = router::build_app(state, &config.public_dir);
 

@@ -768,6 +768,7 @@ dependencies = [
 name = "editor-web"
 version = "0.8.3"
 dependencies = [
+ "editor-core",
  "maud",
  "mosaic-tiles",
 ]

@@ -25,7 +25,7 @@ Same as DPE: server-rendered HTML with **Maud**, served by **Axum**, with **Data
 | `editor-web` | `editor/web` | Maud view library — the document shell, pages and components |
 | `editor-server` | `editor/server` | Composition root: configuration, observability, routing, persistence |
 
-Dependency direction is `server → web → core`. `editor-web` depends on `mosaic-tiles`; the login screens' submit buttons are the first surface to render a tile. The Tailwind entry scanned the crate before that dependency existed, so component CSS shipped regardless of it.
+Dependency direction is `server → web → core`. `editor-web` depends on `editor-core` for the project representation it renders, and on `mosaic-tiles`; the login screens' submit buttons are the first surface to render a tile. The Tailwind entry scanned the crate before that dependency existed, so component CSS shipped regardless of it.
 
 Unlike DPE, the **HTML document shell lives in the view crate** (`editor-web/src/view.rs`), not the server crate. DPE keeps `head()` + `page()` in `dpe-server`; here the server is a composition root for routing, auth and persistence, and a document shell is a view concern like any other partial.
 
@@ -70,6 +70,18 @@ The three `#[serde(untagged)]` enums therefore need no stored variant tag. Untag
 
 `url` keeps the form it was read in. Zero of the 85 committed files use the structured object form (36 hold a one-element string array, 38 a two-element array, 11 omit `url`), so writing the object form would rewrite 74 files. It is used only where there was no prior value: new projects, and those 11 files.
 
+### The published set
+
+`editor_core::published::PublishedProjects` reads `$EDITOR_DATA_DIR/projects/*.json` once at startup and holds them in memory, keyed by case-folded shortcode. The set cannot change without a redeployment, so nothing polls and nothing invalidates. It is not behind a repository port: the ports exist because the editor writes through them and a test has to be able to make a write fail, and this is a read of an immutable snapshot, so a trait would buy an indirection with one implementation.
+
+Three properties of the committed corpus decide the shape, each measured over all 85 files rather than sampled:
+
+- **The `shortcode` field is the key, not the filename.** Five files disagree with the shortcode they hold — `projects/0801_bebb.json` is project `0801d`, and its siblings under `0801_*` are `0801a` through `0801e`. Keying on the filename stem would file all five under `0801`, which no project actually has, so all five would be unreachable by the code they are addressed by and four would be dropped as duplicates.
+- **Lookup folds case.** 24 shortcodes are mixed case (`080C`, `081B`, `085F`), and no two collide when folded. This matches `User::may_reach`, which folds for the same reason. Two files claiming one folded shortcode is reported rather than resolved, so which project answers can never depend on directory order.
+- **Nothing about the load is fatal.** An unset `EDITOR_DATA_DIR` is a configured state (the PR preview has no snapshot), and one malformed file among 85 is a problem with the image rather than a reason to refuse every request. Both are reported at `warn` with a count and one line per failing file, because "84 of 85" is findable where an exited process says only that it exited.
+
+`get` returning `None` does **not** mean the project does not exist. REQ-2.3 allows a project that exists only locally, whose form opens blank and whose REQ-1.1 pre-fill is empty, so a 404 needs the draft and submission records too — which is why `/projects/{shortcode}` answers 200 for an unpublished shortcode.
+
 ### Canonical form
 
 `editor_core::canonical::write_project` is the single decision about what a `projects/*.json` file looks like: members in `ProjectRaw`'s declaration order at every depth, `null` members dropped recursively, language keys alphabetical, four-space indent, a trailing newline, non-ASCII unescaped. An approved submission is then byte-comparable with what is committed, so a review diff shows only what the depositor changed.
@@ -99,8 +111,8 @@ DPE carries `/dpe/…` because it shares `repository.dasch.swiss` with other ser
 | `/login` | GET, POST | public | The address form, and issuing a one-time code. POST rate-limited per IP. |
 | `/login/code` | GET, POST | public | The code form, and spending the code. POST rate-limited per IP. |
 | `/logout` | POST | public | Delete the session and clear the cookie. |
-| `/projects` | GET | signed in | The shortcodes this account may edit. |
-| `/projects/{shortcode}` | GET | signed in + assigned | One project. 403 otherwise (REQ-1.3). |
+| `/projects` | GET | signed in | The projects this account may edit, named from the published set. |
+| `/projects/{shortcode}` | GET | signed in + assigned | One project. 403 otherwise (REQ-1.3); 200 even when unpublished, per REQ-2.3. |
 | `/depositors` | GET, POST | RDU | The account list, and creating a depositor. |
 | `/depositors/new` | GET | RDU | The create form. |
 | `/depositors/{id}/edit` | GET, POST | RDU | The edit form, and the change it makes. |
@@ -116,7 +128,7 @@ Every write shares a URL with the `GET` that renders its form, so a rejected sub
 
 There is deliberately no resend endpoint: asking again is another `POST /login`, under the same cooldown, which keeps the number of endpoints that can send mail at one. See [Authentication](./authentication.md).
 
-`/projects` and `/projects/{shortcode}` exist but render placeholders: what they carry today is the **scope** (REQ-1.2, REQ-1.3), not the editing surface. The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:
+`/projects` lists the published projects a reader may reach — every project for an RDU member, the intersection of assignments and the published set for a depositor. `/projects/{shortcode}` names the project and is otherwise still a placeholder: what these two carry today is the **scope** (REQ-1.2, REQ-1.3) and the projects' names, not the editing surface. The scheme the remaining surfaces will occupy, settled up front because the router and the shell are built against it:
 
 ```text
 GET  /projects/{shortcode}                    → redirect to the first section

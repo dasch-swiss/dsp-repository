@@ -538,26 +538,51 @@ mod tests {
 
     use super::*;
 
-    /// Every JSON member `ProjectRaw` serializes, read off a real committed
+    /// The contract as `ProjectRaw` serializes it, read off a real committed
     /// project rather than listed here — a field added to the contract has to
     /// show up without this file being edited.
     ///
     /// `ProjectRaw` carries no `skip_serializing_if`, so an unset `Option`
-    /// serializes as `null` and is still a member: the set is the whole contract
+    /// serializes as `null` and is still a member: this is the whole contract
     /// and not just the parts this project happens to fill in.
-    fn contract_members() -> BTreeSet<String> {
+    fn contract() -> serde_json::Value {
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
         let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
         let project = published.get("0801d").expect("0801d is in the committed corpus");
-        let value = serde_json::to_value(project).expect("ProjectRaw serializes");
-        value.as_object().expect("ProjectRaw is an object").keys().cloned().collect()
+        serde_json::to_value(project).expect("ProjectRaw serializes")
+    }
+
+    /// The contract's top-level members.
+    fn contract_members() -> BTreeSet<String> {
+        contract()
+            .as_object()
+            .expect("ProjectRaw is an object")
+            .keys()
+            .cloned()
+            .collect()
     }
 
     /// A registry id's top-level contract member: `accessRights.embargoDate` is
     /// part of `accessRights`.
     fn root_of(id: &str) -> &str {
         id.split_once('.').map_or(id, |(root, _)| root)
+    }
+
+    /// Whether a registry id resolves segment by segment, so a dotted id is
+    /// checked against the nested member it names and not merely against its
+    /// root. A `null` anywhere on the path counts as unresolved: the sample
+    /// project cannot answer for that member, and a check that cannot check
+    /// should say so rather than pass.
+    fn resolves(contract: &serde_json::Value, id: &str) -> bool {
+        let mut current = contract;
+        for segment in id.split('.') {
+            match current.as_object().and_then(|object| object.get(segment)) {
+                Some(next) => current = next,
+                None => return false,
+            }
+        }
+        true
     }
 
     #[test]
@@ -582,12 +607,16 @@ mod tests {
     #[test]
     fn nothing_is_registered_that_the_contract_does_not_have() {
         // The other direction: a field renamed in the contract leaves a registry
-        // entry that renders a control posting to nothing.
-        let members = contract_members();
+        // entry that renders a control posting to nothing. Dotted ids are
+        // followed the whole way down, because checking only the root would pass
+        // `accessRights.embargoDate` on the strength of `accessRights` existing,
+        // while the nested member could be renamed or dropped with nothing
+        // failing.
+        let contract = contract();
         let unknown: Vec<&str> = FIELDS
             .iter()
-            .map(|field| root_of(field.id))
-            .filter(|root| !members.contains(*root))
+            .map(|field| field.id)
+            .filter(|id| !resolves(&contract, id))
             .collect();
         assert!(unknown.is_empty(), "these registry ids are not ProjectRaw members: {unknown:?}");
     }

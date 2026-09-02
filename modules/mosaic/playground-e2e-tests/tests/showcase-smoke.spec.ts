@@ -16,13 +16,18 @@ const ROUTES = [
   "breadcrumb",
   "button",
   "card",
+  "checkbox-group",
   "copy-button",
   "icon",
   "link",
   "loading",
+  "radio-group",
+  "repeatable-list",
+  "select",
   "table",
   "tabs",
   "text-field",
+  "textarea",
 ];
 
 test.describe("Mosaic playground showcase", () => {

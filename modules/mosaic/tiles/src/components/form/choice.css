@@ -1,0 +1,56 @@
+@layer components {
+  /*
+   * Shared by the checkbox and radio groups. Both render a `<fieldset>` named by
+   * a `<legend>`, so these classes undo the fieldset's UA border and padding and
+   * lay the choices out.
+   */
+
+  /*
+   * The invalid marker is a left rule that is always present and merely changes
+   * colour, rather than appearing when the group is rejected. A border that
+   * appears shifts every choice sideways at the moment the reader is looking for
+   * what went wrong.
+   *
+   * `min-inline-size: 0` is the fieldset-specific trap: a fieldset has a UA
+   * `min-inline-size: min-content`, so unlike a div it refuses to shrink below
+   * its widest child and pushes out of a grid column instead of wrapping.
+   */
+  .field-group {
+    @apply min-w-0 border-0 border-l-2 border-transparent pl-3;
+  }
+
+  .field-group[data-invalid='true'] {
+    @apply border-danger-700;
+  }
+
+  .field-choices {
+    @apply flex flex-col gap-2;
+  }
+
+  .field-choices-inline {
+    @apply flex-row flex-wrap gap-x-5 gap-y-2;
+  }
+
+  /*
+   * The control sits inside its label as well as being pointed at by the label's
+   * `for`, so the text is a click target. `items-start` rather than `items-center`
+   * keeps the box beside the first line of a label that wraps, instead of
+   * centring it against the whole block.
+   */
+  .field-choice {
+    @apply flex cursor-pointer items-start gap-2;
+  }
+
+  .field-choice-input {
+    /*
+     * `accent-color` tints the native control rather than replacing it, so the
+     * checkmark, the focus ring and forced-colors mode stay the platform's.
+     * `mt-0.5` puts the box on the label's first-line baseline.
+     */
+    @apply mt-0.5 size-4 shrink-0 accent-primary-600;
+  }
+
+  .field-choice-label {
+    @apply leading-snug;
+  }
+}

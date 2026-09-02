@@ -9,13 +9,18 @@ pub mod badge;
 pub mod breadcrumb;
 pub mod button;
 pub mod card;
+pub mod checkbox_group;
 pub mod copy_button;
 pub mod icon;
 pub mod link;
 pub mod loading;
+pub mod radio_group;
+pub mod repeatable_list;
+pub mod select;
 pub mod table;
 pub mod tabs;
 pub mod text_field;
+pub mod textarea;
 pub mod theme;
 
 use maud::{html, Markup};
@@ -70,13 +75,18 @@ mod tests {
             ("Breadcrumb", breadcrumb::page().into_string()),
             ("Button", button::page().into_string()),
             ("Card", card::page().into_string()),
+            ("Checkbox Group", checkbox_group::page().into_string()),
             ("Copy Button", copy_button::page().into_string()),
             ("Icon", icon::page().into_string()),
             ("Link", link::page().into_string()),
             ("Loading", loading::page().into_string()),
+            ("Radio Group", radio_group::page().into_string()),
+            ("Repeatable List", repeatable_list::page().into_string()),
+            ("Select", select::page().into_string()),
             ("Table", table::page().into_string()),
             ("Tabs", tabs::page().into_string()),
             ("Text Field", text_field::page().into_string()),
+            ("Textarea", textarea::page().into_string()),
             ("Design Tokens", theme::page().into_string()),
         ];
         for (name, html) in pages {

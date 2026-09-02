@@ -28,4 +28,27 @@
   .field-hint {
     @apply text-sm text-neutral-600;
   }
+
+  /*
+   * The error region is in the markup whether or not there is a message, so that
+   * an `aria-live` announcement has a region to change rather than a node being
+   * inserted (see the tile's module docs). `:empty` is what keeps that free —
+   * without it every field would carry the paragraph's line box and margin.
+   */
+  .field-error:empty {
+    @apply hidden;
+  }
+
+  .field-error {
+    @apply text-sm font-bold text-danger-700;
+  }
+
+  /*
+   * `aria-invalid` is the source of truth for the invalid border rather than a
+   * parallel `field-input-error` class: with two of them, a field can render red
+   * while announcing as valid, or the reverse, and neither is visible in review.
+   */
+  .field-input[aria-invalid='true'] {
+    @apply border-danger-700;
+  }
 }

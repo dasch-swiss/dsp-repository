@@ -19,7 +19,11 @@
 @import './link/link.css';
 @import './table/table.css';
 @import './tabs/tabs.css';
+@import './form/choice.css';
+@import './form/repeatable_list/repeatable_list.css';
+@import './form/select/select.css';
 @import './form/text_field/text_field.css';
+@import './form/textarea/textarea.css';
 @import './icon/icon.css';
 @import './loading.css';
 @import './tooltip.css';

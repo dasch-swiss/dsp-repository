@@ -1,0 +1,42 @@
+@layer components {
+  /*
+   * The list sits inside the `field-group` fieldset, so the legend, hint, error
+   * and the invalid left rule are already handled. What is here is the rows.
+   */
+
+  .repeatable-rows {
+    /* No marker: the row's own fields say what it is, and a number beside them
+     * would read as part of the data — which is exactly the index the row keys
+     * exist to avoid. */
+    @apply flex list-none flex-col gap-3 p-0;
+  }
+
+  /*
+   * The remove control sits at the end of the row, aligned to the top so it
+   * stays beside the row's first field rather than drifting down a tall row.
+   * `items-start` and `min-w-0` together are what let a row's fields wrap
+   * instead of pushing the button out of the fieldset.
+   */
+  .repeatable-row {
+    @apply flex items-start gap-3 rounded border border-neutral-200 p-3;
+  }
+
+  .repeatable-row-body {
+    @apply flex min-w-0 flex-1 flex-col gap-2;
+  }
+
+  .repeatable-empty {
+    @apply text-neutral-600;
+  }
+
+  /* Both controls are buttons rather than links, so they inherit `btn`; these
+   * only shrink them to the size of a row-level action. */
+  .repeatable-remove,
+  .repeatable-add {
+    @apply shrink-0 px-3 py-1 text-sm;
+  }
+
+  .repeatable-add {
+    @apply self-start;
+  }
+}

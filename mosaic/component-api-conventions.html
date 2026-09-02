@@ -380,6 +380,14 @@ a call argument (or via Maud's in-macro <code>@let x = html! { … }</code>) is 
 is only about <em>inline <code>html!</code> blocks</em> — a builder or a pre-bound variable passed
 into an <code>impl Render</code> slot needs no such care. See also the formatting note in
 <code>CONVENTIONS.md</code>.</p>
+<h2 id="where-a-tiles-files-live"><a class="header" href="#where-a-tiles-files-live">Where a tile's files live</a></h2>
+<p>One directory per tile under <code>tiles/src/components/</code>, holding <code>mod.rs</code> and the tile's own <code>.css</code>. The form tiles are grouped one level deeper, in <code>components/form/</code>, because they share the <code>field-*</code> shell — the label, border, hint and error treatment in <code>form/text_field/text_field.css</code> — and a reader looking for "how does a field look" should have one place to go.</p>
+<p>That grouping is a <strong>directory</strong>, not a public path. <code>components/mod.rs</code> does <code>mod form; pub use form::*;</code>, so the import path is <code>mosaic_tiles::text_field::text_field</code> whether or not the tile sits in a subdirectory, and moving a tile into or out of the group is not a breaking change. Two consequences worth stating, because both are the reason the grouping was affordable at all:</p>
+<ul>
+<li>The public API stays flat for <strong>every</strong> tile, so the form tiles having a directory is not an inconsistency the other tiles are now obliged to follow. Group a family when it shares something concrete; leave the rest flat.</li>
+<li>Nothing outside <code>components/</code> may name <code>form::</code>. A <code>use crate::components::form::text_field</code> would reintroduce the path dependency the re-export exists to prevent.</li>
+</ul>
+<p>The CSS barrel (<code>components/components.css</code>) imports by real path, so a grouped tile's stylesheet is <code>@import './form/&lt;tile&gt;/&lt;tile&gt;.css'</code>. Every consuming Tailwind entry globs <code>tiles/src/**/*.rs</code> recursively, so nesting does not need a new <code>@source</code> entry — but a glob that was ever narrowed to one level would silently drop a grouped tile's classes with no build error.</p>
 <h2 id="css-classes"><a class="header" href="#css-classes">CSS classes</a></h2>
 <ul>
 <li>Variant enums expose <code>css_class(self) -&gt; &amp;'static str</code> returning <strong>complete
@@ -427,14 +435,24 @@ genuinely needs several configurable attributes, that is the signal to promote i
 to a builder.</p>
 <h2 id="status"><a class="header" href="#status">Status</a></h2>
 <p>Convergence is complete. The builders — <code>alert</code>, <code>badge</code>, <code>button</code>, <code>card</code>,
-<code>link</code>, <code>tab</code>, <code>table</code>, <code>text_field</code> — follow these conventions; all of them
-except <code>tab</code> implement the <code>ComponentBuilder</code> trait in <code>tiles/src/builder.rs</code>
-(<code>tab</code> is a 3-element compound with no single id target).
+<code>link</code>, <code>tab</code>, <code>table</code>, and the form tiles <code>text_field</code>, <code>textarea</code>, <code>select</code>,
+<code>checkbox_group</code>, <code>radio_group</code> and <code>repeatable_list</code> — follow these conventions;
+all of them except <code>tab</code> implement the <code>ComponentBuilder</code> trait in
+<code>tiles/src/builder.rs</code> (<code>tab</code> is a 3-element compound with no single id target).
 <code>breadcrumb</code>/<code>breadcrumb_current</code>, the container <code>tabs</code>/<code>breadcrumb</code>, and the
 table's <code>table_head_cell</code>/<code>table_cell</code>/<code>table_cell_with_class</code> partials take
 <code>impl Render</code>. The trivial tiles (<code>icon</code>, <code>copy_button</code>, <code>loading</code>) intentionally
 remain plain functions — they have no variant or optional axes. No tile carries a
 <code>*Props</code> struct anymore. New tiles should follow this shape from the start.</p>
+<p>Two of the form tiles take a <strong>required</strong> argument the others do not, and both
+are constructor arguments rather than builder options because the tile is wrong
+without them: <code>repeatable_list(name, legend, rows_action)</code> needs somewhere to
+post an add or a remove — a list with no way to change it is a list, not this
+tile — and every grouped field needs its <code>legend</code>, which is its accessible name.</p>
+<p>The form tiles also share two private helpers under <code>components/form/</code>, neither
+of which is a tile: <code>shell.rs</code> (the label/hint/error wrapper and its derived
+ids) and <code>choice.rs</code> (what a checkbox group and a radio group have in common).
+Nothing outside <code>components/form/</code> may name them.</p>
 <h3 id="the-one-place-a-slot-is-not-impl-render"><a class="header" href="#the-one-place-a-slot-is-not-impl-render">The one place a slot is not <code>impl Render</code></a></h3>
 <p><code>table(caption)</code> takes <code>impl Into&lt;String&gt;</code>. The caption is reused verbatim as the
 scroll region's <code>aria-label</code>, and an icon or nested markup in an accessible name

@@ -151,8 +151,12 @@ If the tile needs component styles, create
 ```
 
 Tiles are exported wholesale from `tiles/src/lib.rs` (`pub use components::*;`),
-so adding the module file is enough — but make sure the module is declared in
-`tiles/src/components/mod.rs` if that file lists modules explicitly.
+so adding the module file is enough — but the module has to be declared, and
+`tiles/src/components/mod.rs` lists them explicitly. **A form input goes under
+`components/form/` and is declared in `components/form/mod.rs` instead**; that
+directory is re-exported flat, so the import path is `mosaic_tiles::<name>::<name>`
+either way and the CSS barrel imports it as `./form/<name>/<name>.css`. See
+`docs/src/mosaic/component-api-conventions.md`.
 
 ## Step 2 — Wire the CSS into the component barrel
 
@@ -252,7 +256,7 @@ new classes — a class that resolves to nothing is the common footgun.
 
 - [ ] `tiles/src/components/<name>/mod.rs`: a plain `fn -> Markup`, or a builder implementing `Render` + `ComponentBuilder`, with `impl Render` content params and tests
 - [ ] `tiles/src/components/<name>/<name>.css` (if it needs styles)
-- [ ] Module declared in `tiles/src/components/mod.rs` (if listed explicitly)
+- [ ] Module declared in `tiles/src/components/mod.rs` — or in `components/form/mod.rs` for a form input
 - [ ] CSS `@import`ed into `tiles/src/components/components.css` (the barrel — not the app entries)
 - [ ] `playground/src/showcase/<name>.rs` with `data-example-key`-wrapped examples
 - [ ] Module declared + added to the test list in `playground/src/showcase/mod.rs`

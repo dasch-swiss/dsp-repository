@@ -239,12 +239,9 @@ That split is positional, so it is invisible in the route table and reversible b
 
 ## Datastar
 
-The editor vendors Datastar **1.0.2**; DPE is still on 1.0.0-RC.8, and the two vendor directories are independent. See `modules/editor/public/vendor/README.md`.
+The editor vendors Datastar from `modules/editor/public/vendor/`, whose README is the version of record; do not restate the version here. DPE vendors its own copy and is bumped independently.
 
-Two things to get right, both of which fail quietly:
-
-- **Keyed plugin attributes use `:`, not `-`.** `data-on:click`, `data-attr:disabled`, `data-class:open`, and `data-init` rather than `data-on-load`. This has been true since RC.6, so it matches DPE's markup too. The hyphen form produces a console error and an inert control: the page renders fine and a snapshot test asserting the attribute is present still passes.
-- **`__prevent` combines with `__debounce` / `__throttle`** on 1.0.x. The rule against that combination in `docs/src/dpe/architecture.md` is about RC.8 and does not apply here.
+One thing to get right, and it fails quietly: **keyed plugin attributes use `:`, not `-`** — `data-on:click`, `data-attr:disabled`, `data-class:open`, and `data-init` rather than `data-on-load`. This has been true since RC.6, so it matches DPE's markup too. The hyphen form produces a console error and an inert control: the page renders fine and a snapshot test asserting the attribute is present still passes.
 
 ## Styling
 

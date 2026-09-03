@@ -21,7 +21,7 @@ Agent reference card for the **work phase**. All authoritative detail lives in `
 - Use `#[tracing::instrument]` for new handler and service functions
 - Use `otel.kind = "internal"` on handler-level spans (middleware provides the server span)
 - Metric attributes must be bounded — validate against known sets, normalize dynamic values. High-cardinality data goes to structured logs only, never to metric attributes
-- Vendored JS files go in the owning module's `public/vendor/` — `modules/dpe/public/vendor/` or `modules/editor/public/vendor/` — and each has its own `vendor/README.md` (file, package, version, SHA-256) to update when adding or updating. The two are independent: the editor is on Datastar 1.0.2 while DPE is on 1.0.0-RC.8.
+- Vendored JS files go in the owning module's `public/vendor/` — `modules/dpe/public/vendor/` or `modules/editor/public/vendor/` — and each has its own `vendor/README.md` (file, package, version, SHA-256) to update when adding or updating. The two are independent: each is updated on its own, and neither README states the other's versions.
 
 ## Data Conventions
 

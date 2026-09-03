@@ -18,17 +18,9 @@ The Datastar URL is jsdelivr's **`gh/`** (GitHub) route, not `npm/`. The npm pac
 
 ## Datastar version
 
-The editor is on **1.0.2**; DPE is still on **1.0.0-RC.8** and is bumped separately. Nothing is
-shared between the two vendor directories, so the versions are independent.
+The table above is the editor's version of record. DPE vendors its own copy under `modules/dpe/public/vendor/`; nothing is shared between the two directories and each is bumped on its own, so do not read either one's version off the other.
 
-Two consequences of being on 1.0.x rather than RC.8:
-
-- `__prevent` combines with `__debounce` / `__throttle`. `docs/src/dpe/architecture.md` carries a
-  rule against that combination on anchors; the rule is about RC.8 and does not apply here.
-- Keyed plugin attributes use `:`, not `-` — `data-on:click`, `data-attr:disabled`,
-  `data-class:open`, and `data-init` rather than `data-on-load`. That has been true since RC.6, so
-  it matches DPE's markup too. The old hyphen form fails **semi-silently**: a console error and an
-  inert control, with the page rendering fine and snapshot tests still passing.
+One property of 1.0.x worth knowing: keyed plugin attributes use `:`, not `-` — `data-on:click`, `data-attr:disabled`, `data-class:open`, and `data-init` rather than `data-on-load`. That has been true since RC.6, so it matches DPE's markup too. The old hyphen form fails **semi-silently**: a console error and an inert control, with the page rendering fine and snapshot tests still passing.
 
 ## Known dead listener in `telemetry.js`
 

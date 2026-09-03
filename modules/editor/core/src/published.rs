@@ -209,7 +209,9 @@ fn summary(project: &ProjectRaw) -> ProjectSummary<'_> {
 
 /// The lookup key: a shortcode with case folded away.
 fn fold(shortcode: &str) -> String {
-    shortcode.trim().to_ascii_lowercase()
+    // The records' storage key, so a project's published entry and its draft row
+    // are addressed by the same string. See `records::normalize_shortcode`.
+    crate::records::normalize_shortcode(shortcode)
 }
 
 fn read_project(path: &Path) -> Result<ProjectRaw, String> {

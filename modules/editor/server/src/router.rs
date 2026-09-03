@@ -213,7 +213,16 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
         // See [`crate::auth::guard`] for why that is an extractor and not a
         // middleware over a sub-router.
         .route("/projects", get(crate::projects::list))
+        // A redirect to the first section. Sections are real URLs rather than
+        // fragment swaps, so the form is bookmarkable and Back-friendly.
         .route("/projects/{shortcode}", get(crate::projects::detail))
+        // The form. One URL for the section and the save, so a rejected save
+        // re-renders at a path that still answers `GET` — the dead end
+        // `POST /depositors/{id}` briefly was.
+        .route(
+            "/projects/{shortcode}/sections/{section}",
+            get(crate::sections::show).post(crate::sections::save),
+        )
         // --- RDU-only routes ---
         // `Rdu` composes `Authenticated`, so these are closed twice over: no
         // session redirects to login, and a depositor's session gets the 403

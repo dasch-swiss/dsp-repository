@@ -29,8 +29,24 @@
 //! from "forgotten". They still ride through a draft untouched (REQ-1.7); the
 //! omission is from the *form*, not from the data.
 
+use editor_core::form::{Shape, WhenCleared};
 use Audience::{Everyone, RduOnly};
 use Obligation::{Optional, Recommended, Required};
+use Shape::{Multilingual, Text};
+
+/// A required contract `String` whose empty state the committed data spells as a
+/// sentinel. Named because the distinction reads as the UI tier beside it and is
+/// not: `officialName` is `Recommended` and still needs this.
+const REQUIRED_STRING: Shape = Text(WhenCleared::Placeholder);
+
+/// An `Option<String>` on the contract, where absent is what unset means.
+const OPTIONAL_STRING: Shape = Text(WhenCleared::Drop);
+
+/// The form does not read this field back yet. Rendered as a stated note, and
+/// no applier touches it, so its stored value rides through a save unchanged
+/// (REQ-1.7). [`tests::the_fields_the_form_does_not_read_yet_are_named`] pins
+/// the set, so it only ever shrinks.
+const NOT_READ_YET: Option<Shape> = None;
 
 /// How much a field is expected of a depositor.
 ///
@@ -103,6 +119,14 @@ pub struct Field {
     /// (REQ-1.7).
     pub display_only: bool,
     pub audience: Audience,
+    /// How a posted body is read back into this field, or `None` for a field no
+    /// applier touches — a display-only one, or one whose control has not landed
+    /// ([`NOT_READ_YET`]).
+    ///
+    /// The single declaration of the field's contract shape and of what clearing
+    /// it means; the round-trip test derives its table from here rather than
+    /// keeping a second copy.
+    pub shape: Option<Shape>,
 }
 
 impl Field {
@@ -110,6 +134,17 @@ impl Field {
     #[must_use]
     pub const fn editable_by_depositor(&self) -> bool {
         !self.display_only && matches!(self.audience, Audience::Everyone)
+    }
+
+    /// Whether the form renders a control for this field at all.
+    ///
+    /// False for a display-only field and for one the form does not read yet;
+    /// the two render differently (a value against a stated note), which is why
+    /// [`Self::display_only`] stays a separate fact rather than being inferred
+    /// from an absent shape.
+    #[must_use]
+    pub const fn is_editable(&self) -> bool {
+        self.shape.is_some()
     }
 }
 
@@ -138,6 +173,7 @@ const fn hinted(
     hint: &'static str,
     obligation: Obligation,
     audience: Audience,
+    shape: Option<Shape>,
 ) -> Field {
     Field {
         id,
@@ -146,6 +182,7 @@ const fn hinted(
         obligation: Some(obligation),
         display_only: false,
         audience,
+        shape,
     }
 }
 
@@ -158,6 +195,9 @@ const fn shown(id: &'static str, label: &'static str, hint: Option<&'static str>
         obligation: None,
         display_only: true,
         audience,
+        // Nothing reads a display-only field back, which is what REQ-1.5 and
+        // REQ-1.7 together say: shown as a value, written back unchanged.
+        shape: None,
     }
 }
 
@@ -183,7 +223,14 @@ pub const FIELDS: &[Field] = &[
         Some("Short project identifier — set by DaSCH when the project is created."),
         RduOnly,
     ),
-    hinted("name", "Name", "Full, human-readable project title.", Required, Everyone),
+    hinted(
+        "name",
+        "Name",
+        "Full, human-readable project title.",
+        Required,
+        Everyone,
+        Some(REQUIRED_STRING),
+    ),
     hinted(
         "officialName",
         "Official name",
@@ -191,6 +238,7 @@ pub const FIELDS: &[Field] = &[
          funder. Kept for records, and not shown on the public project page.",
         Recommended,
         Everyone,
+        Some(REQUIRED_STRING),
     ),
     hinted(
         "alternativeNames",
@@ -198,6 +246,7 @@ pub const FIELDS: &[Field] = &[
         "Acronyms or alternate spellings — one value per language.",
         Optional,
         Everyone,
+        NOT_READ_YET,
     ),
     // --- Descriptions -------------------------------------------------------
     hinted(
@@ -206,6 +255,7 @@ pub const FIELDS: &[Field] = &[
         "One-line teaser for cards and listings. Up to 200 characters.",
         Required,
         Everyone,
+        Some(REQUIRED_STRING),
     ),
     hinted(
         "description",
@@ -213,14 +263,23 @@ pub const FIELDS: &[Field] = &[
         "Long form — at least one language. Required before publishing.",
         Required,
         Everyone,
+        Some(Multilingual),
     ),
-    hinted("abstract", "Abstract", "Short, citation-ready summary.", Recommended, Everyone),
+    hinted(
+        "abstract",
+        "Abstract",
+        "Short, citation-ready summary.",
+        Recommended,
+        Everyone,
+        Some(Multilingual),
+    ),
     hinted(
         "keywords",
         "Keywords",
         "At least one keyword — each is one multilingual term.",
         Required,
         Everyone,
+        NOT_READ_YET,
     ),
     // --- Links and citation -------------------------------------------------
     shown(
@@ -239,6 +298,7 @@ pub const FIELDS: &[Field] = &[
          publishing.",
         Required,
         RduOnly,
+        NOT_READ_YET,
     ),
     hinted(
         "secondaryUrl",
@@ -246,6 +306,7 @@ pub const FIELDS: &[Field] = &[
         "The project's own website outside DaSCH, if it has one.",
         Optional,
         Everyone,
+        NOT_READ_YET,
     ),
     // --- Status, dates and access ------------------------------------------
     hinted(
@@ -254,6 +315,7 @@ pub const FIELDS: &[Field] = &[
         "Whether the project is ongoing or finished — required even for a draft.",
         Required,
         Everyone,
+        NOT_READ_YET,
     ),
     hinted(
         "startDate",
@@ -261,6 +323,7 @@ pub const FIELDS: &[Field] = &[
         "When the project began. Required even for a draft.",
         Required,
         Everyone,
+        Some(REQUIRED_STRING),
     ),
     hinted(
         "endDate",
@@ -268,6 +331,7 @@ pub const FIELDS: &[Field] = &[
         "Leave empty while the project is ongoing.",
         Optional,
         Everyone,
+        Some(REQUIRED_STRING),
     ),
     hinted(
         "dataPublicationYear",
@@ -275,6 +339,7 @@ pub const FIELDS: &[Field] = &[
         "Year the dataset was published.",
         Recommended,
         Everyone,
+        Some(OPTIONAL_STRING),
     ),
     hinted(
         "accessRights",
@@ -282,6 +347,7 @@ pub const FIELDS: &[Field] = &[
         "How openly the data can be accessed.",
         Required,
         Everyone,
+        NOT_READ_YET,
     ),
     hinted(
         "accessRights.embargoDate",
@@ -289,6 +355,7 @@ pub const FIELDS: &[Field] = &[
         "When the data becomes openly available. Needed for embargoed access.",
         Optional,
         Everyone,
+        NOT_READ_YET,
     ),
     hinted(
         "dataManagementPlan",
@@ -296,6 +363,7 @@ pub const FIELDS: &[Field] = &[
         "Link to the DMP.",
         Optional,
         Everyone,
+        Some(OPTIONAL_STRING),
     ),
     // --- The dataset --------------------------------------------------------
     hinted(
@@ -304,6 +372,7 @@ pub const FIELDS: &[Field] = &[
         "Kind or kinds of data in the dataset — required before publishing.",
         Required,
         Everyone,
+        NOT_READ_YET,
     ),
     hinted(
         "dataLanguage",
@@ -312,6 +381,7 @@ pub const FIELDS: &[Field] = &[
          publishing.",
         Required,
         Everyone,
+        NOT_READ_YET,
     ),
     hinted(
         "disciplines",
@@ -319,6 +389,7 @@ pub const FIELDS: &[Field] = &[
         "At least one — pick from the SNSF or UNESCO discipline lists, or add your own if nothing fits.",
         Required,
         Everyone,
+        NOT_READ_YET,
     ),
     hinted(
         "temporalCoverage",
@@ -328,6 +399,7 @@ pub const FIELDS: &[Field] = &[
          before publishing.",
         Required,
         Everyone,
+        NOT_READ_YET,
     ),
     hinted(
         "spatialCoverage",
@@ -335,6 +407,7 @@ pub const FIELDS: &[Field] = &[
         "Search for a place; we'll record the standard reference link for you. Required before publishing.",
         Required,
         Everyone,
+        NOT_READ_YET,
     ),
     hinted(
         "provenance",
@@ -342,6 +415,7 @@ pub const FIELDS: &[Field] = &[
         "Where the data came from, or how it was produced.",
         Recommended,
         Everyone,
+        Some(OPTIONAL_STRING),
     ),
     hinted(
         "documentationMaterial",
@@ -349,6 +423,7 @@ pub const FIELDS: &[Field] = &[
         "Documentation, codebooks, guides. Compiled by RDU on the depositor's behalf.",
         Required,
         RduOnly,
+        NOT_READ_YET,
     ),
     hinted(
         "additionalMaterial",
@@ -356,6 +431,7 @@ pub const FIELDS: &[Field] = &[
         "Any additional material related to the dataset — related datasets, mirrors, sister projects.",
         Optional,
         Everyone,
+        NOT_READ_YET,
     ),
     // --- People and publications -------------------------------------------
     hinted(
@@ -364,6 +440,7 @@ pub const FIELDS: &[Field] = &[
         "The people and organisations involved, each with their role or roles. Required before publishing.",
         Required,
         Everyone,
+        NOT_READ_YET,
     ),
     hinted(
         "contactPoint",
@@ -371,6 +448,7 @@ pub const FIELDS: &[Field] = &[
         "A person or organisation users should contact about the data.",
         Required,
         Everyone,
+        NOT_READ_YET,
     ),
     hinted(
         "publications",
@@ -378,6 +456,7 @@ pub const FIELDS: &[Field] = &[
         "Bibliographic references, each with an optional persistent identifier.",
         Optional,
         Everyone,
+        NOT_READ_YET,
     ),
     // --- Funding ------------------------------------------------------------
     hinted(
@@ -387,6 +466,7 @@ pub const FIELDS: &[Field] = &[
          grant number, programme and URL.",
         Required,
         Everyone,
+        NOT_READ_YET,
     ),
     // --- Image and legal ----------------------------------------------------
     hinted(
@@ -396,6 +476,7 @@ pub const FIELDS: &[Field] = &[
          holder at minimum. The licence governs the image, separately from the dataset licence.",
         Optional,
         Everyone,
+        Some(OPTIONAL_STRING),
     ),
     shown(
         "legalInfo",
@@ -640,6 +721,144 @@ mod tests {
             display_only,
             BTreeSet::from(["id", "pid", "shortcode", "howToCite", "legalInfo"])
         );
+    }
+
+    /// Every committed project, parsed as the contract sees it — nulls intact,
+    /// because an unset `Option` serializes as `null` and that is the only way to
+    /// tell an `Option` member from a required one.
+    fn contracts() -> Vec<serde_json::Value> {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
+        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
+        let contracts: Vec<serde_json::Value> = published
+            .summaries()
+            .map(|summary| {
+                let project = published.get(summary.shortcode).expect("a summary names a loaded project");
+                serde_json::to_value(project).expect("ProjectRaw serializes")
+            })
+            .collect();
+        assert_eq!(contracts.len(), 85, "the corpus should be all 85 committed projects");
+        contracts
+    }
+
+    /// The fields the form does not read back yet, and therefore renders as a
+    /// stated note rather than as a control.
+    ///
+    /// Listed rather than merely absent, for the same reason [`OMITTED`] is: an
+    /// omission nobody decided is indistinguishable from one somebody did. The
+    /// difference is that this list is temporary — every entry leaves it when its
+    /// widget lands — so the test below pins it exactly, which makes *adding* to
+    /// it a deliberate act and shrinking it the only silent change.
+    const NOT_READ_YET_IDS: &[&str] = &[
+        "accessRights",
+        "accessRights.embargoDate",
+        "additionalMaterial",
+        "alternativeNames",
+        "attributions",
+        "contactPoint",
+        "dataLanguage",
+        "disciplines",
+        "documentationMaterial",
+        "funding",
+        "keywords",
+        "publications",
+        "secondaryUrl",
+        "spatialCoverage",
+        "status",
+        "temporalCoverage",
+        "typeOfData",
+        "url",
+    ];
+
+    #[test]
+    fn the_fields_the_form_does_not_read_yet_are_named() {
+        // A field with no shape renders a note instead of a control, and no
+        // applier touches it — so a *new* contract field defaulting into this
+        // state would be silently uneditable while looking registered. The
+        // completeness test above only asks that a field be placed in a section;
+        // this is what asks whether the form can actually read it.
+        let unread: BTreeSet<&str> = FIELDS
+            .iter()
+            .filter(|field| !field.display_only && field.shape.is_none())
+            .map(|field| field.id)
+            .collect();
+        assert_eq!(unread, NOT_READ_YET_IDS.iter().copied().collect::<BTreeSet<&str>>());
+    }
+
+    #[test]
+    fn a_display_only_field_declares_no_shape() {
+        // REQ-1.5 and REQ-1.7 together: shown as a value, written back
+        // unchanged. A shape here would put an applier on a field the reader
+        // cannot change, so an empty control would clear a value nobody touched.
+        for field in FIELDS.iter().filter(|field| field.display_only) {
+            assert!(field.shape.is_none(), "{} should declare no shape", field.id);
+            assert!(!field.is_editable(), "{} should render no control", field.id);
+        }
+    }
+
+    #[test]
+    fn a_scalar_shape_s_empty_state_matches_whether_the_contract_requires_the_field() {
+        // The inversion this declaration exists to prevent, checked against the
+        // committed data rather than against a list repeated here: `Placeholder`
+        // is for a member the contract types as a `String`, so it is present in
+        // all 85 files, and `Drop` is for an `Option`, so it is null or absent in
+        // at least one. Getting it backwards is invisible — `Drop` on a required
+        // `String` leaves every ongoing project unpublishable until an end date
+        // it does not have is entered, and nothing fails.
+        let contracts = contracts();
+        for field in FIELDS {
+            let Some(Shape::Text(when_cleared)) = field.shape else {
+                continue;
+            };
+            let unset = contracts
+                .iter()
+                .filter(|contract| contract.get(field.id).is_none_or(serde_json::Value::is_null))
+                .count();
+            match when_cleared {
+                WhenCleared::Placeholder => assert_eq!(
+                    unset,
+                    0,
+                    "{} declares the placeholder empty state, so the contract must require it — but it is \
+                     null or absent in {unset} of {} committed projects, which makes it an Option",
+                    field.id,
+                    contracts.len()
+                ),
+                WhenCleared::Drop => assert!(
+                    unset > 0,
+                    "{} declares that clearing drops the member, so the contract must type it as an Option \
+                     — but it is set in all {} committed projects, which is what a required String looks like",
+                    field.id,
+                    contracts.len()
+                ),
+            }
+        }
+    }
+
+    #[test]
+    fn a_declared_shape_matches_the_json_kind_the_contract_holds() {
+        // A `Multilingual` shape on a string member, or a `Text` shape on a
+        // language map, renders a control that posts under names the applier
+        // never reads: the field looks editable and every save is a no-op.
+        for contract in contracts() {
+            for field in FIELDS {
+                let Some(shape) = field.shape else { continue };
+                let Some(value) = contract.get(field.id).filter(|value| !value.is_null()) else {
+                    continue;
+                };
+                match shape {
+                    Shape::Text(_) => assert!(
+                        value.is_string(),
+                        "{} declares a scalar shape but the contract holds {value}",
+                        field.id
+                    ),
+                    Shape::Multilingual => assert!(
+                        value.is_object(),
+                        "{} declares a language map but the contract holds {value}",
+                        field.id
+                    ),
+                }
+            }
+        }
     }
 
     #[test]

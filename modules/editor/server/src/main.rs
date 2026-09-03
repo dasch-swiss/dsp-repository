@@ -22,6 +22,7 @@ mod mail;
 mod page_url;
 mod projects;
 mod router;
+mod sections;
 #[cfg(test)]
 mod test_support;
 mod traceparent;
@@ -161,6 +162,20 @@ fn load_published(data_dir: Option<&std::path::Path>) -> editor_core::published:
 /// route, the logo on the 404 page led to another 404.
 pub(crate) async fn root() -> axum::response::Redirect {
     axum::response::Redirect::to("/projects")
+}
+
+/// An instant as a page shows it.
+///
+/// UTC and explicit about it. The alternative is a local time that depends on
+/// where the server thinks it is, which for a value used to answer "did my code
+/// go out before or after I asked" — or "is this the save I just made" — is
+/// worse than an offset the reader converts themselves.
+///
+/// Here rather than in one of the surfaces that renders it: the account list and
+/// the project form both do, and two copies of one format string is how the two
+/// come to disagree.
+pub(crate) fn format_instant(at: chrono::DateTime<chrono::Utc>) -> String {
+    at.format("%Y-%m-%d %H:%M UTC").to_string()
 }
 
 /// 404 fallback, reached after `ServeDir` finds no matching static file, by a

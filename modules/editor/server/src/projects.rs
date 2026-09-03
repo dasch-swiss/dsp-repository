@@ -1,4 +1,4 @@
-//! `GET /projects` and `GET /projects/{shortcode}`.
+//! `GET /projects`, and the `/projects/{shortcode}` redirect into the form.
 //!
 //! The editing surface is the project form's work. What lands here is the
 //! **scope**: REQ-1.2 confines a depositor to the shortcodes assigned to them,
@@ -14,7 +14,7 @@
 //! to establish later.
 
 use axum::extract::{Path, State};
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use platform_metadata::is_valid_shortcode;
 
 use crate::auth::guard::Authenticated;
@@ -25,7 +25,8 @@ use crate::AppState;
 /// Safe to say plainly: they named the shortcode to get here, so it tells them
 /// nothing they did not supply, and a vaguer message would send them to RDU
 /// without knowing what to ask for.
-const NOT_ASSIGNED: &str = "This project is not assigned to your account. RDU assigns projects to depositors; ask \
+pub(crate) const NOT_ASSIGNED: &str =
+    "This project is not assigned to your account. RDU assigns projects to depositors; ask \
                             them if you should have access to it.";
 
 /// `GET /projects` — what this account may edit.
@@ -54,7 +55,18 @@ pub(crate) async fn list(State(state): State<AppState>, Authenticated(user): Aut
     )
 }
 
-/// `GET /projects/{shortcode}` — one project, if this account may reach it.
+/// `GET /projects/{shortcode}` — a redirect to the first form section.
+///
+/// A redirect rather than a page, so exactly one place decides where a project
+/// link lands, and the scheme in `docs/src/editor/architecture.md` keeps the
+/// form's own URLs section-scoped and bookmarkable. It is therefore absent from
+/// `page_url.rs`'s `KNOWN_ROUTES`: a redirect renders no beacon script, so no
+/// beacon can report it.
+///
+/// The 404-then-403 order is the same as everywhere else in this module, and the
+/// redirect target is deliberately the *same* section for both audiences — a
+/// destination that depended on the role is one more thing to get wrong in a
+/// link shared between a depositor and a reviewer.
 pub(crate) async fn detail(
     State(state): State<AppState>,
     Authenticated(user): Authenticated,
@@ -66,15 +78,17 @@ pub(crate) async fn detail(
     if !is_valid_shortcode(&shortcode) {
         return crate::not_found(State(state)).await;
     }
-    // The authorization check runs before the published set is consulted, and
-    // has to: answering 404 for a shortcode that is not published and 403 for
-    // one that is would make the pair an oracle for which projects exist, to a
-    // reader who is not allowed to know.
+    // The authorization check runs before anything is read, and has to:
+    // answering 404 for a shortcode that is not published and 403 for one that
+    // is would make the pair an oracle for which projects exist, to a reader who
+    // is not allowed to know. Redirecting an unassigned reader to the section
+    // URL would merely move the 403 one request later, and leak the same thing
+    // through the redirect.
     //
     // Nothing here answers 404 for an unknown shortcode either, and that is not
     // an oversight: REQ-2.3 allows a project that exists only locally, so
-    // "absent from the published set" is not "does not exist". Deciding that
-    // needs the draft and submission records, which arrive with the form.
+    // "absent from the published set" is not "does not exist" — the section
+    // handler opens such a project blank rather than refusing it.
     if !user.may_reach(&shortcode) {
         // REQ-1.3. Logged because a depositor repeatedly reaching for projects
         // that are not theirs is worth seeing, and the two identifiers here are
@@ -86,22 +100,13 @@ pub(crate) async fn detail(
         );
         return crate::forbidden(&state, &user, NOT_ASSIGNED);
     }
-    let published = state.published.get(&shortcode);
-    let name = published.map(|project| project.name.as_str());
-    // The published name in the tab title where there is one: a browser with
-    // eleven tabs open shows about twenty characters, and five of them being
-    // "Proje" helps nobody.
-    let title = match name {
-        Some(name) => format!("{name} — DaSCH Metadata Editor"),
-        None => format!("Project {shortcode} — DaSCH Metadata Editor"),
+    let audience = if user.is_rdu() {
+        editor_web::form::registry::Audience::RduOnly
+    } else {
+        editor_web::form::registry::Audience::Everyone
     };
-    crate::render(
-        &state,
-        &title,
-        axum::http::StatusCode::OK,
-        Some(&user),
-        editor_web::pages::projects::project(&shortcode, name),
-    )
+    let section = editor_web::form::registry::first_section(audience);
+    axum::response::Redirect::to(&format!("/projects/{shortcode}/sections/{}", section.id)).into_response()
 }
 
 #[cfg(test)]
@@ -123,15 +128,37 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_a_depositor_opens_a_project_assigned_to_them() {
+    async fn test_a_depositor_opening_a_project_lands_on_its_first_form_section() {
         let (state, _) = test_state("project-allowed").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801", "080C"]).await;
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
 
         let response = as_session(&app, "/projects/0801", &session).await;
-        assert_eq!(response.status(), StatusCode::OK);
-        assert!(body_string(response).await.contains("Project 0801"));
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(location(&response).as_deref(), Some("/projects/0801/sections/overview"));
+    }
+
+    #[tokio::test]
+    async fn test_the_redirect_target_does_not_depend_on_the_role() {
+        // A destination that differed by role is one more thing to get wrong in
+        // a link shared between a depositor and a reviewer, and both audiences
+        // see `overview` first.
+        let (state, _) = test_state("project-first-section").await;
+        let depositor = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801"]).await;
+        let rdu = a_user(&state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
+        let app = test_app(&state);
+
+        for user in [depositor, rdu] {
+            let session = a_session(&state, user.id).await;
+            let response = as_session(&app, "/projects/0801", &session).await;
+            assert_eq!(
+                location(&response).as_deref(),
+                Some("/projects/0801/sections/overview"),
+                "{}",
+                user.name
+            );
+        }
     }
 
     #[tokio::test]
@@ -161,8 +188,14 @@ mod tests {
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
 
-        assert_eq!(as_session(&app, "/projects/080C", &session).await.status(), StatusCode::OK);
-        assert_eq!(as_session(&app, "/projects/080c", &session).await.status(), StatusCode::OK);
+        assert_eq!(
+            as_session(&app, "/projects/080C", &session).await.status(),
+            StatusCode::SEE_OTHER
+        );
+        assert_eq!(
+            as_session(&app, "/projects/080c", &session).await.status(),
+            StatusCode::SEE_OTHER
+        );
         assert_eq!(
             as_session(&app, "/projects/080E", &session).await.status(),
             StatusCode::FORBIDDEN
@@ -178,8 +211,14 @@ mod tests {
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
 
-        assert_eq!(as_session(&app, "/projects/0803", &session).await.status(), StatusCode::OK);
-        assert_eq!(as_session(&app, "/projects/0801a", &session).await.status(), StatusCode::OK);
+        assert_eq!(
+            as_session(&app, "/projects/0803", &session).await.status(),
+            StatusCode::SEE_OTHER
+        );
+        assert_eq!(
+            as_session(&app, "/projects/0801a", &session).await.status(),
+            StatusCode::SEE_OTHER
+        );
     }
 
     #[tokio::test]
@@ -261,37 +300,6 @@ mod tests {
                 "{shortcode}: {body}"
             );
         }
-    }
-
-    #[tokio::test]
-    async fn test_a_published_project_page_leads_with_its_name() {
-        let (state, _) = test_state("detail-name").await;
-        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
-        let session = a_session(&state, user.id).await;
-        let app = test_app(&state);
-
-        let expected = state.published.get("0801d").expect("0801d").name.clone();
-        let body = body_string(as_session(&app, "/projects/0801d", &session).await).await;
-        assert!(body.contains(&expected), "{body}");
-        assert!(
-            body.contains(&format!("<title>{expected} — DaSCH Metadata Editor</title>")),
-            "{body}"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_an_unpublished_project_page_opens_rather_than_404ing() {
-        // REQ-2.3: absent from the published set is not "does not exist", and
-        // deciding that needs the draft records, which the form brings.
-        let (state, _) = test_state("detail-unpublished").await;
-        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["9999"]).await;
-        let session = a_session(&state, user.id).await;
-        let app = test_app(&state);
-
-        let response = as_session(&app, "/projects/9999", &session).await;
-        assert_eq!(response.status(), StatusCode::OK);
-        let body = body_string(response).await;
-        assert!(body.contains("nothing to pre-fill"), "{body}");
     }
 
     #[tokio::test]

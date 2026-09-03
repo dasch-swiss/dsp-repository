@@ -751,6 +751,7 @@ dependencies = [
  "rand",
  "rusqlite",
  "serde",
+ "serde_json",
  "subtle",
  "thiserror 2.0.18",
  "tokio",
@@ -769,8 +770,10 @@ name = "editor-web"
 version = "0.8.3"
 dependencies = [
  "editor-core",
+ "insta",
  "maud",
  "mosaic-tiles",
+ "platform-metadata",
  "serde_json",
 ]
 

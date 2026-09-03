@@ -35,7 +35,7 @@ use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use editor_core::records::{Role, SubmissionState, User};
 use editor_core::repository::{DraftRepository, RepositoryError, SubmissionRepository, UserRepository};
 use editor_web::pages::depositors as page;
@@ -44,7 +44,7 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::auth::guard::Rdu;
-use crate::AppState;
+use crate::{format_instant, AppState};
 
 /// What a depositor is told if they find their way to one of these pages.
 ///
@@ -508,16 +508,6 @@ fn storage_error(state: &AppState, viewer: &User, what: &str, error: &Repository
              keeps happening, the service needs attention.",
         ),
     )
-}
-
-/// An instant as the account list shows it.
-///
-/// UTC and explicit about it. The alternative is a local time that depends on
-/// where the server thinks it is, which for a value used to answer "did my code
-/// go out before or after I asked" is worse than an offset the reader converts
-/// themselves.
-fn format_instant(at: DateTime<Utc>) -> String {
-    at.format("%Y-%m-%d %H:%M UTC").to_string()
 }
 
 #[cfg(test)]

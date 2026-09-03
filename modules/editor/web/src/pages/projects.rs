@@ -1,11 +1,10 @@
-//! The project list and the per-project page.
+//! The project list.
 //!
-//! The per-project page is still a placeholder for the editing surface, which is
-//! the form's work. What is real here is the **scoping** — the list shows a
-//! depositor exactly the projects assigned to them (REQ-1.2), and the
-//! per-project page is reached only through the check that answers REQ-1.3's 403
-//! otherwise — and, now that the editor reads the published set, the projects'
-//! actual names.
+//! What this page owns is the **scoping**: it shows a depositor exactly the
+//! projects assigned to them (REQ-1.2), named from the published set. The
+//! editing surface is [`crate::pages::section`], which `/projects/{shortcode}`
+//! redirects into — there is no per-project landing page between the two, so
+//! that exactly one place decides where a project link lands.
 //!
 //! ## A row can be missing in two directions, and both are ordinary
 //!
@@ -73,38 +72,6 @@ pub fn rdu_overview(rows: &[ProjectSummary<'_>]) -> Markup {
             }
             p class="mt-6" {
                 a href="/depositors" class="underline" { "Manage depositor accounts" }
-            }
-        }
-    }
-}
-
-/// `GET /projects/{shortcode}` — reached only by someone who may.
-///
-/// `name` is the published project's name, or `None` for a shortcode the
-/// published set does not hold. That is not an error state (REQ-2.3): a project
-/// may exist only locally, and its page has to open without reading as a
-/// failure.
-pub fn project(shortcode: &str, name: Option<&str>) -> Markup {
-    html! {
-        div class="max-w-2xl py-8" {
-            @match name {
-                Some(name) => {
-                    h1 class="font-display text-2xl mb-1" { (name) }
-                    p class="font-mono text-sm text-gray-600 mb-6" { (shortcode) }
-                }
-                None => {
-                    h1 class="font-display text-2xl mb-1" { "Project " (shortcode) }
-                    p class="text-gray-600 mb-6" {
-                        "This project is not in the published set this deployment carries, so there is nothing \
-                         to pre-fill yet."
-                    }
-                }
-            }
-            p class="text-gray-600 mb-6" {
-                "The editing form for this project is not available yet."
-            }
-            p {
-                a href="/projects" class="underline" { "Back to your projects" }
             }
         }
     }
@@ -249,33 +216,12 @@ mod tests {
     }
 
     #[test]
-    fn test_the_project_page_leads_with_the_name_and_keeps_the_shortcode() {
-        let out = project("0801d", Some("Bernoulli-Euler Online")).into_string();
-        assert!(out.contains("Bernoulli-Euler Online"), "{out}");
-        assert!(out.contains("0801d"), "{out}");
-        assert!(out.contains(r#"<a href="/projects""#), "{out}");
-    }
-
-    #[test]
-    fn test_an_unpublished_project_opens_without_reading_as_an_error() {
-        // REQ-2.3 allows a project that exists only locally, and REQ-1.1's
-        // "current published metadata" is then empty.
-        let out = project("0999", None).into_string();
-        assert!(out.contains("Project 0999"), "{out}");
-        assert!(out.contains("nothing to pre-fill"), "{out}");
-    }
-
-    #[test]
     fn test_a_shortcode_and_a_name_are_escaped_wherever_they_are_rendered() {
         // Both arrive from data: the shortcode from a path segment or a stored
         // assignment, the name from a project file.
         let hostile = "<script>alert(1)</script>";
         let rows = [summary(hostile, hostile, hostile)];
-        for out in [
-            project(hostile, Some(hostile)).into_string(),
-            assigned(&rows, 1).into_string(),
-            rdu_overview(&rows).into_string(),
-        ] {
+        for out in [assigned(&rows, 1).into_string(), rdu_overview(&rows).into_string()] {
             assert!(!out.contains("<script>alert(1)</script>"), "{out}");
             assert!(out.contains("&lt;script&gt;"), "{out}");
         }

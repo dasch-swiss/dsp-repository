@@ -55,8 +55,10 @@
 //!
 //! A depositor opens a section to read it and presses save. The file has to come
 //! back byte-identical, and three separate things stand in the way — all three
-//! found by `tests/untouched_form_round_trip.rs`, which puts the form in the
-//! middle of the corpus round-trip:
+//! found by `editor-web/tests/untouched_form_round_trip.rs`, which puts the form
+//! in the middle of the corpus round-trip. It is in the *sibling* crate because
+//! it derives which field takes which shape from the field registry, and the
+//! registry lives in `editor-web`:
 //!
 //! - **A newline arrives as CRLF on the no-JavaScript path.** The urlencoded serializer normalises
 //!   line breaks, so a `textarea` holding `"a\nb"` posts `a%0D%0Ab` on a native submit — verified
@@ -66,10 +68,10 @@
 //!   the files hold — and it is applied to both sides of the comparison but only to a value being
 //!   stored, because a bare `\r` (which 10 committed abstracts hold) cannot survive a `<textarea>`
 //!   in any engine.
-//! - **Trimming rewrites values nobody edited.** Four committed files carry a leading or trailing
-//!   space in a field the form owns. A value that differs from the stored one *only* in surrounding
-//!   whitespace is one the depositor did not change, so the stored bytes are kept; a genuinely new
-//!   value is stored trimmed.
+//! - **Trimming rewrites values nobody edited.** A value that differs from the stored one *only* in
+//!   surrounding whitespace is one the depositor did not change, so the stored bytes are kept; a
+//!   genuinely new value is stored trimmed. 20 of the 85 committed files carry such a space
+//!   somewhere, and every field taken over from here brings more of them into range.
 //! - **A stored placeholder renders as an empty control**, so an untouched form posts an empty
 //!   value for it — see [`apply_text`].
 
@@ -89,15 +91,30 @@ use crate::multilingual::DraftMultilingual;
 /// `grc`) with room for a subtag, and every key this service mints.
 const MAX_NAME_SEGMENT: usize = 12;
 
+/// The most suffixed values [`FormBody::entries`] will read under one prefix —
+/// in practice, the most language tags one field may carry.
+///
+/// A bound on work, not a product rule: `DraftMultilingual` is an
+/// order-preserving `Vec`, so its `get` and `set` scan, which is right for a map
+/// the data holds two entries of and ruinous for one holding twenty thousand.
+/// Sixteen times the four tags the UI offers, so no real submission reaches it
+/// and the excess is dropped rather than refused — refusing needs a field-level
+/// error, which arrives with submit validation.
+const MAX_VALUES_PER_PREFIX: usize = 64;
+
 /// A posted form body: every name/value pair, in the order the browser sent
 /// them, duplicates intact.
 ///
-/// The de-duplicating readers below keep a `HashSet` beside the ordered result
-/// rather than scanning what they have already collected. The scan reads more
-/// simply and is quadratic in the number of pairs posted under one name, and
-/// nothing bounds that but Axum's 2 MB body limit — about 100,000 short pairs,
-/// or ten billion string comparisons. A per-field cap is the other half of that
-/// and belongs with the route, which does not exist yet.
+/// Every reader here is **linear in the number of pairs**, which is a property
+/// to keep: nothing bounds how many arrive under one name but Axum's 2 MB body
+/// limit, so an `O(n²)` reader turns one request into billions of comparisons.
+/// Hence the `HashSet` beside each de-duplicating result, and hence
+/// [`Self::entries`] returning values *with* their suffixes rather than leaving
+/// the caller to fetch each with [`Self::get`].
+///
+/// A *product* cap — at most so many keywords, refused with a field-level error
+/// — is a different thing and belongs with the route. This is only the bound on
+/// work.
 #[derive(Debug, Default, Clone)]
 pub struct FormBody {
     pairs: Vec<(String, String)>,
@@ -167,26 +184,36 @@ impl FormBody {
         keys
     }
 
-    /// The suffixes posted under `{prefix}.<suffix>`, in body order, without
-    /// duplicates.
+    /// The suffixed values posted under `{prefix}.<suffix>`, in body order,
+    /// without duplicates.
     ///
     /// How a multilingual field's tags are discovered: the form renders whatever
     /// tags the value had plus the four it offers, so the body is the only thing
     /// that knows which are present. A suffix containing a further `.` is
     /// skipped — that is a deeper path this shape does not own.
+    ///
+    /// **The value comes back with the suffix, in one pass**, because returning
+    /// the suffixes alone and fetching each with [`Self::get`] is quadratic in
+    /// the number of pairs — see [`MAX_VALUES_PER_PREFIX`] for the other half of
+    /// the bound. At most that many are returned.
+    ///
+    /// First occurrence wins, matching [`Self::get`].
     #[must_use]
-    pub fn suffixes(&self, prefix: &str) -> Vec<&str> {
+    pub fn entries(&self, prefix: &str) -> Vec<(&str, &str)> {
         let prefix = format!("{prefix}.");
-        let mut found: Vec<&str> = Vec::new();
+        let mut found: Vec<(&str, &str)> = Vec::new();
         let mut seen: HashSet<&str> = HashSet::new();
-        for (key, _) in &self.pairs {
+        for (key, value) in &self.pairs {
             let Some(suffix) = key.strip_prefix(&prefix) else {
                 continue;
             };
             if suffix.contains('.') || !is_valid_segment(suffix) || !seen.insert(suffix) {
                 continue;
             }
-            found.push(suffix);
+            found.push((suffix, value.as_str()));
+            if found.len() == MAX_VALUES_PER_PREFIX {
+                break;
+            }
         }
         found
     }
@@ -288,17 +315,48 @@ pub enum WhenCleared {
     /// ongoing project unpublishable until an end date it does not have is
     /// entered.
     ///
-    /// **Which field gets which is not declared here, and should be.** It is
-    /// passed per call today, so a handler can disagree with the registry —
-    /// `Drop` on a required `String` — with no test failing. It belongs on
-    /// `registry::Field` alongside the field's control, and the form-dispatch
-    /// work is where to move it. See `docs/src/editor/architecture.md`.
+    /// Which field gets which is declared once, on `editor_web::form::registry`'s
+    /// `Field`, as part of its [`Shape`] — never passed per call.
     Placeholder,
 }
 
 /// The sentinel [`WhenCleared::Placeholder`] writes, and the one a stored value
 /// is recognised by.
 const MISSING: &str = "MISSING";
+
+/// How the form reads one field back out of a posted body.
+///
+/// One arm per applier, so naming a shape is the only way to reach one. The
+/// field registry gives every field it takes over exactly one, which is what
+/// keeps a field's control and its decoder from drifting.
+///
+/// [`WhenCleared`] rides inside [`Self::Text`] rather than beside it because it
+/// is meaningful for nothing else — a language map's empty state is "no tags".
+/// Beside it, a `Multilingual` field could declare one and a `Text` field none.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Shape {
+    /// A scalar string member, read by [`apply_text`]. The [`WhenCleared`] is
+    /// the contract's own distinction: a required `String` whose empty state the
+    /// data spells as a sentinel takes [`WhenCleared::Placeholder`], an
+    /// `Option<String>` takes [`WhenCleared::Drop`].
+    Text(WhenCleared),
+    /// A language map, from `{field}.<tag>` pairs. Read by
+    /// [`apply_multilingual`].
+    Multilingual,
+}
+
+/// Apply one field, whichever shape it is.
+///
+/// The only door out of this crate — the appliers are `pub(crate)` — so a
+/// handler cannot pick a `WhenCleared` the registry does not declare. That
+/// mistake (`Drop` on a required `String`) leaves every ongoing project
+/// unpublishable with nothing failing.
+pub fn apply(shape: Shape, body: &FormBody, draft: &mut ProjectDraft, field: &str) {
+    match shape {
+        Shape::Text(when_cleared) => apply_text(body, draft, field, when_cleared),
+        Shape::Multilingual => apply_multilingual(body, draft, field),
+    }
+}
 
 /// Apply a submitted scalar to `field`.
 ///
@@ -313,7 +371,7 @@ const MISSING: &str = "MISSING";
 /// published field nobody edited: 131 sentinels across 8 paths in the 85
 /// committed files, 24 of them `endDate`. This is the one rule that keeps a save
 /// in an unrelated section from rewriting them.
-pub fn apply_text(body: &FormBody, draft: &mut ProjectDraft, field: &str, when_cleared: WhenCleared) {
+pub(crate) fn apply_text(body: &FormBody, draft: &mut ProjectDraft, field: &str, when_cleared: WhenCleared) {
     let Some(submitted) = body.get(field) else { return };
     let stored = draft.get(field).and_then(Value::as_str).map(str::to_string);
     match resolve(submitted, stored.as_deref()) {
@@ -345,17 +403,14 @@ pub fn apply_text(body: &FormBody, draft: &mut ProjectDraft, field: &str, when_c
 /// too, so `"en": ""` never reaches a file, where DPE's language fallback would
 /// render a blank description in place of the German the project still has. A
 /// map left entirely empty removes the field.
-pub fn apply_multilingual(body: &FormBody, draft: &mut ProjectDraft, field: &str) {
-    let tags = body.suffixes(field);
-    if tags.is_empty() {
+pub(crate) fn apply_multilingual(body: &FormBody, draft: &mut ProjectDraft, field: &str) {
+    let posted = body.entries(field);
+    if posted.is_empty() {
         return;
     }
     let stored = draft.multilingual(field);
     let mut value = DraftMultilingual::new();
-    for tag in tags {
-        let Some(text) = body.get(&format!("{field}.{tag}")) else {
-            continue;
-        };
+    for (tag, text) in posted {
         // Folded, because the tag becomes a key in the stored map and in the
         // published file. `description.EN` beside `description.en` would
         // otherwise write both, and BCP 47 treats them as one language — every
@@ -396,7 +451,10 @@ pub fn apply_multilingual(body: &FormBody, draft: &mut ProjectDraft, field: &str
 /// Order is the body's. Duplicates are dropped, keeping the first: two checked
 /// controls with one value is a rendering bug, and writing the value twice would
 /// put it in the file twice.
-pub fn apply_string_list(body: &FormBody, draft: &mut ProjectDraft, field: &str) {
+/// No [`Shape`] arm names this yet: no field declares that shape until the
+/// repeatable and checkbox-group widgets land. The attribute goes with the arm.
+#[allow(dead_code)]
+pub(crate) fn apply_string_list(body: &FormBody, draft: &mut ProjectDraft, field: &str) {
     if !body.has(field) {
         return;
     }
@@ -425,7 +483,10 @@ pub fn apply_string_list(body: &FormBody, draft: &mut ProjectDraft, field: &str)
 ///
 /// Absent `{field}.row` leaves the field alone. Present with no valid key —
 /// which is what the hidden marker of an empty list posts — clears it.
-pub fn apply_multilingual_rows(body: &FormBody, draft: &mut ProjectDraft, field: &str) {
+/// No [`Shape`] arm names this yet: no field declares that shape until the
+/// repeatable and checkbox-group widgets land. The attribute goes with the arm.
+#[allow(dead_code)]
+pub(crate) fn apply_multilingual_rows(body: &FormBody, draft: &mut ProjectDraft, field: &str) {
     let row_name = format!("{field}.row");
     if !body.has(&row_name) {
         return;
@@ -434,10 +495,7 @@ pub fn apply_multilingual_rows(body: &FormBody, draft: &mut ProjectDraft, field:
     for key in body.rows(field) {
         let prefix = format!("{field}.{key}");
         let mut value = DraftMultilingual::new();
-        for tag in body.suffixes(&prefix) {
-            let Some(text) = body.get(&format!("{prefix}.{tag}")) else {
-                continue;
-            };
+        for (tag, text) in body.entries(&prefix) {
             // No stored counterpart to compare against: a row's identity is its
             // opaque key, and the stored list is positional, so there is nothing
             // here to preserve bytes from. The submitted text is the value.
@@ -546,20 +604,24 @@ mod tests {
     }
 
     #[test]
-    fn suffixes_finds_the_language_tags_a_field_actually_carries() {
+    fn entries_finds_the_language_tags_a_field_actually_carries_with_their_texts() {
         // The tags come from the body because the form renders whatever the
-        // value had, plus the four the UI offers.
+        // value had, plus the four the UI offers. The text comes back with the
+        // tag so the caller never has to scan the body again per tag.
         let body = body(&[
             ("description.de", "Beschreibung"),
             ("description.en", "Description"),
             ("description.ar", "وصف"),
             ("descriptionOther.en", "not this field"),
         ]);
-        assert_eq!(body.suffixes("description"), ["de", "en", "ar"]);
+        assert_eq!(
+            body.entries("description"),
+            [("de", "Beschreibung"), ("en", "Description"), ("ar", "وصف")]
+        );
     }
 
     #[test]
-    fn suffixes_skips_a_deeper_path_and_a_segment_that_is_no_tag() {
+    fn entries_skips_a_deeper_path_and_a_segment_that_is_no_tag() {
         let long = "x".repeat(MAX_NAME_SEGMENT + 1);
         let body = body(&[
             ("keywords.k1.en", "deeper"),
@@ -570,10 +632,48 @@ mod tests {
         ]);
         // A segment that could not be a language tag is dropped rather than
         // becoming a key in a stored map, and from there in a published file.
-        assert_eq!(body.suffixes("keywords"), ["en"]);
+        assert_eq!(body.entries("keywords"), [("en", "shallow")]);
         // The deeper path is not a tag of `keywords`; it is a tag of
         // `keywords.k1`.
-        assert_eq!(body.suffixes("keywords.k1"), ["en"]);
+        assert_eq!(body.entries("keywords.k1"), [("en", "deeper")]);
+    }
+
+    #[test]
+    fn entries_keeps_the_first_of_a_repeated_suffix_matching_get() {
+        // No browser posts one name twice, so a repeat is our own markup or a
+        // hand-built request; picking the same end as `get` is what keeps the
+        // two readers from disagreeing about one body.
+        let body = body(&[("description.en", "first"), ("description.en", "second")]);
+        assert_eq!(body.entries("description"), [("en", "first")]);
+        assert_eq!(body.get("description.en"), Some("first"));
+    }
+
+    #[test]
+    fn entries_stops_at_the_cap_so_one_body_cannot_buy_unbounded_work() {
+        // The bound on work, at a size a single request can reach: Axum's 2 MB
+        // body limit holds roughly 100,000 short pairs, and the readers behind
+        // this scan a `Vec` per value. 20,000 tags under one prefix measured
+        // 2.6 s of CPU in a debug build before the cap.
+        let pairs: Vec<(String, String)> = (0..20_000)
+            .map(|i| (format!("description.t{i:x}"), format!("text {i}")))
+            .collect();
+        let body = FormBody::from_pairs(pairs);
+        assert_eq!(body.entries("description").len(), MAX_VALUES_PER_PREFIX);
+    }
+
+    #[test]
+    fn a_body_within_the_cap_keeps_every_tag() {
+        // The cap must not be reachable by anything real: the UI offers four
+        // tags and no committed field carries more than two.
+        let below = MAX_VALUES_PER_PREFIX - 1;
+        let pairs: Vec<(String, String)> = (0..below)
+            .map(|i| (format!("description.t{i:x}"), format!("text {i}")))
+            .collect();
+        let body = FormBody::from_pairs(pairs);
+        let entries = body.entries("description");
+        assert_eq!(entries.len(), below);
+        assert_eq!(entries[0], ("t0", "text 0"));
+        assert_eq!(entries[below - 1].1, format!("text {}", below - 1));
     }
 
     // --- apply_text -------------------------------------------------------

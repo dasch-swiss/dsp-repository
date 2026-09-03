@@ -67,6 +67,26 @@ impl FromStr for Role {
     }
 }
 
+/// The canonical storage key for a project shortcode: trimmed, ASCII-folded.
+///
+/// One definition, because four things key on a shortcode and three of them are
+/// writes. `drafts`, `submissions` and `approved_records` all carry it as an
+/// exact-match column, while [`PublishedProjects::get`](crate::published::PublishedProjects::get)
+/// and [`User::may_reach`] both fold — the published set mixes `080C` with
+/// `0801a`, so a link typed either way has to reach the same project. Keying a
+/// write on the shortcode as typed would therefore give `/projects/080c` and
+/// `/projects/080C` a **row each** for one project, and two people editing it
+/// would each keep half the edits with nothing to say so. `submissions.shortcode`
+/// is unique, so the same mismatch would also make a pending-submission check
+/// silently miss.
+///
+/// ASCII rather than Unicode folding: `is_valid_shortcode` admits only ASCII
+/// alphanumerics, so the two cannot disagree about what a shortcode is.
+#[must_use]
+pub fn normalize_shortcode(shortcode: &str) -> String {
+    shortcode.trim().to_ascii_lowercase()
+}
+
 /// A person who can log in.
 ///
 /// `email` is stored as entered and in plaintext (PRD Constraints: the
@@ -115,6 +135,14 @@ impl User {
     /// getting it wrong would deny a depositor their own project with no visible
     /// cause. Two projects differing only in case would make this too generous;
     /// no such pair exists in the published set.
+    ///
+    /// This is [`normalize_shortcode`]'s rule, compared rather than keyed — the
+    /// allocation-free form, since nothing here needs the string. It deliberately
+    /// does *not* trim: an argument reaches this only after `is_valid_shortcode`,
+    /// which admits no whitespace, and an authorization check is the last place
+    /// to be more permissive than the thing that validated its input.
+    /// [`tests::the_assignment_comparison_agrees_with_the_storage_key`] pins the
+    /// two against each other.
     #[must_use]
     pub fn may_reach(&self, shortcode: &str) -> bool {
         match self.role {
@@ -361,6 +389,35 @@ mod tests {
         assert!(depositor.may_reach("080C"));
         assert!(depositor.may_reach("080c"));
         assert!(!depositor.may_reach("080E"));
+    }
+
+    #[test]
+    fn the_assignment_comparison_agrees_with_the_storage_key() {
+        // Two expressions of one rule: `may_reach` compares, `normalize_shortcode`
+        // keys. If they ever disagreed, a depositor could reach a project whose
+        // draft they cannot load — or load someone else's. Checked over the
+        // shapes the published set actually contains, mixed case included.
+        for (assigned, requested) in [
+            ("0801", "0801"),
+            ("080C", "080c"),
+            ("080c", "080C"),
+            ("0801a", "0801A"),
+            ("085F", "085f"),
+        ] {
+            assert!(
+                user(Role::Depositor, &[assigned]).may_reach(requested),
+                "{assigned} should reach {requested}"
+            );
+            assert_eq!(
+                normalize_shortcode(assigned),
+                normalize_shortcode(requested),
+                "{assigned} and {requested} must key the same"
+            );
+        }
+        for (assigned, requested) in [("0801", "0803"), ("080C", "080E")] {
+            assert!(!user(Role::Depositor, &[assigned]).may_reach(requested));
+            assert_ne!(normalize_shortcode(assigned), normalize_shortcode(requested));
+        }
     }
 
     #[test]

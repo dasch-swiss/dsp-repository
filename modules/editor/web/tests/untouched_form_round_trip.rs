@@ -1,58 +1,40 @@
 //! Saving a form nobody edited must not change the project, for all 85 files.
 //!
-//! The sibling `canonical_round_trip` test pins `load -> draft -> write`. This
-//! one puts the **form** in the middle: `load -> draft -> render -> submit ->
-//! draft -> write`, with the submit carrying exactly what an untouched control
-//! would post. A depositor opening a section to read it and pressing save must
-//! get a byte-identical file.
+//! `editor-core`'s `canonical_round_trip` pins `load -> draft -> write`; this
+//! one puts the **form** in the middle, with the submit carrying exactly what an
+//! untouched control would post.
 //!
-//! ## What it caught
+//! In `editor-web` because it derives its table from
+//! [`registry::Field`](editor_web::form::registry::Field)'s declared shapes, and
+//! `server -> web -> core` puts the registry on this side. Deriving it is the
+//! point: a field whose shape is declared is covered automatically, where a
+//! hand-written table agrees with the registry only by inspection.
 //!
-//! Three separate ways an untouched save rewrites a published file, all found by
-//! running this test rather than by reasoning about the code:
-//!
-//! 1. **Placeholder sentinels.** `MISSING` and `CALCULATED` (`platform_metadata::is_placeholder`)
-//!    are filtered out of DPE's UI and of OAI-PMH's output, so a control holding one renders
-//!    **empty** — an untouched form posts an empty value, and the obvious decoder writes `""` back.
-//!    All 85 files carry 131 sentinels across 8 paths, 24 of them `endDate`.
-//! 2. **Trimming.** Four files carry a leading or trailing space in a field the form owns, and a
-//!    control posts it back verbatim.
-//! 3. **Newline encoding.** 26 files hold a newline in `description` or `abstract`, and 10 hold a
-//!    bare `\r` that no `<textarea>` can represent.
-//!
-//! Enumerated rather than sampled, and asserted against the committed bytes
-//! rather than against a fixture, because every one of these is silent by
-//! construction: the unit tests pass, the form renders correctly, the draft is
-//! valid, and the only symptom is a diff in a pull request against dozens of
-//! projects nobody touched.
+//! Asserted against the committed bytes rather than a fixture, because every way
+//! this fails is silent: the unit tests pass, the form renders, the draft is
+//! valid, and the only symptom is a pull request touching dozens of projects
+//! nobody edited.
 
 use std::path::{Path, PathBuf};
 
 use editor_core::canonical::write_draft;
 use editor_core::draft::ProjectDraft;
-use editor_core::form::{apply_multilingual, apply_text, FormBody, WhenCleared};
+use editor_core::form::{apply, FormBody, Shape};
+use editor_core::multilingual::UI_LANGUAGES;
+use editor_web::form::registry::{Field, FIELDS};
 use platform_metadata::project::ProjectRaw;
 use serde_json::Value;
 
-/// The scalar text fields the form owns, with what a clear means for each.
-///
-/// `Placeholder` is for a field the contract types as a required `String`, whose
-/// empty state the data spells as a sentinel; `Drop` is for an `Option`, where
-/// absent is unset.
-const TEXT_FIELDS: &[(&str, WhenCleared)] = &[
-    ("name", WhenCleared::Placeholder),
-    ("officialName", WhenCleared::Placeholder),
-    ("shortDescription", WhenCleared::Placeholder),
-    ("startDate", WhenCleared::Placeholder),
-    ("endDate", WhenCleared::Placeholder),
-    ("provenance", WhenCleared::Drop),
-    ("dataManagementPlan", WhenCleared::Drop),
-    ("dataPublicationYear", WhenCleared::Drop),
-    ("imageCredit", WhenCleared::Drop),
-];
-
-/// The language-map fields the form owns.
-const MULTILINGUAL_FIELDS: &[&str] = &["description", "abstract"];
+/// Every field whose shape the registry declares, which is exactly the set an
+/// applier reads and therefore exactly the set that can rewrite a file.
+fn read_fields() -> Vec<(&'static Field, Shape)> {
+    let fields: Vec<(&Field, Shape)> = FIELDS.iter().filter_map(|field| Some((field, field.shape?))).collect();
+    assert!(
+        !fields.is_empty(),
+        "no field declares a shape, so this test would pass over an empty submit"
+    );
+    fields
+}
 
 fn projects_dir() -> PathBuf {
     Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dpe/server/data/projects")).to_path_buf()
@@ -74,25 +56,39 @@ fn project_files() -> Vec<PathBuf> {
 ///
 /// A control renders the stored value, except that a placeholder renders as
 /// empty — which is the whole point of the test — so that is what the body
-/// carries. Every field the form owns is present, because a section posts its
-/// own fields whether or not they hold anything.
+/// carries. Every field with a declared shape is present, because a section
+/// posts its own fields whether or not they hold anything.
 fn untouched_submit(draft: &ProjectDraft) -> FormBody {
     let mut pairs: Vec<(String, String)> = Vec::new();
 
-    for (field, _) in TEXT_FIELDS {
-        let rendered = match draft.get(field).and_then(Value::as_str) {
-            // The sentinel is not shown to a reader, so the control is empty.
-            Some(value) if platform_metadata::is_placeholder(value) => String::new(),
-            Some(value) => value.to_string(),
-            // An absent field renders an empty control, which posts empty.
-            None => String::new(),
-        };
-        pairs.push(((*field).to_string(), rendered));
-    }
-
-    for field in MULTILINGUAL_FIELDS {
-        for (tag, text) in draft.multilingual(field).iter() {
-            pairs.push((format!("{field}.{tag}"), text.to_string()));
+    for (field, shape) in read_fields() {
+        match shape {
+            Shape::Text(_) => {
+                let rendered = match draft.get(field.id).and_then(Value::as_str) {
+                    // The sentinel is not shown to a reader, so the control is
+                    // empty.
+                    Some(value) if platform_metadata::is_placeholder(value) => String::new(),
+                    Some(value) => value.to_string(),
+                    // An absent field renders an empty control, which posts
+                    // empty.
+                    None => String::new(),
+                };
+                pairs.push((field.id.to_string(), rendered));
+            }
+            Shape::Multilingual => {
+                // The widget renders a control per offered language whether or
+                // not the value has that tag, so an untouched submit carries
+                // empty texts for the ones it does not — which is what an
+                // earlier version of this helper left out, posting only the
+                // stored tags and testing a body no browser would send.
+                let stored = draft.multilingual(field.id);
+                for tag in UI_LANGUAGES {
+                    pairs.push((format!("{}.{tag}", field.id), stored.get(tag).unwrap_or_default().to_string()));
+                }
+                for (tag, text) in stored.iter().filter(|(tag, _)| !UI_LANGUAGES.contains(tag)) {
+                    pairs.push((format!("{}.{tag}", field.id), text.to_string()));
+                }
+            }
         }
     }
 
@@ -103,11 +99,8 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
 fn resubmit(draft: &ProjectDraft) -> ProjectDraft {
     let body = untouched_submit(draft);
     let mut resubmitted = draft.clone();
-    for (field, when_cleared) in TEXT_FIELDS {
-        apply_text(&body, &mut resubmitted, field, *when_cleared);
-    }
-    for field in MULTILINGUAL_FIELDS {
-        apply_multilingual(&body, &mut resubmitted, field);
+    for (field, shape) in read_fields() {
+        apply(shape, &body, &mut resubmitted, field.id);
     }
     resubmitted
 }
@@ -180,6 +173,30 @@ fn the_corpus_really_does_carry_the_placeholders_this_test_is_about() {
         sentinels >= 100,
         "expected the corpus to carry many placeholders, found {sentinels}"
     );
+}
+
+#[test]
+fn the_body_this_test_submits_carries_every_field_a_shape_is_declared_for() {
+    // The other half of the canary, and the reason the table is derived rather
+    // than written out: a field whose shape is declared but which
+    // `untouched_submit` forgets to render is a field the round-trip check
+    // silently skips, and the check would still pass. Asserted against the
+    // registry so a newly shaped field cannot be missed.
+    let draft = ProjectDraft::from_raw(
+        &serde_json::from_str::<ProjectRaw>(
+            &std::fs::read_to_string(projects_dir().join("0801_bebb.json")).expect("readable"),
+        )
+        .expect("parses"),
+    );
+    let body = untouched_submit(&draft);
+    for (field, shape) in read_fields() {
+        match shape {
+            Shape::Text(_) => assert!(body.has(field.id), "{} is declared but never posted", field.id),
+            Shape::Multilingual => {
+                assert!(!body.entries(field.id).is_empty(), "{} is declared but never posted", field.id)
+            }
+        }
+    }
 }
 
 fn count_placeholders(value: &Value) -> usize {

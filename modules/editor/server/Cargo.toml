@@ -19,6 +19,10 @@ maud.workspace = true
 axum.workspace = true
 figment = { version = "0.10", features = ["env", "toml"] }
 serde.workspace = true
+# The draft payload column: a `ProjectDraft` serialized. `editor-core` keeps it
+# an opaque `String` because that layer never interprets it, so the handler that
+# does — the form's save path — is where it is parsed and written.
+serde_json.workspace = true
 # Persistence. `rusqlite` is synchronous and its `Connection` is `!Sync`;
 # `deadpool-sqlite` keeps each connection on a thread of its own so every
 # call goes through `interact()` and none can be held across an `.await`.

@@ -8,11 +8,11 @@
 //! → Shared Crates).
 //!
 //! The editor is root-mounted, unlike DPE's `/dpe/…` prefix, since it runs on
-//! its own hostname. `/review`, `/review/{shortcode}` and
-//! `/projects/{shortcode}/sections/{section}` join this list as those surfaces
-//! land — and `/projects/{shortcode}` **leaves** it at the same moment, because
-//! the scheme in `architecture.md` turns it into a redirect to the first
-//! section, and a redirect renders no beacon.
+//! its own hostname. `/review` and `/review/{shortcode}` join this list as those
+//! surfaces land. `/projects/{shortcode}/sections/{section}` has joined it, and
+//! `/projects/{shortcode}` **left** at the same moment: the scheme in
+//! `architecture.md` turned it into a redirect to the first section, and a
+//! redirect renders no beacon script, so no beacon can report it.
 //!
 //! `/` is deliberately absent. It is a redirect, so it never renders the beacon
 //! script and no beacon can report it — the same reason `/` and `/dpe` are
@@ -50,8 +50,18 @@ pub fn normalize_page_url(url: &str) -> &'static str {
     // and an account id are both unbounded sets, so letting either through
     // verbatim is the cardinality explosion this module exists to prevent.
     if let Some(rest) = url.strip_prefix("/projects/") {
-        if !rest.is_empty() && !rest.contains('/') {
-            return "/projects/{shortcode}";
+        // Both segments collapse. A section id is a closed set and would be safe
+        // to keep, but a shortcode is not, and the pair is one attribute value:
+        // `/projects/0801/sections/overview` and `/projects/080C/sections/overview`
+        // have to arrive as the same one.
+        if let Some((shortcode, tail)) = rest.split_once('/') {
+            if !shortcode.is_empty() {
+                if let Some(section) = tail.strip_prefix("sections/") {
+                    if !section.is_empty() && !section.contains('/') {
+                        return "/projects/{shortcode}/sections/{section}";
+                    }
+                }
+            }
         }
     }
     if let Some(rest) = url.strip_prefix("/depositors/") {
@@ -82,8 +92,14 @@ mod tests {
         // A shortcode and an account id are both unbounded sets. Letting either
         // through verbatim is exactly the cardinality explosion this module
         // exists to prevent.
-        assert_eq!(normalize_page_url("/projects/0801"), "/projects/{shortcode}");
-        assert_eq!(normalize_page_url("/projects/0801a"), "/projects/{shortcode}");
+        assert_eq!(
+            normalize_page_url("/projects/0801/sections/overview"),
+            "/projects/{shortcode}/sections/{section}"
+        );
+        assert_eq!(
+            normalize_page_url("/projects/080C/sections/dataset"),
+            "/projects/{shortcode}/sections/{section}"
+        );
         let id = "0c1cd9ff-9a9f-4b0e-9b0a-3f2f8f0b7a11";
         assert_eq!(normalize_page_url(&format!("/depositors/{id}/edit")), "/depositors/{id}/edit");
         assert_eq!(
@@ -109,8 +125,17 @@ mod tests {
         // No longer a page: the edit form posts to `/depositors/{id}/edit`, so
         // nothing renders here and a beacon cannot report it.
         assert_eq!(normalize_page_url("/depositors/0c1cd9ff-9a9f-4b0e"), "other");
-        assert_eq!(normalize_page_url("/projects/0801/sections/general"), "other");
         assert_eq!(normalize_page_url("/projects/"), "other");
+        // No longer a page: it is a redirect into the first section, so it
+        // renders no beacon script and nothing can report it.
+        assert_eq!(normalize_page_url("/projects/0801"), "other");
+        assert_eq!(normalize_page_url("/projects/0801a"), "other");
+        // Near misses stay bounded rather than minting a pattern with a blank or
+        // an extra segment.
+        assert_eq!(normalize_page_url("/projects//sections/overview"), "other");
+        assert_eq!(normalize_page_url("/projects/0801/sections/"), "other");
+        assert_eq!(normalize_page_url("/projects/0801/sections/a/b"), "other");
+        assert_eq!(normalize_page_url("/projects/0801/settings"), "other");
         assert_eq!(normalize_page_url("/depositors/abc/delete"), "other");
         assert_eq!(normalize_page_url("/depositors//edit"), "other");
         // An empty id is not an id: the guards keep `/depositors//…` out of
@@ -128,7 +153,10 @@ mod tests {
         // expected, and would have stayed green through exactly that change
         // while every login page view collapsed into `other`.
         assert_eq!(normalize_page_url("/login?next=/projects"), "/login");
-        assert_eq!(normalize_page_url("/projects/0801?x=1"), "/projects/{shortcode}");
+        assert_eq!(
+            normalize_page_url("/projects/0801/sections/overview?x=1"),
+            "/projects/{shortcode}/sections/{section}"
+        );
         assert_eq!(normalize_page_url("/projects#section"), "/projects");
         assert_eq!(normalize_page_url("/nope?x=1"), "other");
     }

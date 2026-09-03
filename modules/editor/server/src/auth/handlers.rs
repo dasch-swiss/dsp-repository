@@ -1036,12 +1036,25 @@ mod tests {
         assert_eq!(location(&signed_in).as_deref(), Some("/projects/0801"));
         let session = cookie_set(&signed_in, cookie::SESSION).expect("a session");
 
+        // `/projects/{shortcode}` is a redirect into the form's first section, so
+        // arriving is a 303 followed by a page — the point being that the
+        // destination is reachable with the session just minted, not that it is
+        // itself a page.
         let arrived = app
             .clone()
             .oneshot(with_cookie(get("/projects/0801"), cookie::SESSION, &session))
             .await
             .unwrap();
-        assert_eq!(arrived.status(), StatusCode::OK);
+        assert_eq!(arrived.status(), StatusCode::SEE_OTHER);
+        let section = location(&arrived).expect("the project redirects into its form");
+        assert_eq!(section, "/projects/0801/sections/overview");
+
+        let form = app
+            .clone()
+            .oneshot(with_cookie(get(&section), cookie::SESSION, &session))
+            .await
+            .unwrap();
+        assert_eq!(form.status(), StatusCode::OK);
     }
 
     #[tokio::test]

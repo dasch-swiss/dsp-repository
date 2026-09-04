@@ -609,6 +609,11 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <h2 id="enforcement"><a class="header" href="#enforcement">Enforcement</a></h2>
 <p>Commit messages are gated in CI by <a href="https://github.com/KeisukeYamashita/commitlint-rs"><code>commitlint-rs</code></a> via the <code>gate</code> job in <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/workflows/commit-hygiene.yml"><code>commit-hygiene.yml</code></a> (a composite action at <code>.github/actions/commit-lint</code>). The rules live in <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.commitlintrc.yml"><code>.commitlintrc.yml</code></a>: the <code>type</code> allowlist above is mandatory, <code>scope-empty</code> makes the scope mandatory, and the subject must be non-empty.</p>
 <p>The same job enforces the <strong>one-commit-per-PR cap</strong>. To land more than one commit, tick the <code>allow-many-commits</code> checkbox in the PR description — an unticked box does not count.</p>
+<p>The same job also <strong>rejects merge commits on the branch</strong>, and <code>allow-many-commits</code> does not lift that — the override is about independent commits, which a merge commit is not. The cap itself counts real commits, so a branch whose only fault is a merge is told about the merge rather than blamed for having "too many commits".</p>
+<p><strong>Update a stale branch by rebasing, never by merging <code>main</code> into it:</strong></p>
+<pre><code>git fetch origin &amp;&amp; git rebase origin/main &amp;&amp; git push --force-with-lease
+</code></pre>
+<p>In the GitHub UI, use the chevron next to <strong>Update branch</strong> and pick <strong>Update with rebase</strong>. The plain button creates a merge commit, and GitHub offers no repository setting that changes that default or removes the option, so this gate is the only thing that catches it.</p>
 <p>Run the same checks locally before pushing:</p>
 <pre><code>just commit-lint            # checks origin/main..HEAD
 just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD

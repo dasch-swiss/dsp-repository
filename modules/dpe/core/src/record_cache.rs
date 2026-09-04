@@ -68,8 +68,13 @@ fn find_records(shortcode: &str, cache: &mut RecordCache) -> Vec<Record> {
 
 fn load_last_fetched() -> RecordCache {
     let mut map = HashMap::new();
-    let Ok(entries) = std::fs::read_dir(records_dir()) else {
-        return map;
+    let dir = records_dir();
+    let entries = match std::fs::read_dir(&dir) {
+        Ok(entries) => entries,
+        Err(e) => {
+            tracing::error!(dir = %dir.display(), error = %e, "failed to read the records directory");
+            return map;
+        }
     };
     for entry in entries.flatten() {
         let path = entry.path();
@@ -79,8 +84,28 @@ fn load_last_fetched() -> RecordCache {
         let Some(shortcode) = stem.strip_suffix("-records") else {
             continue;
         };
-        let body = std::fs::read_to_string(&path).unwrap_or_default();
-        let records: Vec<Record> = serde_json::from_str(&body).unwrap_or_default();
+        // Both failures below are loud: a dump that does not load leaves its whole
+        // project silently absent from the site, which is indistinguishable from
+        // "that project has no records" unless it is logged.
+        let body = match std::fs::read_to_string(&path) {
+            Ok(body) => body,
+            Err(e) => {
+                tracing::error!(shortcode, path = %path.display(), error = %e, "failed to read records file");
+                continue;
+            }
+        };
+        let records: Vec<Record> = match serde_json::from_str(&body) {
+            Ok(records) => records,
+            Err(e) => {
+                tracing::error!(
+                    shortcode,
+                    path = %path.display(),
+                    error = %e,
+                    "failed to parse records file — serving no records for this project"
+                );
+                continue;
+            }
+        };
         let ts = entry
             .metadata()
             .ok()

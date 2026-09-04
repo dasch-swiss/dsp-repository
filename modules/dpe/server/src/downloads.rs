@@ -22,7 +22,7 @@ pub(crate) struct FileMetadata {
     file_size: Option<u64>,
     checksum: Option<String>,
     checksum_algorithm: Option<String>,
-    mime_type: String,
+    mime_type: Option<String>,
     version: u32,
     date_created: Option<String>,
     date_modified: Option<String>,
@@ -110,7 +110,7 @@ mod tests {
 
     fn full_file() -> RecordFile {
         RecordFile {
-            mime_type: "image/png".to_string(),
+            mime_type: Some("image/png".to_string()),
             url: INGEST_URL.to_string(),
             checksum: Some("9ab438922efe5c31f0a862e10891789d6934685bb6d146afc8a3c67c54e622c9".to_string()),
             checksum_algorithm: Some("SHA-256".to_string()),
@@ -122,7 +122,7 @@ mod tests {
 
     fn minimal_file() -> RecordFile {
         RecordFile {
-            mime_type: "application/pdf".to_string(),
+            mime_type: Some("application/pdf".to_string()),
             url: MINIMAL_URL.to_string(),
             ..RecordFile::default()
         }
@@ -263,6 +263,23 @@ mod tests {
         assert_eq!(body["downloadUrl"], MINIMAL_URL);
         // Comes from the route, not the file object — never null.
         assert_eq!(body["fileId"], RECORD_ID);
+    }
+
+    /// Production exports (project 0803) carry files with no `mimeType`. It
+    /// serialises as an explicit `null`, like the other absent values.
+    #[tokio::test]
+    async fn a_file_without_a_mime_type_serialises_mime_type_as_null() {
+        let file = RecordFile { mime_type: None, ..full_file() };
+        let body = json_body(file).await;
+
+        assert!(
+            body.as_object().expect("body is an object").contains_key("mimeType"),
+            "mimeType should be present"
+        );
+        assert!(body["mimeType"].is_null(), "mimeType should be null, got {}", body["mimeType"]);
+        // The rest of the document is unaffected.
+        assert_eq!(body["fileName"], "Screenshot 2026-08-19 at 16.40.02.png");
+        assert_eq!(body["downloadUrl"], INGEST_URL);
     }
 
     /// Nothing is parsed out of the URL, so an unexpected shape changes nothing.

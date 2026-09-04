@@ -96,12 +96,13 @@ pub struct RecordLegalInfo {
 }
 
 /// `url` is dsp-ingest's own address — see `docs/src/dpe/oai-pmh.md` for why it is
-/// never published. The `Option`s are transitional: most exports carry only
-/// `mimeType` + `url`. Make them required once the exports are regenerated.
+/// never published. `url` is the only required field: every other value is absent
+/// from some production export, and a required field that the data does not carry
+/// makes `serde_json` reject the entire dump rather than the one record.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct RecordFile {
-    #[serde(rename = "mimeType")]
-    pub mime_type: String,
+    #[serde(rename = "mimeType", default)]
+    pub mime_type: Option<String>,
     pub url: String,
     #[serde(default)]
     pub checksum: Option<String>,
@@ -214,7 +215,7 @@ mod tests {
         assert_eq!(record.type_of_data, "Text");
         assert_eq!(record.keywords, Vec::<Multilingual>::new());
         let file = record.file.expect("0803 record should carry a file");
-        assert_eq!(file.mime_type, "application/pdf");
+        assert_eq!(file.mime_type.as_deref(), Some("application/pdf"));
         assert_eq!(
             file.url,
             "https://ingest.dasch.swiss/projects/0803/assets/lklK7rVuVOmpBZYWrF8o-g/original"
@@ -270,7 +271,7 @@ mod tests {
         let record = first_0862_record();
         let file = record.file.expect("the 0862 fixture carries a file");
 
-        assert_eq!(file.mime_type, "image/png");
+        assert_eq!(file.mime_type.as_deref(), Some("image/png"));
         assert_eq!(
             file.checksum.as_deref(),
             Some("9ab438922efe5c31f0a862e10891789d6934685bb6d146afc8a3c67c54e622c9")
@@ -290,11 +291,64 @@ mod tests {
         }"#;
         let file: RecordFile = serde_json::from_str(json).expect("parse minimal file object");
 
-        assert_eq!(file.mime_type, "application/pdf");
+        assert_eq!(file.mime_type.as_deref(), Some("application/pdf"));
         assert_eq!(file.checksum, None);
         assert_eq!(file.checksum_algorithm, None);
         assert_eq!(file.file_name, None);
         assert_eq!(file.file_size, None);
         assert_eq!(file.date_created, None);
+    }
+
+    /// The production 0803 export shape: every technical field but `mimeType`.
+    /// A missing `mimeType` must not fail the record — before it was optional a
+    /// single such file made `serde_json` reject the whole dump, and the loader
+    /// silently served zero records for the project.
+    #[test]
+    fn file_without_a_mime_type_deserialises() {
+        let json = r#"{
+            "url": "https://ingest.dasch.swiss/projects/0803/assets/2vbIabBOEvq-EU9jwmgEe9j/original",
+            "checksum": "91781797997988c3859ea6c9e756587482c19b3b7ea1da10da5ffa9853eb82c2",
+            "checksumAlgorithm": "SHA-256",
+            "fileName": "ad+s167_druck1=0001.tif",
+            "fileSize": 28947082,
+            "dateCreated": "2011-04-14T07:15:28Z"
+        }"#;
+        let file: RecordFile = serde_json::from_str(json).expect("parse file object without mimeType");
+
+        assert_eq!(file.mime_type, None);
+        assert_eq!(file.file_name.as_deref(), Some("ad+s167_druck1=0001.tif"));
+        assert_eq!(file.file_size, Some(28947082));
+    }
+
+    /// A whole dump survives one file lacking `mimeType` — the regression that
+    /// made project 0803 invisible.
+    #[test]
+    fn a_record_list_survives_a_file_without_a_mime_type() {
+        let json = r#"[{
+            "id": "http://rdfh.ch/0803/_qXHiyf6WsOfLFEXr7Zdng",
+            "pid": "https://ark.dasch.swiss/ark:/72163/1/0803/_qXHiyf6WsOfLFEXr7Zdng7",
+            "label": { "en": "a1r, Titelblatt" },
+            "accessRights": "Full Open Access",
+            "legalInfo": {
+                "license": { "licenseIdentifier": "public domain", "licenseDate": "2023-01-01",
+                             "licenseURI": "https://creativecommons.org/publicdomain/zero/1.0/" },
+                "copyrightHolder": "DaSCH",
+                "authorship": ["DaSCH"]
+            },
+            "howToCite": "a1r, Titelblatt",
+            "publisher": "DaSCH",
+            "dateCreated": "2011-04-14T07:15:28Z",
+            "datePublished": "2011-04-14T07:15:28Z",
+            "typeOfData": "Text",
+            "keywords": [],
+            "file": {
+                "url": "https://ingest.dasch.swiss/projects/0803/assets/2vbIabBOEvq-EU9jwmgEe9j/original",
+                "fileName": "ad+s167_druck1=0001.tif"
+            }
+        }]"#;
+        let records: Vec<Record> = serde_json::from_str(json).expect("parse dump with a mimeType-less file");
+
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].file.as_ref().unwrap().mime_type, None);
     }
 }

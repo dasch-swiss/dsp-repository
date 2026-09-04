@@ -70,7 +70,11 @@ pub fn rdu_overview(rows: &[ProjectSummary<'_>]) -> Markup {
                 }
                 (project_table("Every published project", rows))
             }
-            p class="mt-6" {
+            // The review queue is otherwise reachable only by typing its URL:
+            // nothing else in the interface links to it, so an RDU member has
+            // no way to find what is waiting for them.
+            p class="mt-6 flex gap-6" {
+                a href="/review" class="underline" { "Review queue" }
                 a href="/depositors" class="underline" { "Manage depositor accounts" }
             }
         }
@@ -196,6 +200,9 @@ mod tests {
         assert!(out.contains("Bernoulli-Euler Online"), "{out}");
         assert!(out.contains("Anton Webern"), "{out}");
         assert!(out.contains(r#"href="/depositors""#), "{out}");
+        // Nothing else in the interface links to the review queue, so without
+        // this an RDU member has no way to find what is waiting for them.
+        assert!(out.contains(r#"href="/review""#), "{out}");
     }
 
     #[test]

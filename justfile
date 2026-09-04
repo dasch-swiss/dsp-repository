@@ -121,6 +121,12 @@ test:
     bash .github/scripts/commit-advisory.test.sh
     # Checksum gate (dependency-free)
     bash .github/scripts/verify-checksums.test.sh
+    # Branch-update helper (dependency-free; builds throwaway git repos)
+    bash .github/scripts/update-branch.test.sh
+
+# Rebase the current branch onto main and push it — the safe "Update branch"
+update-branch:
+    bash .github/scripts/update-branch.sh
 
 # Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap
 commit-lint base="origin/main":

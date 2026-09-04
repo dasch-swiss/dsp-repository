@@ -63,6 +63,8 @@ pub struct ButtonBuilder {
     variant: ButtonVariant,
     button_type: ButtonType,
     form_action: Option<String>,
+    name: Option<String>,
+    value: Option<String>,
     aria_label: Option<String>,
     disabled: bool,
     extra_classes: String,
@@ -78,6 +80,8 @@ pub fn button(label: impl Render) -> ButtonBuilder {
         variant: ButtonVariant::default(),
         button_type: ButtonType::default(),
         form_action: None,
+        name: None,
+        value: None,
         aria_label: None,
         disabled: false,
         extra_classes: String::new(),
@@ -112,6 +116,28 @@ impl ButtonBuilder {
     /// depend on a form the tile cannot see.
     pub fn form_action(mut self, url: impl Into<String>) -> Self {
         self.form_action = Some(url.into());
+        self.button_type = ButtonType::Submit;
+        self
+    }
+
+    /// Post `name=value` when this button is the one that submitted the form.
+    ///
+    /// The other mechanism behind a form with more than one thing to do, and the
+    /// one to reach for when both destinations are the same URL and the
+    /// *intent* is what differs — a "save" beside an "accept everything", where
+    /// [`Self::form_action`]'s second URL would have to answer `GET` as well and
+    /// would duplicate the handler.
+    ///
+    /// Implies [`ButtonType::Submit`]: only a submitter's name and value are
+    /// posted, so on any other type the pair is set and never sent, which reads
+    /// as a handler that ignores it.
+    ///
+    /// It survives a Datastar form-mode submit as well as a native one — the
+    /// bundle appends the `SubmitEvent`'s submitter to the body it builds — so a
+    /// page using this does not need two renderings of the same decision.
+    pub fn name_value(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
+        self.name = Some(name.into());
+        self.value = Some(value.into());
         self.button_type = ButtonType::Submit;
         self
     }
@@ -152,6 +178,8 @@ impl ButtonBuilder {
                 type=(self.button_type.as_str())
                 formaction=[self.form_action.as_deref()]
                 formmethod=[self.form_action.as_ref().map(|_| "post")]
+                name=[self.name.as_deref()]
+                value=[self.value.as_deref()]
                 aria-label=[self.aria_label.as_deref()]
                 id=[self.id.as_deref()]
                 data-testid=[self.test_id.as_deref()]
@@ -184,6 +212,29 @@ impl Render for ButtonBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn name_value_implies_a_submit_button_carrying_the_pair() {
+        // Only a submitter's name and value are posted. On any other type the
+        // pair renders and is never sent, which reads at the server as a
+        // handler that ignores it.
+        let out = button("Accept all remaining")
+            .name_value("intent", "accept-all")
+            .build()
+            .into_string();
+        assert!(out.contains(r#"type="submit""#), "{out}");
+        assert!(out.contains(r#"name="intent""#), "{out}");
+        assert!(out.contains(r#"value="accept-all""#), "{out}");
+    }
+
+    #[test]
+    fn a_button_without_name_value_carries_neither_attribute() {
+        // A bare `name` with no value posts the empty string, which a handler
+        // reading the intent cannot tell from a value it does not know.
+        let out = button("Save").build().into_string();
+        assert!(!out.contains("name="), "{out}");
+        assert!(!out.contains("value="), "{out}");
+    }
 
     #[test]
     fn form_action_implies_a_submit_button_posting_to_that_url() {

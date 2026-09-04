@@ -95,8 +95,8 @@ pub struct SectionView<'a> {
     pub draft: &'a ProjectDraft,
     /// `None` while the project is editable.
     pub locked: Option<Locked>,
-    /// What RDU asked for when it returned this project to the depositor
-    /// (REQ-4.5), or `None` for a draft nobody has reviewed.
+    /// What RDU asked for when it returned this project to the depositor, or
+    /// `None` for a draft nobody has reviewed.
     ///
     /// On the form rather than on a page of its own: the requirement retains
     /// the note and names nowhere to read it, and the place a depositor acts on

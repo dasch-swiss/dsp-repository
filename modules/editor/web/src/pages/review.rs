@@ -6,8 +6,8 @@
 //!
 //! ## The diff is one form, not one request per field
 //!
-//! REQ-4.3 asks for accept, revert and edit-in-place *per field*; it does not
-//! ask for a request per field, and making each one its own fetch would put
+//! The surface offers accept, revert and edit-in-place *per field*; that does
+//! not mean a request per field, and making each one its own fetch would put
 //! partial failure back where the plan wanted it out of: a reviewer who accepts
 //! eight fields and loses the ninth to a dropped connection has a submission
 //! half-decided with nothing saying which half. One form posting one body is
@@ -39,8 +39,8 @@
 //!
 //! ## A project with no published counterpart
 //!
-//! REQ-2.3 admits a project present only locally, and REQ-4.3 assumes a
-//! published value per field. Rather than degenerate quietly, the surface says
+//! A project can exist only locally, while the comparison assumes a published
+//! value per field. Rather than degenerate quietly, the surface says
 //! there is nothing to compare against and **offers no revert**: reverting means
 //! keeping the published value, and there is no published value — the choice
 //! would silently unset a field the contract requires. Accept and
@@ -83,12 +83,12 @@ pub const CLAIM: &str = "claim";
 
 // --- The queue ------------------------------------------------------------
 
-/// One pending submission, as the queue renders it (REQ-4.1).
+/// One pending submission, as the queue renders it.
 pub struct QueueRow<'a> {
     /// The published project's shortcode as written in its file, or the stored
     /// (folded) key for a project the published set does not hold.
     pub shortcode: &'a str,
-    /// `None` for a project that exists only locally (REQ-2.3).
+    /// `None` for a project that exists only locally.
     pub project_name: Option<&'a str>,
     /// The submitter's name, `None` once that account is removed — the row
     /// survives, so this reads as unknown rather than dangling.
@@ -100,7 +100,7 @@ pub struct QueueRow<'a> {
     pub state: SubmissionState,
 }
 
-/// One draft, as the queue renders it (REQ-1.11).
+/// One draft, as the queue renders it.
 pub struct DraftRow<'a> {
     pub shortcode: &'a str,
     pub project_name: Option<&'a str>,
@@ -111,9 +111,9 @@ pub struct DraftRow<'a> {
 
 /// `GET /review` — every pending submission, then every draft.
 ///
-/// Both tables, not just the first: REQ-4.2 gives every RDU member every
-/// pending submission *and* REQ-1.11 gives them every draft, so that RDU can
-/// help a depositor who is stuck before submitting. A draft is not reviewable,
+/// Both tables, not just the first: every RDU member sees every pending
+/// submission *and* every draft, so that RDU can help a depositor who is stuck
+/// before submitting. A draft is not reviewable,
 /// which is why it is a separate table rather than a row with no controls —
 /// one list mixing the two would invite a reviewer to look for an action that
 /// does not exist.
@@ -341,14 +341,14 @@ pub struct ReviewRow<'a> {
     /// substituted value's control, and the stored decision.
     pub field: &'a str,
     /// The registry entry, or `None` for a member the form does not know —
-    /// which is what REQ-1.8's "a field added to the contract" looks like from
-    /// here. It is what decides both the wording and the control, so the review
+    /// which is what a field added to the contract without an editor change
+    /// looks like from here. It is what decides both the wording and the control, so the review
     /// surface and the depositor's form cannot render a field differently.
     pub registry: Option<&'static Field>,
     pub published: Option<&'a Value>,
     /// The submitted value, as the depositor sent it. Never replaced by the
-    /// reviewer's substitute: the two are shown together, because REQ-4.4
-    /// waives the second approver and nobody else would ever see the change.
+    /// reviewer's substitute: the two are shown together, because there is no
+    /// second approver and nobody else would ever see the change.
     pub submitted: Option<&'a Value>,
     /// What the reviewer put in place of it, or `None` where they left it.
     pub substitute: Option<&'a Value>,
@@ -379,8 +379,8 @@ pub struct ReviewView<'a> {
     /// As the URL spells it, which is what every control posts back to.
     pub shortcode: &'a str,
     pub project_name: Option<&'a str>,
-    /// False for REQ-2.3's local-only project: there is no published side, so
-    /// there is nothing to revert to and no revert is offered.
+    /// False for a local-only project: there is no published side, so there is
+    /// nothing to revert to and no revert is offered.
     pub published: bool,
     pub submitted_by: Option<&'a str>,
     /// Already formatted.
@@ -737,9 +737,9 @@ fn submitted_side(row: &ReviewRow<'_>) -> Markup {
 
 /// What the depositor actually sent, shown beneath the reviewer's replacement.
 ///
-/// Only where the two differ. REQ-4.4 waives the second approver, so a value
-/// RDU substituted is seen by nobody unless the submitted one stays beside it —
-/// and the depositor is shown the same pair later.
+/// Only where the two differ. There is no second approver, so a value RDU
+/// substituted is seen by nobody unless the submitted one stays beside it — and
+/// the depositor is shown the same pair later.
 fn submitted_original(row: &ReviewRow<'_>) -> Markup {
     if row.substitute.is_none() {
         return html! {};
@@ -781,13 +781,13 @@ fn editor(row: &ReviewRow<'_>) -> Markup {
 ///
 /// A radio group and not a pair of buttons, because the three states have to be
 /// distinguishable and reversible: a button that has been pressed says nothing
-/// about a field being *back* to undecided, and REQ-4.3's revert is not the
-/// absence of an accept. The tile's own documentation is the reason the third
+/// about a field being *back* to undecided, and a revert is not the absence of
+/// an accept. The tile's own documentation is the reason the third
 /// choice is explicit — a radio group cannot be returned to unset, so "not
 /// reviewed yet" has to be a choice of its own.
 ///
-/// Revert is absent entirely where nothing is published (REQ-2.3): it means
-/// "keep the published value", and there is none.
+/// Revert is absent entirely where nothing is published: it means "keep the
+/// published value", and there is none.
 fn decision_control(view: &ReviewView<'_>, row: &ReviewRow<'_>) -> Markup {
     let legend = format!("{} — decision", row.label());
     let selected = row.decision.map_or("", Decision::as_str);
@@ -804,7 +804,7 @@ fn decision_control(view: &ReviewView<'_>, row: &ReviewRow<'_>) -> Markup {
     }
 }
 
-/// The reviewer's note, as the depositor's form shows it (REQ-4.5).
+/// The reviewer's note, as the depositor's form shows it.
 ///
 /// Here rather than in [`section`](super::section) because it belongs to the
 /// review round: the note is written by request-changes and read on the form,
@@ -919,8 +919,8 @@ mod tests {
 
     #[test]
     fn the_queue_lists_drafts_as_well_as_submissions() {
-        // REQ-1.11: RDU sees every draft, so it can help a depositor who is
-        // stuck before submitting.
+        // RDU sees every draft, so it can help a depositor who is stuck before
+        // submitting.
         let out = queue(&[], &[draft_row()]).into_string();
         assert!(out.contains("Drafts in progress"), "{out}");
         assert!(out.contains(r#"href="/projects/080C""#), "{out}");
@@ -958,7 +958,7 @@ mod tests {
 
     #[test]
     fn the_diff_posts_the_whole_form_rather_than_one_request_per_field() {
-        // The batching REQ-4.3's per-field controls need: every decision and
+        // The batching the per-field controls need: every decision and
         // every substituted value arrives in one body, so partial failure is one
         // server-side transaction rather than N independent ones.
         let rows = rows();
@@ -1063,9 +1063,9 @@ mod tests {
 
     #[test]
     fn a_substituted_value_is_shown_beside_what_the_depositor_sent() {
-        // REQ-4.4 waives the second approver, so a value RDU put in place of
-        // the depositor's is seen by nobody unless the submitted one stays
-        // beside it.
+        // There is no second approver, so a value RDU put in place of the
+        // depositor's is seen by nobody unless the submitted one stays beside
+        // it.
         let substitute = json!("A reviewer's wording");
         let mut rows = rows();
         rows[0].decision = Some(Decision::Accept);
@@ -1079,9 +1079,9 @@ mod tests {
 
     #[test]
     fn an_unpublished_project_offers_no_revert_and_says_why() {
-        // REQ-2.3's local-only project: revert means keeping the published
-        // value, and there is none — offering it would silently unset a field
-        // the contract requires.
+        // A local-only project: revert means keeping the published value, and
+        // there is none — offering it would silently unset a field the contract
+        // requires.
         let rows = rows();
         let mut view = view(&rows);
         view.published = false;
@@ -1165,8 +1165,8 @@ mod tests {
 
     #[test]
     fn the_reviewer_note_names_what_it_is() {
-        // REQ-4.5 retains the note and names nowhere to read it. A bare
-        // paragraph on the form would read as one more hint.
+        // The note has no other home, and a bare paragraph on the form would
+        // read as one more hint.
         let out = reviewer_note("Please add a German description.").into_string();
         assert!(out.contains("RDU asked for changes"), "{out}");
         assert!(out.contains("Please add a German description."), "{out}");

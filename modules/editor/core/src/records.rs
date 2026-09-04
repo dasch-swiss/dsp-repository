@@ -233,8 +233,8 @@ pub struct DraftRecord {
     /// review queue's "last editor" column reads as unknown rather than
     /// dangling.
     pub updated_by: Option<Uuid>,
-    /// The note RDU left when it returned this project to the depositor
-    /// (REQ-4.5). `None` for a draft nobody has reviewed.
+    /// The note RDU left when it returned this project to the depositor.
+    /// `None` for a draft nobody has reviewed.
     ///
     /// It lives on the draft rather than on the submission because
     /// request-changes turns the submission *into* a draft: the row carrying
@@ -310,8 +310,8 @@ pub struct Submission {
     /// Carried back to the depositor when RDU requests changes (REQ-4.5).
     pub reviewer_note: Option<String>,
     /// A serialized [`ReviewState`](crate::review::ReviewState) — the per-field
-    /// decisions and substitutions RDU has recorded so far (REQ-4.3). `None`
-    /// while nothing has been decided.
+    /// decisions and substitutions RDU has recorded so far. `None` while nothing
+    /// has been decided.
     ///
     /// Opaque here for the same reason as `payload`: this layer stores it and
     /// the reviewing handler is the one that should decide when to parse it,

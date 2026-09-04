@@ -1,5 +1,5 @@
-//! The field-by-field comparison RDU reviews a submission through (REQ-4.3),
-//! and the per-field decisions it records.
+//! The field-by-field comparison RDU reviews a submission through, and the
+//! per-field decisions it records.
 //!
 //! Two halves that stay apart on purpose. [`diff`] is a pure comparison of two
 //! drafts and knows nothing about a form or a reviewer; [`ReviewState`] is what
@@ -10,8 +10,8 @@
 //! ## The comparison is over top-level members, not registry fields
 //!
 //! A draft is the project's JSON members ([`ProjectDraft`]), including members
-//! no applier touches (REQ-1.7) and members added to the contract since this
-//! build (REQ-1.8). Enumerating the registry instead would show a reviewer only
+//! no applier touches and members added to the contract since this build.
+//! Enumerating the registry instead would show a reviewer only
 //! the fields the *form* knows, so a change arriving through any other path
 //! would be approved without ever being displayed. The union of both sides is
 //! therefore the row set, and the registry supplies wording for the ids it
@@ -38,7 +38,7 @@ use serde_json::Value;
 
 use crate::draft::ProjectDraft;
 
-/// What a reviewer decided about one field (REQ-4.3).
+/// What a reviewer decided about one field.
 ///
 /// Absent — no entry in [`ReviewState`] — is a third state and the initial one:
 /// the field is changed and nobody has looked at it yet. It is not a variant
@@ -84,8 +84,9 @@ impl Decision {
 /// The substitute is kept *here* rather than written into the submission's
 /// payload, which would be the shorter path and would destroy evidence: the
 /// depositor's own value is what a later screen has to show them beside what
-/// RDU substituted (REQ-4.4 waives the second approver, so nobody else sees the
-/// change), and an overwritten payload cannot answer what was submitted.
+/// RDU substituted — a depositor's submission needs no second approver, so
+/// nobody else sees the change — and an overwritten payload cannot answer what
+/// was submitted.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct FieldReview {
     /// `None` while the field is still undecided.
@@ -215,8 +216,8 @@ impl FieldDiff {
 
 /// Compare a submission against the published project, member by member.
 ///
-/// `published` is `None` for a project that exists only locally (REQ-2.3),
-/// which is not the same as a published project holding none of these members:
+/// `published` is `None` for a project that exists only locally, which is not
+/// the same as a published project holding none of these members:
 /// there is no published side to revert *to*, and the surface says so rather
 /// than offering a revert that would silently unset a required field. The
 /// comparison itself is identical either way — an absent project answers `None`
@@ -315,7 +316,7 @@ mod tests {
 
     #[test]
     fn test_an_unpublished_project_makes_every_member_a_change() {
-        // REQ-2.3's local-only project: there is no published side at all, so
+        // A local-only project: there is no published side at all, so
         // every member the submission holds is new. The rows are the same shape
         // as any other diff — only the framing around them differs.
         let submitted = draft(json!({ "name": "N", "description": { "en": "D" } }));

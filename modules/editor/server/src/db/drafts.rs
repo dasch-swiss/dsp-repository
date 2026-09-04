@@ -137,7 +137,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_upsert_replaces_the_reviewer_note() {
-        // The note describes one review round (REQ-4.5). Left out of the
+        // The note describes one review round. Left out of the
         // conflict clause it would survive the round it belongs to and read as
         // current advice on work that has already answered it.
         let db = test_db("drafts-note").await;

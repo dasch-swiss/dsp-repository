@@ -627,7 +627,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-api-oai"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -643,7 +643,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-core"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "platform-metadata",
  "serde",
@@ -654,7 +654,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-server"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "axum",
  "axum-tracing-opentelemetry",
@@ -694,7 +694,7 @@ dependencies = [
 
 [[package]]
 name = "dpe-web"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "dpe-core",
  "maud",
@@ -713,7 +713,7 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
 name = "editor-core"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "async-trait",
  "chrono",
@@ -726,7 +726,7 @@ dependencies = [
 
 [[package]]
 name = "editor-server"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "async-trait",
  "axum",
@@ -767,7 +767,7 @@ dependencies = [
 
 [[package]]
 name = "editor-web"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "editor-core",
  "insta",
@@ -2070,7 +2070,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-playground"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "axum",
  "maud",
@@ -2084,7 +2084,7 @@ dependencies = [
 
 [[package]]
 name = "mosaic-tiles"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "icondata",
  "maud",
@@ -2431,7 +2431,7 @@ checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
 
 [[package]]
 name = "platform-metadata"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "serde",
  "serde_json",
@@ -2440,7 +2440,7 @@ dependencies = [
 
 [[package]]
 name = "platform-telemetry"
-version = "0.8.3"
+version = "0.8.4"
 dependencies = [
  "axum",
  "opentelemetry",

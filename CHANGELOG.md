@@ -1,5 +1,74 @@
 # Changelog
 
+## [0.8.4](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.3...v0.8.4) (2026-09-04)
+
+
+### Features
+
+* **dpe-server:** Add a record file metadata endpoint ([6449a83](https://github.com/dasch-swiss/dsp-repository/commit/6449a839af217f161f043a2ba94d682de36eb464))
+* **editor-core,editor-server:** Read the published project set ([712ecf9](https://github.com/dasch-swiss/dsp-repository/commit/712ecf9fd36f5681b06e1b7c7890354ab01884a2))
+* **editor-core,editor-web,editor-server:** Add the review queue and the field-by-field diff ([2461c62](https://github.com/dasch-swiss/dsp-repository/commit/2461c628ca4780675bb4a05c6033d73d9b705a33))
+* **editor-core,editor-web,editor-server:** Render and save one project form section ([878bbca](https://github.com/dasch-swiss/dsp-repository/commit/878bbcaa94d1847a55450e4f034c143b1d2689ab))
+* **editor-core:** Add the canonical project writer ([a73a4e6](https://github.com/dasch-swiss/dsp-repository/commit/a73a4e6ca975c1d30054ba5e3568df3839fae4a2))
+* **editor-core:** Add the permissive draft representation ([c6c1e20](https://github.com/dasch-swiss/dsp-repository/commit/c6c1e20f526e98b899477b41898f970ef438a44b))
+* **editor-core:** Read a posted form body back into a draft ([f86dcd7](https://github.com/dasch-swiss/dsp-repository/commit/f86dcd7b0ed3966fac7ebedd8eddff1bd55ea3cb))
+* **editor-core:** Refuse a submission whose temporalCoverage cannot resolve ([4f4b7fc](https://github.com/dasch-swiss/dsp-repository/commit/4f4b7fc6bb8e9884947482b47e910ba45878b2e9))
+* **editor-server:** Seed sample records on a throwaway deployment ([fc2f4c4](https://github.com/dasch-swiss/dsp-repository/commit/fc2f4c41c7856c1e235e38cc12b6b139bf79272d))
+* **editor-web:** Add the project field registry and its sections ([46a36e5](https://github.com/dasch-swiss/dsp-repository/commit/46a36e5af6204bb48298dfd36810ed5f6aed1848))
+* **editor-web:** Link the review queue from the RDU projects page ([a7ffd0e](https://github.com/dasch-swiss/dsp-repository/commit/a7ffd0ee3b2f45218958e1da041c7ac83477b604))
+* **mosaic-tiles:** Add the alert tile ([bb78935](https://github.com/dasch-swiss/dsp-repository/commit/bb78935af5cec6b988db004a59f406cd2cfecb29))
+* **mosaic-tiles:** Add the form tiles the project form needs ([c24223f](https://github.com/dasch-swiss/dsp-repository/commit/c24223f6d5efd86bc8056679e92de9aacd4e5ab1))
+* **mosaic-tiles:** Add the table tile ([b59fcfe](https://github.com/dasch-swiss/dsp-repository/commit/b59fcfe8fd7d1c82a771a5e2bc8bbeed8321a185))
+* **mosaic-tiles:** Add the text field tile ([96041fd](https://github.com/dasch-swiss/dsp-repository/commit/96041fd16d4a8e17e8cbd92bee50a6849203b8fe))
+* **mosaic-tiles:** Let a submit button carry its own name and value ([5f9108d](https://github.com/dasch-swiss/dsp-repository/commit/5f9108d6124b64b48ab0c61444de3dc1586ea1fe))
+
+
+### Bug Fixes
+
+* **dpe-data:** Point 0111 project URL at app.dasch.swiss after server move ([02d8c40](https://github.com/dasch-swiss/dsp-repository/commit/02d8c40fe2b385051abf5729c7c2aaba1dbd0f99))
+* **dpe-data:** Restore 0103's canonical key order ([26c8622](https://github.com/dasch-swiss/dsp-repository/commit/26c86222f749d2aa301f56fd3e1c154d39a6c766))
+* **dpe-server:** Answer the record file 404 in JSON, not the HTML shell ([94bcbdf](https://github.com/dasch-swiss/dsp-repository/commit/94bcbdf08f777554927ad07d178bd35f6eeaa153))
+* **platform-metadata,dpe-core:** Make mimeType optional and log dump load failures ([eece231](https://github.com/dasch-swiss/dsp-repository/commit/eece2316d1220c14e2103d0b3551389f06f61024))
+
+
+### Code Refactoring
+
+* **dpe-server:** Rewrite validate over the extracted checker ([b17169e](https://github.com/dasch-swiss/dsp-repository/commit/b17169e46ab1bb35752c725abe395124adf92a1e))
+* **editor-server:** Fold the review columns into the initial schema ([4a39691](https://github.com/dasch-swiss/dsp-repository/commit/4a39691a514d8b251575ed8364a85696c841f0f0))
+* **editor-web:** Render the login and depositor screens with the new tiles ([0daa25f](https://github.com/dasch-swiss/dsp-repository/commit/0daa25ff33271fc0cd2aab12e24103933a6721db))
+* **mosaic-tiles:** Group the form tiles into a form directory ([6c426ef](https://github.com/dasch-swiss/dsp-repository/commit/6c426ef93ff011fa385813efbda91b8cba023c07))
+* **platform-metadata:** Make multilingual maps deterministic ([05bdd48](https://github.com/dasch-swiss/dsp-repository/commit/05bdd485d5f94de2fb1e160367bca5d0f4deff6b))
+
+
+### Documentation
+
+* **editor-core:** Record the project representation and canonical form ([a8e35e2](https://github.com/dasch-swiss/dsp-repository/commit/a8e35e2f4fb2ace5c4ab97cc6d4ed61572f31b9f))
+* **editor-server:** State the review surface's rules without citing the PRD ([9d6bf8a](https://github.com/dasch-swiss/dsp-repository/commit/9d6bf8a8a4a71914db10309ad0ab5fd27c88ee8c))
+* **mosaic-tiles:** Bring the tile conventions and the add-component skill up to date ([3ca5b1e](https://github.com/dasch-swiss/dsp-repository/commit/3ca5b1ed1eb6cffbe2eb93156a15b851155abc06))
+
+
+### Tests
+
+* **dpe-server:** Pin validate's error wording before extracting its rules ([b882c2a](https://github.com/dasch-swiss/dsp-repository/commit/b882c2ab8a638b45a21acb5d21805ba422a31b03))
+* **editor-core:** Round-trip the canonical writer over all 85 project files ([8e4ca50](https://github.com/dasch-swiss/dsp-repository/commit/8e4ca503a22343c63cd1df8cdf47fb56639e9a4e))
+* **editor-web:** Follow a registry id's dotted path into the contract ([315dc9f](https://github.com/dasch-swiss/dsp-repository/commit/315dc9ffd5853f4ad70658c0d5256a139489d4ac))
+
+
+### Build System
+
+* **deps:** Bump DPE's vendored Datastar client to 1.0.2 (DEV-6907) ([bb30cf4](https://github.com/dasch-swiss/dsp-repository/commit/bb30cf4e57fb57ffb98b3e590e6f3294cc05f2cc))
+
+
+### Miscellaneous Chores
+
+* **ci:** Reject merge commits on a branch, and say so plainly ([c14ab74](https://github.com/dasch-swiss/dsp-repository/commit/c14ab74057743d06f231d8b7c2d8c1df78345f25))
+* **ci:** Verify vendored JS and Tailwind CLI checksums (DEV-7126, DEV-6727) ([7869953](https://github.com/dasch-swiss/dsp-repository/commit/78699535e095e5fa0e4c59529d19072901d95c9e))
+* **dpe-data:** Normalise top-level key order in 31 project files ([990206f](https://github.com/dasch-swiss/dsp-repository/commit/990206f60194167154b0d84eee04e59ddf6231d7))
+* **dpe-data:** Point 0115 activites-cs at the migrated server ([061f63a](https://github.com/dasch-swiss/dsp-repository/commit/061f63a9e1145f9793eaf5f1bbd439d00f856d9d))
+* **dpe-data:** Replace 0103 cover image with high-res version and add image credit ([a6a5ea7](https://github.com/dasch-swiss/dsp-repository/commit/a6a5ea781adceafe19528c5928bee071d769644e))
+* **dpe-data:** Update records with the sidecar fields (DEV-7025, DEV-6963) ([60e298c](https://github.com/dasch-swiss/dsp-repository/commit/60e298c4f2956a11456fe2029372d84359d59bdb))
+* **dpe-server:** Use pretty, colour-coded logs on a terminal ([14de46c](https://github.com/dasch-swiss/dsp-repository/commit/14de46c071ef18d31386f02550f18319ca74db5a))
+
 ## [0.8.3](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.2...v0.8.3) (2026-08-31)
 
 

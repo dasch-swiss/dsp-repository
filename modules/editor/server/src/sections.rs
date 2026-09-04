@@ -233,7 +233,7 @@ pub(crate) async fn save(
         updated_by: Some(user.id),
         // Both preserved from the stored row. "Created" keeps meaning when the
         // draft was first saved rather than when it was last; the reviewer's
-        // note (REQ-4.5) has to survive the depositor saving their answer to it,
+        // note has to survive the depositor saving their answer to it,
         // or it disappears the moment they start acting on it. It is cleared by
         // the resubmission that answers it, not by a save.
         reviewer_note: context.record.as_ref().and_then(|record| record.reviewer_note.clone()),
@@ -614,8 +614,8 @@ mod tests {
 
     #[tokio::test]
     async fn a_returned_project_shows_the_depositor_what_rdu_asked_for() {
-        // REQ-4.5 retains the reviewer note and names nowhere to read it. The
-        // form is where the depositor acts on it, so it is where it is shown —
+        // The reviewer note has no other home. The form is where the depositor
+        // acts on it, so it is where it is shown —
         // and it rides inside the region, so a save does not clear it.
         let (state, _) = test_state("section-note").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;

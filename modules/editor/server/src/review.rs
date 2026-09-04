@@ -1,8 +1,8 @@
 //! The review surfaces: `GET /review`, and `GET`/`POST /review/{shortcode}`.
 //!
-//! Every handler here takes [`Rdu`](crate::auth::guard::Rdu), which is REQ-4.2
-//! in one place: RDU access is role-based rather than per-project, so there is
-//! no assignment to check and no per-project 403 to render. A depositor's
+//! Every handler here takes [`Rdu`](crate::auth::guard::Rdu), which puts the
+//! access rule in one place: RDU access is role-based rather than per-project,
+//! so there is no assignment to check and no per-project 403 to render. A depositor's
 //! session gets the 403 page from the extractor, and no session is redirected
 //! to login.
 //!
@@ -14,7 +14,7 @@
 //!   405.
 //! - **The submitted payload is never rewritten.** A reviewer's substitution goes to
 //!   `review_state`; overwriting `payload` would destroy the depositor's own value, which is the
-//!   one thing REQ-4.4's waived second approver makes it necessary to keep.
+//!   one thing the absence of a second approver makes it necessary to keep.
 //! - **A substitution is computed by running the form's own applier** over a clone of the submitted
 //!   draft. That is what makes a reviewer's edit obey the same trimming, newline and placeholder
 //!   rules a depositor's does — rules whose whole purpose is that an untouched value writes no
@@ -54,7 +54,7 @@ const SAVE_REFUSED_STORAGE: &str = "The review decisions could not be saved. Not
 const SAVE_REFUSED_GONE: &str = "This submission is no longer waiting for review — somebody withdrew or finished it \
                                  while this page was open. Nothing was saved.";
 
-/// `GET /review` — the queue (REQ-4.1) and the drafts (REQ-1.11).
+/// `GET /review` — the queue and the drafts.
 pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Response {
     let submissions = match SubmissionRepository::list(&*state.db).await {
         Ok(submissions) => submissions,
@@ -73,7 +73,7 @@ pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Resp
     // account name, and neither can be produced inside the `map` that builds it.
     let pending: Vec<PendingRow> = submissions
         .iter()
-        // REQ-4.1 lists *pending* submissions. An approved record is waiting to
+        // The queue lists *pending* submissions. An approved record is waiting to
         // be collected into a pull request, not for a reviewer, so a row for it
         // here would be a queue entry nobody can clear.
         .filter(|submission| submission.state != SubmissionState::Approved)
@@ -153,7 +153,7 @@ pub(crate) struct ShowParams {
     show: Option<String>,
 }
 
-/// `GET /review/{shortcode}` — the field-by-field diff (REQ-4.3).
+/// `GET /review/{shortcode}` — the field-by-field diff.
 pub(crate) async fn show(
     State(state): State<AppState>,
     Rdu(user): Rdu,
@@ -292,7 +292,7 @@ struct Context<'a> {
     submission: Submission,
     /// The submission's payload, parsed.
     submitted: ProjectDraft,
-    /// The published project, `None` for REQ-2.3's local-only project.
+    /// The published project, `None` for a local-only one.
     published: Option<ProjectDraft>,
     project_name: Option<&'a str>,
     rows: Vec<FieldDiff>,
@@ -319,7 +319,7 @@ impl Context<'_> {
 ///
 /// Shape, then the record — the same order as everywhere else in this service.
 /// There is no authorization step between them here: [`Rdu`] already decided,
-/// and REQ-4.2 leaves nothing per-project to check.
+/// and role-based access leaves nothing per-project to check.
 async fn context<'a>(state: &'a AppState, user: &User, shortcode: &'a str) -> Result<Context<'a>, Response> {
     if !is_valid_shortcode(shortcode) {
         return Err(crate::not_found(State(state.clone())).await);
@@ -509,10 +509,10 @@ fn render_page(
 /// Turn the comparison into what the page renders, adding the registry's
 /// wording and whether the form has a control for the field.
 ///
-/// A field the registry does not know keeps its member name as its label. That
-/// is REQ-1.8's case — a field added to the contract without an editor change —
-/// and a row labelled by its raw name is far better than no row at all, which
-/// would let the change through unseen.
+/// A field the registry does not know keeps its member name as its label — a
+/// field added to the contract without an editor change. A row labelled by its
+/// raw name is far better than no row at all, which would let the change
+/// through unseen.
 fn review_rows<'a>(context: &'a Context<'a>) -> Vec<page::ReviewRow<'a>> {
     context
         .rows
@@ -712,8 +712,8 @@ mod tests {
 
     #[tokio::test]
     async fn a_depositor_cannot_reach_the_review_surfaces() {
-        // REQ-4.2 makes review access role-based. The `Rdu` extractor is what
-        // performs the check, so a handler that omits it is visibly public.
+        // Review access is role-based. The `Rdu` extractor is what performs the
+        // check, so a handler that omits it is visibly public.
         let (state, _) = test_state("review-depositor").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&state, user.id).await;
@@ -728,8 +728,8 @@ mod tests {
 
     #[tokio::test]
     async fn the_queue_lists_every_pending_submission_oldest_first() {
-        // REQ-4.1, and REQ-4.2's "every RDU member sees every pending
-        // submission" — neither account below is assigned to either project.
+        // Oldest first, and every RDU member sees every pending submission —
+        // neither account below is assigned to either project.
         let (state, _) = test_state("review-queue-order").await;
         let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
         let author = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &[]).await;
@@ -766,8 +766,8 @@ mod tests {
 
     #[tokio::test]
     async fn the_queue_shows_every_draft_as_well() {
-        // REQ-1.11: drafts are visible to RDU so it can help a depositor who is
-        // stuck before submitting. The account below is assigned nothing.
+        // Drafts are visible to RDU so it can help a depositor who is stuck
+        // before submitting. The account below is assigned nothing.
         let (state, _) = test_state("review-queue-drafts").await;
         let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
         let author = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
@@ -827,7 +827,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_project_with_no_published_counterpart_offers_no_revert() {
-        // REQ-2.3's local-only project. Revert means keeping the published
+        // A local-only project. Revert means keeping the published
         // value, and there is none — the choice would silently unset a field
         // the contract requires.
         let (state, _) = test_state("review-unpublished").await;
@@ -1060,9 +1060,9 @@ mod tests {
 
     #[tokio::test]
     async fn editing_a_field_in_place_stores_a_substitute_and_keeps_what_was_submitted() {
-        // REQ-4.3's edit-in-place. REQ-4.4 waives the second approver, so the
-        // depositor's own value has to survive beside the substitution or
-        // nobody ever sees what changed.
+        // Edit-in-place. A depositor's submission needs no second approver, so
+        // their own value has to survive beside the substitution or nobody ever
+        // sees what changed.
         let (state, _) = test_state("review-edit").await;
         let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
         let submission = a_submission(&state, "0801d", None, json!({ "name": "A new name" })).await;

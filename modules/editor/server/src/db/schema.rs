@@ -8,8 +8,14 @@
 //!
 //! The rules that keep it honest:
 //!
-//! - [`MIGRATIONS`] is **append-only**. A released entry is never edited — every database that
-//!   already ran it would skip the edit, so the schema would differ by deployment age.
+//! - [`MIGRATIONS`] becomes **append-only at the first deployment**, and is not there yet. The
+//!   editor has never been deployed and every database it has is disposable, so a column the first
+//!   iteration needs belongs in `0001` rather than in a migration recording a history nobody lived
+//!   through. Once a database exists that we cannot recreate, editing a released entry is out:
+//!   every database that already ran it would skip the edit, so the schema would differ by
+//!   deployment age. A developer holding a local file database across such an edit recreates it —
+//!   the `user_version` guard skips an entry it has already applied, so the edit would never reach
+//!   them.
 //! - Everything runs inside one `BEGIN IMMEDIATE` transaction, the `user_version` bump included, so
 //!   a crash part-way leaves the database at the version it started from rather than half-migrated.
 //!   `BEGIN IMMEDIATE` also makes two processes starting at once safe: the second waits and then
@@ -27,7 +33,6 @@ const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0001_initial.sql"),
     include_str!("migrations/0002_auth.sql"),
     include_str!("migrations/0003_mail_sends.sql"),
-    include_str!("migrations/0004_review.sql"),
 ];
 
 /// The version a fully migrated database reports.

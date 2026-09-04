@@ -6,4 +6,5 @@ pub mod forbidden;
 pub mod login;
 pub mod problem;
 pub mod projects;
+pub mod review;
 pub mod section;

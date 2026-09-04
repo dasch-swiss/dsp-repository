@@ -234,6 +234,11 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
         // it had no `GET`, so reloading or sharing a rejected edit produced a
         // bare 405 with no body and no way back — the dead end this service
         // renders a 403 as a page precisely to avoid.
+        // The review surfaces. One `POST` URL per submission, carrying claim,
+        // save and accept-all as an `intent` pair — a second write URL would
+        // need a `GET` of its own or strand a refused write on a bare 405.
+        .route("/review", get(crate::review::queue))
+        .route("/review/{shortcode}", get(crate::review::show).post(crate::review::act))
         .route("/depositors", get(crate::depositors::list).post(crate::depositors::create))
         .route("/depositors/new", get(crate::depositors::create_form))
         .route(

@@ -12,7 +12,7 @@ use super::Database;
 const ENTITY: &str = "submission";
 
 const SELECT: &str = "SELECT id, shortcode, payload, state, submitted_by, submitted_at, reviewed_by, reviewed_at, \
-                      reviewer_note FROM submissions";
+                      reviewer_note, review_state FROM submissions";
 
 fn map_row(row: &Row<'_>) -> rusqlite::Result<Submission> {
     Ok(Submission {
@@ -25,6 +25,7 @@ fn map_row(row: &Row<'_>) -> rusqlite::Result<Submission> {
         reviewed_by: optional_uuid_column(row, 6)?,
         reviewed_at: row.get(7)?,
         reviewer_note: row.get(8)?,
+        review_state: row.get(9)?,
     })
 }
 
@@ -35,7 +36,7 @@ impl SubmissionRepository for Database {
         self.write(move |tx| {
             tx.execute(
                 "INSERT INTO submissions (id, shortcode, payload, state, submitted_by, submitted_at, reviewed_by, \
-                 reviewed_at, reviewer_note) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                 reviewed_at, reviewer_note, review_state) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
                 params![
                     submission.id.to_string(),
                     submission.shortcode,
@@ -46,6 +47,7 @@ impl SubmissionRepository for Database {
                     submission.reviewed_by.map(|id| id.to_string()),
                     submission.reviewed_at,
                     submission.reviewer_note,
+                    submission.review_state,
                 ],
             )
         })
@@ -64,7 +66,7 @@ impl SubmissionRepository for Database {
             .write(move |tx| {
                 tx.execute(
                     "UPDATE submissions SET payload = ?2, state = ?3, reviewed_by = ?4, reviewed_at = ?5, \
-                     reviewer_note = ?6 WHERE id = ?1",
+                     reviewer_note = ?6, review_state = ?7 WHERE id = ?1",
                     params![
                         submission.id.to_string(),
                         submission.payload,
@@ -72,6 +74,7 @@ impl SubmissionRepository for Database {
                         submission.reviewed_by.map(|id| id.to_string()),
                         submission.reviewed_at,
                         submission.reviewer_note,
+                        submission.review_state,
                     ],
                 )
             })
@@ -162,6 +165,7 @@ mod tests {
             reviewed_by: None,
             reviewed_at: None,
             reviewer_note: None,
+            review_state: None,
         }
     }
 
@@ -169,7 +173,11 @@ mod tests {
     async fn test_create_then_find_round_trips_every_field() {
         let db = test_db("submissions-round-trip").await;
         let author = a_user(&db, "a@x.test", Role::Depositor).await;
-        let submission = submission("0801", Some(author), at(11));
+        let mut submission = submission("0801", Some(author), at(11));
+        // Set rather than left `None`, or the column added by 0004 round-trips
+        // vacuously: a `None` compares equal whether the column is read,
+        // written, or missing.
+        submission.review_state = Some(r#"{"name":{"decision":"accept"}}"#.to_string());
         SubmissionRepository::create(&db, &submission).await.unwrap();
 
         assert_eq!(
@@ -211,12 +219,14 @@ mod tests {
         submission.reviewed_by = Some(reviewer);
         submission.reviewed_at = Some(at(14));
         submission.reviewer_note = Some("Looks right.".to_string());
+        submission.review_state = Some(r#"{"name":{"decision":"revert"}}"#.to_string());
         SubmissionRepository::update(&db, &submission).await.unwrap();
 
         let found = SubmissionRepository::find(&db, submission.id).await.unwrap().unwrap();
         assert_eq!(found.state, SubmissionState::Approved);
         assert_eq!(found.reviewed_by, Some(reviewer));
         assert_eq!(found.reviewer_note.as_deref(), Some("Looks right."));
+        assert_eq!(found.review_state.as_deref(), Some(r#"{"name":{"decision":"revert"}}"#));
         assert_eq!(found.submitted_at, at(11));
     }
 

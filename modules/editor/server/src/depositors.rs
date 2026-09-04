@@ -891,6 +891,7 @@ mod route_tests {
                 shortcode: "0801".to_string(),
                 payload: "{}".to_string(),
                 updated_by: Some(target.id),
+                reviewer_note: None,
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
             },
@@ -970,6 +971,7 @@ mod route_tests {
                 shortcode: "0801".to_string(),
                 payload: "{}".to_string(),
                 updated_by: Some(target.id),
+                reviewer_note: None,
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
             },
@@ -988,6 +990,7 @@ mod route_tests {
                 reviewed_by: None,
                 reviewed_at: None,
                 reviewer_note: None,
+                review_state: None,
             },
         )
         .await
@@ -1029,6 +1032,7 @@ mod route_tests {
                 reviewed_by: None,
                 reviewed_at: None,
                 reviewer_note: None,
+                review_state: None,
             },
         )
         .await

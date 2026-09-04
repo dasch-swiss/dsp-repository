@@ -231,8 +231,12 @@ pub(crate) async fn save(
             }
         },
         updated_by: Some(user.id),
-        // Preserved from the stored row so "created" keeps meaning when the
-        // draft was first saved rather than when it was last.
+        // Both preserved from the stored row. "Created" keeps meaning when the
+        // draft was first saved rather than when it was last; the reviewer's
+        // note (REQ-4.5) has to survive the depositor saving their answer to it,
+        // or it disappears the moment they start acting on it. It is cleared by
+        // the resubmission that answers it, not by a save.
+        reviewer_note: context.record.as_ref().and_then(|record| record.reviewer_note.clone()),
         created_at: context.record.as_ref().map_or(now, |record| record.created_at),
         updated_at: now,
     };
@@ -337,6 +341,7 @@ fn view<'a>(
         audience: context.audience,
         draft: &context.draft,
         locked: context.locked,
+        reviewer_note: context.record.as_ref().and_then(|record| record.reviewer_note.as_deref()),
         saved_at,
         notice,
     }
@@ -607,6 +612,63 @@ mod tests {
         assert_eq!(draft.get("url"), before.as_ref());
     }
 
+    #[tokio::test]
+    async fn a_returned_project_shows_the_depositor_what_rdu_asked_for() {
+        // REQ-4.5 retains the reviewer note and names nowhere to read it. The
+        // form is where the depositor acts on it, so it is where it is shown —
+        // and it rides inside the region, so a save does not clear it.
+        let (state, _) = test_state("section-note").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        DraftRepository::upsert(
+            &*state.db,
+            &DraftRecord {
+                shortcode: "0801d".to_string(),
+                payload: "{}".to_string(),
+                updated_by: Some(user.id),
+                reviewer_note: Some("Please add a German description.".to_string()),
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+        let app = test_app(&state);
+
+        let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        assert!(body.contains("RDU asked for changes"), "{body}");
+        assert!(body.contains("Please add a German description."), "{body}");
+    }
+
+    #[tokio::test]
+    async fn saving_a_draft_does_not_clear_the_reviewer_note() {
+        // The note describes the round the depositor is answering, so it has to
+        // survive them saving their answer to it — otherwise it disappears the
+        // moment they start acting on it.
+        let (state, _) = test_state("section-note-save").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        DraftRepository::upsert(
+            &*state.db,
+            &DraftRecord {
+                shortcode: "0801d".to_string(),
+                payload: "{}".to_string(),
+                updated_by: Some(user.id),
+                reviewer_note: Some("Please add a German description.".to_string()),
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+        let app = test_app(&state);
+
+        as_session(&app, post(OVERVIEW, "name=A%20name"), &session).await;
+
+        let stored = DraftRepository::find(&*state.db, "0801d").await.unwrap().unwrap();
+        assert_eq!(stored.reviewer_note.as_deref(), Some("Please add a German description."));
+    }
+
     /// Put a pending submission in front of the project.
     async fn a_submission(state: &AppState, shortcode: &str, user: Uuid, submission_state: SubmissionState) {
         SubmissionRepository::create(
@@ -621,6 +683,7 @@ mod tests {
                 reviewed_by: None,
                 reviewed_at: None,
                 reviewer_note: None,
+                review_state: None,
             },
         )
         .await

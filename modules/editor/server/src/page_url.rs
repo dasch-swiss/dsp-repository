@@ -8,8 +8,7 @@
 //! → Shared Crates).
 //!
 //! The editor is root-mounted, unlike DPE's `/dpe/…` prefix, since it runs on
-//! its own hostname. `/review` and `/review/{shortcode}` join this list as those
-//! surfaces land. `/projects/{shortcode}/sections/{section}` has joined it, and
+//! its own hostname. `/projects/{shortcode}/sections/{section}` has joined it, and
 //! `/projects/{shortcode}` **left** at the same moment: the scheme in
 //! `architecture.md` turned it into a redirect to the first section, and a
 //! redirect renders no beacon script, so no beacon can report it.
@@ -31,7 +30,14 @@
 //!
 //! REVIEW: new full-page routes in `router.rs` need a matching entry here —
 //! see `REVIEW.md`.
-const KNOWN_ROUTES: &[&str] = &["/login", "/login/code", "/projects", "/depositors", "/depositors/new"];
+const KNOWN_ROUTES: &[&str] = &[
+    "/login",
+    "/login/code",
+    "/projects",
+    "/review",
+    "/depositors",
+    "/depositors/new",
+];
 
 /// Normalize a page URL to a known editor route pattern.
 /// Returns "other" for unrecognized paths to prevent metric cardinality explosion.
@@ -64,6 +70,15 @@ pub fn normalize_page_url(url: &str) -> &'static str {
             }
         }
     }
+    // The shortcode collapses, for the reason the project routes' does: it is
+    // an unbounded set, and letting it through verbatim is the cardinality
+    // explosion this module exists to prevent.
+    if let Some(rest) = url.strip_prefix("/review/") {
+        if !rest.is_empty() && !rest.contains('/') {
+            return "/review/{shortcode}";
+        }
+        return "other";
+    }
     if let Some(rest) = url.strip_prefix("/depositors/") {
         return match rest.split_once('/') {
             Some((id, "edit")) if !id.is_empty() => "/depositors/{id}/edit",
@@ -83,6 +98,7 @@ mod tests {
         assert_eq!(normalize_page_url("/login"), "/login");
         assert_eq!(normalize_page_url("/login/code"), "/login/code");
         assert_eq!(normalize_page_url("/projects"), "/projects");
+        assert_eq!(normalize_page_url("/review"), "/review");
         assert_eq!(normalize_page_url("/depositors"), "/depositors");
         assert_eq!(normalize_page_url("/depositors/new"), "/depositors/new");
     }
@@ -100,6 +116,8 @@ mod tests {
             normalize_page_url("/projects/080C/sections/dataset"),
             "/projects/{shortcode}/sections/{section}"
         );
+        assert_eq!(normalize_page_url("/review/0801d"), "/review/{shortcode}");
+        assert_eq!(normalize_page_url("/review/080C"), "/review/{shortcode}");
         let id = "0c1cd9ff-9a9f-4b0e-9b0a-3f2f8f0b7a11";
         assert_eq!(normalize_page_url(&format!("/depositors/{id}/edit")), "/depositors/{id}/edit");
         assert_eq!(
@@ -136,6 +154,8 @@ mod tests {
         assert_eq!(normalize_page_url("/projects/0801/sections/"), "other");
         assert_eq!(normalize_page_url("/projects/0801/sections/a/b"), "other");
         assert_eq!(normalize_page_url("/projects/0801/settings"), "other");
+        assert_eq!(normalize_page_url("/review/"), "other");
+        assert_eq!(normalize_page_url("/review/0801d/fields"), "other");
         assert_eq!(normalize_page_url("/depositors/abc/delete"), "other");
         assert_eq!(normalize_page_url("/depositors//edit"), "other");
         // An empty id is not an id: the guards keep `/depositors//…` out of
@@ -145,6 +165,7 @@ mod tests {
 
     #[test]
     fn a_query_is_stripped_rather_than_collapsing_the_page_into_other() {
+        assert_eq!(normalize_page_url("/review/0801d?show=all"), "/review/{shortcode}");
         // `telemetry.js` sends `location.pathname`, so nothing arrives with a
         // query today. The previous version of this test asserted that fact —
         // `assert_ne!(normalize_page_url("/login?next=…"), "/login")` — and

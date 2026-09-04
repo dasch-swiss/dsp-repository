@@ -95,6 +95,14 @@ pub struct SectionView<'a> {
     pub draft: &'a ProjectDraft,
     /// `None` while the project is editable.
     pub locked: Option<Locked>,
+    /// What RDU asked for when it returned this project to the depositor
+    /// (REQ-4.5), or `None` for a draft nobody has reviewed.
+    ///
+    /// On the form rather than on a page of its own: the requirement retains
+    /// the note and names nowhere to read it, and the place a depositor acts on
+    /// it is the form they act on it *in*. It rides inside the region, so it is
+    /// still there after a save patches it.
+    pub reviewer_note: Option<&'a str>,
     /// When the stored draft was last written, formatted. `None` when the form
     /// is showing published metadata that nobody has saved over yet (REQ-1.1).
     pub saved_at: Option<&'a str>,
@@ -259,6 +267,7 @@ fn status(view: &SectionView<'_>) -> Markup {
 fn form(view: &SectionView<'_>) -> Markup {
     let action = view.action();
     html! {
+        @if let Some(note) = view.reviewer_note { (crate::pages::review::reviewer_note(note)) }
         @if let Some(locked) = view.locked {
             ({
                 alert(locked.message())
@@ -327,6 +336,7 @@ mod tests {
             audience,
             draft,
             locked: None,
+            reviewer_note: None,
             saved_at: None,
             notice: None,
         }

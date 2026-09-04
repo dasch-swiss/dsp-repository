@@ -54,7 +54,7 @@ File databases get `journal_mode=WAL` and `synchronous=NORMAL`; in-memory databa
 
 A forward-only, append-only list of statement batches guarded by `PRAGMA user_version`, applied at startup — no migration framework and no added dependency. Everything runs in one `BEGIN IMMEDIATE` transaction including the version bump, so a crash part-way leaves the database at the version it started from. A database reporting a *higher* version than the build knows stops startup: that is a rollback to an older image, and running anyway would query columns that do not exist.
 
-The tables are `users`, `user_shortcodes`, `sessions`, `login_codes`, `mail_sends`, `drafts`, `submissions` and `approved_records`, all `STRICT`. Migration `0002` added `users.failed_login_at` (a lockout has to be measured from somewhere, because the counter it gates resets only on success) and `login_codes.browser_token` (the pre-auth binding — see [Authentication](./authentication.md)). Migration `0003` added `mail_sends`, the append-only send log the daily caps count; it replaced counting live `login_codes` rows, which under-reported because a sign-in deletes codes that were mailed. `drafts`, `submissions` and `approved_records` carry their body as an opaque JSON `payload` string. It holds a serialized `editor_core::draft::ProjectDraft`, which is `#[serde(transparent)]` over the project's members, so the column already contains the project object and needs no migration to become typed; the persistence layer never interprets it.
+The tables are `users`, `user_shortcodes`, `sessions`, `login_codes`, `mail_sends`, `drafts`, `submissions` and `approved_records`, all `STRICT`. Migration `0002` added `users.failed_login_at` (a lockout has to be measured from somewhere, because the counter it gates resets only on success) and `login_codes.browser_token` (the pre-auth binding — see [Authentication](./authentication.md)). Migration `0003` added `mail_sends`, the append-only send log the daily caps count; it replaced counting live `login_codes` rows, which under-reported because a sign-in deletes codes that were mailed. Migration `0004` added `submissions.review_state` (the per-field decisions and substitutions RDU records, REQ-4.3) and `drafts.reviewer_note` (REQ-4.5's note — on the draft rather than the submission, because request-changes turns the submission *into* a draft, so a note kept on the row being deleted could never reach the person it is addressed to). `drafts`, `submissions` and `approved_records` carry their body as an opaque JSON `payload` string. It holds a serialized `editor_core::draft::ProjectDraft`, which is `#[serde(transparent)]` over the project's members, so the column already contains the project object and needs no migration to become typed; the persistence layer never interprets it.
 
 ### In-memory variant
 
@@ -149,6 +149,8 @@ DPE carries `/dpe/…` because it shares `repository.dasch.swiss` with other ser
 | `/projects` | GET | signed in | The projects this account may edit, named from the published set. |
 | `/projects/{shortcode}` | GET | signed in + assigned | 303 to the first form section. 403 otherwise (REQ-1.3). |
 | `/projects/{shortcode}/sections/{section}` | GET, POST | signed in + assigned | One form section, and the draft save it makes. 200 even when the project is unpublished, per REQ-2.3. |
+| `/review` | GET | RDU | The review queue: every pending submission oldest first, and every draft. |
+| `/review/{shortcode}` | GET, POST | RDU | The field-by-field diff, and the claim or decision save it makes. |
 | `/depositors` | GET, POST | RDU | The account list, and creating a depositor. |
 | `/depositors/new` | GET | RDU | The create form. |
 | `/depositors/{id}/edit` | GET, POST | RDU | The edit form, and the change it makes. |
@@ -166,14 +168,7 @@ There is deliberately no resend endpoint: asking again is another `POST /login`,
 
 `/projects` lists the published projects a reader may reach — every project for an RDU member, the intersection of assignments and the published set for a depositor. `/projects/{shortcode}` is a **redirect** into the form's first section, so exactly one place decides where a project link lands, and there is no per-project landing page between the list and the form. It is therefore absent from `page_url.rs`'s `KNOWN_ROUTES` for the same reason `/` is: a redirect renders no beacon script, so no beacon can report it. The redirect target is the same section for both audiences — a destination that depended on the role is one more thing to get wrong in a link shared between a depositor and a reviewer.
 
-The review surfaces are not built. Their scheme is settled because the router and the shell are built against it:
-
-```text
-GET  /review                                  the review queue, oldest first
-GET  /review/{shortcode}                      the field-by-field diff surface
-```
-
-Two decisions inside that:
+Two decisions about that scheme:
 
 - **Form sections are real URLs**, not fragment swaps. Bookmarkable, Back-friendly, and consistent with the repository's URL-based-navigation principle.
 - **Review deep-links by shortcode**, not by submission id. A project has at most one pending submission, so the shortcode is unique for the purpose and reads better in a URL shared between reviewers.
@@ -218,6 +213,51 @@ The colour pairings are measured against the design tokens, with the method cros
 `Obligation::Required` reads "must be present to submit" (REQ-1.12), and the published corpus does not satisfy four of the seventeen fields carrying it: **all 85** projects lack `documentationMaterial`, 13 lack `url`, 9 lack `contactPoint`, and one each lacks `typeOfData` and `dataLanguage`. A submit gate applied literally against the tier would refuse every project already live.
 
 The section rail therefore reports the tier honestly rather than flatteringly — 75 of the 85 projects come out complete for a depositor, and the ten that do not are named in `editor_web::form::obligation`'s tests, which pin the measured counts so a change to an obligation has to say what it does to existing projects. Deciding what submit actually requires is submit validation's, not the rail's.
+
+## The review surface
+
+`GET /review` is the queue and `GET /review/{shortcode}` the field-by-field diff (REQ-4.1, REQ-4.3). Both take the `Rdu` extractor, which is REQ-4.2 in one place — access is role-based, so there is no assignment to check and no per-project 403 to render, and an RDU account's assignment set is empty by design. The queue carries a second table of every draft, because REQ-1.11 makes those visible to RDU too; a draft is not reviewable, so it is a separate table rather than a row with no controls.
+
+### The diff is one form, not one request per field
+
+REQ-4.3 asks for accept, revert and edit-in-place *per field*. It does not ask for a request per field, and the plan's own reason for batching is what settles it: a reviewer who accepts eight fields and loses the ninth to a dropped connection has a submission half-decided with nothing saying which half. One `<form>` posting one body is that batching natively — every decision and every substituted value arrives together and is written in one transaction — and it keeps the surface working without JavaScript, which every other authenticated surface here does.
+
+Three things hold it together, each of which fails quietly if changed:
+
+- **A decision posts under `decision.{field}`; a substituted value posts under the field's own name** — `{field}` for a scalar, `{field}.{tag}` for one language of a map. That is exactly what the section form posts, and therefore exactly what `editor_core::form`'s appliers read. No registry id begins with `decision.`, so the two namespaces cannot collide.
+- **A substitution is computed by running the field's own applier over a clone of the submitted draft**, then comparing. That is the only way a reviewer's edit obeys the rules a depositor's does — trimming, newline normalisation, a stored `MISSING` surviving an empty submit — rules whose whole purpose is that an untouched value writes no bytes. A second comparison here would agree with them only by inspection.
+- **The in-place editor *is* the depositor's control**, `editor_web::form::widgets::control` over a one-member draft holding what would be committed. A second dispatch diverged as soon as it existed: keyed off whether the value happened to hold a newline, `startDate` rendered as free text where the form gives a date picker, and `shortDescription` lost the 200-character cap its own hint promises — neither caught server-side, because the cap is an HTML attribute.
+- **The intent rides on the submit button**, as `name="intent"`. A native submit posts the activated button's name and value, and Datastar 1.0.2's form mode appends them too, from `SubmitEvent.submitter` — so "Save review decisions" and "Accept all remaining" are two buttons on one form. `formaction` would not do: the bundle posts to the URL in `@post`, so the second destination would be silently ignored on the enhanced path and honoured on the plain one.
+
+`POST /review/{shortcode}` answers the same two ways as the form's save, for the same two reasons: a 303 on the plain path so a `POST` left in the history does not re-post, and the region as `text/html` on the enhanced one, always 200 because Datastar processes a body only on a 200.
+
+### The submitted payload is never rewritten
+
+A reviewer's substitution goes to `submissions.review_state`, never over `payload`. REQ-4.4 waives the second approver, so a value RDU put in place of the depositor's is seen by nobody unless the submitted one survives beside it — and an overwritten payload cannot answer what was submitted. `Some(Value::Null)` in a field's stored review is a reviewer *clearing* a field, which is a real substitution and not the absence of one.
+
+Only fields the submission actually changes are read back, and a revert is refused on a project with no published counterpart. Both are the same rule: an unchanged field renders no decision control and an unpublished project never offers revert, so a decision naming either came from a hand-built body — and storing one records a decision the surface can never show and therefore never undo. A stored revert on an unpublished project renders "Reverted — keeps published" beside a "Not published yet" column, in a radio group with no matching option, so it reads as undecided and cannot be cleared.
+
+### The comparison is over top-level members, not registry fields
+
+`editor_core::review::diff` compares the union of both sides' JSON members. Enumerating the registry instead would show a reviewer only the fields the *form* knows, so a change arriving through any other path — REQ-1.7's untouched members, REQ-1.8's field added to the contract — would be approved without ever being displayed. A member the registry does not know keeps its own name as its label, and a member the submission *dropped* is still a row: a removal is a change somebody has to see.
+
+Equality is on the stored `Value`, which is stricter than the comparison `editor_core::form` applies to a submitted value. It has to be: those forgiving rules exist so that *saving* an untouched form writes no bytes, and by the time a submission exists they have already run. What survives them is a real difference in what would be committed.
+
+### A project with no published counterpart
+
+REQ-2.3 admits a project present only locally and REQ-4.3 assumes a published value per field, so for the first project created through the editor the comparison degenerates. The surface says so once, in a banner rather than per field — it is a fact about the record, not about any one field, and a paragraph rendered beside a control is not part of that control's accessible description, so a reader tabbing straight to the input would never hear it. Per row it renders the published column as "Not published yet" rather than "Not set", since a reader told the latter looks for the field rather than for the record. And it **offers no revert**. Revert means keeping the published value, and there is none; offering it would silently unset a field the contract requires. Accept and edit-in-place still apply, which is the whole of what a reviewer can do to a record that is new.
+
+### Concurrent review is visible, not locked
+
+Two RDU members can open one submission and the PRD defines no claim. Opening one from the queue is a `POST` that claims it — `Submitted` to `InReview`, `reviewed_by` set — which is also the first producer of `SubmissionState::InReview`, a state the project form already reads as a reason to lock the depositor out. A second reviewer is told who has it and offered a take-over; nothing is blocked and the last save wins, as it does for a draft. The reader is only shown as the holder once the write has actually succeeded — naming them on a refusal would also suppress the take-over banner, telling them the opposite of what the row says at exactly the moment it matters. The take-over carries the current filter, for the same reason the diff form does.
+
+A lock was the alternative and costs more than it buys: it needs a release path and a stale-lock timeout, and strands a submission whenever somebody closes a tab. What must not happen *silently* is one reviewer overwriting another, and the banner plus the queue's "With …" column is what stops that.
+
+Claiming is a `POST` and not a `GET` because it changes state, and the `Sec-Fetch-Site` control exempts `GET` by necessity — a navigation from anywhere is a `GET`. It shares the review URL rather than taking one of its own, so a refused claim re-renders somewhere that still answers `GET`.
+
+### Where the depositor reads the reviewer note
+
+On the project form, inside the region a save replaces, from `drafts.reviewer_note`. REQ-4.5 retains the note and names nowhere to read it; the form is where the depositor acts on it. A save preserves it — it describes the round being answered, so clearing it on the first save would remove it the moment they started acting on it — and the resubmission that answers it is what clears it, which belongs with submit rather than here.
 
 ## Request middleware
 

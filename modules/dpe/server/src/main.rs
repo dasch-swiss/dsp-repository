@@ -214,6 +214,8 @@ fn main() -> ExitCode {
 
 #[tokio::main]
 async fn serve() -> ExitCode {
+    use std::io::IsTerminal;
+
     use axum::http::StatusCode;
     use axum::routing::get;
     use init_tracing_opentelemetry::TracingConfig;
@@ -245,7 +247,25 @@ async fn serve() -> ExitCode {
     // Reads OTEL_* env vars automatically. Falls back to no-op export when
     // OTEL_EXPORTER_OTLP_ENDPOINT is not set (safe for local development).
     // Log level is controlled via RUST_LOG.
-    let _otel_guard = TracingConfig::production()
+    //
+    // Format depends on where stdout points. Attached to a terminal, use the
+    // pretty formatter: one indented block per event with a colour-coded level
+    // (ERROR red, WARN yellow, INFO green) and the source location, which is
+    // what a developer wants when reading the dev server's output. Redirected
+    // to a file, pipe or container runtime, stay on single-line JSON so Loki
+    // keeps parsing it. `NO_COLOR` (https://no-color.org) forces JSON too: the
+    // pretty formatter always emits ANSI, so honouring the variable means not
+    // selecting it.
+    let human_readable = std::io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none();
+    let tracing_config = if human_readable {
+        // `production()` disables line numbers; pretty output is worth much
+        // less without them, so switch them back on for this path only.
+        TracingConfig::production().with_pretty_format().with_line_numbers(true)
+    } else {
+        TracingConfig::production()
+    };
+
+    let _otel_guard = tracing_config
         .with_otel_tracer_name(env!("CARGO_PKG_NAME"))
         .init_subscriber_ext(|registry| {
             use opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge;

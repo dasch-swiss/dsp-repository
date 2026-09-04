@@ -76,3 +76,40 @@ scan reports vulnerabilities:
 - **Main-branch scanning** — continuous monitoring of production images
 - **Blocking on critical CVEs** — failing the PR check when critical vulnerabilities
   are detected
+
+## Third-Party Artifact Integrity
+
+Scanning answers "does this dependency carry a known CVE". It does not answer "are these the bytes we reviewed". Two kinds of third-party artifact in this repo are shipped or executed without passing through Cargo, so nothing else checks them. `just check` enforces both, which is what the CI `check` job runs.
+
+### Vendored JavaScript
+
+`modules/dpe/public/vendor/` and `modules/editor/public/vendor/` hold third-party JavaScript served straight to browsers. Each directory's `README.md` records a SHA-256 per file. Those digests are now recomputed rather than merely asserted, so the table is a check instead of a claim.
+
+Verification fails when:
+
+- a vendored file's bytes no longer match the digest its table records;
+- a table row names a file that is not in the directory;
+- the directory commits a file that no table row names;
+- a row's digest is not 64 lowercase hex characters. A truncated or mistyped digest is reported, never skipped: a silently skipped row is an unverified file, which is the failure the gate exists to prevent.
+
+Untracked files in a vendor directory are ignored, so local scratch does not fail anyone's build.
+
+To change a vendored file, follow the update process in that directory's own `README.md`: replace the file, then put `shasum -a 256 <file>` into the table.
+
+### The Tailwind standalone CLI
+
+The CSS build runs a Tailwind v4 standalone binary fetched from GitHub Releases, from two places: `_tailwind-bin` in the `justfile`, which sits behind every `just css*` recipe, the `build-dpe` and `build-editor` actions and the `a11y-dpe` workflow; and `modules/mosaic/playground/Dockerfile`. Unverified, a replaced release asset would run arbitrary code in every developer checkout and every CI job.
+
+`tailwind.pins` records the version and the expected SHA-256 of each release asset. Both download sites verify against it and fail closed. The justfile checks on every resolve rather than only after a download, so a binary cached by an earlier build is verified too; hashing it costs about 0.05s under coreutils and 0.3s under perl `shasum`.
+
+Bump the pinned version with:
+
+```sh
+just tailwind-pins-refresh 4.1.19
+```
+
+This takes the digests from the `sha256sums.txt` published alongside that release and rewrites `tailwind.pins`. That file is read once, here, and never at build time: whoever can replace a release asset can replace its checksum file too, so verifying one against the other would establish nothing.
+
+Be precise about what the pin buys, because it is easy to overstate. Nobody can authenticate a 64-character digest by reading it, so review of a bump commit checks the version and the asset names, not the bytes. What the pin gives is a fixed reference point and an audit trail: every later download has to match what was pinned, so tampering after the bump (a replaced asset, a poisoned CDN cache) fails closed, and an unexpected `tailwind.pins` change shows up in a diff that should not have contained one. A release already compromised at the moment of the bump would be pinned as it stands. Upstream ships no signature, provenance or SBOM that would close that last gap, so this is the strongest check available here.
+
+`tailwind.pins` is also the only place the Tailwind version is written. The justfile and the mosaic Dockerfile both read it, so neither can drift onto a version the other has not seen.

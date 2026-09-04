@@ -8,7 +8,7 @@ All CI/CD workflows are defined as GitHub Actions in `.github/workflows/`.
 
 Every push and pull request runs:
 
-- **check.yml** — Formatting (`maudfmt` for `html!` macros + `cargo +nightly fmt`) and linting (`clippy`)
+- **check.yml** — Formatting (`maudfmt` for `html!` macros + `cargo +nightly fmt`), linting (`clippy`), and third-party artifact checksums (see [Security](./security.md))
 - **test.yml** — Runs the full test suite
 - **scout-dpe.yml** / **scout-mosaic-playground.yml** — Docker image vulnerability scanning (see [Security](./security.md))
 

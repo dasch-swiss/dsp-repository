@@ -20,19 +20,35 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
 # Download the pinned Tailwind v4 standalone CLI for the build platform (bundles
-# the official plugins, so no Node/npm is needed). TAILWIND_VERSION must match
-# the justfile's TAILWIND_VERSION. TARGETARCH is provided automatically by
-# BuildKit (amd64 on the CI/Cloud Run x64 path, arm64 on Apple-Silicon).
-ARG TAILWIND_VERSION=4.1.18
+# the official plugins, so no Node/npm is needed) and verify it before running
+# it. Both the version and the expected SHA-256 come from tailwind.pins, which
+# the justfile reads too, so this build and `just css-mosaic` cannot drift onto
+# different versions or disagree about what a good binary is. TARGETARCH is
+# provided automatically by BuildKit (amd64 on the CI/Cloud Run x64 path, arm64
+# on Apple-Silicon).
+#
+# These copies sit above the download so that editing a pin invalidates the
+# download layer (which is what should happen) while leaving the expensive
+# `cargo chef cook` layer above untouched.
+COPY tailwind.pins /tmp/tailwind.pins
+COPY .github/scripts/verify-checksums.sh /tmp/verify-checksums.sh
 ARG TARGETARCH
-RUN case "$TARGETARCH" in \
-      amd64) tw_arch=x64 ;; \
-      arm64) tw_arch=arm64 ;; \
-      *) echo "unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
-    esac; \
-    curl -fsSL "https://github.com/tailwindlabs/tailwindcss/releases/download/v${TAILWIND_VERSION}/tailwindcss-linux-$tw_arch" \
-      -o /usr/local/bin/tailwindcss \
-    && chmod +x /usr/local/bin/tailwindcss
+RUN bash -eu -c ' \
+      . /tmp/verify-checksums.sh; \
+      TAILWIND_PINS=/tmp/tailwind.pins; \
+      case "${TARGETARCH:-}" in \
+        amd64) tw_arch=x64 ;; \
+        arm64) tw_arch=arm64 ;; \
+        *) echo "unsupported TARGETARCH: ${TARGETARCH:-<unset>}" >&2; exit 1 ;; \
+      esac; \
+      ver="$(tailwind_version)"; \
+      asset="tailwindcss-linux-$tw_arch"; \
+      want="$(tailwind_pin "$asset")"; \
+      curl -fsSL "https://github.com/tailwindlabs/tailwindcss/releases/download/v$ver/$asset" \
+        -o /usr/local/bin/tailwindcss; \
+      verify_file /usr/local/bin/tailwindcss "$want"; \
+      chmod +x /usr/local/bin/tailwindcss \
+    '
 
 # Copy the full source.
 COPY . .

@@ -525,6 +525,17 @@ impl EditorConfig {
     /// no durable state and no production flag — which is the PR preview, a
     /// local run, and nothing else. See `docs/src/editor/authentication.md`.
     pub fn reveals_login_code(&self) -> bool {
+        self.is_throwaway()
+    }
+
+    /// Whether this deployment is a throwaway: not `PROD`, no relay, no durable
+    /// state.
+    ///
+    /// The condition above, named, because two things now turn on it — showing
+    /// a login code in the interface, and seeding the sample records that make
+    /// the review surfaces reachable before submit exists. Naming it once keeps
+    /// the second from drifting into a weaker test than the first.
+    pub fn is_throwaway(&self) -> bool {
         self.env != "PROD" && self.smtp_host.is_none() && self.db_dir.is_none()
     }
 
@@ -970,6 +981,27 @@ mod reveal_tests {
         // The PR preview and a local run: nothing here survives the process and
         // the code is already going to the log in plaintext.
         assert!(preview().reveals_login_code());
+    }
+
+    #[test]
+    fn test_showing_the_code_and_seeding_sample_data_ask_the_same_question() {
+        // Two things turn on this predicate, and the sample records are the
+        // laxer-looking of the pair — "it's only a preview" is exactly how a
+        // seeding rule ends up with a weaker test than the one guarding a
+        // login code. Pinned so they cannot drift apart.
+        let relay = EditorConfig { smtp_host: Some("relay.test".to_string()), ..preview() };
+        let durable = EditorConfig { db_dir: Some(std::path::PathBuf::from("/data")), ..preview() };
+        let production = EditorConfig { env: "PROD".to_string(), ..preview() };
+        for config in [preview(), relay, durable, production] {
+            assert_eq!(
+                config.reveals_login_code(),
+                config.is_throwaway(),
+                "{:?} / {:?} / {:?}",
+                config.env,
+                config.smtp_host,
+                config.db_dir
+            );
+        }
     }
 
     #[test]

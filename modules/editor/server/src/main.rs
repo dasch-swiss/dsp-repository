@@ -18,6 +18,7 @@ mod config;
 mod csrf;
 mod db;
 mod depositors;
+mod dev_seed;
 mod mail;
 mod page_url;
 mod projects;
@@ -497,13 +498,32 @@ async fn serve() -> ExitCode {
         );
     }
 
+    let published = std::sync::Arc::new(load_published(config.data_dir.as_deref()));
+
+    // Sample records, only on a deployment whose database dies with the process
+    // (see `dev_seed`). Nothing in the service creates a submission yet, so
+    // without this a preview renders an empty queue and the review surfaces
+    // cannot be exercised at all. Never fatal: a preview with no sample data is
+    // a worse preview, not a reason to refuse to start.
+    if config.is_throwaway() {
+        match dev_seed::seed(&*db, &published, chrono::Utc::now()).await {
+            Ok(Some((under_review, in_progress))) => tracing::info!(
+                project.under_review = %under_review,
+                project.in_progress = %in_progress,
+                "seeded sample records for a throwaway deployment"
+            ),
+            Ok(None) => {}
+            Err(error) => tracing::warn!(error = %error, "could not seed sample records"),
+        }
+    }
+
     let state = AppState {
         css_href: resolve_css_href(&config.public_dir),
         db,
         mailer,
         auth: auth::AuthConfig::from(&config),
         reveal_login_code: config.reveals_login_code(),
-        published: std::sync::Arc::new(load_published(config.data_dir.as_deref())),
+        published,
     };
     let app = router::build_app(state, &config.public_dir);
 

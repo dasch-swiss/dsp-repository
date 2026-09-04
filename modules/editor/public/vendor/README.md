@@ -40,4 +40,5 @@ about.
 1. Download the new version from the source URL above
 2. Replace the file in this directory
 3. Update the version and SHA-256 in the table above: `shasum -a 256 <file>`
-4. Verify the application works (`just dev-editor`)
+4. Confirm the table matches the files: `just verify-checksums` (also run by `just check`)
+5. Verify the application works (`just dev-editor`)

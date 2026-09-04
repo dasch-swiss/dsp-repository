@@ -5,10 +5,6 @@ GIT_TAG := `git describe --tags --exact-match 2>/dev/null || true`
 IMAGE_TAG := if GIT_TAG == "" { CARGO_VERSION + "-" + COMMIT_HASH } else { CARGO_VERSION }
 DOCKER_IMAGE := DOCKER_REPO + ":" + IMAGE_TAG
 
-# Pinned Tailwind v4 standalone CLI (DEV-6642) — bundles the official plugins (incl. typography), so the CSS build needs no Node/npm.
-
-TAILWIND_VERSION := "4.1.18"
-
 # Projects whose OAI records `just fetch-records` refreshes. Add a shortcode here to track a new project.
 
 RECORD_SHORTCODES := "081C 0868 0803"
@@ -52,8 +48,12 @@ install-e2e-requirements: _check-node
 _check-node:
     @command -v node >/dev/null 2>&1 || { echo >&2 "error: 'node' not on PATH. just runs recipes in sh, which can't see nvm's lazy shell functions — expose your default node bin on PATH for all shells (eager-load it in your shell rc, or use brew/volta/asdf). See docs/src/fundamentals/onboarding.md."; exit 1; }
 
+# Verify the third-party bytes we ship or execute: each modules/*/public/vendor/README.md table against the files it describes, and tailwind.pins for completeness. Run by `just check`. (DEV-7126, DEV-6727)
+verify-checksums:
+    bash .github/scripts/verify-checksums.sh
+
 # Run all fmt and clippy checks
-check:
+check: verify-checksums
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable
@@ -119,6 +119,8 @@ test:
     bash .github/scripts/check-commit-count.test.sh
     # Commit-advisory helpers (deterministic parts only; needs jq)
     bash .github/scripts/commit-advisory.test.sh
+    # Checksum gate (dependency-free)
+    bash .github/scripts/verify-checksums.test.sh
 
 # Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap
 commit-lint base="origin/main":
@@ -256,21 +258,54 @@ run-docker-mosaic-playground:
 # DPE targets
 ###################
 
-# Resolve the pinned Tailwind v4 standalone CLI (download + cache under target/, gitignored); echoes its path. Bundles plugins incl. typography → no Node/npm needed. (DEV-6642)
+# Rewrite tailwind.pins for a Tailwind release, taking the digests from the sha256sums.txt published alongside it. That file is read once, here, and never at build time, where an attacker able to swap a release asset could swap its checksum file too. Pinning buys a fixed reference point and an audit trail, not authenticity: see docs/src/security.md. (DEV-6727)
+tailwind-pins-refresh version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    . .github/scripts/verify-checksums.sh
+    ver="{{ version }}"
+    sums="$(curl -fsSL --connect-timeout 10 --max-time 60 \
+        "https://github.com/tailwindlabs/tailwindcss/releases/download/v$ver/sha256sums.txt")"
+    tmp="$(mktemp "${TMPDIR:-/tmp}/tailwind-pins.XXXXXX")"
+    # Keep everything above the version line; rewrite from there down.
+    awk '$1 == "version" { exit } { print }' tailwind.pins >"$tmp"
+    printf 'version %s\n\n' "$ver" >>"$tmp"
+    for asset in $TAILWIND_ASSETS; do
+        pin="$(printf '%s\n' "$sums" | awk -v a="$asset" '$2 == a || $2 == "./" a { print $1; exit }')"
+        [ -n "$pin" ] || { echo "✗ $asset is not listed in v$ver's sha256sums.txt" >&2; exit 1; }
+        printf '%s  %s\n' "$pin" "$asset" >>"$tmp"
+    done
+    mv "$tmp" tailwind.pins
+    TAILWIND_PINS=tailwind.pins verify_tailwind_pins
+    git --no-pager diff -- tailwind.pins
+
+# Resolve the pinned Tailwind v4 standalone CLI (download + cache under target/, gitignored); echoes its path. Bundles plugins incl. typography → no Node/npm needed. (DEV-6642) The version and the SHA-256 of every release asset both come from tailwind.pins, which modules/mosaic/playground/Dockerfile reads too, so neither file can drift onto a version the other has not seen; bump with `just tailwind-pins-refresh <version>`. The binary is verified before it is handed to a caller. (DEV-6727)
 [private]
 _tailwind-bin:
     #!/usr/bin/env bash
     set -euo pipefail
-    ver="{{ TAILWIND_VERSION }}"
+    . .github/scripts/verify-checksums.sh
+    ver="$(tailwind_version)"
     case "$(uname -s)" in Darwin) os=macos ;; Linux) os=linux ;; *) echo "unsupported OS: $(uname -s)" >&2; exit 1 ;; esac
     case "$(uname -m)" in arm64|aarch64) arch=arm64 ;; x86_64) arch=x64 ;; *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;; esac
+    asset="tailwindcss-$os-$arch"
     bin="target/tailwind/tailwindcss-$ver-$os-$arch"
+    want="$(tailwind_pin "$asset")"
     if [ ! -x "$bin" ]; then
         mkdir -p target/tailwind
-        url="https://github.com/tailwindlabs/tailwindcss/releases/download/v$ver/tailwindcss-$os-$arch"
+        url="https://github.com/tailwindlabs/tailwindcss/releases/download/v$ver/$asset"
         echo "fetching Tailwind standalone CLI: $url" >&2
         curl -fsSL --connect-timeout 10 --max-time 60 --retry 3 -o "$bin" "$url"
         chmod +x "$bin"
+    fi
+    # Checked on every resolve, not only after a download: a cache left by an
+    # earlier build, or a truncated one, is precisely what must not be executed.
+    # Hashing the 75 MB macOS arm64 binary measured ~0.05s under coreutils and
+    # ~0.3s under perl shasum; the 121 MB linux-x64 asset scales from there.
+    if ! verify_file "$bin" "$want"; then
+        rm -f "$bin"
+        echo "removed the unverified binary. If this Tailwind bump is intentional, run 'just tailwind-pins-refresh $ver'" >&2
+        exit 1
     fi
     echo "$bin"
 

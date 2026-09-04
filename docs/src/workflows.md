@@ -10,7 +10,7 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 
 | Command | Description |
 |---------|-------------|
-| `just check` | Run formatting and linting checks |
+| `just check` | Run formatting, linting and checksum checks |
 | `just build` | Build all targets |
 | `just test` | Run all tests |
 | `just fmt` | Format all code (`maudfmt` for `maud::html!` macro contents, then `cargo +nightly fmt`) |
@@ -23,6 +23,8 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 | `just install-e2e-requirements` | Install Playwright browsers for E2E tests |
 | `just docs-serve` | Serve documentation locally at localhost:3000 |
 | `just validate-data` | Validate all data files in the default data directory |
+| `just verify-checksums` | Check vendored JS against each `vendor/README.md` table and `tailwind.pins` for completeness (also run by `just check`) |
+| `just tailwind-pins-refresh <version>` | Re-pin the Tailwind standalone CLI digests for a new version |
 
 ## Git, Commits, and Pull Requests
 

@@ -2,6 +2,8 @@
 # several checks:
 # - fmt: checks that the code is formatted according to rustfmt
 # - clippy: checks that the code does not contain any clippy warnings
+# - checksums: verifies vendored JS against its vendor/README.md tables, and that
+#   tailwind.pins is complete (part of `just check`; see docs/src/security.md)
 # - doc: checks that the code can be documented without errors
 # - hack: check combinations of feature flags
 

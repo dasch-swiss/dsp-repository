@@ -1,0 +1,20 @@
+# Pinned Tailwind v4 standalone CLI: the single source of truth for the version
+# and for the SHA-256 of every release asset the build may download (DEV-6727).
+#
+# Consumers, both of which fail closed on a mismatch:
+#   - `_tailwind-bin` in the justfile, behind every `just css*` recipe and both
+#     CI build actions
+#   - modules/mosaic/playground/Dockerfile
+#
+# To bump: `just tailwind-pins-refresh <version>` rewrites this file from the
+# sha256sums.txt published with that release. Review the diff as you would any
+# other dependency bump; that review is what the pin is worth.
+#
+# Hash lines are `<sha256>  <release asset name>`, the sha256sum(1) format.
+
+version 4.1.18
+
+7a7702db6c93718a9b6655d455304edda18600f5a4f195242342ed3b5b70ebe8  tailwindcss-linux-arm64
+737becf8d4ad1115ea98df69fa94026d402ca8feb91306a035b5b004167da8dd  tailwindcss-linux-x64
+7f27711dceac1a580b6ad58ddac46e59202c85a6c16f2f08f6fdcdee261008e1  tailwindcss-macos-arm64
+1e8a77fd796a3a4aa3d8727887de926ef9d38477aba113fd7c32c0d31a32a3ab  tailwindcss-macos-x64

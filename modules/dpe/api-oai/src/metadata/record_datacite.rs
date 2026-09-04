@@ -149,7 +149,7 @@ pub fn record_to_datacite(record: &Record) -> DataCiteRecord {
     let formats: Vec<String> = record
         .file
         .as_ref()
-        .map(|f| f.mime_type.clone())
+        .and_then(|f| f.mime_type.clone())
         .filter(|m| !m.is_empty())
         .into_iter()
         .collect();
@@ -184,7 +184,7 @@ mod tests {
     fn bitstream_record() -> Record {
         Record {
             file: Some(RecordFile {
-                mime_type: "image/jp2".to_string(),
+                mime_type: Some("image/jp2".to_string()),
                 url: "https://ingest.dasch.swiss/projects/0001/assets/5RMOnH7RmAY-qKzgr431bg7/original".to_string(),
                 ..RecordFile::default()
             }),
@@ -392,7 +392,7 @@ mod tests {
     fn file_size_does_not_reach_the_payload() {
         let record = Record {
             file: Some(RecordFile {
-                mime_type: "image/png".to_string(),
+                mime_type: Some("image/png".to_string()),
                 url: "https://ingest.dasch.swiss/projects/0001/assets/abc/original".to_string(),
                 file_size: Some(377685),
                 ..RecordFile::default()

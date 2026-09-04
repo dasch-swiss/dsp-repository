@@ -49,9 +49,9 @@ pub fn record_to_dublin_core(record: &Record) -> DublinCoreRecord {
     dc.resource_type = type_of_data_to_dc_type(&record.type_of_data);
 
     // dc:format — the file's MIME type (bitstream records only)
-    if let Some(file) = &record.file {
-        if !file.mime_type.is_empty() {
-            dc.formats.push(file.mime_type.clone());
+    if let Some(mime_type) = record.file.as_ref().and_then(|f| f.mime_type.as_ref()) {
+        if !mime_type.is_empty() {
+            dc.formats.push(mime_type.clone());
         }
     }
 
@@ -83,7 +83,7 @@ mod tests {
     fn bitstream_record() -> Record {
         Record {
             file: Some(RecordFile {
-                mime_type: "image/jp2".to_string(),
+                mime_type: Some("image/jp2".to_string()),
                 url: "https://ingest.dasch.swiss/projects/0001/assets/5RMOnH7RmAY-qKzgr431bg7/original".to_string(),
                 ..RecordFile::default()
             }),

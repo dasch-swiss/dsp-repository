@@ -248,7 +248,7 @@
 <h3 id="checks-and-tests"><a class="header" href="#checks-and-tests">Checks and Tests</a></h3>
 <p>Every push and pull request runs:</p>
 <ul>
-<li><strong>check.yml</strong> — Formatting (<code>maudfmt</code> for <code>html!</code> macros + <code>cargo +nightly fmt</code>) and linting (<code>clippy</code>)</li>
+<li><strong>check.yml</strong> — Formatting (<code>maudfmt</code> for <code>html!</code> macros + <code>cargo +nightly fmt</code>), linting (<code>clippy</code>), and third-party artifact checksums (see <a href="./security.html">Security</a>)</li>
 <li><strong>test.yml</strong> — Runs the full test suite</li>
 <li><strong>scout-dpe.yml</strong> / <strong>scout-mosaic-playground.yml</strong> — Docker image vulnerability scanning (see <a href="./security.html">Security</a>)</li>
 </ul>

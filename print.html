@@ -424,7 +424,7 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 <p>For any interaction or coding-related workflow, the justfile is the primary source of truth. Run <code>just</code> without arguments to see all available commands with descriptions.</p>
 <h2 id="key-development-commands"><a class="header" href="#key-development-commands">Key Development Commands</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>just check</code></td><td>Run formatting and linting checks</td></tr>
+<tr><td><code>just check</code></td><td>Run formatting, linting and checksum checks</td></tr>
 <tr><td><code>just build</code></td><td>Build all targets</td></tr>
 <tr><td><code>just test</code></td><td>Run all tests</td></tr>
 <tr><td><code>just fmt</code></td><td>Format all code (<code>maudfmt</code> for <code>maud::html!</code> macro contents, then <code>cargo +nightly fmt</code>)</td></tr>
@@ -437,6 +437,8 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 <tr><td><code>just install-e2e-requirements</code></td><td>Install Playwright browsers for E2E tests</td></tr>
 <tr><td><code>just docs-serve</code></td><td>Serve documentation locally at localhost:3000</td></tr>
 <tr><td><code>just validate-data</code></td><td>Validate all data files in the default data directory</td></tr>
+<tr><td><code>just verify-checksums</code></td><td>Check vendored JS against each <code>vendor/README.md</code> table and <code>tailwind.pins</code> for completeness (also run by <code>just check</code>)</td></tr>
+<tr><td><code>just tailwind-pins-refresh &lt;version&gt;</code></td><td>Re-pin the Tailwind standalone CLI digests for a new version</td></tr>
 </tbody></table>
 </div>
 <h2 id="git-commits-and-pull-requests"><a class="header" href="#git-commits-and-pull-requests">Git, Commits, and Pull Requests</a></h2>
@@ -864,7 +866,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <h3 id="checks-and-tests"><a class="header" href="#checks-and-tests">Checks and Tests</a></h3>
 <p>Every push and pull request runs:</p>
 <ul>
-<li><strong>check.yml</strong> — Formatting (<code>maudfmt</code> for <code>html!</code> macros + <code>cargo +nightly fmt</code>) and linting (<code>clippy</code>)</li>
+<li><strong>check.yml</strong> — Formatting (<code>maudfmt</code> for <code>html!</code> macros + <code>cargo +nightly fmt</code>), linting (<code>clippy</code>), and third-party artifact checksums (see <a href="./security.html">Security</a>)</li>
 <li><strong>test.yml</strong> — Runs the full test suite</li>
 <li><strong>scout-dpe.yml</strong> / <strong>scout-mosaic-playground.yml</strong> — Docker image vulnerability scanning (see <a href="./security.html">Security</a>)</li>
 </ul>
@@ -1079,6 +1081,28 @@ environments on Docker Hub)</li>
 <li><strong>Blocking on critical CVEs</strong> — failing the PR check when critical vulnerabilities
 are detected</li>
 </ul>
+<h2 id="third-party-artifact-integrity"><a class="header" href="#third-party-artifact-integrity">Third-Party Artifact Integrity</a></h2>
+<p>Scanning answers "does this dependency carry a known CVE". It does not answer "are these the bytes we reviewed". Two kinds of third-party artifact in this repo are shipped or executed without passing through Cargo, so nothing else checks them. <code>just check</code> enforces both, which is what the CI <code>check</code> job runs.</p>
+<h3 id="vendored-javascript"><a class="header" href="#vendored-javascript">Vendored JavaScript</a></h3>
+<p><code>modules/dpe/public/vendor/</code> and <code>modules/editor/public/vendor/</code> hold third-party JavaScript served straight to browsers. Each directory's <code>README.md</code> records a SHA-256 per file. Those digests are now recomputed rather than merely asserted, so the table is a check instead of a claim.</p>
+<p>Verification fails when:</p>
+<ul>
+<li>a vendored file's bytes no longer match the digest its table records;</li>
+<li>a table row names a file that is not in the directory;</li>
+<li>the directory commits a file that no table row names;</li>
+<li>a row's digest is not 64 lowercase hex characters. A truncated or mistyped digest is reported, never skipped: a silently skipped row is an unverified file, which is the failure the gate exists to prevent.</li>
+</ul>
+<p>Untracked files in a vendor directory are ignored, so local scratch does not fail anyone's build.</p>
+<p>To change a vendored file, follow the update process in that directory's own <code>README.md</code>: replace the file, then put <code>shasum -a 256 &lt;file&gt;</code> into the table.</p>
+<h3 id="the-tailwind-standalone-cli"><a class="header" href="#the-tailwind-standalone-cli">The Tailwind standalone CLI</a></h3>
+<p>The CSS build runs a Tailwind v4 standalone binary fetched from GitHub Releases, from two places: <code>_tailwind-bin</code> in the <code>justfile</code>, which sits behind every <code>just css*</code> recipe, the <code>build-dpe</code> and <code>build-editor</code> actions and the <code>a11y-dpe</code> workflow; and <code>modules/mosaic/playground/Dockerfile</code>. Unverified, a replaced release asset would run arbitrary code in every developer checkout and every CI job.</p>
+<p><code>tailwind.pins</code> records the version and the expected SHA-256 of each release asset. Both download sites verify against it and fail closed. The justfile checks on every resolve rather than only after a download, so a binary cached by an earlier build is verified too; hashing it costs about 0.05s under coreutils and 0.3s under perl <code>shasum</code>.</p>
+<p>Bump the pinned version with:</p>
+<pre><code class="language-sh">just tailwind-pins-refresh 4.1.19
+</code></pre>
+<p>This takes the digests from the <code>sha256sums.txt</code> published alongside that release and rewrites <code>tailwind.pins</code>. That file is read once, here, and never at build time: whoever can replace a release asset can replace its checksum file too, so verifying one against the other would establish nothing.</p>
+<p>Be precise about what the pin buys, because it is easy to overstate. Nobody can authenticate a 64-character digest by reading it, so review of a bump commit checks the version and the asset names, not the bytes. What the pin gives is a fixed reference point and an audit trail: every later download has to match what was pinned, so tampering after the bump (a replaced asset, a poisoned CDN cache) fails closed, and an unexpected <code>tailwind.pins</code> change shows up in a diff that should not have contained one. A release already compromised at the moment of the bump would be pinned as it stands. Upstream ships no signature, provenance or SBOM that would close that last gap, so this is the strongest check available here.</p>
+<p><code>tailwind.pins</code> is also the only place the Tailwind version is written. The justfile and the mosaic Dockerfile both read it, so neither can drift onto a version the other has not seen.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;

@@ -39,6 +39,14 @@ fn examples() -> Markup {
         })
         ({
             example(
+                "button-intents",
+                "One Form, Two Intents",
+                "A submit button carrying its own name and value, for a form with more than one thing to do",
+                intents(),
+            )
+        })
+        ({
+            example(
                 "button-with_icons",
                 "Buttons with Icons",
                 "Buttons combined with icon components",
@@ -115,6 +123,24 @@ fn with_icons() -> Markup {
                     (btn(ButtonVariant::Primary, icon(IconChevronRight, "w-4 h-4")))
                 }
             }
+        }
+    }
+}
+
+/// Two submits on one form, telling the handler which was pressed.
+fn intents() -> Markup {
+    html! {
+        form class="flex gap-4 items-center" method="post" action="#" {
+            ({
+                button("Save review decisions")
+                    .variant(ButtonVariant::Primary)
+                    .name_value("intent", "save")
+            })
+            ({
+                button("Accept all remaining")
+                    .variant(ButtonVariant::Secondary)
+                    .name_value("intent", "accept-all")
+            })
         }
     }
 }

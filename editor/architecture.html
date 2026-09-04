@@ -418,12 +418,8 @@ GET  /review/{shortcode}                      the field-by-field diff surface
 </ul>
 <p>That split is positional, so it is invisible in the route table and reversible by moving one line. A test asserts <code>/healthz</code> and the beacon are absent from <code>build_router</code>.</p>
 <h2 id="datastar"><a class="header" href="#datastar">Datastar</a></h2>
-<p>The editor vendors Datastar <strong>1.0.2</strong>; DPE is still on 1.0.0-RC.8, and the two vendor directories are independent. See <code>modules/editor/public/vendor/README.md</code>.</p>
-<p>Two things to get right, both of which fail quietly:</p>
-<ul>
-<li><strong>Keyed plugin attributes use <code>:</code>, not <code>-</code>.</strong> <code>data-on:click</code>, <code>data-attr:disabled</code>, <code>data-class:open</code>, and <code>data-init</code> rather than <code>data-on-load</code>. This has been true since RC.6, so it matches DPE's markup too. The hyphen form produces a console error and an inert control: the page renders fine and a snapshot test asserting the attribute is present still passes.</li>
-<li><strong><code>__prevent</code> combines with <code>__debounce</code> / <code>__throttle</code></strong> on 1.0.x. The rule against that combination in <code>docs/src/dpe/architecture.md</code> is about RC.8 and does not apply here.</li>
-</ul>
+<p>The editor vendors Datastar from <code>modules/editor/public/vendor/</code>, whose README is the version of record; do not restate the version here. DPE vendors its own copy and is bumped independently.</p>
+<p>One thing to get right, and it fails quietly: <strong>keyed plugin attributes use <code>:</code>, not <code>-</code></strong> — <code>data-on:click</code>, <code>data-attr:disabled</code>, <code>data-class:open</code>, and <code>data-init</code> rather than <code>data-on-load</code>. This has been true since RC.6, so it matches DPE's markup too. The hyphen form produces a console error and an inert control: the page renders fine and a snapshot test asserting the attribute is present still passes.</p>
 <h2 id="styling"><a class="header" href="#styling">Styling</a></h2>
 <p><code>modules/editor/style/main.css</code> is the single Tailwind entry, built by <code>just css-editor</code> (dev) or <code>just css-editor-release</code> (content-hashed). It imports the design tokens and the <code>mosaic-tiles</code> component barrel.</p>
 <p><code>@import 'tailwindcss' source(none)</code> means classes are collected <strong>only</strong> from the explicit <code>@source</code> globs, which must cover every crate that emits Tailwind classes. A missing glob produces no build error — just markup whose classes resolve to nothing. After a change that adds classes in a new location, grep the built stylesheet for them.</p>

@@ -328,7 +328,6 @@ GET /projects/{id}/tab/{tab}    → SSE fragment (Axum + Datastar)
 <h2 id="datastar-attribute-conventions"><a class="header" href="#datastar-attribute-conventions">Datastar Attribute Conventions</a></h2>
 <ul>
 <li><strong>Signal naming</strong>: Use <code>_</code> prefix for client-only signals (e.g., <code>_tab_loading</code>). The underscore excludes the signal from server payloads.</li>
-<li><strong>No <code>__debounce</code> on <code>__prevent</code> anchors</strong>: Do NOT combine <code>__prevent</code> with <code>__debounce</code> or <code>__throttle</code> on anchor elements — known Datastar timing issue.</li>
 <li><strong><code>retry: 'never'</code></strong>: Use on <code>@get()</code> calls where fallback to full navigation is preferred over retrying.</li>
 <li><strong>Graceful degradation</strong>: Every Datastar-enhanced <code>&lt;a&gt;</code> must have a valid <code>href</code> for no-JS fallback.</li>
 </ul>

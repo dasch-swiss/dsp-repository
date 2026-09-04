@@ -90,6 +90,13 @@ CREATE TABLE drafts (
     -- SET NULL, not CASCADE: removing an account must not destroy the project's
     -- work. "Last editor" then reads as unknown rather than dangling.
     updated_by TEXT REFERENCES users (id) ON DELETE SET NULL,
+    -- The note RDU leaves when it returns the project to the depositor.
+    --
+    -- On the draft rather than on the submission, because request-changes turns
+    -- the submission *into* a draft: `submissions.reviewer_note` is deleted with
+    -- its row at exactly the moment the depositor needs to read it, so a note
+    -- kept only there could never reach the person it is addressed to.
+    reviewer_note TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 ) STRICT;
@@ -111,8 +118,22 @@ CREATE TABLE submissions (
     submitted_at  TEXT NOT NULL,
     reviewed_by   TEXT REFERENCES users (id) ON DELETE SET NULL,
     reviewed_at   TEXT,
-    -- Carried back to the depositor when RDU requests changes (REQ-4.5).
-    reviewer_note TEXT
+    -- Carried back to the depositor when RDU requests changes.
+    reviewer_note TEXT,
+    -- The per-field decisions and substitutions RDU has recorded on this
+    -- submission, as a JSON object keyed by project member name. Null until a
+    -- reviewer decides something: an empty object and "nothing decided" are the
+    -- same state, and storing one of them would make a reload able to tell them
+    -- apart when nothing else can.
+    --
+    -- A reviewer's substituted value goes here and NOT into `payload`.
+    -- Overwriting the payload would be the shorter path and would destroy the
+    -- evidence the depositor has to be shown: a depositor's submission needs no
+    -- second approver, so the value RDU put in place of theirs is seen by nobody
+    -- unless the submitted one survives beside it.
+    --
+    -- Opaque to this layer, like `payload` — the reviewing handler parses it.
+    review_state  TEXT
 ) STRICT;
 
 -- The review queue is oldest first (REQ-4.1).

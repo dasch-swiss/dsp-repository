@@ -469,6 +469,9 @@ pub(crate) struct Faults {
     /// `MailSendRepository::record` — named for the port, since `record` alone
     /// would not say which one.
     pub record_mail_send: bool,
+    /// `SubmissionRepository::update` — the review surface's only write, and
+    /// the branch where a page must not report a claim that did not happen.
+    pub submission_update: bool,
 }
 
 /// A store that delegates every call to a real [`Database`] and fails the ones
@@ -666,6 +669,9 @@ impl SubmissionRepository for FaultyDatabase {
     }
 
     async fn update(&self, submission: &Submission) -> Result<()> {
+        if self.faults.submission_update {
+            return Err(injected("SubmissionRepository::update"));
+        }
         SubmissionRepository::update(&*self.inner, submission).await
     }
 

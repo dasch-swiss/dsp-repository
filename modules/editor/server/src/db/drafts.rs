@@ -10,15 +10,16 @@ use super::Database;
 
 const ENTITY: &str = "draft";
 
-const SELECT: &str = "SELECT shortcode, payload, updated_by, created_at, updated_at FROM drafts";
+const SELECT: &str = "SELECT shortcode, payload, updated_by, reviewer_note, created_at, updated_at FROM drafts";
 
 fn map_row(row: &Row<'_>) -> rusqlite::Result<DraftRecord> {
     Ok(DraftRecord {
         shortcode: row.get(0)?,
         payload: row.get(1)?,
         updated_by: optional_uuid_column(row, 2)?,
-        created_at: row.get(3)?,
-        updated_at: row.get(4)?,
+        reviewer_note: row.get(3)?,
+        created_at: row.get(4)?,
+        updated_at: row.get(5)?,
     })
 }
 
@@ -31,13 +32,15 @@ impl DraftRepository for Database {
             // when the depositor started, and overwriting it on every save would
             // make a draft look newly created each time it was touched.
             tx.execute(
-                "INSERT INTO drafts (shortcode, payload, updated_by, created_at, updated_at) \
-                 VALUES (?1, ?2, ?3, ?4, ?5) \
-                 ON CONFLICT (shortcode) DO UPDATE SET payload = ?2, updated_by = ?3, updated_at = ?5",
+                "INSERT INTO drafts (shortcode, payload, updated_by, reviewer_note, created_at, updated_at) \
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6) \
+                 ON CONFLICT (shortcode) DO UPDATE SET payload = ?2, updated_by = ?3, reviewer_note = ?4, \
+                 updated_at = ?6",
                 params![
                     draft.shortcode,
                     draft.payload,
                     draft.updated_by.map(|id| id.to_string()),
+                    draft.reviewer_note,
                     draft.created_at,
                     draft.updated_at,
                 ],
@@ -112,6 +115,7 @@ mod tests {
             shortcode: shortcode.to_string(),
             payload: payload.to_string(),
             updated_by: author,
+            reviewer_note: None,
             created_at: at(10),
             updated_at: updated,
         }
@@ -121,10 +125,33 @@ mod tests {
     async fn test_upsert_then_find_round_trips_every_field() {
         let db = test_db("drafts-round-trip").await;
         let author = a_user(&db).await;
-        let draft = draft("0801", r#"{"name":"work in progress"}"#, Some(author), at(11));
+        let mut draft = draft("0801", r#"{"name":"work in progress"}"#, Some(author), at(11));
+        // Set rather than left `None`, or the column added by 0004 round-trips
+        // vacuously: every field of this record is compared below, and a `None`
+        // compares equal whether the column is read, written, or missing.
+        draft.reviewer_note = Some("Please add a German description.".to_string());
         db.upsert(&draft).await.unwrap();
 
         assert_eq!(DraftRepository::find(&db, "0801").await.unwrap(), Some(draft));
+    }
+
+    #[tokio::test]
+    async fn test_upsert_replaces_the_reviewer_note() {
+        // The note describes one review round (REQ-4.5). Left out of the
+        // conflict clause it would survive the round it belongs to and read as
+        // current advice on work that has already answered it.
+        let db = test_db("drafts-note").await;
+        let author = a_user(&db).await;
+        let mut first = draft("0801", "first", Some(author), at(11));
+        first.reviewer_note = Some("Add a German description.".to_string());
+        db.upsert(&first).await.unwrap();
+
+        let second = draft("0801", "second", Some(author), at(12));
+        assert_eq!(second.reviewer_note, None, "the premise of this test");
+        db.upsert(&second).await.unwrap();
+
+        let found = DraftRepository::find(&db, "0801").await.unwrap().unwrap();
+        assert_eq!(found.reviewer_note, None);
     }
 
     #[tokio::test]

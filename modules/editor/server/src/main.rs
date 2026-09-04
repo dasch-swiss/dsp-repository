@@ -21,6 +21,7 @@ mod depositors;
 mod mail;
 mod page_url;
 mod projects;
+mod review;
 mod router;
 mod sections;
 #[cfg(test)]

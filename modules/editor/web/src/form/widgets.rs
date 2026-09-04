@@ -47,7 +47,7 @@ const NOT_READ_YET: &str = "This field is not editable here yet. Its current val
                             save, and the control arrives in a later release.";
 
 /// What is shown in place of a value the project does not have.
-const NO_VALUE: &str = "Not set";
+pub(crate) const NO_VALUE: &str = "Not set";
 
 /// One field: its label, its obligation, and whichever of the three renderings
 /// applies.
@@ -85,21 +85,28 @@ fn stated(field: &Field, draft: &ProjectDraft) -> Markup {
 }
 
 /// The stored value, rendered for reading.
+fn value_display(field: &Field, draft: &ProjectDraft) -> Markup {
+    value_markup(draft.get(field.id))
+}
+
+/// Any project member, rendered for reading.
+///
+/// Takes a `Value` rather than a field and a draft because the review surface
+/// renders two of them side by side — a published one and a submitted one — and
+/// neither is "the draft's". One rendering for both, so a reviewer comparing a
+/// value against the form that produced it is comparing like with like.
 ///
 /// A placeholder sentinel is *not* shown: `MISSING` and `CALCULATED` are the
 /// platform's "no value yet" markers, filtered out of DPE's UI and of OAI-PMH's
 /// output, so showing one here would be the only place in the platform that
 /// presents an internal marker as a value.
-fn value_display(field: &Field, draft: &ProjectDraft) -> Markup {
-    let stored = draft.get(field.id);
+pub(crate) fn value_markup(value: Option<&Value>) -> Markup {
     html! {
-        @match stored {
+        @match value {
             Some(Value::String(text)) if !is_placeholder(text) && !text.trim().is_empty() => {
                 p class="whitespace-pre-line text-neutral-900" { (text) }
             }
-            Some(value) if is_language_map(value) => {
-                (language_list(&draft.multilingual(field.id)))
-            }
+            Some(value) if is_language_map(value) => { (language_list(&as_multilingual(value))) }
             Some(Value::Array(items)) if !items.is_empty() => {
                 p class="text-neutral-900" { (count_summary(items.len())) }
             }
@@ -113,13 +120,22 @@ fn value_display(field: &Field, draft: &ProjectDraft) -> Markup {
     }
 }
 
+/// A language map as the form's editing view over it, in UI-tag order.
+///
+/// Same construction as [`ProjectDraft::multilingual`], for a value already in
+/// hand rather than one looked up by field id.
+pub(crate) fn as_multilingual(value: &Value) -> DraftMultilingual {
+    let contract = serde_json::from_value(value.clone()).unwrap_or_default();
+    DraftMultilingual::from_contract(&contract)
+}
+
 /// Whether a stored object is a language map rather than a structured value.
 ///
 /// Every member being a short lowercase tag holding a string is what separates
 /// `{"en": "…"}` from `{"type": …, "url": …}`. A structured value is summarised
 /// by its member count instead, which is honest about not rendering it rather
 /// than showing a half-parsed version of it.
-fn is_language_map(value: &Value) -> bool {
+pub(crate) fn is_language_map(value: &Value) -> bool {
     value.as_object().is_some_and(|members| {
         !members.is_empty()
             && members
@@ -129,7 +145,7 @@ fn is_language_map(value: &Value) -> bool {
 }
 
 /// A read-only language map: one line per language, in the form's own order.
-fn language_list(value: &DraftMultilingual) -> Markup {
+pub(crate) fn language_list(value: &DraftMultilingual) -> Markup {
     html! {
         dl class="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1" {
             @for (tag, text) in value.iter() {
@@ -159,7 +175,7 @@ fn count_summary(count: usize) -> String {
 /// which is honest — a wrong name is worse than a raw code, and the set of tags
 /// is deliberately open ([`UI_LANGUAGES`] is what the form *offers*, not what it
 /// accepts).
-fn language_name(tag: &str) -> &str {
+pub(crate) fn language_name(tag: &str) -> &str {
     match tag {
         "de" => "German",
         "en" => "English",
@@ -172,11 +188,16 @@ fn language_name(tag: &str) -> &str {
 
 /// The control for one editable field, dispatched by id.
 ///
+/// `pub(crate)` because the review surface renders the *same* control over the
+/// value it would commit. A second dispatch there diverged silently — a date
+/// rendered as free text, and `shortDescription` lost the 200-character cap its
+/// own hint promises, with nothing server-side to catch either.
+///
 /// The `match` is exhaustive over the ids the registry declares a shape for, and
 /// the fallback is not a silent default: it renders the same note an unbuilt
 /// field gets, so a field given a shape without a control here is visible rather
 /// than posting under a name with no way to enter a value.
-fn control(field: &Field, draft: &ProjectDraft, shape: Shape) -> Markup {
+pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape) -> Markup {
     match field.id {
         "name" | "officialName" => text(field, draft, InputType::Text),
         // `type="text"`, not `type="url"`: a draft may hold a value that does

@@ -11,6 +11,7 @@
 //! `drafts.payload` holds, the multilingual editing view ([`multilingual`]) a
 //! form renders, how a posted form body is read back into a draft ([`form`]),
 //! the published set the form pre-fills from ([`published`]), the
+//! field-by-field comparison RDU reviews a submission through ([`review`]), the
 //! checks a draft must pass to be submitted ([`submission`]), and the canonical
 //! writer ([`canonical`]) that turns an approved draft back into a
 //! `projects/*.json` file byte-for-byte.
@@ -23,6 +24,7 @@ pub mod multilingual;
 pub mod published;
 pub mod records;
 pub mod repository;
+pub mod review;
 pub mod submission;
 
 #[cfg(test)]

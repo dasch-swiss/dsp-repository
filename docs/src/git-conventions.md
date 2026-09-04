@@ -107,6 +107,14 @@ Commit messages are gated in CI by [`commitlint-rs`](https://github.com/KeisukeY
 
 The same job enforces the **one-commit-per-PR cap**. To land more than one commit, tick the `allow-many-commits` checkbox in the PR description — an unticked box does not count.
 
+The same job also **rejects merge commits on the branch**, and `allow-many-commits` does not lift that — the override is about independent commits, which a merge commit is not. The cap itself counts real commits, so a branch whose only fault is a merge is told about the merge rather than blamed for having "too many commits".
+
+**Update a stale branch by rebasing, never by merging `main` into it:**
+
+    git fetch origin && git rebase origin/main && git push --force-with-lease
+
+In the GitHub UI, use the chevron next to **Update branch** and pick **Update with rebase**. The plain button creates a merge commit, and GitHub offers no repository setting that changes that default or removes the option, so this gate is the only thing that catches it.
+
 Run the same checks locally before pushing:
 
     just commit-lint            # checks origin/main..HEAD

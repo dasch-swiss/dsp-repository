@@ -112,6 +112,82 @@ test_range_ignores_base_movement() {
 }
 assert_ok "range: excludes commits added to base after branch point" test_range_ignores_base_movement
 
+# --- Integration: merge commits are rejected ------------------------------
+
+# make_merged_repo <n>: a feature branch with <n> real commits that has had an
+# advanced `base` merged into it — what GitHub's "Update branch" button
+# produces when you use the plain button instead of "Update with rebase".
+make_merged_repo() {
+  local n="$1" dir i
+  dir="$(make_repo)"
+  (
+    cd "$dir" || exit 1
+    git checkout -q -b feature
+    for i in $(seq 1 "$n"); do
+      git commit -q --allow-empty -m "feat(dpe-web): change $i"
+    done
+    git checkout -q base
+    git commit -q --allow-empty -m "chore(ci): base moved on"
+    git checkout -q feature
+    git merge -q --no-ff base -m "Merge branch 'base' into feature"
+  )
+  printf '%s' "$dir"
+}
+
+# --- Unit: check_no_merges ------------------------------------------------
+
+assert_ok   "no-merges: a linear branch passes"    check_no_merges 0
+assert_fail "no-merges: one merge commit fails"    check_no_merges 1
+assert_fail "no-merges: several merge commits fail" check_no_merges 3
+
+# --- Integration: the branch shape the Update-branch button produces ------
+
+test_merge_commit_fails() {
+  local repo; repo="$(make_merged_repo 1)"
+  ( cd "$repo" || exit 1; BASE_REF=base PR_BODY="" MAX_COMMITS=1 main )
+  local rc=$?; rm -rf "$repo"; return $rc
+}
+# The override says "these are several independent changes worth their own
+# lines on main". That is never true of a merge commit, so it must not lift
+# this — it used to, which let merge commits through the gate entirely.
+test_override_does_not_excuse_a_merge() {
+  local repo; repo="$(make_merged_repo 1)"
+  ( cd "$repo" || exit 1; BASE_REF=base PR_BODY="- [x] allow-many-commits" MAX_COMMITS=1 main )
+  local rc=$?; rm -rf "$repo"; return $rc
+}
+# A rebased branch is what the guidance asks for, and it has to pass.
+test_rebased_branch_passes() {
+  local repo; repo="$(make_merged_repo 1)"
+  (
+    cd "$repo" || exit 1
+    git rebase -q base >/dev/null 2>&1
+    BASE_REF=base PR_BODY="" MAX_COMMITS=1 main
+  )
+  local rc=$?; rm -rf "$repo"; return $rc
+}
+# The cap must not also fire: the branch has one real commit, and blaming it
+# for "2 commits" would send the developer to the wrong remedy.
+test_merge_does_not_trip_the_cap() {
+  local repo out
+  repo="$(make_merged_repo 1)"
+  out="$( cd "$repo" && BASE_REF=base PR_BODY="" MAX_COMMITS=1 main 2>/dev/null )"
+  rm -rf "$repo"
+  case "$out" in *"commit count: 1 (max 1)"*) return 0 ;; *) return 1 ;; esac
+}
+# Two real commits plus a merge must still trip the cap: the fix narrows what
+# is counted without weakening it.
+test_cap_still_applies_alongside_a_merge() {
+  local repo; repo="$(make_merged_repo 2)"
+  ( cd "$repo" || exit 1; BASE_REF=base PR_BODY="" MAX_COMMITS=1 check_count \
+      "$(git rev-list --count --no-merges "$(compute_range base)")" "" )
+  local rc=$?; rm -rf "$repo"; return $rc
+}
+assert_fail "merge: a merged-in base fails the gate"                test_merge_commit_fails
+assert_ok   "merge: the cap reports the real commit count, not the merge" test_merge_does_not_trip_the_cap
+assert_fail "merge: two real commits plus a merge still trip the cap"     test_cap_still_applies_alongside_a_merge
+assert_fail "merge: 'allow-many-commits' does not excuse a merge"   test_override_does_not_excuse_a_merge
+assert_ok   "merge: rebasing the same branch makes it pass"         test_rebased_branch_passes
+
 # --- Integration: main (end to end) --------------------------------------
 
 test_main_single_commit() {

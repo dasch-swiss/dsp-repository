@@ -8,8 +8,16 @@
 # Only this one rule lives here, because the others are already covered:
 #   • fixup!/squash! commits do not parse as Conventional Commits, so
 #     commitlint rejects them — including under the override.
-#   • merge commits cannot land on main at all: the `main` ruleset enables
-#     `required_linear_history`. commitlint skips them by design.
+#   • fixup!/squash! are commitlint's problem, as above.
+#
+# Two rules live here, both about the shape of the branch:
+#   1. the one-commit cap, liftable with the override token;
+#   2. no merge commits, NOT liftable — see check_no_merges.
+#
+# The ruleset's `required_linear_history` keeps merge commits off main, but it
+# says nothing about the branch, and GitHub's "Update branch" button defaults
+# to merging the base in. There is no repository setting that changes that
+# default or removes the option, so the only place to catch it is here.
 #
 # Configuration (environment variables, with defaults):
 #   BASE_REF        base to diff against            (default: origin/main)
@@ -46,6 +54,31 @@ compute_range() {
   printf '%s..HEAD' "$base"
 }
 
+# check_no_merges <count> — a branch must contain no merge commits.
+#
+# Deliberately not subject to the override: `allow-many-commits` says "these
+# are several independent changes worth their own lines on main", which is
+# never true of a merge commit. Without this the token waved merge commits
+# straight through.
+check_no_merges() {
+  local count="$1"
+  if [ "$count" -eq 0 ]; then
+    echo "✓ no merge commits"
+    return 0
+  fi
+  {
+    echo "✗ $count merge commit(s) on this branch."
+    echo "  The branch was updated by merging $BASE_REF into it. Update it by"
+    echo "  rebasing instead, so its history stays linear:"
+    echo "      git fetch origin && git rebase $BASE_REF && git push --force-with-lease"
+    echo "  In the GitHub UI, use the chevron next to 'Update branch' and pick"
+    echo "  'Update with rebase' — the plain button makes a merge commit."
+    echo "  '$OVERRIDE_TOKEN' does not lift this; it is about independent"
+    echo "  commits, which a merge commit is not."
+  } >&2
+  return 1
+}
+
 # check_count <count> <body>
 check_count() {
   local count="$1" body="$2"
@@ -70,11 +103,21 @@ check_count() {
 }
 
 main() {
-  local range count
+  local range count merges rc=0
   range="$(compute_range "$BASE_REF")"
-  count="$(git rev-list --count "$range")"
+  # The cap counts real commits. Merge commits get their own check below, so
+  # excluding them here is not a relaxation: a merge still fails the gate, and
+  # now fails it even with the override ticked. It just stops the cap blaming
+  # "too many commits" for a branch whose only fault is how it was updated,
+  # and stops it advising an override that would not have helped.
+  count="$(git rev-list --count --no-merges "$range")"
+  merges="$(git rev-list --count --merges "$range")"
   echo "Checking commit count over $range"
-  check_count "$count" "$PR_BODY"
+  # Both run, so a branch with both problems reports both rather than hiding
+  # one behind the other.
+  check_count "$count" "$PR_BODY" || rc=1
+  check_no_merges "$merges" || rc=1
+  return "$rc"
 }
 
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then

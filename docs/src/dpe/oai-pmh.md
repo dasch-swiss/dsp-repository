@@ -160,7 +160,13 @@ One URL, one representation. There is no content negotiation and no `?format=` p
 
 DPE serves metadata only. It does not serve the file's bytes and does not redirect to them — the download URL is a *field* of the document, which a consumer reads and then fetches from dsp-ingest itself.
 
-`404` covers both a record that does not exist and a record that carries no file. The two are not distinguished, and both return the standard DPE 404 page so a human following a stale link lands somewhere sensible. `POST` and friends get `405`.
+`404` covers both a record that does not exist and a record that carries no file. The two are not distinguished, and both return JSON — the endpoint has no `Accept` dispatch, so answering the error path in HTML would hand a harvester a document it cannot parse:
+
+```json
+{ "error": "not found" }
+```
+
+`POST` and friends get `405`.
 
 **Constructing the URL from a harvested record.** The two path segments are exactly the two components of the record's OAI identifier. Strip the `oai:dasch.swiss:ark:/72163/1/` prefix and append `/file`:
 

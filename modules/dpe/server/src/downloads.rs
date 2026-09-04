@@ -4,13 +4,11 @@
 //! checksum, dates — had no way out of DPE. See `docs/src/dpe/oai-pmh.md` →
 //! *Record files* for the rationale and the response shape.
 
-use axum::extract::{Path, State};
+use axum::extract::Path;
 use axum::response::IntoResponse;
 use dpe_core::record_repository::{FsRecordRepository, RecordRepository};
 use platform_metadata::RecordFile;
 use serde::Serialize;
-
-use crate::AppState;
 
 /// `Option`s serialise as explicit `null` to keep the shape stable. `path` is
 /// absent entirely — assets are flat, so a null would imply a hierarchy that does
@@ -59,16 +57,22 @@ impl FileMetadata {
 /// serves the metadata; the bytes come from `download_url`.
 ///
 /// Missing record and record-without-file are both `404`, not distinguished.
-#[tracing::instrument(skip(state), fields(otel.kind = "internal"))]
+/// The 404 is JSON too, not the app's HTML shell: the endpoint has no `Accept`
+/// dispatch, so switching media type on the error path would hand a harvester a
+/// document it cannot parse.
+#[tracing::instrument(fields(otel.kind = "internal"))]
 pub(crate) async fn record_file_handler(
-    State(state): State<AppState>,
     Path((shortcode, record_id)): Path<(String, String)>,
 ) -> axum::response::Response {
     let ark_suffix = format!("{shortcode}/{record_id}");
     let repo = FsRecordRepository::new();
 
     let Some(file) = repo.get_by_id(&ark_suffix).and_then(|r| r.file.as_ref()) else {
-        return crate::not_found(State(state)).await.into_response();
+        return (
+            axum::http::StatusCode::NOT_FOUND,
+            axum::Json(serde_json::json!({ "error": "not found" })),
+        )
+            .into_response();
     };
 
     axum::Json(FileMetadata::new(file, &record_id)).into_response()
@@ -302,6 +306,7 @@ mod tests {
 #[cfg(test)]
 mod lookup_tests {
     use axum::body::Body;
+    use axum::http::header::CONTENT_TYPE;
     use axum::http::{Request, StatusCode};
     use http_body_util::BodyExt;
     use tower::ServiceExt;
@@ -311,15 +316,10 @@ mod lookup_tests {
     fn app() -> axum::Router {
         dpe_core::set_data_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/data"));
 
-        axum::Router::new()
-            .route(
-                "/dpe/records/{shortcode}/{record_id}/file",
-                axum::routing::get(record_file_handler),
-            )
-            .with_state(AppState {
-                fathom_site_id: None,
-                css_href: "/assets/app.css".to_string(),
-            })
+        axum::Router::new().route(
+            "/dpe/records/{shortcode}/{record_id}/file",
+            axum::routing::get(record_file_handler),
+        )
     }
 
     async fn fetch(app: axum::Router, uri: &str) -> (StatusCode, String) {
@@ -330,32 +330,37 @@ mod lookup_tests {
         (status, String::from_utf8_lossy(&bytes).into_owned())
     }
 
+    /// The endpoint speaks JSON on every path: a harvester calling it never has
+    /// to parse HTML to learn the record is gone.
     #[tokio::test]
-    async fn missing_record_and_record_without_a_file_both_return_the_404_shell() {
+    async fn missing_record_and_record_without_a_file_both_return_a_json_404() {
         let app = app();
 
         let no_file_record = dpe_core::record_cache::all_records()
             .iter()
             .find(|r| r.file.is_none())
             .expect("the committed data has at least one record without a file");
-        let (status, body) = fetch(
-            app.clone(),
-            &format!(
-                "/dpe/records/{}/{}/file",
-                no_file_record.pid.shortcode, no_file_record.pid.record_id
-            ),
-        )
-        .await;
-        assert_eq!(status, StatusCode::NOT_FOUND);
-        assert!(body.contains("Page not found."), "should be the app's 404 shell");
+        let no_file_uri = format!(
+            "/dpe/records/{}/{}/file",
+            no_file_record.pid.shortcode, no_file_record.pid.record_id
+        );
 
-        let (status, body) = fetch(app.clone(), "/dpe/records/0862/no-such-record/file").await;
-        assert_eq!(status, StatusCode::NOT_FOUND);
-        assert!(body.contains("Page not found."));
+        for uri in [
+            no_file_uri.as_str(),
+            "/dpe/records/0862/no-such-record/file",
+            "/dpe/records/9999/no-such-record/file",
+        ] {
+            let req = Request::builder().uri(uri).body(Body::empty()).unwrap();
+            let response = app.clone().oneshot(req).await.unwrap();
 
-        let (status, body) = fetch(app, "/dpe/records/9999/no-such-record/file").await;
-        assert_eq!(status, StatusCode::NOT_FOUND);
-        assert!(body.contains("Page not found."));
+            assert_eq!(response.status(), StatusCode::NOT_FOUND, "for {uri}");
+            assert_eq!(response.headers().get(CONTENT_TYPE).unwrap(), "application/json", "for {uri}");
+
+            let bytes = response.into_body().collect().await.unwrap().to_bytes();
+            let body: serde_json::Value =
+                serde_json::from_slice(&bytes).unwrap_or_else(|e| panic!("body is JSON for {uri}: {e}"));
+            assert_eq!(body["error"], "not found", "for {uri}");
+        }
     }
 
     /// The `=` in a record id is part of the identifier — no normalisation.

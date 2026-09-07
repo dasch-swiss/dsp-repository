@@ -14,6 +14,10 @@
     "url": [
         "https://app.ls-prod-server.dasch.swiss/project/0112"
     ],
+    "secondaryUrl": {
+        "type": "URL",
+        "url": "https://roud.unil.ch/"
+    },
     "howToCite": "Maggetti, D., Jacquier Kaempfer, C., Spadini, E., Pellegrino, B., Burri, J., Lacord, R., Peterman, S., Christen, A., Jaouen, L., Rivoal, M., 2020, Gustave Roud, oeuvres [database] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0112.",
     "accessRights": {
         "accessRights": "Full Open Access"

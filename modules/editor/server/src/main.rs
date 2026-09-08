@@ -18,7 +18,6 @@ mod config;
 mod csrf;
 mod db;
 mod depositors;
-mod dev_seed;
 mod mail;
 mod page_url;
 mod projects;
@@ -68,6 +67,27 @@ pub(crate) struct AppState {
     /// make fail — a test that wants a different set loads a different
     /// directory.
     published: std::sync::Arc<editor_core::published::PublishedProjects>,
+    /// The two tables a `temporalCoverage` entry resolves through, read once at
+    /// startup from the same `EDITOR_DATA_DIR`.
+    ///
+    /// Here rather than reloaded per submit because they are immutable
+    /// snapshots like [`Self::published`], and because submit validation has to
+    /// apply the *same* decision `dpe-server validate` and `dpe-api-oai` do —
+    /// which means the same two tables, not a second reading of them. Empty
+    /// without a data directory, which makes every free-text period
+    /// unresolvable and so refuses the submission rather than passing it: the
+    /// fail-safe direction, since the alternative opens a pull request that
+    /// fails CI in a crate the editor never touches.
+    temporal: std::sync::Arc<TemporalTables>,
+}
+
+/// The pair of tables `editor_core::submission::unresolved_temporal_coverage`
+/// reads. One struct because they are only ever used together and adjacent
+/// arguments of similar map types are silently swappable.
+#[derive(Default)]
+pub(crate) struct TemporalTables {
+    pub(crate) periods: std::collections::HashMap<String, platform_metadata::w3cdtf::W3cdtfRange>,
+    pub(crate) enrichment: std::collections::HashMap<String, platform_metadata::temporal_enrichment::EnrichedDate>,
 }
 
 /// Render a page inside the document shell.
@@ -125,6 +145,32 @@ pub(crate) fn forbidden(
 /// projects. Both are reported at `warn` with the count, which is the thing an
 /// operator can act on: "84 of 85" is a specific, findable problem where a
 /// process that exited says only that it exited.
+/// The temporal-resolution tables, or empty ones without a data directory.
+///
+/// Empty is not silently permissive: with no tables every free-text period is
+/// unresolvable, so submit refuses rather than admitting one. That is the right
+/// direction for a misconfiguration — the alternative approves a record whose
+/// pull request fails CI in `dpe-api-oai`.
+fn load_temporal(data_dir: Option<&std::path::Path>) -> TemporalTables {
+    let Some(data_dir) = data_dir else {
+        tracing::warn!(
+            "no EDITOR_DATA_DIR: the temporal-resolution tables are empty, so every free-text temporalCoverage \
+             entry reads as unresolvable and no submission carrying one can be made"
+        );
+        return TemporalTables::default();
+    };
+    let tables = TemporalTables {
+        periods: platform_metadata::chronontology::load_from(data_dir),
+        enrichment: platform_metadata::temporal_enrichment::load_from(data_dir),
+    };
+    tracing::info!(
+        periods = tables.periods.len(),
+        enrichment = tables.enrichment.len(),
+        "temporal-resolution tables loaded"
+    );
+    tables
+}
+
 fn load_published(data_dir: Option<&std::path::Path>) -> editor_core::published::PublishedProjects {
     use editor_core::published::PublishedProjects;
 
@@ -499,23 +545,7 @@ async fn serve() -> ExitCode {
     }
 
     let published = std::sync::Arc::new(load_published(config.data_dir.as_deref()));
-
-    // Sample records, only on a deployment whose database dies with the process
-    // (see `dev_seed`). Nothing in the service creates a submission yet, so
-    // without this a preview renders an empty queue and the review surfaces
-    // cannot be exercised at all. Never fatal: a preview with no sample data is
-    // a worse preview, not a reason to refuse to start.
-    if config.is_throwaway() {
-        match dev_seed::seed(&*db, &published, chrono::Utc::now()).await {
-            Ok(Some((under_review, in_progress))) => tracing::info!(
-                project.under_review = %under_review,
-                project.in_progress = %in_progress,
-                "seeded sample records for a throwaway deployment"
-            ),
-            Ok(None) => {}
-            Err(error) => tracing::warn!(error = %error, "could not seed sample records"),
-        }
-    }
+    let temporal = std::sync::Arc::new(load_temporal(config.data_dir.as_deref()));
 
     let state = AppState {
         css_href: resolve_css_href(&config.public_dir),
@@ -524,6 +554,7 @@ async fn serve() -> ExitCode {
         auth: auth::AuthConfig::from(&config),
         reveal_login_code: config.reveals_login_code(),
         published,
+        temporal,
     };
     let app = router::build_app(state, &config.public_dir);
 

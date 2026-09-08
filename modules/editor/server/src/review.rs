@@ -28,13 +28,17 @@ use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use editor_core::draft::ProjectDraft;
 use editor_core::form::{apply, FormBody};
-use editor_core::records::{normalize_shortcode, Submission, SubmissionState, User};
-use editor_core::repository::{DraftRepository, RepositoryError, SubmissionRepository, UserRepository};
+use editor_core::records::{
+    normalize_shortcode, ApprovedRecord, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState, User,
+};
+use editor_core::repository::{
+    DraftRepository, RepositoryError, ReviewRoundRepository, SubmissionRepository, Transition, UserRepository,
+};
 use editor_core::review::{diff, Decision, FieldDiff, FieldReview, ReviewState};
-use editor_web::form::registry;
+use editor_web::form::{registry, INTENT};
 use editor_web::pages::review as page;
 use platform_metadata::is_valid_shortcode;
 use serde_json::Value;
@@ -53,6 +57,16 @@ const SAVE_REFUSED_STORAGE: &str = "The review decisions could not be saved. Not
                                     it keeps happening the service needs attention.";
 const SAVE_REFUSED_GONE: &str = "This submission is no longer waiting for review — somebody withdrew or finished it \
                                  while this page was open. Nothing was saved.";
+const APPROVE_REFUSED_UNDECIDED: &str = "Every change has to be decided before this can be approved. Approving an \
+                                         undecided field would commit a value nobody looked at — use \"Accept all \
+                                         remaining\" if that is what you mean.";
+const NOTE_REQUIRED: &str = "A note is required: it is the only thing the depositor will see. Nothing was changed.";
+const FINISH_REFUSED_STORAGE: &str = "The review could not be recorded, so this submission is still in the queue. \
+                                      Nothing was changed — try again, and if it keeps happening the service needs \
+                                      attention.";
+const FINISH_REFUSED_UNWRITABLE: &str = "The approved record could not be built from this submission, so nothing \
+                                         was changed. The service needs attention before this project can be \
+                                         approved.";
 
 /// `GET /review` — the queue and the drafts.
 pub(crate) async fn queue(State(state): State<AppState>, Rdu(user): Rdu) -> Response {
@@ -215,8 +229,17 @@ pub(crate) async fn act(
     } else {
         page::Filter::Changed
     };
-    let intent = body.get(page::INTENT).unwrap_or(page::SAVE);
+    let intent = body.get(INTENT).unwrap_or(page::SAVE);
     span.record("review.intent", tracing::field::display(intent));
+
+    // The decisions on screen are read before any branch, so a terminating
+    // action acts on what the reviewer is looking at rather than on what was
+    // last saved. Approve especially: the two differ exactly when somebody
+    // decided a row and went straight to Approve without saving first.
+    if matches!(intent, page::APPROVE | page::REQUEST_CHANGES | page::REJECT) {
+        context.state = decisions_from(&body, &context.rows, &context.submitted, false, context.published.is_some());
+        return finish(&state, &user, &context, &body, filter, headers, intent).await;
+    }
 
     let now = Utc::now();
     let mut submission = context.submission.clone();
@@ -240,6 +263,16 @@ pub(crate) async fn act(
                 return refused(&state, &user, &context, filter, headers, SAVE_REFUSED_STORAGE);
             }
         };
+        // The note as typed, kept on the pending submission. It is the *working*
+        // note — the one the round takes a copy of when it ends — and it is
+        // saved here because backing out of a confirmation posts a plain save:
+        // without this, declining a reject discards a carefully written reason
+        // and the reviewer has to write it again from memory. Absent from the
+        // body leaves the stored one alone, so a save from the diff form (which
+        // renders no note control) cannot clear it.
+        if let Some(note) = body.get(page::NOTE) {
+            submission.reviewer_note = (!note.trim().is_empty()).then(|| note.trim().to_string());
+        }
         page::Notice::Saved
     };
 
@@ -282,6 +315,273 @@ pub(crate) async fn act(
             refused(&state, &user, &context, filter, headers, SAVE_REFUSED_STORAGE)
         }
     }
+}
+
+/// End the review round: approve (REQ-4.4), request changes (REQ-4.5) or
+/// reject (REQ-4.6).
+///
+/// Each asks for confirmation first, on the same URL, so a refused write
+/// re-renders somewhere that still answers `GET`. The confirmation is also
+/// where the note is collected — required for the two outcomes the depositor
+/// has to be told about, and enforced here and not only by the `required`
+/// attribute the control carries.
+async fn finish(
+    state: &AppState,
+    user: &User,
+    context: &Context<'_>,
+    body: &FormBody,
+    filter: page::Filter,
+    headers: HeaderMap,
+    intent: &str,
+) -> Response {
+    let span = tracing::Span::current();
+
+    // Not the second post yet: render the prompt, carrying whatever is typed.
+    if body.get(page::CONFIRMED).is_none() {
+        span.record("review.outcome", "confirming");
+        let prompt = Prompt { intent, note: working_note(context, body), refusal: None };
+        return asking(state, user, context, filter, headers, prompt);
+    }
+
+    let note = working_note(context, body);
+    let outcome = match intent {
+        page::APPROVE => ReviewOutcome::Approved,
+        page::REQUEST_CHANGES => ReviewOutcome::ChangesRequested,
+        _ => ReviewOutcome::Rejected,
+    };
+
+    if outcome != ReviewOutcome::Approved && note.trim().is_empty() {
+        span.record("review.outcome", "note_required");
+        tracing::info!(review.outcome = %outcome, "refused a review round with no note");
+        // The prompt again *with the reason*: re-rendered silently it looks
+        // like the button did nothing, which is the one reading that leaves a
+        // reviewer with no next step.
+        let prompt = Prompt { intent, note, refusal: Some(NOTE_REQUIRED) };
+        return asking(state, user, context, filter, headers, prompt);
+    }
+
+    // Approving an undecided change commits bytes nobody looked at, which is
+    // the one thing a field-by-field surface exists to prevent. Only approve:
+    // request-changes and reject do not commit anything, and an undecided row
+    // is a perfectly ordinary state to return or discard a submission in.
+    if outcome == ReviewOutcome::Approved {
+        let changed = context.changed_fields();
+        let undecided = changed.len()
+            - context.state.count(&changed, Decision::Accept)
+            - context.state.count(&changed, Decision::Revert);
+        if undecided > 0 {
+            span.record("review.outcome", "undecided");
+            tracing::info!(review.undecided = undecided, "refused an approval with undecided changes");
+            return refused(state, user, context, filter, headers, APPROVE_REFUSED_UNDECIDED);
+        }
+    }
+
+    let round = ReviewRound {
+        id: Uuid::new_v4(),
+        shortcode: context.submission.shortcode.clone(),
+        submission_id: context.submission.id,
+        outcome,
+        note: (!note.trim().is_empty()).then(|| note.trim().to_string()),
+        // The decisions as they stand on screen, snapshotted: the submission
+        // row carrying them is deleted by the same transaction, so this is the
+        // only remaining answer to what was accepted and what RDU put in place
+        // of the depositor's values.
+        review_state: match serde_json::to_string(&context.state) {
+            Ok(_) if context.state.is_empty() => None,
+            Ok(stored) => Some(stored),
+            Err(error) => {
+                span.record("review.outcome", "serialize_failed");
+                tracing::error!(error = %error, "review decisions could not be serialized");
+                return refused(state, user, context, filter, headers, SAVE_REFUSED_STORAGE);
+            }
+        },
+        actor: Some(user.id),
+        at: Utc::now(),
+    };
+
+    let transition = match outcome {
+        ReviewOutcome::Approved => {
+            let Some(record) = approved_record(context, user, round.at) else {
+                span.record("review.outcome", "serialize_failed");
+                return refused(state, user, context, filter, headers, FINISH_REFUSED_UNWRITABLE);
+            };
+            ReviewRoundRepository::approve(&*state.db, context.submission.id, &record, &round).await
+        }
+        ReviewOutcome::ChangesRequested => {
+            let Some(draft) = returned_draft(context, user, round.at) else {
+                span.record("review.outcome", "serialize_failed");
+                return refused(state, user, context, filter, headers, FINISH_REFUSED_UNWRITABLE);
+            };
+            ReviewRoundRepository::request_changes(&*state.db, context.submission.id, &draft, &round).await
+        }
+        // Reject leaves both the draft and the published metadata alone
+        // (REQ-4.6, REQ-1.13): the note is what the depositor gets, and their
+        // work is still theirs to resubmit.
+        ReviewOutcome::Rejected | ReviewOutcome::Withdrawn => {
+            ReviewRoundRepository::discard(&*state.db, context.submission.id, &round).await
+        }
+    };
+
+    match transition {
+        Ok(Transition::Applied) => {
+            span.record("review.outcome", outcome.as_str());
+            tracing::info!(
+                review.outcome = %outcome,
+                submission.id = %context.submission.id,
+                review.accepted = context.state.count(&context.changed_fields(), Decision::Accept),
+                "finished a review round"
+            );
+            finished(state, user, context, outcome)
+        }
+        // The terminal-state guard. Somebody else finished this submission
+        // while the page was open, and nothing was written — which is what
+        // stops a reject destroying a record already served into a pull
+        // request, and a request-changes resurrecting one as a draft.
+        Ok(Transition::AlreadyReviewed) => {
+            span.record("review.outcome", "already_reviewed");
+            tracing::info!("refused a review round on a submission somebody else had finished");
+            refused(state, user, context, filter, headers, SAVE_REFUSED_GONE)
+        }
+        Err(error) => {
+            span.record("review.outcome", "store_failed");
+            tracing::error!(error = %error, "could not record a review round");
+            refused(state, user, context, filter, headers, FINISH_REFUSED_STORAGE)
+        }
+    }
+}
+
+/// The note the reviewer is working on: what this body carries, or what a
+/// previous save stored.
+///
+/// The fallback is what makes the prompt survive being declined: the diff form
+/// renders no note control, so backing out of a confirmation and opening it
+/// again posts nothing under [`page::NOTE`] and would otherwise show an empty
+/// box where a written reason had been.
+fn working_note<'a>(context: &'a Context<'_>, body: &'a FormBody) -> &'a str {
+    body.get(page::NOTE)
+        .or(context.submission.reviewer_note.as_deref())
+        .unwrap_or_default()
+}
+
+/// What an approval commits: the submitted draft with every decision applied.
+///
+/// Not the submitted payload. An accepted field takes the reviewer's substitute
+/// where there is one, and a reverted field goes back to the published value —
+/// so the record is what RDU decided, while `submissions.payload` stayed the
+/// depositor's own until the moment it was deleted.
+///
+/// `None` only if the result will not serialize, which cannot happen for a
+/// draft that already did.
+fn approved_record(context: &Context<'_>, user: &User, at: DateTime<Utc>) -> Option<ApprovedRecord> {
+    let mut decided = context.submitted.clone();
+    for row in context.rows.iter().filter(|row| row.changed()) {
+        match context.state.decision(&row.field) {
+            Some(Decision::Accept) => {
+                if let Some(substitute) = context.state.substitute(&row.field) {
+                    // `Null` is a reviewer clearing an optional field, which is
+                    // a removal and not a stored null — the canonical writer
+                    // strips nulls, so writing one would differ from what the
+                    // depositor's own clear produces.
+                    if substitute.is_null() {
+                        decided.remove(&row.field);
+                    } else {
+                        decided.set(&row.field, substitute.clone());
+                    }
+                }
+            }
+            // Back to what is published. Absent there means the submission
+            // added the member, so reverting removes it again.
+            Some(Decision::Revert) => match row.published.as_ref() {
+                Some(published) => decided.set(&row.field, published.clone()),
+                None => {
+                    decided.remove(&row.field);
+                }
+            },
+            // Unreachable: an approval with an undecided change is refused
+            // above. Left as the submitted value rather than guessed at, so if
+            // the guard ever regresses the record is at least what was sent.
+            None => {}
+        }
+    }
+    Some(ApprovedRecord {
+        id: Uuid::new_v4(),
+        shortcode: context.submission.shortcode.clone(),
+        payload: serde_json::to_string(&decided).ok()?,
+        approved_by: Some(user.id),
+        approved_at: at,
+        collected_at: None,
+    })
+}
+
+/// The draft a request-changes hands back.
+///
+/// The submitted payload, not the draft row as it was: the depositor resumes
+/// from what they sent, which is what the note and the per-field decisions are
+/// about. What RDU decided rides on the round, so nothing about the review is
+/// written into the draft itself.
+fn returned_draft(context: &Context<'_>, user: &User, at: DateTime<Utc>) -> Option<DraftRecord> {
+    Some(DraftRecord {
+        shortcode: context.submission.shortcode.clone(),
+        payload: serde_json::to_string(&context.submitted).ok()?,
+        updated_by: Some(user.id),
+        // The submission time, not now: a returned draft was started when the
+        // depositor started it, and `created_at` is the only thing that says
+        // so once the original row is overwritten.
+        created_at: context.submission.submitted_at,
+        updated_at: at,
+    })
+}
+
+/// What a confirmation prompt renders: the verb it will perform, the note as it
+/// stands, and why the last attempt was refused.
+///
+/// A struct rather than three more arguments, for the reason `sections`'
+/// `Rendering` is one: two of the three are string-ish and one is an `Option`
+/// of the same, which a positional list lets a call site scramble silently.
+struct Prompt<'a> {
+    intent: &'a str,
+    note: &'a str,
+    refusal: Option<&'a str>,
+}
+
+/// The confirmation step for a terminating action.
+fn asking(
+    state: &AppState,
+    user: &User,
+    context: &Context<'_>,
+    filter: page::Filter,
+    headers: HeaderMap,
+    prompt: Prompt<'_>,
+) -> Response {
+    let rows = review_rows(context);
+    let mut view = view(context, &rows, filter, prompt.refusal.map(page::Notice::Refused));
+    view.confirming = Some(prompt.intent);
+    view.note = prompt.note;
+    if is_enhanced(&headers) {
+        return (StatusCode::OK, axum::response::Html(page::region(&view).into_string())).into_response();
+    }
+    let title = page_title(context);
+    crate::render(state, &title, StatusCode::OK, Some(user), page::page(&view))
+}
+
+/// The round is over, so there is no submission left to diff.
+fn finished(state: &AppState, user: &User, context: &Context<'_>, outcome: ReviewOutcome) -> Response {
+    let finished = match outcome {
+        ReviewOutcome::Approved => page::Finished::Approved,
+        ReviewOutcome::ChangesRequested => page::Finished::ChangesRequested,
+        ReviewOutcome::Rejected | ReviewOutcome::Withdrawn => page::Finished::Rejected,
+    };
+    // The same body on both paths, and a full document on the enhanced one
+    // too: the region this surface patches is the diff, and there is no diff
+    // any more. Datastar matches a patch by `id`, so a body with no
+    // `review-surface` in it patches nothing — a full page replaces it.
+    crate::render(
+        state,
+        &page_title(context),
+        StatusCode::OK,
+        Some(user),
+        page::finished(context.project_name, context.shortcode, finished),
+    )
 }
 
 /// Everything a rendering needs, once the request is known to be allowed.
@@ -499,11 +799,16 @@ fn render_page(
 ) -> Response {
     let rows = review_rows(context);
     let view = view(context, &rows, filter, notice);
-    let title = match context.project_name {
+    crate::render(state, &page_title(context), StatusCode::OK, Some(user), page::page(&view))
+}
+
+/// What a review page is called. One decision, shared by the diff, the
+/// confirmation and the finished page.
+fn page_title(context: &Context<'_>) -> String {
+    match context.project_name {
         Some(name) => format!("Review {name} — DaSCH Metadata Editor"),
         None => format!("Review project {} — DaSCH Metadata Editor", context.shortcode),
-    };
-    crate::render(state, &title, StatusCode::OK, Some(user), page::page(&view))
+    }
 }
 
 /// Turn the comparison into what the page renders, adding the registry's
@@ -552,6 +857,9 @@ fn view<'a>(
         rows,
         filter,
         notice,
+        // The two the terminating flow sets; a diff rendering carries neither.
+        note: "",
+        confirming: None,
     }
 }
 
@@ -644,7 +952,7 @@ fn storage_error(state: &AppState, user: &User, what: &str, error: &RepositoryEr
 mod tests {
     use axum::body::Body;
     use axum::http::Request;
-    use editor_core::records::{DraftRecord, Role};
+    use editor_core::records::Role;
     use serde_json::json;
     use tower::ServiceExt;
 
@@ -675,6 +983,631 @@ mod tests {
         let user = a_user(state, email, name, Role::Rdu, &[]).await;
         let session = a_session(state, user.id).await;
         (user, session)
+    }
+
+    /// The body a terminating action's second post carries: the intent, the
+    /// confirmation pair, the decisions and the note.
+    fn finishing(intent: &str, decisions: &[(&str, &str)], note: &str) -> String {
+        let mut body = format!("intent={intent}&{}=1", page::CONFIRMED);
+        for (field, decision) in decisions {
+            body.push_str(&format!("&{}.{field}={decision}", page::DECISION_PREFIX));
+        }
+        if !note.is_empty() {
+            body.push_str(&format!("&{}={}", page::NOTE, note.replace(' ', "+")));
+        }
+        body
+    }
+
+    /// The one approved record for a project.
+    async fn the_record(state: &AppState, shortcode: &str) -> editor_core::records::ApprovedRecord {
+        let mut records = editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.db, shortcode)
+            .await
+            .expect("read");
+        assert_eq!(records.len(), 1, "exactly one approved record: {records:?}");
+        records.remove(0)
+    }
+
+    /// The one round recorded for a project.
+    async fn the_round(state: &AppState, shortcode: &str) -> editor_core::records::ReviewRound {
+        let mut rounds = ReviewRoundRepository::list_for_shortcode(&*state.db, shortcode)
+            .await
+            .expect("read");
+        assert_eq!(rounds.len(), 1, "exactly one round: {rounds:?}");
+        rounds.remove(0)
+    }
+
+    #[tokio::test]
+    async fn approving_creates_the_approved_record_and_clears_the_queue() {
+        // REQ-4.4. The submission leaves the queue and an `approved_records`
+        // row takes its place, on its way to a pull request.
+        let (state, _) = test_state("review-approve").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+
+        let body = body_string(
+            as_session(
+                &app,
+                post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+                &session,
+            )
+            .await,
+        )
+        .await;
+        assert!(body.contains("Approved"), "{body}");
+
+        assert_eq!(SubmissionRepository::find(&*state.db, submission.id).await.unwrap(), None);
+        let record = the_record(&state, "0801d").await;
+        assert!(record.payload.contains("A New Title"), "{}", record.payload);
+        assert_eq!(record.collected_at, None, "uncollected, so the endpoint will serve it");
+        assert_eq!(the_round(&state, "0801d").await.outcome, ReviewOutcome::Approved);
+    }
+
+    #[tokio::test]
+    async fn approving_commits_the_reviewers_substitution_and_not_the_submitted_value() {
+        // REQ-4.3 permits editing before acceptance. The substitute is what
+        // gets committed; `submissions.payload` stayed the depositor's own
+        // until the moment it was deleted, which is what lets their form show
+        // them what was changed on their behalf.
+        let (state, _) = test_state("review-approve-substitute").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        a_submission(&state, "0801d", None, json!({ "name": "The depositor's title" })).await;
+        let app = test_app(&state);
+
+        // The substitute posts under the field's own name, exactly as the
+        // depositor's form posts it.
+        let body = format!("{}&name=RDU%27s+title", finishing(page::APPROVE, &[("name", "accept")], ""));
+        as_session(&app, post("/review/0801d", &body), &session).await;
+
+        let record = the_record(&state, "0801d").await;
+        assert!(record.payload.contains("RDU's title"), "{}", record.payload);
+        assert!(!record.payload.contains("The depositor's title"), "{}", record.payload);
+        let round = the_round(&state, "0801d").await;
+        let (stored, error) = ReviewState::parse(round.review_state.as_deref());
+        assert!(error.is_none());
+        assert_eq!(
+            stored.substitutions(),
+            [("name", &json!("RDU's title"))],
+            "the round keeps the evidence"
+        );
+    }
+
+    #[tokio::test]
+    async fn approving_a_reverted_field_commits_the_published_value() {
+        // Revert means keep what is published, so the record must carry the
+        // published value — not the submitted one, and not nothing.
+        let (state, _) = test_state("review-approve-revert").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let published = state.published.get("0801d").expect("0801d").name.clone();
+        a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+
+        as_session(
+            &app,
+            post("/review/0801d", &finishing(page::APPROVE, &[("name", "revert")], "")),
+            &session,
+        )
+        .await;
+
+        let record = the_record(&state, "0801d").await;
+        let committed: ProjectDraft = serde_json::from_str(&record.payload).unwrap();
+        assert_eq!(committed.get("name").and_then(Value::as_str), Some(published.as_str()));
+    }
+
+    #[tokio::test]
+    async fn reverting_a_member_the_submission_added_removes_it_again() {
+        // Absent from the published side means the submission added it, so
+        // reverting has to remove it. Left in place it would commit a field
+        // the reviewer explicitly declined.
+        let (state, _) = test_state("review-approve-revert-added").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        // `provenance` is an `Option` the file leaves out, so `from_raw`
+        // strips it and the published side genuinely has no such member —
+        // unlike `endDate`, which 0801d carries as the `MISSING` placeholder.
+        assert!(
+            state.published.get("0801d").expect("0801d").provenance.is_none(),
+            "the premise: 0801d has no `provenance`"
+        );
+        a_submission(&state, "0801d", None, json!({ "provenance": "Added by the depositor" })).await;
+        let app = test_app(&state);
+
+        as_session(
+            &app,
+            post("/review/0801d", &finishing(page::APPROVE, &[("provenance", "revert")], "")),
+            &session,
+        )
+        .await;
+
+        let committed: ProjectDraft = serde_json::from_str(&the_record(&state, "0801d").await.payload).unwrap();
+        assert_eq!(committed.get("provenance"), None);
+    }
+
+    #[tokio::test]
+    async fn approving_with_an_undecided_change_is_refused() {
+        // Approving an undecided row commits bytes nobody looked at, which is
+        // the one thing a field-by-field surface exists to prevent. "Accept all
+        // remaining" makes clearing it one click, so this is never a dead end.
+        let (state, _) = test_state("review-approve-undecided").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(
+            &state,
+            "0801d",
+            None,
+            json!({ "name": "A New Title", "officialName": "Another" }),
+        )
+        .await;
+        let app = test_app(&state);
+
+        // One decided, one not.
+        let response = as_session(
+            &app,
+            post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+            &session,
+        )
+        .await;
+
+        assert!(
+            body_string(response).await.contains("has to be decided"),
+            "the reason is stated"
+        );
+        assert!(
+            SubmissionRepository::find(&*state.db, submission.id).await.unwrap().is_some(),
+            "the submission is still in the queue"
+        );
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+            .await
+            .unwrap()
+            .is_empty());
+    }
+
+    #[tokio::test]
+    async fn an_rdu_member_can_approve_the_submission_they_made_themselves() {
+        // REQ-4.4: no second approver for an RDU member's own submission. What
+        // that means here is that nothing distinguishes their own submission
+        // from anyone else's — there is no second-approver step to waive, and
+        // no self-approval check to add.
+        let (state, _) = test_state("review-approve-own").await;
+        let (reviewer, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        a_submission(&state, "0801d", Some(reviewer.id), json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+
+        as_session(
+            &app,
+            post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+            &session,
+        )
+        .await;
+
+        assert_eq!(the_round(&state, "0801d").await.actor, Some(reviewer.id));
+        assert_eq!(the_record(&state, "0801d").await.approved_by, Some(reviewer.id));
+    }
+
+    #[tokio::test]
+    async fn requesting_changes_returns_the_project_with_the_note_and_the_decisions() {
+        // REQ-4.5: the submission becomes a draft, and both the note and the
+        // per-field accepted state are retained — the latter on the round,
+        // which is what layer-3's field lock reads.
+        let (state, _) = test_state("review-request-changes").await;
+        let (reviewer, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+
+        let body = body_string(
+            as_session(
+                &app,
+                post(
+                    "/review/0801d",
+                    &finishing(page::REQUEST_CHANGES, &[("name", "accept")], "Add a German description"),
+                ),
+                &session,
+            )
+            .await,
+        )
+        .await;
+        assert!(body.contains("Returned to the depositor"), "{body}");
+
+        assert_eq!(SubmissionRepository::find(&*state.db, submission.id).await.unwrap(), None);
+        let draft = DraftRepository::find(&*state.db, "0801d")
+            .await
+            .unwrap()
+            .expect("the submission became a draft");
+        assert!(
+            draft.payload.contains("A New Title"),
+            "the depositor resumes from what they sent"
+        );
+        assert_eq!(draft.updated_by, Some(reviewer.id));
+
+        let round = the_round(&state, "0801d").await;
+        assert_eq!(round.outcome, ReviewOutcome::ChangesRequested);
+        assert_eq!(round.note.as_deref(), Some("Add a German description"));
+        let (stored, _) = ReviewState::parse(round.review_state.as_deref());
+        assert_eq!(stored.accepted_fields(), ["name"], "the lock has something to read");
+    }
+
+    #[tokio::test]
+    async fn rejecting_discards_the_submission_and_leaves_the_draft() {
+        // REQ-4.6 discards and leaves published metadata unchanged; REQ-1.13
+        // preserves the draft, so the depositor's work is still theirs.
+        let (state, _) = test_state("review-reject").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        DraftRepository::upsert(
+            &*state.db,
+            &DraftRecord {
+                shortcode: "0801d".to_string(),
+                payload: submission.payload.clone(),
+                updated_by: None,
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+        let app = test_app(&state);
+
+        let body = body_string(
+            as_session(
+                &app,
+                post(
+                    "/review/0801d",
+                    &finishing(page::REJECT, &[], "Out of scope for this repository"),
+                ),
+                &session,
+            )
+            .await,
+        )
+        .await;
+        assert!(body.contains("Rejected"), "{body}");
+
+        assert_eq!(SubmissionRepository::find(&*state.db, submission.id).await.unwrap(), None);
+        assert!(
+            DraftRepository::find(&*state.db, "0801d").await.unwrap().is_some(),
+            "the draft survives"
+        );
+        assert!(
+            editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.db, "0801d")
+                .await
+                .unwrap()
+                .is_empty(),
+            "nothing was approved"
+        );
+        let round = the_round(&state, "0801d").await;
+        assert_eq!(round.outcome, ReviewOutcome::Rejected);
+        assert_eq!(round.note.as_deref(), Some("Out of scope for this repository"));
+    }
+
+    #[tokio::test]
+    async fn a_reject_with_no_note_is_refused() {
+        // The whole rejection signal. REQ-4.6 discards the submission and
+        // notifications are out of scope, so without a note the depositor's
+        // work vanishes with nothing whatever saying why.
+        let (state, _) = test_state("review-reject-no-note").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+
+        for note in ["", "   "] {
+            let body = format!("intent={}&{}=1&{}={note}", page::REJECT, page::CONFIRMED, page::NOTE);
+            let response = as_session(&app, post("/review/0801d", &body), &session).await;
+            let rendered = body_string(response).await;
+            assert!(rendered.contains("only thing the depositor will see"), "{rendered}");
+            assert!(
+                SubmissionRepository::find(&*state.db, submission.id).await.unwrap().is_some(),
+                "nothing was discarded for note {note:?}"
+            );
+        }
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+            .await
+            .unwrap()
+            .is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_request_changes_with_no_note_is_refused() {
+        // REQ-4.5 retains "the reviewer note", and it is the only thing telling
+        // the depositor what to do — a returned draft with no note is a form
+        // they cannot act on.
+        let (state, _) = test_state("review-changes-no-note").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+
+        let body = format!("intent={}&{}=1", page::REQUEST_CHANGES, page::CONFIRMED);
+        as_session(&app, post("/review/0801d", &body), &session).await;
+
+        assert!(SubmissionRepository::find(&*state.db, submission.id).await.unwrap().is_some());
+        assert_eq!(
+            DraftRepository::find(&*state.db, "0801d").await.unwrap(),
+            None,
+            "no draft was written"
+        );
+    }
+
+    #[tokio::test]
+    async fn an_approval_needs_no_note() {
+        // Approve is the one outcome that leaves a record somewhere else, and
+        // the depositor is shown what changed rather than told about it. A
+        // required note here would be ceremony on the common path.
+        let (state, _) = test_state("review-approve-no-note").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+
+        as_session(
+            &app,
+            post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+            &session,
+        )
+        .await;
+
+        assert_eq!(the_round(&state, "0801d").await.note, None);
+    }
+
+    #[tokio::test]
+    async fn a_note_survives_backing_out_of_the_confirmation() {
+        // Declining a confirmation posts a plain save, and the diff form
+        // renders no note control — so without the working copy on the
+        // submission, a carefully written rejection reason is gone and has to
+        // be typed again from memory.
+        let (state, _) = test_state("review-note-survives").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+
+        // Open the reject prompt and type a reason, then decline: "Not now"
+        // carries no intent, so it posts as a save.
+        let typed = format!("intent={}&{}=Out+of+scope", page::REJECT, page::NOTE);
+        as_session(&app, post("/review/0801d", &typed), &session).await;
+        let declined = format!("{}=Out+of+scope", page::NOTE);
+        as_session(&app, post("/review/0801d", &declined), &session).await;
+
+        let stored = SubmissionRepository::find(&*state.db, submission.id).await.unwrap().unwrap();
+        assert_eq!(stored.reviewer_note.as_deref(), Some("Out of scope"));
+
+        // Re-opening the prompt shows it back.
+        let reopened =
+            body_string(as_session(&app, post("/review/0801d", &format!("intent={}", page::REJECT)), &session).await)
+                .await;
+        assert!(reopened.contains("Out of scope"), "{reopened}");
+    }
+
+    #[tokio::test]
+    async fn a_save_from_the_diff_form_does_not_clear_a_stored_note() {
+        // The diff form renders no note control, so an ordinary "Save review
+        // decisions" posts nothing under `note`. Read as an empty note that
+        // would erase the stored one on every save.
+        let (state, _) = test_state("review-note-not-cleared").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+        let typed = format!("intent={}&{}=Out+of+scope", page::REJECT, page::NOTE);
+        as_session(&app, post("/review/0801d", &typed), &session).await;
+        as_session(&app, post("/review/0801d", &format!("{}=Out+of+scope", page::NOTE)), &session).await;
+
+        // A save carrying decisions and no note at all.
+        let body = format!("intent={}&{}.name=accept", page::SAVE, page::DECISION_PREFIX);
+        as_session(&app, post("/review/0801d", &body), &session).await;
+
+        let stored = SubmissionRepository::find(&*state.db, submission.id).await.unwrap().unwrap();
+        assert_eq!(stored.reviewer_note.as_deref(), Some("Out of scope"));
+    }
+
+    #[tokio::test]
+    async fn the_round_takes_the_stored_note_when_the_confirming_body_carries_none() {
+        // The reviewer typed a reason, backed out, came back and confirmed from
+        // a page whose control was pre-filled from storage. If only the body
+        // counted, the note requirement would refuse them — or worse, record a
+        // round with no note at all.
+        let (state, _) = test_state("review-note-from-storage").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+        let stored_note = format!("{}=Out+of+scope", page::NOTE);
+        as_session(&app, post("/review/0801d", &stored_note), &session).await;
+
+        // Confirming with no note in the body at all.
+        let body = format!("intent={}&{}=1", page::REJECT, page::CONFIRMED);
+        as_session(&app, post("/review/0801d", &body), &session).await;
+
+        assert_eq!(the_round(&state, "0801d").await.note.as_deref(), Some("Out of scope"));
+    }
+
+    #[tokio::test]
+    async fn a_terminating_action_asks_before_it_writes() {
+        // All three are irreversible from this surface — the submission row is
+        // gone whichever is chosen — so each asks once. The first post renders
+        // the prompt and writes nothing.
+        let (state, _) = test_state("review-confirm").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+
+        for (intent, expected) in [
+            (page::APPROVE, "Yes, approve"),
+            (page::REQUEST_CHANGES, "Yes, request changes"),
+            (page::REJECT, "Yes, reject"),
+        ] {
+            let body =
+                body_string(as_session(&app, post("/review/0801d", &format!("intent={intent}")), &session).await).await;
+            assert!(body.contains(expected), "{intent}: {body}");
+            assert!(
+                SubmissionRepository::find(&*state.db, submission.id).await.unwrap().is_some(),
+                "{intent} wrote something on the first post"
+            );
+        }
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+            .await
+            .unwrap()
+            .is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_terminating_action_on_an_already_finished_submission_is_reported() {
+        // The terminal-state guard, at the surface it is reached through. Two
+        // reviewers hold the page open: the second must not destroy a record
+        // the collection endpoint has already served into a pull request, nor
+        // resurrect one as a draft.
+        for intent in [page::APPROVE, page::REQUEST_CHANGES, page::REJECT] {
+            let (state, _) = test_state(&format!("review-race-{intent}")).await;
+            let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+            a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+            let app = test_app(&state);
+
+            // The first reviewer approves.
+            as_session(
+                &app,
+                post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+                &session,
+            )
+            .await;
+
+            // The second acts on a page rendered before that.
+            let response = as_session(
+                &app,
+                post("/review/0801d", &finishing(intent, &[("name", "accept")], "Too late")),
+                &session,
+            )
+            .await;
+
+            // The submission is gone, so the request never gets past resolving
+            // it: the surface says there is nothing to review rather than
+            // inventing a second round.
+            assert_eq!(response.status(), StatusCode::NOT_FOUND, "{intent}");
+            assert!(body_string(response).await.contains("Nothing to review"), "{intent}");
+            let rounds = ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d").await.unwrap();
+            assert_eq!(rounds.len(), 1, "{intent}: exactly the first round");
+            assert_eq!(rounds[0].outcome, ReviewOutcome::Approved, "{intent}");
+            assert_eq!(
+                editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*state.db, "0801d")
+                    .await
+                    .unwrap()
+                    .len(),
+                1,
+                "{intent}: no second record"
+            );
+            assert_eq!(DraftRepository::find(&*state.db, "0801d").await.unwrap(), None, "{intent}");
+        }
+    }
+
+    #[tokio::test]
+    async fn a_terminating_action_refused_by_storage_leaves_the_submission_in_the_queue() {
+        // Nothing partial: the three writes are one transaction, so a failure
+        // leaves the submission exactly where it was and says so.
+        let db = std::sync::Arc::new(open_test_db("review-finish-storage").await);
+        let sound = state_over(db.clone(), RecordingMailer::new(), |_| {});
+        let (_, session) = a_reviewer(&sound, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(&sound, "0801d", None, json!({ "name": "A New Title" })).await;
+        let faulty = state_over(
+            std::sync::Arc::new(FaultyDatabase::new(
+                db.clone(),
+                Faults { review_transition: true, ..Faults::default() },
+            )),
+            RecordingMailer::new(),
+            |_| {},
+        );
+        let app = test_app(&faulty);
+
+        let response = as_session(
+            &app,
+            post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+            &session,
+        )
+        .await;
+
+        assert!(
+            body_string(response).await.contains("still in the queue"),
+            "the reason is stated"
+        );
+        assert!(SubmissionRepository::find(&*db, submission.id).await.unwrap().is_some());
+        assert!(
+            editor_core::repository::ApprovedRecordRepository::find_by_shortcode(&*db, "0801d")
+                .await
+                .unwrap()
+                .is_empty()
+        );
+        assert!(ReviewRoundRepository::list_for_shortcode(&*db, "0801d")
+            .await
+            .unwrap()
+            .is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_terminating_action_uses_the_decisions_on_screen_not_the_ones_last_saved() {
+        // The controls sit inside the diff form, so the decisions post with the
+        // action. Read from storage instead, approving straight after deciding
+        // a row would commit the previous state — a difference nothing on the
+        // page would explain.
+        let (state, _) = test_state("review-finish-unsaved").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        assert_eq!(submission.review_state, None, "the premise: nothing was saved");
+        let app = test_app(&state);
+
+        as_session(
+            &app,
+            post("/review/0801d", &finishing(page::APPROVE, &[("name", "revert")], "")),
+            &session,
+        )
+        .await;
+
+        // A revert that was never saved still decided the outcome.
+        let published = state.published.get("0801d").expect("0801d").name.clone();
+        let committed: ProjectDraft = serde_json::from_str(&the_record(&state, "0801d").await.payload).unwrap();
+        assert_eq!(committed.get("name").and_then(Value::as_str), Some(published.as_str()));
+    }
+
+    #[tokio::test]
+    async fn a_depositor_cannot_finish_a_review_round() {
+        // The `Rdu` extractor closes every handler here, so this is the 403
+        // page rather than a refusal message. Asserted on the write, not only
+        // on the render: the extractor runs before the body is read.
+        let (state, _) = test_state("review-finish-depositor").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let submission = a_submission(&state, "0801d", Some(user.id), json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+
+        let response = as_session(
+            &app,
+            post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+            &session,
+        )
+        .await;
+
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        assert!(SubmissionRepository::find(&*state.db, submission.id).await.unwrap().is_some());
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+            .await
+            .unwrap()
+            .is_empty());
+    }
+
+    #[tokio::test]
+    async fn an_unknown_intent_saves_rather_than_finishing_the_round() {
+        // Every terminating action is irreversible; a save is not. A body
+        // naming a verb this build does not know has to take the recoverable
+        // branch.
+        let (state, _) = test_state("review-unknown-intent").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        let app = test_app(&state);
+
+        let body = format!("intent=publish&{}=1&{}.name=accept", page::CONFIRMED, page::DECISION_PREFIX);
+        as_session(&app, post("/review/0801d", &body), &session).await;
+
+        let stored = SubmissionRepository::find(&*state.db, submission.id)
+            .await
+            .unwrap()
+            .expect("the submission is still in the queue");
+        assert_eq!(
+            stored.state,
+            SubmissionState::InReview,
+            "it was claimed and saved, not finished"
+        );
+        assert!(ReviewRoundRepository::list_for_shortcode(&*state.db, "0801d")
+            .await
+            .unwrap()
+            .is_empty());
     }
 
     /// A pending submission whose payload is the published project with
@@ -777,7 +1710,6 @@ mod tests {
                 shortcode: "0801d".to_string(),
                 payload: "{}".to_string(),
                 updated_by: Some(author.id),
-                reviewer_note: None,
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
             },

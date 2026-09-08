@@ -233,16 +233,6 @@ pub struct DraftRecord {
     /// review queue's "last editor" column reads as unknown rather than
     /// dangling.
     pub updated_by: Option<Uuid>,
-    /// The note RDU left when it returned this project to the depositor.
-    /// `None` for a draft nobody has reviewed.
-    ///
-    /// It lives on the draft rather than on the submission because
-    /// request-changes turns the submission *into* a draft: the row carrying
-    /// the note is deleted at the moment the depositor needs to read it, so a
-    /// note stored there could never be shown to the person it is addressed to.
-    /// Cleared when the project is submitted again, since it describes the
-    /// round that has now been answered.
-    pub reviewer_note: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -307,7 +297,12 @@ pub struct Submission {
     pub submitted_at: DateTime<Utc>,
     pub reviewed_by: Option<Uuid>,
     pub reviewed_at: Option<DateTime<Utc>>,
-    /// Carried back to the depositor when RDU requests changes (REQ-4.5).
+    /// The reviewer's *working* note, kept across saves while the review runs,
+    /// so backing out of a confirmation does not discard a written reason.
+    ///
+    /// What the depositor reads is [`ReviewRound::note`]: this row is deleted
+    /// by the transition that ends the round, so a note kept only here could
+    /// never reach them.
     pub reviewer_note: Option<String>,
     /// A serialized [`ReviewState`](crate::review::ReviewState) — the per-field
     /// decisions and substitutions RDU has recorded so far. `None` while nothing
@@ -332,6 +327,103 @@ pub struct ApprovedRecord {
     /// `None` while uncollected. A failed collection leaves it `None` so the
     /// next run retries it (REQ-5.7).
     pub collected_at: Option<DateTime<Utc>>,
+}
+
+/// How a review round ended.
+///
+/// Not a [`SubmissionState`]: every variant deletes the submission, and the
+/// depositor-facing state list has no Rejected. [`Self::Withdrawn`] is the
+/// depositor's own discard, here rather than in a second place so that their
+/// action leaves the same trail as a reviewer's.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ReviewOutcome {
+    /// Accepted (REQ-4.4). An `approved_records` row now holds what was
+    /// approved, including anything RDU substituted.
+    Approved,
+    /// Returned to the depositor as a draft, with a note (REQ-4.5).
+    ChangesRequested,
+    /// Discarded by RDU. Published metadata is unchanged (REQ-4.6).
+    Rejected,
+    /// Discarded by the depositor who made it (REQ-4.7).
+    Withdrawn,
+}
+
+impl ReviewOutcome {
+    /// The stored form, pinned by a `CHECK` constraint in the schema.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Approved => "approved",
+            Self::ChangesRequested => "changes_requested",
+            Self::Rejected => "rejected",
+            Self::Withdrawn => "withdrawn",
+        }
+    }
+
+    /// Whether this outcome hands the project back for more editing.
+    ///
+    /// True for everything except [`Self::Approved`]: approve is the only
+    /// outcome that leaves the record somewhere else (an `approved_records` row
+    /// on its way to a pull request), so it is the only one after which editing
+    /// again starts the *next* cycle rather than continuing this one.
+    #[must_use]
+    pub const fn returns_the_project(self) -> bool {
+        !matches!(self, Self::Approved)
+    }
+}
+
+impl fmt::Display for ReviewOutcome {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl FromStr for ReviewOutcome {
+    type Err = UnknownVariant;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "approved" => Ok(Self::Approved),
+            "changes_requested" => Ok(Self::ChangesRequested),
+            "rejected" => Ok(Self::Rejected),
+            "withdrawn" => Ok(Self::Withdrawn),
+            other => Err(UnknownVariant { kind: "review outcome", value: other.to_string() }),
+        }
+    }
+}
+
+/// One finished review round: what was decided about a submission, by whom, and
+/// what the depositor has to be told.
+///
+/// **Append-only.** Written by the transition that ends the round and never
+/// updated, so the rows for one project are its review history and a later
+/// round cannot overwrite an earlier one. See the editor architecture
+/// documentation for what reads it and why it is a table rather than columns
+/// on `drafts`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReviewRound {
+    pub id: Uuid,
+    pub shortcode: String,
+    /// The submission this round ended. Kept although that row is gone: it is
+    /// how two rounds recorded in the same second are told apart, and how a
+    /// round is tied to the `approved_records` row it produced.
+    pub submission_id: Uuid,
+    pub outcome: ReviewOutcome,
+    /// What the depositor is told. `None` is allowed for every outcome —
+    /// requiring one is the handler's rule, not the record's, since a
+    /// withdrawal has nobody to address.
+    pub note: Option<String>,
+    /// The serialized [`ReviewState`](crate::review::ReviewState) as it stood
+    /// when the round ended, or `None` where nothing was decided.
+    ///
+    /// A snapshot, not a reference: the submission it came from is deleted by
+    /// the same transaction, so nothing else can answer which fields were
+    /// accepted or what was put in place of the depositor's values.
+    pub review_state: Option<String>,
+    /// Who ended the round, `None` once that account is removed; see
+    /// [`DraftRecord::updated_by`]. For a withdrawal this is the depositor.
+    pub actor: Option<Uuid>,
+    pub at: DateTime<Utc>,
 }
 
 #[cfg(test)]
@@ -362,6 +454,44 @@ mod tests {
         // `Depositor` — that would hand an unknown role a depositor's access.
         assert!("admin".parse::<Role>().is_err());
         assert!("rejected".parse::<SubmissionState>().is_err());
+    }
+
+    #[test]
+    fn test_review_outcome_round_trips_through_its_stored_form() {
+        for outcome in [
+            ReviewOutcome::Approved,
+            ReviewOutcome::ChangesRequested,
+            ReviewOutcome::Rejected,
+            ReviewOutcome::Withdrawn,
+        ] {
+            assert_eq!(outcome.as_str().parse::<ReviewOutcome>().unwrap(), outcome);
+        }
+    }
+
+    #[test]
+    fn test_an_unknown_stored_review_outcome_is_an_error() {
+        // `submitted` is a submission *state*, not an outcome. The two
+        // vocabularies share a table neighbourhood and one word (`approved`),
+        // so reading either one's value as the other has to fail rather than
+        // land on whichever variant sorts first.
+        assert!("submitted".parse::<ReviewOutcome>().is_err());
+        assert!("in_review".parse::<ReviewOutcome>().is_err());
+        assert_eq!("approved".parse::<ReviewOutcome>().unwrap(), ReviewOutcome::Approved);
+    }
+
+    #[test]
+    fn test_only_approval_does_not_return_the_project() {
+        // Approve moves the record to `approved_records`, on its way to a pull
+        // request; the other three leave the project with the depositor. The
+        // form reads this to decide whether it is editable again.
+        assert!(!ReviewOutcome::Approved.returns_the_project());
+        for outcome in [
+            ReviewOutcome::ChangesRequested,
+            ReviewOutcome::Rejected,
+            ReviewOutcome::Withdrawn,
+        ] {
+            assert!(outcome.returns_the_project(), "{outcome}");
+        }
     }
 
     #[test]

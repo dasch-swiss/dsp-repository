@@ -13,10 +13,11 @@ use axum::http::header::{COOKIE, SET_COOKIE};
 use axum::http::{Request, Response};
 use chrono::{DateTime, Utc};
 use editor_core::published::PublishedProjects;
-use editor_core::records::{ApprovedRecord, DraftRecord, LoginCode, Session, Submission, User};
+use editor_core::records::{ApprovedRecord, DraftRecord, LoginCode, ReviewRound, Session, Submission, User};
 use editor_core::repository::{
     ApprovedRecordRepository, Attempt, DraftRepository, Issued, LoginCodeRepository, MailSendRepository, Repositories,
-    RepositoryError, Result, SessionRepository, SubmissionRepository, UserRepository,
+    RepositoryError, Result, ReviewRoundRepository, SessionRepository, SubmissionRepository, Transition,
+    UserRepository,
 };
 use uuid::Uuid;
 
@@ -24,7 +25,7 @@ use crate::auth::AuthConfig;
 use crate::config::EditorConfig;
 use crate::db::{Database, Source};
 use crate::mail::{Mail, MailError, Mailer};
-use crate::AppState;
+use crate::{AppState, TemporalTables};
 
 /// One message a [`RecordingMailer`] was asked to send.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -149,7 +150,28 @@ pub(crate) fn state_over(
         // mixed-case shortcodes, the `MISSING` placeholders and the five
         // filenames that disagree with their shortcode.
         published: published_corpus(),
+        temporal: temporal_tables(),
     }
+}
+
+/// The committed temporal-resolution tables, loaded once for the whole test
+/// binary.
+///
+/// The real ones, for the reason [`published_corpus`] gives about projects: a
+/// fixture of two invented periods would let submit validation pass while
+/// disagreeing with what `dpe-server validate` decides about the 85 committed
+/// projects, which is the whole point of sharing the tables.
+pub(crate) fn temporal_tables() -> Arc<TemporalTables> {
+    static TABLES: OnceLock<Arc<TemporalTables>> = OnceLock::new();
+    TABLES
+        .get_or_init(|| {
+            let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data");
+            Arc::new(TemporalTables {
+                periods: platform_metadata::chronontology::load_from(&dir),
+                enrichment: platform_metadata::temporal_enrichment::load_from(&dir),
+            })
+        })
+        .clone()
 }
 
 /// The committed project corpus, loaded once for the whole test binary.
@@ -472,6 +494,20 @@ pub(crate) struct Faults {
     /// `SubmissionRepository::update` — the review surface's only write, and
     /// the branch where a page must not report a claim that did not happen.
     pub submission_update: bool,
+    /// `SubmissionRepository::create` — the submit path's write, and the branch
+    /// where a refused submit must leave the draft editable rather than report
+    /// a submission nobody holds.
+    pub submission_create: bool,
+    /// Every writing transition on [`ReviewRoundRepository`] at once.
+    ///
+    /// One flag for three methods, because a handler reaches exactly one of
+    /// them per request and they share the branch a test is driving: a
+    /// terminating action that could not be written must leave the submission
+    /// where it was and say so.
+    pub review_transition: bool,
+    /// `ReviewRoundRepository::list_for_shortcode` — the read the depositor's
+    /// form makes to find out what RDU said.
+    pub review_rounds_list: bool,
 }
 
 /// A store that delegates every call to a real [`Database`] and fails the ones
@@ -665,6 +701,9 @@ impl DraftRepository for FaultyDatabase {
 #[async_trait]
 impl SubmissionRepository for FaultyDatabase {
     async fn create(&self, submission: &Submission) -> Result<()> {
+        if self.faults.submission_create {
+            return Err(injected("SubmissionRepository::create"));
+        }
         SubmissionRepository::create(&*self.inner, submission).await
     }
 
@@ -689,6 +728,42 @@ impl SubmissionRepository for FaultyDatabase {
 
     async fn delete(&self, id: Uuid) -> Result<bool> {
         SubmissionRepository::delete(&*self.inner, id).await
+    }
+}
+
+#[async_trait]
+impl ReviewRoundRepository for FaultyDatabase {
+    async fn approve(&self, submission_id: Uuid, record: &ApprovedRecord, round: &ReviewRound) -> Result<Transition> {
+        if self.faults.review_transition {
+            return Err(injected("ReviewRoundRepository::approve"));
+        }
+        ReviewRoundRepository::approve(&*self.inner, submission_id, record, round).await
+    }
+
+    async fn request_changes(
+        &self,
+        submission_id: Uuid,
+        draft: &DraftRecord,
+        round: &ReviewRound,
+    ) -> Result<Transition> {
+        if self.faults.review_transition {
+            return Err(injected("ReviewRoundRepository::request_changes"));
+        }
+        ReviewRoundRepository::request_changes(&*self.inner, submission_id, draft, round).await
+    }
+
+    async fn discard(&self, submission_id: Uuid, round: &ReviewRound) -> Result<Transition> {
+        if self.faults.review_transition {
+            return Err(injected("ReviewRoundRepository::discard"));
+        }
+        ReviewRoundRepository::discard(&*self.inner, submission_id, round).await
+    }
+
+    async fn list_for_shortcode(&self, shortcode: &str) -> Result<Vec<ReviewRound>> {
+        if self.faults.review_rounds_list {
+            return Err(injected("ReviewRoundRepository::list_for_shortcode"));
+        }
+        ReviewRoundRepository::list_for_shortcode(&*self.inner, shortcode).await
     }
 }
 

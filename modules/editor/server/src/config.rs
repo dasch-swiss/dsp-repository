@@ -531,10 +531,12 @@ impl EditorConfig {
     /// Whether this deployment is a throwaway: not `PROD`, no relay, no durable
     /// state.
     ///
-    /// The condition above, named, because two things now turn on it — showing
-    /// a login code in the interface, and seeding the sample records that make
-    /// the review surfaces reachable before submit exists. Naming it once keeps
-    /// the second from drifting into a weaker test than the first.
+    /// The condition above, named and tested on its own rather than folded into
+    /// [`Self::reveals_login_code`], because what makes it safe is the
+    /// conjunction of three environment facts and not the one decision that
+    /// currently reads it. It briefly had a second reader — the sample records
+    /// that made the review surfaces reachable before submit existed — which is
+    /// why it is named at all.
     pub fn is_throwaway(&self) -> bool {
         self.env != "PROD" && self.smtp_host.is_none() && self.db_dir.is_none()
     }
@@ -984,23 +986,27 @@ mod reveal_tests {
     }
 
     #[test]
-    fn test_showing_the_code_and_seeding_sample_data_ask_the_same_question() {
-        // Two things turn on this predicate, and the sample records are the
-        // laxer-looking of the pair — "it's only a preview" is exactly how a
-        // seeding rule ends up with a weaker test than the one guarding a
-        // login code. Pinned so they cannot drift apart.
+    fn test_a_throwaway_deployment_needs_all_three_conditions_not_any_one() {
+        // The conjunction is the whole safety argument: any one of a relay, a
+        // durable database or PROD is enough to make a deployment real, and
+        // reading it as a disjunction is how "it's only a preview" ends up
+        // showing a login code on something holding accounts people use.
+        //
+        // Asserted against `is_throwaway` directly. Comparing it with
+        // `reveals_login_code` would be a tautology — that method *is* this
+        // predicate — which is what this test had become once the second
+        // reader went.
+        assert!(preview().is_throwaway(), "no relay, no durable state, not PROD");
         let relay = EditorConfig { smtp_host: Some("relay.test".to_string()), ..preview() };
         let durable = EditorConfig { db_dir: Some(std::path::PathBuf::from("/data")), ..preview() };
         let production = EditorConfig { env: "PROD".to_string(), ..preview() };
-        for config in [preview(), relay, durable, production] {
-            assert_eq!(
-                config.reveals_login_code(),
-                config.is_throwaway(),
-                "{:?} / {:?} / {:?}",
-                config.env,
-                config.smtp_host,
-                config.db_dir
-            );
+        for (config, why) in [
+            (relay, "a relay"),
+            (durable, "a durable database"),
+            (production, "PROD"),
+        ] {
+            assert!(!config.is_throwaway(), "{why} alone must make it a real deployment");
+            assert!(!config.reveals_login_code(), "{why} alone must stop the code being shown");
         }
     }
 

@@ -190,6 +190,43 @@ impl ReviewState {
     pub fn is_empty(&self) -> bool {
         self.fields.is_empty()
     }
+
+    /// Every field marked [`Decision::Accept`], in stored order.
+    ///
+    /// This is what locks a field on a returned draft (REQ-4.5 retains the
+    /// per-field state and nothing stopped the depositor altering it): a field
+    /// RDU has already accepted must not re-enter review still flagged
+    /// accepted while holding a value nobody accepted.
+    ///
+    /// Reverted fields are deliberately *not* here. A revert discards the
+    /// submitted value, so the depositor has nothing to preserve and every
+    /// reason to try again — locking it would leave them a field they were told
+    /// to fix and cannot touch.
+    #[must_use]
+    pub fn accepted_fields(&self) -> Vec<&str> {
+        self.fields
+            .iter()
+            .filter(|(_, review)| review.decision == Some(Decision::Accept))
+            .map(|(field, _)| field.as_str())
+            .collect()
+    }
+
+    /// Every field RDU put its own value in place of, with that value.
+    ///
+    /// What the depositor is shown before an approval they get no other sight
+    /// of: REQ-4.3 permits editing before acceptance and REQ-4.4 waives the
+    /// second approver, so a substituted value is otherwise seen by nobody.
+    ///
+    /// Reverted fields are excluded for the reason [`Self::accepted_fields`]
+    /// gives about them, and because a revert stores no substitute anyway.
+    #[must_use]
+    pub fn substitutions(&self) -> Vec<(&str, &Value)> {
+        self.fields
+            .iter()
+            .filter(|(_, review)| review.decision != Some(Decision::Revert))
+            .filter_map(|(field, review)| review.value.as_ref().map(|value| (field.as_str(), value)))
+            .collect()
+    }
 }
 
 /// One field, as the review surface shows it.
@@ -389,6 +426,79 @@ mod tests {
         for decision in [Decision::Accept, Decision::Revert] {
             assert_eq!(Decision::parse(decision.as_str()), Some(decision));
         }
+    }
+
+    #[test]
+    fn test_accepted_fields_are_the_ones_a_returned_draft_locks() {
+        // REQ-4.5 retains the per-field state and nothing stopped the depositor
+        // altering an accepted field, which then re-entered review still
+        // flagged accepted. A reverted field is deliberately not locked: its
+        // submitted value was discarded, so there is nothing to preserve and
+        // the depositor has every reason to try again.
+        let mut state = ReviewState::new();
+        state.set("name", FieldReview { decision: Some(Decision::Accept), value: None });
+        state.set("abstract", FieldReview { decision: Some(Decision::Revert), value: None });
+        state.set("provenance", FieldReview { decision: None, value: Some(json!("a substitute")) });
+        state.set(
+            "shortDescription",
+            FieldReview {
+                decision: Some(Decision::Accept),
+                value: Some(json!("Edited by RDU")),
+            },
+        );
+
+        assert_eq!(state.accepted_fields(), ["name", "shortDescription"]);
+    }
+
+    #[test]
+    fn test_substitutions_are_what_the_depositor_is_shown() {
+        // REQ-4.3 permits editing before acceptance and REQ-4.4 waives the
+        // second approver, so a value RDU put in place of the depositor's is
+        // seen by nobody unless this reports it.
+        let mut state = ReviewState::new();
+        state.set(
+            "name",
+            FieldReview {
+                decision: Some(Decision::Accept),
+                value: Some(json!("Edited by RDU")),
+            },
+        );
+        // Accepted as submitted: nothing was put in its place, so there is
+        // nothing to show.
+        state.set("abstract", FieldReview { decision: Some(Decision::Accept), value: None });
+
+        assert_eq!(state.substitutions(), [("name", &json!("Edited by RDU"))]);
+    }
+
+    #[test]
+    fn test_a_cleared_field_is_a_substitution_the_depositor_sees() {
+        // `Some(Value::Null)` is a reviewer clearing a field, which is a real
+        // substitution — the one an `or`-shaped alternative could not express.
+        // Filtering it out here would hide exactly the case where the
+        // depositor's value disappeared rather than changed.
+        let mut state = ReviewState::new();
+        state.set(
+            "endDate",
+            FieldReview { decision: Some(Decision::Accept), value: Some(Value::Null) },
+        );
+        assert_eq!(state.substitutions(), [("endDate", &Value::Null)]);
+    }
+
+    #[test]
+    fn test_a_reverted_field_reports_neither_a_lock_nor_a_substitution() {
+        // A revert discards the submitted value and stores no substitute, so a
+        // stored one came from a hand-built body. Reporting it would show the
+        // depositor a value RDU explicitly chose not to take.
+        let mut state = ReviewState::new();
+        state.set(
+            "name",
+            FieldReview {
+                decision: Some(Decision::Revert),
+                value: Some(json!("never taken")),
+            },
+        );
+        assert!(state.accepted_fields().is_empty());
+        assert!(state.substitutions().is_empty());
     }
 
     #[test]

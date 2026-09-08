@@ -74,7 +74,7 @@ const ALL_VARIANTS: [(AlertVariant, &str); 4] = [
 
 fn variants() -> Markup {
     html! {
-        div class="flex flex-col gap-3" {
+        div {
             @for (variant, message) in ALL_VARIANTS { (alert(message).variant(variant)) }
         }
     }
@@ -118,7 +118,7 @@ fn with_link() -> Markup {
         (link("See the projects you can edit", "#"))
     };
     html! {
-        div class="flex flex-col gap-3" {
+        div {
             @for (variant, _) in ALL_VARIANTS { (alert(&body).variant(variant)) }
         }
     }
@@ -134,7 +134,7 @@ fn roles() -> Markup {
         "This one is not: it states a consequence rather than reporting a failure, so it has no role."
     };
     html! {
-        div class="flex flex-col gap-3" {
+        div {
             (alert(announced).variant(AlertVariant::Danger))
             (alert(silent).variant(AlertVariant::Info))
         }

@@ -95,7 +95,13 @@ impl AlertBuilder {
         self
     }
 
-    /// Append extra utility classes after the variant classes (e.g. a margin).
+    /// Append extra utility classes after the variant classes.
+    ///
+    /// Not the place for bottom spacing — the tile carries `mb-4` itself. A
+    /// caller needing a different margin has to use Tailwind's `!` modifier
+    /// (`!mb-6`), because two same-property utilities are resolved by CSS
+    /// source order rather than by their order in the attribute, so a plain
+    /// `mb-6` here may or may not win.
     pub fn class(mut self, classes: impl Into<String>) -> Self {
         self.extra_classes = classes.into();
         self
@@ -220,8 +226,23 @@ mod tests {
 
     #[test]
     fn extra_classes_follow_the_variant() {
-        let out = alert("x").variant(AlertVariant::Danger).class("mb-4").build().into_string();
-        assert!(out.contains(r#"class="alert alert-danger mb-4""#), "{out}");
+        let out = alert("x").variant(AlertVariant::Danger).class("mt-8").build().into_string();
+        assert!(out.contains(r#"class="alert alert-danger mt-8""#), "{out}");
+    }
+
+    #[test]
+    fn the_tile_carries_its_own_bottom_margin() {
+        // Every production call site set one and sixteen of the seventeen chose
+        // `mb-4`, so it belongs here rather than being written out per call.
+        // Asserted on the rendered class list because that is the only place
+        // the CSS and the markup meet — `.alert` is what carries it.
+        let out = alert("x").build().into_string();
+        assert!(out.contains(r#"class="alert alert-info""#), "{out}");
+        let css = include_str!("alert.css");
+        assert!(
+            css.contains("@apply mb-4 rounded border"),
+            "the `.alert` rule owns the margin: {css}"
+        );
     }
 
     #[test]

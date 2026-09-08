@@ -52,9 +52,7 @@ pub fn request_code(next: Option<&str>, error: Option<&str>) -> Markup {
                 "Enter your email address and we will send you a six-digit code. The code is valid for ten \
                  minutes and can be used once."
             }
-            @if let Some(message) = error {
-                (alert(message).variant(AlertVariant::Danger).class("mb-4"))
-            }
+            @if let Some(message) = error { (alert(message).variant(AlertVariant::Danger)) }
             form method="post" action=(with_next("/login", next)) class="flex flex-col gap-4" {
                 (email_field())
                 div { (button("Send me a code").button_type(ButtonType::Submit)) }
@@ -84,7 +82,6 @@ fn revealed_code(code: &str) -> Markup {
             alert(body)
                 .variant(AlertVariant::Warning)
                 .title("Development deployment — no mail was sent")
-                .class("mb-4")
         })
     }
 }
@@ -129,9 +126,7 @@ pub fn enter_code(next: Option<&str>, error: Option<&str>, revealed: Option<&str
                 "If the address you gave belongs to an account, a six-digit code is on its way to it. Enter the \
                  code below."
             }
-            @if let Some(message) = error {
-                (alert(message).variant(AlertVariant::Danger).class("mb-4"))
-            }
+            @if let Some(message) = error { (alert(message).variant(AlertVariant::Danger)) }
             @if let Some(code) = revealed { (revealed_code(code)) }
             form method="post" action=(with_next("/login/code", next)) class="flex flex-col gap-4" {
                 (code_field())

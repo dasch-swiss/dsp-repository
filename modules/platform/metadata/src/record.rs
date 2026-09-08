@@ -175,7 +175,7 @@ mod tests {
     use super::*;
 
     fn first_0803_record() -> Record {
-        let json = include_str!("../../../dpe/server/data/records_test/0803-records.json");
+        let json = include_str!("../testdata/0803-records.json");
         let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0803-records.json");
         record
     }
@@ -184,7 +184,7 @@ mod tests {
     /// production exports still predate those fields, so this fixture is the only
     /// place the populated shape is exercised.
     fn first_0862_record() -> Record {
-        let json = include_str!("../../../dpe/server/data/records_test/0862-records.json");
+        let json = include_str!("../testdata/0862-records.json");
         let [record]: [Record; 1] = serde_json::from_str(json).expect("parse 0862-records.json");
         record
     }

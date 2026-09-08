@@ -52,8 +52,12 @@ _check-node:
 verify-checksums:
     bash .github/scripts/verify-checksums.sh
 
+# Verify no platform crate hardcodes a path into a service module: a shared crate must not know one service's directory layout. Compiles fine, so only a grep catches it. Run by `just check`. (DEV-7046)
+check-platform-paths:
+    bash .github/scripts/check-platform-paths.sh
+
 # Run all fmt and clippy checks
-check: verify-checksums
+check: verify-checksums check-platform-paths
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable
@@ -121,6 +125,8 @@ test:
     bash .github/scripts/commit-advisory.test.sh
     # Checksum gate (dependency-free)
     bash .github/scripts/verify-checksums.test.sh
+    # Platform-path gate (dependency-free)
+    bash .github/scripts/check-platform-paths.test.sh
 
 # Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap
 commit-lint base="origin/main":

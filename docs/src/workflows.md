@@ -24,6 +24,7 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 | `just docs-serve` | Serve documentation locally at localhost:3000 |
 | `just validate-data` | Validate all data files in the default data directory |
 | `just verify-checksums` | Check vendored JS against each `vendor/README.md` table and `tailwind.pins` for completeness (also run by `just check`) |
+| `just check-platform-paths` | Fail the build if a crate under `modules/platform/` hardcodes a path into a service module (also run by `just check`) |
 | `just tailwind-pins-refresh <version>` | Re-pin the Tailwind standalone CLI digests for a new version |
 
 ## Git, Commits, and Pull Requests

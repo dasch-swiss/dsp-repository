@@ -10,6 +10,8 @@ platform/
 
 Platform crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration takes it as a parameter instead of reaching for it.
 
+Both halves of that rule are enforced, not just reviewed. A `dpe-*` or `editor-*` dependency in a platform crate's `Cargo.toml` is a Cargo cycle and fails to build. A hardcoded *path* into a service module compiles fine, so `just check` greps for one: see `.github/scripts/check-platform-paths.sh`, which fails on a `../`- or `modules/`-rooted path into any non-platform module under `modules/` appearing in a platform crate's `src/`. Prose cross-references are untouched: the crate names (`dpe-core`, `dpe_core::…`) carry no slash.
+
 ## `platform-metadata` (metadata/)
 
 The research-metadata wire contract, shared by `dpe-*` and `editor-*`. Contains:
@@ -28,7 +30,7 @@ Dependencies: `serde`, `serde_json`, `tracing`.
 
 The workspace enables `serde_json`'s `preserve_order` feature, which the editor's canonical project writer requires: it round-trips `ProjectRaw` through `serde_json::Value` to strip `null` members, and `Value` alphabetises every key unless the feature is on. With it, output follows the struct's declaration order, which is what the 85 committed project files hold. Two consequences to know: `Map::remove` becomes swap-remove (use `retain` to drop members in place), and a `HashMap` field would serialize in its own random iteration order, which is why multilingual fields are `Multilingual` rather than `HashMap`.
 
-`testdata/0803-records.json` is a supported cross-crate test fixture, not a private one: `dpe-api-oai`'s `get_record` and `test_utils` tests `include_str!` it by relative path, as does `record.rs`'s own test. It is the single copy of a sample record — moving or renaming it breaks those call sites at compile time, so update them in the same commit.
+`testdata/` holds two supported cross-crate test fixtures, not private ones: `0803-records.json` (a plain record) and `0862-records.json` (the one committed record carrying the full technical file metadata). `record.rs`'s own tests `include_str!` both; `dpe-api-oai`'s `get_record` and `test_utils` tests read `0803-records.json` by relative path. That direction (a service crate reading into platform) is the allowed one, and these are the single copy of each sample, so moving or renaming one breaks those call sites at compile time; update them in the same commit. They live here rather than under `modules/dpe/server/data/` because `record.rs` is what reads them, and a platform crate takes no path into a service module.
 
 ## `platform-telemetry` (telemetry/)
 

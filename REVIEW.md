@@ -13,7 +13,7 @@ Agent reference card for the **review phase**. Full details in `docs/src/fundame
 - [ ] Unit tests for edge cases (invalid input, missing data)
 - [ ] New API crates follow `dpe-api-{name}` pattern (`docs/src/repo_structure.md`)
 - [ ] `dpe-core` and `platform-metadata` have no framework dependencies
-- [ ] `platform-metadata` takes no dependency on a service crate, and no path into a service's data directory
+- [ ] `platform-metadata` takes no dependency on a service crate, and no path into a service's data directory. Both fail the build, so this is a spot-check: a service dependency is a Cargo cycle, a hardcoded path is caught by `just check-platform-paths`
 - [ ] CLI subcommands documented in help text
 - [ ] Documentation updated when patterns change
 - [ ] New env vars documented in `docs/src/dpe/operations.md` (editor: `docs/src/editor/operations.md`)

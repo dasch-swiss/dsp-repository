@@ -18,7 +18,7 @@ Review checklist for the DSP Repository. Organized by priority.
 **Architecture**
 - New API crates follow the `dpe-api-{name}` pattern with `platform-metadata` and `dpe-core` as only domain dependencies (see [Project Structure](../repo_structure.md))
 - `dpe-core` and `platform-metadata` have no framework dependencies (no axum, no maud)
-- `platform-metadata` takes no dependency on a service crate, and no path into a service's data directory
+- `platform-metadata` takes no dependency on a service crate, and no path into a service's data directory. Both halves fail the build, so this is a spot-check rather than a hand-verification: a service dependency is a Cargo cycle, and a hardcoded path is caught by `just check-platform-paths` (`.github/scripts/check-platform-paths.sh`)
 - Validate command covers all data file types (DPE)
 - E2E test directory naming: `web-e2e-tests/` for DPE, `playground-e2e-tests/` for Mosaic
 

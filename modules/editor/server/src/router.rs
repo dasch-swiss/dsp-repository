@@ -221,7 +221,7 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
         // `POST /depositors/{id}` briefly was.
         .route(
             "/projects/{shortcode}/sections/{section}",
-            get(crate::sections::show).post(crate::sections::save),
+            get(crate::sections::show).post(crate::sections::act),
         )
         // --- RDU-only routes ---
         // `Rdu` composes `Authenticated`, so these are closed twice over: no

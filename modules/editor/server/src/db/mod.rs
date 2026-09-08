@@ -47,6 +47,7 @@ mod drafts;
 mod login_codes;
 mod mail_sends;
 mod mapping;
+mod review_rounds;
 mod schema;
 mod sessions;
 mod submissions;

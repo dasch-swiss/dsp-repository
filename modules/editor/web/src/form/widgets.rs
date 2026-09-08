@@ -40,7 +40,24 @@ pub enum Mode {
     /// Values only — the project has a submission in review, so nothing may
     /// change under the reviewer (REQ-4.x).
     ReadOnly,
+    /// Values only, because RDU accepted this field in the round being
+    /// answered (REQ-4.5).
+    ///
+    /// A third variant rather than [`Self::ReadOnly`] with a flag beside it,
+    /// because the reader has to be told *which* of two reasons applies: a
+    /// whole-form lock lifts when the review finishes, and this one lifts when
+    /// the field is submitted again. Told the wrong one, a depositor waits for
+    /// the wrong event.
+    Accepted,
 }
+
+/// What a reader is told about a field RDU has already accepted.
+///
+/// It renders as a value with no control, so nothing about it posts and the
+/// applier that would write it is not run either — the note explains a gate
+/// that is enforced server-side, rather than being the gate.
+const ACCEPTED_BY_RDU: &str = "RDU accepted this value, so it is fixed while you answer this review. It is submitted \
+                               unchanged, and becomes editable again after the next review round.";
 
 /// What a reader is told about a field whose widget has not landed.
 const NOT_READ_YET: &str = "This field is not editable here yet. Its current value is kept unchanged when you \
@@ -54,9 +71,10 @@ pub(crate) const NO_VALUE: &str = "Not set";
 pub fn field_row(field: &Field, draft: &ProjectDraft, mode: Mode) -> Markup {
     match (mode, field.shape) {
         (Mode::Editable, Some(shape)) => control(field, draft, shape),
+        (Mode::Accepted, _) => stated(field, draft, Some(ACCEPTED_BY_RDU)),
         // A locked field and a display-only one render the same way, which is
         // the point: neither posts, so neither can be cleared.
-        (Mode::ReadOnly, _) | (_, None) => stated(field, draft),
+        (Mode::ReadOnly, _) | (_, None) => stated(field, draft, None),
     }
 }
 
@@ -66,19 +84,20 @@ pub fn field_row(field: &Field, draft: &ProjectDraft, mode: Mode) -> Markup {
 /// naming nothing is worse than no `for` at all. The heading and the value are
 /// tied by proximity and by the same `field-*` treatment the tiles use, so a
 /// locked form reads as the same form.
-fn stated(field: &Field, draft: &ProjectDraft) -> Markup {
+fn stated(field: &Field, draft: &ProjectDraft, why: Option<&str>) -> Markup {
     let editable_but_unbuilt = !field.display_only && field.shape.is_none();
     html! {
         div class="field" {
             p class="field-label" { (labelled(field)) }
+            (value_display(field, draft))
             @if editable_but_unbuilt {
-                (value_display(field, draft))
                 p class="field-hint" { (NOT_READ_YET) }
-            } @else {
-                (value_display(field, draft))
-                @if let Some(hint) = field.hint {
-                    p class="field-hint" { (hint) }
-                }
+            } @else if let Some(why) = why {
+                // Instead of the hint, not beside it: the hint says what to
+                // type, which is not what this reader can do.
+                p class="field-hint" { (why) }
+            } @else if let Some(hint) = field.hint {
+                p class="field-hint" { (hint) }
             }
         }
     }
@@ -217,7 +236,7 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape) -> Mark
         // whole section down for it would hide every other field too.
         _ => {
             debug_assert!(false, "{} declares {shape:?} but no control", field.id);
-            stated(field, draft)
+            stated(field, draft, None)
         }
     }
 }

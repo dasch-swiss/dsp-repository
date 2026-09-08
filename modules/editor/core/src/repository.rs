@@ -1,7 +1,7 @@
 //! The persistence ports, one trait per aggregate.
 //!
 //! Framework-free: the traits name domain records and [`RepositoryError`], never
-//! a `rusqlite` type. `editor-server` implements all seven against SQLite, so the
+//! a `rusqlite` type. `editor-server` implements all eight against SQLite, so the
 //! handlers Phase 3 onwards writes depend on these and not on the driver.
 //!
 //! Every method is `async` and boxed via `async_trait` rather than left as a
@@ -19,7 +19,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use crate::records::{ApprovedRecord, DraftRecord, LoginCode, Session, Submission, User};
+use crate::records::{ApprovedRecord, DraftRecord, LoginCode, ReviewRound, Session, Submission, User};
 
 /// What can go wrong in a repository call.
 ///
@@ -355,16 +355,78 @@ pub trait ApprovedRecordRepository: Send + Sync {
     async fn delete(&self, id: Uuid) -> Result<bool>;
 }
 
+/// Whether a terminating review action found the submission it named.
+///
+/// The terminal-state guard, as a return value rather than a check the caller
+/// makes first: a `find` followed by a write is two statements with a window
+/// between them, and two reviewers deciding at once is the case this exists
+/// for. Every method returning it deletes the submission by id inside the same
+/// transaction that records the round, so the delete's own row count is what
+/// decides — and exactly one of two concurrent calls can see a row.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Transition {
+    /// The submission was there. It is gone, and the round is recorded.
+    Applied,
+    /// Somebody finished it first. **Nothing was written**, including the round.
+    AlreadyReviewed,
+}
+
+/// The transitions that end a review round (REQ-4.4 to REQ-4.7), and the
+/// history they leave.
+///
+/// Each writing method spans three tables and is therefore one method rather
+/// than a caller-side sequence: a reject that deleted the submission and then
+/// failed to record the round would destroy the depositor's work and leave
+/// nothing saying it ever existed, which is the failure the round table exists
+/// to prevent. `submissions` is the row every one of them deletes, so its
+/// delete is also the terminal-state guard — see [`Transition`].
+#[async_trait]
+pub trait ReviewRoundRepository: Send + Sync {
+    /// Approve (REQ-4.4): delete the submission, insert the approved record it
+    /// becomes, record the round.
+    ///
+    /// The record's payload is what RDU approved — the submitted draft with
+    /// every accepted substitution applied and every reverted field put back —
+    /// computed by the caller, which is the only layer that knows the form's
+    /// appliers.
+    async fn approve(&self, submission_id: Uuid, record: &ApprovedRecord, round: &ReviewRound) -> Result<Transition>;
+
+    /// Request changes (REQ-4.5): delete the submission, write the draft it
+    /// becomes, record the round.
+    ///
+    /// The draft carries the submitted payload, so the depositor resumes from
+    /// what they sent rather than from whatever the draft held when they sent
+    /// it. What RDU decided per field rides on the round, not the draft.
+    async fn request_changes(
+        &self,
+        submission_id: Uuid,
+        draft: &DraftRecord,
+        round: &ReviewRound,
+    ) -> Result<Transition>;
+
+    /// Reject (REQ-4.6) or withdraw (REQ-4.7): delete the submission and record
+    /// the round, leaving both the draft and the published metadata alone.
+    ///
+    /// One method for two outcomes because the write is identical — they differ
+    /// only in [`ReviewRound::outcome`] and in who is allowed to ask, which is
+    /// the handler's rule.
+    async fn discard(&self, submission_id: Uuid, round: &ReviewRound) -> Result<Transition>;
+
+    /// Every round on one project, **newest first**, so the head of the list is
+    /// the one the depositor's form has to show.
+    async fn list_for_shortcode(&self, shortcode: &str) -> Result<Vec<ReviewRound>>;
+}
+
 /// Every port at once, so one handle can serve all of them.
 ///
-/// The seven traits above are the units of dependency — a function that only
+/// The eight traits above are the units of dependency — a function that only
 /// looks up accounts should say `&dyn UserRepository` and mean it. This is for
 /// the callers that cannot, because Rust has no way to spell a trait object over
 /// several traits at once: `AppState`, which every handler shares and which
-/// therefore needs all seven, and the few functions that genuinely need more than
+/// therefore needs all eight, and the few functions that genuinely need more than
 /// one port (the session lookup reads a session *and* its account).
 ///
-/// The blanket impl is what keeps this free: anything implementing the seven
+/// The blanket impl is what keeps this free: anything implementing the eight
 /// ports is a `Repositories` without saying so, so neither the SQLite
 /// implementation nor a test fake ever writes `impl Repositories`.
 ///
@@ -379,6 +441,7 @@ pub trait Repositories:
     + DraftRepository
     + SubmissionRepository
     + ApprovedRecordRepository
+    + ReviewRoundRepository
 {
 }
 
@@ -390,5 +453,6 @@ impl<T> Repositories for T where
         + DraftRepository
         + SubmissionRepository
         + ApprovedRecordRepository
+        + ReviewRoundRepository
 {
 }

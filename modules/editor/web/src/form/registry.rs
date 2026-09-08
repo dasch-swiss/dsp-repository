@@ -586,6 +586,17 @@ pub fn section(id: &str) -> Option<&'static Section> {
     SECTIONS.iter().find(|section| section.id == id)
 }
 
+/// The section a field is shown in, or `None` for a field no section lists.
+///
+/// The form is sectioned and submit validation is whole-project, so an error
+/// can name a field the reader is not currently looking at. Without this the
+/// refusal says "the fields below say what needs changing" and nothing below
+/// says anything — a dead end.
+#[must_use]
+pub fn section_of(field_id: &str) -> Option<&'static Section> {
+    SECTIONS.iter().find(|section| section.fields.contains(&field_id))
+}
+
 /// The sections this audience sees, in rail order.
 pub fn sections_for(audience: Audience) -> impl Iterator<Item = &'static Section> {
     SECTIONS

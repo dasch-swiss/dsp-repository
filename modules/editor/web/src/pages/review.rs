@@ -61,6 +61,7 @@ use serde_json::Value;
 
 use crate::form::registry::Field;
 use crate::form::widgets::{control, value_markup};
+use crate::form::INTENT;
 
 /// The id the enhanced path's patch targets, and the anchor a save returns to.
 pub const REGION_ID: &str = "review-surface";
@@ -68,9 +69,6 @@ pub const REGION_ID: &str = "review-surface";
 /// The name every decision control on the diff form posts under, before the
 /// field id. Stated once, because the renderer and the decoder both spell it.
 pub const DECISION_PREFIX: &str = "decision";
-
-/// The name every control that says *what a POST is for* posts under.
-pub const INTENT: &str = "intent";
 
 /// Store the decisions and substitutions the body carries.
 pub const SAVE: &str = "save";
@@ -80,6 +78,28 @@ pub const ACCEPT_ALL: &str = "accept-all";
 
 /// Take the submission over, without deciding anything.
 pub const CLAIM: &str = "claim";
+
+/// Accept the submission: it becomes an approved record on its way to a pull
+/// request (REQ-4.4).
+pub const APPROVE: &str = "approve";
+
+/// Return the submission to the depositor as a draft, with the note (REQ-4.5).
+pub const REQUEST_CHANGES: &str = "request-changes";
+
+/// Discard the submission, leaving published metadata unchanged (REQ-4.6).
+pub const REJECT: &str = "reject";
+
+/// The name the reviewer's note posts under.
+pub const NOTE: &str = "note";
+
+/// The pair a confirmation's own submit adds, which is how the second post of
+/// a terminating action is told from the first.
+///
+/// A hidden input inside the prompt rather than a different intent value: the
+/// intent names *what* is being done and stays the same across both posts, so
+/// the two-step shape does not double the verb list — and a body that names an
+/// intent without this gets the prompt, never the write.
+pub const CONFIRMED: &str = "confirmed";
 
 // --- The queue ------------------------------------------------------------
 
@@ -335,6 +355,21 @@ pub enum Notice<'a> {
     Refused(&'a str),
 }
 
+/// A finished review round, as the surface confirms it.
+///
+/// Its own type rather than three more [`Notice`] variants, because a finished
+/// round has no diff left to render beside it — the submission is gone. The
+/// page it produces is a confirmation and a way back to the queue.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Finished {
+    /// REQ-4.4: an `approved_records` row now holds what was approved.
+    Approved,
+    /// REQ-4.5: the project is back with the depositor.
+    ChangesRequested,
+    /// REQ-4.6: discarded, published metadata unchanged.
+    Rejected,
+}
+
 /// One field, as the diff renders it.
 pub struct ReviewRow<'a> {
     /// The project member name. The key for the decision control, the
@@ -392,6 +427,15 @@ pub struct ReviewView<'a> {
     pub rows: &'a [ReviewRow<'a>],
     pub filter: Filter,
     pub notice: Option<Notice<'a>>,
+    /// The note as it stands, so a refused terminating action does not throw
+    /// away what the reviewer typed.
+    pub note: &'a str,
+    /// Which terminating control, if any, is asking for confirmation.
+    ///
+    /// Approve, request-changes and reject are all irreversible from this
+    /// surface — the submission row is gone either way — so each asks once. The
+    /// prompt is where the note becomes required for the two that carry one.
+    pub confirming: Option<&'a str>,
 }
 
 impl ReviewView<'_> {
@@ -401,6 +445,16 @@ impl ReviewView<'_> {
 
     fn changed(&self) -> usize {
         self.rows.iter().filter(|row| row.changed).count()
+    }
+
+    /// Changed rows nobody has decided yet.
+    ///
+    /// Approve is refused while this is non-zero: taking an undecided row
+    /// ships bytes nobody looked at, which is what a field-by-field surface
+    /// exists to prevent. "Accept all remaining" makes clearing it one click,
+    /// so the refusal is never a dead end.
+    fn undecided(&self) -> usize {
+        self.rows.iter().filter(|row| row.changed && row.decision.is_none()).count()
     }
 
     fn decided(&self, decision: Decision) -> usize {
@@ -641,7 +695,7 @@ fn diff_form(view: &ReviewView<'_>) -> Markup {
             }
             @for row in &rows { (diff_row(view, row)) }
             @if view.changed() > 0 {
-                div class="flex items-center gap-4 mt-2" {
+                div class="flex flex-wrap items-center gap-4 mt-2" {
                     ({
                         button("Save review decisions")
                             .variant(ButtonVariant::Primary)
@@ -653,6 +707,194 @@ fn diff_form(view: &ReviewView<'_>) -> Markup {
                             .name_value(INTENT, ACCEPT_ALL)
                     })
                 }
+            }
+            (finish(view))
+        }
+    }
+}
+
+/// The three controls that end the review round, and the note they carry.
+///
+/// Inside the diff form, not beside it. The note and every recorded decision
+/// have to arrive with the action: a separate form would post neither, so
+/// approving would ship the decisions as they were last *saved* rather than as
+/// they stand on screen — a difference nothing on the page would explain.
+///
+/// Each asks once before writing. All three are irreversible from here: the
+/// submission row is gone whichever is chosen, and only approve leaves a record
+/// anywhere else.
+fn finish(view: &ReviewView<'_>) -> Markup {
+    html! {
+        div class="mt-6 rounded border border-neutral-300 bg-white p-4 flex flex-col gap-4" {
+            h3 class="font-display text-lg" { "Finish this review" }
+            @match view.confirming {
+                Some(APPROVE) => (confirm_approve(view))
+                Some(REQUEST_CHANGES) => (confirm_note(view, REQUEST_CHANGES))
+                Some(REJECT) => (confirm_note(view, REJECT))
+                _ => (finish_choices(view))
+            }
+        }
+    }
+}
+
+/// The three verbs, each posting its own confirmation step.
+fn finish_choices(view: &ReviewView<'_>) -> Markup {
+    let undecided = view.undecided();
+    html! {
+        @if undecided > 0 {
+            // Said before the control rather than only on the refusal: a
+            // reviewer who knows why approve will refuse can clear it in one
+            // click instead of discovering it by being turned away.
+            p class="text-sm text-neutral-600" {
+                strong { (undecided) }
+                (if undecided == 1 { " change has" } else { " changes have" })
+                " no decision yet. Approving needs every change decided — "
+                strong { "Accept all remaining" }
+                " does the rest."
+            }
+        }
+        div class="flex flex-wrap items-center gap-4" {
+            ({
+                button("Approve")
+                    .variant(ButtonVariant::Primary)
+                    .name_value(INTENT, APPROVE)
+            })
+            ({
+                button("Request changes")
+                    .variant(ButtonVariant::Secondary)
+                    .name_value(INTENT, REQUEST_CHANGES)
+            })
+            // `Outline` and not a destructive variant, which Mosaic does not
+            // have: adding one is its own change, with a showcase and a CSS
+            // class. What actually guards the action is the confirmation step,
+            // the prose naming what is lost, and the "Yes, reject" label —
+            // colour is never the only signal here, for the reason
+            // `Obligation::label` gives.
+            ({
+                button("Reject")
+                    .variant(ButtonVariant::Outline)
+                    .name_value(INTENT, REJECT)
+            })
+        }
+    }
+}
+
+/// Approve's confirmation. No note: an approval needs no explanation, and the
+/// depositor is shown what changed rather than told about it.
+fn confirm_approve(view: &ReviewView<'_>) -> Markup {
+    let substituted = view.rows.iter().filter(|row| row.substitute.is_some()).count();
+    html! {
+        p {
+            "Approving records this project for a pull request. The values below become what is committed, and \
+             this submission leaves RDU's queue."
+        }
+        @if substituted > 0 {
+            p class="text-sm text-neutral-600" {
+                strong { (substituted) }
+                (if substituted == 1 { " field carries" } else { " fields carry" })
+                " a value you put in place of the depositor's. They are shown it on their own form — there is no \
+                 second approver, so nothing else would."
+            }
+        }
+        (confirm_buttons("Yes, approve", APPROVE))
+    }
+}
+
+/// Request-changes' and reject's confirmation, with the note both require.
+///
+/// `required` on the control and enforced again on the server. For reject it is
+/// the whole rejection signal: REQ-4.6 discards the submission and
+/// notifications are out of scope, so without a note the depositor's work
+/// vanishes with nothing saying why.
+fn confirm_note(view: &ReviewView<'_>, intent: &str) -> Markup {
+    let (heading, label, action) = if intent == REJECT {
+        (
+            "Rejecting discards this submission. The published metadata is unchanged, and the depositor's draft is              kept — but their submission is gone, so this note is the only thing that will tell them why.",
+            "Why this is being rejected",
+            "Yes, reject",
+        )
+    } else {
+        (
+            "Requesting changes returns this project to the depositor as a draft. Fields you accepted stay fixed              until they submit again; everything else is theirs to edit.",
+            "What the depositor needs to change",
+            "Yes, request changes",
+        )
+    };
+    html! {
+        p { (heading) }
+        div class="field" {
+            label class="field-label" for=(NOTE) { (label) }
+            textarea
+                class="field-input field-textarea"
+                id=(NOTE)
+                name=(NOTE)
+                rows="4"
+                required
+                aria-describedby="note-hint"
+            { (view.note) }
+            p class="field-hint" id="note-hint" {
+                "The depositor reads this on their own form. It is required."
+            }
+        }
+        (confirm_buttons(action, intent))
+    }
+}
+
+/// A confirmation's two buttons.
+///
+/// "Not now" carries no intent at all, so it falls through to a plain save —
+/// which re-renders this surface with the decisions intact and the prompt gone.
+/// A verb of its own would be one more that could write.
+///
+/// It needs [`ButtonType::Submit`] said explicitly: the builder defaults to
+/// `type="button"`, and only `name_value` promotes it — which is exactly what
+/// this button must not do. Left at the default it renders inside the form and
+/// does nothing at all.
+fn confirm_buttons(label: &str, intent: &str) -> Markup {
+    html! {
+        input type="hidden" name=(CONFIRMED) value="1";
+        div class="flex flex-wrap items-center gap-4" {
+            (button(label).variant(ButtonVariant::Primary).name_value(INTENT, intent))
+            ({
+                button("Not now")
+                    .variant(ButtonVariant::Secondary)
+                    .button_type(ButtonType::Submit)
+            })
+        }
+    }
+}
+
+/// What the surface renders once the round is over: there is no submission
+/// left to diff, so this is a confirmation and the way back to the queue.
+#[must_use]
+pub fn finished(project: Option<&str>, shortcode: &str, outcome: Finished) -> Markup {
+    let (title, body) = match outcome {
+        Finished::Approved => (
+            "Approved",
+            "This project is recorded for a pull request and has left the review queue. The depositor sees what \
+             was approved, including anything you put in place of their values, on their own form.",
+        ),
+        Finished::ChangesRequested => (
+            "Returned to the depositor",
+            "The project is a draft again and the depositor can edit it. Your note is on their form, and the \
+             fields you accepted are fixed until they submit again.",
+        ),
+        Finished::Rejected => (
+            "Rejected",
+            "The submission is discarded and the published metadata is unchanged. The depositor's draft is kept, \
+             and your note tells them why on their own form.",
+        ),
+    };
+    html! {
+        div class="max-w-5xl py-8" {
+            h1 class="font-display text-2xl mb-1" { (title) }
+            p class="font-mono text-sm text-gray-600 mb-4" {
+                @if let Some(project) = project { (project) " · " }
+                (shortcode)
+            }
+            p class="mb-4" { (body) }
+            p {
+                a href="/review" class="underline" { "Back to the review queue" }
             }
         }
     }
@@ -804,28 +1046,6 @@ fn decision_control(view: &ReviewView<'_>, row: &ReviewRow<'_>) -> Markup {
     }
 }
 
-/// The reviewer's note, as the depositor's form shows it.
-///
-/// Here rather than in [`section`](super::section) because it belongs to the
-/// review round: the note is written by request-changes and read on the form,
-/// and putting both in the module that owns the review vocabulary keeps the
-/// wording in one place.
-#[must_use]
-pub fn reviewer_note(note: &str) -> Markup {
-    html! {
-        ({
-            alert(
-                    html! {
-                        p class = "whitespace-pre-line" { (note) }
-                    },
-                )
-                .variant(AlertVariant::Info)
-                .title("RDU asked for changes")
-                .class("mb-4")
-        })
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -906,6 +1126,8 @@ mod tests {
             rows,
             filter: Filter::Changed,
             notice: None,
+            note: "",
+            confirming: None,
         }
     }
 
@@ -1161,15 +1383,6 @@ mod tests {
         let out = region(&view).into_string();
         assert!(out.contains("alert-warning"), "{out}");
         assert!(!out.contains(r#"role="alert""#), "{out}");
-    }
-
-    #[test]
-    fn the_reviewer_note_names_what_it_is() {
-        // The note has no other home, and a bare paragraph on the form would
-        // read as one more hint.
-        let out = reviewer_note("Please add a German description.").into_string();
-        assert!(out.contains("RDU asked for changes"), "{out}");
-        assert!(out.contains("Please add a German description."), "{out}");
     }
 
     #[test]

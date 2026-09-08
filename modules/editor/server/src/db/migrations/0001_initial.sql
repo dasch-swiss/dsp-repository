@@ -90,13 +90,6 @@ CREATE TABLE drafts (
     -- SET NULL, not CASCADE: removing an account must not destroy the project's
     -- work. "Last editor" then reads as unknown rather than dangling.
     updated_by TEXT REFERENCES users (id) ON DELETE SET NULL,
-    -- The note RDU leaves when it returns the project to the depositor.
-    --
-    -- On the draft rather than on the submission, because request-changes turns
-    -- the submission *into* a draft: `submissions.reviewer_note` is deleted with
-    -- its row at exactly the moment the depositor needs to read it, so a note
-    -- kept only there could never reach the person it is addressed to.
-    reviewer_note TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 ) STRICT;
@@ -140,6 +133,58 @@ CREATE TABLE submissions (
 CREATE INDEX submissions_submitted_at ON submissions (submitted_at);
 CREATE INDEX submissions_submitted_by ON submissions (submitted_by);
 CREATE INDEX submissions_reviewed_by ON submissions (reviewed_by);
+
+-- Finished review rounds: what was decided about a submission, by whom, and
+-- what the depositor has to be told (REQ-4.4 to REQ-4.7).
+--
+-- Every outcome deletes the `submissions` row, so this is the only thing left
+-- saying what happened. REQ-2.1 fixes the state list at five and has no
+-- Rejected, so a terminated round cannot be a submission state without adding a
+-- sixth.
+--
+-- Four things read it, and each would otherwise want a column of its own:
+-- a rejection being visible at all (REQ-4.6 discards and notifications are out
+-- of scope); a returned draft being distinguishable from one never submitted;
+-- the per-field accepted state surviving the return (REQ-4.5), which is what
+-- makes locking an accepted field possible; and the depositor seeing what RDU
+-- substituted for their value before approving. The last two read
+-- `review_state`.
+--
+-- Append-only: a row is written by the transition that ends the round and never
+-- updated, so the rows for one project are its review history. Repeated rounds
+-- leave a trail rather than overwriting one field.
+CREATE TABLE review_rounds (
+    id            TEXT NOT NULL PRIMARY KEY,
+    shortcode     TEXT NOT NULL,
+    -- The submission this round ended. Not a foreign key: that row is deleted
+    -- by the same transaction, so a reference would either fail or have to be
+    -- nulled, and this is how two rounds recorded in the same second are told
+    -- apart.
+    submission_id TEXT NOT NULL,
+    -- `withdrawn` is the depositor's own discard (REQ-4.7). It is a round like
+    -- the others because it answers the same question — what became of the
+    -- submission — and answering it from two places would leave the
+    -- depositor's own action the one with no trace.
+    outcome       TEXT NOT NULL CHECK (outcome IN ('approved', 'changes_requested', 'rejected', 'withdrawn')),
+    -- What the depositor is told. Null is allowed for every outcome: requiring
+    -- one is the handler's rule, since a withdrawal has nobody to address.
+    note          TEXT,
+    -- The `submissions.review_state` snapshot as the round ended, or null where
+    -- nothing was decided. A snapshot and not a reference, for the reason
+    -- `submission_id` is not a foreign key: nothing else can answer which
+    -- fields were accepted or what was put in place of the depositor's values.
+    review_state  TEXT,
+    -- SET NULL, not CASCADE, for the reason `drafts.updated_by` is: removing an
+    -- account must not destroy the record of what was decided.
+    actor         TEXT REFERENCES users (id) ON DELETE SET NULL,
+    at            TEXT NOT NULL
+) STRICT;
+
+-- The depositor's form reads the newest round for one project, so this is the
+-- query the index exists for. `at` descending is served by an ascending index
+-- read backwards, so no second index is needed.
+CREATE INDEX review_rounds_shortcode_at ON review_rounds (shortcode, at);
+CREATE INDEX review_rounds_actor ON review_rounds (actor);
 
 CREATE TABLE approved_records (
     id           TEXT NOT NULL PRIMARY KEY,

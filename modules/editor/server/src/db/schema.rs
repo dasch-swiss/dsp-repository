@@ -99,6 +99,7 @@ mod tests {
         "drafts",
         "login_codes",
         "mail_sends",
+        "review_rounds",
         "sessions",
         "submissions",
         "user_shortcodes",

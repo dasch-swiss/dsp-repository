@@ -18,16 +18,43 @@
 //!   saving would clear it. Datastar gates its form path on the same flag.
 
 use editor_core::draft::ProjectDraft;
+use editor_core::records::ReviewOutcome;
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
-use mosaic_tiles::button::{button, ButtonType};
+use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
+use mosaic_tiles::link::link;
+use serde_json::Value;
 
 use crate::form::obligation::{section_progress, SectionProgress};
 use crate::form::registry::{sections_for, Audience, Section};
 use crate::form::widgets::{field_row, Mode};
+use crate::form::INTENT;
 
 /// The id the enhanced path's patch targets. Also the anchor a save returns to.
 pub const REGION_ID: &str = "project-section";
+
+/// Store the draft, changing nothing about the review cycle (REQ-1.10).
+///
+/// Also what an unknown intent falls back to. A body naming a verb this build
+/// does not know must not submit or withdraw by typo: those two are not
+/// undoable by the depositor, and saving is.
+pub const SAVE: &str = "save";
+
+/// Validate the draft and record it as the project's pending submission
+/// (REQ-1.12).
+pub const SUBMIT: &str = "submit";
+
+/// Take a pending submission back, leaving the draft (REQ-4.7).
+pub const WITHDRAW: &str = "withdraw";
+
+/// Show the withdrawal confirmation, which posts [`WITHDRAW`].
+///
+/// Two steps rather than one, because a withdrawal cannot be undone by the
+/// depositor — the submission's place in the queue and whatever a reviewer has
+/// already recorded on it both go. It shares this URL rather than taking one of
+/// its own, for the reason every other write here does: a refused post
+/// re-renders somewhere that still answers `GET`.
+pub const WITHDRAW_CONFIRM: &str = "withdraw-confirm";
 
 /// Why the form is read-only.
 ///
@@ -66,14 +93,81 @@ impl Locked {
     }
 }
 
+/// The latest finished review round, as the depositor's form shows it.
+///
+/// Everything here is about *communicating* the round. The one thing the round
+/// also governs mechanically — which fields are fixed — is
+/// [`SectionView::accepted_fields`], separately, because the applier skip that
+/// enforces it is not a rendering concern.
+pub struct RoundSummary<'a> {
+    pub outcome: ReviewOutcome,
+    /// What RDU wrote. Required for a rejection and a request-changes, absent
+    /// for an approval and a withdrawal.
+    pub note: Option<&'a str>,
+    /// Already formatted; the server owns the format.
+    pub at: &'a str,
+    /// Each field RDU put its own value in place of, with that value rendered.
+    ///
+    /// The other half of the reason this surface exists. REQ-4.3 lets a
+    /// reviewer edit before accepting and REQ-4.4 waives the second approver,
+    /// so a substituted value is seen by nobody unless the depositor is shown
+    /// it here.
+    pub substitutions: &'a [(String, Value)],
+}
+
+impl RoundSummary<'_> {
+    /// The heading, and what it means for the depositor now.
+    fn wording(&self) -> (&'static str, &'static str) {
+        match self.outcome {
+            ReviewOutcome::ChangesRequested => (
+                "RDU asked for changes",
+                "This project is a draft again. Fields RDU accepted are fixed until you submit it again; \
+                 everything else is yours to edit.",
+            ),
+            // REQ-4.6 discards the submission and notifications are out of
+            // scope, so without this the work vanishes with nothing saying
+            // why. The draft is kept (REQ-1.13), which is the other half of
+            // what the depositor needs to know.
+            ReviewOutcome::Rejected => (
+                "RDU rejected this submission",
+                "The submission was discarded and the published project is unchanged. Your draft is still here, \
+                 so you can change it and submit again.",
+            ),
+            ReviewOutcome::Approved => (
+                "RDU approved this project",
+                "It is recorded for a pull request against the repository, and the published page updates once \
+                 that is merged. Editing again starts the next round.",
+            ),
+            ReviewOutcome::Withdrawn => (
+                "The submission was taken back",
+                "It is no longer in RDU's queue. Your draft is unchanged, so you can keep editing and submit \
+                 again.",
+            ),
+        }
+    }
+
+    fn variant(&self) -> AlertVariant {
+        match self.outcome {
+            ReviewOutcome::Approved => AlertVariant::Success,
+            ReviewOutcome::Rejected => AlertVariant::Warning,
+            ReviewOutcome::ChangesRequested | ReviewOutcome::Withdrawn => AlertVariant::Info,
+        }
+    }
+}
+
 /// What the `POST` that led to this rendering did.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Notice<'a> {
     /// The draft was stored.
     Saved,
-    /// The save was refused, and why. Not a field-level error — those arrive
-    /// with submit validation; this is the whole-form kind: a live submission,
-    /// or storage that would not take the write.
+    /// The draft became the project's pending submission.
+    Submitted,
+    /// A pending submission was taken back, and the form is editable again.
+    Withdrawn,
+    /// The write was refused, and why. The whole-form kind: a live submission,
+    /// nothing to submit, or storage that would not take the write. Field-level
+    /// errors are [`SectionView::errors`], which is a different thing — they
+    /// name a control the reader can go and fix.
     Refused(&'a str),
 }
 
@@ -95,14 +189,37 @@ pub struct SectionView<'a> {
     pub draft: &'a ProjectDraft,
     /// `None` while the project is editable.
     pub locked: Option<Locked>,
-    /// What RDU asked for when it returned this project to the depositor, or
-    /// `None` for a draft nobody has reviewed.
+    /// Field ids RDU accepted in the round being answered, which are therefore
+    /// fixed until it is submitted again (REQ-4.5).
     ///
-    /// On the form rather than on a page of its own: the requirement retains
-    /// the note and names nowhere to read it, and the place a depositor acts on
-    /// it is the form they act on it *in*. It rides inside the region, so it is
-    /// still there after a save patches it.
-    pub reviewer_note: Option<&'a str>,
+    /// Ids rather than a per-field flag on the registry, because the set is
+    /// per-round data and the registry is a constant. Empty whenever the latest
+    /// round did not return the project — an approval's decisions are not a
+    /// lock on work that has left the depositor's hands.
+    pub accepted_fields: &'a [String],
+    /// Whether this reader may take the pending submission back (REQ-4.7), and
+    /// so whether the withdrawal control is offered at all.
+    pub may_withdraw: bool,
+    /// Set while the withdrawal confirmation is showing.
+    pub confirming_withdrawal: bool,
+    /// Per-field submit errors, keyed by the path the field posts under
+    /// (`temporalCoverage[0]`, not `temporalCoverage`), in field order.
+    ///
+    /// Separate from [`Notice::Refused`]: these name a control the reader can
+    /// go and fix, and a refusal names the form as a whole.
+    pub errors: &'a [(String, String)],
+    /// The latest finished review round, or `None` for a project nobody has
+    /// reviewed.
+    ///
+    /// On the form rather than on a page of its own: REQ-4.5 retains the note
+    /// and names nowhere to read it, and the place a depositor acts on it is
+    /// the form they act on it *in*. It rides inside the region, so a save
+    /// leaves it in place.
+    ///
+    /// It shows until the depositor submits again, which starts the next
+    /// cycle. That is also what makes a returned draft distinguishable from one
+    /// never submitted, without adding a state beyond REQ-2.1's five.
+    pub round: Option<RoundSummary<'a>>,
     /// When the stored draft was last written, formatted. `None` when the form
     /// is showing published metadata that nobody has saved over yet (REQ-1.1).
     pub saved_at: Option<&'a str>,
@@ -110,12 +227,55 @@ pub struct SectionView<'a> {
 }
 
 impl SectionView<'_> {
-    fn mode(&self) -> Mode {
+    /// How one field renders. Three answers, not two: a whole-form lock and an
+    /// accepted field are both read-only and lift on different events, so the
+    /// reader has to be told which applies.
+    fn mode_of(&self, field: &'static str) -> Mode {
         if self.locked.is_some() {
             Mode::ReadOnly
+        } else if self.accepted_fields.iter().any(|accepted| accepted == field) {
+            Mode::Accepted
         } else {
             Mode::Editable
         }
+    }
+
+    /// Errors against one field, matched on the path a control posts under —
+    /// so `temporalCoverage[0]` belongs to `temporalCoverage` and marks the
+    /// whole field, which is the granularity this form renders at.
+    fn errors_for(&self, field: &str) -> Vec<&str> {
+        self.errors
+            .iter()
+            .filter(|(path, _)| Self::names(path, field))
+            .map(|(_, message)| message.as_str())
+            .collect()
+    }
+
+    /// Whether an error path belongs to a field.
+    fn names(path: &str, field: &str) -> bool {
+        path == field || path.strip_prefix(field).is_some_and(|rest| rest.starts_with('['))
+    }
+
+    /// Errors naming a field this section does not show, with the section it
+    /// is in.
+    ///
+    /// The form is sectioned and submit validation is whole-project, so a
+    /// refusal is routinely about a field the reader is not looking at.
+    /// Rendered per field only, the message would be nowhere on the page and
+    /// the refusal would read as a dead end.
+    fn errors_elsewhere(&self) -> Vec<(&'static Section, &str, &str)> {
+        let shown: Vec<&str> = self.section.fields_for(self.audience).map(|field| field.id).collect();
+        self.errors
+            .iter()
+            .filter(|(path, _)| !shown.iter().any(|field| Self::names(path, field)))
+            .filter_map(|(path, message)| {
+                // The field id is the path with any `[index]` suffix off.
+                let id = path.split_once('[').map_or(path.as_str(), |(id, _)| id);
+                let section = crate::form::registry::section_of(id)?;
+                let label = crate::form::registry::field(id).map_or(id, |field| field.label);
+                Some((section, label, message.as_str()))
+            })
+            .collect()
     }
 
     fn action(&self) -> String {
@@ -254,11 +414,39 @@ fn status(view: &SectionView<'_>) -> Markup {
                             .class("mb-4")
                     })
                 }
+                Some(Notice::Submitted) => {
+                    ({
+                        alert(
+                                "Submitted for review. The form is read-only until RDU returns the project to \
+                                 you, and your draft is kept either way.",
+                            )
+                            .variant(AlertVariant::Success)
+                            .title("Sent to RDU")
+                            .class("mb-4")
+                    })
+                }
+                Some(Notice::Withdrawn) => {
+                    ({
+                        alert(
+                                "The submission has been taken back and is no longer in RDU's queue. Your draft \
+                                 is unchanged, so you can keep editing and submit again.",
+                            )
+                            .variant(AlertVariant::Success)
+                            .title("Submission withdrawn")
+                            .class("mb-4")
+                    })
+                }
                 Some(Notice::Refused(message)) => {
                     (alert(message).variant(AlertVariant::Warning).class("mb-4"))
                 }
                 None => {}
             }
+            // Inside the live region, beside the refusal it details rather than
+            // above the form heading: the refusal is what gets announced, and
+            // it is about fields the reader cannot see, so the list of them has
+            // to announce with it. Outside, the announcement said what needed
+            // changing and the detail was silent.
+            (errors_elsewhere(view))
         }
     }
 }
@@ -267,7 +455,7 @@ fn status(view: &SectionView<'_>) -> Markup {
 fn form(view: &SectionView<'_>) -> Markup {
     let action = view.action();
     html! {
-        @if let Some(note) = view.reviewer_note { (crate::pages::review::reviewer_note(note)) }
+        @if let Some(round) = view.round.as_ref() { (review_round(round)) }
         @if let Some(locked) = view.locked {
             ({
                 alert(locked.message())
@@ -293,17 +481,126 @@ fn form(view: &SectionView<'_>) -> Markup {
                 // No wrapper and no obligation pill here: the pill is inside the
                 // field's own label, which is the only way it reaches a screen
                 // reader now that nothing is `required`. See `widgets::labelled`.
-                (field_row(field, view.draft, view.mode()))
+                (field_row(field, view.draft, view.mode_of(field.id)))
+                @for message in view.errors_for(field.id) {
+                    (alert(message).variant(AlertVariant::Warning).class("mb-4"))
+                }
             }
-            @if view.locked.is_none() {
+            (controls(view))
+        }
+    }
+}
+
+/// The latest review round: what RDU decided, when, its note, and anything RDU
+/// put in place of the depositor's own values.
+fn review_round(round: &RoundSummary<'_>) -> Markup {
+    let (heading, meaning) = round.wording();
+    html! {
+        ({
+            let body = html! {
+                p { (meaning) } p class = "text-sm mt-2" { (round.at) } @ if let
+                Some(note) = round.note { div class = "mt-3" { p class =
+                "text-xs font-bold uppercase tracking-wide" { "What RDU wrote" } p class
+                = "whitespace-pre-line" { (note) } } } @ if ! round.substitutions
+                .is_empty() { div class = "mt-3" { p class =
+                "text-xs font-bold uppercase tracking-wide" {
+                "Values RDU changed before deciding" } ul class =
+                "flex flex-col gap-2 mt-1" { @ for (field, value) in round.substitutions
+                { li { strong { (crate ::form::registry::field(field).map_or(field
+                .as_str(), | f | f.label)) } ": "(crate
+                ::form::widgets::value_markup(Some(value))) } } } } }
+            };
+            alert(body).variant(round.variant()).title(heading).class("mb-4")
+        })
+    }
+}
+
+/// Errors about fields another section shows, each a link to the section that
+/// shows it.
+///
+/// A link and not just a name: the field is one navigation away and the reader
+/// has no other way to know which of six sections holds it.
+fn errors_elsewhere(view: &SectionView<'_>) -> Markup {
+    let elsewhere = view.errors_elsewhere();
+    if elsewhere.is_empty() {
+        return html! {};
+    }
+    html! {
+        ({
+            let body = html! {
+                ul class = "flex flex-col gap-2" { @ for (section, label, message) in &
+                elsewhere { li { a href = { "/projects/"(view.shortcode)
+                "/sections/"(section.id) } class = "underline font-bold" { (label) }
+                " ("(section.title) "): "(message) } } }
+            };
+            alert(body)
+                .variant(AlertVariant::Warning)
+                .title("Fields in other sections need changing")
+                .class("mb-4")
+        })
+    }
+}
+
+/// The write controls, which depend on where the project sits in the cycle.
+///
+/// Every one of them is a named submit on the *same* form, as the review
+/// surface's pair is: a native submit posts the activated button's name and
+/// value, and Datastar 1.0.2's form mode appends them from
+/// `SubmitEvent.submitter`. A second form would have to carry the fields again
+/// to submit them, and `formaction` would be honoured on the plain path and
+/// silently ignored on the enhanced one, where the bundle posts to the URL in
+/// `@post`.
+fn controls(view: &SectionView<'_>) -> Markup {
+    html! {
+        @if view.confirming_withdrawal {
+            div class="rounded border border-neutral-300 bg-white p-4 flex flex-col gap-3" {
+                p {
+                    "Taking the submission back removes it from RDU's queue, along with anything a reviewer has \
+                     already recorded on it. Your draft is kept, so you can keep editing and submit again."
+                }
                 div class="flex items-center gap-4" {
-                    (button("Save draft").button_type(ButtonType::Submit))
-                    @if let Some(saved_at) = view.saved_at {
-                        p class="text-sm text-gray-600" { "Draft last saved " (saved_at) "." }
-                    } @else {
-                        p class="text-sm text-gray-600" {
-                            "Nothing saved yet — this form shows the project's published metadata."
-                        }
+                    ({
+                        button("Yes, take it back")
+                            .button_type(ButtonType::Submit)
+                            .name_value(INTENT, WITHDRAW)
+                    })
+                    // A link, not a button. Backing out has to write nothing,
+                    // and a button with no intent falls through to `save` —
+                    // which this form refuses while a submission is pending,
+                    // so declining a withdrawal would answer "nothing was
+                    // saved", the opposite of the reassurance it is for.
+                    (link("Keep waiting", view.action()))
+                }
+            }
+        } @else if view.locked.is_some() {
+            @if view.may_withdraw {
+                div class="flex items-center gap-4" {
+                    ({
+                        button("Take the submission back")
+                            .variant(ButtonVariant::Secondary)
+                            .button_type(ButtonType::Submit)
+                            .name_value(INTENT, WITHDRAW_CONFIRM)
+                    })
+                }
+            }
+        } @else {
+            div class="flex flex-wrap items-center gap-4" {
+                ({
+                    button("Save draft")
+                        .variant(ButtonVariant::Secondary)
+                        .button_type(ButtonType::Submit)
+                        .name_value(INTENT, SAVE)
+                })
+                ({
+                    button("Submit for review")
+                        .button_type(ButtonType::Submit)
+                        .name_value(INTENT, SUBMIT)
+                })
+                @if let Some(saved_at) = view.saved_at {
+                    p class="text-sm text-gray-600" { "Draft last saved " (saved_at) "." }
+                } @else {
+                    p class="text-sm text-gray-600" {
+                        "Nothing saved yet — this form shows the project's published metadata."
                     }
                 }
             }
@@ -336,7 +633,11 @@ mod tests {
             audience,
             draft,
             locked: None,
-            reviewer_note: None,
+            accepted_fields: &[],
+            may_withdraw: false,
+            confirming_withdrawal: false,
+            errors: &[],
+            round: None,
             saved_at: None,
             notice: None,
         }
@@ -344,6 +645,56 @@ mod tests {
 
     fn overview(draft: &ProjectDraft) -> String {
         page(&view(draft, "overview", Audience::Everyone)).into_string()
+    }
+
+    #[test]
+    fn an_error_about_another_section_announces_with_the_refusal_that_names_it() {
+        // Whole-project submit validation against a sectioned form means the
+        // field at fault is routinely not on this page. The refusal is what
+        // gets announced, so the list of those fields has to be inside the
+        // `aria-live` region with it — rendered above the form heading instead,
+        // the announcement said something needed changing and the detail was
+        // silent.
+        //
+        // Asserted on `status` alone, which is the region: slicing it out of a
+        // whole rendering cannot distinguish "inside" from "just after", since
+        // the alert it holds is itself a `<div>`.
+        let draft = published_draft();
+        let errors = [(
+            "temporalCoverage[0]".to_string(),
+            "cannot be matched to a date range".to_string(),
+        )];
+        let mut view = view(&draft, "overview", Audience::Everyone);
+        view.errors = &errors;
+        view.notice = Some(Notice::Refused("This project cannot be submitted yet."));
+
+        let region = status(&view).into_string();
+        assert!(region.contains(r#"aria-live="polite""#), "{region}");
+        assert!(region.contains("cannot be matched to a date range"), "{region}");
+        // And it names the section that holds the field, as a link.
+        assert!(region.contains("/projects/0801d/sections/dataset"), "{region}");
+        assert!(
+            region.contains("Temporal coverage"),
+            "the field's label, not its member name: {region}"
+        );
+    }
+
+    #[test]
+    fn an_error_about_a_field_on_this_page_is_not_listed_as_elsewhere() {
+        // The two renderings are exclusive: a field with a control on this page
+        // gets its error beside that control, and listing it in the
+        // other-sections block as well would send the reader away from the
+        // input they are looking at.
+        let draft = published_draft();
+        let errors = [("name".to_string(), "must not be empty".to_string())];
+        let mut view = view(&draft, "overview", Audience::Everyone);
+        view.errors = &errors;
+
+        assert!(!status(&view).into_string().contains("must not be empty"));
+        assert!(
+            region(&view).into_string().contains("must not be empty"),
+            "it renders by the control"
+        );
     }
 
     #[test]

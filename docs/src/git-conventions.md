@@ -111,7 +111,9 @@ The same job also **rejects merge commits on the branch**, and `allow-many-commi
 
 **Update a stale branch by rebasing, never by merging `main` into it:**
 
-    git fetch origin && git rebase origin/main && git push --force-with-lease
+    just update-branch
+
+That fetches, rebases onto `origin/main` and force-pushes with a lease, and refuses rather than guessing where a rebase would be wrong — a detached HEAD, `main` itself, a rebase already in progress, or uncommitted changes. It is also the way to repair a branch the plain button has already been pressed on: such a branch *is* up to date, so only the merge commit needs removing, and the recipe still rebases it flat. A conflict stops it and leaves the rebase in progress for you to finish; nothing is pushed. The equivalent by hand is `git fetch origin && git rebase origin/main && git push --force-with-lease`.
 
 In the GitHub UI, use the chevron next to **Update branch** and pick **Update with rebase**. The plain button creates a merge commit, and GitHub offers no repository setting that changes that default or removes the option, so this gate is the only thing that catches it.
 

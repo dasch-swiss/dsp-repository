@@ -407,13 +407,7 @@ fn status(view: &SectionView<'_>) -> Markup {
     html! {
         div class="empty:hidden" aria-live="polite" {
             @match view.notice {
-                Some(Notice::Saved) => {
-                    ({
-                        alert("Draft saved.")
-                            .variant(AlertVariant::Success)
-                            .class("mb-4")
-                    })
-                }
+                Some(Notice::Saved) => { (alert("Draft saved.").variant(AlertVariant::Success)) }
                 Some(Notice::Submitted) => {
                     ({
                         alert(
@@ -422,7 +416,6 @@ fn status(view: &SectionView<'_>) -> Markup {
                             )
                             .variant(AlertVariant::Success)
                             .title("Sent to RDU")
-                            .class("mb-4")
                     })
                 }
                 Some(Notice::Withdrawn) => {
@@ -433,12 +426,9 @@ fn status(view: &SectionView<'_>) -> Markup {
                             )
                             .variant(AlertVariant::Success)
                             .title("Submission withdrawn")
-                            .class("mb-4")
                     })
                 }
-                Some(Notice::Refused(message)) => {
-                    (alert(message).variant(AlertVariant::Warning).class("mb-4"))
-                }
+                Some(Notice::Refused(message)) => { (alert(message).variant(AlertVariant::Warning)) }
                 None => {}
             }
             // Inside the live region, beside the refusal it details rather than
@@ -461,7 +451,6 @@ fn form(view: &SectionView<'_>) -> Markup {
                 alert(locked.message())
                     .variant(AlertVariant::Warning)
                     .title(locked.heading())
-                    .class("mb-4")
             })
         }
         h2 class="font-display text-xl mb-4" { (view.section.title) }
@@ -483,7 +472,7 @@ fn form(view: &SectionView<'_>) -> Markup {
                 // reader now that nothing is `required`. See `widgets::labelled`.
                 (field_row(field, view.draft, view.mode_of(field.id)))
                 @for message in view.errors_for(field.id) {
-                    (alert(message).variant(AlertVariant::Warning).class("mb-4"))
+                    (alert(message).variant(AlertVariant::Warning))
                 }
             }
             (controls(view))
@@ -510,7 +499,7 @@ fn review_round(round: &RoundSummary<'_>) -> Markup {
                 .as_str(), | f | f.label)) } ": "(crate
                 ::form::widgets::value_markup(Some(value))) } } } } }
             };
-            alert(body).variant(round.variant()).title(heading).class("mb-4")
+            alert(body).variant(round.variant()).title(heading)
         })
     }
 }
@@ -536,7 +525,6 @@ fn errors_elsewhere(view: &SectionView<'_>) -> Markup {
             alert(body)
                 .variant(AlertVariant::Warning)
                 .title("Fields in other sections need changing")
-                .class("mb-4")
         })
     }
 }

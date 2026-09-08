@@ -540,22 +540,15 @@ fn status(view: &ReviewView<'_>) -> Markup {
         div class="empty:hidden" aria-live="polite" {
             @match view.notice {
                 Some(Notice::Saved) => {
-                    ({
-                        alert("Review decisions saved.")
-                            .variant(AlertVariant::Success)
-                            .class("mb-4")
-                    })
+                    (alert("Review decisions saved.").variant(AlertVariant::Success))
                 }
                 Some(Notice::Claimed) => {
                     ({
                         alert("You are now reviewing this submission.")
                             .variant(AlertVariant::Success)
-                            .class("mb-4")
                     })
                 }
-                Some(Notice::Refused(message)) => {
-                    (alert(message).variant(AlertVariant::Warning).class("mb-4"))
-                }
+                Some(Notice::Refused(message)) => { (alert(message).variant(AlertVariant::Warning)) }
                 None => {}
             }
         }
@@ -583,7 +576,6 @@ fn unpublished_banner(view: &ReviewView<'_>) -> Markup {
                 )
                 .variant(AlertVariant::Info)
                 .title("Nothing published to compare against")
-                .class("mb-4")
         })
     }
 }
@@ -628,7 +620,6 @@ fn claim_banner(view: &ReviewView<'_>) -> Markup {
             alert(body)
                 .variant(AlertVariant::Warning)
                 .title("Somebody else is reviewing this")
-                .class("mb-4")
         })
     }
 }

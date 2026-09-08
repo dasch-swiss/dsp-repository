@@ -5,8 +5,16 @@
    * 11:1, and the `link` tile's own text-primary-600 clears AA (4.5:1) on every
    * one of these surfaces, so a link inside an alert needs no variant of its own.
    */
+  /*
+   * `mb-4` is part of the tile, not a per-call-site class. Every one of the
+   * seventeen production call sites set a bottom margin and sixteen chose this
+   * value, so it was the default written out seventeen times rather than a
+   * one-off. A caller that needs a different one appends `!mb-N` — the plain
+   * form would collide, since two same-property utilities are resolved by CSS
+   * source order and not by the order they appear in the attribute.
+   */
   .alert {
-    @apply rounded border px-3 py-2;
+    @apply mb-4 rounded border px-3 py-2;
   }
 
   .alert-title {

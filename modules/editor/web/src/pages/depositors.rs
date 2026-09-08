@@ -202,7 +202,7 @@ fn depositor_form(action: &str, submit_label: &str, fields: &DepositorFields<'_>
         .value(fields.shortcodes)
         .hint(shortcodes_hint);
     html! {
-        @if let Some(message) = error { (alert(message).variant(AlertVariant::Danger).class("mb-4")) }
+        @if let Some(message) = error { (alert(message).variant(AlertVariant::Danger)) }
         form method="post" action=(action) class="flex flex-col gap-4" {
             (name_field)
             (email_field)
@@ -303,12 +303,7 @@ fn leaves_behind(impact: &RemovalImpact<'_>) -> Markup {
         }
     };
     html! {
-        ({
-            alert(items)
-                .variant(AlertVariant::Warning)
-                .title("What this leaves behind")
-                .class("mb-6")
-        })
+        (alert(items).variant(AlertVariant::Warning).title("What this leaves behind"))
     }
 }
 

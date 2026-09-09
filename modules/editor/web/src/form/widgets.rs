@@ -17,13 +17,20 @@
 //! depositor who cannot find "Keywords" in the section the published page shows
 //! it in would otherwise conclude the form lost it.
 
-use editor_core::draft::ProjectDraft;
-use editor_core::form::Shape;
+use editor_core::agents::Agents;
+use editor_core::draft::{ProjectDraft, UrlSlot};
+use editor_core::form::{ChoiceSet, FormBody, Shape, GRANTS_KIND, REFERENCE_KIND};
 use editor_core::multilingual::{DraftMultilingual, UI_LANGUAGES};
 use maud::{html, Markup};
+use mosaic_tiles::checkbox_group::checkbox_group;
+use mosaic_tiles::radio_group::radio_group;
+use mosaic_tiles::repeatable_list::repeatable_list;
+use mosaic_tiles::select::select;
 use mosaic_tiles::text_field::{text_field, InputType};
 use mosaic_tiles::textarea::textarea;
+use mosaic_tiles::ComponentBuilder;
 use platform_metadata::is_placeholder;
+use platform_metadata::project::CONTRIBUTOR_ROLES;
 use serde_json::Value;
 
 use super::registry::{Field, Obligation};
@@ -68,9 +75,9 @@ pub(crate) const NO_VALUE: &str = "Not set";
 
 /// One field: its label, its obligation, and whichever of the three renderings
 /// applies.
-pub fn field_row(field: &Field, draft: &ProjectDraft, mode: Mode) -> Markup {
+pub fn field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<'_>) -> Markup {
     match (mode, field.shape) {
-        (Mode::Editable, Some(shape)) => control(field, draft, shape),
+        (Mode::Editable, Some(shape)) => control(field, draft, shape, rows),
         (Mode::Accepted, _) => stated(field, draft, Some(ACCEPTED_BY_RDU)),
         // A locked field and a display-only one render the same way, which is
         // the point: neither posts, so neither can be cleared.
@@ -142,8 +149,11 @@ pub(crate) fn value_markup(value: Option<&Value>) -> Markup {
 /// A language map as the form's editing view over it, in UI-tag order.
 ///
 /// Same construction as [`ProjectDraft::multilingual`], for a value already in
-/// hand rather than one looked up by field id.
-pub(crate) fn as_multilingual(value: &Value) -> DraftMultilingual {
+/// hand rather than one looked up by field id — a row of a repeatable field is
+/// exactly that, which is why this is `pub`: `untouched_form_round_trip` builds
+/// the body a row would post and has to read a row the same way the widget
+/// does, or it tests a body no browser would send.
+pub fn as_multilingual(value: &Value) -> DraftMultilingual {
     let contract = serde_json::from_value(value.clone()).unwrap_or_default();
     DraftMultilingual::from_contract(&contract)
 }
@@ -216,7 +226,7 @@ pub(crate) fn language_name(tag: &str) -> &str {
 /// the fallback is not a silent default: it renders the same note an unbuilt
 /// field gets, so a field given a shape without a control here is visible rather
 /// than posting under a name with no way to enter a value.
-pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape) -> Markup {
+pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: Rows<'_>) -> Markup {
     match field.id {
         "name" | "officialName" => text(field, draft, InputType::Text),
         // `type="text"`, not `type="url"`: a draft may hold a value that does
@@ -224,7 +234,27 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape) -> Mark
         // address would block the save REQ-1.10 asks for — the same reason
         // `text` below never sets `required`.
         "dataManagementPlan" => text(field, draft, InputType::Text),
-        "startDate" | "endDate" => text(field, draft, InputType::Date),
+        "startDate" | "endDate" | "accessRights.embargoDate" => text(field, draft, InputType::Date),
+        // Two choices, so both are visible at once and picking one is a single
+        // action. A `<select>` for two options hides half the answer behind a
+        // click and reads worse to a screen reader.
+        "status" => radio(field, draft, choices(shape)),
+        // `type="text"`, like `dataManagementPlan` and for the same reason: a draft may hold a value that does not
+        // validate, and a browser refusing to submit a half-typed address would block the save.
+        "url" | "secondaryUrl" => url(field, draft, slot(shape)),
+        "typeOfData" | "dataLanguage" => string_list(field, draft, set(shape)),
+        "keywords" | "alternativeNames" => multilingual_rows(field, draft, rows),
+        "additionalMaterial" | "documentationMaterial" => string_rows(field, draft, rows),
+        "contactPoint" => agent_rows(field, draft, rows),
+        "attributions" => attribution_rows(field, draft, rows),
+        "temporalCoverage" | "disciplines" => text_or_reference_rows(field, draft, rows, reference_types(shape)),
+        "spatialCoverage" => reference_rows(field, draft, rows, reference_types(shape)),
+        "publications" => publication_rows(field, draft, rows),
+        "funding" => funding(field, draft, rows),
+        // Four choices whose labels run to "Open Access with Restrictions", and
+        // exactly one is current. Radios would be four long lines competing
+        // with the fields around them.
+        "accessRights.accessRights" => dropdown(field, draft, choices(shape)),
         "dataPublicationYear" => year(field, draft),
         "shortDescription" => long_text(field, draft, 2, Some(SHORT_DESCRIPTION_MAX)),
         "provenance" | "imageCredit" => long_text(field, draft, 3, None),
@@ -238,6 +268,933 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape) -> Mark
             debug_assert!(false, "{} declares {shape:?} but no control", field.id);
             stated(field, draft, None)
         }
+    }
+}
+
+/// What a repeatable field needs beyond the draft: the body that was posted, and
+/// where its add and remove controls submit to.
+///
+/// A named type rather than two arguments, because both are `Option`-ish and
+/// only repeatable fields read either — a positional pair would let every other
+/// control's call site scramble them silently.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Rows<'a> {
+    /// The posted body, when this render is answering a `POST`.
+    ///
+    /// **This is what keeps a freshly added row alive.** A row with no text in
+    /// any language is never stored — `apply_multilingual_rows` drops it, and it
+    /// must, or a file fills up with empty objects — so an added-but-unfilled
+    /// row exists only in the form. The tile renders a hidden `{field}.row` for
+    /// every row including a blank one, so the body carries its key back and the
+    /// re-render finds it here. Nothing is held server-side between requests.
+    pub posted: Option<&'a FormBody>,
+    /// Base URL for the add and remove controls: `{base}/add` and
+    /// `{base}/{key}/remove`.
+    pub action: &'a str,
+    /// The field one more blank row was just asked for.
+    pub adding: Option<&'a str>,
+    /// The agents an id field may refer to, for resolving an id to a name and
+    /// for the shared suggestion list.
+    ///
+    /// `None` renders the id bare, which is what a deployment with no data
+    /// directory looks like — honest, and it still round-trips.
+    pub agents: Option<&'a Agents>,
+}
+
+/// The keys of the rows to render for `field`, in display order.
+///
+/// From the posted body when there is one, so what a depositor typed and any
+/// blank row they added both survive the round trip. From the stored list
+/// otherwise, keyed **positionally** — a stored list is positional, so `r0` is
+/// its first row, and the key only has to stay stable for the life of one
+/// rendered form: the body carries the keys back in DOM order and the applier
+/// rebuilds the list from that, never from a number.
+fn row_keys(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Vec<String> {
+    let row_name = format!("{}.row", field.id);
+    let mut keys: Vec<String> = match rows.posted {
+        Some(body) if body.has(&row_name) => body.rows(field.id).into_iter().map(str::to_string).collect(),
+        _ => (0..stored_rows(field, draft).len()).map(|n| format!("r{n}")).collect(),
+    };
+    if rows.adding == Some(field.id) {
+        keys.push(next_row_key(&keys));
+    }
+    keys
+}
+
+/// A row key not already in use.
+///
+/// The smallest free `rN` rather than the next after the highest, because keys
+/// arrive from the body and a removed middle row leaves a gap: appending after
+/// the highest would work too, but this keeps the set dense and the accessible
+/// "Remove keyword 2" labels matching what a reader counts on the page.
+fn next_row_key(keys: &[String]) -> String {
+    (0..=keys.len())
+        .map(|n| format!("r{n}"))
+        .find(|candidate| !keys.contains(candidate))
+        .unwrap_or_else(|| format!("r{}", keys.len()))
+}
+
+/// The stored rows of a list-of-maps field.
+fn stored_rows<'a>(field: &Field, draft: &'a ProjectDraft) -> Vec<&'a Value> {
+    draft
+        .get(field.id)
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or(&[])
+        .iter()
+        .collect()
+}
+
+/// One row's language map, from the body when this is a re-render and from the
+/// stored list otherwise.
+///
+/// The two never mix: a posted body is the whole truth about what the form
+/// currently holds, and a stored list is the whole truth about what a fresh
+/// `GET` shows. Reading texts from one and keys from the other is how a
+/// re-render ends up showing a value the depositor did not type.
+fn row_value(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, key: &str, position: usize) -> DraftMultilingual {
+    let row_name = format!("{}.row", field.id);
+    match rows.posted {
+        Some(body) if body.has(&row_name) => {
+            let mut value = DraftMultilingual::new();
+            for (tag, text) in body.entries(&format!("{}.{key}", field.id)) {
+                value.set(&tag.to_ascii_lowercase(), text);
+            }
+            value
+        }
+        _ => stored_rows(field, draft)
+            .get(position)
+            .map(|row| as_multilingual(row))
+            .unwrap_or_default(),
+    }
+}
+
+/// A list of single strings: one text control per row, added and removed by
+/// server round-trip.
+///
+/// Shares every piece of the row protocol with [`multilingual_rows`] — the
+/// hidden `{field}.row` key, the empty marker, the add and remove actions — and
+/// differs only in what a row contains.
+fn string_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
+    let keys = row_keys(field, draft, rows);
+    let stored = stored_rows(field, draft);
+    let action = format!("{}/{}", rows.action, field.id);
+    let noun = row_noun(field);
+    let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
+    for (position, key) in keys.iter().enumerate() {
+        let row_name = format!("{}.row", field.id);
+        let value = match rows.posted {
+            Some(body) if body.has(&row_name) => body.get(&format!("{}.{key}", field.id)).unwrap_or_default(),
+            _ => stored.get(position).and_then(|row| row.as_str()).unwrap_or_default(),
+        };
+        list = list.row(
+            key,
+            html! {
+                ({
+                    text_field(
+                            format!("{}.{key}", field.id),
+                            row_label(ROW_VALUE_LABEL, position),
+                        )
+                        .input_type(InputType::Text)
+                        .value(value)
+                })
+            },
+        );
+    }
+    if let Some(hint) = field.hint {
+        list = list.hint(hint);
+    }
+    html! {
+        (list)
+    }
+}
+
+/// The `id` of the shared suggestion list, referenced by every agent input.
+///
+/// One list per page rather than one per control: it carries every committed agent, and
+/// `attributions` runs to dozens of rows on one project, so a `<select>` per row would re-send the
+/// whole vocabulary per row on every save. The measured sizes are in
+/// `docs/src/editor/project-form.md`.
+pub(crate) const AGENT_LIST_ID: &str = "agent-suggestions";
+
+/// The shared suggestion list, rendered once per page.
+///
+/// Each option's **value is the id**, which is what the input holds and
+/// therefore what round-trips byte-for-byte; the option's text is the name, so
+/// the dropdown reads as a list of people and organisations rather than of
+/// ids. The kind is stated beside the name because two committed organisations
+/// have person-like names.
+pub fn agent_suggestions(agents: &Agents) -> Markup {
+    html! {
+        datalist id=(AGENT_LIST_ID) {
+            @for agent in agents.all() {
+                option value=(agent.id) { (agent.label) " (" (agent.kind.label()) ")" }
+            }
+        }
+    }
+}
+
+/// A list of agent ids as editable rows, each resolved to a name.
+///
+/// The input holds the **id**, not the name. That is what keeps an untouched
+/// save byte-identical: the stored value goes into the control and comes back
+/// out of it unchanged, with no lookup in between that could fail or resolve
+/// differently. The name is rendered beside the control instead, so a reader is
+/// not left looking at `person-001` — and an id that resolves to nobody says so
+/// there, which is the same thing submit refuses.
+fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
+    let keys = row_keys(field, draft, rows);
+    let stored = stored_rows(field, draft);
+    let action = format!("{}/{}", rows.action, field.id);
+    let noun = row_noun(field);
+    let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
+    for (position, key) in keys.iter().enumerate() {
+        let row_name = format!("{}.row", field.id);
+        let id = match rows.posted {
+            Some(body) if body.has(&row_name) => body.get(&format!("{}.{key}", field.id)).unwrap_or_default(),
+            _ => stored.get(position).and_then(|row| row.as_str()).unwrap_or_default(),
+        };
+        // See `attribution_rows` for why the resolved name and the warning go
+        // through the control rather than beside it.
+        let mut agent = text_field(format!("{}.{key}", field.id), row_label(AGENT_ID_LABEL, position))
+            .input_type(InputType::Text)
+            .value(id)
+            .list(AGENT_LIST_ID);
+        match rows.agents.and_then(|agents| agents.get(id)) {
+            Some(found) => agent = agent.hint(format!("{} ({})", found.label, found.kind.label())),
+            None if !id.trim().is_empty() => agent = agent.error(UNRESOLVED_AGENT),
+            None => {}
+        }
+        let body = html! {
+            (agent)
+        };
+        list = list.row(key, body);
+    }
+    if let Some(hint) = field.hint {
+        list = list.hint(hint);
+    }
+    html! {
+        (list)
+    }
+}
+
+/// A list of contributor rows: an agent picker plus that contributor's roles.
+///
+/// The roles are a checkbox group over the offered vocabulary **unioned with whatever this row
+/// already holds**, plus a text input for one more. Same shape as `dataLanguage` and for the same
+/// reason: the corpus spells the same role several ways, so a closed offer would drop a project's
+/// own wording on the first save.
+///
+/// Both the group and the "add another" input post under
+/// `{field}.{key}.role`, so `FormBody::all` collects them together and no
+/// second wire name is needed.
+fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
+    let keys = row_keys(field, draft, rows);
+    let stored = stored_rows(field, draft);
+    let action = format!("{}/{}", rows.action, field.id);
+    let noun = row_noun(field);
+    let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
+    for (position, key) in keys.iter().enumerate() {
+        let row_name = format!("{}.row", field.id);
+        let posted = rows.posted.filter(|body| body.has(&row_name));
+        let prefix = format!("{}.{key}", field.id);
+        let contributor = match posted {
+            Some(body) => body.get(&format!("{prefix}.contributor")).unwrap_or_default().to_string(),
+            None => stored
+                .get(position)
+                .and_then(|row| row.get("contributor"))
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string(),
+        };
+        let held: Vec<String> = match posted {
+            Some(body) => body.all(&format!("{prefix}.role")).map(str::to_string).collect(),
+            None => stored
+                .get(position)
+                .and_then(|row| row.get("contributorType"))
+                .and_then(Value::as_array)
+                .map(|roles| roles.iter().filter_map(Value::as_str).map(str::to_string).collect())
+                .unwrap_or_default(),
+        };
+        let mut options: Vec<&str> = CONTRIBUTOR_ROLES.to_vec();
+        for role in &held {
+            if !options.contains(&role.as_str()) {
+                options.push(role);
+            }
+        }
+        // Through `.hint()`/`.error()` rather than a sibling paragraph, so both
+        // are tied to the input by `aria-describedby` and the unresolved case
+        // also sets `aria-invalid`. As siblings they were announced to nobody: a
+        // reader tabbing onto the input heard its label and the raw id, and not
+        // the warning explaining why the id was wrong. `funding`'s funder
+        // controls already folded the same state into their label.
+        let mut agent = text_field(format!("{prefix}.contributor"), row_label(AGENT_ID_LABEL, position))
+            .input_type(InputType::Text)
+            .value(&contributor)
+            .list(AGENT_LIST_ID);
+        match rows.agents.and_then(|agents| agents.get(contributor.trim())) {
+            Some(found) => agent = agent.hint(format!("{} ({})", found.label, found.kind.label())),
+            None if !contributor.trim().is_empty() => agent = agent.error(UNRESOLVED_AGENT),
+            None => {}
+        }
+        let body = html! {
+            div class="flex flex-col gap-3" {
+                (agent)
+                ({
+                    checkbox_group(format!("{prefix}.role"), ROLE_GROUP_LABEL)
+                        .options(options.iter().map(|role| (*role, *role)))
+                        .checked(held.iter().map(String::as_str))
+                })
+                ({
+                    text_field(format!("{prefix}.role"), ADD_ROLE_LABEL)
+                        .input_type(InputType::Text)
+                        .hint(ADD_ROLE_HINT)
+                        .with_id(format!("{prefix}.role-add"))
+                })
+            }
+        };
+        list = list.row(key, body);
+    }
+    if let Some(hint) = field.hint {
+        list = list.hint(hint);
+    }
+    html! {
+        (list)
+    }
+}
+
+/// The reference types a shape offers, or none for any other shape.
+const fn reference_types(shape: Shape) -> &'static [&'static str] {
+    match shape {
+        Shape::TextOrReferenceRows(types) | Shape::ReferenceRows(types) => types,
+        _ => &[],
+    }
+}
+
+/// A list of rows that are each an authority reference or free text.
+///
+/// **Both branches are always in the DOM, and the inactive one is `hidden`
+/// rather than `disabled`.** That is the whole mechanism: a `hidden` input is
+/// still submitted, so the server receives both candidates plus the
+/// discriminant and can keep the unchosen one — a depositor who switches to a
+/// reference and back finds their text still there. `disabled` would submit
+/// nothing and lose it.
+///
+/// Switching branches is a **server round-trip**: the chosen branch follows what the row holds, so
+/// picking the other radio and saving re-renders with it visible. The control then behaves
+/// identically with and without JavaScript, and this form stays free of signal bindings.
+fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, types: &[&str]) -> Markup {
+    let keys = row_keys(field, draft, rows);
+    let stored = stored_rows(field, draft);
+    let action = format!("{}/{}", rows.action, field.id);
+    let noun = row_noun(field);
+    let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
+    for (position, key) in keys.iter().enumerate() {
+        let row_name = format!("{}.row", field.id);
+        let posted = rows.posted.filter(|body| body.has(&row_name));
+        let prefix = format!("{}.{key}", field.id);
+        let held = stored.get(position);
+
+        // A stored row is a reference when it has a URL; that is the same test
+        // `ProjectDraft::coverage_shapes` applies, and serde's own attempt
+        // order agrees — `AuthorityFileReference` is declared first.
+        let is_reference = match posted {
+            Some(body) => body.get(&format!("{prefix}.kind")) == Some(REFERENCE_KIND),
+            None => held.and_then(|row| row.get("url")).is_some(),
+        };
+        let reference_value = |member: &str| -> String {
+            match posted {
+                Some(body) => body.get(&format!("{prefix}.ref.{member}")).unwrap_or_default().to_string(),
+                None => held
+                    .and_then(|row| row.get(if member == "label" { "text" } else { member }))
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_string(),
+            }
+        };
+        let texts = match posted {
+            Some(body) => {
+                let mut value = DraftMultilingual::new();
+                for (tag, text) in body.entries(&format!("{prefix}.text")) {
+                    value.set(&tag.to_ascii_lowercase(), text);
+                }
+                value
+            }
+            None => held
+                .filter(|_| !is_reference)
+                .map(|row| as_multilingual(row))
+                .unwrap_or_default(),
+        };
+        let current = if is_reference { REFERENCE_KIND } else { TEXT_KIND };
+
+        list = list.row(
+            key,
+            html! {
+                div class="flex flex-col gap-3" {
+                    ({
+                        radio_group(format!("{prefix}.kind"), VARIANT_LABEL)
+                            .options([
+                                (REFERENCE_KIND, "A recognised entry"),
+                                (TEXT_KIND, "My own wording"),
+                            ])
+                            .selected(current)
+                            .hint(VARIANT_HINT)
+                            .inline()
+                    })
+                    div hidden[!is_reference] class="flex flex-col gap-2" {
+                        ({
+                            select(format!("{prefix}.ref.type"), REFERENCE_TYPE_LABEL)
+                                .options(types.iter().map(|kind| (*kind, *kind)))
+                                .selected(reference_value("type"))
+                        })
+                        ({
+                            text_field(format!("{prefix}.ref.url"), REFERENCE_URL_LABEL)
+                                .input_type(InputType::Text)
+                                .value(reference_value("url"))
+                        })
+                        ({
+                            text_field(
+                                    format!("{prefix}.ref.label"),
+                                    REFERENCE_LABEL_LABEL,
+                                )
+                                .input_type(InputType::Text)
+                                .value(reference_value("label"))
+                        })
+                    }
+                    div hidden[is_reference] class="flex flex-col gap-2" {
+                        @for tag in UI_LANGUAGES.iter().copied().chain(texts.extra_tags()) {
+                            ({
+                                text_field(
+                                        format!("{prefix}.text.{tag}"),
+                                        language_name(tag),
+                                    )
+                                    .input_type(InputType::Text)
+                                    .value(texts.get(tag).unwrap_or_default())
+                            })
+                        }
+                    }
+                }
+            },
+        );
+    }
+    if let Some(hint) = field.hint {
+        list = list.hint(hint);
+    }
+    html! {
+        (list)
+    }
+}
+
+/// One row's three reference controls, shared by every field that renders a
+/// reference so their names and labels cannot drift.
+fn reference_controls(prefix: &str, types: &[&str], value: impl Fn(&str) -> String) -> Markup {
+    html! {
+        ({
+            select(format!("{prefix}.ref.type"), REFERENCE_TYPE_LABEL)
+                .options(types.iter().map(|kind| (*kind, *kind)))
+                .selected(value("type"))
+        })
+        ({
+            text_field(format!("{prefix}.ref.url"), REFERENCE_URL_LABEL)
+                .input_type(InputType::Text)
+                .value(value("url"))
+        })
+        ({
+            text_field(format!("{prefix}.ref.label"), REFERENCE_LABEL_LABEL)
+                .input_type(InputType::Text)
+                .value(value("label"))
+        })
+    }
+}
+
+/// One row's stored or posted member, for a row of flat members.
+fn row_member(field: &Field, stored: Option<&Value>, rows: Rows<'_>, prefix: &str, member: &str) -> String {
+    let row_name = format!("{}.row", field.id);
+    match rows.posted.filter(|body| body.has(&row_name)) {
+        Some(body) => body.get(&format!("{prefix}.{member}")).unwrap_or_default().to_string(),
+        None => stored
+            .and_then(|row| row.get(member))
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string(),
+    }
+}
+
+/// A list of authority references - the reference half of
+/// [`text_or_reference_rows`], with no variant to choose.
+fn reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, types: &[&str]) -> Markup {
+    let keys = row_keys(field, draft, rows);
+    let stored = stored_rows(field, draft);
+    let action = format!("{}/{}", rows.action, field.id);
+    let noun = row_noun(field);
+    let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
+    for (position, key) in keys.iter().enumerate() {
+        let prefix = format!("{}.{key}", field.id);
+        let held = stored.get(position).copied();
+        let body = reference_controls(&prefix, types, |member| {
+            row_member(field, held, rows, &prefix, if member == "label" { "text" } else { member })
+        });
+        list = list.row(
+            key,
+            html! {
+                div class="flex flex-col gap-2" { (body) }
+            },
+        );
+    }
+    if let Some(hint) = field.hint {
+        list = list.hint(hint);
+    }
+    html! {
+        (list)
+    }
+}
+
+/// A list of bibliographic references: a citation and an optional identifier.
+fn publication_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
+    let keys = row_keys(field, draft, rows);
+    let stored = stored_rows(field, draft);
+    let action = format!("{}/{}", rows.action, field.id);
+    let noun = row_noun(field);
+    let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
+    for (position, key) in keys.iter().enumerate() {
+        let prefix = format!("{}.{key}", field.id);
+        let held = stored.get(position).copied();
+        let row_name = format!("{}.row", field.id);
+        let text = row_member(field, held, rows, &prefix, "text");
+        // The identifier is nested one deeper in the contract, so it cannot go
+        // through `row_member`.
+        let pid = match rows.posted.filter(|body| body.has(&row_name)) {
+            Some(body) => body.get(&format!("{prefix}.pid")).unwrap_or_default().to_string(),
+            None => held
+                .and_then(|row| row.get("pid")?.get("url"))
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string(),
+        };
+        list = list.row(
+            key,
+            html! {
+                div class="flex flex-col gap-2" {
+                    ({
+                        textarea(
+                                format!("{prefix}.text"),
+                                row_label(CITATION_LABEL, position),
+                            )
+                            .rows(2)
+                            .value(text)
+                    })
+                    ({
+                        text_field(
+                                format!("{prefix}.pid"),
+                                row_label(PID_LABEL, position),
+                            )
+                            .input_type(InputType::Text)
+                            .value(pid)
+                            .hint(PID_HINT)
+                    })
+                }
+            },
+        );
+    }
+    if let Some(hint) = field.hint {
+        list = list.hint(hint);
+    }
+    html! {
+        (list)
+    }
+}
+
+/// Funding: either a list of grants or one free text.
+///
+/// The discriminant is on the **field**, not per row, so the chooser sits above
+/// the list rather than inside each row. Both branches stay in the DOM with the
+/// inactive one `hidden`, for the reason [`text_or_reference_rows`] gives.
+fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
+    let stored = stored_rows(field, draft);
+    let is_grants = match rows.posted.filter(|body| body.has(&format!("{}.kind", field.id))) {
+        Some(body) => body.get(&format!("{}.kind", field.id)) == Some(GRANTS_KIND),
+        // A string is the free-text variant; anything else, including absent, renders as grants, which is what
+        // almost every project holds.
+        None => !draft.get(field.id).is_some_and(Value::is_string),
+    };
+    let free_text = match rows.posted {
+        Some(body) => body.get(&format!("{}.text", field.id)).unwrap_or_default().to_string(),
+        None => draft.get(field.id).and_then(Value::as_str).unwrap_or_default().to_string(),
+    };
+
+    let keys = row_keys(field, draft, rows);
+    let action = format!("{}/{}", rows.action, field.id);
+    let mut list = repeatable_list(field.id, labelled(field), &action).item_noun("grant");
+    for (position, key) in keys.iter().enumerate() {
+        let prefix = format!("{}.{key}", field.id);
+        let held = stored.get(position).copied();
+        let row_name = format!("{}.row", field.id);
+        let funders: Vec<String> = match rows.posted.filter(|body| body.has(&row_name)) {
+            Some(body) => body.all(&format!("{prefix}.funder")).map(str::to_string).collect(),
+            None => held
+                .and_then(|grant| grant.get("funders"))
+                .and_then(Value::as_array)
+                .map(|ids| ids.iter().filter_map(Value::as_str).map(str::to_string).collect())
+                .unwrap_or_default(),
+        };
+        list = list.row(
+            key,
+            html! {
+                div class="flex flex-col gap-2" {
+                    // One control per stored funder plus a blank, all posting
+                    // under one name so `FormBody::all` collects them. Adding
+                    // several funders takes a save each, which is the same
+                    // price adding a row costs.
+                    @for (index, id) in funders.iter().chain(std::iter::once(&String::new())).enumerate() {
+                        ({
+                            let resolved = rows
+                                .agents
+                                .and_then(|agents| agents.get(id.trim()));
+                            let label = match resolved {
+                                Some(agent) => format!("{} - {}", FUNDER_LABEL, agent.label),
+                                None if id.trim().is_empty() && index > 0 => {
+                                    ADD_FUNDER_LABEL.to_string()
+                                }
+                                None if id.trim().is_empty() => FUNDER_LABEL.to_string(),
+                                None => format!("{FUNDER_LABEL} - {UNRESOLVED_AGENT}"),
+                            };
+                            text_field(format!("{prefix}.funder"), label)
+                                .input_type(InputType::Text)
+                                .value(id)
+                                .list(AGENT_LIST_ID)
+                                .with_id(format!("{prefix}.funder-{index}"))
+                        })
+                    }
+                    ({
+                        text_field(format!("{prefix}.number"), GRANT_NUMBER_LABEL)
+                            .input_type(InputType::Text)
+                            .value(row_member(field, held, rows, &prefix, "number"))
+                    })
+                    ({
+                        text_field(format!("{prefix}.name"), GRANT_NAME_LABEL)
+                            .input_type(InputType::Text)
+                            .value(row_member(field, held, rows, &prefix, "name"))
+                    })
+                    ({
+                        text_field(format!("{prefix}.url"), GRANT_URL_LABEL)
+                            .input_type(InputType::Text)
+                            .value(row_member(field, held, rows, &prefix, "url"))
+                    })
+                }
+            },
+        );
+    }
+    if let Some(hint) = field.hint {
+        list = list.hint(hint);
+    }
+    html! {
+        div class="field field-group" {
+            ({
+                radio_group(format!("{}.kind", field.id), FUNDING_VARIANT_LABEL)
+                    .options([
+                        (GRANTS_KIND, "Grants"),
+                        (FUNDING_TEXT_KIND, "A note instead"),
+                    ])
+                    .selected(if is_grants { GRANTS_KIND } else { FUNDING_TEXT_KIND })
+                    .hint(FUNDING_VARIANT_HINT)
+                    .inline()
+            })
+            div hidden[!is_grants] { (list) }
+            div hidden[is_grants] {
+                ({
+                    text_field(format!("{}.text", field.id), FUNDING_TEXT_LABEL)
+                        .input_type(InputType::Text)
+                        .value(free_text)
+                        .hint(FUNDING_TEXT_HINT)
+                })
+            }
+        }
+    }
+}
+
+/// Labels for the publication, funding and grant controls.
+const CITATION_LABEL: &str = "Reference";
+const PID_LABEL: &str = "Persistent identifier";
+const PID_HINT: &str = "A DOI or other stable link, if the publication has one.";
+const FUNDER_LABEL: &str = "Funder";
+const ADD_FUNDER_LABEL: &str = "Add another funder";
+const GRANT_NUMBER_LABEL: &str = "Grant number";
+const GRANT_NAME_LABEL: &str = "Programme";
+const GRANT_URL_LABEL: &str = "Link";
+const FUNDING_VARIANT_LABEL: &str = "How funding is recorded";
+const FUNDING_VARIANT_HINT: &str = "Grants are listed one by one, each with its funder. A note is a single line, \
+                                    for a project with nothing to list. Switching saves the form, and neither is \
+                                    lost.";
+const FUNDING_TEXT_LABEL: &str = "Funding note";
+const FUNDING_TEXT_HINT: &str = "For example, \"No funding\".";
+
+/// The discriminant value meaning "a note" for funding, the counterpart of
+/// [`GRANTS_KIND`].
+const FUNDING_TEXT_KIND: &str = "text";
+
+/// The discriminant value meaning "free text", the counterpart of
+/// [`REFERENCE_KIND`].
+const TEXT_KIND: &str = "text";
+
+/// The legend on a row's variant chooser.
+const VARIANT_LABEL: &str = "How this is recorded";
+
+/// Why the choice exists, in the terms a depositor can act on.
+const VARIANT_HINT: &str = "A recognised entry carries a link the repository can resolve, which is what makes the \
+                            value comparable across projects. Your own wording is kept as typed, per language. \
+                            Switching saves the form, and nothing you have entered in either is lost.";
+
+/// The labels on a reference branch's three controls.
+const REFERENCE_TYPE_LABEL: &str = "Source";
+const REFERENCE_URL_LABEL: &str = "Link";
+const REFERENCE_LABEL_LABEL: &str = "Shown as";
+
+/// The legend on a contributor row's role group.
+const ROLE_GROUP_LABEL: &str = "Roles";
+
+/// The label on the input that adds a role the offer does not carry.
+const ADD_ROLE_LABEL: &str = "Add another role";
+
+/// Why that input is there. Worth saying, because the group above it already
+/// looks like the whole answer.
+const ADD_ROLE_HINT: &str = "For a role the list does not offer. Type it and save; it joins the list above.";
+
+/// The label on an agent row's control.
+const AGENT_ID_LABEL: &str = "Person or organisation";
+
+/// What is shown beside an id that resolves to nobody.
+///
+/// Said here as well as at submit, because the form is where it can be fixed:
+/// told only at submit, a depositor would have to find which of 56 rows the
+/// refusal meant.
+const UNRESOLVED_AGENT: &str = "No person or organisation with this id — pick one from the list.";
+
+/// A row control's label, with the row's own position in it.
+///
+/// Five rows whose value controls are all called "Link" are five
+/// indistinguishable entries in a screen reader's form-field list, and stepping
+/// through the list in document order is the only way to tell row 3 from row 5.
+/// The repeatable-list tile already numbers its Remove buttons for exactly this
+/// reason; this gives the row's own control the same treatment.
+fn row_label(label: &str, position: usize) -> String {
+    format!("{label} {}", position + 1)
+}
+
+/// The label on a single-value row's control.
+///
+/// A row's own label, not the field's: the field is named by the list's
+/// `<legend>`, and every control still needs an accessible name of its own —
+/// five rows all called "Additional material" would read identically.
+const ROW_VALUE_LABEL: &str = "Link";
+
+/// What one row of a repeatable field is called, for the accessible "Remove
+/// <noun> 2" labels the tile builds.
+///
+/// The field's label singularised crudely, because the alternative is a second
+/// vocabulary in the registry for the sake of one word per field.
+fn row_noun(field: &Field) -> String {
+    let label = field.label.to_lowercase();
+    label.strip_suffix('s').map_or(label.clone(), str::to_string)
+}
+
+/// A list of language maps: one multilingual group per row, added and removed by
+/// server round-trip.
+fn multilingual_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
+    let keys = row_keys(field, draft, rows);
+    let action = format!("{}/{}", rows.action, field.id);
+    let noun = row_noun(field);
+    let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
+    for (position, key) in keys.iter().enumerate() {
+        let value = row_value(field, draft, rows, key, position);
+        let prefix = format!("{}.{key}", field.id);
+        list = list.row(
+            key,
+            html! {
+                div class="flex flex-col gap-2" {
+                    @for tag in UI_LANGUAGES.iter().copied().chain(value.extra_tags()) {
+                        ({
+                            text_field(format!("{prefix}.{tag}"), language_name(tag))
+                                .input_type(InputType::Text)
+                                .value(value.get(tag).unwrap_or_default())
+                        })
+                    }
+                }
+            },
+        );
+    }
+    if let Some(hint) = field.hint {
+        list = list.hint(hint);
+    }
+    html! {
+        (list)
+    }
+}
+
+/// The values a [`Shape::Choice`] offers, or none for any other shape.
+///
+/// Unreachable while the registry and [`control`]'s dispatch agree, which
+/// `tests::every_shaped_field_has_a_control` pins. Empty rather than a panic,
+/// for the same reason `control`'s own fallback arm renders a note: a group with
+/// no options is a visible gap in this file, and taking the section down for it
+/// would hide every other field too.
+const fn choices(shape: Shape) -> &'static [&'static str] {
+    match shape {
+        Shape::Choice(values) => values,
+        _ => &[],
+    }
+}
+
+/// Which choice set a shape names, defaulting to an empty closed one.
+///
+/// Unreachable while the registry and [`control`]'s dispatch agree, which
+/// `tests::every_shaped_field_has_a_control` pins. Closed-and-empty is the
+/// fail-safe of the two: it renders a group with no options, which is a visible
+/// gap, where an open one would accept anything a hand-built body sent.
+const fn set(shape: Shape) -> ChoiceSet {
+    match shape {
+        Shape::StringList(set) => set,
+        _ => ChoiceSet::Closed(&[]),
+    }
+}
+
+/// The values stored in a list field, in the order the project holds them.
+fn stored_list<'a>(field: &Field, draft: &'a ProjectDraft) -> Vec<&'a str> {
+    draft
+        .get(field.id)
+        .and_then(Value::as_array)
+        .map(|items| items.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default()
+}
+
+/// A list of strings as a checkbox group, plus a way in for a value the offer
+/// does not carry.
+///
+/// **The options are the offer unioned with whatever the project already holds**, the same rule the
+/// multilingual widget follows and for the same reason: a value with no control posts nothing, so a
+/// list rebuilt from the body would drop it — and `dataLanguage` holds far more tags than the UI
+/// offers.
+///
+/// An open set also gets a text input **named after the field itself**, so a typed value arrives as
+/// one more repeated value and `apply_string_list` reads it with the rest. No route and no
+/// client-side splicing: the next render finds it in the stored list and gives it a checkbox.
+fn string_list(field: &Field, draft: &ProjectDraft, set: ChoiceSet) -> Markup {
+    let stored = stored_list(field, draft);
+    let mut options: Vec<&str> = set.offered().to_vec();
+    for value in &stored {
+        if !options.contains(value) {
+            options.push(value);
+        }
+    }
+
+    let mut group = checkbox_group(field.id, labelled(field))
+        .options(options.iter().map(|value| (*value, label_for(field, value))))
+        .checked(stored.iter().copied());
+    if let Some(hint) = field.hint {
+        group = group.hint(hint);
+    }
+    html! {
+        (group)
+        @if matches!(set, ChoiceSet::Open(_)) {
+            ({
+                text_field(field.id, ADD_ANOTHER)
+                    .input_type(InputType::Text)
+                    .hint(ADD_ANOTHER_HINT)
+                    .with_id(format!("{}-add", field.id))
+            })
+        }
+    }
+}
+
+/// What the "add one more" input is called on an open list.
+const ADD_ANOTHER: &str = "Add another";
+
+/// Why that input is there, and what happens to what goes in it.
+const ADD_ANOTHER_HINT: &str = "Type one more value and save — it is added to the list above, where you can then \
+                                untick it.";
+
+/// A list value's label. Language tags get their language name, because `cop`
+/// and `gez` are not readable as they stand; anything else is already prose.
+fn label_for(field: &Field, value: &str) -> String {
+    if field.id == "dataLanguage" {
+        let name = language_name(value);
+        if name == value {
+            return value.to_string();
+        }
+        return format!("{name} ({value})");
+    }
+    value.to_string()
+}
+
+/// Which URL slot a shape names, defaulting to the secondary.
+///
+/// Unreachable while the registry and [`control`]'s dispatch agree, which
+/// `tests::every_shaped_field_has_a_control` pins. The secondary is the safer
+/// fallback of the two: it is the depositor's own field, so a control wired to
+/// it by mistake cannot show or overwrite the RDU-only DaSCH address.
+const fn slot(shape: Shape) -> UrlSlot {
+    match shape {
+        Shape::Url(slot) => slot,
+        _ => UrlSlot::Secondary,
+    }
+}
+
+/// One of the project's two URLs, as a plain text control.
+///
+/// Reads through [`ProjectDraft::url_slot`], so it renders whichever
+/// representation the project stores the pair in without knowing which. A
+/// placeholder sentinel renders empty, for the same reason [`scalar_value`]
+/// does it — two committed projects hold `url: ["MISSING"]`.
+fn url(field: &Field, draft: &ProjectDraft, slot: UrlSlot) -> Markup {
+    let value = draft.url_slot(slot).filter(|text| !is_placeholder(text)).unwrap_or_default();
+    let mut control = text_field(field.id, labelled(field)).input_type(InputType::Text).value(value);
+    if let Some(hint) = field.hint {
+        control = control.hint(hint);
+    }
+    html! {
+        (control)
+    }
+}
+
+/// A closed choice as a radio group: every option visible, one current.
+///
+/// The wire value doubles as the label, because both vocabularies are already
+/// depositor-facing prose — `Ongoing`, `Open Access with Restrictions`. A
+/// separate label table would be a second thing to keep in step with
+/// `platform_metadata`'s slices for no gain.
+fn radio(field: &Field, draft: &ProjectDraft, values: &[&str]) -> Markup {
+    let mut control = radio_group(field.id, labelled(field))
+        .options(values.iter().map(|value| (*value, *value)))
+        .inline();
+    if let Some(current) = draft.get(field.id).and_then(Value::as_str) {
+        control = control.selected(current);
+    }
+    if let Some(hint) = field.hint {
+        control = control.hint(hint);
+    }
+    html! {
+        (control)
+    }
+}
+
+/// A closed choice as a `<select>`.
+///
+/// **No placeholder option.** The contract types these as enums with no unset
+/// variant, so "nothing chosen" is not a state a project can hold — and
+/// `apply_choice` ignores a value outside the offered set, so a placeholder
+/// would be an option that silently does nothing when picked. A project that
+/// somehow holds no value renders with nothing selected, which the browser
+/// shows as the first option; the stored value is unchanged until a real pick
+/// posts one.
+fn dropdown(field: &Field, draft: &ProjectDraft, values: &[&str]) -> Markup {
+    let mut control = select(field.id, labelled(field)).options(values.iter().map(|value| (*value, *value)));
+    if let Some(current) = draft.get(field.id).and_then(Value::as_str) {
+        control = control.selected(current);
+    }
+    if let Some(hint) = field.hint {
+        control = control.hint(hint);
+    }
+    html! {
+        (control)
     }
 }
 
@@ -385,7 +1342,7 @@ mod tests {
     fn render(section: &Section, draft: &ProjectDraft, audience: Audience) -> String {
         section
             .fields_for(audience)
-            .map(|field| field_row(field, draft, Mode::Editable).into_string())
+            .map(|field| field_row(field, draft, Mode::Editable, Rows::default()).into_string())
             .collect()
     }
 
@@ -416,6 +1373,30 @@ mod tests {
                     Some(Shape::Multilingual) => UI_LANGUAGES
                         .iter()
                         .all(|tag| out.contains(&format!(r#"name="{}.{tag}""#, field.id))),
+                    // A group posts under the field's name from each of its
+                    // controls, so the name appearing at all is the same
+                    // evidence a scalar gives.
+                    Some(Shape::Choice(_)) => out.contains(&format!(r#"name="{}""#, field.id)),
+                    // A URL slot posts under the field's own name, like a
+                    // scalar — the slot decides where it is *stored*, not what
+                    // it is called on the wire.
+                    Some(Shape::Url(_) | Shape::StringList(_)) => out.contains(&format!(r#"name="{}""#, field.id)),
+                    // A repeatable field posts its rows under `{field}.row`,
+                    // and posts that name even when the list is empty — the
+                    // marker is what lets a depositor clear the last row.
+                    Some(
+                        Shape::MultilingualRows
+                        | Shape::StringRows
+                        | Shape::AgentRows
+                        | Shape::AttributionRows
+                        | Shape::TextOrReferenceRows(_)
+                        | Shape::ReferenceRows(_)
+                        | Shape::PublicationRows,
+                    ) => out.contains(&format!(r#"name="{}.row""#, field.id)),
+                    // Funding's discriminant is on the field rather than the
+                    // row, and the row marker appears only on the grants
+                    // branch, so the discriminant is what always posts.
+                    Some(Shape::FundingRows) => out.contains(&format!(r#"name="{}.kind""#, field.id)),
                 };
                 if !posts {
                     unrendered.push(field.id);
@@ -438,7 +1419,12 @@ mod tests {
             .filter(|field| field.is_editable())
             .map(|field| field.id)
             .collect();
-        assert_eq!(shaped.len(), 11, "{shaped:?}");
+        // Every editable field, since none is left without a control: the count
+        // is `FIELDS` minus the six display-only ones.
+        // A count rather than "more than none": this is the canary for a test
+        // that asserts an absence, so it has to move deliberately as shapes
+        // land rather than drifting.
+        assert_eq!(shaped.len(), 29, "{shaped:?}");
         let reached: Vec<&str> = SECTIONS
             .iter()
             .flat_map(|section| section.fields_for(Audience::RduOnly))
@@ -464,7 +1450,7 @@ mod tests {
         for section in SECTIONS {
             for field in section.fields_for(Audience::RduOnly) {
                 let Some(obligation) = field.obligation else { continue };
-                let out = field_row(field, &draft, Mode::Editable).into_string();
+                let out = field_row(field, &draft, Mode::Editable, Rows::default()).into_string();
                 // Inside the labelling element, not merely somewhere in the
                 // field: the accessible name is what has to carry it.
                 let named = ["label", "legend", "p"].iter().any(|tag| {
@@ -510,7 +1496,7 @@ mod tests {
         let draft = published_draft();
         for section in sections_for(Audience::RduOnly) {
             for field in section.fields_for(Audience::RduOnly) {
-                let out = field_row(field, &draft, Mode::ReadOnly).into_string();
+                let out = field_row(field, &draft, Mode::ReadOnly, Rows::default()).into_string();
                 assert!(!out.contains("<input"), "{}: {out}", field.id);
                 assert!(!out.contains("<textarea"), "{}: {out}", field.id);
                 assert!(!out.contains("name="), "{}: {out}", field.id);

@@ -1007,7 +1007,11 @@ fn editor(row: &ReviewRow<'_>) -> Markup {
     if let Some(value) = row.outgoing() {
         outgoing.set(field.id, value.clone());
     }
-    control(field, &outgoing, shape)
+    // `Rows::default()` deliberately: no posted body and no add/remove action.
+    // A reviewer is looking at what was *submitted*, so a repeatable field
+    // renders its stored rows read-only-ish rather than an editing state, and
+    // there is no blank row to keep alive across a round trip here.
+    control(field, &outgoing, shape, crate::form::widgets::Rows::default())
 }
 
 /// Accept / revert / undecided for one field.

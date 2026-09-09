@@ -79,6 +79,16 @@ pub(crate) struct AppState {
     /// fail-safe direction, since the alternative opens a pull request that
     /// fails CI in a crate the editor never touches.
     temporal: std::sync::Arc<TemporalTables>,
+    /// The persons and organizations a project may refer to by id, read once at
+    /// startup from the same `EDITOR_DATA_DIR`.
+    ///
+    /// An immutable snapshot behind an `Arc` for the reason [`Self::published`]
+    /// is: `AppState` is cloned per request and this holds 558 agents. The form
+    /// resolves an id to a name through it and submit refuses one that resolves
+    /// to nothing, so an empty set makes every agent reference unresolvable —
+    /// which is why a missing directory is logged loudly rather than passed
+    /// over.
+    agents: std::sync::Arc<editor_core::agents::Agents>,
 }
 
 /// The pair of tables `editor_core::submission::unresolved_temporal_coverage`
@@ -197,6 +207,27 @@ fn load_published(data_dir: Option<&std::path::Path>) -> editor_core::published:
         );
     }
     published
+}
+
+/// The agent set, or an empty one without a data directory.
+fn load_agents(data_dir: Option<&std::path::Path>) -> editor_core::agents::Agents {
+    let Some(data_dir) = data_dir else {
+        tracing::warn!(
+            "no EDITOR_DATA_DIR: the agent set is empty, so every contributor and contact reference renders as a bare id and no submission naming one can be accepted"
+        );
+        return editor_core::agents::Agents::default();
+    };
+    let (agents, errors) =
+        editor_core::agents::Agents::load_from(&data_dir.join("persons"), &data_dir.join("organizations"));
+    for error in &errors {
+        tracing::warn!(error = %error, "an agent could not be read");
+    }
+    if errors.is_empty() {
+        tracing::info!(agents = agents.len(), "agent set loaded");
+    } else {
+        tracing::warn!(agents = agents.len(), failed = errors.len(), "agent set loaded with failures");
+    }
+    agents
 }
 
 /// `GET /` — a redirect to the project list.
@@ -546,6 +577,7 @@ async fn serve() -> ExitCode {
 
     let published = std::sync::Arc::new(load_published(config.data_dir.as_deref()));
     let temporal = std::sync::Arc::new(load_temporal(config.data_dir.as_deref()));
+    let agents = std::sync::Arc::new(load_agents(config.data_dir.as_deref()));
 
     let state = AppState {
         css_href: resolve_css_href(&config.public_dir),
@@ -555,6 +587,7 @@ async fn serve() -> ExitCode {
         reveal_login_code: config.reveals_login_code(),
         published,
         temporal,
+        agents,
     };
     let app = router::build_app(state, &config.public_dir);
 

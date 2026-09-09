@@ -15,6 +15,17 @@
 //! with users. Where the prototype's own summary and its screens disagree, the
 //! screens win.
 //!
+//! **One deliberate departure: a hint never states an obligation.** The
+//! prototype's hints carried phrases like "Required before publishing" and
+//! "required even for a draft", which were written against its two required
+//! tiers. The pill now states the tier and [`Obligation::Required`] is enforced
+//! at submit, so a hint repeating it is at best redundant and was at worst
+//! wrong in two directions at once: a hint saying "before publishing" beside a
+//! pill that blocks a *submission* understates the gate, and "required even for
+//! a draft" contradicts the draft's own permissiveness — a draft may be missing anything, which is
+//! why no control here carries `required`. The hints say what goes in the field;
+//! the pill says whether it has to be there.
+//!
 //! ## Grouping
 //!
 //! One scheme, the prototype's `dpe` default: the sections mirror the published
@@ -29,10 +40,16 @@
 //! from "forgotten". They still ride through a draft untouched (REQ-1.7); the
 //! omission is from the *form*, not from the data.
 
-use editor_core::form::{Shape, WhenCleared};
+use editor_core::draft::UrlSlot;
+use editor_core::form::{ChoiceSet, Shape, WhenCleared};
+use editor_core::multilingual::UI_LANGUAGES;
+use platform_metadata::project::{ACCESS_RIGHTS_VALUES, PROJECT_STATUS_VALUES, TYPE_OF_DATA_VALUES};
 use Audience::{Everyone, RduOnly};
 use Obligation::{Optional, Recommended, Required};
-use Shape::{Multilingual, Text};
+use Shape::{
+    AgentRows, AttributionRows, Choice, FundingRows, Multilingual, MultilingualRows, PublicationRows, ReferenceRows,
+    StringList, StringRows, Text, TextOrReferenceRows, Url,
+};
 
 /// A required contract `String` whose empty state the committed data spells as a
 /// sentinel. Named because the distinction reads as the UI tier beside it and is
@@ -42,24 +59,50 @@ const REQUIRED_STRING: Shape = Text(WhenCleared::Placeholder);
 /// An `Option<String>` on the contract, where absent is what unset means.
 const OPTIONAL_STRING: Shape = Text(WhenCleared::Drop);
 
-/// The form does not read this field back yet. Rendered as a stated note, and
-/// no applier touches it, so its stored value rides through a save unchanged
-/// (REQ-1.7). [`tests::the_fields_the_form_does_not_read_yet_are_named`] pins
-/// the set, so it only ever shrinks.
-const NOT_READ_YET: Option<Shape> = None;
+/// The authority sources a `spatialCoverage` reference may come from, spelled as the committed data
+/// spells them.
+const PLACE_SOURCES: &[&str] = &["Geonames", "Pleiades", "Gazetteer", "URL"];
+
+/// The authority sources a `temporalCoverage` reference may come from, spelled as the committed
+/// data spells them.
+///
+/// A closed offer, unlike the role vocabulary beside it: these are the
+/// resolvers the platform actually consults, and an unknown one is a link
+/// nothing can dereference. `URL` is kept because a committed entry uses it and
+/// dropping it would refuse that project.
+const PERIOD_SOURCES: &[&str] = &["Chronontology", "Periodo", "URL"];
+
+/// The authority sources a `disciplines` reference may come from. Every committed reference is
+/// `Skos` — the SNSF and UNESCO vocabularies are both published as SKOS.
+const DISCIPLINE_SOURCES: &[&str] = &["Skos"];
 
 /// How much a field is expected of a depositor.
 ///
 /// The prototype distinguished "required" from "required before publishing" and
 /// then collapsed the two, because a depositor cannot act on the difference: a
-/// draft may be missing anything (REQ-1.9), and everything in both tiers has to
-/// be there to submit. What is left is a single required tier plus two degrees
-/// of encouragement.
+/// draft may be missing anything, and everything in both tiers has to be there
+/// to submit. What is left is a single required tier plus two degrees of
+/// encouragement.
+///
+/// ## The required tier is bounded by what the published corpus satisfies
+///
+/// **A field is `Required` only if the published corpus answers it.** [`Obligation::Required`] is a
+/// literal submit gate, so tiering a field the published projects leave unset would refuse every
+/// one of them — an unenforceable tier that therefore goes unenforced. Such a field is
+/// `Recommended`, with its publication requirement stated in the hint: a different gate, owned by
+/// RDU at publication.
+///
+/// `obligation::tests::the_required_fields_the_committed_corpus_does_not_answer_are_the_measured_ones` keeps it
+/// true — it fails the day a field is tiered `Required` that the corpus cannot answer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Obligation {
-    /// Must be present to submit.
+    /// Must be present to submit — a literal gate, not an encouragement.
     Required,
     /// Encouraged, and never blocks a submission.
+    ///
+    /// Also where a field the repository needs before *publishing* sits, when
+    /// the published corpus shows it is not there today. The hint carries that;
+    /// see the tier note above.
     Recommended,
     /// Add if relevant.
     Optional,
@@ -246,7 +289,7 @@ pub const FIELDS: &[Field] = &[
         "Acronyms or alternate spellings — one value per language.",
         Optional,
         Everyone,
-        NOT_READ_YET,
+        Some(MultilingualRows),
     ),
     // --- Descriptions -------------------------------------------------------
     hinted(
@@ -260,7 +303,7 @@ pub const FIELDS: &[Field] = &[
     hinted(
         "description",
         "Description",
-        "Long form — at least one language. Required before publishing.",
+        "Long form — at least one language.",
         Required,
         Everyone,
         Some(Multilingual),
@@ -279,7 +322,7 @@ pub const FIELDS: &[Field] = &[
         "At least one keyword — each is one multilingual term.",
         Required,
         Everyone,
-        NOT_READ_YET,
+        Some(MultilingualRows),
     ),
     // --- Links and citation -------------------------------------------------
     shown(
@@ -291,14 +334,16 @@ pub const FIELDS: &[Field] = &[
         ),
         Everyone,
     ),
+    // `Recommended`, not `Required`: published projects without a `url` exist, so a submit gate on it would refuse
+    // them. See `Obligation`.
     hinted(
         "url",
         "DaSCH project URL",
-        "Link to this project in the DaSCH platform — usually an app.dasch.swiss address. Required before \
-         publishing.",
-        Required,
+        "Link to this project in the DaSCH platform — usually an app.dasch.swiss address. Needed before the \
+         project can be published.",
+        Recommended,
         RduOnly,
-        NOT_READ_YET,
+        Some(Url(UrlSlot::Primary)),
     ),
     hinted(
         "secondaryUrl",
@@ -306,21 +351,21 @@ pub const FIELDS: &[Field] = &[
         "The project's own website outside DaSCH, if it has one.",
         Optional,
         Everyone,
-        NOT_READ_YET,
+        Some(Url(UrlSlot::Secondary)),
     ),
     // --- Status, dates and access ------------------------------------------
     hinted(
         "status",
         "Status",
-        "Whether the project is ongoing or finished — required even for a draft.",
+        "Whether the project is ongoing or finished.",
         Required,
         Everyone,
-        NOT_READ_YET,
+        Some(Choice(PROJECT_STATUS_VALUES)),
     ),
     hinted(
         "startDate",
         "Start date",
-        "When the project began. Required even for a draft.",
+        "When the project began.",
         Required,
         Everyone,
         Some(REQUIRED_STRING),
@@ -341,21 +386,29 @@ pub const FIELDS: &[Field] = &[
         Everyone,
         Some(OPTIONAL_STRING),
     ),
+    // The id is the nested member holding the choice, not the object around it:
+    // `accessRights` is `{accessRights, embargoDate}`, so a shape on the object
+    // would have to write the whole thing and would take the embargo date with
+    // it. `ProjectDraft` follows dotted ids, so naming the member is all this
+    // needs — the same shape `accessRights.embargoDate` beside it already had.
     hinted(
-        "accessRights",
+        "accessRights.accessRights",
         "Access rights",
         "How openly the data can be accessed.",
         Required,
         Everyone,
-        NOT_READ_YET,
+        Some(Choice(ACCESS_RIGHTS_VALUES)),
     ),
+    // `Optional`, and deliberately not gated on the choice beside it: almost no published project with "Embargoed
+    // Access" carries a date, so a rule requiring one would refuse them all. Same lesson as the tier note on
+    // `Obligation`.
     hinted(
         "accessRights.embargoDate",
         "Embargo release date",
         "When the data becomes openly available. Needed for embargoed access.",
         Optional,
         Everyone,
-        NOT_READ_YET,
+        Some(OPTIONAL_STRING),
     ),
     hinted(
         "dataManagementPlan",
@@ -366,22 +419,24 @@ pub const FIELDS: &[Field] = &[
         Some(OPTIONAL_STRING),
     ),
     // --- The dataset --------------------------------------------------------
+    // `Recommended` for both: `082C_decoso` is published with neither, so a
+    // submit gate on them would refuse it. See `Obligation`.
     hinted(
         "typeOfData",
         "Type of data",
-        "Kind or kinds of data in the dataset — required before publishing.",
-        Required,
+        "Kind or kinds of data in the dataset — needed before the project can be published.",
+        Recommended,
         Everyone,
-        NOT_READ_YET,
+        Some(StringList(ChoiceSet::Closed(TYPE_OF_DATA_VALUES))),
     ),
     hinted(
         "dataLanguage",
         "Data languages",
-        "The languages of the data itself. Pick from the list or add any other language. Required before \
-         publishing.",
-        Required,
+        "The languages of the data itself. Pick from the list or add any other language. Needed before the \
+         project can be published.",
+        Recommended,
         Everyone,
-        NOT_READ_YET,
+        Some(StringList(ChoiceSet::Open(&UI_LANGUAGES))),
     ),
     hinted(
         "disciplines",
@@ -389,25 +444,24 @@ pub const FIELDS: &[Field] = &[
         "At least one — pick from the SNSF or UNESCO discipline lists, or add your own if nothing fits.",
         Required,
         Everyone,
-        NOT_READ_YET,
+        Some(TextOrReferenceRows(DISCIPLINE_SOURCES)),
     ),
     hinted(
         "temporalCoverage",
         "Temporal coverage",
         "The time period the data covers. Search for a recognised period, for example Bronze Age or Siècle \
-         des Lumières, and we'll record the authority link — or add your own term per language. Required \
-         before publishing.",
+         des Lumières, and we'll record the authority link — or add your own term per language.",
         Required,
         Everyone,
-        NOT_READ_YET,
+        Some(TextOrReferenceRows(PERIOD_SOURCES)),
     ),
     hinted(
         "spatialCoverage",
         "Spatial coverage",
-        "Search for a place; we'll record the standard reference link for you. Required before publishing.",
+        "Search for a place; we'll record the standard reference link for you.",
         Required,
         Everyone,
-        NOT_READ_YET,
+        Some(ReferenceRows(PLACE_SOURCES)),
     ),
     hinted(
         "provenance",
@@ -417,13 +471,15 @@ pub const FIELDS: &[Field] = &[
         Everyone,
         Some(OPTIONAL_STRING),
     ),
+    // `Recommended`: no published project has it, which makes it the clearest case of the tier note on
+    // `Obligation` — RDU compiles it, and gating a submission on it would refuse the entire live corpus.
     hinted(
         "documentationMaterial",
         "Documentation material",
         "Documentation, codebooks, guides. Compiled by RDU on the depositor's behalf.",
-        Required,
+        Recommended,
         RduOnly,
-        NOT_READ_YET,
+        Some(StringRows),
     ),
     hinted(
         "additionalMaterial",
@@ -431,24 +487,26 @@ pub const FIELDS: &[Field] = &[
         "Any additional material related to the dataset — related datasets, mirrors, sister projects.",
         Optional,
         Everyone,
-        NOT_READ_YET,
+        Some(StringRows),
     ),
     // --- People and publications -------------------------------------------
     hinted(
         "attributions",
         "Contributors",
-        "The people and organisations involved, each with their role or roles. Required before publishing.",
+        "The people and organisations involved, each with their role or roles.",
         Required,
         Everyone,
-        NOT_READ_YET,
+        Some(AttributionRows),
     ),
+    // `Recommended`: published projects without a `contactPoint` exist. See `Obligation`.
     hinted(
         "contactPoint",
         "Contact point",
-        "A person or organisation users should contact about the data.",
-        Required,
+        "A person or organisation users should contact about the data. Needed before the project can be \
+         published.",
+        Recommended,
         Everyone,
-        NOT_READ_YET,
+        Some(AgentRows),
     ),
     hinted(
         "publications",
@@ -456,17 +514,17 @@ pub const FIELDS: &[Field] = &[
         "Bibliographic references, each with an optional persistent identifier.",
         Optional,
         Everyone,
-        NOT_READ_YET,
+        Some(PublicationRows),
     ),
     // --- Funding ------------------------------------------------------------
     hinted(
         "funding",
         "Funding",
-        "At least one funder is required before publishing — funder organisation or organisations, plus \
-         grant number, programme and URL.",
+        "At least one funder — funder organisation or organisations, plus grant number, programme and \
+         URL.",
         Required,
         Everyone,
-        NOT_READ_YET,
+        Some(FundingRows),
     ),
     // --- Image and legal ----------------------------------------------------
     hinted(
@@ -552,7 +610,7 @@ pub const SECTIONS: &[Section] = &[
         title: "Access, citation and funding",
         audience: Everyone,
         fields: &[
-            "accessRights",
+            "accessRights.accessRights",
             "accessRights.embargoDate",
             "howToCite",
             "funding",
@@ -626,7 +684,9 @@ impl Section {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeSet;
+    use std::collections::{BTreeMap, BTreeSet};
+
+    use platform_metadata::project::{CONTRIBUTOR_ROLES, ROLES_NOT_OFFERED};
 
     use super::*;
 
@@ -752,34 +812,93 @@ mod tests {
         contracts
     }
 
-    /// The fields the form does not read back yet, and therefore renders as a
-    /// stated note rather than as a control.
+    /// The fields the form does not read back yet.
     ///
-    /// Listed rather than merely absent, for the same reason [`OMITTED`] is: an
-    /// omission nobody decided is indistinguishable from one somebody did. The
-    /// difference is that this list is temporary — every entry leaves it when its
-    /// widget lands — so the test below pins it exactly, which makes *adding* to
-    /// it a deliberate act and shrinking it the only silent change.
-    const NOT_READ_YET_IDS: &[&str] = &[
-        "accessRights",
-        "accessRights.embargoDate",
-        "additionalMaterial",
-        "alternativeNames",
-        "attributions",
-        "contactPoint",
-        "dataLanguage",
-        "disciplines",
-        "documentationMaterial",
-        "funding",
-        "keywords",
-        "publications",
-        "secondaryUrl",
-        "spatialCoverage",
-        "status",
-        "temporalCoverage",
-        "typeOfData",
-        "url",
-    ];
+    /// **Empty: every editable field has a control.** The test below is what keeps it so — a new
+    /// `ProjectRaw` member placed in a section without a shape lands here and fails, rather
+    /// than rendering as a note nobody notices.
+    ///
+    /// The rendering it names is still in `widgets::stated`, unreached by any field today and
+    /// deliberately kept: it is what a *new* field falls back to, and a depositor who cannot
+    /// find a field the published page shows would otherwise conclude the form lost it.
+    const NOT_READ_YET_IDS: &[&str] = &[];
+
+    /// `typeOfData` is a closed vocabulary with no enum behind it, so nothing but this test says
+    /// the offered set still covers the committed data. A project holding a kind the form does
+    /// not offer has it dropped on the first save.
+    ///
+    /// Here rather than beside the slice in `platform-metadata`, because a platform crate takes no
+    /// path into a service's data directory (`.github/scripts/check-platform-paths.sh`).
+    #[test]
+    fn the_offered_data_kinds_cover_every_value_the_corpus_holds() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
+        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
+
+        let mut unknown: Vec<&str> = Vec::new();
+        for summary in published.summaries() {
+            let project = published.get(summary.shortcode).expect("a summary names a loaded project");
+            for kind in project.type_of_data.iter().flatten() {
+                if !TYPE_OF_DATA_VALUES.contains(&kind.as_str()) {
+                    unknown.push(kind);
+                }
+            }
+        }
+        unknown.sort_unstable();
+        unknown.dedup();
+        assert!(unknown.is_empty(), "committed data kinds the form does not offer: {unknown:?}");
+    }
+
+    /// Every role several projects share is either offered or deliberately not.
+    ///
+    /// Measured by project spread rather than by use count: a role one project repeats is that
+    /// project's wording, and the open set is what carries it. Three projects is the line.
+    /// Case-insensitive, because supplying one casing where the data has several is the offer's
+    /// whole purpose.
+    #[test]
+    fn the_offered_roles_cover_the_roles_several_projects_share() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
+        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
+
+        let mut projects_per_role: BTreeMap<String, BTreeSet<&str>> = BTreeMap::new();
+        for summary in published.summaries() {
+            let project = published.get(summary.shortcode).expect("a summary names a loaded project");
+            for attribution in &project.attributions {
+                for role in &attribution.contributor_type {
+                    projects_per_role
+                        .entry(role.trim().to_lowercase())
+                        .or_default()
+                        .insert(summary.shortcode);
+                }
+            }
+        }
+
+        let offered: BTreeSet<String> = CONTRIBUTOR_ROLES.iter().map(|role| role.to_lowercase()).collect();
+        let excused: BTreeSet<&str> = ROLES_NOT_OFFERED.iter().map(|(role, _)| *role).collect();
+        let mut missing: Vec<(&str, usize)> = projects_per_role
+            .iter()
+            .filter(|(role, projects)| {
+                projects.len() >= 3 && !offered.contains(role.as_str()) && !excused.contains(role.as_str())
+            })
+            .map(|(role, projects)| (role.as_str(), projects.len()))
+            .collect();
+        missing.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
+        assert!(
+            missing.is_empty(),
+            "roles shared by three or more projects that are neither offered nor in ROLES_NOT_OFFERED: {missing:?}"
+        );
+
+        // The other direction: an excuse for a role the corpus has stopped sharing is a stale
+        // decision, and one for a role that *is* offered is a contradiction.
+        for (role, reason) in ROLES_NOT_OFFERED {
+            assert!(!offered.contains(*role), "{role} is both offered and excused ({reason})");
+            assert!(
+                projects_per_role.get(*role).is_some_and(|projects| projects.len() >= 3),
+                "{role} is excused but no longer shared by three projects; drop the entry"
+            );
+        }
+    }
 
     #[test]
     fn the_fields_the_form_does_not_read_yet_are_named() {
@@ -787,7 +906,8 @@ mod tests {
         // applier touches it — so a *new* contract field defaulting into this
         // state would be silently uneditable while looking registered. The
         // completeness test above only asks that a field be placed in a section;
-        // this is what asks whether the form can actually read it.
+        // this is what asks whether the form can actually read it. The list is
+        // empty, so this now asserts that every editable field is readable.
         let unread: BTreeSet<&str> = FIELDS
             .iter()
             .filter(|field| !field.display_only && field.shape.is_none())
@@ -867,6 +987,133 @@ mod tests {
                         "{} declares a language map but the contract holds {value}",
                         field.id
                     ),
+                    // Stronger than the arms above: a choice must not merely be
+                    // a string, it must be one the applier accepts back. A
+                    // committed value outside the offered set is a control that
+                    // silently resets the field on the first save.
+                    // The pair is stored positionally on 74 projects and as
+                    // members on 11, so the only thing worth asserting is that
+                    // it is *not* a bare string — which is the one shape
+                    // `url_slot` cannot read either way.
+                    Shape::AgentRows | Shape::StringRows => {
+                        let rows = value.as_array().unwrap_or_else(|| {
+                            panic!("{} declares string rows but the contract holds {value}", field.id)
+                        });
+                        for row in rows {
+                            assert!(row.is_string(), "{} declares string rows but a row holds {row}", field.id);
+                        }
+                    }
+                    Shape::ReferenceRows(sources) => {
+                        let rows = value.as_array().unwrap_or_else(|| {
+                            panic!("{} declares reference rows but the contract holds {value}", field.id)
+                        });
+                        for row in rows {
+                            let source = row.get("type").and_then(serde_json::Value::as_str).unwrap_or("");
+                            assert!(
+                                sources.contains(&source),
+                                "{} holds a reference from {source:?}, which is not one of {sources:?}",
+                                field.id
+                            );
+                        }
+                    }
+                    Shape::PublicationRows => {
+                        let rows = value.as_array().unwrap_or_else(|| {
+                            panic!("{} declares publication rows but the contract holds {value}", field.id)
+                        });
+                        for row in rows {
+                            assert!(
+                                row.get("text").is_some_and(serde_json::Value::is_string),
+                                "{} declares publication rows but a row holds {row}",
+                                field.id
+                            );
+                        }
+                    }
+                    Shape::FundingRows => assert!(
+                        value.is_array() || value.is_string(),
+                        "{} declares funding but the contract holds {value}",
+                        field.id
+                    ),
+                    Shape::TextOrReferenceRows(sources) => {
+                        let rows = value.as_array().unwrap_or_else(|| {
+                            panic!("{} declares variant rows but the contract holds {value}", field.id)
+                        });
+                        for row in rows {
+                            // A reference must name a source the form offers,
+                            // or the committed entry is one no control can
+                            // reproduce; a text row is a language map.
+                            match row.get("url") {
+                                Some(_) => {
+                                    let source = row.get("type").and_then(serde_json::Value::as_str).unwrap_or("");
+                                    assert!(
+                                        sources.contains(&source),
+                                        "{} holds a reference from {source:?}, which is not one of {sources:?}",
+                                        field.id
+                                    );
+                                }
+                                None => assert!(
+                                    row.is_object(),
+                                    "{} declares variant rows but a text row holds {row}",
+                                    field.id
+                                ),
+                            }
+                        }
+                    }
+                    Shape::AttributionRows => {
+                        let rows = value.as_array().unwrap_or_else(|| {
+                            panic!("{} declares contributor rows but the contract holds {value}", field.id)
+                        });
+                        for row in rows {
+                            assert!(
+                                row.get("contributor").is_some_and(serde_json::Value::is_string),
+                                "{} declares contributor rows but a row holds {row}",
+                                field.id
+                            );
+                        }
+                    }
+                    Shape::MultilingualRows => {
+                        let rows = value.as_array().unwrap_or_else(|| {
+                            panic!("{} declares a list of maps but the contract holds {value}", field.id)
+                        });
+                        for row in rows {
+                            assert!(
+                                row.is_object(),
+                                "{} declares a list of language maps but a row holds {row}",
+                                field.id
+                            );
+                        }
+                    }
+                    Shape::StringList(set) => {
+                        let items = value
+                            .as_array()
+                            .unwrap_or_else(|| panic!("{} declares a list but the contract holds {value}", field.id));
+                        // A closed vocabulary must cover what the corpus holds,
+                        // or the applier drops a committed value on the first
+                        // save. An open one is open, so there is nothing to
+                        // check beyond the kind.
+                        let unknown: Vec<&str> = items
+                            .iter()
+                            .filter_map(serde_json::Value::as_str)
+                            .filter(|item| !set.accepts(item))
+                            .collect();
+                        assert!(
+                            unknown.is_empty(),
+                            "{} holds {unknown:?}, which its closed shape does not offer",
+                            field.id
+                        );
+                    }
+                    Shape::Url(_) => assert!(
+                        value.is_array() || value.is_object(),
+                        "{} declares a URL slot but the contract holds {value}",
+                        field.id
+                    ),
+                    Shape::Choice(values) => {
+                        let held = value.as_str().unwrap_or_default();
+                        assert!(
+                            values.contains(&held),
+                            "{} holds {held:?}, not one of the {values:?} its shape offers",
+                            field.id
+                        );
+                    }
                 }
             }
         }
@@ -1029,6 +1276,24 @@ mod tests {
                 assert!(!hint.contains("TODO"), "{}: unfinished hint", field.id);
             }
             assert!(!field.label.is_empty(), "{}: empty label", field.id);
+        }
+    }
+
+    #[test]
+    fn a_hint_never_states_an_obligation() {
+        // The pill states the tier and submit enforces it, so a hint repeating it is redundant
+        // where it agrees and a second, contradictory source of truth where it does not.
+        //
+        // "Needed before the project can be published" is deliberately still allowed, and is what
+        // the `Recommended` fields carry: a different gate, owned by RDU at publication.
+        // The tier note on `Obligation` is where that distinction is written down.
+        for field in FIELDS {
+            let Some(hint) = field.hint else { continue };
+            assert!(
+                !hint.to_ascii_lowercase().contains("required"),
+                "{}: a hint must not state an obligation — the pill does: {hint:?}",
+                field.id
+            );
         }
     }
 

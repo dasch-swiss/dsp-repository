@@ -17,7 +17,9 @@
 //!   — the value comes back empty, so with validation off, fiddling the year of a real date and
 //!   saving would clear it. Datastar gates its form path on the same flag.
 
+use editor_core::agents::Agents;
 use editor_core::draft::ProjectDraft;
+use editor_core::form::FormBody;
 use editor_core::records::ReviewOutcome;
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
@@ -27,7 +29,7 @@ use serde_json::Value;
 
 use crate::form::obligation::{section_progress, SectionProgress};
 use crate::form::registry::{sections_for, Audience, Section};
-use crate::form::widgets::{field_row, Mode};
+use crate::form::widgets::{field_row, Mode, Rows};
 use crate::form::INTENT;
 
 /// The id the enhanced path's patch targets. Also the anchor a save returns to.
@@ -55,6 +57,28 @@ pub const WITHDRAW: &str = "withdraw";
 /// its own, for the reason every other write here does: a refused post
 /// re-renders somewhere that still answers `GET`.
 pub const WITHDRAW_CONFIRM: &str = "withdraw-confirm";
+
+/// Discarding the draft, once confirmed.
+///
+/// "Discard" rather than "delete", in the wire vocabulary as well as on the
+/// control, because what goes is the draft and never the project: a project with
+/// no draft still has its published metadata, and the form re-opens showing it. "Delete the draft"
+/// reads to a depositor like deleting their work from the repository.
+pub const DISCARD: &str = "discard";
+
+/// Asking first. The draft is the only copy of whatever has not been submitted,
+/// and `DraftRepository::delete` cannot be undone.
+pub const DISCARD_CONFIRM: &str = "discard-confirm";
+
+/// The name a form posts the draft revision it was rendered from under.
+///
+/// What makes a concurrent overwrite visible: the draft is one row and `upsert` is last-write-wins,
+/// so without this a save silently replaces work somebody else did while this form was open.
+///
+/// A courtesy check between people, not a security control: a body that omits
+/// it is saved without complaint, because a hand-built request has no form to
+/// have been rendered from and nothing is protected by refusing it.
+pub const BASELINE: &str = "baseline";
 
 /// Why the form is read-only.
 ///
@@ -164,6 +188,12 @@ pub enum Notice<'a> {
     Submitted,
     /// A pending submission was taken back, and the form is editable again.
     Withdrawn,
+    /// The draft was discarded, and the form is showing published metadata
+    /// again.
+    Discarded,
+    /// Somebody else saved the draft while this form was open. Carries their
+    /// name where it is known, so the reader can go and ask rather than guess.
+    Changed { by: Option<&'a str>, at: &'a str },
     /// The write was refused, and why. The whole-form kind: a live submission,
     /// nothing to submit, or storage that would not take the write. Field-level
     /// errors are [`SectionView::errors`], which is a different thing — they
@@ -176,6 +206,19 @@ pub enum Notice<'a> {
 /// A struct rather than a long argument list: half of these are `Option`s of
 /// similar types, and adjacent optional arguments of one type are silently
 /// swappable — the same reason the form tiles' shell is a struct.
+/// An action that asks before it acts.
+///
+/// Both are irreversible for the person doing them: a withdrawal drops whatever
+/// a reviewer had recorded, and a discard drops the only copy of unsubmitted
+/// work.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Confirmation {
+    /// Taking a pending submission back.
+    Withdrawal,
+    /// Discarding the draft.
+    Discard,
+}
+
 pub struct SectionView<'a> {
     pub shortcode: &'a str,
     /// The published project's name, or `None` for a shortcode the published set
@@ -200,8 +243,21 @@ pub struct SectionView<'a> {
     /// Whether this reader may take the pending submission back (REQ-4.7), and
     /// so whether the withdrawal control is offered at all.
     pub may_withdraw: bool,
-    /// Set while the withdrawal confirmation is showing.
-    pub confirming_withdrawal: bool,
+    /// Whether this reader may discard the draft, and so whether the control is
+    /// offered at all.
+    ///
+    /// False without a stored draft — there is nothing to discard, and the form
+    /// is already showing published metadata — and false while a submission is
+    /// pending, because the draft is what the depositor comes back to when RDU
+    /// returns the project.
+    pub may_discard: bool,
+    /// Which confirmation is showing, if any.
+    ///
+    /// A named type rather than one `bool` per action: the second one turned
+    /// two independent flags into four states, two of which are nonsense
+    /// (both confirmations at once), and a reader of the call site could not
+    /// tell which `false` meant what.
+    pub confirming: Option<Confirmation>,
     /// Per-field submit errors, keyed by the path the field posts under
     /// (`temporalCoverage[0]`, not `temporalCoverage`), in field order.
     ///
@@ -220,10 +276,52 @@ pub struct SectionView<'a> {
     /// cycle. That is also what makes a returned draft distinguishable from one
     /// never submitted, without adding a state beyond REQ-2.1's five.
     pub round: Option<RoundSummary<'a>>,
+    /// Who last saved the draft, when that was somebody other than this reader.
+    ///
+    /// `None` for a draft this reader saved themselves, which is the ordinary
+    /// case and would be noise — and `None` for an editor whose account has
+    /// since been removed, where the row survives with a null author.
+    pub last_editor: Option<&'a str>,
+    /// When this reader will be signed out, formatted — and only when that is
+    /// close enough to be worth saying.
+    ///
+    /// `None` the rest of the time, which is nearly always: a warning
+    /// permanently on screen is a warning nobody reads.
+    pub signed_out_at: Option<&'a str>,
+    /// The stored draft's revision, posted back under [`BASELINE`] so a save can
+    /// tell whether the draft moved underneath it.
+    pub baseline: Option<&'a str>,
     /// When the stored draft was last written, formatted. `None` when the form
     /// is showing published metadata that nobody has saved over yet (REQ-1.1).
     pub saved_at: Option<&'a str>,
     pub notice: Option<Notice<'a>>,
+    /// The body that was posted, when this render is answering a `POST`.
+    ///
+    /// Only repeatable fields read it, and what they need it for is the one
+    /// thing the draft cannot hold: a row a depositor added but has not filled
+    /// in. Such a row is never stored — an empty row must not reach a published
+    /// file — so it lives in the form, and the body is where a re-render finds
+    /// it again.
+    ///
+    /// `None` after a successful save, deliberately: the save commits every row
+    /// that has any text in it, and a row that still has none is not data. It
+    /// is `Some` for a refusal and for add/remove, where the editing state is
+    /// exactly what has to survive.
+    pub posted: Option<&'a FormBody>,
+    /// The field one more blank row was just asked for.
+    pub adding_row: Option<&'a str>,
+    /// The agents an id field may refer to.
+    ///
+    /// Borrowed from `AppState`'s immutable snapshot, so no page allocates a
+    /// copy of 558 entries.
+    pub agents: Option<&'a Agents>,
+    /// Base URL a repeatable field's add and remove controls submit to.
+    ///
+    /// Owned, so [`Rows`] can stay a plain borrow. Built by the caller rather
+    /// than here, because the route shape belongs to the router: `/fields` under
+    /// the section's own URL, so a row action resolves through the same
+    /// audience gate, lock check and shortcode fold the save does.
+    pub rows_action: String,
 }
 
 impl SectionView<'_> {
@@ -278,8 +376,36 @@ impl SectionView<'_> {
             .collect()
     }
 
+    /// Whether any field this reader sees in this section offers the agent suggestion list, and
+    /// therefore whether the list is worth its weight on this page.
+    ///
+    /// The answer comes from `Shape::offers_agent_suggestions`, which is exhaustive, rather than
+    /// from a list of shapes written out here: a predicate that misses a shape renders no list
+    /// on a page whose inputs point at one, and nothing fails.
+    fn has_agent_field(&self) -> bool {
+        self.section
+            .fields_for(self.audience)
+            .any(|field| field.shape.is_some_and(editor_core::form::Shape::offers_agent_suggestions))
+    }
+
     fn action(&self) -> String {
         format!("/projects/{}/sections/{}", self.shortcode, self.section.id)
+    }
+
+    /// What a repeatable field needs: the posted body, and the base URL its add
+    /// and remove controls submit to.
+    ///
+    /// The base is the section's own URL plus `/fields`, so a row action
+    /// resolves through the same handler chain as the save — the audience gate,
+    /// the lock check and the shortcode fold are the section's, not a second
+    /// copy.
+    fn rows(&self) -> Rows<'_> {
+        Rows {
+            posted: self.posted,
+            action: &self.rows_action,
+            adding: self.adding_row,
+            agents: self.agents,
+        }
     }
 }
 
@@ -428,21 +554,47 @@ fn status(view: &SectionView<'_>) -> Markup {
                             .title("Submission withdrawn")
                     })
                 }
+                Some(Notice::Discarded) => {
+                    ({
+                        alert(
+                                "The draft has been discarded. This form is showing the project's published \
+                                 metadata again, and nothing you save from here is submitted until you say so.",
+                            )
+                            .variant(AlertVariant::Success)
+                            .title("Draft discarded")
+                    })
+                }
+                Some(Notice::Changed { by, at }) => { (changed_notice(by, at)) }
                 Some(Notice::Refused(message)) => { (alert(message).variant(AlertVariant::Warning)) }
                 None => {}
             }
+            // Outside the `@match`, because it is not an outcome of anything
+            // the reader just did — it is true of the session whatever the
+            // last action was, including none.
             // Inside the live region, beside the refusal it details rather than
             // above the form heading: the refusal is what gets announced, and
             // it is about fields the reader cannot see, so the list of them has
             // to announce with it. Outside, the announcement said what needed
             // changing and the detail was silent.
             (errors_elsewhere(view))
+            // Outside the `@match`, because it is not an outcome of anything
+            // the reader just did — it is true of the session whatever the last
+            // action was, including none.
+            @if let Some(at) = view.signed_out_at { (sign_out_notice(at)) }
         }
     }
 }
 
 /// The section's fields, and the control that saves them.
 fn form(view: &SectionView<'_>) -> Markup {
+    // Only on a form a save can actually change: a read-only one has no
+    // controls for `change` to fire from, so the attribute could never do
+    // anything, and advertising a save the handler would refuse is worse than
+    // not offering one.
+    let autosave = view
+        .locked
+        .is_none()
+        .then(|| format!("@post('{}', {{contentType: 'form'}})", view.action()));
     let action = view.action();
     html! {
         @if let Some(round) = view.round.as_ref() { (review_round(round)) }
@@ -465,17 +617,30 @@ fn form(view: &SectionView<'_>) -> Markup {
             action=(action)
             class="flex flex-col gap-6"
             data-on:submit={ "@post('" (action) "', {contentType: 'form'})" }
+            "data-on:change__debounce.1s"=[autosave.as_deref()]
         {
+            // The revision this form was rendered from, so a save can tell
+            // whether the draft moved underneath it. Absent when there is no
+            // stored draft: there is nothing to have moved.
+            @if let Some(baseline) = view.baseline {
+                input type="hidden" name=(BASELINE) value=(baseline);
+            }
             @for field in view.section.fields_for(view.audience) {
                 // No wrapper and no obligation pill here: the pill is inside the
                 // field's own label, which is the only way it reaches a screen
                 // reader now that nothing is `required`. See `widgets::labelled`.
-                (field_row(field, view.draft, view.mode_of(field.id)))
+                (field_row(field, view.draft, view.mode_of(field.id), view.rows()))
                 @for message in view.errors_for(field.id) {
                     (alert(message).variant(AlertVariant::Warning))
                 }
             }
             (controls(view))
+            // Once per page, and only when a field on it holds agent ids — the list carries every committed agent,
+            // so rendering it on a section with no such field is pure weight. Inside the form is fine: a
+            // `<datalist>` submits nothing.
+            @if let Some(agents) = view.agents {
+                @if view.has_agent_field() { (crate::form::widgets::agent_suggestions(agents)) }
+            }
         }
     }
 }
@@ -529,6 +694,47 @@ fn errors_elsewhere(view: &SectionView<'_>) -> Markup {
     }
 }
 
+/// What a reader is told shortly before their sign-in ends.
+fn sign_out_notice(at: &str) -> Markup {
+    let body = html! {
+        p { "You will be signed out at " (at) ". Save your draft before then." }
+    };
+    let built = alert(body).variant(AlertVariant::Warning).title("This sign-in is about to end");
+    html! {
+        (built)
+    }
+}
+
+/// What a reader is told when somebody else saved the draft underneath them.
+///
+/// A named function rather than an `html!` block spliced into the `@match` arm,
+/// which is this repo's rule (`modules/dpe/CLAUDE.md`) and not a stylistic one:
+/// `maudfmt` skips a block nested as a call argument and `cargo fmt` then
+/// flattens it. The first version of this sat inline and was already mangled —
+/// `@ match`, `p class = "mt-2"` — with `just check` green, because the check
+/// verifies `maudfmt` is a no-op and `maudfmt` never looked at it.
+fn changed_notice(by: Option<&str>, at: &str) -> Markup {
+    let body = html! {
+        p {
+            @match by {
+                Some(name) => { (name) " saved this draft at " (at) ", after this form was opened." }
+                None => { "Somebody else saved this draft at " (at) ", after this form was opened." }
+            }
+            " Nothing has been saved just now."
+        }
+        p class="mt-2" {
+            "What is on this page is still what you typed. Saving again keeps your version and replaces "
+            "theirs, so it is worth checking with them first."
+        }
+    };
+    let built = alert(body)
+        .variant(AlertVariant::Warning)
+        .title("The draft changed while you were editing");
+    html! {
+        (built)
+    }
+}
+
 /// The write controls, which depend on where the project sits in the cycle.
 ///
 /// Every one of them is a named submit on the *same* form, as the review
@@ -540,7 +746,26 @@ fn errors_elsewhere(view: &SectionView<'_>) -> Markup {
 /// `@post`.
 fn controls(view: &SectionView<'_>) -> Markup {
     html! {
-        @if view.confirming_withdrawal {
+        @if view.confirming == Some(Confirmation::Discard) {
+            div class="rounded border border-neutral-300 bg-white p-4 flex flex-col gap-3" {
+                p {
+                    "Discarding the draft removes every change that has not been submitted. It cannot be undone. \
+                     The project itself is not affected — the form re-opens showing its published metadata."
+                }
+                div class="flex items-center gap-4" {
+                    ({
+                        button("Yes, discard the draft")
+                            .button_type(ButtonType::Submit)
+                            .name_value(INTENT, DISCARD)
+                    })
+                    // A link for the same reason declining a withdrawal is one:
+                    // backing out must write nothing, and a button with no
+                    // intent falls through to `save`, which would answer "saved"
+                    // to somebody who has just decided not to.
+                    (link("Keep the draft", view.action()))
+                }
+            }
+        } @else if view.confirming == Some(Confirmation::Withdrawal) {
             div class="rounded border border-neutral-300 bg-white p-4 flex flex-col gap-3" {
                 p {
                     "Taking the submission back removes it from RDU's queue, along with anything a reviewer has \
@@ -584,8 +809,23 @@ fn controls(view: &SectionView<'_>) -> Markup {
                         .button_type(ButtonType::Submit)
                         .name_value(INTENT, SUBMIT)
                 })
+                @if view.may_discard {
+                    ({
+                        button("Discard draft")
+                            .variant(ButtonVariant::Secondary)
+                            .button_type(ButtonType::Submit)
+                            .name_value(INTENT, DISCARD_CONFIRM)
+                    })
+                }
                 @if let Some(saved_at) = view.saved_at {
-                    p class="text-sm text-gray-600" { "Draft last saved " (saved_at) "." }
+                    p class="text-sm text-gray-600" {
+                        "Draft last saved "
+                        (saved_at)
+                        // Named only when it was somebody else: "saved by you"
+                        // is the ordinary case and reads as noise.
+                        @if let Some(editor) = view.last_editor { " by " (editor) }
+                        "."
+                    }
                 } @else {
                     p class="text-sm text-gray-600" {
                         "Nothing saved yet — this form shows the project's published metadata."
@@ -598,14 +838,27 @@ fn controls(view: &SectionView<'_>) -> Markup {
 
 #[cfg(test)]
 mod tests {
+    use editor_core::agents::Agents;
     use editor_core::draft::ProjectDraft;
+    use editor_core::form::FormBody;
     use serde_json::json;
 
     use super::*;
     use crate::form::registry::{field, section};
 
-    /// A draft over a real committed project, so the fields under test hold what
-    /// the corpus actually holds rather than what a fixture assumes.
+    /// The committed agent set, loaded once for the whole test binary.
+    pub(super) fn agent_corpus() -> &'static Agents {
+        static AGENTS: std::sync::OnceLock<Agents> = std::sync::OnceLock::new();
+        AGENTS.get_or_init(|| {
+            let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data");
+            let (agents, errors) = Agents::load_from(&dir.join("persons"), &dir.join("organizations"));
+            assert!(errors.is_empty(), "the committed agent set should load: {errors:?}");
+            agents
+        })
+    }
+
+    /// A draft over a real committed project, so the fields under test hold what the corpus
+    /// actually holds rather than what a fixture assumes.
     pub(super) fn published_draft() -> ProjectDraft {
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
         let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
@@ -615,6 +868,12 @@ mod tests {
 
     pub(super) fn view<'a>(draft: &'a ProjectDraft, section_id: &str, audience: Audience) -> SectionView<'a> {
         SectionView {
+            // The real committed set, so a snapshot shows resolved names and
+            // the suggestion list a depositor actually gets.
+            agents: Some(agent_corpus()),
+            posted: None,
+            adding_row: None,
+            rows_action: format!("/projects/0801d/sections/{section_id}/fields"),
             shortcode: "0801d",
             project_name: Some("Bernoulli-Euler Online"),
             section: section(section_id).expect("a known section"),
@@ -623,7 +882,11 @@ mod tests {
             locked: None,
             accepted_fields: &[],
             may_withdraw: false,
-            confirming_withdrawal: false,
+            may_discard: false,
+            confirming: None,
+            last_editor: None,
+            signed_out_at: None,
+            baseline: None,
             errors: &[],
             round: None,
             saved_at: None,
@@ -686,6 +949,82 @@ mod tests {
     }
 
     #[test]
+    fn no_section_renders_the_same_element_id_twice() {
+        // A duplicate `id` silently breaks every `label for` and
+        // `aria-describedby` pointing at it: the browser resolves them to the
+        // *first* element with that id, so the second control announces the
+        // wrong name and clicking its label focuses the wrong box.
+        //
+        // Easy to produce here, because several controls deliberately share a **name** so
+        // `FormBody::all` collects their values into one list, and the tiles default an
+        // element's id to its name — so any such control needs an explicit id.
+        //
+        // Over every section and both audiences, on a project that carries data in the repeatable
+        // fields: an empty list renders no rows and would hide the row-level collisions
+        // entirely.
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["organization-008", "person-001"]));
+        draft.set(
+            "additionalMaterial",
+            serde_json::json!(["https://one.example/", "https://two.example/"]),
+        );
+        draft.set("publications", serde_json::json!([{ "text": "One" }, { "text": "Two" }]));
+        draft.set(
+            "funding",
+            serde_json::json!([{ "funders": ["organization-002", "organization-003"], "number": "1" }]),
+        );
+
+        let mut clashes: Vec<String> = Vec::new();
+        for audience in [Audience::Everyone, Audience::RduOnly] {
+            for section in sections_for(audience) {
+                let out = page(&view(&draft, section.id, audience)).into_string();
+                let mut seen: std::collections::BTreeMap<&str, usize> = std::collections::BTreeMap::new();
+                for id in out.split(r#" id=""#).skip(1).filter_map(|rest| rest.split('"').next()) {
+                    *seen.entry(id).or_default() += 1;
+                }
+                for (id, count) in seen.iter().filter(|(_, count)| **count > 1) {
+                    clashes.push(format!("{} ({audience:?}): {id} x{count}", section.id));
+                }
+            }
+        }
+        assert!(clashes.is_empty(), "duplicate element ids: {clashes:?}");
+    }
+
+    #[test]
+    fn an_editable_form_autosaves_on_change_and_a_locked_one_does_not() {
+        // `change` rather than `input`: the response patches this whole region,
+        // so a trigger that fired mid-keystroke would patch the field being
+        // typed into. And nothing on a read-only form — it has no controls for
+        // `change` to fire from, so the attribute could never act, and
+        // advertising a save the handler would refuse is worse than none.
+        let draft = published_draft();
+        let editable = page(&view(&draft, "overview", Audience::Everyone)).into_string();
+        assert!(editable.contains("data-on:change__debounce.1s"), "{editable}");
+        assert!(!editable.contains("data-on:input"), "never on every keystroke: {editable}");
+
+        let mut locked = view(&draft, "overview", Audience::Everyone);
+        locked.locked = Some(Locked::Submitted);
+        let out = page(&locked).into_string();
+        assert!(!out.contains("data-on:change"), "{out}");
+    }
+
+    #[test]
+    fn the_form_warns_about_a_sign_out_only_when_one_is_near() {
+        // A warning permanently on screen is a warning nobody reads, which is
+        // why the deadline reaches the view already filtered.
+        let draft = published_draft();
+        let quiet = page(&view(&draft, "overview", Audience::Everyone)).into_string();
+        assert!(!quiet.contains("about to end"), "{quiet}");
+
+        let mut soon = view(&draft, "overview", Audience::Everyone);
+        soon.signed_out_at = Some("2026-09-09 08:15 UTC");
+        let out = page(&soon).into_string();
+        assert!(out.contains("This sign-in is about to end"), "{out}");
+        assert!(out.contains("2026-09-09 08:15 UTC"), "{out}");
+        assert!(out.contains("Save your draft before then"), "the action is named: {out}");
+    }
+
+    #[test]
     fn the_form_posts_to_the_url_it_was_fetched_from() {
         // A write posting to a path with no `GET` strands a rejected save on a
         // bare 405 — the dead end `POST /depositors/{id}` briefly was.
@@ -725,17 +1064,90 @@ mod tests {
     }
 
     #[test]
-    fn a_field_the_form_cannot_read_yet_says_so_and_posts_nothing() {
-        // Silently absent would leave a depositor who cannot find "Status" in
-        // the section the published page shows it in concluding the form lost
-        // it. Posting nothing is what keeps its stored value untouched
-        // (REQ-1.7), because no applier names the field.
+    fn the_agent_suggestion_list_is_rendered_once_and_only_where_a_field_needs_it() {
+        // It carries every committed agent, so rendering it per control, or on a section holding no
+        // agent field, is pure weight.
+        // Over **every** section and both audiences, not two hand-picked ones. A narrower version
+        // passes while `funding` — which also offers the list, and sits alone in the access
+        // section — renders inputs pointing at a `<datalist>` that was never on the page,
+        // so a depositor typing a funder got no suggestions and nothing failed.
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["organization-008"]));
+        for audience in [Audience::Everyone, Audience::RduOnly] {
+            for section in sections_for(audience) {
+                let out = page(&view(&draft, section.id, audience)).into_string();
+                let referenced = out.contains(r#"list="agent-suggestions""#);
+                let rendered = out.matches("<datalist").count();
+                assert!(
+                    !referenced || rendered == 1,
+                    "{} ({audience:?}) points at the suggestion list but renders {rendered} of them",
+                    section.id
+                );
+                assert!(
+                    rendered <= 1,
+                    "{} ({audience:?}) renders the 31.7 KB list {rendered} times",
+                    section.id
+                );
+            }
+        }
+
+        let contributors = page(&view(&draft, "contributors", Audience::Everyone)).into_string();
+        assert_eq!(contributors.matches("<datalist").count(), 1);
+        assert!(contributors.contains(r#"list="agent-suggestions""#), "the input points at it");
+        // The option's value is the id, which is what the input holds and
+        // therefore what round-trips; its text is the name.
+        assert!(
+            contributors.contains(r#"<option value="organization-008">"#),
+            "an option carries the id as its value: {contributors}"
+        );
+
+        let image = page(&view(&draft, "image", Audience::Everyone)).into_string();
+        assert_eq!(image.matches("<datalist").count(), 0, "no agent field, no list");
+    }
+
+    #[test]
+    fn an_agent_row_shows_the_resolved_name_beside_the_id() {
+        // The input has to hold the id for the round trip to be exact, so the
+        // name is rendered beside it — otherwise a depositor is looking at
+        // `organization-008` with no way to know who that is.
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["organization-008"]));
+        let out = page(&view(&draft, "contributors", Audience::Everyone)).into_string();
+        assert!(out.contains(r#"value="organization-008""#), "the id is what posts: {out}");
+        assert!(out.contains("Dokumentationsbibliothek St. Moritz"), "the name is shown: {out}");
+    }
+
+    #[test]
+    fn an_agent_id_that_resolves_to_nobody_says_so_in_the_form() {
+        // Said here as well as at submit, because the form is where it can be
+        // fixed: told only at submit, a depositor would have to work out which
+        // row the refusal meant.
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["person-99999"]));
+        let out = page(&view(&draft, "contributors", Audience::Everyone)).into_string();
+        assert!(out.contains("No person or organisation with this id"), "{out}");
+    }
+
+    #[test]
+    fn no_field_renders_the_not_editable_yet_note_any_more() {
+        // This replaces a test that asserted the note *appears*, which had no
+        // subject left once every editable field gained a control. The note
+        // itself is kept in `widgets::stated` as the fallback a new contract
+        // field lands on, so what is worth pinning now is that nothing reaches
+        // it — a field that did would be silently uneditable while looking
+        // registered.
         let draft = published_draft();
-        let out = overview(&draft);
-        assert!(field("status").expect("status").shape.is_none(), "the premise of this test");
-        assert!(out.contains("Status"), "{out}");
-        assert!(out.contains("not editable here yet"), "{out}");
-        assert!(!out.contains(r#"name="status""#), "{out}");
+        let mut reached: Vec<&str> = Vec::new();
+        for section in sections_for(Audience::RduOnly) {
+            let out = page(&view(&draft, section.id, Audience::RduOnly)).into_string();
+            if out.contains("not editable here yet") {
+                reached.push(section.id);
+            }
+        }
+        assert!(
+            reached.is_empty(),
+            "sections still rendering the unbuilt-field note: {reached:?}"
+        );
     }
 
     #[test]

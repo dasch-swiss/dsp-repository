@@ -66,6 +66,22 @@ pub fn normalize_page_url(url: &str) -> &'static str {
                     if !section.is_empty() && !section.contains('/') {
                         return "/projects/{shortcode}/sections/{section}";
                     }
+                    // The row actions live under the section and render the
+                    // full page shell on the no-JavaScript path, so they emit a
+                    // beacon of their own. Without an entry they collapsed into
+                    // `"other"` — the field id and the row key are both
+                    // unbounded, so neither may be kept, but the two shapes are
+                    // worth telling apart from an unrecognised path.
+                    if let Some(rest) = section.split_once('/').map(|(_, rest)| rest) {
+                        if let Some(rest) = rest.strip_prefix("fields/") {
+                            if rest.ends_with("/add") {
+                                return "/projects/{shortcode}/sections/{section}/fields/{field}/add";
+                            }
+                            if rest.ends_with("/remove") {
+                                return "/projects/{shortcode}/sections/{section}/fields/{field}/{key}/remove";
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -91,6 +107,37 @@ pub fn normalize_page_url(url: &str) -> &'static str {
 
 #[cfg(test)]
 mod tests {
+
+    /// The row actions render the page shell on the no-JavaScript path, so they
+    /// emit a beacon of their own. Without an entry they collapsed into
+    /// `"other"` alongside genuinely unknown paths — the module's own REVIEW
+    /// note asks for one whenever `router.rs` gains a full-page route.
+    #[test]
+    fn the_row_action_routes_are_attributed_rather_than_bucketed_as_other() {
+        assert_eq!(
+            normalize_page_url("/projects/0801d/sections/dataset/fields/keywords/add"),
+            "/projects/{shortcode}/sections/{section}/fields/{field}/add"
+        );
+        assert_eq!(
+            normalize_page_url("/projects/080C/sections/dataset/fields/keywords/r0/remove"),
+            "/projects/{shortcode}/sections/{section}/fields/{field}/{key}/remove"
+        );
+        // The field id and the row key are unbounded sets, so neither may reach
+        // the attribute verbatim — that is the cardinality explosion this
+        // module exists to prevent.
+        for url in [
+            "/projects/0801d/sections/dataset/fields/keywords/add",
+            "/projects/0801d/sections/dataset/fields/attributions/r7/remove",
+        ] {
+            let normalized = normalize_page_url(url);
+            assert!(!normalized.contains("keywords"), "{normalized}");
+            assert!(!normalized.contains("attributions"), "{normalized}");
+            assert!(!normalized.contains("r7"), "{normalized}");
+        }
+        // Still "other" for a shape that is not one of the two.
+        assert_eq!(normalize_page_url("/projects/0801d/sections/dataset/fields/keywords"), "other");
+        assert_eq!(normalize_page_url("/projects/0801d/sections/dataset/nonsense/x/add"), "other");
+    }
     use super::*;
 
     #[test]

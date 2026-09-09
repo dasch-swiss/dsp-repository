@@ -20,7 +20,7 @@ use std::path::{Path, PathBuf};
 use editor_core::canonical::write_draft;
 use editor_core::draft::ProjectDraft;
 use editor_core::form::{apply, FormBody, Shape};
-use editor_core::multilingual::UI_LANGUAGES;
+use editor_core::multilingual::{DraftMultilingual, UI_LANGUAGES};
 use editor_web::form::registry::{Field, FIELDS};
 use platform_metadata::project::ProjectRaw;
 use serde_json::Value;
@@ -74,6 +74,226 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                     None => String::new(),
                 };
                 pairs.push((field.id.to_string(), rendered));
+            }
+            Shape::ReferenceRows(_) => {
+                let rows = draft.get(field.id).and_then(Value::as_array).cloned().unwrap_or_default();
+                if rows.is_empty() {
+                    pairs.push((format!("{}.row", field.id), String::new()));
+                }
+                for (position, row) in rows.iter().enumerate() {
+                    let key = format!("r{position}");
+                    let prefix = format!("{}.{key}", field.id);
+                    pairs.push((format!("{}.row", field.id), key.clone()));
+                    for (member, name) in [("type", "type"), ("url", "url"), ("text", "label")] {
+                        pairs.push((
+                            format!("{prefix}.ref.{name}"),
+                            row.get(member).and_then(Value::as_str).unwrap_or_default().to_string(),
+                        ));
+                    }
+                }
+            }
+            Shape::PublicationRows => {
+                let rows = draft.get(field.id).and_then(Value::as_array).cloned().unwrap_or_default();
+                if rows.is_empty() {
+                    pairs.push((format!("{}.row", field.id), String::new()));
+                }
+                for (position, row) in rows.iter().enumerate() {
+                    let key = format!("r{position}");
+                    let prefix = format!("{}.{key}", field.id);
+                    pairs.push((format!("{}.row", field.id), key.clone()));
+                    pairs.push((
+                        format!("{prefix}.text"),
+                        row.get("text").and_then(Value::as_str).unwrap_or_default().to_string(),
+                    ));
+                    pairs.push((
+                        format!("{prefix}.pid"),
+                        row.get("pid")
+                            .and_then(|pid| pid.get("url"))
+                            .and_then(Value::as_str)
+                            .unwrap_or_default()
+                            .to_string(),
+                    ));
+                }
+            }
+            Shape::FundingRows => {
+                // The discriminant is on the field, so both branches post once
+                // rather than per row.
+                let held = draft.get(field.id);
+                let is_grants = !held.is_some_and(Value::is_string);
+                pairs.push((
+                    format!("{}.kind", field.id),
+                    if is_grants { "grants" } else { "text" }.to_string(),
+                ));
+                pairs.push((
+                    format!("{}.text", field.id),
+                    held.and_then(Value::as_str).unwrap_or_default().to_string(),
+                ));
+                let grants = held.and_then(Value::as_array).cloned().unwrap_or_default();
+                if grants.is_empty() {
+                    pairs.push((format!("{}.row", field.id), String::new()));
+                }
+                for (position, grant) in grants.iter().enumerate() {
+                    let key = format!("r{position}");
+                    let prefix = format!("{}.{key}", field.id);
+                    pairs.push((format!("{}.row", field.id), key.clone()));
+                    for id in grant
+                        .get("funders")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .filter_map(Value::as_str)
+                    {
+                        pairs.push((format!("{prefix}.funder"), id.to_string()));
+                    }
+                    // The trailing blank funder control.
+                    pairs.push((format!("{prefix}.funder"), String::new()));
+                    for member in ["number", "name", "url"] {
+                        pairs.push((
+                            format!("{prefix}.{member}"),
+                            grant.get(member).and_then(Value::as_str).unwrap_or_default().to_string(),
+                        ));
+                    }
+                }
+            }
+            Shape::TextOrReferenceRows(_) => {
+                // A row is a variant. Both branches are in the DOM and the
+                // inactive one is only `hidden`, so an untouched form posts
+                // *both* candidates plus the discriminant — which is exactly
+                // what the applier must narrow with the discriminant alone.
+                let rows = draft.get(field.id).and_then(Value::as_array).cloned().unwrap_or_default();
+                if rows.is_empty() {
+                    pairs.push((format!("{}.row", field.id), String::new()));
+                }
+                for (position, row) in rows.iter().enumerate() {
+                    let key = format!("r{position}");
+                    let prefix = format!("{}.{key}", field.id);
+                    pairs.push((format!("{}.row", field.id), key.clone()));
+                    let is_reference = row.get("url").is_some();
+                    pairs.push((
+                        format!("{prefix}.kind"),
+                        if is_reference { "reference" } else { "text" }.to_string(),
+                    ));
+                    // The reference branch, empty on a text row.
+                    for (member, name) in [("type", "type"), ("url", "url"), ("text", "label")] {
+                        pairs.push((
+                            format!("{prefix}.ref.{name}"),
+                            row.get(member).and_then(Value::as_str).unwrap_or_default().to_string(),
+                        ));
+                    }
+                    // The text branch, empty on a reference row. A control per
+                    // offered language plus whatever tags the value carries.
+                    let texts = if is_reference {
+                        DraftMultilingual::default()
+                    } else {
+                        editor_web::form::widgets::as_multilingual(row)
+                    };
+                    for tag in UI_LANGUAGES.iter().copied().chain(texts.extra_tags()) {
+                        pairs.push((format!("{prefix}.text.{tag}"), texts.get(tag).unwrap_or_default().to_string()));
+                    }
+                }
+            }
+            Shape::AttributionRows => {
+                // A row is a contributor plus a role checkbox group. The group
+                // posts one value per ticked box, which for an untouched form
+                // is exactly the roles the project holds - in the order it
+                // holds them, since the widget lists the offer first and then
+                // whatever the row adds.
+                let rows = draft.get(field.id).and_then(Value::as_array).cloned().unwrap_or_default();
+                if rows.is_empty() {
+                    pairs.push((format!("{}.row", field.id), String::new()));
+                }
+                for (position, row) in rows.iter().enumerate() {
+                    let key = format!("r{position}");
+                    pairs.push((format!("{}.row", field.id), key.clone()));
+                    pairs.push((
+                        format!("{}.{key}.contributor", field.id),
+                        row.get("contributor").and_then(Value::as_str).unwrap_or_default().to_string(),
+                    ));
+                    for role in row
+                        .get("contributorType")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .filter_map(Value::as_str)
+                    {
+                        pairs.push((format!("{}.{key}.role", field.id), role.to_string()));
+                    }
+                    // The "add another role" input, empty on an untouched form.
+                    pairs.push((format!("{}.{key}.role", field.id), String::new()));
+                }
+            }
+            Shape::AgentRows | Shape::StringRows => {
+                // Same row protocol as the language-map rows below, with one
+                // text per row: the hidden `{field}.row` key, and the empty
+                // marker when the list has none.
+                let rows = draft.get(field.id).and_then(Value::as_array).cloned().unwrap_or_default();
+                if rows.is_empty() {
+                    pairs.push((format!("{}.row", field.id), String::new()));
+                }
+                for (position, row) in rows.iter().enumerate() {
+                    let key = format!("r{position}");
+                    pairs.push((format!("{}.row", field.id), key.clone()));
+                    pairs.push((format!("{}.{key}", field.id), row.as_str().unwrap_or_default().to_string()));
+                }
+            }
+            Shape::MultilingualRows => {
+                // The tile emits a hidden `{field}.row` per row and a single
+                // empty one when the list has none — the marker, which is what
+                // lets a depositor clear the last row rather than the field
+                // reading as absent and being left alone. Row keys are
+                // positional on a fresh render, so `r0` is the stored list's
+                // first row.
+                let rows = draft.get(field.id).and_then(Value::as_array).cloned().unwrap_or_default();
+                if rows.is_empty() {
+                    pairs.push((format!("{}.row", field.id), String::new()));
+                }
+                for (position, row) in rows.iter().enumerate() {
+                    let key = format!("r{position}");
+                    pairs.push((format!("{}.row", field.id), key.clone()));
+                    let stored = editor_web::form::widgets::as_multilingual(row);
+                    for tag in UI_LANGUAGES.iter().copied().chain(stored.extra_tags()) {
+                        pairs.push((
+                            format!("{}.{key}.{tag}", field.id),
+                            stored.get(tag).unwrap_or_default().to_string(),
+                        ));
+                    }
+                }
+            }
+            Shape::StringList(_) => {
+                // A checkbox group posts one value per ticked box and nothing at all when none is
+                // ticked. Nothing-at-all is what leaves the field alone rather than
+                // clearing it, so an untouched form over a project with no list
+                // posts no name — the state several committed files are in for `typeOfData`.
+                for value in draft
+                    .get(field.id)
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .filter_map(Value::as_str)
+                {
+                    pairs.push((field.id.to_string(), value.to_string()));
+                }
+            }
+            Shape::Url(slot) => {
+                // The control renders the slot's stored value, with a
+                // placeholder rendering empty — two projects hold
+                // `url: ["MISSING"]`, which is the same trap the scalar arm
+                // above exists for, reached through a different reader.
+                let rendered = draft
+                    .url_slot(slot)
+                    .filter(|text| !platform_metadata::is_placeholder(text))
+                    .unwrap_or_default();
+                pairs.push((field.id.to_string(), rendered.to_string()));
+            }
+            Shape::Choice(_) => {
+                // A radio group posts the checked value and a `<select>` the
+                // selected one, so an untouched form carries whatever the
+                // project holds. A project holding *nothing* posts nothing at
+                // all: no radio is checked and the group submits no name, which
+                // is what leaves the field alone rather than clearing it.
+                if let Some(value) = draft.get(field.id).and_then(Value::as_str) {
+                    pairs.push((field.id.to_string(), value.to_string()));
+                }
             }
             Shape::Multilingual => {
                 // The widget renders a control per offered language whether or
@@ -176,6 +396,36 @@ fn the_corpus_really_does_carry_the_placeholders_this_test_is_about() {
 }
 
 #[test]
+fn the_corpus_carries_a_row_whose_text_only_trimming_would_change() {
+    // A positive canary for the row arm. `apply_multilingual_rows` looks a
+    // submitted row text up against every stored row so that trimming cannot
+    // rewrite a value nobody edited — and the only thing that proves the rule is
+    // live is a committed row with surrounding whitespace in it. Without this,
+    // the rule could be removed and the round trip above would still pass over a
+    // corpus that happened to have none.
+    let mut found: Vec<String> = Vec::new();
+    for path in project_files() {
+        let raw: ProjectRaw = serde_json::from_str(&std::fs::read_to_string(&path).expect("readable")).expect("parses");
+        let value = serde_json::to_value(&raw).expect("serializes");
+        for field in ["keywords", "alternativeNames"] {
+            for row in value.get(field).and_then(Value::as_array).into_iter().flatten() {
+                for (tag, text) in row.as_object().into_iter().flatten() {
+                    if let Some(text) = text.as_str() {
+                        if text != text.trim() {
+                            found.push(format!("{}: {field}.{tag}", path.file_name().unwrap().to_string_lossy()));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert!(
+        !found.is_empty(),
+        "no committed row text carries surrounding whitespace, so the round trip above no longer covers the          trimming rule for rows"
+    );
+}
+
+#[test]
 fn the_body_this_test_submits_carries_every_field_a_shape_is_declared_for() {
     // The other half of the canary, and the reason the table is derived rather
     // than written out: a field whose shape is declared but which
@@ -192,6 +442,40 @@ fn the_body_this_test_submits_carries_every_field_a_shape_is_declared_for() {
     for (field, shape) in read_fields() {
         match shape {
             Shape::Text(_) => assert!(body.has(field.id), "{} is declared but never posted", field.id),
+            // Funding's discriminant is on the field, so that is what always
+            // posts - the row marker only appears on the grants branch.
+            Shape::FundingRows => assert!(
+                body.has(&format!("{}.kind", field.id)),
+                "{} is declared but never posts its discriminant",
+                field.id
+            ),
+            // Only where the project holds one — an unset choice posts nothing,
+            // by design, so requiring the name unconditionally would assert a
+            // body no browser sends.
+            Shape::Url(_) => assert!(body.has(field.id), "{} is declared but never posted", field.id),
+            // Only where the project holds one, for the same reason a choice
+            // is: an empty group posts no name.
+            Shape::AgentRows
+            | Shape::StringRows
+            | Shape::MultilingualRows
+            | Shape::AttributionRows
+            | Shape::TextOrReferenceRows(_)
+            | Shape::ReferenceRows(_)
+            | Shape::PublicationRows => assert!(
+                body.has(&format!("{}.row", field.id)),
+                "{} is declared but never posts its row marker",
+                field.id
+            ),
+            Shape::StringList(_) => assert!(
+                draft.get(field.id).is_none() || body.has(field.id),
+                "{} is declared but never posted",
+                field.id
+            ),
+            Shape::Choice(_) => assert!(
+                draft.get(field.id).is_none() || body.has(field.id),
+                "{} is declared but never posted",
+                field.id
+            ),
             Shape::Multilingual => {
                 assert!(!body.entries(field.id).is_empty(), "{} is declared but never posted", field.id)
             }

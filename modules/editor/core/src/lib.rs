@@ -16,6 +16,7 @@
 //! writer ([`canonical`]) that turns an approved draft back into a
 //! `projects/*.json` file byte-for-byte.
 
+pub mod agents;
 pub mod canonical;
 pub mod draft;
 pub mod form;

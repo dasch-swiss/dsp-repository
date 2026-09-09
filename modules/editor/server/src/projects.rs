@@ -30,7 +30,7 @@ pub(crate) const NOT_ASSIGNED: &str =
                             them if you should have access to it.";
 
 /// `GET /projects` — what this account may edit.
-pub(crate) async fn list(State(state): State<AppState>, Authenticated(user): Authenticated) -> Response {
+pub(crate) async fn list(State(state): State<AppState>, Authenticated(user, _): Authenticated) -> Response {
     // Not one page with a branch inside it: an RDU account's `shortcodes` is
     // empty by design (REQ-4.2), so rendering it through the depositor's list
     // would tell an administrator they have no projects.
@@ -69,7 +69,7 @@ pub(crate) async fn list(State(state): State<AppState>, Authenticated(user): Aut
 /// link shared between a depositor and a reviewer.
 pub(crate) async fn detail(
     State(state): State<AppState>,
-    Authenticated(user): Authenticated,
+    Authenticated(user, _): Authenticated,
     Path(shortcode): Path<String>,
 ) -> Response {
     // Shape first, so a path segment that could never name a project is a 404

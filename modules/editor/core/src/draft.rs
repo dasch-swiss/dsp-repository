@@ -90,6 +90,23 @@ pub enum FundingShape {
     Text,
 }
 
+/// Which of the two URLs a field owns.
+///
+/// The project contract keeps a DaSCH address and an external one, and *where*
+/// it keeps them depends on the project's vintage — so a field cannot simply
+/// name a member. The two slots are also owned by different audiences (`url` is
+/// RDU-only, `secondaryUrl` is a depositor's), which is the reason they are
+/// written independently rather than as a pair: a depositor editing the external
+/// site must not be able to touch the DaSCH one, and must not lose it either.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UrlSlot {
+    /// The DaSCH platform address — `url`, or element 0 of the legacy array.
+    Primary,
+    /// The project's own website — `secondaryUrl`, or element 1 of the legacy
+    /// array.
+    Secondary,
+}
+
 /// The on-disk form of `url`, which the editor writes back unchanged.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UrlShape {
@@ -142,26 +159,97 @@ impl ProjectDraft {
     }
 
     /// One field's raw value, or `None` when the field is not set.
+    ///
+    /// A **dotted** field is followed segment by segment, so
+    /// `accessRights.embargoDate` reads the member inside `accessRights`. Every
+    /// other reader here does the same, which is what lets the field registry
+    /// name a nested member and have the form, the applier, the rail and the
+    /// submit gate all agree about what it points at. Without it a dotted id
+    /// looked up a top-level member that does not exist, so the field read as
+    /// unset whatever the project held — silently, since nothing else about it
+    /// would look wrong.
     #[must_use]
     pub fn get(&self, field: &str) -> Option<&Value> {
-        self.members.get(field)
+        let (root, rest) = split_path(field);
+        let mut current = self.members.get(root)?;
+        for segment in rest {
+            current = current.as_object()?.get(segment)?;
+        }
+        Some(current)
     }
 
     /// Sets one field's raw value, valid or not.
     ///
     /// A `Value::Null` removes the field instead of storing a null, so a draft
     /// never holds the ambiguity `from_raw` strips out.
+    ///
+    /// A dotted field writes the nested member, creating the objects on the way
+    /// down where they are absent — a project whose `accessRights` is missing
+    /// still has to be able to take an embargo date. A segment holding a
+    /// non-object is replaced, because the alternative is a write that silently
+    /// does nothing.
     pub fn set(&mut self, field: &str, value: Value) {
-        if value.is_null() {
-            self.members.shift_remove(field);
-        } else {
-            self.members.insert(field.to_string(), value);
+        let (root, rest) = split_path(field);
+        if rest.is_empty() {
+            if value.is_null() {
+                self.members.shift_remove(root);
+            } else {
+                self.members.insert(root.to_string(), value);
+            }
+            return;
         }
+        if value.is_null() {
+            self.remove(field);
+            return;
+        }
+        let mut current = self
+            .members
+            .entry(root.to_string())
+            .or_insert_with(|| Value::Object(Map::new()));
+        for segment in &rest[..rest.len() - 1] {
+            if !current.is_object() {
+                *current = Value::Object(Map::new());
+            }
+            current = current
+                .as_object_mut()
+                .expect("just made an object")
+                .entry((*segment).to_string())
+                .or_insert_with(|| Value::Object(Map::new()));
+        }
+        if !current.is_object() {
+            *current = Value::Object(Map::new());
+        }
+        current
+            .as_object_mut()
+            .expect("just made an object")
+            .insert(rest[rest.len() - 1].to_string(), value);
     }
 
     /// Drops one field. Returns whether it was set.
+    ///
+    /// A dotted field drops only the nested member; the object holding it stays,
+    /// even when it is left empty. `canonical::write_draft` strips empty and
+    /// null members on the way out, so the file is the same either way, and
+    /// removing the parent here would drop its *siblings* — clearing an embargo
+    /// date would take the access-rights choice with it.
     pub fn remove(&mut self, field: &str) -> bool {
-        self.members.shift_remove(field).is_some()
+        let (root, rest) = split_path(field);
+        if rest.is_empty() {
+            return self.members.shift_remove(root).is_some();
+        }
+        let mut current = match self.members.get_mut(root) {
+            Some(current) => current,
+            None => return false,
+        };
+        for segment in &rest[..rest.len() - 1] {
+            current = match current.as_object_mut().and_then(|object| object.get_mut(*segment)) {
+                Some(next) => next,
+                None => return false,
+            };
+        }
+        current
+            .as_object_mut()
+            .is_some_and(|object| object.shift_remove(rest[rest.len() - 1]).is_some())
     }
 
     /// The fields currently set, in declaration order.
@@ -239,37 +327,126 @@ impl ProjectDraft {
         }
     }
 
-    /// Sets `url`, and `secondaryUrl` where the form keeps it separately.
+    /// One of the two URLs, as a plain string, or `None` where the project has
+    /// none in that slot.
     ///
-    /// The form is whatever was read ([`Self::url_shape`]); a field that had no
-    /// prior value gets the structured object, which is the form new projects
-    /// use. `primary: None` clears both.
-    pub fn set_url(&mut self, primary: Option<&str>, secondary: Option<&str>) {
-        let Some(primary) = primary else {
-            self.remove("url");
-            self.remove("secondaryUrl");
-            return;
-        };
-        match self.url_shape() {
-            UrlShape::StringArray => {
-                let mut array = vec![Value::String(primary.to_string())];
-                array.extend(secondary.map(|url| Value::String(url.to_string())));
-                self.set("url", Value::Array(array));
-                // The legacy form carries the secondary URL as element 1, so a
-                // separate member would be a second, contradictory home for it.
-                self.remove("secondaryUrl");
-            }
-            UrlShape::Object | UrlShape::Absent => {
-                self.set("url", authority_file_reference(primary));
-                match secondary {
-                    Some(url) => self.set("secondaryUrl", authority_file_reference(url)),
-                    None => {
-                        self.remove("secondaryUrl");
+    /// Reads whichever representation the project actually uses: most keep the pair positionally in
+    /// a `url` array, some keep the secondary in its own `secondaryUrl` member, and one project
+    /// holds a one-element array *and* a member.
+    ///
+    /// So the array is not simply "the form". For the secondary it answers only when it actually
+    /// has a second element, and the member answers otherwise — returning early on the array's
+    /// mere presence reads that project's external website as absent, and an untouched save
+    /// then deletes it. No project has a two-element array and a member, so there is never a
+    /// contradiction to resolve.
+    #[must_use]
+    pub fn url_slot(&self, slot: UrlSlot) -> Option<&str> {
+        let array = self.get("url").and_then(Value::as_array);
+        match slot {
+            UrlSlot::Primary => match array {
+                Some(array) => array.first().and_then(Value::as_str),
+                // The structured form. No committed project uses it; it is what
+                // a project starting from nothing is written as.
+                None => self.get("url").and_then(|url| url.get("url")).and_then(Value::as_str),
+            },
+            UrlSlot::Secondary => array
+                .and_then(|array| array.get(1))
+                .and_then(Value::as_str)
+                .or_else(|| self.get("secondaryUrl").and_then(|url| url.get("url")).and_then(Value::as_str)),
+        }
+    }
+
+    /// Whether this project keeps its secondary URL positionally, and therefore
+    /// whether a write to that slot goes into the `url` array.
+    ///
+    /// Its current home wins, so a save preserves the representation rather than
+    /// migrating it: the one project holding both a one-element array and a
+    /// `secondaryUrl` member keeps using the member. Only when nothing is
+    /// stored is there a choice, and then the array wins if there is one —
+    /// which is what the 38 projects carrying a secondary positionally look
+    /// like.
+    fn secondary_in_array(&self) -> bool {
+        match self.get("url").and_then(Value::as_array) {
+            Some(array) => array.len() > 1 || self.get("secondaryUrl").is_none(),
+            None => false,
+        }
+    }
+
+    /// Writes one of the two URLs, leaving the other alone.
+    ///
+    /// **Do not fold these into one setter taking both.** Writing the pair together clears both
+    /// when the primary is `None`, and "no primary, has a secondary" is a state published
+    /// projects are already in — `url` is RDU-only and `secondaryUrl` is a depositor's, so the
+    /// two must be writable independently.
+    ///
+    /// Each write touches only the slot's own home, so the stored representation survives and an
+    /// untouched save is byte-identical. One forced exception: clearing the primary while a
+    /// *positional* secondary exists cannot be written as an array, element 0 being the
+    /// primary, so that case moves the secondary into its own member and drops `url` — the form
+    /// other projects already use for this state.
+    pub fn set_url_slot(&mut self, slot: UrlSlot, value: Option<&str>) {
+        match slot {
+            UrlSlot::Secondary => {
+                if self.secondary_in_array() {
+                    let primary = self.url_slot(UrlSlot::Primary).map(str::to_string);
+                    match (primary, value) {
+                        (Some(primary), Some(secondary)) => {
+                            self.set("url", Value::Array(vec![text(&primary), text(secondary)]));
+                        }
+                        (Some(primary), None) => self.set("url", Value::Array(vec![text(&primary)])),
+                        // No primary to anchor the array, so the member is the
+                        // only place left for a secondary.
+                        (None, Some(secondary)) => {
+                            self.remove("url");
+                            self.set("secondaryUrl", authority_file_reference(secondary));
+                        }
+                        (None, None) => {
+                            self.remove("url");
+                        }
+                    }
+                } else {
+                    match value {
+                        Some(secondary) => self.set("secondaryUrl", authority_file_reference(secondary)),
+                        None => {
+                            self.remove("secondaryUrl");
+                        }
                     }
                 }
             }
+            UrlSlot::Primary => match self.get("url").and_then(Value::as_array) {
+                Some(array) => {
+                    let positional = array.get(1).and_then(Value::as_str).map(str::to_string);
+                    match (value, positional) {
+                        (Some(primary), Some(secondary)) => {
+                            self.set("url", Value::Array(vec![text(primary), text(&secondary)]));
+                        }
+                        (Some(primary), None) => self.set("url", Value::Array(vec![text(primary)])),
+                        // Element 0 *is* the primary, so there is no positional
+                        // way to say "no primary, has a secondary".
+                        (None, Some(secondary)) => {
+                            self.remove("url");
+                            self.set("secondaryUrl", authority_file_reference(&secondary));
+                        }
+                        (None, None) => {
+                            self.remove("url");
+                        }
+                    }
+                }
+                None => match value {
+                    Some(primary) => self.set("url", authority_file_reference(primary)),
+                    None => {
+                        self.remove("url");
+                    }
+                },
+            },
         }
     }
+}
+
+/// A JSON string, so the array arms above read as data rather than as
+/// conversions.
+fn text(value: &str) -> Value {
+    Value::String(value.to_string())
 }
 
 /// The variant an untagged coverage entry deserializes to, asked in serde's own
@@ -281,6 +458,16 @@ fn coverage_shape(entry: &Value) -> TextOrReference {
     } else {
         TextOrReference::Text
     }
+}
+
+/// A field id as a root member plus the nested segments under it.
+///
+/// One place, because `get`, `set` and `remove` must agree about what a dotted
+/// id points at; three copies of a two-line split is how they stop agreeing.
+fn split_path(field: &str) -> (&str, Vec<&str>) {
+    let mut segments = field.split('.');
+    let root = segments.next().unwrap_or(field);
+    (root, segments.collect())
 }
 
 fn authority_file_reference(url: &str) -> Value {
@@ -413,57 +600,258 @@ mod tests {
 
     /// Finding 2: an array stays an array. 74 of the 85 files would otherwise
     /// be rewritten into the object form.
-    #[test]
-    fn set_url_keeps_the_legacy_array_form() {
-        let mut draft = ProjectDraft::from_raw(&sample_raw());
-        draft.set("url", json!(["https://old.example.org"]));
-        assert_eq!(draft.url_shape(), UrlShape::StringArray);
-        draft.set_url(Some("https://new.example.org"), Some("https://secondary.example.org"));
-        assert_eq!(
-            draft.get("url"),
-            Some(&json!(["https://new.example.org", "https://secondary.example.org"]))
-        );
-        assert!(draft.get("secondaryUrl").is_none());
-    }
-
-    #[test]
-    fn set_url_keeps_the_object_form() {
-        let mut draft = ProjectDraft::from_raw(&sample_raw());
-        draft.set("url", json!({"type": "URL", "url": "https://old.example.org"}));
-        assert_eq!(draft.url_shape(), UrlShape::Object);
-        draft.set_url(Some("https://new.example.org"), None);
-        assert_eq!(
-            draft.get("url"),
-            Some(&json!({"type": "URL", "url": "https://new.example.org"}))
-        );
-    }
 
     /// The 11 files that omit `url`, and every new project: no prior value, so
     /// the structured form is the one to introduce.
+
     #[test]
-    fn set_url_uses_the_object_form_where_there_was_no_prior_value() {
+    fn a_dotted_field_reads_the_nested_member_rather_than_a_top_level_one() {
+        // `accessRights.embargoDate` is the registry's one dotted id. Read as a
+        // top-level member it is always absent, so the field renders empty
+        // whatever the project holds and the rail counts it unsatisfied — with
+        // nothing else about it looking wrong.
         let mut draft = ProjectDraft::from_raw(&sample_raw());
-        draft.remove("url");
-        assert_eq!(draft.url_shape(), UrlShape::Absent);
-        draft.set_url(Some("https://new.example.org"), Some("https://secondary.example.org"));
+        draft.set(
+            "accessRights",
+            json!({"accessRights": "Embargoed Access", "embargoDate": "2030-01-01"}),
+        );
+        assert_eq!(draft.get("accessRights.embargoDate"), Some(&json!("2030-01-01")));
+        assert_eq!(draft.get("accessRights.accessRights"), Some(&json!("Embargoed Access")));
+        assert_eq!(draft.get("accessRights.nothingHere"), None);
+    }
+
+    #[test]
+    fn a_dotted_write_leaves_its_siblings_alone() {
+        // The whole reason `remove` drops the member and not its parent: an
+        // embargo date and the access-rights choice live in one object, so
+        // clearing the date must not take the choice with it.
+        let mut draft = ProjectDraft::from_raw(&sample_raw());
+        draft.set(
+            "accessRights",
+            json!({"accessRights": "Embargoed Access", "embargoDate": "2030-01-01"}),
+        );
+
+        draft.set("accessRights.embargoDate", json!("2031-06-30"));
+        assert_eq!(draft.get("accessRights.accessRights"), Some(&json!("Embargoed Access")));
+
+        assert!(draft.remove("accessRights.embargoDate"));
+        assert_eq!(draft.get("accessRights.embargoDate"), None);
+        assert_eq!(
+            draft.get("accessRights.accessRights"),
+            Some(&json!("Embargoed Access")),
+            "clearing the date must not clear the choice"
+        );
+        assert!(draft.get("accessRights").is_some(), "the object itself survives");
+    }
+
+    #[test]
+    fn a_dotted_write_creates_the_object_it_needs() {
+        // A project with no `accessRights` at all still has to be able to take
+        // an embargo date, or the field is uneditable until some other write
+        // happens to create the parent.
+        let mut draft = ProjectDraft::default();
+        draft.set("accessRights.embargoDate", json!("2030-01-01"));
+        assert_eq!(draft.get("accessRights"), Some(&json!({"embargoDate": "2030-01-01"})));
+    }
+
+    #[test]
+    fn a_dotted_set_of_null_removes_the_nested_member_only() {
+        // `set(_, Null)` removes rather than storing a null at every depth, so a
+        // draft never holds the ambiguity `from_raw` strips out.
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "accessRights",
+            json!({"accessRights": "Full Open Access", "embargoDate": "2030-01-01"}),
+        );
+        draft.set("accessRights.embargoDate", Value::Null);
+        assert_eq!(draft.get("accessRights"), Some(&json!({"accessRights": "Full Open Access"})));
+    }
+
+    #[test]
+    fn removing_a_dotted_field_that_is_not_there_reports_nothing_removed() {
+        let mut draft = ProjectDraft::default();
+        assert!(!draft.remove("accessRights.embargoDate"));
+        draft.set("accessRights", json!("not an object"));
+        assert!(!draft.remove("accessRights.embargoDate"), "a non-object parent holds no member");
+    }
+
+    #[test]
+    fn a_plain_field_is_unaffected_by_the_path_split() {
+        // The regression this could cause is broad and silent — every existing
+        // caller passes an undotted id — so it is asserted rather than assumed.
+        let mut draft = ProjectDraft::default();
+        draft.set("name", json!("A Project"));
+        assert_eq!(draft.get("name"), Some(&json!("A Project")));
+        assert!(draft.remove("name"));
+        assert_eq!(draft.get("name"), None);
+        assert!(!draft.remove("name"));
+    }
+
+    #[test]
+    fn a_slot_read_follows_whichever_form_the_project_uses() {
+        // Projects keep the pair positionally, or the secondary in its own member, or one project
+        // both — so the array answers for the secondary only when it has a second element.
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "url",
+            json!(["https://app.dasch.swiss/project/0119", "https://external.example/"]),
+        );
+        assert_eq!(draft.url_slot(UrlSlot::Primary), Some("https://app.dasch.swiss/project/0119"));
+        assert_eq!(draft.url_slot(UrlSlot::Secondary), Some("https://external.example/"));
+
+        draft.set("url", json!(["https://app.dasch.swiss/project/0119"]));
+        assert_eq!(draft.url_slot(UrlSlot::Secondary), None, "a one-element array has no secondary");
+
+        let mut newer = ProjectDraft::default();
+        newer.set("secondaryUrl", json!({"type": "URL", "url": "https://roud.unil.ch/"}));
+        assert_eq!(newer.url_slot(UrlSlot::Primary), None);
+        assert_eq!(newer.url_slot(UrlSlot::Secondary), Some("https://roud.unil.ch/"));
+    }
+
+    #[test]
+    fn writing_one_slot_leaves_the_other_alone_in_the_array_form() {
+        // The property the old paired `set_url` could not offer: `url` is
+        // RDU-only and `secondaryUrl` is a depositor's, so each write must be
+        // confined to its own slot.
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "url",
+            json!(["https://app.dasch.swiss/project/0119", "https://external.example/"]),
+        );
+
+        draft.set_url_slot(UrlSlot::Secondary, Some("https://moved.example/"));
         assert_eq!(
             draft.get("url"),
-            Some(&json!({"type": "URL", "url": "https://new.example.org"}))
+            Some(&json!(["https://app.dasch.swiss/project/0119", "https://moved.example/"])),
+            "the DaSCH address is untouched"
         );
+
+        draft.set_url_slot(UrlSlot::Primary, Some("https://app.dasch.swiss/project/9999"));
         assert_eq!(
-            draft.get("secondaryUrl"),
-            Some(&json!({"type": "URL", "url": "https://secondary.example.org"}))
+            draft.get("url"),
+            Some(&json!(["https://app.dasch.swiss/project/9999", "https://moved.example/"])),
+            "the external site is untouched"
         );
     }
 
     #[test]
-    fn set_url_with_no_primary_clears_both_members() {
-        let mut draft = ProjectDraft::from_raw(&sample_raw());
-        draft.set("url", json!({"type": "URL", "url": "https://old.example.org"}));
-        draft.set("secondaryUrl", json!({"type": "URL", "url": "https://secondary.example.org"}));
-        draft.set_url(None, None);
-        assert!(draft.get("url").is_none());
-        assert!(draft.get("secondaryUrl").is_none());
+    fn clearing_the_secondary_leaves_a_one_element_array() {
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "url",
+            json!(["https://app.dasch.swiss/project/0119", "https://external.example/"]),
+        );
+        draft.set_url_slot(UrlSlot::Secondary, None);
+        assert_eq!(draft.get("url"), Some(&json!(["https://app.dasch.swiss/project/0119"])));
+        assert_eq!(draft.get("secondaryUrl"), None);
+    }
+
+    #[test]
+    fn clearing_the_primary_moves_the_secondary_to_its_own_member() {
+        // The one case the array form cannot express: element 0 *is* the primary, so "no primary,
+        // has a secondary" has no positional writing. The member form does, and it is the
+        // form committed projects already use.
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "url",
+            json!(["https://app.dasch.swiss/project/0119", "https://external.example/"]),
+        );
+
+        draft.set_url_slot(UrlSlot::Primary, None);
+        assert_eq!(draft.get("url"), None);
+        assert_eq!(
+            draft.get("secondaryUrl"),
+            Some(&json!({"type": "URL", "url": "https://external.example/"})),
+            "the depositor's value survives an RDU clear"
+        );
+        assert_eq!(draft.url_slot(UrlSlot::Secondary), Some("https://external.example/"));
+    }
+
+    #[test]
+    fn a_secondary_survives_a_write_on_a_project_that_has_no_primary() {
+        // The regression the old paired API had: `set_url(None, Some(x))`
+        // cleared both members, and 11 published projects are in precisely the
+        // "no primary, has a secondary" state — so editing the external site on
+        // one of them would have wiped it.
+        let mut draft = ProjectDraft::default();
+        draft.set("secondaryUrl", json!({"type": "URL", "url": "https://roud.unil.ch/"}));
+
+        draft.set_url_slot(UrlSlot::Secondary, Some("https://roud.unil.ch/about"));
+        assert_eq!(
+            draft.get("secondaryUrl"),
+            Some(&json!({"type": "URL", "url": "https://roud.unil.ch/about"}))
+        );
+        assert_eq!(draft.get("url"), None, "no primary was invented");
+    }
+
+    #[test]
+    fn a_first_url_on_a_project_with_none_takes_the_object_form() {
+        // The form new projects use. Nothing in the corpus holds `url` as an
+        // object, so this is only ever reached by a project starting from
+        // nothing — which is why it must not be the form a *legacy* project is
+        // migrated to.
+        let mut draft = ProjectDraft::default();
+        draft.set_url_slot(UrlSlot::Primary, Some("https://app.dasch.swiss/project/9999"));
+        assert_eq!(
+            draft.get("url"),
+            Some(&json!({"type": "URL", "url": "https://app.dasch.swiss/project/9999"}))
+        );
+    }
+
+    #[test]
+    fn a_one_element_array_beside_a_member_reads_the_member_as_the_secondary() {
+        // `0112_roud` is the shape this got wrong: a one-element `url` array
+        // *and* a `secondaryUrl` member. Returning early on the array's
+        // presence read the secondary as absent, and the untouched-save round
+        // trip then deleted it — caught only because that test runs over the
+        // committed bytes rather than a fixture.
+        let mut draft = ProjectDraft::default();
+        draft.set("url", json!(["https://app.ls-prod-server.dasch.swiss/project/0112"]));
+        draft.set("secondaryUrl", json!({"type": "URL", "url": "https://roud.unil.ch/"}));
+
+        assert_eq!(
+            draft.url_slot(UrlSlot::Primary),
+            Some("https://app.ls-prod-server.dasch.swiss/project/0112")
+        );
+        assert_eq!(draft.url_slot(UrlSlot::Secondary), Some("https://roud.unil.ch/"));
+    }
+
+    #[test]
+    fn a_write_keeps_a_secondary_in_the_home_it_already_has() {
+        // The representation survives the save: this project keeps its
+        // secondary in the member, so a write goes there and the array is left
+        // as the one element it is. Writing it positionally instead would give
+        // the project two homes for one value.
+        let mut draft = ProjectDraft::default();
+        draft.set("url", json!(["https://app.ls-prod-server.dasch.swiss/project/0112"]));
+        draft.set("secondaryUrl", json!({"type": "URL", "url": "https://roud.unil.ch/"}));
+
+        draft.set_url_slot(UrlSlot::Secondary, Some("https://roud.unil.ch/about"));
+        assert_eq!(
+            draft.get("url"),
+            Some(&json!(["https://app.ls-prod-server.dasch.swiss/project/0112"])),
+            "the array gains no second element"
+        );
+        assert_eq!(
+            draft.get("secondaryUrl"),
+            Some(&json!({"type": "URL", "url": "https://roud.unil.ch/about"}))
+        );
+    }
+
+    #[test]
+    fn a_first_secondary_on_a_positional_project_goes_into_the_array() {
+        // 35 projects have a one-element array and no member at all; adding an
+        // external site to one of those should make it look like the 38 that
+        // already carry theirs positionally, not introduce a second form.
+        let mut draft = ProjectDraft::default();
+        draft.set("url", json!(["https://app.dasch.swiss/project/0119"]));
+
+        draft.set_url_slot(UrlSlot::Secondary, Some("https://external.example/"));
+        assert_eq!(
+            draft.get("url"),
+            Some(&json!(["https://app.dasch.swiss/project/0119", "https://external.example/"]))
+        );
+        assert_eq!(draft.get("secondaryUrl"), None);
     }
 
     #[test]

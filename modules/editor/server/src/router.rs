@@ -223,6 +223,20 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
             "/projects/{shortcode}/sections/{section}",
             get(crate::sections::show).post(crate::sections::act),
         )
+        // Adding and removing a row of a repeatable field. Under the section's
+        // own URL, and handled by the same module, so a row action resolves
+        // through one `context()` — the audience gate, the lock check and the
+        // shortcode fold are the section's rather than a second copy of the
+        // rule that decides who may write what. `POST` only: both change the
+        // form, and a `GET` that did would be a state change on a `GET`.
+        .route(
+            "/projects/{shortcode}/sections/{section}/fields/{field}/add",
+            post(crate::sections::add_row),
+        )
+        .route(
+            "/projects/{shortcode}/sections/{section}/fields/{field}/{key}/remove",
+            post(crate::sections::remove_row),
+        )
         // --- RDU-only routes ---
         // `Rdu` composes `Authenticated`, so these are closed twice over: no
         // session redirects to login, and a depositor's session gets the 403

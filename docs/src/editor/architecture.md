@@ -84,14 +84,16 @@ Three properties of the committed corpus decide the shape, each measured over al
 
 ### The form
 
-`editor_core::form` reads a posted body back into a draft; `editor_web::form::registry` says what the form knows about each field. The split is deliberate: the decoder knows *shapes* (a scalar, a language map, a list of strings, rows of language maps) and has no idea which field is which, so choosing a shape per field belongs with the registry, keyed by the same field ids as the renderers. A field's control and its decoder are then declared together and cannot drift, and the audience check — which fields a depositor may write at all — has one home rather than one in the view and one in the handler.
+`editor_core::form` reads a posted body back into a draft; `editor_web::form::registry` says what the form knows about each field. The split is deliberate: the decoder knows *shapes* (a scalar, a language map, a closed choice, a URL slot, a list of strings, and four kinds of row) and has no idea which field is which, so choosing a shape per field belongs with the registry, keyed by the same field ids as the renderers. A field's control and its decoder are then declared together and cannot drift, and the audience check — which fields a depositor may write at all — has one home rather than one in the view and one in the handler.
 
 The body is read as `Form<Vec<(String, String)>>`, not as a struct. `axum::Form` deserializes with `serde_urlencoded` 0.7 (via axum 0.8), which **errors** on a repeated key rather than collecting it into a `Vec`, and cannot deserialize a struct containing a `Vec` at all — so a checkbox group and a repeatable list's row keys have no struct representation. The pair list gives body order with duplicates intact, which is what opaque row keys plus DOM order need, and adds no second urlencoded parser. `serde_html_form`, which does decode repeated keys, is not a dependency of this tree.
 
 Three rules make an untouched save a no-op, all three pinned by `editor-web/tests/untouched_form_round_trip.rs`:
 
 - A stored `MISSING`/`CALCULATED` placeholder survives an empty submit. Those sentinels are filtered out of DPE's UI and of OAI-PMH's output, so a control holding one renders empty and an untouched form posts empty for it. 131 across the 85 files, 24 of them `endDate`.
-- A value differing from the stored one only in surrounding whitespace is left alone; a genuinely new value is stored trimmed. Counted over the whole corpus rather than over the fields the form happens to read today: 20 of the 85 files carry a leading or trailing space somewhere, one of them (`0816_vitrocentre.json`, `shortDescription`) in a field a declared shape already reads. The rest sit in `disciplines.text` (7 files), `publications.text` (6), `attributions.contributorType` (3), `abstract.en` (2), and one each in `keywords.ar`, `description.ar`, `spatialCoverage.text` and `legalInfo.license.licenseURI` — so **each field taken over from here on brings more of them into range**, and `apply_multilingual_rows` cannot preserve any of them until a row has a stored counterpart to compare against: it resolves every row against `None`, so its `Unchanged` arm is unreachable and every row is trimmed on every save.
+- A value differing from the stored one only in surrounding whitespace is left alone; a genuinely new value is stored trimmed. Counted over the whole corpus rather than over the fields the form happens to read today: 20 of the 85 files carry a leading or trailing space somewhere, one of them (`0816_vitrocentre.json`, `shortDescription`) in a field a declared shape already reads. The rest sit in `disciplines.text` (7 files), `publications.text` (6), `attributions.contributorType` (3), `abstract.en` (2), and one each in `keywords.ar`, `description.ar`, `spatialCoverage.text` and `legalInfo.license.licenseURI` — so **every field now reads one of them**, and the row appliers had to grow a way to preserve them: `resolve_against` looks a submitted value up against every value the field already holds, rather than against one position, because a row key is opaque and need not map to a position — after one removal the body carries `r0` and `r2` against a two-row list, so a positional lookup would preserve one row's bytes into another.
+
+  It prefers an **exact** byte match before the whitespace-insensitive one, which is not redundant: `0121_societesavoie` holds both `"Project Member, Data Collector"` and the same value with a trailing space, in one project, so the loose comparison cannot tell them apart and whichever came first rewrote the other. Both of those were caught by the corpus round trip and neither by a unit test — the reason that test runs over committed bytes rather than a fixture.
 - Newlines are normalised to `\n` — a native submit posts CRLF where `FormData` posts LF, so the no-JS and enhanced paths would otherwise write different bytes for the same value in 26 of the 85 files. Normalisation applies to **both sides of the comparison but only to a value being stored**, because 10 committed abstracts hold a bare `\r` that a `<textarea>` converts to `\n` before any submit.
 
 #### Where a field's shape and empty state are declared
@@ -105,17 +107,26 @@ Two registry tests hold it to the data rather than to a list repeated in prose:
 - `Text(Placeholder)` requires the member to be present in **all 85** committed projects, which is what a required `String` looks like; `Text(Drop)` requires it to be null or absent in at least one, which is what an `Option` looks like. That is the inversion above, checked in the direction the corpus can actually decide.
 - A declared shape has to match the JSON kind the contract holds, so a `Multilingual` on a string member — a control posting under names no applier reads, and a save that is silently a no-op — fails rather than shipping.
 
-A field with **no** shape is either display-only (REQ-1.5, written back unchanged per REQ-1.7) or one whose control has not landed. The second set is named in the registry's tests and only ever shrinks, so a *new* contract field cannot default into it quietly; the form renders it as a stated note rather than omitting it, because a depositor who cannot find a field the published page shows would otherwise conclude the form lost it.
+A field with **no** shape is display-only (REQ-1.5, written back unchanged per REQ-1.7). It used to also mean "a control that has not landed", of which there were eighteen; that set is now empty, and the registry test that pinned it exactly is what keeps it so — a new `ProjectRaw` member placed in a section without a shape fails there rather than rendering as a note nobody notices.
+
+The note itself stays in `widgets::stated`, unreached by any field today and deliberately kept: it is the fallback such a field lands on, and a depositor who cannot find a field the published page shows would otherwise conclude the form lost it.
 
 `untouched_form_round_trip.rs` derives its table from `FIELDS` and therefore lives in **`editor-web`**: the dependency direction is `server -> web -> core`, so a test in `editor-core` cannot read the registry at all. Deriving it is the point — a field whose shape is declared is covered automatically, where a hand-written table agrees with the registry only by inspection.
 
-> [!NOTE]
-> **Open: a depositor who types the word `MISSING`.** The placeholder sentinels are recognised by an exact string match and a submitted value is stored verbatim, so typing `MISSING` into a text field stores something the rest of the platform reads as "no value": it is filtered out of DPE and of OAI-PMH, and because a recognised placeholder renders as an empty control, the next empty submit leaves it alone rather than clearing it. The field is then only editable by typing some other value first. Rare, and harmless to the file, but a dead end for whoever hits it. The fix is a submission-time check refusing a literal sentinel with a field-level error, which belongs with the rest of submit validation.
+A depositor who types the word `MISSING` is refused at submit, by `form::submit::typed_sentinels`. The sentinels are recognised by an exact string match and a submitted value is stored verbatim, so typing one stores something the rest of the platform reads as "no value" — filtered out of DPE and of OAI-PMH — and because a recognised placeholder renders as an empty control, the next empty submit leaves it alone rather than clearing it. The field then reads as empty, will not clear, and is only editable by typing some other value first.
 
-> [!NOTE]
-> **Open: no *product* cap on a posted body.** The bound on **work** is closed: every `FormBody` reader is linear in the number of pairs, and `entries` — which discovers a field's language tags — returns each value with its suffix and stops at 64 of them. Both halves matter: returning suffixes alone and fetching each with `get` would be quadratic, and `DraftMultilingual` is an order-preserving `Vec` whose `get` and `set` scan, which is right for a map the data holds two entries of and wrong for one holding twenty thousand: 20,000 tags under one prefix measured 2.6 s of CPU in a debug build, from a single request, against Axum's 2 MB limit of roughly 100,000 short pairs.
->
-> What is still open is the cap a *depositor* can see: at most so many keywords or rows, refused with a field-level error rather than silently dropped. That needs an error path the appliers do not have, so it belongs with submit validation. Until then a body over 64 tags for one field is a hand-built one, and dropping the excess is the fail-safe direction.
+The check reads the **declared shape**, not the value, because a stored sentinel is usually correct: `endDate` is `"MISSING"` in 24 of the 85 committed projects, and `WhenCleared::Placeholder` means the editor writes one itself when a depositor clears the field. So the question is not "is this a sentinel" but "could clearing this field have produced one" — `Placeholder` yes and allowed (typing one is then indistinguishable from clearing, and has the same effect), `Drop` no and refused, `Multilingual` no and refused per tag, since an empty text drops its tag. Deriving it from the shape also answers for a project with no published counterpart (REQ-1.1), which a comparison against the published value could not.
+
+**One number caps what a field may carry, and it is both bounds at once.** `MAX_VALUES_PER_PREFIX` is 64. As a bound on **work** it always mattered: every `FormBody` reader is linear in the number of pairs, and `entries` — which discovers a field's language tags — returns each value with its suffix rather than leaving the caller to fetch each with `get`, which would be quadratic. `DraftMultilingual` is an order-preserving `Vec` whose `get` and `set` scan, right for a map the data holds two entries of and wrong for one holding twenty thousand: 20,000 tags under one prefix measured 2.6 s of CPU in a debug build, from a single request, against Axum's 2 MB limit of roughly 100,000 short pairs.
+
+It is now also the cap a depositor can **see**. `form::submit::over_cap` refuses a body carrying more, with a field-level error naming the field and the number, and `FormBody::exceeds_entries` is what counts — `entries` cannot, because it stops at the cap, so through it a body of twenty thousand tags and one of sixty-four are indistinguishable.
+
+Two facts about where it runs, both load-bearing:
+
+- **Before any applier, and on a save as much as a submit.** An applier truncates silently, so an over-cap save left to submit would store the truncated value and the submit after it would see a draft already within the cap and pass. Nothing is written on the refused branch, which is what makes "nothing was saved" true.
+- **One number, not a visible cap above the work bound.** A product cap set higher would silently discard every value between the two — exactly the failure a visible cap exists to remove. So `entries`' truncation is now a fail-safe floor rather than the behaviour: unreachable through the route, kept because `FormBody` is public and a future caller might not check first.
+
+Sixty-four is sixteen times the four tags the UI offers and twenty-one times the three the widest committed language map holds, and a test asserts the cap stays above what the corpus carries — so the day a project needs more, the cap is raised deliberately rather than a save being refused.
 
 ### Canonical form
 
@@ -132,7 +143,7 @@ The 85-file round-trip test (`editor-core/tests/canonical_round_trip.rs`) assert
 
 ### Submission checks
 
-`editor_core::submission::unresolved_temporal_coverage` applies REQ-1.14: every `temporalCoverage` entry must resolve to a structured date, which `dpe-server validate` does not block on and OAI-PMH needs. It reuses `platform_metadata::temporal_coverage::completeness_gap`, the same decision `validate` and `dpe-api-oai`'s `every_committed_temporal_coverage_resolves` apply, and adds the entry index so the form can mark a row rather than the whole field. REQ-1.15 is settled as refusal: a depositor who needs a period the enrichment table does not know uses the `Reference` variant, which always resolves.
+`editor_core::submission::unresolved_temporal_coverage` applies REQ-1.14: every `temporalCoverage` entry must resolve to a structured date, which `dpe-server validate` does not block on and OAI-PMH needs. It reuses `platform_metadata::temporal_coverage::completeness_gap`, the same decision `validate` and `dpe-api-oai`'s `every_committed_temporal_coverage_resolves` apply, and adds the entry index so the form can mark a row rather than the whole field. REQ-1.15 is settled as refusal: a depositor who needs a period the enrichment table does not know uses the `Reference` variant, which always resolves — and since the variant chooser landed that escape route is one a depositor can actually take, where before the refusal named a way out the form did not offer.
 
 ## URL scheme
 
@@ -148,7 +159,9 @@ DPE carries `/dpe/…` because it shares `repository.dasch.swiss` with other ser
 | `/logout` | POST | public | Delete the session and clear the cookie. |
 | `/projects` | GET | signed in | The projects this account may edit, named from the published set. |
 | `/projects/{shortcode}` | GET | signed in + assigned | 303 to the first form section. 403 otherwise (REQ-1.3). |
-| `/projects/{shortcode}/sections/{section}` | GET, POST | signed in + assigned | One form section, and the save, submit or withdrawal it makes. 200 even when the project is unpublished, per REQ-2.3. |
+| `/projects/{shortcode}/sections/{section}` | GET, POST | signed in + assigned | One form section, and the save, autosave, submit, withdrawal or discard it makes. 200 even when the project is unpublished, per REQ-2.3. |
+| `…/sections/{section}/fields/{field}/add` | POST | signed in + assigned | One more row of a repeatable field. Under the section's URL so it resolves through the same `context()`. |
+| `…/sections/{section}/fields/{field}/{key}/remove` | POST | signed in + assigned | Drop one row. The key is in the path, not a button's name and value, because a programmatic submit omits the submitter's. |
 | `/review` | GET | RDU | The review queue: every pending submission oldest first, and every draft. |
 | `/review/{shortcode}` | GET, POST | RDU | The field-by-field diff, and the claim, decision save, approve, request-changes or reject it makes. |
 | `/depositors` | GET, POST | RDU | The account list, and creating a depositor. |
@@ -159,6 +172,8 @@ DPE carries `/dpe/…` because it shares `repository.dasch.swiss` with other ser
 | `/telemetry/collect` | POST | public | Browser telemetry beacon. Untraced, rate-limited per IP. |
 
 Everything else is served from the public asset directory, falling back to a 404 rendered in the page shell.
+
+The two row paths are the one exception to the rule below, and deliberately: they are `POST`-only because both change the form and a `GET` that did would be a state change on a `GET`. They never strand a refusal, because they re-render the section rather than redirecting, and a reload of one lands on the section's own `GET`.
 
 Every write shares a URL with the `GET` that renders its form, so a rejected submission re-renders somewhere that still answers `GET`. A write-only path leaves a reloaded rejection at a bare 405, the same dead end REQ-1.3's 403 is rendered as a page to avoid.
 
@@ -208,13 +223,7 @@ The colour pairings are measured against the design tokens, with the method cros
 
 `drafts.shortcode` is an exact-match column, while `PublishedProjects::get` and `User::may_reach` both fold ASCII case — the published set mixes `080C` with `0801a`, so a link typed either way reaches the same project. Keying a draft on the path segment as typed would therefore give `/projects/080c` and `/projects/080C` a **row each** for one project, and two people editing it would each keep half the edits with nothing to say so. The section handler folds, in one named place, and `is_valid_shortcode` admits only ASCII alphanumerics so the fold is total and agrees with the other two by construction.
 
-### Obligation is not yet a submit gate, and the corpus says why
-
-`Obligation::Required` reads "must be present to submit" (REQ-1.12), and the published corpus does not satisfy four of the seventeen fields carrying it: **all 85** projects lack `documentationMaterial`, 13 lack `url`, 9 lack `contactPoint`, and one each lacks `typeOfData` and `dataLanguage`. A submit gate applied literally against the tier would refuse every project already live.
-
-The section rail therefore reports the tier honestly rather than flatteringly — 75 of the 85 projects come out complete for a depositor, and the ten that do not are named in `editor_web::form::obligation`'s tests, which pin the measured counts so a change to an obligation has to say what it does to existing projects.
-
-Submit validation is a separate list, in [Submit](#submit) below, and deliberately does not read the tier: it gates on the contract's own requirements plus the temporal-coverage check, both of which the whole committed corpus already satisfies.
+The form's own behaviour — which fields submit insists on, how an agent reference is picked, where a vocabulary is closed, how a variant row narrows, row actions, discard, the concurrent-save refusal and autosave — is in [The Project Form](./project-form.md), together with the corpus measurements those decisions rest on.
 
 ## The review surface
 
@@ -269,7 +278,7 @@ All four end the round the same way — the `submissions` row is deleted — so 
 
 **Request-changes and reject both require a note; approve does not.** For reject the note is the entire signal: the submission is discarded, notifications are out of scope, and the depositor-facing state list has no Rejected — so without a note the work vanishes with nothing saying why. For request-changes it is the only thing telling the depositor what to change. An approval needs none, because the depositor is *shown* what changed rather than told about it.
 
-**Reject and withdraw both leave the draft.** Reject must not destroy work RDU merely declined, and a withdrawal reads as "take it back so I can keep editing" — request-changes already establishes submission-becomes-draft as the direction. The abandoned-draft problem is the explicit draft-delete action's, not these.
+**Reject and withdraw both leave the draft.** Reject must not destroy work RDU merely declined, and a withdrawal reads as "take it back so I can keep editing" — request-changes already establishes submission-becomes-draft as the direction. The abandoned-draft problem belongs to [discarding a draft](#discarding-a-draft), not to these.
 
 Each of the four asks once before writing, on the same URL, discriminated by a hidden `confirmed` pair the prompt carries. The intent names *what* is being done and stays the same across both posts, so the two-step shape does not double the verb list — and a body naming an intent without `confirmed` gets the prompt, never the write. An unknown intent falls back to a plain save on both surfaces: every terminating action is irreversible and a save is not.
 
@@ -285,11 +294,16 @@ The depositor reads all of it on the project form, inside the region a save repl
 
 `POST /projects/{shortcode}/sections/{section}` with `intent=submit` records the draft as the project's pending submission. The draft is written first and on both intents, so a refused submission costs the depositor the submission and never the editing.
 
-Three gates, in order:
+Six gates, in order:
 
 1. **The draft must be a complete `ProjectRaw`.** A type-level failure means a member the contract requires has no value, and no per-field rule below can say anything useful about a shape that does not exist.
-2. **Every `temporalCoverage` entry must resolve**, through `editor_core::submission::unresolved_temporal_coverage` — the same decision `dpe-server validate` and `dpe-api-oai` apply, over the same two tables, which `AppState` reads once at startup from `EDITOR_DATA_DIR`. With no data directory the tables are empty, so every free-text period is unresolvable and the submission is refused: the fail-safe direction, since the alternative opens a pull request that fails CI in a crate the editor never touches. It re-runs on **every** submit, which is what makes a resubmission revalidated rather than trusted because it was reviewed once.
-3. **The submission must change something.** The comparison is `editor_core::review::diff`, the one the review surface itself renders from, so "changes nothing" means the same thing in both places. Allowed through, an unchanged submission locks the depositor's own form on a queue entry a reviewer can only clear by rejecting it.
+2. **Every `Obligation::Required` field the submitter sees must be answered**, through `obligation::unsatisfied_required`. Narrower than it looks beside gate 1 and not redundant with it: every required field is a non-`Option` contract member, so an *absent* one already failed above, and what this catches is present-and-empty — `[]`, `{}`, `""`, a `MISSING` sentinel. It reads presence through the same function the section rail counts with, and the tier it gates on is bounded by what the published corpus answers; see [Obligation is a submit gate](#obligation-is-a-submit-gate-and-the-corpus-bounds-which-fields-carry-it).
+3. **Every agent reference must resolve**, through `form::submit::unresolved_agents`. The applier stores whatever id arrives, because a draft may hold a value that does not validate (REQ-1.9) — this is what stops an unresolvable reference reaching a published file, where the public project page would render a bare `person-001`.
+4. **No field may hold a placeholder sentinel a depositor typed**, through `form::submit::typed_sentinels`. Decided from the field's declared shape rather than from the value, because a stored sentinel is usually correct; see [where a field's shape and empty state are declared](#where-a-fields-shape-and-empty-state-are-declared) above.
+5. **Every `temporalCoverage` entry must resolve**, through `editor_core::submission::unresolved_temporal_coverage` — the same decision `dpe-server validate` and `dpe-api-oai` apply, over the same two tables, which `AppState` reads once at startup from `EDITOR_DATA_DIR`. With no data directory the tables are empty, so every free-text period is unresolvable and the submission is refused: the fail-safe direction, since the alternative opens a pull request that fails CI in a crate the editor never touches. It re-runs on **every** submit, which is what makes a resubmission revalidated rather than trusted because it was reviewed once.
+6. **The submission must change something.** The comparison is `editor_core::review::diff`, the one the review surface itself renders from, so "changes nothing" means the same thing in both places. Allowed through, an unchanged submission locks the depositor's own form on a queue entry a reviewer can only clear by rejecting it.
+
+Two further checks run on **every** write rather than only on a submit, and therefore before these: the per-field cap, because an applier truncates silently and deferring it would let an over-cap save store the truncated value; and the concurrent-save baseline, because a save is exactly what would overwrite somebody else's work.
 
 A refusal re-renders rather than redirecting, so nothing typed is lost, and per-field errors render beside the control they name. Submit validation is whole-project while the form is sectioned, so an error routinely names a field the depositor is not looking at — those are listed separately with a link to the section that holds them, otherwise the refusal says "the fields below say what needs changing" and nothing below says anything.
 

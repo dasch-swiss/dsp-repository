@@ -20,7 +20,7 @@ use editor_core::draft::ProjectDraft;
 use platform_metadata::is_placeholder;
 use serde_json::Value;
 
-use super::registry::{Audience, Field, Obligation, Section};
+use super::registry::{sections_for, Audience, Field, Obligation, Section};
 
 /// A section's required-field state, as the rail shows it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -73,6 +73,31 @@ pub fn section_progress(section: &Section, audience: Audience, draft: &ProjectDr
 #[must_use]
 pub fn is_satisfied(field: &Field, draft: &ProjectDraft) -> bool {
     draft.get(field.id).is_some_and(has_value)
+}
+
+/// Every required field this audience sees that the draft does not answer, in
+/// the order the form shows them.
+///
+/// The submit gate, reading presence through the same [`is_satisfied`] the rail does. That sharing
+/// is why it lives here rather than in the route: a gate stricter than the rail would refuse a
+/// submission the rail had just counted complete, and a depositor looking at "5 of 5 required" has
+/// no way to tell which of the two is lying.
+///
+/// **Complementary to `ProjectDraft::to_raw`, not overlapping it.** Every `Required` field is a
+/// non-`Option` member of `ProjectRaw`, so an *absent* one already fails the conversion; what this
+/// catches is the state the contract cannot see — present and empty (`keywords: []`, `description:
+/// {}`, `name: ""`, a `MISSING` sentinel).
+///
+/// Iterated through [`sections_for`] and [`Section::fields_for`] rather than over `FIELDS`, so the
+/// audience gate is the one the form renders through and the order is display order, which is the
+/// order the refusal lists.
+#[must_use]
+pub fn unsatisfied_required(audience: Audience, draft: &ProjectDraft) -> Vec<&'static Field> {
+    sections_for(audience)
+        .flat_map(|section| section.fields_for(audience))
+        .filter(|field| field.obligation == Some(Obligation::Required))
+        .filter(|field| !is_satisfied(field, draft))
+        .collect()
 }
 
 /// Whether a stored value is an answer rather than an empty state.
@@ -183,28 +208,21 @@ mod tests {
     /// Every required field the committed corpus does **not** answer, and how
     /// many of the 85 projects it is missing from.
     ///
-    /// Measured, not asserted from the requirements — and the measurement is the
-    /// point. `Obligation::Required` means "must be present to submit"
-    /// (REQ-1.12), so a submit gate applied literally against this tier would
-    /// refuse every one of these projects: all 85 lack `documentationMaterial`,
-    /// 13 lack `url`, 9 lack `contactPoint`. That is a live surface being made
-    /// unsubmittable by a tier nobody checked against the data, and it is the
-    /// same shape of failure `WhenCleared` was documented against. Submit
-    /// validation is where it gets decided; this is the baseline it decides
-    /// from, and the test below is what makes an obligation change say so.
-    const UNANSWERED_BY_THE_CORPUS: &[(&str, usize)] = &[
-        ("documentationMaterial", 85),
-        ("url", 13),
-        ("contactPoint", 9),
-        ("dataLanguage", 1),
-        ("typeOfData", 1),
-    ];
+    /// **Empty, and that is an invariant.** `Obligation::Required` is a literal submit gate
+    /// ([`unsatisfied_required`]), so a field tiered that way which the published corpus does not
+    /// answer makes every one of those projects unsubmittable.
+    ///
+    /// So the test below is a gate, not a baseline: tier a field `Required` that the corpus cannot
+    /// answer and it fails, naming the field and the count. Fix the tier, or fix the data —
+    /// never this constant, unless a *published* project genuinely has to become unsubmittable.
+    const UNANSWERED_BY_THE_CORPUS: &[(&str, usize)] = &[];
 
     /// How many of the 85 committed projects answer every required field a
-    /// *depositor* sees. The ten that do not are nine missing `contactPoint`
-    /// (the `0801*` family, `0805`, `080C`, `080E`, `081C`) and `082C`, which
-    /// has neither `typeOfData` nor `dataLanguage`.
-    const COMPLETE_FOR_A_DEPOSITOR: usize = 75;
+    /// *depositor* sees. All of them, which is the same fact
+    /// [`UNANSWERED_BY_THE_CORPUS`] states per field, asserted per project: no
+    /// published project opens showing a depositor outstanding work, and none is
+    /// refused by the submit gate.
+    const COMPLETE_FOR_A_DEPOSITOR: usize = 85;
 
     #[test]
     fn the_required_fields_the_committed_corpus_does_not_answer_are_the_measured_ones() {
@@ -239,14 +257,13 @@ mod tests {
     }
 
     #[test]
-    fn most_published_projects_open_complete_for_a_depositor() {
+    fn every_published_project_opens_complete_for_a_depositor() {
         // The rail must not invent outstanding work: a project that is already
-        // live should not open showing a depositor a list of things to fix that
-        // they did not create. Pinned as a count rather than as "all of them",
-        // because it is not all of them — ten projects genuinely lack a
-        // depositor-visible required field, and the honest number is the one
-        // worth watching. A rail bug moves this sharply; a data fix moves it by
-        // one.
+        // live must not open showing a depositor a list of things to fix that
+        // they did not create. Since the required tier became a submit gate this
+        // is also the gate's own guarantee, one project at a time — the count is
+        // all 85 exactly because no required field goes unanswered by the corpus
+        // (`UNANSWERED_BY_THE_CORPUS`).
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
         let (published, _) = editor_core::published::PublishedProjects::load_from(&dir);
         let shortcodes: Vec<String> = published.summaries().map(|s| s.shortcode.to_string()).collect();
@@ -265,32 +282,110 @@ mod tests {
     }
 
     #[test]
-    fn an_rdu_reader_sees_the_field_the_corpus_never_answers() {
-        // The other side of the same fact, pinned where a reader of this module
-        // will find it: the rail is honest rather than flattering, so a section
-        // holding an unanswered required field says so even when the project is
-        // published.
-        let progress = section_progress(section("dataset").expect("dataset"), Audience::RduOnly, &draft());
-        assert!(!progress.is_complete(), "{}", progress.summary());
-        assert_eq!(progress.satisfied + 1, progress.required, "{}", progress.summary());
+    fn an_rdu_reader_sees_a_published_project_as_complete_too() {
+        // RDU sees strictly more fields than a depositor, so asserting it here is what stops the
+        // next `Required` on an RDU-only field slipping past the depositor-audience count.
+        let draft = draft();
+        for section in sections_for(Audience::RduOnly) {
+            let progress = section_progress(section, Audience::RduOnly, &draft);
+            assert!(
+                progress.is_complete(),
+                "section {} reads incomplete for RDU on a published project: {}",
+                section.id,
+                progress.summary()
+            );
+        }
     }
 
     #[test]
-    fn a_required_field_is_never_addressed_by_a_dotted_path() {
-        // `ProjectDraft::get` reads a top-level member, so a dotted id would
-        // count as unsatisfied whatever the project holds — silently, and only
-        // in the rail. No required field is dotted today
-        // (`accessRights.embargoDate` is `Optional`); this fires the day one is,
-        // rather than the rail quietly under-counting.
-        for field in crate::form::registry::FIELDS {
-            if field.obligation == Some(Obligation::Required) {
-                assert!(
-                    !field.id.contains('.'),
-                    "{} is required and dotted: `is_satisfied` needs a path-aware read first",
-                    field.id
-                );
+    fn no_published_project_is_refused_by_the_submit_gate() {
+        // The whole point of bounding the required tier by the corpus, asserted
+        // through the function the route actually calls rather than through the
+        // rail. Over all 85 and both audiences, because RDU sees fields a
+        // depositor does not and submits through the same handler.
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
+        let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
+        assert!(errors.is_empty(), "the committed corpus should load: {errors:?}");
+
+        let mut refused: Vec<(String, Vec<&str>)> = Vec::new();
+        for shortcode in published.summaries().map(|s| s.shortcode.to_string()) {
+            let raw = published.get(&shortcode).expect("a summary names a loaded project");
+            let draft = ProjectDraft::from_raw(raw);
+            for audience in [Audience::Everyone, Audience::RduOnly] {
+                let unsatisfied: Vec<&str> =
+                    unsatisfied_required(audience, &draft).iter().map(|field| field.id).collect();
+                if !unsatisfied.is_empty() {
+                    refused.push((shortcode.clone(), unsatisfied));
+                }
             }
         }
+        assert!(
+            refused.is_empty(),
+            "the submit gate would refuse published projects: {refused:?}"
+        );
+    }
+
+    #[test]
+    fn the_submit_gate_names_a_required_field_emptied_rather_than_removed() {
+        // The state `to_raw` cannot see, which is the only thing this gate adds
+        // over it: every required field is a non-`Option` member of
+        // `ProjectRaw`, so an absent one already fails the conversion, while
+        // `[]`, `{}`, `""` and a sentinel all deserialize and none is an answer.
+        let mut draft = draft();
+        assert!(unsatisfied_required(Audience::Everyone, &draft).is_empty());
+
+        draft.set("keywords", json!([]));
+        draft.set("name", json!("MISSING"));
+        let named: Vec<&str> = unsatisfied_required(Audience::Everyone, &draft)
+            .iter()
+            .map(|field| field.id)
+            .collect();
+        assert_eq!(named, ["name", "keywords"], "in the order the form shows them");
+
+        // Still a complete `ProjectRaw`, which is what makes the gate necessary.
+        assert!(draft.to_raw().is_ok(), "an emptied required field is still a valid contract");
+    }
+
+    #[test]
+    fn the_submit_gate_never_names_a_field_the_submitter_cannot_see() {
+        // A refusal naming an RDU-only field to a depositor is an instruction
+        // they cannot follow — the same reason a display-only field carries no
+        // obligation pill. No required field is RDU-only today; this is what
+        // fires if one becomes so, rather than a depositor being stuck on a
+        // field their form does not render.
+        let empty = ProjectDraft::default();
+        for field in unsatisfied_required(Audience::Everyone, &empty) {
+            assert_eq!(
+                field.audience,
+                Audience::Everyone,
+                "{} is RDU-only but gates a depositor's submission",
+                field.id
+            );
+        }
+        // The canary: an empty draft must actually reach the gate, or the loop
+        // above passes over nothing.
+        assert!(!unsatisfied_required(Audience::Everyone, &empty).is_empty());
+    }
+
+    #[test]
+    fn a_dotted_required_field_is_counted_from_the_member_it_names() {
+        // This replaces a test that asserted no required field was dotted, on
+        // the strength of `ProjectDraft::get` reading only top-level members —
+        // a dotted id then counted as unsatisfied whatever the project held,
+        // silently and only in the rail. `get` follows paths now, and
+        // `accessRights.accessRights` is both required and dotted, so the
+        // guarantee worth pinning is that the count follows the path too.
+        let mut draft = draft();
+        let field = crate::form::registry::field("accessRights.accessRights").expect("the access-rights choice");
+        assert!(field.id.contains('.'), "the premise of this test");
+        assert_eq!(field.obligation, Some(Obligation::Required));
+        assert!(is_satisfied(field, &draft), "a published project answers it");
+
+        draft.set("accessRights", serde_json::json!({ "embargoDate": "2030-01-01" }));
+        assert!(
+            !is_satisfied(field, &draft),
+            "the choice is gone even though its parent object is not"
+        );
     }
 
     #[test]

@@ -438,6 +438,7 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 <tr><td><code>just docs-serve</code></td><td>Serve documentation locally at localhost:3000</td></tr>
 <tr><td><code>just validate-data</code></td><td>Validate all data files in the default data directory</td></tr>
 <tr><td><code>just verify-checksums</code></td><td>Check vendored JS against each <code>vendor/README.md</code> table and <code>tailwind.pins</code> for completeness (also run by <code>just check</code>)</td></tr>
+<tr><td><code>just check-platform-paths</code></td><td>Fail the build if a crate under <code>modules/platform/</code> hardcodes a path into a service module (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just tailwind-pins-refresh &lt;version&gt;</code></td><td>Re-pin the Tailwind standalone CLI digests for a new version</td></tr>
 </tbody></table>
 </div>
@@ -784,7 +785,7 @@ just commit-lint &lt;base-ref&gt; # checks &lt;base-ref&gt;..HEAD
 <li><strong>CI path filters.</strong> The path-filtered workflows key on a module glob — <code>modules/dpe/**</code> for DPE's preview, Scout and a11y jobs, <code>modules/editor/**</code> for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (<code>check</code>, <code>test</code> and <code>gate</code> carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)</li>
 <li><strong>Dev-loop watch lists.</strong> <code>bacon.toml</code>'s <code>serve</code> and <code>serve-editor</code> jobs each watch their own module directory. A shared crate outside <code>modules/platform/</code> stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.</li>
 <li><strong>Directory-scoped agent instructions.</strong> <code>modules/dpe/CLAUDE.md</code> governs everything under <code>modules/dpe/</code>, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — <code>REVIEW.md</code> carries two, one pointing into <code>dpe-server</code>'s <code>page_url.rs</code> and one into <code>editor-server</code>'s — and those need to name the real location.</li>
-<li><strong>The dependency direction.</strong> <code>platform-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead.</li>
+<li><strong>The dependency direction.</strong> <code>platform-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead. Both halves fail the build: a service dependency is a Cargo cycle, and a hardcoded path into another module is caught by <code>just check-platform-paths</code> (<code>.github/scripts/check-platform-paths.sh</code>).</li>
 </ul>
 <p><code>mosaic-*</code> predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.</p>
 <p><strong>The rule covers the shareable part of a crate, not necessarily the whole crate.</strong> <code>dpe-core</code> was not moved wholesale when the editor came to need the data contract: it mixes the contract with DPE's caches, repositories, cluster logic and a DSP-API HTTP client, and moving all of it would have made every one of those a platform concern. What moved is the contract — <code>platform-metadata</code> — and <code>dpe-core</code> now depends on it like any other consumer. Read the rule as <em>the shared thing lives under <code>modules/platform/</code></em>; where the shared thing is a subset of a crate, extract the subset.</p>
@@ -4729,7 +4730,7 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 <ul>
 <li>New API crates follow the <code>dpe-api-{name}</code> pattern with <code>platform-metadata</code> and <code>dpe-core</code> as only domain dependencies (see <a href="fundamentals/../repo_structure.html">Project Structure</a>)</li>
 <li><code>dpe-core</code> and <code>platform-metadata</code> have no framework dependencies (no axum, no maud)</li>
-<li><code>platform-metadata</code> takes no dependency on a service crate, and no path into a service's data directory</li>
+<li><code>platform-metadata</code> takes no dependency on a service crate, and no path into a service's data directory. Both halves fail the build, so this is a spot-check rather than a hand-verification: a service dependency is a Cargo cycle, and a hardcoded path is caught by <code>just check-platform-paths</code> (<code>.github/scripts/check-platform-paths.sh</code>)</li>
 <li>Validate command covers all data file types (DPE)</li>
 <li>E2E test directory naming: <code>web-e2e-tests/</code> for DPE, <code>playground-e2e-tests/</code> for Mosaic</li>
 </ul>

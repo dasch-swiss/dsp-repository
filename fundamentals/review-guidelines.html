@@ -262,7 +262,7 @@
 <ul>
 <li>New API crates follow the <code>dpe-api-{name}</code> pattern with <code>platform-metadata</code> and <code>dpe-core</code> as only domain dependencies (see <a href="../repo_structure.html">Project Structure</a>)</li>
 <li><code>dpe-core</code> and <code>platform-metadata</code> have no framework dependencies (no axum, no maud)</li>
-<li><code>platform-metadata</code> takes no dependency on a service crate, and no path into a service's data directory</li>
+<li><code>platform-metadata</code> takes no dependency on a service crate, and no path into a service's data directory. Both halves fail the build, so this is a spot-check rather than a hand-verification: a service dependency is a Cargo cycle, and a hardcoded path is caught by <code>just check-platform-paths</code> (<code>.github/scripts/check-platform-paths.sh</code>)</li>
 <li>Validate command covers all data file types (DPE)</li>
 <li>E2E test directory naming: <code>web-e2e-tests/</code> for DPE, <code>playground-e2e-tests/</code> for Mosaic</li>
 </ul>

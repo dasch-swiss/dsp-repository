@@ -13,6 +13,7 @@ pub mod cluster;
 pub mod cluster_cache;
 pub mod collection;
 pub mod contributors;
+pub mod cover_image_cache;
 pub mod models;
 pub mod organization_cache;
 pub mod person_cache;
@@ -30,11 +31,13 @@ pub use collection::CollectionRef;
 pub use contributors::{
     is_organization_id, load_organization, load_person, CachedContributorLookup, ContributorLookup, ResolvedContributor,
 };
+pub use cover_image_cache::cover_image_url;
 pub use models::Page;
 pub use project::{Project, VALID_TABS};
 pub use project_cache::all_projects;
 pub use project_repository::{FsProjectRepository, ProjectRepository};
 pub use record_repository::{FsRecordRepository, RecordRepository};
 pub use utils::{
-    get_data_dir, lang_value, language_display_name, set_data_dir, set_show_placeholder_values, show_placeholder_values,
+    get_data_dir, get_public_dir, lang_value, language_display_name, set_data_dir, set_public_dir,
+    set_show_placeholder_values, show_placeholder_values,
 };

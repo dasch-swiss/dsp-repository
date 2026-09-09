@@ -47,6 +47,8 @@ pub fn language_display_name(code: &str) -> &str {
 
 static DATA_DIR: OnceLock<String> = OnceLock::new();
 
+static PUBLIC_DIR: OnceLock<String> = OnceLock::new();
+
 static SHOW_PLACEHOLDER_VALUES: OnceLock<bool> = OnceLock::new();
 
 /// Set the data directory path at startup. Must be called before any data access.
@@ -71,6 +73,27 @@ pub fn get_data_dir() -> &'static str {
             .or_else(|_| std::env::var("DATA_DIR"))
             .unwrap_or_else(|_| "modules/dpe/server/data".to_string())
     })
+}
+
+/// Set the public (static asset) directory path at startup. Must be called before any
+/// asset lookup. Thread-safe: uses OnceLock (first call wins, subsequent calls are no-ops).
+pub fn set_public_dir(path: &str) {
+    if PUBLIC_DIR.set(path.to_string()).is_err() {
+        tracing::warn!(
+            new = path,
+            current = PUBLIC_DIR.get().unwrap().as_str(),
+            "set_public_dir called again but public dir is already set"
+        );
+    }
+}
+
+/// Get the public (static asset) directory path: the directory `ServeDir` serves, so a
+/// file present under it is reachable at the corresponding `/…` URL.
+///
+/// Priority: OnceLock (set by main.rs) → DPE_PUBLIC_DIR env var → development default.
+/// Falls back to setting the OnceLock from env/default on first call.
+pub fn get_public_dir() -> &'static str {
+    PUBLIC_DIR.get_or_init(|| std::env::var("DPE_PUBLIC_DIR").unwrap_or_else(|_| "modules/dpe/public".to_string()))
 }
 
 /// Set whether placeholder values ("MISSING", "CALCULATED") should be shown in the UI.

@@ -9,6 +9,10 @@ const pages = [
   { name: "Home", path: "/dpe/" },
   { name: "Projects listing", path: "/dpe/projects" },
   { name: "Project detail", path: "/dpe/projects/0803" },
+  // 0843 has no cover image, so its hero renders the placeholder branch. The
+  // listing above already covers the placeholder *card*; without this entry the
+  // placeholder *hero* is never scanned.
+  { name: "Project detail (no cover image)", path: "/dpe/projects/0843" },
   { name: "About", path: "/dpe/about" },
 ];
 

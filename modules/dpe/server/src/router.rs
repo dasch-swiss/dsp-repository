@@ -291,6 +291,11 @@ mod tests {
         use crate::router::build_router;
 
         dpe_core::set_data_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/data"));
+        // Covers live under the public dir, which cargo does NOT put on the test cwd:
+        // `cargo test` runs from the package dir, so the relative default misses and
+        // every project would render as coverless. Distinct from NO_PUBLIC_DIR below,
+        // which is the ServeDir static-file root, not dpe-core's asset lookup.
+        dpe_core::set_public_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/../public"));
 
         let app = build_router(
             test_state(),
@@ -323,6 +328,14 @@ mod tests {
         let (status, body) = body_of("/dpe/projects/0862").await;
         assert_eq!(status, StatusCode::OK);
         assert!(!body.contains("Page not found."), "the project page route should still render");
+        // 0862 has a cover on disk, so the wired-up handler must resolve it. This is the
+        // only test that renders a full project page through the router, so without the
+        // assertion the whole set_public_dir → cover_image_url → <img> path is exercised
+        // nowhere in `cargo test` and a broken lookup would look like a passing suite.
+        assert!(
+            body.contains(r#"src="/assets/images/0862.webp""#),
+            "0862's cover should resolve: {body}"
+        );
     }
 
     #[tokio::test]

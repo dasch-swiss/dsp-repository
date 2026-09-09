@@ -92,6 +92,86 @@ pub struct ProjectRaw {
     pub image_credit: Option<String>,
 }
 
+/// The contribution roles a form **offers** for `attributions[].contributorType`
+/// - an offer, not a constraint.
+///
+/// Unlike [`TYPE_OF_DATA_VALUES`] and [`ACCESS_RIGHTS_VALUES`] beside it, a value outside this list
+/// is kept. The committed data leaves no choice: it spells the same role several ways, crams
+/// several roles into one entry, and uses free prose in place of a role, so closing the set would
+/// rewrite published files.
+///
+/// So this is the vocabulary a depositor is *offered*: every role several projects share, in the
+/// dominant casing, plus a few standard ones. Everything already stored stays.
+///
+/// Coverage is measured by **how many projects share a role, not how many times it is used** — a
+/// role used often by one project is that project's own wording, not shared vocabulary.
+/// [`ROLES_NOT_OFFERED`] names the shared ones still left out, so each omission is a decision on
+/// the record.
+pub const CONTRIBUTOR_ROLES: &[&str] = &[
+    "Project Leader",
+    "Project Member",
+    "Project Manager",
+    "Principal Investigator",
+    "Applicant",
+    "Data Collector",
+    "Data Curator",
+    "Author",
+    "Editor",
+    "Creator",
+    "Contributor",
+    "Researcher",
+    "Annotator",
+    "Publisher",
+    "Related Person",
+    "Employee",
+    "Other",
+];
+
+/// Roles several projects share that the form still does not offer, and why.
+///
+/// Named rather than merely absent, for the reason `OMITTED` is in the editor's
+/// field registry: an omission nobody decided is indistinguishable from one
+/// somebody did. Lowercased, because that is how
+/// `tests::the_offered_roles_cover_the_roles_several_projects_share` compares.
+pub const ROLES_NOT_OFFERED: &[(&str, &str)] = &[
+    // Four projects use the abbreviation. The offer carries the full form, and
+    // the short one stays as stored data rather than becoming a second way to
+    // say the same role.
+    ("pi", "offered as \"Principal Investigator\""),
+    // Three roles crammed into one entry, in a member that is a `Vec<String>`
+    // and could have held them separately. Offering it would make the
+    // data-modelling mistake reproducible with one click.
+    (
+        "project member, data collector, data curator",
+        "three roles in one entry; the offer lists them separately",
+    ),
+    // A shorter wording of the role 37 projects spell "Project Leader", which
+    // is the one the offer carries.
+    ("project lead", "offered as \"Project Leader\""),
+];
+
+/// The kinds of data a dataset may hold — a closed vocabulary, in the order a
+/// form offers them.
+///
+/// Closed because the committed corpus is: the published projects between them use exactly these
+/// five, and unlike `dataLanguage` beside it there is no long tail to preserve — so a value the
+/// form did not offer is a hand-built one.
+///
+/// A plain `Vec<String>` on the contract rather than an enum, so nothing but
+/// this slice constrains it — which is why the editor's shape declares the set
+/// and the applier drops anything else.
+pub const TYPE_OF_DATA_VALUES: &[&str] = &["Text", "Image", "XML", "Video", "Audio"];
+
+/// The wire values [`ProjectStatus`] serializes to, in the order a form offers
+/// them.
+///
+/// Beside the enum rather than in the editor, for the same reason
+/// [`ACCESS_RIGHTS_VALUES`] is: it is the contract's vocabulary, and a copy in
+/// a form registry could drift from the type while both still compiled.
+/// `tests::every_offered_value_deserializes_into_its_contract_type` is what
+/// stops the drift.
+pub const PROJECT_STATUS_VALUES: &[&str] = &["Ongoing", "Finished"];
+
 pub const ACCESS_RIGHTS_VALUES: &[&str] = &[
     "Full Open Access",
     "Open Access with Restrictions",
@@ -216,6 +296,37 @@ pub struct Grant {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Every value a form may offer has to be one the contract accepts back.
+    ///
+    /// These two slices are the only place the wire vocabulary is written out,
+    /// and a form builds its options from them — so an entry that does not
+    /// deserialize is a control a depositor can pick and a submission the
+    /// contract then rejects, with the failure landing on `to_raw` rather than
+    /// on the option that caused it.
+    #[test]
+    fn every_offered_value_deserializes_into_its_contract_type() {
+        for value in PROJECT_STATUS_VALUES {
+            let json = serde_json::to_string(value).expect("a string serializes");
+            serde_json::from_str::<ProjectStatus>(&json)
+                .unwrap_or_else(|e| panic!("{value:?} is offered but is not a ProjectStatus: {e}"));
+        }
+        for value in ACCESS_RIGHTS_VALUES {
+            let json = serde_json::to_string(value).expect("a string serializes");
+            serde_json::from_str::<AccessRightsType>(&json)
+                .unwrap_or_else(|e| panic!("{value:?} is offered but is not an AccessRightsType: {e}"));
+        }
+    }
+
+    /// The other direction: a variant added to either enum without being
+    /// offered is a value the data can hold and the form cannot show, so a
+    /// depositor opening such a project sees the field reset to something else
+    /// on the next save.
+    #[test]
+    fn every_contract_variant_is_offered() {
+        assert_eq!(PROJECT_STATUS_VALUES.len(), 2, "ProjectStatus has two variants");
+        assert_eq!(ACCESS_RIGHTS_VALUES.len(), 4, "AccessRightsType has four variants");
+    }
 
     #[test]
     fn valid_shortcode_alphanumeric() {

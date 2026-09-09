@@ -75,6 +75,7 @@ pub struct TextFieldBuilder {
     inputmode: Option<&'static str>,
     pattern: Option<String>,
     maxlength: Option<u32>,
+    list: Option<String>,
     required: bool,
     autofocus: bool,
     id: Option<String>,
@@ -97,6 +98,7 @@ pub fn text_field(name: impl Into<String>, label: impl Render) -> TextFieldBuild
         inputmode: None,
         pattern: None,
         maxlength: None,
+        list: None,
         required: false,
         autofocus: false,
         id: None,
@@ -148,6 +150,24 @@ impl TextFieldBuilder {
     }
 
     /// Mark the input required.
+    /// Point the input at a `<datalist>` by id, so the browser offers its
+    /// options as suggestions.
+    ///
+    /// The list itself is the caller's to render, once, wherever it belongs on
+    /// the page — which is the reason this takes an id rather than the options:
+    /// a suggestion list large enough to be worth sharing (hundreds of entries)
+    /// must not be repeated per control.
+    ///
+    /// Progressive by construction: with no JavaScript, and in a browser with
+    /// no `datalist` support, the input stays an ordinary text field and the
+    /// attribute is inert. It is a *suggestion* list either way — the browser
+    /// does not restrict what may be typed, so whatever accepts the value still
+    /// has to validate it.
+    pub fn list(mut self, id: impl Into<String>) -> Self {
+        self.list = Some(id.into());
+        self
+    }
+
     pub fn required(mut self) -> Self {
         self.required = true;
         self
@@ -219,6 +239,7 @@ impl TextFieldBuilder {
                 inputmode=[self.inputmode]
                 pattern=[self.pattern.as_deref()]
                 maxlength=[self.maxlength]
+                list=[self.list.as_deref()]
                 aria-describedby=[described_by.as_deref()]
                 aria-invalid=[shell.aria_invalid()]
                 data-testid=[self.test_id.as_deref()]
@@ -447,6 +468,23 @@ mod tests {
         assert!(!out.contains("required"), "{out}");
         assert!(!out.contains("autofocus"), "{out}");
         assert!(!out.contains("data-testid="), "{out}");
+    }
+
+    #[test]
+    fn a_suggestion_list_is_referenced_by_id_and_is_absent_unless_asked_for() {
+        // By id rather than by options, so a list large enough to be worth
+        // sharing is rendered once on the page instead of per control.
+        let plain = text_field("contributor", "Contributor").build().into_string();
+        assert!(!plain.contains("list="), "{plain}");
+
+        let out = text_field("contributor", "Contributor")
+            .list("agent-suggestions")
+            .build()
+            .into_string();
+        assert!(out.contains(r#"list="agent-suggestions""#), "{out}");
+        // Still an ordinary text input: a `datalist` suggests and never
+        // restricts, so whatever accepts the value has to validate it.
+        assert!(out.contains(r#"type="text""#), "{out}");
     }
 
     #[test]

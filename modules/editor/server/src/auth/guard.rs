@@ -50,14 +50,14 @@ const MAX_NEXT_LEN: usize = 256;
 /// useful. Signing in and landing back on the page that was asked for is the
 /// behaviour, which is what `next` carries.
 #[derive(Debug, Clone)]
-pub(crate) struct Authenticated(pub(crate) User);
+pub(crate) struct Authenticated(pub(crate) User, pub(crate) chrono::DateTime<chrono::Utc>);
 
 impl FromRequestParts<AppState> for Authenticated {
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
         match session::current(&*state.db, &state.auth, &parts.headers, Utc::now()).await {
-            Some(user) => Ok(Self(user)),
+            Some(viewer) => Ok(Self(viewer.user, viewer.signed_out_at)),
             None => Err(Redirect::to(&login_url(destination(parts))).into_response()),
         }
     }
@@ -81,7 +81,7 @@ impl FromRequestParts<AppState> for Rdu {
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
-        let Authenticated(user) = Authenticated::from_request_parts(parts, state).await?;
+        let Authenticated(user, _) = Authenticated::from_request_parts(parts, state).await?;
         if !user.is_rdu() {
             // Worth a line: a depositor reaching an administration URL is either
             // a stale bookmark or someone trying doors, and both are things an

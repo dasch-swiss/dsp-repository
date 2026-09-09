@@ -151,7 +151,26 @@ pub(crate) fn state_over(
         // filenames that disagree with their shortcode.
         published: published_corpus(),
         temporal: temporal_tables(),
+        agents: agent_corpus(),
     }
+}
+
+/// The committed agent set, loaded once for the whole test binary.
+///
+/// The real set rather than a fixture, for the reason [`published_corpus`] gives: every committed
+/// contributor and contact reference resolves through it, so invented agents would let a change
+/// that only works for invented ids pass.
+pub(crate) fn agent_corpus() -> Arc<editor_core::agents::Agents> {
+    static AGENTS: OnceLock<Arc<editor_core::agents::Agents>> = OnceLock::new();
+    AGENTS
+        .get_or_init(|| {
+            let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data");
+            let (agents, errors) =
+                editor_core::agents::Agents::load_from(&dir.join("persons"), &dir.join("organizations"));
+            assert!(errors.is_empty(), "the committed agent set should load: {errors:?}");
+            Arc::new(agents)
+        })
+        .clone()
 }
 
 /// The committed temporal-resolution tables, loaded once for the whole test
@@ -255,7 +274,19 @@ pub(crate) async fn count_rows(db: &Database, table: &'static str) -> i64 {
 /// one suite passing on input the other would mangle.
 pub(crate) fn urlencode(value: &str) -> String {
     value
+        // `%` first, or the escapes below would be escaped again.
         .replace('%', "%25")
+        // `&` and `=` are the pair and name/value separators, so a value
+        // holding either silently becomes two pairs or a renamed field. A
+        // committed publication citation reads "in Di Natale A. & Basile C.",
+        // and without escaping `&` the round-trip test posted it truncated at
+        // "Di Natale A." and then compared the truncation against the file.
+        // Nothing failed until `publications` gained a control, because until
+        // then no shaped field's values contained one.
+        .replace('&', "%26")
+        .replace('=', "%3D")
+        // `#` starts a fragment, which a server never receives.
+        .replace('#', "%23")
         .replace('@', "%40")
         .replace(' ', "%20")
         .replace(',', "%2C")

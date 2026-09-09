@@ -43,6 +43,17 @@ fn examples() -> Markup {
         })
         ({
             example(
+                "text_field-suggestions",
+                "Suggestion list",
+                "`.list(id)` points the input at a `<datalist>` the caller renders once, so a list of hundreds \
+                 of entries is not repeated per control. It suggests and never restricts, so the value still \
+                 has to be validated where it is accepted — and with no JavaScript it stays an ordinary text \
+                 field.",
+                suggestions(),
+            )
+        })
+        ({
+            example(
                 "text_field-one_time_code",
                 "One-time code",
                 "One intent method sets autocomplete, inputmode, pattern and maxlength together — setting three \
@@ -135,6 +146,20 @@ fn types() -> Markup {
         })
     };
     form_column(fields)
+}
+
+fn suggestions() -> Markup {
+    html! {
+        ({
+            text_field("contributor", "Contributor")
+                .list("contributor-suggestions")
+                .hint("Start typing a name.")
+        })
+        datalist id="contributor-suggestions" {
+            option value="person-001" { "Philippe Gonzalez (Person)" }
+            option value="organization-008" { "Dokumentationsbibliothek St. Moritz (Organisation)" }
+        }
+    }
 }
 
 fn one_time_code() -> Markup {

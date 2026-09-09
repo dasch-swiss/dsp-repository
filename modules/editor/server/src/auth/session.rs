@@ -68,7 +68,7 @@ pub(crate) async fn current(
     auth: &AuthConfig,
     headers: &HeaderMap,
     now: DateTime<Utc>,
-) -> Option<User> {
+) -> Option<Viewer> {
     let id = cookie::read(headers, cookie::SESSION)?;
 
     let session = match SessionRepository::find(db, &id).await {
@@ -112,7 +112,25 @@ pub(crate) async fn current(
         }
     }
 
-    Some(user)
+    // The earlier of the two deadlines, which is what a page can honestly warn
+    // about. They behave differently and the difference is why only the earlier
+    // one is useful: the absolute expiry is fixed at sign-in and never moves,
+    // while the idle one advances on every request — including an autosave — so
+    // a page that showed only the idle one would promise a time that changes
+    // the moment anything happens.
+    Some(Viewer { user, signed_out_at: session.expires_at.min(idle_deadline) })
+}
+
+/// Who is signed in, and when that stops being true.
+///
+/// The deadline rides along because it comes from the row this function already
+/// read: asking for it separately would mean a second read of the same session
+/// on every request that wants to warn about it.
+#[derive(Debug, Clone)]
+pub(crate) struct Viewer {
+    pub(crate) user: User,
+    /// The earlier of the absolute expiry and the idle timeout.
+    pub(crate) signed_out_at: DateTime<Utc>,
 }
 
 /// What [`end`] did.

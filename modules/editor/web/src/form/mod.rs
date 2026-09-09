@@ -7,6 +7,7 @@
 
 pub mod obligation;
 pub mod registry;
+pub mod submit;
 pub mod widgets;
 
 /// The name every control that says *what a POST is for* posts under.

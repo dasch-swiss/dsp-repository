@@ -23,16 +23,18 @@ use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
 use chrono::{DateTime, Utc};
 use editor_core::draft::ProjectDraft;
-use editor_core::form::{apply, FormBody};
+use editor_core::form::{apply, FormBody, Shape};
 use editor_core::records::{
     normalize_shortcode, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState, User,
 };
 use editor_core::repository::{
-    DraftRepository, RepositoryError, ReviewRoundRepository, SubmissionRepository, Transition,
+    DraftRepository, RepositoryError, ReviewRoundRepository, SubmissionRepository, Transition, UserRepository,
 };
 use editor_core::review::{diff, FieldDiff, ReviewState};
 use editor_core::submission::unresolved_temporal_coverage;
+use editor_web::form::obligation::unsatisfied_required;
 use editor_web::form::registry::{self, Audience, Section};
+use editor_web::form::submit::{over_cap, typed_sentinels, unresolved_agents};
 use editor_web::form::INTENT;
 use editor_web::pages::section as page;
 use platform_metadata::is_valid_shortcode;
@@ -55,6 +57,13 @@ const SAVE_REFUSED_STORAGE: &str = "The draft could not be saved. Nothing was ch
 const SUBMIT_REFUSED_INCOMPLETE: &str = "This project cannot be submitted yet: some fields the repository requires \
                                          have no value. Your draft has been saved — fill the remaining fields and \
                                          submit again.";
+/// The refusal an unanswered required field renders as.
+///
+/// Distinct from [`SUBMIT_REFUSED_INCOMPLETE`], which answers a draft that is
+/// not a `ProjectRaw` at all and can therefore name no field: this one always
+/// carries per-field errors, so it promises them.
+const SUBMIT_REFUSED_UNANSWERED: &str = "This project cannot be submitted yet: some required fields have no value. \
+                                         Your draft has been saved, and each one is named below with a link to it.";
 // Deliberately says nothing about *where* the fields are. Validation is
 // whole-project while the form is sectioned, so the fields at fault are
 // routinely on another page — a message promising "the fields below" is read
@@ -80,6 +89,65 @@ const WITHDRAW_REFUSED_STORAGE: &str = "The submission could not be taken back, 
 /// resolves, which is the escape route REQ-1.15's refusal decision rests on —
 /// without naming it, a depositor whose period the table does not know is
 /// simply stuck.
+/// The refusal a body over the per-field cap renders as.
+///
+/// A write refusal rather than a submit one: applied to a save too, because an
+/// over-cap save would otherwise truncate, store, and leave the submit that
+/// follows looking at a draft already within the cap.
+const WRITE_REFUSED_OVER_CAP: &str = "One field carried more values than this form accepts, so nothing was saved. \
+                                      Each one is named below.";
+
+/// The field-level error a field over the cap renders as.
+fn over_cap_message(label: &str) -> String {
+    format!(
+        "\"{label}\" carried more than {} values. Nothing was saved for this field — remove some and save again.",
+        editor_core::form::MAX_VALUES_PER_FIELD
+    )
+}
+
+const DISCARD_REFUSED_GONE: &str = "There is no draft to discard — this form is already showing the project's \
+                                    published metadata.";
+const DISCARD_REFUSED_LOCKED: &str = "This project is in review, so its draft cannot be discarded. Take the \
+                                      submission back first if you want to start over.";
+const DISCARD_REFUSED_STORAGE: &str = "The draft could not be discarded, so it is still there. Try again, and if \
+                                       it keeps happening the service needs attention.";
+
+/// The refusal an unresolvable agent reference renders as.
+const SUBMIT_REFUSED_UNKNOWN_AGENT: &str = "This project cannot be submitted yet: it refers to a person or \
+                                            organisation the repository does not have. Your draft has been saved, \
+                                            and each one is named below with a link to it.";
+
+/// The field-level error an unresolvable agent reference renders as.
+fn unknown_agent_message(id: &str) -> String {
+    format!(
+        "\"{id}\" is not a person or organisation the repository knows. Pick one from the suggestions, or ask RDU \
+         to add it."
+    )
+}
+
+/// The refusal a typed placeholder sentinel renders as.
+const SUBMIT_REFUSED_SENTINEL: &str = "This project cannot be submitted yet: a field holds a word the repository \
+                                       reserves for \"no value yet\". Your draft has been saved, and each one is \
+                                       named below with a link to it.";
+
+/// The field-level error a typed placeholder sentinel renders as.
+///
+/// Names the words, because the control shows the field as *empty* once one is
+/// stored: told only that the value is wrong, a depositor looks at a blank box.
+/// Says what to do with it too — the way out is a real value or a genuine
+/// clear, and for an optional field those are different acts.
+const SENTINEL_MESSAGE: &str = "\"MISSING\" and \"CALCULATED\" are reserved here for a value that is not filled in \
+                                yet, so this field reads as empty to the rest of the platform. Enter the real value, \
+                                or clear the field if there is nothing to record.";
+
+/// The field-level error an unanswered required field renders as.
+///
+/// Names neither the field nor its section, because both renderings supply
+/// them: in the reader's own section the message sits directly under the
+/// field's label, and elsewhere `errors_elsewhere` prefixes it with the label
+/// and a link to the section that holds it.
+const UNANSWERED_MESSAGE: &str = "Required before this project can be submitted, and it has no value yet.";
+
 fn unresolved_message(name: &str) -> String {
     format!(
         "\"{name}\" cannot be matched to a date range, and the repository needs one for every period. Either pick \
@@ -120,6 +188,36 @@ struct Context<'a> {
     /// anyway, and the whole point is that an accepted value cannot re-enter
     /// review altered.
     accepted_fields: Vec<String>,
+    /// When this reader's session ends, whichever of the two deadlines comes
+    /// first.
+    ///
+    /// On the context because every rendering wants it and it costs nothing:
+    /// the guard already read the session row it comes from.
+    signed_out_at: DateTime<Utc>,
+    /// Who last saved the draft, when that was somebody other than this reader.
+    ///
+    /// Resolved here rather than in the view, and only when it is somebody
+    /// else: a draft this reader saved themselves is the ordinary case, so the
+    /// name would be noise, and skipping it avoids a user lookup on every
+    /// ordinary form render.
+    last_editor: Option<String>,
+    /// The agents an id field may refer to, borrowed from `AppState`'s
+    /// immutable snapshot.
+    ///
+    /// On the context rather than reached through `state` in the view, because
+    /// `view` is given the resolved request and not the whole application —
+    /// which is what keeps a renderer from quietly acquiring a second source of
+    /// truth about the project.
+    agents: &'a editor_core::agents::Agents,
+    /// The body that was posted, or `None` on a `GET`.
+    ///
+    /// Part of the resolved request rather than an argument threaded through
+    /// the thirteen refusal call sites, and only repeatable fields read it.
+    /// What they need is the one thing the draft cannot hold: a row a depositor
+    /// added but has not filled in. Such a row is never stored — an empty row
+    /// must not reach a published file — so it lives in the form, and the body
+    /// is where a re-render finds it again.
+    posted: Option<&'a FormBody>,
     /// The latest finished review round, or `None` for a project nobody has
     /// reviewed.
     ///
@@ -170,6 +268,7 @@ async fn context<'a>(
     user: &User,
     shortcode: &str,
     section_id: &str,
+    signed_out_at: DateTime<Utc>,
 ) -> Result<Context<'a>, Response> {
     if !is_valid_shortcode(shortcode) {
         return Err(crate::not_found(State(state.clone())).await);
@@ -199,6 +298,25 @@ async fn context<'a>(
         Ok(record) => record,
         Err(error) => return Err(storage_error(state, user, "read this project's draft", &error)),
     };
+    // Only when somebody else saved it: two members of one project team is the
+    // normal case, and this is what turns a silent overwrite into a named one.
+    // A draft this reader saved themselves needs no name, which also keeps this
+    // lookup off every ordinary render. An account since removed leaves the row
+    // with a null author, and reads as unknown rather than dangling.
+    let last_editor = match record.as_ref().map(|record| record.updated_by) {
+        Some(Some(editor)) if editor != user.id => match UserRepository::find_by_id(&*state.db, editor).await {
+            Ok(found) => found.map(|found| found.name),
+            // Not worth refusing the whole page over: the name is a courtesy
+            // beside the timestamp, and the timestamp is what says the draft
+            // moved.
+            Err(error) => {
+                tracing::warn!(error = %error, "could not read the draft's last editor");
+                None
+            }
+        },
+        _ => None,
+    };
+
     // Everything short of `Approved` locks the form. An approved record is
     // waiting to be collected into a pull request and is no longer the
     // depositor's to wait on, so editing again starts the next cycle rather
@@ -295,6 +413,10 @@ async fn context<'a>(
         submission,
         accepted_fields,
         round,
+        last_editor,
+        signed_out_at,
+        agents: &state.agents,
+        posted: None,
         project_name: published.map(|project| project.name.as_str()),
     })
 }
@@ -302,10 +424,10 @@ async fn context<'a>(
 /// `GET /projects/{shortcode}/sections/{section}`.
 pub(crate) async fn show(
     State(state): State<AppState>,
-    Authenticated(user): Authenticated,
+    Authenticated(user, signed_out_at): Authenticated,
     Path((shortcode, section_id)): Path<(String, String)>,
 ) -> Response {
-    let context = match context(&state, &user, &shortcode, &section_id).await {
+    let context = match context(&state, &user, &shortcode, &section_id, signed_out_at).await {
         Ok(context) => context,
         Err(response) => return response,
     };
@@ -333,7 +455,7 @@ pub(crate) async fn show(
 )]
 pub(crate) async fn act(
     State(state): State<AppState>,
-    Authenticated(user): Authenticated,
+    Authenticated(user, signed_out_at): Authenticated,
     Path((shortcode, section_id)): Path<(String, String)>,
     headers: HeaderMap,
     // Last, because it consumes the body. `Vec<(String, String)>` rather than a
@@ -346,15 +468,19 @@ pub(crate) async fn act(
     span.record("project.shortcode", tracing::field::display(&shortcode));
     span.record("form.section", tracing::field::display(&section_id));
 
-    let mut context = match context(&state, &user, &shortcode, &section_id).await {
+    // Declared before the context so it outlives it: the context borrows it, so
+    // that every render reached from here can preserve the editing state
+    // without the body being threaded through each refusal.
+    let body = FormBody::from_pairs(pairs);
+
+    let mut context = match context(&state, &user, &shortcode, &section_id, signed_out_at).await {
         Ok(context) => context,
         Err(response) => {
             span.record("form.outcome", "refused");
             return response;
         }
     };
-
-    let body = FormBody::from_pairs(pairs);
+    context.posted = Some(&body);
     // Anything this build does not know falls back to `save`: submit and
     // withdraw are not undoable by the depositor and a save is, so a body
     // naming an unknown verb must take the recoverable branch.
@@ -362,12 +488,21 @@ pub(crate) async fn act(
         Some(page::SUBMIT) => Intent::Submit,
         Some(page::WITHDRAW) => Intent::Withdraw,
         Some(page::WITHDRAW_CONFIRM) => Intent::ConfirmWithdrawal,
+        Some(page::DISCARD) => Intent::Discard,
+        Some(page::DISCARD_CONFIRM) => Intent::ConfirmDiscard,
         _ => Intent::Save,
     };
     span.record("form.intent", tracing::field::display(intent.as_str()));
 
     if intent == Intent::Withdraw || intent == Intent::ConfirmWithdrawal {
         return withdraw(&state, &user, &shortcode, &context, headers, intent).await;
+    }
+
+    // Before the lock check and before anything is applied: discarding is not a
+    // write to the draft but the removal of it, so running the appliers first
+    // would store a body only to delete it.
+    if intent == Intent::Discard || intent == Intent::ConfirmDiscard {
+        return discard(&state, &user, &shortcode, &context, headers, intent).await;
     }
 
     // Re-checked here and not only when the form was rendered: the render is a
@@ -379,6 +514,106 @@ pub(crate) async fn act(
         return refused(&state, &user, &shortcode, &context, headers, SAVE_REFUSED_LOCKED);
     }
 
+    // Did the draft move under this form? The draft is one row and `upsert` is last-write-wins, so
+    // without this a save silently replaces work somebody else did while this form was open.
+    // Refused **once**: the re-render carries what was typed and a refreshed baseline, so
+    // saving again keeps this depositor's version.
+    //
+    // It closes the human-scale race — two people with the form open for
+    // minutes — and not the instant between this read and the write below,
+    // which needs a transaction rather than a baseline. Worth being exact
+    // about, because the wider race is the one that actually loses work.
+    if let Some(conflict) = changed_underneath(&context, &body) {
+        span.record("form.outcome", "changed_underneath");
+        tracing::info!("refused a write against a draft that changed underneath the form");
+        // In memory only, and before rendering: a scalar control renders from
+        // the draft, so without this the refusal would show the other person's
+        // values under a notice saying the page still holds yours. Nothing is
+        // stored, which is what makes "nothing has been saved just now" true.
+        apply_posted(&mut context, &body);
+        let rendering = Rendering {
+            notice: Some(page::Notice::Changed { by: context.last_editor.as_deref(), at: &conflict }),
+            keep_posted: true,
+            ..Rendering::default()
+        };
+        return if is_enhanced(&headers) {
+            region(&shortcode, &context, rendering)
+        } else {
+            render_page(&state, &user, &shortcode, &context, rendering)
+        };
+    }
+
+    // Before any applier runs, and on a save as much as a submit: an applier
+    // silently truncates at `MAX_VALUES_PER_FIELD`, so deferring this to
+    // submit would let an over-cap save store the truncated value and leave
+    // submit looking at a draft already within the cap. Nothing is written on
+    // this branch, which is what makes the refusal honest about "nothing was
+    // saved".
+    let over = over_cap(context.audience, context.section, &body);
+    if !over.is_empty() {
+        span.record("form.outcome", "over_cap");
+        tracing::info!(fields.over_cap = over.len(), "refused a write carrying too many values");
+        let errors: Vec<(String, String)> = over
+            .iter()
+            .map(|field| (field.id.to_string(), over_cap_message(field.label)))
+            .collect();
+        return refused_with(&state, &user, &shortcode, &context, headers, WRITE_REFUSED_OVER_CAP, &errors);
+    }
+
+    let record = match apply_and_store(&state, &user, &shortcode, &mut context, &headers, &body).await {
+        Ok(record) => record,
+        Err(response) => return response,
+    };
+
+    if intent == Intent::Save {
+        span.record("form.outcome", "saved");
+        tracing::info!("saved a project draft");
+        return saved(&shortcode, &context, headers);
+    }
+
+    // The record's own timestamp rather than a second `Utc::now()`: the
+    // submission and the draft write it came from must agree.
+    let submitted_at = record.updated_at;
+    submit(&state, &user, &shortcode, &context, headers, &record, submitted_at).await
+}
+
+/// How long before the session ends a form starts saying so.
+///
+/// Half an hour: long enough to finish a paragraph and save, short enough that
+/// the warning is not permanently on screen being ignored.
+const SIGN_OUT_WARNING: chrono::Duration = chrono::Duration::minutes(30);
+
+/// The deadline, if it is close enough to be worth telling a reader about.
+fn nearly_signed_out(signed_out_at: DateTime<Utc>) -> Option<DateTime<Utc>> {
+    (signed_out_at - Utc::now() <= SIGN_OUT_WARNING).then_some(signed_out_at)
+}
+
+/// When the stored draft is a different revision from the one this form was
+/// rendered from, formatted for a reader.
+///
+/// `None` when they agree, when there is no stored draft, and when the body
+/// carries no baseline at all. That last case is deliberate: a body with no
+/// baseline was not posted from a form this service rendered, so there is no
+/// revision it could have been looking at, and refusing it would protect
+/// nothing. This is a courtesy between people rather than a control — the row
+/// is still last-write-wins.
+fn changed_underneath(context: &Context<'_>, body: &FormBody) -> Option<String> {
+    let baseline = body.get(page::BASELINE)?;
+    let record = context.record.as_ref()?;
+    let stored = record.updated_at.to_rfc3339();
+    (stored != baseline).then(|| crate::format_instant(record.updated_at))
+}
+
+/// Apply the posted body to the **in-memory** draft, returning how many fields
+/// it touched.
+///
+/// Split from the store beside it because one path needs exactly this and not
+/// the write: a save refused because the draft changed underneath has to
+/// re-render what the depositor typed, and a scalar control renders
+/// from the draft rather than from the body — so without applying first, the
+/// refusal would show the *other* person's values under a notice claiming the
+/// page still holds yours.
+fn apply_posted(context: &mut Context<'_>, body: &FormBody) -> usize {
     let mut applied = 0;
     for field in context.section.fields_for(context.audience) {
         // An accepted field is skipped here, which is the gate. Not rendering
@@ -389,20 +624,45 @@ pub(crate) async fn act(
             continue;
         }
         if let Some(shape) = field.shape {
-            apply(shape, &body, &mut context.draft, field.id);
+            apply(shape, body, &mut context.draft, field.id);
             applied += 1;
         }
     }
+    applied
+}
+
+/// Apply the posted body to the draft and write it, or the response that refuses
+/// the write.
+///
+/// Shared by the save/submit handler and the row actions, which is what keeps a
+/// row action from being a second, weaker write path: the accepted-field gate,
+/// the `fields_for` audience gate, the `created_at` preservation and the
+/// serialize/store refusals are all here, once.
+///
+/// The draft is written **before** submit validation runs, and on every intent.
+/// A submit that stored only the submission would lose whatever was typed in the
+/// same post if validation then refused it — and the draft is what the depositor
+/// comes back to when RDU returns the project.
+async fn apply_and_store(
+    state: &AppState,
+    user: &User,
+    shortcode: &str,
+    context: &mut Context<'_>,
+    headers: &HeaderMap,
+    body: &FormBody,
+) -> Result<DraftRecord, Response> {
+    let span = tracing::Span::current();
+    let applied = apply_posted(context, body);
 
     let now = Utc::now();
     let record = DraftRecord {
-        shortcode: normalize_shortcode(&shortcode),
+        shortcode: normalize_shortcode(shortcode),
         payload: match serde_json::to_string(&context.draft) {
             Ok(payload) => payload,
             Err(error) => {
                 span.record("form.outcome", "serialize_failed");
                 tracing::error!(error = %error, "a draft could not be serialized");
-                return refused(&state, &user, &shortcode, &context, headers, SAVE_REFUSED_STORAGE);
+                return Err(refused(state, user, shortcode, context, headers.clone(), SAVE_REFUSED_STORAGE));
             }
         },
         updated_by: Some(user.id),
@@ -414,24 +674,184 @@ pub(crate) async fn act(
         updated_at: now,
     };
 
-    // The draft is written on both intents, and first. A submit that stored
-    // only the submission would lose whatever was typed in the same post if
-    // validation then refused it — and the draft is what the depositor comes
-    // back to when RDU returns the project (REQ-1.13).
     if let Err(error) = DraftRepository::upsert(&*state.db, &record).await {
         span.record("form.outcome", "store_failed");
         tracing::error!(error = %error, "could not save a project draft");
-        return refused(&state, &user, &shortcode, &context, headers, SAVE_REFUSED_STORAGE);
+        return Err(refused(state, user, shortcode, context, headers.clone(), SAVE_REFUSED_STORAGE));
     }
     context.record = Some(record.clone());
+    tracing::debug!(fields.applied = applied, "applied a posted form body");
+    Ok(record)
+}
 
-    if intent == Intent::Save {
-        span.record("form.outcome", "saved");
-        tracing::info!(fields.applied = applied, "saved a project draft");
-        return saved(&shortcode, &context, headers);
+/// `POST /projects/{shortcode}/sections/{section}/fields/{field}/add` — one more
+/// blank row.
+///
+/// The whole form body comes with it, because the tile's add control is a submit
+/// button carrying a `formaction`. So nothing typed elsewhere is lost, and this
+/// handler's job is only to save what arrived and re-render with one row more.
+///
+/// **The blank row is not stored.** `apply_multilingual_rows` drops a row with
+/// no text in any language, and it must — a file full of empty objects is not
+/// data. The extra row is a *rendering*, and it survives the next round trip
+/// because the tile emits a hidden `{field}.row` for it, so the body carries
+/// its key back. Nothing is held server-side between requests.
+pub(crate) async fn add_row(
+    State(state): State<AppState>,
+    Authenticated(user, signed_out_at): Authenticated,
+    Path((shortcode, section_id, field_id)): Path<(String, String, String)>,
+    headers: HeaderMap,
+    Form(pairs): Form<Vec<(String, String)>>,
+) -> Response {
+    row_action(
+        &state,
+        &user,
+        &shortcode,
+        &section_id,
+        &field_id,
+        headers,
+        pairs,
+        None,
+        signed_out_at,
+    )
+    .await
+}
+
+/// `POST /projects/{shortcode}/sections/{section}/fields/{field}/{key}/remove` —
+/// drop one row.
+///
+/// The key comes from the URL rather than from a submit button's name and value,
+/// which is the tile's own decision and the right one: a form submitted
+/// programmatically does not include the submitter's name and value unless it is
+/// passed explicitly, so a named button would work on the plain path and vanish
+/// on the enhanced one.
+pub(crate) async fn remove_row(
+    State(state): State<AppState>,
+    Authenticated(user, signed_out_at): Authenticated,
+    Path((shortcode, section_id, field_id, key)): Path<(String, String, String, String)>,
+    headers: HeaderMap,
+    Form(pairs): Form<Vec<(String, String)>>,
+) -> Response {
+    row_action(
+        &state,
+        &user,
+        &shortcode,
+        &section_id,
+        &field_id,
+        headers,
+        pairs,
+        Some(&key),
+        signed_out_at,
+    )
+    .await
+}
+
+/// Add or remove a row: the two differ only in what they do to the posted body.
+///
+/// Removing drops the row's key from `{field}.row` **before** anything is
+/// applied, so the applier simply does not see it and the stored list comes out
+/// without it. That is the whole removal — there is no separate delete, which is
+/// what keeps this in step with a save: one applier, one set of rules.
+#[tracing::instrument(
+    skip_all,
+    fields(
+        otel.kind = "internal",
+        otel.name = "project section row action",
+        auth.actor = tracing::field::Empty,
+        project.shortcode = tracing::field::Empty,
+        form.section = tracing::field::Empty,
+        form.field = tracing::field::Empty,
+        form.outcome = tracing::field::Empty,
+    )
+)]
+#[allow(clippy::too_many_arguments)]
+async fn row_action(
+    state: &AppState,
+    user: &User,
+    shortcode: &str,
+    section_id: &str,
+    field_id: &str,
+    headers: HeaderMap,
+    pairs: Vec<(String, String)>,
+    removing: Option<&str>,
+    signed_out_at: DateTime<Utc>,
+) -> Response {
+    let span = tracing::Span::current();
+    span.record("auth.actor", tracing::field::display(user.id));
+    span.record("project.shortcode", tracing::field::display(shortcode));
+    span.record("form.section", tracing::field::display(section_id));
+    span.record("form.field", tracing::field::display(field_id));
+
+    let row_name = format!("{field_id}.row");
+    let body = FormBody::from_pairs(match removing {
+        // The marker survives a removal of the last row: without a
+        // `{field}.row` in the body the applier reads the field as absent and
+        // leaves it alone, so removing the only row would not stick.
+        Some(key) => {
+            let mut kept: Vec<(String, String)> = pairs
+                .into_iter()
+                .filter(|(name, value)| name != &row_name || value != key)
+                .collect();
+            if !kept.iter().any(|(name, _)| name == &row_name) {
+                kept.push((row_name.clone(), String::new()));
+            }
+            kept
+        }
+        None => pairs,
+    });
+
+    let mut context = match context(state, user, shortcode, section_id, signed_out_at).await {
+        Ok(context) => context,
+        Err(response) => {
+            span.record("form.outcome", "refused");
+            return response;
+        }
+    };
+    context.posted = Some(&body);
+
+    // The field has to be one this reader may write in this section, checked
+    // through `fields_for` like every other write: without it the URL is a way
+    // to name an RDU-only or a display-only field.
+    let Some(field) = context.section.fields_for(context.audience).find(|field| {
+        field.id == field_id
+            && matches!(
+                field.shape,
+                Some(Shape::MultilingualRows | Shape::StringRows | Shape::AgentRows | Shape::AttributionRows)
+            )
+    }) else {
+        span.record("form.outcome", "unknown_field");
+        return crate::not_found(State(state.clone())).await;
+    };
+
+    if context.locked.is_some() {
+        span.record("form.outcome", "locked");
+        return refused(state, user, shortcode, &context, headers, SAVE_REFUSED_LOCKED);
     }
 
-    submit(&state, &user, &shortcode, &context, headers, &record, now).await
+    let over = over_cap(context.audience, context.section, &body);
+    if !over.is_empty() {
+        span.record("form.outcome", "over_cap");
+        let errors: Vec<(String, String)> = over
+            .iter()
+            .map(|field| (field.id.to_string(), over_cap_message(field.label)))
+            .collect();
+        return refused_with(state, user, shortcode, &context, headers, WRITE_REFUSED_OVER_CAP, &errors);
+    }
+
+    if let Err(response) = apply_and_store(state, user, shortcode, &mut context, &headers, &body).await {
+        return response;
+    }
+
+    span.record("form.outcome", if removing.is_some() { "row_removed" } else { "row_added" });
+    let rendering = Rendering {
+        adding_row: removing.is_none().then_some(field.id),
+        keep_posted: true,
+        ..Rendering::default()
+    };
+    if is_enhanced(&headers) {
+        return region(shortcode, &context, rendering);
+    }
+    render_page(state, user, shortcode, &context, rendering)
 }
 
 /// What a `POST` to this route is for.
@@ -441,6 +861,8 @@ enum Intent {
     Submit,
     Withdraw,
     ConfirmWithdrawal,
+    Discard,
+    ConfirmDiscard,
 }
 
 impl Intent {
@@ -453,6 +875,8 @@ impl Intent {
             Self::Submit => "submit",
             Self::Withdraw => "withdraw",
             Self::ConfirmWithdrawal => "withdraw-confirm",
+            Self::Discard => "discard",
+            Self::ConfirmDiscard => "discard-confirm",
         }
     }
 }
@@ -473,9 +897,32 @@ async fn submit(
 ) -> Response {
     let span = tracing::Span::current();
 
-    // Type-level first: a draft that cannot become a `ProjectRaw` is missing a
-    // member the contract requires, and no per-field rule below can say
-    // anything useful about a shape that does not exist.
+    // The obligation gate reads the draft, so it needs nothing from the contract conversion below
+    // and must stay ahead of it: every way a required value can be missing — absent, `[]`,
+    // `{}`, `""`, a placeholder sentinel — is reachable from the form, and the conversion can
+    // only report the first of them, without naming a field. Presence is read through
+    // `obligation::is_satisfied`, the same function the section rail counts with, so the gate
+    // cannot refuse a submission the rail has just called complete.
+    let unanswered = unsatisfied_required(context.audience, &context.draft);
+    if !unanswered.is_empty() {
+        span.record("form.outcome", "unanswered");
+        tracing::info!(
+            fields.unanswered = unanswered.len(),
+            "refused a submission with unanswered required fields"
+        );
+        let errors: Vec<(String, String)> = unanswered
+            .iter()
+            .map(|field| (field.id.to_string(), UNANSWERED_MESSAGE.to_string()))
+            .collect();
+        return refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_UNANSWERED, &errors);
+    }
+
+    // Do not move this ahead of the obligation gate. Emptying a required list to zero rows removes
+    // the member — `keywords`, `attributions`, `disciplines`, `temporalCoverage` and
+    // `spatialCoverage` are non-`Option` `Vec`s and the row appliers use absent as their empty
+    // state — so the conversion fails first with a generic "missing field" and this branch
+    // reports it naming no field at all. What is left for it is what no field-level rule can
+    // explain: a member of the wrong JSON kind, which the form cannot produce.
     let raw = match context.draft.to_raw() {
         Ok(raw) => raw,
         Err(error) => {
@@ -484,6 +931,43 @@ async fn submit(
             return refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_INCOMPLETE, &[]);
         }
     };
+
+    // Every agent reference must resolve. The applier stores whatever arrives,
+    // because a draft may hold a value that does not validate — this
+    // is what stops an unresolvable id reaching a published file, where it
+    // renders as a bare `person-001` on the public project page.
+    let unknown = unresolved_agents(context.audience, &context.draft, context.agents);
+    if !unknown.is_empty() {
+        span.record("form.outcome", "unknown_agent");
+        tracing::info!(
+            fields.unknown_agents = unknown.len(),
+            "refused a submission with an unresolvable agent"
+        );
+        let errors: Vec<(String, String)> = unknown
+            .iter()
+            .map(|(field, id)| (field.id.to_string(), unknown_agent_message(id)))
+            .collect();
+        return refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_UNKNOWN_AGENT, &errors);
+    }
+
+    // A sentinel a depositor typed, which the shape is what recognises: a
+    // sentinel is the *correct* stored value wherever clearing the field writes
+    // one, so this refuses only the shapes where clearing means something else.
+    // Left through, the field reads as empty, an empty submit will not clear it,
+    // and the platform reads the stored word as no value at all.
+    let sentinels = typed_sentinels(context.audience, &context.draft);
+    if !sentinels.is_empty() {
+        span.record("form.outcome", "sentinel");
+        tracing::info!(
+            fields.sentinel = sentinels.len(),
+            "refused a submission holding a typed placeholder sentinel"
+        );
+        let errors: Vec<(String, String)> = sentinels
+            .iter()
+            .map(|field| (field.id.to_string(), SENTINEL_MESSAGE.to_string()))
+            .collect();
+        return refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_SENTINEL, &errors);
+    }
 
     // REQ-1.14, through the same function `dpe-server validate` and
     // `dpe-api-oai` apply, so the three cannot disagree about what counts as a
@@ -566,6 +1050,77 @@ async fn submit(
     }
 }
 
+/// Discard the draft, or show the confirmation that posts it.
+///
+/// The only thing in the service that removes a draft: a review that rejects
+/// one and a depositor who withdraws a submission both **keep** it, so without
+/// this an abandoned draft sits in RDU's list for good, and a project hand-edited
+/// outside the editor keeps a stale draft shadowing it.
+///
+/// Removing the draft is not the same as removing the project. The published
+/// metadata is untouched, and the form re-opens pre-filled from it —
+/// which is why the control and the confirmation both say "discard" rather than
+/// "delete".
+async fn discard(
+    state: &AppState,
+    user: &User,
+    shortcode: &str,
+    context: &Context<'_>,
+    headers: HeaderMap,
+    intent: Intent,
+) -> Response {
+    let span = tracing::Span::current();
+
+    // Nothing stored: the form is already showing published metadata, so there
+    // is nothing to discard and the control is not offered. Only a hand-built
+    // body or a stale page reaches this.
+    if context.record.is_none() {
+        span.record("form.outcome", "gone");
+        tracing::info!("refused a discard of a project with no draft");
+        return refused_with(state, user, shortcode, context, headers, DISCARD_REFUSED_GONE, &[]);
+    }
+
+    // Re-checked here as well as when the form was rendered, for the reason the
+    // save path re-checks it: the render is a `GET`, so nothing stops a `POST`
+    // arriving without one, or arriving after a reviewer picked the project up.
+    // The draft is what the depositor comes back to when RDU returns the
+    // project, so it must not vanish from under a live review.
+    if context.locked.is_some() {
+        span.record("form.outcome", "locked");
+        tracing::info!("refused a discard against a project that is in review");
+        return refused_with(state, user, shortcode, context, headers, DISCARD_REFUSED_LOCKED, &[]);
+    }
+
+    if intent == Intent::ConfirmDiscard {
+        span.record("form.outcome", "confirming");
+        return confirming(state, user, shortcode, context, headers, page::Confirmation::Discard);
+    }
+
+    match DraftRepository::delete(&*state.db, &normalize_shortcode(shortcode)).await {
+        // `false` means it went between the read above and this write, which is
+        // the outcome the depositor asked for either way.
+        Ok(_) => {
+            span.record("form.outcome", "discarded");
+            tracing::info!(auth.role = %user.role, "discarded a project draft");
+            phase_changed(
+                state,
+                user,
+                shortcode,
+                context.section.id,
+                context,
+                headers,
+                page::Notice::Discarded,
+            )
+            .await
+        }
+        Err(error) => {
+            span.record("form.outcome", "store_failed");
+            tracing::error!(error = %error, "could not discard a project draft");
+            refused_with(state, user, shortcode, context, headers, DISCARD_REFUSED_STORAGE, &[])
+        }
+    }
+}
+
 /// Take a pending submission back (REQ-4.7), or show the confirmation that
 /// posts it.
 ///
@@ -593,7 +1148,7 @@ async fn withdraw(
 
     if intent == Intent::ConfirmWithdrawal {
         span.record("form.outcome", "confirming");
-        return confirming(state, user, shortcode, context, headers);
+        return confirming(state, user, shortcode, context, headers, page::Confirmation::Withdrawal);
     }
 
     let round = ReviewRound {
@@ -681,10 +1236,14 @@ async fn phase_changed(
     headers: HeaderMap,
     notice: page::Notice<'_>,
 ) -> Response {
+    // The re-resolve below needs the same deadline the request came in with;
+    // taking it off the context rather than as an argument keeps it in step
+    // with whatever `context()` was given.
+    let signed_out_at = context.signed_out_at;
     if !is_enhanced(&headers) {
         return redirect_here(shortcode, context);
     }
-    match self::context(state, user, shortcode, section_id).await {
+    match self::context(state, user, shortcode, section_id, signed_out_at).await {
         Ok(fresh) => region(shortcode, &fresh, Rendering { notice: Some(notice), ..Rendering::default() }),
         // The write landed; only the re-read did not. A redirect is the
         // fail-safe answer — the browser follows it and finds the new phase,
@@ -694,8 +1253,15 @@ async fn phase_changed(
 }
 
 /// The withdrawal confirmation, rendered over the read-only form.
-fn confirming(state: &AppState, user: &User, shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response {
-    let rendering = Rendering { confirming_withdrawal: true, ..Rendering::default() };
+fn confirming(
+    state: &AppState,
+    user: &User,
+    shortcode: &str,
+    context: &Context<'_>,
+    headers: HeaderMap,
+    which: page::Confirmation,
+) -> Response {
+    let rendering = Rendering { confirming: Some(which), ..Rendering::default() };
     if is_enhanced(&headers) {
         return region(shortcode, context, rendering);
     }
@@ -735,7 +1301,11 @@ fn refused_with(
     let rendering = Rendering {
         notice: Some(page::Notice::Refused(message)),
         errors,
-        confirming_withdrawal: false,
+        confirming: None,
+        adding_row: None,
+        // A refusal re-renders what was typed, which for a repeatable field
+        // includes a row that has been added but not filled in.
+        keep_posted: true,
     };
     if is_enhanced(&headers) {
         return region(shortcode, context, rendering);
@@ -753,7 +1323,16 @@ fn refused_with(
 struct Rendering<'a> {
     notice: Option<page::Notice<'a>>,
     errors: &'a [(String, String)],
-    confirming_withdrawal: bool,
+    confirming: Option<page::Confirmation>,
+    /// The field one more blank row was just asked for.
+    adding_row: Option<&'a str>,
+    /// Whether this render must preserve the posted editing state.
+    ///
+    /// Set for a refusal and for a row action, and deliberately **not** for a
+    /// successful save: a save commits every row with any text in it, and a row
+    /// that still has none is not data, so dropping it is the point rather than
+    /// a loss.
+    keep_posted: bool,
 }
 
 /// The section region, as the enhanced path's `datastar-patch-elements`.
@@ -761,8 +1340,8 @@ struct Rendering<'a> {
 /// 200 always: Datastar processes a response body only on a 200, so a status
 /// carrying the refusal would lose the message it is carrying.
 fn region(shortcode: &str, context: &Context<'_>, rendering: Rendering<'_>) -> Response {
-    let stored = saved_at(context);
-    let view = view(shortcode, context, stored.as_deref(), rendering);
+    let stored = stored_of(context);
+    let view = view(shortcode, context, &stored, rendering);
     (StatusCode::OK, axum::response::Html(page::region(&view).into_string())).into_response()
 }
 
@@ -774,8 +1353,8 @@ fn render_page(
     context: &Context<'_>,
     rendering: Rendering<'_>,
 ) -> Response {
-    let stored = saved_at(context);
-    let view = view(shortcode, context, stored.as_deref(), rendering);
+    let stored = stored_of(context);
+    let view = view(shortcode, context, &stored, rendering);
     // The published name in the tab title where there is one: a browser with
     // eleven tabs open shows about twenty characters, and five of them being
     // "Proje" helps nobody.
@@ -786,14 +1365,36 @@ fn render_page(
     crate::render(state, &title, StatusCode::OK, Some(user), page::page(&view))
 }
 
-fn saved_at(context: &Context<'_>) -> Option<String> {
-    context.record.as_ref().map(|record| crate::format_instant(record.updated_at))
+/// What the stored draft row contributes to a rendering: when it was last
+/// written, for a reader, and which revision that is, for the form to post back.
+///
+/// One struct rather than two `Option<String>` arguments: both are derived from
+/// the same row and adjacent optionals of one type are silently swappable —
+/// which here would show a depositor an RFC 3339 timestamp and post a
+/// human-formatted one as the revision, so every save would report a conflict.
+struct Stored {
+    /// Formatted for a reader.
+    saved_at: Option<String>,
+    /// When this reader's session ends, formatted, and only when that is close
+    /// enough to be worth saying.
+    signed_out_at: Option<String>,
+    /// The same instant as RFC 3339, which is what [`page::BASELINE`] carries.
+    /// Machine-readable on purpose: it is compared, never shown.
+    baseline: Option<String>,
+}
+
+fn stored_of(context: &Context<'_>) -> Stored {
+    Stored {
+        saved_at: context.record.as_ref().map(|record| crate::format_instant(record.updated_at)),
+        baseline: context.record.as_ref().map(|record| record.updated_at.to_rfc3339()),
+        signed_out_at: nearly_signed_out(context.signed_out_at).map(crate::format_instant),
+    }
 }
 
 fn view<'a>(
     shortcode: &'a str,
     context: &'a Context<'a>,
-    saved_at: Option<&'a str>,
+    stored: &'a Stored,
     rendering: Rendering<'a>,
 ) -> page::SectionView<'a> {
     page::SectionView {
@@ -809,7 +1410,12 @@ fn view<'a>(
         // can take back is one only a reject can clear. The same predicate the
         // write applies, so the control is never offered where it is refused.
         may_withdraw: context.pending_submission().is_some(),
-        confirming_withdrawal: rendering.confirming_withdrawal,
+        // A draft to discard, and no live review to pull it out from under.
+        // Both halves matter: without a draft the form already shows published
+        // metadata, and while a submission is pending the draft is what the
+        // depositor comes back to.
+        may_discard: context.record.is_some() && context.locked.is_none(),
+        confirming: rendering.confirming,
         errors: rendering.errors,
         round: context.round.as_ref().map(|round| page::RoundSummary {
             outcome: round.outcome,
@@ -817,8 +1423,19 @@ fn view<'a>(
             at: &round.at,
             substitutions: &round.substitutions,
         }),
-        saved_at,
+        saved_at: stored.saved_at.as_deref(),
+        last_editor: context.last_editor.as_deref(),
+        // The revision this render is of, so a save posted from it can tell
+        // whether the draft moved underneath. Refreshed on every render,
+        // including the one that reports a conflict — otherwise a depositor who
+        // decides to keep their version would be refused for ever.
+        baseline: stored.baseline.as_deref(),
+        signed_out_at: stored.signed_out_at.as_deref(),
         notice: rendering.notice,
+        agents: Some(context.agents),
+        posted: rendering.keep_posted.then_some(context.posted).flatten(),
+        adding_row: rendering.adding_row,
+        rows_action: format!("/projects/{shortcode}/sections/{}/fields", context.section.id),
     }
 }
 
@@ -854,10 +1471,14 @@ mod tests {
         test_state, with_cookie, Faults, FaultyDatabase, RecordingMailer,
     };
 
-    /// Percent-encode a form value. Only the three characters the fixtures
-    /// actually carry — a general encoder would be a dependency for one call.
+    /// Percent-encode a form value.
+    ///
+    /// Delegates to `test_support`'s encoder rather than keeping a second one. A second encoder
+    /// that missed a character silently truncates a posted value and compares the truncation
+    /// against the file: a draft revision reads `…45.345567+00:00`, so an unescaped `+` arrives
+    /// as a space and a baseline compares unequal to itself.
     fn urlencoding(value: &str) -> String {
-        value.replace('%', "%25").replace('&', "%26").replace(' ', "+")
+        crate::test_support::urlencode(value)
     }
 
     const OVERVIEW: &str = "/projects/0801d/sections/overview";
@@ -1387,6 +2008,502 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn submitting_with_a_required_field_emptied_is_refused_and_names_it() {
+        // `shortDescription` is emptied through the form rather than written straight to the draft,
+        // because that is the only way a depositor reaches this state: the control renders,
+        // they clear it, and the value is a valid `ProjectRaw` member the whole way — which
+        // is why `to_raw` cannot catch it.
+        let (state, _) = test_state("section-submit-unanswered").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let response = as_session(
+            &app,
+            post(OVERVIEW, "name=A+New+Title&shortDescription=&intent=submit"),
+            &session,
+        )
+        .await;
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "a refusal re-renders rather than redirecting"
+        );
+        let body = body_string(response).await;
+        assert!(body.contains(UNANSWERED_MESSAGE), "the field-level error shows: {body}");
+        assert!(
+            body.contains("some required fields have no value"),
+            "the refusal promises named fields: {body}"
+        );
+        assert_eq!(
+            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            None,
+            "nothing was submitted"
+        );
+        // A refusal costs the submission, never the editing.
+        let draft = DraftRepository::find(&*state.db, "0801d")
+            .await
+            .unwrap()
+            .expect("the draft survives a refused submission");
+        assert!(draft.payload.contains("A New Title"), "{}", draft.payload);
+    }
+
+    #[tokio::test]
+    async fn a_required_field_in_another_section_is_refused_with_a_link_to_it() {
+        // The gate is whole-project while the form is sectioned, so the field at
+        // fault is routinely not on the page the depositor submitted from.
+        // Without the link the refusal names a field the reader cannot find
+        // among six sections.
+        let (state, _) = test_state("section-submit-unanswered-elsewhere").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        // Emptied **through the route a depositor uses**, because hand-building `keywords: []` is a
+        // state the real path does not produce: removing the last row drops the member
+        // entirely, `keywords` being a non-`Option` `Vec` whose applier uses absent as its
+        // empty state. Only the real path reaches what the gate must catch.
+        as_session(
+            &app,
+            post(
+                "/projects/0801d/sections/dataset/fields/keywords/r0/remove",
+                "keywords.row=r0&keywords.r0.en=the+only+keyword",
+            ),
+            &session,
+        )
+        .await;
+        let stored = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        assert!(
+            !stored.payload.contains("\"keywords\""),
+            "the member is absent: {}",
+            stored.payload
+        );
+
+        let response = as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=submit"), &session).await;
+        let body = body_string(response).await;
+        assert!(
+            body.contains("some required fields have no value"),
+            "the named refusal, not the generic contract one: {body}"
+        );
+        assert!(
+            body.contains("/projects/0801d/sections/dataset"),
+            "the section holding the field is linked: {body}"
+        );
+        assert!(body.contains("Keywords"), "the field is named: {body}");
+    }
+
+    #[tokio::test]
+    async fn submitting_a_published_project_unchanged_is_not_refused_by_the_obligation_gate() {
+        // The corpus-wide guarantee at the route rather than in the unit test:
+        // bounding the required tier by what the published corpus answers is
+        // what keeps the gate from refusing a live project. If it did refuse
+        // one, the refusal here would be the obligation gate and not the
+        // "nothing to submit" one that a genuinely unchanged draft earns.
+        let (state, _) = test_state("section-submit-unanswered-published").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let response = as_session(&app, post(OVERVIEW, "intent=submit"), &session).await;
+        let body = body_string(response).await;
+        assert!(
+            !body.contains(UNANSWERED_MESSAGE),
+            "a published project answers every required field: {body}"
+        );
+        assert!(
+            body.contains("identical to what is published"),
+            "the refusal it does earn is the unchanged one: {body}"
+        );
+    }
+
+    const DATASET: &str = "/projects/0801d/sections/dataset";
+
+    /// A depositor with the dataset section open.
+    async fn a_depositor_on(name: &str) -> (AppState, axum::Router, String) {
+        let (state, _) = test_state(name).await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        (state, app, session)
+    }
+
+    #[tokio::test]
+    async fn adding_a_row_renders_one_more_and_stores_nothing_extra() {
+        // The blank row is a rendering, not a stored value:
+        // `apply_multilingual_rows` drops a row with no text in any language,
+        // and it must, or a published file fills with empty objects. It survives
+        // the next round trip because the tile emits a hidden `{field}.row` for
+        // it and the body carries the key back.
+        let (state, app, session) = a_depositor_on("section-add-row").await;
+
+        let response = as_session(
+            &app,
+            post(
+                &format!("{DATASET}/fields/keywords/add"),
+                "keywords.row=r0&keywords.r0.en=manuscripts",
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "a row action re-renders rather than redirecting"
+        );
+        let body = body_string(response).await;
+
+        // The row that was filled in comes back, and one blank row is added
+        // under a fresh key.
+        assert!(body.contains("manuscripts"), "the filled row survives: {body}");
+        assert!(body.contains(r#"name="keywords.r1.en""#), "the new row renders: {body}");
+
+        // Only the filled row reached storage. The blank one is a rendering.
+        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let stored: serde_json::Value = serde_json::from_str(&draft.payload).unwrap();
+        assert_eq!(
+            stored.get("keywords"),
+            Some(&serde_json::json!([{ "en": "manuscripts" }])),
+            "{}",
+            draft.payload
+        );
+    }
+
+    #[tokio::test]
+    async fn removing_a_row_drops_it_from_the_stored_list() {
+        // The removal *is* the applier seeing one fewer key: there is no
+        // separate delete, which is what keeps a row action in step with a save.
+        let (state, app, session) = a_depositor_on("section-remove-row").await;
+        let published = state.published.get("0801d").expect("0801d");
+        assert!(published.keywords.len() >= 2, "0801d was chosen for having several keywords");
+
+        // Post every row, then remove the first.
+        let mut form = String::new();
+        for (position, keyword) in published.keywords.iter().enumerate() {
+            form.push_str(&format!("&keywords.row=r{position}"));
+            for (tag, text) in keyword.iter() {
+                form.push_str(&format!("&keywords.r{position}.{tag}={}", urlencoding(text)));
+            }
+        }
+        let response = as_session(
+            &app,
+            post(&format!("{DATASET}/fields/keywords/r0/remove"), form.trim_start_matches('&')),
+            &session,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let stored: serde_json::Value = serde_json::from_str(&draft.payload).unwrap();
+        assert_eq!(
+            stored.get("keywords").and_then(|k| k.as_array()).map(Vec::len),
+            Some(published.keywords.len() - 1),
+            "{}",
+            draft.payload
+        );
+    }
+
+    #[tokio::test]
+    async fn removing_the_last_row_clears_the_field_rather_than_leaving_it() {
+        // The marker case. With no `{field}.row` left in the body the applier
+        // reads the field as absent and leaves it alone, so removing the only
+        // row would not stick — the handler re-adds the empty marker for
+        // exactly that reason.
+        let (state, app, session) = a_depositor_on("section-remove-last-row").await;
+
+        let response = as_session(
+            &app,
+            post(
+                &format!("{DATASET}/fields/keywords/r0/remove"),
+                "keywords.row=r0&keywords.r0.en=only",
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let stored: serde_json::Value = serde_json::from_str(&draft.payload).unwrap();
+        assert!(
+            stored.get("keywords").is_none(),
+            "the last removal must stick: {}",
+            draft.payload
+        );
+    }
+
+    #[tokio::test]
+    async fn the_row_routes_serve_a_string_row_field_too() {
+        // One row protocol for both row shapes: `additionalMaterial` holds
+        // plain strings rather than language maps, and shares the tile, the
+        // hidden `{field}.row` key, the empty marker and these two routes. A
+        // second set of routes for it would be a second place for the audience
+        // gate and the lock check to drift.
+        let (state, app, session) = a_depositor_on("section-string-rows").await;
+
+        let added = as_session(
+            &app,
+            post(
+                &format!("{DATASET}/fields/additionalMaterial/add"),
+                "additionalMaterial.row=r0&additionalMaterial.r0=https%3A%2F%2Ffirst.example%2F",
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(added.status(), StatusCode::OK);
+        let body = body_string(added).await;
+        assert!(body.contains("https://first.example/"), "the filled row survives: {body}");
+        assert!(body.contains(r#"name="additionalMaterial.r1""#), "a blank row is added: {body}");
+
+        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let stored: serde_json::Value = serde_json::from_str(&draft.payload).unwrap();
+        assert_eq!(
+            stored.get("additionalMaterial"),
+            Some(&serde_json::json!(["https://first.example/"])),
+            "{}",
+            draft.payload
+        );
+
+        let removed = as_session(
+            &app,
+            post(
+                &format!("{DATASET}/fields/additionalMaterial/r0/remove"),
+                "additionalMaterial.row=r0&additionalMaterial.r0=https%3A%2F%2Ffirst.example%2F",
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(removed.status(), StatusCode::OK);
+        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        let stored: serde_json::Value = serde_json::from_str(&draft.payload).unwrap();
+        assert!(
+            stored.get("additionalMaterial").is_none(),
+            "the last removal sticks: {}",
+            draft.payload
+        );
+    }
+
+    #[tokio::test]
+    async fn a_depositor_cannot_reach_the_rdu_only_row_field() {
+        // `documentationMaterial` is a string-row field like the one above, and
+        // RDU-only. The URL names the field, so `fields_for` is the only thing
+        // between a depositor and writing it.
+        let (state, app, session) = a_depositor_on("section-rdu-row-field").await;
+        let response = as_session(
+            &app,
+            post(
+                &format!("{DATASET}/fields/documentationMaterial/add"),
+                "documentationMaterial.row=r0&documentationMaterial.r0=https%3A%2F%2Fdocs.example%2F",
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        assert_eq!(
+            DraftRepository::find(&*state.db, "0801d").await.unwrap(),
+            None,
+            "nothing was written"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_row_action_on_a_field_the_reader_may_not_write_is_a_404() {
+        // The URL names the field, so without the `fields_for` check it is a way
+        // to reach an RDU-only or a display-only field. `documentationMaterial`
+        // is RDU-only; `howToCite` is display-only and in another section.
+        let (_state, app, session) = a_depositor_on("section-row-forbidden").await;
+        for field in ["documentationMaterial", "howToCite", "provenance", "nonsense"] {
+            let response = as_session(&app, post(&format!("{DATASET}/fields/{field}/add"), ""), &session).await;
+            assert_eq!(
+                response.status(),
+                StatusCode::NOT_FOUND,
+                "{field} should not be reachable as a repeatable field"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn a_row_action_against_a_project_in_review_is_refused() {
+        // The lock is re-checked here and not only on the save path: a row
+        // action is a write, and it resolves through the same `context()`.
+        let (state, _) = test_state("section-row-locked").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        a_submission(&state, "0801d", user.id, SubmissionState::Submitted).await;
+
+        let response = as_session(
+            &app,
+            post(&format!("{DATASET}/fields/keywords/add"), "keywords.row=r0"),
+            &session,
+        )
+        .await;
+        let body = body_string(response).await;
+        assert!(body.contains("in review"), "{body}");
+        assert_eq!(
+            DraftRepository::find(&*state.db, "0801d").await.unwrap(),
+            None,
+            "nothing was written"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_save_carrying_more_values_than_the_cap_is_refused_and_writes_nothing() {
+        // The cap a depositor can see, and the reason it is on the save path
+        // and not only on submit: an applier truncates at
+        // `MAX_VALUES_PER_FIELD`, so an over-cap save would store the
+        // truncated value and the submit after it would see a draft already
+        // within the cap and pass. Refusing the write is what makes "nothing
+        // was saved" true.
+        let (state, _) = test_state("section-save-over-cap").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let mut form = String::from("name=A+New+Title");
+        for n in 0..=editor_core::form::MAX_VALUES_PER_FIELD {
+            form.push_str(&format!("&description.l{n}=text"));
+        }
+        let response = as_session(&app, post(OVERVIEW, &form), &session).await;
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "a refusal re-renders rather than redirecting"
+        );
+        let body = body_string(response).await;
+        assert!(body.contains("more values than this form accepts"), "{body}");
+        assert!(body.contains("Description"), "the field is named: {body}");
+        assert_eq!(
+            DraftRepository::find(&*state.db, "0801d").await.unwrap(),
+            None,
+            "nothing was written, including the name that was fine"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_save_at_exactly_the_cap_is_accepted() {
+        // The boundary in the direction that matters: a cap that refused at its
+        // own limit would be off by one against the number the refusal states.
+        let (state, _) = test_state("section-save-at-cap").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let mut form = String::from("name=A+New+Title");
+        for n in 0..editor_core::form::MAX_VALUES_PER_FIELD {
+            form.push_str(&format!("&description.l{n}=text"));
+        }
+        let response = as_session(&app, post(OVERVIEW, &form), &session).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER, "a save at the cap is accepted");
+        assert!(DraftRepository::find(&*state.db, "0801d").await.unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn submitting_an_agent_reference_that_resolves_to_nobody_is_refused() {
+        // The applier stores whatever id arrives, because a draft may hold a
+        // value that does not validate. This is what stops it
+        // reaching a published file, where the public project page would render
+        // a bare `person-99999`.
+        let (state, _) = test_state("section-unknown-agent").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        const CONTRIBUTORS: &str = "/projects/0801d/sections/contributors";
+
+        let response = as_session(
+            &app,
+            post(CONTRIBUTORS, "contactPoint.row=r0&contactPoint.r0=person-99999&intent=submit"),
+            &session,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::OK, "a refusal re-renders");
+        let body = body_string(response).await;
+        assert!(body.contains("person-99999"), "the offending id is named: {body}");
+        assert!(body.contains("not a person or organisation the repository knows"), "{body}");
+        assert_eq!(
+            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            None,
+            "nothing was submitted"
+        );
+    }
+
+    #[tokio::test]
+    async fn submitting_a_reference_that_resolves_is_accepted() {
+        // The other half: a real id passes the gate, so the refusal above is
+        // about resolution and not about the field being touched at all.
+        let (state, _) = test_state("section-known-agent").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        const CONTRIBUTORS: &str = "/projects/0801d/sections/contributors";
+
+        let response = as_session(
+            &app,
+            post(
+                CONTRIBUTORS,
+                "contactPoint.row=r0&contactPoint.r0=organization-008&intent=submit",
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER, "the submission is recorded");
+        let submission = SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+            .await
+            .unwrap()
+            .expect("a pending submission");
+        assert!(submission.payload.contains("organization-008"), "{}", submission.payload);
+    }
+
+    #[tokio::test]
+    async fn submitting_a_typed_placeholder_sentinel_is_refused_with_a_field_error() {
+        // The dead end the architecture doc carried as an open `[!NOTE]`: typing
+        // the word stores something the platform reads as "no value", the
+        // control then renders empty, and an empty submit will not clear it.
+        // Typed through the form, because that is the only way a depositor
+        // reaches it — and `provenance` is `WhenCleared::Drop`, where clearing
+        // removes the member, so the sentinel cannot have come from clearing.
+        let (state, _) = test_state("section-submit-sentinel").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let response = as_session(&app, post(DATASET, "provenance=MISSING&intent=submit"), &session).await;
+        assert_eq!(response.status(), StatusCode::OK, "a refusal re-renders");
+        let body = body_string(response).await;
+        assert!(body.contains("reserved here for a value that is not filled in"), "{body}");
+        assert_eq!(
+            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            None,
+            "nothing was submitted"
+        );
+        // The draft keeps it, so the depositor sees what they typed and can fix
+        // it — a refusal costs the submission, never the editing.
+        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        assert!(draft.payload.contains("MISSING"), "{}", draft.payload);
+    }
+
+    #[tokio::test]
+    async fn submitting_a_project_whose_end_date_is_a_sentinel_is_not_refused_for_it() {
+        // The other half, and the reason the check reads the declared shape rather than the value:
+        // `endDate` is `WhenCleared::Placeholder`, so `"MISSING"` is what the editor writes
+        // when a depositor clears it, and published projects hold it. Refusing it would
+        // make every ongoing project unsubmittable.
+        let (state, _) = test_state("section-submit-sentinel-legit").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let response = as_session(&app, post(OVERVIEW, "name=A+New+Title&endDate=&intent=submit"), &session).await;
+        let body = body_string(response).await;
+        assert!(!body.contains("reserved here for a value"), "{body}");
+        assert!(
+            SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+                .await
+                .unwrap()
+                .is_some(),
+            "the submission should be recorded: {body}"
+        );
+    }
+
+    #[tokio::test]
     async fn submitting_an_unresolvable_period_is_refused_with_a_field_error() {
         // REQ-1.14 and Success Criterion 2, applied through the same function
         // `dpe-server validate` and `dpe-api-oai` use. Re-run on every submit,
@@ -1645,6 +2762,349 @@ mod tests {
         let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
         assert!(!body.contains("Submitted for review"), "{body}");
         assert!(body.contains("Submit for review"), "the submit control is back: {body}");
+    }
+
+    /// The two accounts a concurrency test needs: both assigned to one project,
+    /// which is the normal case rather than an edge one.
+    async fn two_project_mates(state: &AppState) -> (User, String, User, String) {
+        let first = a_user(state, "one@example.test", "Ada One", Role::Depositor, &["0801d"]).await;
+        let second = a_user(state, "two@example.test", "Bo Two", Role::Depositor, &["0801d"]).await;
+        let first_session = a_session(state, first.id).await;
+        let second_session = a_session(state, second.id).await;
+        (first, first_session, second, second_session)
+    }
+
+    /// The baseline the form currently renders, as a body would post it.
+    async fn baseline_of(state: &AppState, shortcode: &str) -> String {
+        let record = DraftRepository::find(&*state.db, shortcode)
+            .await
+            .unwrap()
+            .expect("a draft to take a baseline from");
+        urlencoding(&record.updated_at.to_rfc3339())
+    }
+
+    #[test]
+    fn only_a_deadline_within_the_warning_window_reaches_a_reader() {
+        // The filter itself, which the view cannot test: a rendering is handed
+        // the deadline already filtered, so a test that injects one proves the
+        // markup and not the threshold. Removing the filter passed both of
+        // those, which is what this closes.
+        let now = Utc::now();
+        assert!(nearly_signed_out(now + chrono::Duration::minutes(29)).is_some());
+        assert!(nearly_signed_out(now + chrono::Duration::minutes(31)).is_none());
+        // A session that has just run out still warrants saying so, rather than
+        // going quiet at the moment it matters most.
+        assert!(nearly_signed_out(now - chrono::Duration::minutes(1)).is_some());
+    }
+
+    #[tokio::test]
+    async fn a_fresh_session_is_not_warned_about_signing_out() {
+        // The default session is twelve hours absolute and two hours idle, so
+        // an ordinary form must be quiet. A warning permanently on screen is a
+        // warning nobody reads.
+        let (state, _) = test_state("section-no-warning").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        assert!(!body.contains("about to end"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn an_autosave_carries_no_intent_and_is_treated_as_a_save() {
+        // What the autosave trigger actually posts: the form body with no
+        // submitter, so no `intent` at all. The handler reads an unknown or
+        // absent verb as `save` — the recoverable branch, deliberately — so an
+        // autosave can never submit or withdraw.
+        let (state, _) = test_state("section-autosave").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let response = as_session(&app, enhanced(OVERVIEW, "name=Typed+then+left+the+field"), &session).await;
+        assert_eq!(response.status(), StatusCode::OK, "the enhanced path patches the region");
+
+        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        assert!(draft.payload.contains("Typed then left the field"), "{}", draft.payload);
+        assert_eq!(
+            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            None,
+            "an autosave must never submit"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_save_over_a_draft_that_changed_underneath_is_refused_and_names_who() {
+        // Two members of one project team, both with the form open. Without
+        // this the second save silently replaces the first person's work.
+        let (state, _) = test_state("section-concurrent").await;
+        let (_first, first_session, _second, second_session) = two_project_mates(&state).await;
+        let app = test_app(&state);
+
+        // Ada saves, so a draft exists; Bo's form was rendered from it.
+        as_session(&app, post(OVERVIEW, "name=Ada+was+here"), &first_session).await;
+        let bo_baseline = baseline_of(&state, "0801d").await;
+
+        // Ada saves again, moving the draft under Bo's open form.
+        as_session(&app, post(OVERVIEW, "name=Ada+again"), &first_session).await;
+
+        let response = as_session(
+            &app,
+            post(OVERVIEW, &format!("name=Bo+was+here&baseline={bo_baseline}")),
+            &second_session,
+        )
+        .await;
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "a refusal re-renders rather than redirecting"
+        );
+        let body = body_string(response).await;
+        assert!(body.contains("changed while you were editing"), "{body}");
+        assert!(body.contains("Ada One"), "the other editor is named: {body}");
+        // What was typed comes back, so nothing has to be retyped.
+        assert!(body.contains("Bo was here"), "the typed value survives: {body}");
+
+        let stored = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        assert!(
+            stored.payload.contains("Ada again"),
+            "nothing was overwritten: {}",
+            stored.payload
+        );
+        assert!(!stored.payload.contains("Bo was here"), "{}", stored.payload);
+    }
+
+    #[tokio::test]
+    async fn saving_again_after_the_warning_keeps_this_depositors_version() {
+        // Refused once, not for ever: the re-render carries a refreshed baseline, so a depositor
+        // who decides to keep their version can. The row is still last-write-wins; what
+        // this adds is that the overwrite is visible.
+        let (state, _) = test_state("section-concurrent-again").await;
+        let (_first, first_session, _second, second_session) = two_project_mates(&state).await;
+        let app = test_app(&state);
+
+        as_session(&app, post(OVERVIEW, "name=Ada+was+here"), &first_session).await;
+        let stale = baseline_of(&state, "0801d").await;
+        as_session(&app, post(OVERVIEW, "name=Ada+again"), &first_session).await;
+
+        // Refused once.
+        as_session(
+            &app,
+            post(OVERVIEW, &format!("name=Bo+was+here&baseline={stale}")),
+            &second_session,
+        )
+        .await;
+
+        // Saving again, with the baseline the refusal re-rendered.
+        let fresh = baseline_of(&state, "0801d").await;
+        let response = as_session(
+            &app,
+            post(OVERVIEW, &format!("name=Bo+was+here&baseline={fresh}")),
+            &second_session,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER, "the second save is accepted");
+        let stored = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        assert!(stored.payload.contains("Bo was here"), "{}", stored.payload);
+    }
+
+    #[tokio::test]
+    async fn a_body_with_no_baseline_is_saved_without_complaint() {
+        // Deliberate: a body with no baseline was not posted from a form this
+        // service rendered, so there is no revision it could have been looking
+        // at and refusing it would protect nothing. It is also what keeps every
+        // other test in this file — none of which posts one — testing the save
+        // path rather than this check.
+        let (state, _) = test_state("section-no-baseline").await;
+        let (_first, first_session, _second, second_session) = two_project_mates(&state).await;
+        let app = test_app(&state);
+
+        as_session(&app, post(OVERVIEW, "name=Ada+was+here"), &first_session).await;
+        let response = as_session(&app, post(OVERVIEW, "name=Bo+was+here"), &second_session).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    }
+
+    #[tokio::test]
+    async fn the_form_names_the_other_editor_but_not_the_reader_themselves() {
+        // "Saved by you" is the ordinary case and reads as noise, which is also
+        // why the name is only looked up when it is somebody else.
+        let (state, _) = test_state("section-last-editor").await;
+        let (_first, first_session, _second, second_session) = two_project_mates(&state).await;
+        let app = test_app(&state);
+        as_session(&app, post(OVERVIEW, "name=Ada+was+here"), &first_session).await;
+
+        let own = body_string(as_session(&app, get(OVERVIEW), &first_session).await).await;
+        assert!(own.contains("Draft last saved"), "{own}");
+        assert!(!own.contains("by Ada One"), "a reader is not told they are themselves: {own}");
+
+        let mate = body_string(as_session(&app, get(OVERVIEW), &second_session).await).await;
+        assert!(mate.contains("by Ada One"), "the other editor is named: {mate}");
+    }
+
+    #[tokio::test]
+    async fn the_form_posts_the_revision_it_was_rendered_from() {
+        // The mechanism, asserted at the markup: without the hidden field the
+        // check above has nothing to compare and every concurrent save is
+        // silent again.
+        let (state, _) = test_state("section-baseline-rendered").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        // No draft yet: nothing to have moved, so nothing to post.
+        let blank = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        assert!(!blank.contains(r#"name="baseline""#), "{blank}");
+
+        a_changed_draft(&state, &app, &session).await;
+        let opened = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        assert!(opened.contains(r#"name="baseline""#), "{opened}");
+        let record = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        assert!(
+            opened.contains(&record.updated_at.to_rfc3339()),
+            "the stored revision, not a formatted time: {opened}"
+        );
+    }
+
+    #[tokio::test]
+    async fn discarding_asks_first_and_writes_nothing_until_confirmed() {
+        // The draft is the only copy of whatever has not been submitted, and
+        // the delete cannot be undone.
+        let (state, _) = test_state("section-discard-confirm").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        a_changed_draft(&state, &app, &session).await;
+
+        let response = as_session(&app, post(OVERVIEW, "intent=discard-confirm"), &session).await;
+        assert_eq!(response.status(), StatusCode::OK, "the confirmation re-renders");
+        let body = body_string(response).await;
+        assert!(body.contains("cannot be undone"), "{body}");
+        assert!(body.contains("Yes, discard the draft"), "{body}");
+        // Backing out has to write nothing, so it is a link and not a button
+        // that would fall through to `save`.
+        assert!(body.contains("Keep the draft"), "{body}");
+        assert!(
+            DraftRepository::find(&*state.db, "0801d").await.unwrap().is_some(),
+            "asking must not delete"
+        );
+    }
+
+    #[tokio::test]
+    async fn discarding_removes_the_draft_and_leaves_the_published_project() {
+        // The one thing in the service that removes a draft — reject and
+        // withdraw both keep it — and it removes only the draft: the form
+        // re-opens pre-filled from the published metadata.
+        let (state, _) = test_state("section-discard").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        a_changed_draft(&state, &app, &session).await;
+
+        let response = as_session(&app, post(OVERVIEW, "intent=discard"), &session).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER, "the plain path redirects to the GET");
+        assert_eq!(
+            DraftRepository::find(&*state.db, "0801d").await.unwrap(),
+            None,
+            "the draft is gone"
+        );
+
+        // The form still works and shows the published name, not the discarded
+        // draft's title.
+        let reopened = as_session(&app, get(OVERVIEW), &session).await;
+        assert_eq!(reopened.status(), StatusCode::OK);
+        let body = body_string(reopened).await;
+        assert!(body.contains("Basler Edition der Bernoulli-Briefwechsel"), "{body}");
+        assert!(!body.contains("A New Title"), "the discarded value is gone: {body}");
+        assert!(body.contains("Nothing saved yet"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn the_enhanced_path_re_renders_a_discard_without_the_control_it_just_used() {
+        // `phase_changed` re-resolves the request rather than patching two
+        // fields of the old context, and this is the case that needs it: after
+        // the draft is gone there is nothing to discard, so a region rendered
+        // from the pre-delete context would still offer the control and still
+        // claim a last-saved time.
+        let (state, _) = test_state("section-discard-enhanced").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        a_changed_draft(&state, &app, &session).await;
+
+        let response = as_session(&app, enhanced(OVERVIEW, "intent=discard"), &session).await;
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "the enhanced path patches rather than redirecting"
+        );
+        let body = body_string(response).await;
+        assert!(!body.starts_with("<!DOCTYPE html>"), "a region, not a document: {body}");
+        assert!(body.contains("Draft discarded"), "{body}");
+        assert!(!body.contains("Discard draft"), "the control is gone with the draft: {body}");
+        assert!(body.contains("Nothing saved yet"), "{body}");
+        assert_eq!(DraftRepository::find(&*state.db, "0801d").await.unwrap(), None);
+    }
+
+    #[tokio::test]
+    async fn discarding_a_project_with_no_draft_is_refused_and_the_control_is_not_offered() {
+        // Nothing to discard: the form is already showing published metadata.
+        let (state, _) = test_state("section-discard-none").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let opened = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        assert!(!opened.contains("Discard draft"), "no draft, no control: {opened}");
+
+        let response = as_session(&app, post(OVERVIEW, "intent=discard"), &session).await;
+        let body = body_string(response).await;
+        assert!(body.contains("no draft to discard"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn discarding_a_draft_under_review_is_refused() {
+        // The draft is what the depositor comes back to when RDU returns the
+        // project, so it must not vanish from under a live review, and the
+        // refusal says what to do instead.
+        let (state, _) = test_state("section-discard-locked").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        a_changed_draft(&state, &app, &session).await;
+        a_submission(&state, "0801d", user.id, SubmissionState::Submitted).await;
+
+        let opened = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        assert!(!opened.contains("Discard draft"), "locked, so no control: {opened}");
+
+        let response = as_session(&app, post(OVERVIEW, "intent=discard"), &session).await;
+        let body = body_string(response).await;
+        assert!(body.contains("cannot be discarded"), "{body}");
+        assert!(body.contains("Take the submission back first"), "the way out is named: {body}");
+        assert!(
+            DraftRepository::find(&*state.db, "0801d").await.unwrap().is_some(),
+            "the draft survives"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_depositor_cannot_discard_a_draft_on_a_project_they_are_not_assigned() {
+        // The same gate every write here goes through: `context()` resolves
+        // shape, then authorization, before anything reads state.
+        let (state, _) = test_state("section-discard-forbidden").await;
+        let owner = a_user(&state, "own@example.test", "An Owner", Role::Depositor, &["0801d"]).await;
+        let app = test_app(&state);
+        let owner_session = a_session(&state, owner.id).await;
+        a_changed_draft(&state, &app, &owner_session).await;
+
+        let outsider = a_user(&state, "out@example.test", "An Outsider", Role::Depositor, &["0803"]).await;
+        let session = a_session(&state, outsider.id).await;
+        let response = as_session(&app, post(OVERVIEW, "intent=discard"), &session).await;
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        assert!(
+            DraftRepository::find(&*state.db, "0801d").await.unwrap().is_some(),
+            "the draft survives"
+        );
     }
 
     #[tokio::test]
@@ -2185,7 +3645,29 @@ mod tests {
                 .unwrap_or_else(|| panic!("{shortcode} should have a draft row"));
             let stored: ProjectDraft = serde_json::from_str(&row.payload).expect("a stored payload parses");
             let written = write_draft(&stored).expect("the draft should write");
-            assert_eq!(written, committed, "saving every untouched section rewrote {filename}");
+            // The first differing line rather than two whole files: a failure
+            // here names a place, and dumping 200 lines of Arabic description
+            // to say a grant number moved is unreadable.
+            if written != committed {
+                let place = committed
+                    .lines()
+                    .zip(written.lines())
+                    .enumerate()
+                    .find(|(_, (before, after))| before != after)
+                    .map_or_else(
+                        || {
+                            format!(
+                                "every shared line matches; lengths differ: committed {} bytes, written {}",
+                                committed.len(),
+                                written.len()
+                            )
+                        },
+                        |(line, (before, after))| {
+                            format!("line {}:\n  committed: {before}\n  written:   {after}", line + 1)
+                        },
+                    );
+                panic!("saving every untouched section rewrote {filename}\n{place}");
+            }
         }
     }
 
@@ -2238,6 +3720,220 @@ mod tests {
                     let extra: Vec<&str> = stored.extra_tags().collect();
                     for tag in UI_LANGUAGES.iter().copied().chain(extra) {
                         pairs.push((format!("{}.{tag}", field.id), stored.get(tag).unwrap_or_default().to_string()));
+                    }
+                }
+                Some(Shape::StringList(_)) => {
+                    for value in draft
+                        .get(field.id)
+                        .and_then(|value| value.as_array())
+                        .into_iter()
+                        .flatten()
+                        .filter_map(|value| value.as_str())
+                    {
+                        pairs.push((field.id.to_string(), value.to_string()));
+                    }
+                }
+                Some(Shape::ReferenceRows(_)) => {
+                    let rows = draft.get(field.id).and_then(|v| v.as_array()).cloned().unwrap_or_default();
+                    if rows.is_empty() {
+                        pairs.push((format!("{}.row", field.id), String::new()));
+                    }
+                    for (position, row) in rows.iter().enumerate() {
+                        let key = format!("r{position}");
+                        let prefix = format!("{}.{key}", field.id);
+                        pairs.push((format!("{}.row", field.id), key.clone()));
+                        for (member, name) in [("type", "type"), ("url", "url"), ("text", "label")] {
+                            pairs.push((
+                                format!("{prefix}.ref.{name}"),
+                                row.get(member).and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                            ));
+                        }
+                    }
+                }
+                Some(Shape::PublicationRows) => {
+                    let rows = draft.get(field.id).and_then(|v| v.as_array()).cloned().unwrap_or_default();
+                    if rows.is_empty() {
+                        pairs.push((format!("{}.row", field.id), String::new()));
+                    }
+                    for (position, row) in rows.iter().enumerate() {
+                        let key = format!("r{position}");
+                        let prefix = format!("{}.{key}", field.id);
+                        pairs.push((format!("{}.row", field.id), key.clone()));
+                        pairs.push((
+                            format!("{prefix}.text"),
+                            row.get("text").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                        ));
+                        pairs.push((
+                            format!("{prefix}.pid"),
+                            row.get("pid")
+                                .and_then(|pid| pid.get("url"))
+                                .and_then(|v| v.as_str())
+                                .unwrap_or_default()
+                                .to_string(),
+                        ));
+                    }
+                }
+                Some(Shape::FundingRows) => {
+                    // The discriminant is on the field, so both branches post once
+                    // rather than per row.
+                    let held = draft.get(field.id);
+                    let is_grants = !held.is_some_and(|v| v.is_string());
+                    pairs.push((
+                        format!("{}.kind", field.id),
+                        if is_grants { "grants" } else { "text" }.to_string(),
+                    ));
+                    pairs.push((
+                        format!("{}.text", field.id),
+                        held.and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                    ));
+                    let grants = held.and_then(|v| v.as_array()).cloned().unwrap_or_default();
+                    if grants.is_empty() {
+                        pairs.push((format!("{}.row", field.id), String::new()));
+                    }
+                    for (position, grant) in grants.iter().enumerate() {
+                        let key = format!("r{position}");
+                        let prefix = format!("{}.{key}", field.id);
+                        pairs.push((format!("{}.row", field.id), key.clone()));
+                        for id in grant
+                            .get("funders")
+                            .and_then(|v| v.as_array())
+                            .into_iter()
+                            .flatten()
+                            .filter_map(|v| v.as_str())
+                        {
+                            pairs.push((format!("{prefix}.funder"), id.to_string()));
+                        }
+                        // The trailing blank funder control.
+                        pairs.push((format!("{prefix}.funder"), String::new()));
+                        for member in ["number", "name", "url"] {
+                            pairs.push((
+                                format!("{prefix}.{member}"),
+                                grant.get(member).and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                            ));
+                        }
+                    }
+                }
+                Some(Shape::TextOrReferenceRows(_)) => {
+                    // A row is a variant. Both branches are in the DOM and the
+                    // inactive one is only `hidden`, so an untouched form posts
+                    // *both* candidates plus the discriminant — which is exactly
+                    // what the applier must narrow with the discriminant alone.
+                    let rows = draft
+                        .get(field.id)
+                        .and_then(|value| value.as_array())
+                        .cloned()
+                        .unwrap_or_default();
+                    if rows.is_empty() {
+                        pairs.push((format!("{}.row", field.id), String::new()));
+                    }
+                    for (position, row) in rows.iter().enumerate() {
+                        let key = format!("r{position}");
+                        let prefix = format!("{}.{key}", field.id);
+                        pairs.push((format!("{}.row", field.id), key.clone()));
+                        let is_reference = row.get("url").is_some();
+                        pairs.push((
+                            format!("{prefix}.kind"),
+                            if is_reference { "reference" } else { "text" }.to_string(),
+                        ));
+                        // The reference branch, empty on a text row.
+                        for (member, name) in [("type", "type"), ("url", "url"), ("text", "label")] {
+                            pairs.push((
+                                format!("{prefix}.ref.{name}"),
+                                row.get(member).and_then(|value| value.as_str()).unwrap_or_default().to_string(),
+                            ));
+                        }
+                        // The text branch, empty on a reference row. A control per
+                        // offered language plus whatever tags the value carries.
+                        let texts = if is_reference {
+                            editor_core::multilingual::DraftMultilingual::default()
+                        } else {
+                            editor_web::form::widgets::as_multilingual(row)
+                        };
+                        for tag in UI_LANGUAGES.iter().copied().chain(texts.extra_tags()) {
+                            pairs
+                                .push((format!("{prefix}.text.{tag}"), texts.get(tag).unwrap_or_default().to_string()));
+                        }
+                    }
+                }
+                Some(Shape::AttributionRows) => {
+                    let rows = draft
+                        .get(field.id)
+                        .and_then(|value| value.as_array())
+                        .cloned()
+                        .unwrap_or_default();
+                    if rows.is_empty() {
+                        pairs.push((format!("{}.row", field.id), String::new()));
+                    }
+                    for (position, row) in rows.iter().enumerate() {
+                        let key = format!("r{position}");
+                        pairs.push((format!("{}.row", field.id), key.clone()));
+                        pairs.push((
+                            format!("{}.{key}.contributor", field.id),
+                            row.get("contributor").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                        ));
+                        for role in row
+                            .get("contributorType")
+                            .and_then(|v| v.as_array())
+                            .into_iter()
+                            .flatten()
+                            .filter_map(|v| v.as_str())
+                        {
+                            pairs.push((format!("{}.{key}.role", field.id), role.to_string()));
+                        }
+                        pairs.push((format!("{}.{key}.role", field.id), String::new()));
+                    }
+                }
+                Some(Shape::AgentRows | Shape::StringRows) => {
+                    let rows = draft
+                        .get(field.id)
+                        .and_then(|value| value.as_array())
+                        .cloned()
+                        .unwrap_or_default();
+                    if rows.is_empty() {
+                        pairs.push((format!("{}.row", field.id), String::new()));
+                    }
+                    for (position, row) in rows.iter().enumerate() {
+                        let key = format!("r{position}");
+                        pairs.push((format!("{}.row", field.id), key.clone()));
+                        pairs.push((format!("{}.{key}", field.id), row.as_str().unwrap_or_default().to_string()));
+                    }
+                }
+                Some(Shape::MultilingualRows) => {
+                    let rows = draft
+                        .get(field.id)
+                        .and_then(|value| value.as_array())
+                        .cloned()
+                        .unwrap_or_default();
+                    if rows.is_empty() {
+                        // The empty marker, without which the field reads as
+                        // absent and the last removal would not stick.
+                        pairs.push((format!("{}.row", field.id), String::new()));
+                    }
+                    for (position, row) in rows.iter().enumerate() {
+                        let key = format!("r{position}");
+                        pairs.push((format!("{}.row", field.id), key.clone()));
+                        let stored = editor_web::form::widgets::as_multilingual(row);
+                        for tag in UI_LANGUAGES.iter().copied().chain(stored.extra_tags()) {
+                            pairs.push((
+                                format!("{}.{key}.{tag}", field.id),
+                                stored.get(tag).unwrap_or_default().to_string(),
+                            ));
+                        }
+                    }
+                }
+                Some(Shape::Url(slot)) => {
+                    let rendered = draft
+                        .url_slot(slot)
+                        .filter(|text| !platform_metadata::is_placeholder(text))
+                        .unwrap_or_default();
+                    pairs.push((field.id.to_string(), rendered.to_string()));
+                }
+                // Only where the project holds one: a radio group with nothing
+                // checked and a `<select>` on a project with no value both
+                // submit no name, which is what leaves the field alone.
+                Some(Shape::Choice(_)) => {
+                    if let Some(value) = draft.get(field.id).and_then(|value| value.as_str()) {
+                        pairs.push((field.id.to_string(), value.to_string()));
                     }
                 }
                 None => {}

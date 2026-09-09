@@ -314,6 +314,10 @@ async fn serve() -> ExitCode {
     // Set data directory for dpe-core (thread-safe OnceLock, no env mutation)
     dpe_core::set_data_dir(dpe_config.data_dir.to_str().expect("data_dir path must be valid UTF-8"));
 
+    // The same directory ServeDir serves, so a cover present under it is reachable at
+    // its URL. dpe-core scans it to resolve cover presence at render time.
+    dpe_core::set_public_dir(dpe_config.public_dir.to_str().expect("public_dir path must be valid UTF-8"));
+
     // Set the public OAI-PMH base URL (thread-safe OnceLock), emitted as baseURL / <request>.
     dpe_api_oai::set_base_url(&dpe_config.oai_base_url);
     tracing::info!(oai_base_url = %dpe_config.oai_base_url, "OAI-PMH base URL set");

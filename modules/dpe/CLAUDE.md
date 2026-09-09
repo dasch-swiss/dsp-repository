@@ -50,6 +50,12 @@ Project descriptive metadata lives as JSON under `modules/dpe/server/data/`.
 3. **Key order is canonical.** Top-level members must be in `ProjectRaw`'s field declaration order, nested objects in theirs, language keys alphabetical, 4-space indent, trailing newline, no explicit `null`. `editor-core`'s `canonical_round_trip` test asserts this byte-for-byte over all 85 files, so a hand-ordered file fails it rather than `just validate-data`. Don't reorder by hand: run `CANONICALIZE_PROJECT_FILES=1 cargo test -p editor-core --test canonical_round_trip`, which rewrites the files with what the editor's writer produces. Adding or removing a project file also trips `the_corpus_is_the_whole_published_set` in that test; bump its count in the same commit.
 4. Run `just validate-data` (cross-references, temporal-coverage resolution) and `just test`.
 
+### Adding a Project Cover Image
+
+Drop `<shortcode>.webp` into `modules/dpe/public/assets/images/`. The filename **is** the lookup key: `dpe-core`'s `cover_image_cache` scans the directory at startup and matches stems case-sensitively, because `ServeDir` resolves the URL against a case-sensitive filesystem in the container. So `081b.webp` does not serve shortcode `081B`, and a stray leading space makes the file invisible to the URL while it still looks present in a directory listing (that was DEV-7128's ` 0118.webp`). A cover is optional: a project without one renders a placeholder, and no `<img>` is emitted.
+
+The scan runs once per process, so a file added while the server is running is not picked up until restart.
+
 ### Adding a New Component
 
 1. Add a `fn name(...) -> maud::Markup` in `web/src/components/`

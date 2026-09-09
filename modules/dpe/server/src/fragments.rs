@@ -294,6 +294,8 @@ mod tests {
         INIT.call_once(|| {
             let data_dir = format!("{}/data", env!("CARGO_MANIFEST_DIR"));
             dpe_core::set_data_dir(&data_dir);
+            // Same reason as router.rs: the public dir is not the test cwd.
+            dpe_core::set_public_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/../public"));
             // Show placeholders in tests to exercise the red-styled rendering path
             dpe_core::set_show_placeholder_values(true);
         });

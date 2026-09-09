@@ -261,6 +261,12 @@ cardinality between the archival and in-progress stages.
 > - `imageCredit` is implemented as an optional string. Note the cover image
 >   itself is **not** modelled: it is resolved by filename convention
 >   (`/assets/images/<shortcode>.webp`); `imageCredit` only records its credit.
+>   The image is **optional**: covers are onboarded per project on request, and
+>   some published projects have none. Presence is decided server-side from a
+>   startup scan of the assets directory (`dpe-core`'s `cover_image_cache`), so a
+>   project without one renders a placeholder and no `<img>` is emitted at all.
+>   The lookup is case-sensitive, matching how `ServeDir` resolves the URL in the
+>   container.
 
 ### Collection
 

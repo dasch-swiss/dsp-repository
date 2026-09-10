@@ -10,6 +10,7 @@
 //! persistence, and the shell is a view concern like every other partial.
 
 pub mod components;
+pub mod entity;
 pub mod form;
 pub mod pages;
 pub mod view;

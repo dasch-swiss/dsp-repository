@@ -12,7 +12,8 @@
 //! form renders, how a posted form body is read back into a draft ([`form`]),
 //! the published set the form pre-fills from ([`published`]), the
 //! field-by-field comparison RDU reviews a submission through ([`review`]), the
-//! checks a draft must pass to be submitted ([`submission`]), and the canonical
+//! checks a draft must pass to be submitted ([`submission`]), the requests to
+//! add or change a person or organisation ([`proposals`]), and the canonical
 //! writer ([`canonical`]) that turns an approved draft back into a
 //! `projects/*.json` file byte-for-byte.
 
@@ -22,6 +23,7 @@ pub mod draft;
 pub mod form;
 pub mod json;
 pub mod multilingual;
+pub mod proposals;
 pub mod published;
 pub mod records;
 pub mod repository;

@@ -17,9 +17,10 @@
 //!   — the value comes back empty, so with validation off, fiddling the year of a real date and
 //!   saving would clear it. Datastar gates its form path on the same flag.
 
-use editor_core::agents::Agents;
+use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
 use editor_core::form::FormBody;
+use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation};
 use editor_core::records::ReviewOutcome;
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
@@ -69,6 +70,49 @@ pub const DISCARD: &str = "discard";
 /// Asking first. The draft is the only copy of whatever has not been submitted,
 /// and `DraftRepository::delete` cannot be undone.
 pub const DISCARD_CONFIRM: &str = "discard-confirm";
+
+/// Start a proposal for a new person (REQ-3.1).
+pub const PROPOSE_PERSON: &str = "propose-person";
+
+/// Start a proposal for a new organisation (REQ-3.1).
+pub const PROPOSE_ORGANIZATION: &str = "propose-organization";
+
+/// Propose a change to an entity this project already references (REQ-3.2).
+///
+/// The entity rides in the intent value — `propose-changes:person-417` — via
+/// [`propose_changes_intent`] and [`proposed_entity`].
+///
+/// **It must not move to a field of its own.** A section renders every field inside one `<form>`
+/// and a resolved agent row repeats in it (`attributions` reaches 56 rows on one project), so a
+/// per-row field shares one name across all of them: every submit posts all 56 values and
+/// `FormBody::get` takes the first, whichever row was clicked. Only the activated button posts its
+/// name and value — natively and through Datastar's `SubmitEvent.submitter` — so the value is the
+/// one place exactly one entity can arrive from.
+pub const PROPOSE_CHANGES: &str = "propose-changes";
+
+/// The separator between [`PROPOSE_CHANGES`] and the entity id it carries.
+///
+/// A colon because no entity id contains one: they are `person-NNN` and `organization-NNN`, so the
+/// split cannot land inside an id.
+const PROPOSE_CHANGES_SEPARATOR: char = ':';
+
+/// The intent value a "Propose changes" control on `entity_id`'s row posts.
+#[must_use]
+pub fn propose_changes_intent(entity_id: &str) -> String {
+    format!("{PROPOSE_CHANGES}{PROPOSE_CHANGES_SEPARATOR}{entity_id}")
+}
+
+/// The entity id a posted intent carries, or `None` when it is not a propose-changes intent.
+///
+/// An empty id answers `None` rather than `Some("")`: a body naming the verb with no entity has
+/// asked for nothing, which is the same refusal as naming an entity that resolves to nobody.
+#[must_use]
+pub fn proposed_entity(intent: &str) -> Option<&str> {
+    intent
+        .strip_prefix(PROPOSE_CHANGES)?
+        .strip_prefix(PROPOSE_CHANGES_SEPARATOR)
+        .filter(|entity_id| !entity_id.is_empty())
+}
 
 /// The name a form posts the draft revision it was rendered from under.
 ///
@@ -194,6 +238,14 @@ pub enum Notice<'a> {
     /// Somebody else saved the draft while this form was open. Carries their
     /// name where it is known, so the reader can go and ask rather than guess.
     Changed { by: Option<&'a str>, at: &'a str },
+    /// A new entity proposal was started, or an existing entity now has a change proposed (REQ-3.1,
+    /// REQ-3.2). Names the kind and the id, and links to the entity form, which is where the
+    /// depositor fills the proposal in — the propose controls allocate the id and nothing else.
+    Proposed {
+        kind: ProposalKind,
+        operation: ProposalOperation,
+        entity_id: &'a str,
+    },
     /// The write was refused, and why. The whole-form kind: a live submission,
     /// nothing to submit, or storage that would not take the write. Field-level
     /// errors are [`SectionView::errors`], which is a different thing — they
@@ -264,6 +316,18 @@ pub struct SectionView<'a> {
     /// Separate from [`Notice::Refused`]: these name a control the reader can
     /// go and fix, and a refusal names the form as a whole.
     pub errors: &'a [(String, String)],
+    /// Findings against this project's own live proposals, from the latest submit refusal — one row
+    /// per finding, each naming which proposal it is about.
+    ///
+    /// Separate from [`Self::errors`]: a proposal is not a registry field, so it cannot ride that
+    /// field-keyed channel — `errors_elsewhere`'s lookup would resolve to nothing and drop it.
+    pub proposal_findings: &'a [(String, ProposalKind, String)],
+    /// This project's own entity proposals (US-3), every status, the same slice the server's
+    /// section context holds.
+    ///
+    /// Every status rather than only the live ones: the summary this renders is `is_live()` alone,
+    /// filtered here rather than upstream, so there is one place that decides which proposals show.
+    pub proposals: &'a [EntityProposal],
     /// The latest finished review round, or `None` for a project nobody has
     /// reviewed.
     ///
@@ -314,7 +378,7 @@ pub struct SectionView<'a> {
     ///
     /// Borrowed from `AppState`'s immutable snapshot, so no page allocates a
     /// copy of 558 entries.
-    pub agents: Option<&'a Agents>,
+    pub agents: Option<&'a AgentScope<'a>>,
     /// Base URL a repeatable field's add and remove controls submit to.
     ///
     /// Owned, so [`Rows`] can stay a plain borrow. Built by the caller rather
@@ -405,6 +469,11 @@ impl SectionView<'_> {
             action: &self.rows_action,
             adding: self.adding_row,
             agents: self.agents,
+            // This is the section form, which dispatches all three propose
+            // intents (`sections.rs`) — unlike the entity form's own
+            // `affiliations` picker, which reuses these same row widgets but
+            // must not offer a control its route does not handle.
+            propose: true,
         }
     }
 }
@@ -424,7 +493,7 @@ pub fn region(view: &SectionView<'_>) -> Markup {
     html! {
         section id=(REGION_ID) class="grid gap-6 md:grid-cols-[16rem_1fr] items-start" {
             (rail(view))
-            div { (status(view)) (form(view)) }
+            div { (status(view)) (proposals_summary(view)) (form(view)) }
         }
     }
 }
@@ -565,6 +634,9 @@ fn status(view: &SectionView<'_>) -> Markup {
                     })
                 }
                 Some(Notice::Changed { by, at }) => { (changed_notice(by, at)) }
+                Some(Notice::Proposed { kind, operation, entity_id }) => {
+                    (proposed_notice(view, kind, operation, entity_id))
+                }
                 Some(Notice::Refused(message)) => { (alert(message).variant(AlertVariant::Warning)) }
                 None => {}
             }
@@ -577,6 +649,7 @@ fn status(view: &SectionView<'_>) -> Markup {
             // to announce with it. Outside, the announcement said what needed
             // changing and the detail was silent.
             (errors_elsewhere(view))
+            (proposal_findings_elsewhere(view))
             // Outside the `@match`, because it is not an outcome of anything
             // the reader just did — it is true of the session whatever the last
             // action was, including none.
@@ -691,6 +764,129 @@ fn errors_elsewhere(view: &SectionView<'_>) -> Markup {
                 .variant(AlertVariant::Warning)
                 .title("Fields in other sections need changing")
         })
+    }
+}
+
+/// A proposal was just started, named by kind and id, with a link onward.
+///
+/// Its own function rather than inline in `status`'s `@match`, per this repo's rule on a nested
+/// `html!` passed as a call argument (`maudfmt` skips it and `cargo fmt` then mangles it).
+fn proposed_notice(
+    view: &SectionView<'_>,
+    kind: ProposalKind,
+    operation: ProposalOperation,
+    entity_id: &str,
+) -> Markup {
+    let noun = kind.label().to_lowercase();
+    let lead = match operation {
+        ProposalOperation::New => format!("A new {noun} has been started as {entity_id}."),
+        ProposalOperation::Change => format!("A change to {entity_id} has been started."),
+    };
+    let body = html! {
+        p { (lead) }
+        p class="mt-2" {
+            a href={ "/projects/" (view.shortcode) "/entities/" (entity_id) } class="underline" {
+                "Open it to fill in the details"
+            }
+            "."
+        }
+    };
+    html! {
+        (alert(body).variant(AlertVariant::Success).title("Proposal started"))
+    }
+}
+
+/// Findings against this project's own live proposals, from the latest submit refusal, each linked
+/// to that proposal's entity form.
+///
+/// A parallel function to [`errors_elsewhere`] rather than a shared one: a proposal is not a
+/// registry field, so `errors_elsewhere`'s `section_of` lookup would resolve to nothing and drop
+/// every one of these silently.
+fn proposal_findings_elsewhere(view: &SectionView<'_>) -> Markup {
+    if view.proposal_findings.is_empty() {
+        return html! {};
+    }
+    let body = proposal_findings_list(view);
+    html! {
+        ({
+            alert(body)
+                .variant(AlertVariant::Warning)
+                .title("A person or organisation you started needs finishing")
+        })
+    }
+}
+
+/// The list inside [`proposal_findings_elsewhere`]'s alert.
+///
+/// Its own function, and not by preference: a `html!` block nested as a call argument is skipped by
+/// `maudfmt` and then flattened by `cargo fmt`, which is this repo's rule
+/// (`modules/dpe/CLAUDE.md`) and is what happened to the first version of this — `@ for`,
+/// `class = "…"`, an arbitrary mid-expression break — with `just check` green, because that check
+/// verifies `maudfmt` is a no-op and `maudfmt` never looked inside. `changed_notice` below carries
+/// the same note about the same trap.
+fn proposal_findings_list(view: &SectionView<'_>) -> Markup {
+    html! {
+        ul class="flex flex-col gap-2" {
+            @for (entity_id, kind, message) in view.proposal_findings {
+                li {
+                    a   href={ "/projects/" (view.shortcode) "/entities/" (entity_id) }
+                        class="underline font-bold"
+                    { (kind.label()) " " (entity_id) }
+                    ": "
+                    (message)
+                }
+            }
+        }
+    }
+}
+
+/// A short list of this project's own live proposals, each resolved to a label where its payload
+/// already gives one, and linked to its entity form.
+///
+/// Gated on [`SectionView::has_agent_field`] like the shared `<datalist>`: a proposal exists to be
+/// referenced from an agent field, so a section with none has no use for the list either. Renders
+/// nothing at all with no live proposals — a panel with a heading and no rows would read as broken,
+/// not as "there is nothing here yet".
+fn proposals_summary(view: &SectionView<'_>) -> Markup {
+    if !view.has_agent_field() {
+        return html! {};
+    }
+    let live: Vec<&EntityProposal> = view.proposals.iter().filter(|proposal| proposal.is_live()).collect();
+    if live.is_empty() {
+        return html! {};
+    }
+    html! {
+        div class="rounded border border-neutral-300 bg-white p-4 mb-6" {
+            // `h2`, not `h3`: this panel renders *above* the section form, whose
+            // own title is an `h2`, and the page heading is the only `h1`. As an
+            // `h3` the outline ran 1 -> 3 -> 2, so a reader navigating by level
+            // got a broken tree, and one jumping from the `h1` to the next `h2`
+            // skipped this panel entirely although it sits first in reading
+            // order.
+            h2 class="font-display text-base mb-2" { "Proposed persons and organisations" }
+            ul class="flex flex-col gap-1" {
+                @for proposal in &live {
+                    @let resolved = view
+                        .agents
+                        .and_then(|agents| agents.get(&proposal.entity_id));
+                    li {
+                        span class="text-xs font-bold uppercase tracking-wide text-neutral-600" {
+                            (proposal.kind.label())
+                        }
+                        " "
+                        a   href={ "/projects/" (view.shortcode) "/entities/" (proposal.entity_id) }
+                            class="underline font-bold"
+                        {
+                            @match resolved {
+                                Some(agent) => (agent.label)
+                                None => (proposal.entity_id)
+                            }
+                        }
+                        @if resolved.is_some() { " (" (proposal.entity_id) ")" }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -838,7 +1034,7 @@ fn controls(view: &SectionView<'_>) -> Markup {
 
 #[cfg(test)]
 mod tests {
-    use editor_core::agents::Agents;
+    use editor_core::agents::{AgentScope, Agents};
     use editor_core::draft::ProjectDraft;
     use editor_core::form::FormBody;
     use serde_json::json;
@@ -847,7 +1043,7 @@ mod tests {
     use crate::form::registry::{field, section};
 
     /// The committed agent set, loaded once for the whole test binary.
-    pub(super) fn agent_corpus() -> &'static Agents {
+    fn published_agents() -> &'static Agents {
         static AGENTS: std::sync::OnceLock<Agents> = std::sync::OnceLock::new();
         AGENTS.get_or_init(|| {
             let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data");
@@ -855,6 +1051,12 @@ mod tests {
             assert!(errors.is_empty(), "the committed agent set should load: {errors:?}");
             agents
         })
+    }
+
+    /// The committed set with no proposals, for a fixture with no project in hand.
+    pub(super) fn agent_corpus() -> &'static AgentScope<'static> {
+        static SCOPE: std::sync::OnceLock<AgentScope<'static>> = std::sync::OnceLock::new();
+        SCOPE.get_or_init(|| AgentScope::published_only(published_agents()))
     }
 
     /// A draft over a real committed project, so the fields under test hold what the corpus
@@ -888,6 +1090,8 @@ mod tests {
             signed_out_at: None,
             baseline: None,
             errors: &[],
+            proposal_findings: &[],
+            proposals: &[],
             round: None,
             saved_at: None,
             notice: None,

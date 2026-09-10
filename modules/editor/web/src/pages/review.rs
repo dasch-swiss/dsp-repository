@@ -48,6 +48,7 @@
 //! meaningfully do to a record that is new.
 
 use editor_core::draft::ProjectDraft;
+use editor_core::proposals::{EntityProposal, ProposalDecision, ProposalKind, ProposalOperation};
 use editor_core::records::SubmissionState;
 use editor_core::review::Decision;
 use maud::{html, Markup};
@@ -59,6 +60,7 @@ use mosaic_tiles::radio_group::radio_group;
 use mosaic_tiles::table::{table, table_cell, table_head_cell};
 use serde_json::Value;
 
+use crate::entity;
 use crate::form::registry::Field;
 use crate::form::widgets::{control, value_markup};
 use crate::form::INTENT;
@@ -69,6 +71,19 @@ pub const REGION_ID: &str = "review-surface";
 /// The name every decision control on the diff form posts under, before the
 /// field id. Stated once, because the renderer and the decoder both spell it.
 pub const DECISION_PREFIX: &str = "decision";
+
+/// The name every proposed entity's decision control posts under, before its `entity_id` —
+/// [`DECISION_PREFIX`]'s counterpart for a proposal rather than a field.
+///
+/// A separate prefix rather than a proposal posting under `decision.{entity_id}` too: the two
+/// vocabularies differ (accept/reject here, accept/revert there), and a shared namespace would let
+/// a stray `decision.person-417` be read as a field decision on a field literally named
+/// `person-417`, which cannot happen but would be one string comparison away from being able to.
+/// Collision with a *field*'s own namespace is closed the same way `DECISION_PREFIX`'s own docs
+/// close it: no registry field id begins with `entity`, pinned by
+/// `tests::no_registry_field_id_begins_with_the_entity_decision_prefix` rather than only argued in
+/// prose.
+pub const ENTITY_DECISION_PREFIX: &str = "entity";
 
 /// Store the decisions and substitutions the body carries.
 pub const SAVE: &str = "save";
@@ -409,6 +424,26 @@ impl ReviewRow<'_> {
     }
 }
 
+/// One proposed person or organisation, as the review surface shows it below the field diff.
+///
+/// A proposed entity is not a project field, so it gets no [`ReviewRow`] — REQ-4.3 reviews changed
+/// project fields, and a proposed person is not one. This is its own row, in its own region, with
+/// its own decision vocabulary ([`ProposalDecision`], not [`Decision`]).
+pub struct EntityRow<'a> {
+    pub proposal: &'a EntityProposal,
+    /// The proposed entity, parsed from [`EntityProposal::payload`]. Owned rather than borrowed:
+    /// nothing else on the page needs the parsed value to outlive this row, and parsing it once per
+    /// request is cheaper than threading a second lifetime through for it.
+    pub payload: Value,
+    /// The published entity's body, for [`ProposalOperation::Change`] — `None` for
+    /// [`ProposalOperation::New`], which has no published side to compare against, the same
+    /// situation an unpublished project is in.
+    pub published: Option<&'a Value>,
+    /// Other projects, by their published shortcode, holding a live proposal for this same entity.
+    /// Empty where nobody else has touched it.
+    pub other_projects: &'a [String],
+}
+
 /// Everything one rendering of the diff surface needs.
 pub struct ReviewView<'a> {
     /// As the URL spells it, which is what every control posts back to.
@@ -425,6 +460,11 @@ pub struct ReviewView<'a> {
     /// Whether the reader is the one holding it.
     pub held_by_viewer: bool,
     pub rows: &'a [ReviewRow<'a>],
+    /// This submission's proposed entities, in submission order. Rendered below the field diff,
+    /// inside the same `<form>` — a proposal's decision has to arrive with a terminating action
+    /// exactly as a field's does, or approving straight after deciding one would act on whatever
+    /// was last saved rather than on what is on screen.
+    pub entity_rows: &'a [EntityRow<'a>],
     pub filter: Filter,
     pub notice: Option<Notice<'a>>,
     /// The note as it stands, so a refused terminating action does not throw
@@ -699,8 +739,132 @@ fn diff_form(view: &ReviewView<'_>) -> Markup {
                     })
                 }
             }
+            (entity_rows_section(view))
             (finish(view))
         }
+    }
+}
+
+/// Every proposed entity on this submission, below the field diff and inside the same `<form>` as
+/// the field rows — see [`ReviewView::entity_rows`] for why it cannot be a form of its own.
+fn entity_rows_section(view: &ReviewView<'_>) -> Markup {
+    if view.entity_rows.is_empty() {
+        return html! {};
+    }
+    html! {
+        div class="mt-8 flex flex-col gap-4" {
+            h2 class="font-display text-xl" { "Proposed people and organisations" }
+            @for row in view.entity_rows { (entity_row(row)) }
+        }
+    }
+}
+
+fn entity_row(row: &EntityRow<'_>) -> Markup {
+    html! {
+        div class="rounded border border-neutral-300 bg-white" {
+            div class="flex flex-wrap items-center gap-3 border-b border-neutral-200 px-4 py-2" {
+                strong { (row.proposal.kind.label()) " " (row.proposal.entity_id) }
+                ({
+                    badge(operation_label(row.proposal.operation))
+                        .variant(BadgeVariant::Secondary)
+                })
+            }
+            (cross_project_notice(row))
+            @for (label, member) in entity_members(row.proposal.kind) {
+                (entity_member_row(label, member, row))
+            }
+            (entity_decision_control(row))
+        }
+    }
+}
+
+fn operation_label(operation: ProposalOperation) -> &'static str {
+    match operation {
+        ProposalOperation::New => "New",
+        ProposalOperation::Change => "Change",
+    }
+}
+
+/// This kind's members, label then JSON key: `editor_web::entity`'s own field list, plus `address`
+/// for an organisation, which that module omits because it renders and applies the address as a
+/// flat group of scalars rather than through one of `Shape`'s per-field controls. The review row
+/// has no such split — it only ever reads a value — so `address` is one member like any other here.
+fn entity_members(kind: ProposalKind) -> Vec<(&'static str, &'static str)> {
+    let mut members: Vec<(&'static str, &'static str)> =
+        entity::fields_for(kind).iter().map(|field| (field.label, field.id)).collect();
+    if kind == ProposalKind::Organization {
+        members.push(("Address", "address"));
+    }
+    members
+}
+
+/// One member: what is published beside what is proposed, reusing [`value_markup`] rather than a
+/// second value renderer — the same reuse [`row_values`] makes for a project field.
+fn entity_member_row(label: &str, member: &str, row: &EntityRow<'_>) -> Markup {
+    let proposed = row.payload.get(member);
+    html! {
+        div class="border-t border-neutral-200 px-4 py-3" {
+            p class="mb-2 text-sm font-semibold" { (label) }
+            div class="grid gap-4 md:grid-cols-2" {
+                div {
+                    p class="mb-1 text-xs font-bold uppercase tracking-wide text-neutral-600" {
+                        "Published"
+                    }
+                    @match row.published {
+                        Some(published) => (value_markup(published.get(member)))
+                        None => p class="italic text-neutral-600" { "Not published yet" }
+                    }
+                }
+                div {
+                    p class="mb-1 text-xs font-bold uppercase tracking-wide text-neutral-600" {
+                        "Proposed"
+                    }
+                    (value_markup(proposed))
+                }
+            }
+        }
+    }
+}
+
+/// Two projects may hold live proposals for the same entity at once (decision 4 on the issue): the
+/// review surface names the other project here rather than blocking, because blocking would strand
+/// one project on another project's review, while a silent overwrite would let RDU approve a
+/// change that is about to be replaced with nothing saying so — whichever is approved last simply
+/// wins.
+fn cross_project_notice(row: &EntityRow<'_>) -> Markup {
+    if row.other_projects.is_empty() {
+        return html! {};
+    }
+    let names = row.other_projects.join(", ");
+    let message = format!(
+        "Also proposed by {names}. Whichever project's proposal for this entity is approved last wins — the \
+         other's change is silently replaced, with nothing here to say so once it happens."
+    );
+    html! {
+        div class="p-4 pb-0" {
+            ({
+                alert(message)
+                    .variant(AlertVariant::Info)
+                    .title("Proposed by another project too")
+            })
+        }
+    }
+}
+
+/// Accept / reject / undecided for one proposal — [`ProposalDecision`]'s own vocabulary, not
+/// [`Decision`]'s: a proposed entity has no published value to revert to, so the only honest
+/// opposite of accepting one is rejecting it.
+fn entity_decision_control(row: &EntityRow<'_>) -> Markup {
+    let legend = format!("{} {} — decision", row.proposal.kind.label(), row.proposal.entity_id);
+    let selected = row.proposal.decision.map_or("", ProposalDecision::as_str);
+    let mut group = radio_group(format!("{ENTITY_DECISION_PREFIX}.{}", row.proposal.entity_id), legend)
+        .inline()
+        .option(ProposalDecision::Accept.as_str(), "Accept")
+        .selected(selected);
+    group = group.option(ProposalDecision::Reject.as_str(), "Reject");
+    group = group.option("", "Not reviewed yet");
+    html! {
+        div class="border-t border-neutral-200 px-4 py-3" { (group) }
     }
 }
 
@@ -1119,11 +1283,131 @@ mod tests {
             reviewer: None,
             held_by_viewer: false,
             rows,
+            entity_rows: &[],
             filter: Filter::Changed,
             notice: None,
             note: "",
             confirming: None,
         }
+    }
+
+    /// A minimal proposal fixture.
+    ///
+    /// `id`, `created_at` and `updated_at` are `Default::default()` rather than named
+    /// `uuid`/`chrono` values: neither crate is a dependency of `editor-web` — this crate never
+    /// needs to *construct* one, only to render a value whose type `editor-core` already names
+    /// — and none of these three rows are read by anything the review surface renders.
+    fn an_entity_proposal(kind: ProposalKind, operation: ProposalOperation, entity_id: &str) -> EntityProposal {
+        EntityProposal {
+            id: Default::default(),
+            shortcode: "0801d".to_string(),
+            entity_id: entity_id.to_string(),
+            kind,
+            operation,
+            payload: "{}".to_string(),
+            status: editor_core::proposals::ProposalStatus::Submitted,
+            decision: None,
+            proposed_by: None,
+            created_at: Default::default(),
+            updated_at: Default::default(),
+            decided_by: None,
+            decided_at: None,
+        }
+    }
+
+    #[test]
+    fn no_registry_field_id_begins_with_the_entity_decision_prefix() {
+        // The collision `ENTITY_DECISION_PREFIX`'s own docs argue against, pinned rather than only
+        // argued in prose — the same argument `DECISION_PREFIX`'s docs make for its own namespace.
+        for section in crate::form::registry::sections_for(crate::form::registry::Audience::RduOnly) {
+            for field in section.fields_for(crate::form::registry::Audience::RduOnly) {
+                assert!(
+                    !field.id.starts_with(ENTITY_DECISION_PREFIX),
+                    "{} begins with the entity-decision prefix and would collide with a proposal's own \
+                     decision key",
+                    field.id
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_new_proposal_shows_only_the_proposed_side() {
+        // The same situation an unpublished project is in: there is no published value to compare
+        // against, so the surface says so rather than rendering an empty "Published" column.
+        let proposal = an_entity_proposal(ProposalKind::Person, ProposalOperation::New, "person-417");
+        let payload =
+            json!({"givenNames": ["Ada"], "familyNames": ["Lovelace"], "jobTitles": [], "email": "ada@example.org"});
+        let row = EntityRow {
+            proposal: &proposal,
+            payload,
+            published: None,
+            other_projects: &[],
+        };
+        let out = entity_row(&row).into_string();
+        assert!(out.contains("Person"), "{out}");
+        assert!(out.contains("person-417"), "{out}");
+        // A repeatable member is summarised by `value_markup`, the same as everywhere else it is
+        // reused; a scalar one is the plain content.
+        assert!(out.contains("ada@example.org"), "{out}");
+        assert!(out.contains("Not published yet"), "{out}");
+    }
+
+    #[test]
+    fn a_change_proposal_shows_the_published_value_beside_the_proposed_one() {
+        let proposal = an_entity_proposal(ProposalKind::Organization, ProposalOperation::Change, "organization-008");
+        let published = json!({"id": "organization-008", "name": "Old Name", "url": "https://old.example/"});
+        let payload = json!({"name": "New Name", "url": "https://old.example/"});
+        let row = EntityRow {
+            proposal: &proposal,
+            payload,
+            published: Some(&published),
+            other_projects: &[],
+        };
+        let out = entity_row(&row).into_string();
+        assert!(out.contains("Old Name"), "{out}");
+        assert!(out.contains("New Name"), "{out}");
+        assert!(!out.contains("Not published yet"), "{out}");
+    }
+
+    #[test]
+    fn a_proposal_offers_accept_reject_and_not_reviewed_yet_under_its_own_name() {
+        let proposal = an_entity_proposal(ProposalKind::Person, ProposalOperation::New, "person-417");
+        let row = EntityRow {
+            proposal: &proposal,
+            payload: json!({}),
+            published: None,
+            other_projects: &[],
+        };
+        let out = entity_row(&row).into_string();
+        assert!(out.contains(r#"name="entity.person-417""#), "{out}");
+        assert!(out.contains(r#"value="accept""#), "{out}");
+        assert!(out.contains(r#"value="reject""#), "{out}");
+        assert!(out.contains("Not reviewed yet"), "{out}");
+    }
+
+    #[test]
+    fn the_cross_project_notice_appears_only_when_another_project_holds_a_live_proposal() {
+        let proposal = an_entity_proposal(ProposalKind::Person, ProposalOperation::New, "person-417");
+        let others = vec!["0803".to_string()];
+        let row = EntityRow {
+            proposal: &proposal,
+            payload: json!({}),
+            published: None,
+            other_projects: &others,
+        };
+        let out = entity_row(&row).into_string();
+        assert!(out.contains("0803"), "{out}");
+        assert!(out.contains("Proposed by another project too"), "{out}");
+
+        let alone = EntityRow {
+            proposal: &proposal,
+            payload: json!({}),
+            published: None,
+            other_projects: &[],
+        };
+        let out = entity_row(&alone).into_string();
+        assert!(!out.contains("Proposed by another project too"), "{out}");
     }
 
     #[test]

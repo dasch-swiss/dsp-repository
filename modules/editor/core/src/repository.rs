@@ -1,7 +1,7 @@
 //! The persistence ports, one trait per aggregate.
 //!
 //! Framework-free: the traits name domain records and [`RepositoryError`], never
-//! a `rusqlite` type. `editor-server` implements all eight against SQLite, so the
+//! a `rusqlite` type. `editor-server` implements all nine against SQLite, so the
 //! handlers Phase 3 onwards writes depend on these and not on the driver.
 //!
 //! Every method is `async` and boxed via `async_trait` rather than left as a
@@ -19,6 +19,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+use crate::proposals::{EntityProposal, ProposalDecision};
 use crate::records::{ApprovedRecord, DraftRecord, LoginCode, ReviewRound, Session, Submission, User};
 
 /// What can go wrong in a repository call.
@@ -417,16 +418,60 @@ pub trait ReviewRoundRepository: Send + Sync {
     async fn list_for_shortcode(&self, shortcode: &str) -> Result<Vec<ReviewRound>>;
 }
 
+/// Entity proposals (US-3): a person or organisation a depositor proposes to
+/// create, or a change to one their project references.
+#[async_trait]
+pub trait EntityProposalRepository: Send + Sync {
+    /// Insert a proposal for a **new** entity, allocating its `entity_id`
+    /// inside the write transaction.
+    ///
+    /// `published_floor` is the highest id number the published store holds for
+    /// that kind, which this layer cannot see. Returns the proposal as stored,
+    /// with `entity_id` filled in.
+    async fn create_new(&self, proposal: &EntityProposal, published_floor: u32) -> Result<EntityProposal>;
+
+    /// Insert a proposal to change an entity that already exists. `entity_id`
+    /// is the caller's; nothing is allocated.
+    async fn create_change(&self, proposal: &EntityProposal) -> Result<()>;
+
+    /// Replace a proposal's payload, stamping `updated_at`.
+    async fn update_payload(&self, id: Uuid, payload: &str, at: DateTime<Utc>) -> Result<()>;
+
+    /// Record what RDU decided about this proposal, or clear it. Leaves
+    /// `status` alone — the status changes only when the round ends.
+    async fn set_decision(
+        &self,
+        id: Uuid,
+        decision: Option<ProposalDecision>,
+        by: Option<Uuid>,
+        at: DateTime<Utc>,
+    ) -> Result<()>;
+
+    async fn find(&self, id: Uuid) -> Result<Option<EntityProposal>>;
+
+    /// One project's proposals, oldest first. Every status, so a caller can
+    /// filter with `EntityProposal::is_live`.
+    async fn list_for_shortcode(&self, shortcode: &str) -> Result<Vec<EntityProposal>>;
+
+    /// Every **live** proposal naming this entity, whatever project it belongs
+    /// to.
+    async fn list_live_for_entity(&self, entity_id: &str) -> Result<Vec<EntityProposal>>;
+
+    /// Discard a proposal the depositor abandoned. The row survives as a
+    /// tombstone so its allocated id is never handed out again.
+    async fn withdraw(&self, id: Uuid, at: DateTime<Utc>) -> Result<()>;
+}
+
 /// Every port at once, so one handle can serve all of them.
 ///
-/// The eight traits above are the units of dependency — a function that only
+/// The nine traits above are the units of dependency — a function that only
 /// looks up accounts should say `&dyn UserRepository` and mean it. This is for
 /// the callers that cannot, because Rust has no way to spell a trait object over
 /// several traits at once: `AppState`, which every handler shares and which
-/// therefore needs all eight, and the few functions that genuinely need more than
+/// therefore needs all nine, and the few functions that genuinely need more than
 /// one port (the session lookup reads a session *and* its account).
 ///
-/// The blanket impl is what keeps this free: anything implementing the eight
+/// The blanket impl is what keeps this free: anything implementing the nine
 /// ports is a `Repositories` without saying so, so neither the SQLite
 /// implementation nor a test fake ever writes `impl Repositories`.
 ///
@@ -442,6 +487,7 @@ pub trait Repositories:
     + SubmissionRepository
     + ApprovedRecordRepository
     + ReviewRoundRepository
+    + EntityProposalRepository
 {
 }
 
@@ -454,5 +500,6 @@ impl<T> Repositories for T where
         + SubmissionRepository
         + ApprovedRecordRepository
         + ReviewRoundRepository
+        + EntityProposalRepository
 {
 }

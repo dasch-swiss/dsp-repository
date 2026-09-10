@@ -24,11 +24,13 @@ use axum::Form;
 use chrono::{DateTime, Utc};
 use editor_core::draft::ProjectDraft;
 use editor_core::form::{apply, FormBody, Shape};
+use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation, ProposalStatus};
 use editor_core::records::{
     normalize_shortcode, DraftRecord, ReviewOutcome, ReviewRound, Submission, SubmissionState, User,
 };
 use editor_core::repository::{
-    DraftRepository, RepositoryError, ReviewRoundRepository, SubmissionRepository, Transition, UserRepository,
+    DraftRepository, EntityProposalRepository, RepositoryError, ReviewRoundRepository, SubmissionRepository,
+    Transition, UserRepository,
 };
 use editor_core::review::{diff, FieldDiff, ReviewState};
 use editor_core::submission::unresolved_temporal_coverage;
@@ -130,6 +132,30 @@ const SUBMIT_REFUSED_SENTINEL: &str = "This project cannot be submitted yet: a f
                                        reserves for \"no value yet\". Your draft has been saved, and each one is \
                                        named below with a link to it.";
 
+/// The refusal an unfinished entity proposal of this project's own renders as.
+const SUBMIT_REFUSED_PROPOSAL_INCOMPLETE: &str = "This project cannot be submitted yet: a person or organisation \
+                                                   you started has not been finished. Your draft has been saved, \
+                                                   and each one is named below with a link to it.";
+
+/// The refusal `PROPOSE_CHANGES` renders as when the posted entity is missing or names nobody.
+const PROPOSE_REFUSED_UNKNOWN_ENTITY: &str = "No person or organisation was picked, or the one picked is not one \
+                                              the repository knows, so nothing was started.";
+
+/// The refusal a `Conflict` from [`EntityProposalRepository::create_new`] renders as: two proposals
+/// of the same kind computed the same next id at once, which is rare but not impossible.
+const PROPOSE_REFUSED_RACED: &str = "Something else claimed the same id at the same moment. Nothing was started \
+                                     — try again.";
+
+/// The refusal a `Conflict` from [`EntityProposalRepository::create_change`] renders as: an
+/// ordinary double-click, since this project already holds a live proposal for that entity.
+const PROPOSE_REFUSED_ALREADY_LIVE: &str = "This project already has a change proposed for that person or \
+                                            organisation. Nothing new was started — open the existing proposal \
+                                            instead.";
+
+/// The refusal a storage failure renders as for any of the three propose intents.
+const PROPOSE_REFUSED_STORAGE: &str = "The proposal could not be recorded. Nothing was started — try again, and \
+                                       if it keeps happening the service needs attention.";
+
 /// The field-level error a typed placeholder sentinel renders as.
 ///
 /// Names the words, because the control shows the field as *empty* once one is
@@ -201,14 +227,20 @@ struct Context<'a> {
     /// name would be noise, and skipping it avoids a user lookup on every
     /// ordinary form render.
     last_editor: Option<String>,
-    /// The agents an id field may refer to, borrowed from `AppState`'s
-    /// immutable snapshot.
+    /// The agents an id field may refer to.
     ///
     /// On the context rather than reached through `state` in the view, because
     /// `view` is given the resolved request and not the whole application —
     /// which is what keeps a renderer from quietly acquiring a second source of
     /// truth about the project.
-    agents: &'a editor_core::agents::Agents,
+    agents: editor_core::agents::AgentScope<'a>,
+    /// This project's own entity proposals (US-3), every status.
+    ///
+    /// Read once here rather than filtered at each use: [`Self::agents`] is built from it (only the
+    /// referenceable ones contribute), the submit gate below walks the live ones, and the summary
+    /// panel renders the live ones too — three readers of one list rather than three queries that
+    /// could disagree about which proposals exist.
+    proposals: Vec<EntityProposal>,
     /// The body that was posted, or `None` on a `GET`.
     ///
     /// Part of the resolved request rather than an argument threaded through
@@ -384,6 +416,14 @@ async fn context<'a>(
             .unwrap_or_default(),
     });
 
+    // Every status, not only the live ones: `AgentScope::with_proposals` also resolves an
+    // `Accepted` proposal (REQ-3.6's referential-integrity gate needs that), and the submit gate
+    // below needs `is_live` per row to decide which to check.
+    let proposals = match EntityProposalRepository::list_for_shortcode(&*state.db, &key).await {
+        Ok(proposals) => proposals,
+        Err(error) => return Err(storage_error(state, user, "read this project's entity proposals", &error)),
+    };
+
     let published = state.published.get(shortcode);
     let draft = match &record {
         // A stored draft supersedes the published metadata: REQ-1.1 pre-fills
@@ -415,7 +455,11 @@ async fn context<'a>(
         round,
         last_editor,
         signed_out_at,
-        agents: &state.agents,
+        // Built from `proposals` before it moves into the struct below: `with_proposals` copies out
+        // the labels it needs into its own `Vec<Agent>`, so the scope does not borrow the vector and
+        // the two can sit on `Context` side by side.
+        agents: editor_core::agents::AgentScope::with_proposals(&state.agents, &proposals),
+        proposals,
         posted: None,
         project_name: published.map(|project| project.name.as_str()),
     })
@@ -490,6 +534,11 @@ pub(crate) async fn act(
         Some(page::WITHDRAW_CONFIRM) => Intent::ConfirmWithdrawal,
         Some(page::DISCARD) => Intent::Discard,
         Some(page::DISCARD_CONFIRM) => Intent::ConfirmDiscard,
+        Some(page::PROPOSE_PERSON) => Intent::ProposePerson,
+        Some(page::PROPOSE_ORGANIZATION) => Intent::ProposeOrganization,
+        // The entity rides in the value, so this matches the prefix rather than the whole
+        // string; `page::PROPOSE_CHANGES`'s docs say why it is not a hidden input.
+        Some(value) if page::proposed_entity(value).is_some() => Intent::ProposeChanges,
         _ => Intent::Save,
     };
     span.record("form.intent", tracing::field::display(intent.as_str()));
@@ -569,6 +618,15 @@ pub(crate) async fn act(
         span.record("form.outcome", "saved");
         tracing::info!("saved a project draft");
         return saved(&shortcode, &context, headers);
+    }
+
+    // Same footing as submit below: the draft above is already written, so a proposal refused past
+    // this point costs the depositor only the proposal, never whatever they just typed.
+    if matches!(
+        intent,
+        Intent::ProposePerson | Intent::ProposeOrganization | Intent::ProposeChanges
+    ) {
+        return propose(&state, &user, &shortcode, &section_id, &context, headers, &body, intent).await;
     }
 
     // The record's own timestamp rather than a second `Utc::now()`: the
@@ -782,21 +840,8 @@ async fn row_action(
     span.record("form.section", tracing::field::display(section_id));
     span.record("form.field", tracing::field::display(field_id));
 
-    let row_name = format!("{field_id}.row");
     let body = FormBody::from_pairs(match removing {
-        // The marker survives a removal of the last row: without a
-        // `{field}.row` in the body the applier reads the field as absent and
-        // leaves it alone, so removing the only row would not stick.
-        Some(key) => {
-            let mut kept: Vec<(String, String)> = pairs
-                .into_iter()
-                .filter(|(name, value)| name != &row_name || value != key)
-                .collect();
-            if !kept.iter().any(|(name, _)| name == &row_name) {
-                kept.push((row_name.clone(), String::new()));
-            }
-            kept
-        }
+        Some(key) => FormBody::pairs_without_row(pairs, field_id, key),
         None => pairs,
     });
 
@@ -863,6 +908,12 @@ enum Intent {
     ConfirmWithdrawal,
     Discard,
     ConfirmDiscard,
+    /// Start a proposal for a new person (REQ-3.1).
+    ProposePerson,
+    /// Start a proposal for a new organisation (REQ-3.1).
+    ProposeOrganization,
+    /// Propose a change to an entity this project already references (REQ-3.2).
+    ProposeChanges,
 }
 
 impl Intent {
@@ -877,6 +928,9 @@ impl Intent {
             Self::ConfirmWithdrawal => "withdraw-confirm",
             Self::Discard => "discard",
             Self::ConfirmDiscard => "discard-confirm",
+            Self::ProposePerson => "propose-person",
+            Self::ProposeOrganization => "propose-organization",
+            Self::ProposeChanges => "propose-changes",
         }
     }
 }
@@ -936,7 +990,7 @@ async fn submit(
     // because a draft may hold a value that does not validate — this
     // is what stops an unresolvable id reaching a published file, where it
     // renders as a bare `person-001` on the public project page.
-    let unknown = unresolved_agents(context.audience, &context.draft, context.agents);
+    let unknown = unresolved_agents(context.audience, &context.draft, &context.agents);
     if !unknown.is_empty() {
         span.record("form.outcome", "unknown_agent");
         tracing::info!(
@@ -948,6 +1002,58 @@ async fn submit(
             .map(|(field, id)| (field.id.to_string(), unknown_agent_message(id)))
             .collect();
         return refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_UNKNOWN_AGENT, &errors);
+    }
+
+    // This project's own live proposals must satisfy the same rules the entity form enforces: a
+    // `Draft`/`Submitted` proposal riding into review with an incomplete payload would let RDU
+    // accept it into a broken committed file, with no field-level check left to stop
+    // it once this project is approved.
+    let mut proposal_findings: Vec<(String, ProposalKind, String)> = Vec::new();
+    for proposal in context.proposals.iter().filter(|proposal| proposal.is_live()) {
+        let payload: serde_json::Value = match serde_json::from_str(&proposal.payload) {
+            Ok(payload) => payload,
+            // Cannot happen through this form — every writer here stores what `serde_json::Value`
+            // itself produced — but a stored payload this build cannot parse is a reason to refuse,
+            // not to skip the check silently.
+            Err(_) => {
+                proposal_findings.push((
+                    proposal.entity_id.clone(),
+                    proposal.kind,
+                    "its stored data could not be read".to_string(),
+                ));
+                continue;
+            }
+        };
+        let findings = match proposal.kind {
+            ProposalKind::Person => editor_core::proposals::check_person(&payload),
+            // The published side is what makes the address carve-out work: an incomplete address
+            // inherited unchanged from a published organisation is passed through, one the
+            // depositor wrote is refused. `None` for a `New` proposal, which has nothing to
+            // inherit — `published_body` answers only for the published store, so a proposal's own
+            // payload can never grandfather itself.
+            ProposalKind::Organization => {
+                editor_core::proposals::check_organization(&payload, context.agents.published_body(&proposal.entity_id))
+            }
+        };
+        for finding in findings {
+            let field = match finding.index {
+                Some(index) => format!("{}[{index}]", finding.field),
+                None => finding.field.to_string(),
+            };
+            proposal_findings.push((
+                proposal.entity_id.clone(),
+                proposal.kind,
+                format!("{field}: {}", finding.message),
+            ));
+        }
+    }
+    if !proposal_findings.is_empty() {
+        span.record("form.outcome", "proposal_incomplete");
+        tracing::info!(
+            proposals.findings = proposal_findings.len(),
+            "refused a submission with an unfinished entity proposal"
+        );
+        return refused_with_proposal_findings(state, user, shortcode, context, headers, &proposal_findings);
     }
 
     // A sentinel a depositor typed, which the shape is what recognises: a
@@ -1046,6 +1152,193 @@ async fn submit(
             span.record("form.outcome", "store_failed");
             tracing::error!(error = %error, "could not record a pending submission");
             refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_STORAGE, &[])
+        }
+    }
+}
+
+/// Start an entity proposal (REQ-3.1/3.2), or refuse without creating one.
+///
+/// The draft has already been written by the time this runs — `act` saves the posted body before
+/// dispatching on intent, on this path exactly as it does on submit — so a refusal here costs the
+/// depositor only the proposal, never whatever they just typed.
+#[allow(clippy::too_many_arguments)]
+async fn propose(
+    state: &AppState,
+    user: &User,
+    shortcode: &str,
+    section_id: &str,
+    context: &Context<'_>,
+    headers: HeaderMap,
+    body: &FormBody,
+    intent: Intent,
+) -> Response {
+    let span = tracing::Span::current();
+    let now = Utc::now();
+
+    let outcome = match intent {
+        Intent::ProposePerson | Intent::ProposeOrganization => {
+            let kind = if intent == Intent::ProposePerson {
+                ProposalKind::Person
+            } else {
+                ProposalKind::Organization
+            };
+            let proposal = EntityProposal {
+                id: Uuid::new_v4(),
+                shortcode: normalize_shortcode(shortcode),
+                // Filled in by `create_new`, inside the write transaction that allocates it — nothing
+                // out here can compute it without racing every other proposal of this kind.
+                entity_id: String::new(),
+                kind,
+                operation: ProposalOperation::New,
+                payload: "{}".to_string(),
+                status: ProposalStatus::Draft,
+                proposed_by: Some(user.id),
+                created_at: now,
+                updated_at: now,
+                decision: None,
+                decided_by: None,
+                decided_at: None,
+            };
+            let published_floor = state.agents.highest_id_number(kind);
+            EntityProposalRepository::create_new(&*state.db, &proposal, published_floor)
+                .await
+                .map(|created| (created.entity_id, kind, ProposalOperation::New))
+        }
+        Intent::ProposeChanges => {
+            // Both "no id was posted" and "the posted id resolves to nobody" are the same refusal:
+            // either way there is nothing this project may propose a change to.
+            //
+            // The id comes from the intent value, which is the activated button's — so it names
+            // the row that was clicked and no other. Read from a shared hidden input it named
+            // whichever resolved row happened to render first.
+            let resolved = body
+                .get(INTENT)
+                .and_then(page::proposed_entity)
+                .and_then(|id| context.agents.get(id).map(|agent| (id, agent)));
+            let Some((entity_id, agent)) = resolved else {
+                span.record("form.outcome", "propose_unresolved_entity");
+                tracing::info!("refused a change proposal naming no resolvable entity");
+                return refused(state, user, shortcode, context, headers, PROPOSE_REFUSED_UNKNOWN_ENTITY);
+            };
+            let kind = match agent.kind {
+                editor_core::agents::AgentKind::Person => ProposalKind::Person,
+                editor_core::agents::AgentKind::Organization => ProposalKind::Organization,
+            };
+            // `published_body` and not "whatever this scope resolves": a proposal must be seeded
+            // from the published entity, never from another proposal's payload. The agent resolved
+            // above, and only the published store answers `seed_payload`, so a `None` here means
+            // the id resolved through a proposal rather than a file — which `create_change` has
+            // nothing to change.
+            let Some(seed) = context.agents.seed_payload(entity_id) else {
+                span.record("form.outcome", "unknown_entity");
+                tracing::info!(proposal.entity_id = %entity_id, "refused a change to an unpublished entity");
+                return refused(state, user, shortcode, context, headers, PROPOSE_REFUSED_UNKNOWN_ENTITY);
+            };
+            let proposal = EntityProposal {
+                id: Uuid::new_v4(),
+                shortcode: normalize_shortcode(shortcode),
+                entity_id: entity_id.to_string(),
+                kind,
+                operation: ProposalOperation::Change,
+                // Seeded with the whole published entity, `id` stripped. Not a nicety: accepting
+                // this proposal writes its payload as the entity file, so a payload holding only
+                // the members a form renders would silently drop `affiliations`, `sameAs`,
+                // `email`, `alternativeName`, `canton` and `additional`. This is the property
+                // `ProjectDraft` gives a project — carry every member the editor does not manage,
+                // unchanged — and an entity needs it for the same reason.
+                //
+                // `seed_payload` is what removes `id`; see its docs and `EntityProposal::payload`
+                // for why the payload must not carry one.
+                payload: seed.to_string(),
+                status: ProposalStatus::Draft,
+                proposed_by: Some(user.id),
+                created_at: now,
+                updated_at: now,
+                decision: None,
+                decided_by: None,
+                decided_at: None,
+            };
+            EntityProposalRepository::create_change(&*state.db, &proposal)
+                .await
+                .map(|()| (proposal.entity_id, kind, ProposalOperation::Change))
+        }
+        _ => unreachable!("propose is dispatched to only for the three propose intents"),
+    };
+
+    match outcome {
+        Ok((entity_id, kind, operation)) => {
+            span.record("form.outcome", "proposed");
+            tracing::info!(proposal.entity_id = %entity_id, proposal.kind = %kind, "started an entity proposal");
+            proposed(
+                state, user, shortcode, section_id, context, headers, kind, operation, &entity_id,
+            )
+            .await
+        }
+        // `entity_proposals_allocated_id` (only reachable from `ProposePerson`/`ProposeOrganization`,
+        // since it applies to `operation = 'new'` rows alone) is a genuine allocation race;
+        // `entity_proposals_live_per_entity` (only reachable from `ProposeChanges`) is an ordinary
+        // double-click. Both are refusals, not 500s.
+        Err(RepositoryError::Conflict { .. }) => {
+            span.record("form.outcome", "propose_conflict");
+            let message = if intent == Intent::ProposeChanges {
+                PROPOSE_REFUSED_ALREADY_LIVE
+            } else {
+                PROPOSE_REFUSED_RACED
+            };
+            tracing::info!("refused a proposal that raced an existing one");
+            refused(state, user, shortcode, context, headers, message)
+        }
+        Err(error) => {
+            span.record("form.outcome", "store_failed");
+            tracing::error!(error = %error, "could not record an entity proposal");
+            refused(state, user, shortcode, context, headers, PROPOSE_REFUSED_STORAGE)
+        }
+    }
+}
+
+/// A proposal was started: named with its kind and id, and linked to the entity form it will one
+/// day have.
+///
+/// Neither path redirects, unlike a save or a phase change. Datastar processes a body only on a
+/// 200, so a redirect the enhanced path followed would merge the entity form's whole page into the
+/// section region; re-rendering answers both renderings identically, the same way a refusal does,
+/// and the notice carries the link instead.
+#[allow(clippy::too_many_arguments)]
+async fn proposed(
+    state: &AppState,
+    user: &User,
+    shortcode: &str,
+    section_id: &str,
+    context: &Context<'_>,
+    headers: HeaderMap,
+    kind: ProposalKind,
+    operation: ProposalOperation,
+    entity_id: &str,
+) -> Response {
+    let notice = page::Notice::Proposed { kind, operation, entity_id };
+    let signed_out_at = context.signed_out_at;
+    // Re-resolved like `phase_changed`, so the picker and the proposals summary this same render
+    // shows already carry what was just started — without it a depositor could not yet name the id
+    // they just allocated anywhere else on the page they are looking at.
+    match self::context(state, user, shortcode, section_id, signed_out_at).await {
+        Ok(fresh) => {
+            let rendering = Rendering { notice: Some(notice), ..Rendering::default() };
+            if is_enhanced(&headers) {
+                region(shortcode, &fresh, rendering)
+            } else {
+                render_page(state, user, shortcode, &fresh, rendering)
+            }
+        }
+        // The write landed; only the re-read did not. Unlike `phase_changed`, this must never
+        // redirect — for the reason this function's own docs give about the enhanced path — so the
+        // fallback re-renders what is already in hand instead.
+        Err(_) => {
+            let rendering = Rendering { notice: Some(notice), ..Rendering::default() };
+            if is_enhanced(&headers) {
+                region(shortcode, context, rendering)
+            } else {
+                render_page(state, user, shortcode, context, rendering)
+            }
         }
     }
 }
@@ -1196,7 +1489,11 @@ async fn withdraw(
 }
 
 /// Whether this request came from the Datastar bundle.
-fn is_enhanced(headers: &HeaderMap) -> bool {
+///
+/// `pub(crate)` so the entity form (`entities.rs`) answers the same two ways
+/// this form does, from one definition — a second copy could drift on which
+/// header name it checks.
+pub(crate) fn is_enhanced(headers: &HeaderMap) -> bool {
     headers.contains_key(DATASTAR_REQUEST)
 }
 
@@ -1301,11 +1598,37 @@ fn refused_with(
     let rendering = Rendering {
         notice: Some(page::Notice::Refused(message)),
         errors,
+        proposal_findings: &[],
         confirming: None,
         adding_row: None,
         // A refusal re-renders what was typed, which for a repeatable field
         // includes a row that has been added but not filled in.
         keep_posted: true,
+    };
+    if is_enhanced(&headers) {
+        return region(shortcode, context, rendering);
+    }
+    render_page(state, user, shortcode, context, rendering)
+}
+
+/// A submission refused because one of this project's own proposals is not finished yet.
+///
+/// Its own function rather than another `refused_with` argument: every other call site passes an
+/// empty proposal-findings slice, and a ninth optional-shaped parameter next to `errors` is exactly
+/// the kind of adjacent-arguments mistake this file's own `Rendering` struct exists to rule out.
+fn refused_with_proposal_findings(
+    state: &AppState,
+    user: &User,
+    shortcode: &str,
+    context: &Context<'_>,
+    headers: HeaderMap,
+    findings: &[(String, ProposalKind, String)],
+) -> Response {
+    let rendering = Rendering {
+        notice: Some(page::Notice::Refused(SUBMIT_REFUSED_PROPOSAL_INCOMPLETE)),
+        proposal_findings: findings,
+        keep_posted: true,
+        ..Rendering::default()
     };
     if is_enhanced(&headers) {
         return region(shortcode, context, rendering);
@@ -1323,6 +1646,13 @@ fn refused_with(
 struct Rendering<'a> {
     notice: Option<page::Notice<'a>>,
     errors: &'a [(String, String)],
+    /// Findings against this project's own live proposals (the submit gate below), each keyed by
+    /// which proposal and what needs finishing.
+    ///
+    /// A parallel channel to `errors` rather than sharing it: a proposal is not a registry field,
+    /// so `errors_elsewhere`'s field-id lookup would resolve to nothing and silently drop every
+    /// one of these.
+    proposal_findings: &'a [(String, ProposalKind, String)],
     confirming: Option<page::Confirmation>,
     /// The field one more blank row was just asked for.
     adding_row: Option<&'a str>,
@@ -1417,6 +1747,8 @@ fn view<'a>(
         may_discard: context.record.is_some() && context.locked.is_none(),
         confirming: rendering.confirming,
         errors: rendering.errors,
+        proposal_findings: rendering.proposal_findings,
+        proposals: &context.proposals,
         round: context.round.as_ref().map(|round| page::RoundSummary {
             outcome: round.outcome,
             note: round.note.as_deref(),
@@ -1432,7 +1764,7 @@ fn view<'a>(
         baseline: stored.baseline.as_deref(),
         signed_out_at: stored.signed_out_at.as_deref(),
         notice: rendering.notice,
-        agents: Some(context.agents),
+        agents: Some(&context.agents),
         posted: rendering.keep_posted.then_some(context.posted).flatten(),
         adding_row: rendering.adding_row,
         rows_action: format!("/projects/{shortcode}/sections/{}/fields", context.section.id),
@@ -3582,6 +3914,386 @@ mod tests {
         );
         let response = app.clone().oneshot(request).await.expect("completes");
         assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    }
+
+    /// Every proposal stored for `shortcode`, for asserting on what a propose intent wrote.
+    async fn proposals_for(state: &AppState, shortcode: &str) -> Vec<EntityProposal> {
+        EntityProposalRepository::list_for_shortcode(&*state.db, shortcode)
+            .await
+            .expect("proposals should read")
+    }
+
+    #[tokio::test]
+    async fn propose_person_allocates_against_the_committed_corpus_and_names_the_id() {
+        let (state, _) = test_state("section-propose-person").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let response = as_session(&app, post(OVERVIEW, "intent=propose-person"), &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = body_string(response).await;
+        assert!(body.contains("person-417"), "{body}");
+
+        let proposals = proposals_for(&state, "0801d").await;
+        assert_eq!(proposals.len(), 1, "{proposals:?}");
+        assert_eq!(proposals[0].entity_id, "person-417");
+        assert_eq!(proposals[0].kind, ProposalKind::Person);
+        assert_eq!(proposals[0].operation, ProposalOperation::New);
+        assert_eq!(proposals[0].status, ProposalStatus::Draft);
+        assert_eq!(proposals[0].proposed_by, Some(user.id));
+    }
+
+    #[tokio::test]
+    async fn propose_organization_allocates_against_the_committed_corpus() {
+        let (state, _) = test_state("section-propose-organization").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let response = as_session(&app, post(OVERVIEW, "intent=propose-organization"), &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(body_string(response).await.contains("organization-143"));
+
+        let proposals = proposals_for(&state, "0801d").await;
+        assert_eq!(proposals.len(), 1, "{proposals:?}");
+        assert_eq!(proposals[0].entity_id, "organization-143");
+        assert_eq!(proposals[0].kind, ProposalKind::Organization);
+    }
+
+    #[tokio::test]
+    async fn proposing_twice_allocates_two_different_ids() {
+        let (state, _) = test_state("section-propose-twice").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        as_session(&app, post(OVERVIEW, "intent=propose-person"), &session).await;
+        as_session(&app, post(OVERVIEW, "intent=propose-person"), &session).await;
+
+        let mut ids: Vec<String> = proposals_for(&state, "0801d").await.into_iter().map(|p| p.entity_id).collect();
+        ids.sort();
+        assert_eq!(ids, vec!["person-417".to_string(), "person-418".to_string()]);
+    }
+
+    #[tokio::test]
+    async fn a_propose_intent_saves_the_posted_body_first() {
+        // Same reasoning as submit's own comment: starting a proposal must not cost the depositor
+        // whatever they had just typed.
+        let (state, _) = test_state("section-propose-saves-first").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        as_session(&app, post(OVERVIEW, "name=A+New+Title&intent=propose-person"), &session).await;
+
+        let draft = DraftRepository::find(&*state.db, "0801d").await.unwrap().expect("a draft");
+        assert!(draft.payload.contains("A New Title"), "{}", draft.payload);
+    }
+
+    #[tokio::test]
+    async fn propose_changes_with_an_id_that_resolves_to_nobody_creates_nothing_and_refuses() {
+        let (state, _) = test_state("section-propose-changes-unknown").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let response = as_session(&app, post(OVERVIEW, "intent=propose-changes:person-999"), &session).await;
+        assert_eq!(response.status(), StatusCode::OK, "a refusal, not a 500");
+        assert!(
+            body_string(response).await.contains("nothing was started"),
+            "the reason is stated"
+        );
+        assert!(proposals_for(&state, "0801d").await.is_empty());
+    }
+
+    /// The bug two reviewers found independently, driven through the **rendered markup** rather
+    /// than a hand-built body.
+    ///
+    /// A section renders every one of its fields inside one `<form>`, so a project with two
+    /// resolved agent references renders two "Propose changes" controls. Both a native submit and
+    /// Datastar's form mode post every *field* regardless of which button was clicked, so when the
+    /// entity rode in a hidden input the body carried both ids and `FormBody::get` took the first:
+    /// clicking the second row's button proposed a change to the first row's entity, silently. Only
+    /// the activated **button** posts its name and value, which is why the id lives there.
+    ///
+    /// The old tests could not catch this: each hand-crafted a body with one `propose.entity`
+    /// value, so the collision never existed in them.
+    #[tokio::test]
+    async fn propose_changes_targets_the_row_whose_button_was_clicked() {
+        let (state, _) = test_state("section-propose-changes-second-row").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        const CONTRIBUTORS: &str = "/projects/0801d/sections/contributors";
+
+        // Two resolved contributors, saved through the form itself so the stored draft is exactly
+        // what a depositor would have produced — and so the render below is the real markup.
+        as_session(
+            &app,
+            post(
+                CONTRIBUTORS,
+                "attributions.row=r0&attributions.r0.contributor=person-001&attributions.r0.role=Author\
+                 &attributions.row=r1&attributions.r1.contributor=organization-008&attributions.r1.role=Funder",
+            ),
+            &session,
+        )
+        .await;
+
+        let rendered = body_string(as_session(&app, get(CONTRIBUTORS), &session).await).await;
+        assert!(
+            rendered.contains(r#"value="propose-changes:person-001""#)
+                && rendered.contains(r#"value="propose-changes:organization-008""#),
+            "both rows must offer their own control: {rendered}"
+        );
+        // Neither row may put the id in a field every submit carries.
+        assert!(!rendered.contains(r#"name="propose.entity""#), "{rendered}");
+
+        // Click the **second** row's control, exactly as the markup posts it.
+        as_session(&app, post(CONTRIBUTORS, "intent=propose-changes:organization-008"), &session).await;
+
+        let proposals = proposals_for(&state, "0801d").await;
+        assert_eq!(proposals.len(), 1, "{proposals:?}");
+        assert_eq!(
+            proposals[0].entity_id, "organization-008",
+            "the clicked row's entity, not whichever rendered first"
+        );
+    }
+
+    #[tokio::test]
+    async fn propose_changes_twice_for_one_entity_refuses_the_second_without_a_500() {
+        let (state, _) = test_state("section-propose-changes-twice").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let body = "intent=propose-changes:organization-008";
+
+        let first = as_session(&app, post(OVERVIEW, body), &session).await;
+        assert_eq!(first.status(), StatusCode::OK);
+
+        let second = as_session(&app, post(OVERVIEW, body), &session).await;
+        assert_eq!(second.status(), StatusCode::OK, "a refusal, not a 500");
+        assert!(body_string(second).await.contains("already has a change proposed"));
+
+        let proposals = proposals_for(&state, "0801d").await;
+        assert_eq!(proposals.len(), 1, "the second attempt created nothing: {proposals:?}");
+    }
+
+    #[tokio::test]
+    async fn a_change_proposal_is_seeded_with_the_whole_published_entity_minus_its_id() {
+        // Accepting a change proposal writes its payload as the entity file, so an unseeded
+        // payload is data loss: `organization-001` carries a four-member `address` that no
+        // organisation form would have to render for the member to survive. This is the property
+        // `ProjectDraft` gives a project, applied to an entity.
+        let (state, _) = test_state("section-propose-changes-seeded").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        as_session(&app, post(OVERVIEW, "intent=propose-changes:organization-001"), &session).await;
+
+        let proposals = proposals_for(&state, "0801d").await;
+        let payload: serde_json::Value =
+            serde_json::from_str(&proposals[0].payload).expect("the seeded payload is JSON");
+        assert_eq!(payload["name"], "Université de Lausanne");
+        assert_eq!(payload["url"], "https://www.unil.ch/");
+        assert_eq!(
+            payload["address"]["locality"], "Lausanne",
+            "a member no form has to render survives"
+        );
+        assert!(
+            payload.get("id").is_none(),
+            "the payload must not carry `id` — it lives in entity_id"
+        );
+        assert_eq!(proposals[0].entity_id, "organization-001");
+    }
+
+    /// Decision 5 on the issue, end to end.
+    ///
+    /// `organization-065` (Tanta University) is committed with no `postalCode`. A depositor
+    /// proposing any other change to it must not be made to invent one — REQ-3.4's "all four or
+    /// omit `address`" applies to what they wrote, not to what they inherited. The same carve-out
+    /// `typed_sentinels` already makes for a reference `url` because `0110_h-steiner` holds
+    /// `MISSING`.
+    ///
+    /// This is the test that would have caught the carve-out shipping as dead code: it only passes
+    /// once this layer can hand `check_organization` the published entity to compare against.
+    #[tokio::test]
+    async fn a_change_to_an_organisation_with_an_already_incomplete_address_can_be_submitted() {
+        let (state, _) = test_state("section-propose-changes-grandfathered").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        as_session(&app, post(OVERVIEW, "intent=propose-changes:organization-065"), &session).await;
+
+        let proposals = proposals_for(&state, "0801d").await;
+        let payload: serde_json::Value = serde_json::from_str(&proposals[0].payload).expect("JSON");
+        assert!(
+            payload["address"]["postalCode"].as_str().unwrap_or_default().is_empty(),
+            "the seed really is incomplete, or this test proves nothing: {payload}"
+        );
+
+        let response = as_session(&app, post(OVERVIEW, "intent=submit"), &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = body_string(response).await;
+        assert!(
+            !body.contains("has not been finished"),
+            "an inherited incomplete address must not refuse the submission: {body}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_propose_intent_against_a_locked_project_is_refused() {
+        let (state, _) = test_state("section-propose-locked").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        a_submission(&state, "0801d", user.id, SubmissionState::InReview).await;
+        let app = test_app(&state);
+
+        let response = as_session(&app, post(OVERVIEW, "intent=propose-person"), &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(body_string(response).await.contains("in review"));
+        assert!(proposals_for(&state, "0801d").await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn submit_is_refused_when_a_live_proposal_has_findings_and_names_it() {
+        let (state, _) = test_state("section-submit-proposal-findings").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        // Started with an empty payload, which is what `propose-person` always creates — nothing
+        // has filled it in yet, so `check_person` has plenty to find.
+        as_session(&app, post(OVERVIEW, "intent=propose-person"), &session).await;
+
+        let response = as_session(&app, post(OVERVIEW, "intent=submit"), &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = body_string(response).await;
+        assert!(body.contains("has not been finished"), "{body}");
+        assert!(body.contains("person-417"), "names the proposal: {body}");
+        assert_eq!(
+            SubmissionRepository::find_by_shortcode(&*state.db, "0801d").await.unwrap(),
+            None,
+            "nothing was submitted"
+        );
+    }
+
+    #[tokio::test]
+    async fn submit_passes_once_the_proposals_payload_satisfies_its_checks() {
+        let (state, _) = test_state("section-submit-proposal-satisfied").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        // Alongside a genuine change to the draft: the project otherwise equals what is published,
+        // and submit's own "nothing to review" gate would refuse it for that reason instead —
+        // proving nothing about the proposal gate this test is for.
+        as_session(&app, post(OVERVIEW, "name=Updated+Title&intent=propose-person"), &session).await;
+        let proposal = proposals_for(&state, "0801d").await.into_iter().next().expect("the proposal");
+        EntityProposalRepository::update_payload(
+            &*state.db,
+            proposal.id,
+            r#"{"givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#,
+            Utc::now(),
+        )
+        .await
+        .unwrap();
+
+        // A successful submit redirects on the plain path (POST-redirect-GET), unlike every
+        // refusal above, which re-renders at `200` — so the status code alone is the first proof
+        // the proposal gate let this through.
+        let response = as_session(&app, post(OVERVIEW, "name=Updated+Title&intent=submit"), &session).await;
+        assert_eq!(
+            response.status(),
+            StatusCode::SEE_OTHER,
+            "a refusal would re-render at 200 instead"
+        );
+        assert_eq!(
+            SubmissionRepository::find_by_shortcode(&*state.db, "0801d")
+                .await
+                .unwrap()
+                .map(|submission| submission.state),
+            Some(SubmissionState::Submitted)
+        );
+    }
+
+    #[tokio::test]
+    async fn a_just_allocated_id_resolves_in_the_picker_once_its_payload_is_filled_in() {
+        // `payload: "{}"` is what `propose-person` always stores, and it does not deserialize into
+        // a `Person` — so it cannot resolve yet, exactly like an entity form nobody has saved. This
+        // fills it in directly through the repository, standing in for the entity form this chunk
+        // does not build, and checks the plumbing this chunk does own: `AgentScope::with_proposals`
+        // wired into the section context.
+        let (state, _) = test_state("section-propose-resolves").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        as_session(&app, post(OVERVIEW, "intent=propose-person"), &session).await;
+        let proposal = proposals_for(&state, "0801d").await.into_iter().next().expect("the proposal");
+        EntityProposalRepository::update_payload(
+            &*state.db,
+            proposal.id,
+            r#"{"givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#,
+            Utc::now(),
+        )
+        .await
+        .unwrap();
+
+        // The `<datalist>` — and the summary panel — render only on a section holding an agent
+        // field, which "overview" is not: `contactPoint`/`attributions` are "contributors".
+        const CONTRIBUTORS: &str = "/projects/0801d/sections/contributors";
+        let opened = body_string(as_session(&app, get(CONTRIBUTORS), &session).await).await;
+        assert!(opened.contains(r#"option value="person-417""#), "{opened}");
+
+        // And a field naming it is no longer refused as unresolvable.
+        as_session(
+            &app,
+            post(CONTRIBUTORS, "contactPoint.row=0&contactPoint.0=person-417"),
+            &session,
+        )
+        .await;
+        let refusal = as_session(&app, post(CONTRIBUTORS, "intent=submit"), &session).await;
+        assert!(
+            !body_string(refusal)
+                .await
+                .contains("is not a person or organisation the repository knows"),
+            "person-417 must resolve now that it has a name"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_proposals_summary_lists_a_live_proposal_and_is_absent_with_none() {
+        // The summary is gated like the `<datalist>`, on a section holding an agent field —
+        // "contributors" (`contactPoint`/`attributions`), not "overview".
+        const CONTRIBUTORS: &str = "/projects/0801d/sections/contributors";
+        let (state, _) = test_state("section-propose-summary").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let before = body_string(as_session(&app, get(CONTRIBUTORS), &session).await).await;
+        assert!(
+            !before.contains("Proposed persons and organisations"),
+            "an empty panel reads as broken: {before}"
+        );
+
+        as_session(&app, post(OVERVIEW, "intent=propose-organization"), &session).await;
+
+        let after = body_string(as_session(&app, get(CONTRIBUTORS), &session).await).await;
+        assert!(after.contains("Proposed persons and organisations"), "{after}");
+        // At `h2`, not `h3`. This panel renders above the section form, whose own title is an
+        // `h2`, under the page's single `h1` — as an `h3` the outline ran 1 -> 3 -> 2, so a reader
+        // navigating by heading level got a broken tree and one jumping from the `h1` to the next
+        // `h2` skipped the panel although it comes first in reading order.
+        assert!(
+            after.contains(r#"<h2 class="font-display text-base mb-2">Proposed persons and organisations</h2>"#),
+            "the summary heading must be an h2: {after}"
+        );
+        assert!(after.contains("organization-143"), "{after}");
+        assert!(after.contains("Organisation"), "the kind is named: {after}");
     }
 
     /// The projects the end-to-end round-trip drives, and the trap each carries.

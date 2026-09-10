@@ -26,6 +26,28 @@ pub(super) fn optional_uuid_column(row: &Row<'_>, index: usize) -> rusqlite::Res
     .transpose()
 }
 
+/// Read a nullable TEXT column through its [`FromStr`].
+///
+/// [`parsed_column`]'s shape for a column that is both parsed and nullable —
+/// `entity_proposals.decision`, where null is "undecided" and any stored word
+/// outside the vocabulary must surface rather than become a decision nobody
+/// took. Here rather than beside its one caller for the reason
+/// [`optional_uuid_column`] is: the pairing of a parse with a null is a
+/// mapping concern, and a second copy of it would be free to forget the
+/// `FromSqlConversionFailure`.
+pub(super) fn optional_parsed_column<T>(row: &Row<'_>, index: usize) -> rusqlite::Result<Option<T>>
+where
+    T: FromStr,
+    T::Err: std::error::Error + Send + Sync + 'static,
+{
+    let raw: Option<String> = row.get(index)?;
+    raw.map(|raw| {
+        raw.parse()
+            .map_err(|e| rusqlite::Error::FromSqlConversionFailure(index, Type::Text, Box::new(e)))
+    })
+    .transpose()
+}
+
 /// Read a TEXT column through its [`FromStr`] — the stored form of `role` and
 /// `state`, both of which also carry a `CHECK` constraint in the schema.
 pub(super) fn parsed_column<T>(row: &Row<'_>, index: usize) -> rusqlite::Result<T>

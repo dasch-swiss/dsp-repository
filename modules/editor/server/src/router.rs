@@ -237,6 +237,22 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
             "/projects/{shortcode}/sections/{section}/fields/{field}/{key}/remove",
             post(crate::sections::remove_row),
         )
+        // The entity form (US-3): one person or organisation proposal. `{proposal}` is the
+        // proposal's `entity_id`, the same value `pages::section` already links to — see
+        // `entities.rs`'s module docs for why. One `GET`/`POST` pair for the same reason the
+        // section form's is: a rejected save re-renders at a path that still answers `GET`.
+        .route(
+            "/projects/{shortcode}/entities/{proposal}",
+            get(crate::entities::show).post(crate::entities::act),
+        )
+        .route(
+            "/projects/{shortcode}/entities/{proposal}/fields/{field}/add",
+            post(crate::entities::add_row),
+        )
+        .route(
+            "/projects/{shortcode}/entities/{proposal}/fields/{field}/{key}/remove",
+            post(crate::entities::remove_row),
+        )
         // --- RDU-only routes ---
         // `Rdu` composes `Authenticated`, so these are closed twice over: no
         // session redirects to login, and a depositor's session gets the 403

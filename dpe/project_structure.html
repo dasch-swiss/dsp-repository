@@ -285,8 +285,10 @@ supplies its own directory. See <code>modules/platform/README.md</code>.</p>
 <li><strong>Repository traits</strong>: <code>ProjectRepository</code>, <code>RecordRepository</code></li>
 <li><strong>Fs implementations</strong>: <code>FsProjectRepository</code>, <code>FsRecordRepository</code> (backed by in-memory caches)</li>
 <li><strong>Data loading</strong>: project, record, person, organization, cluster and the two temporal caches (<code>OnceLock&lt;…&gt;</code>) loaded from <code>DPE_DATA_DIR</code> on first access</li>
-<li><strong>Utilities</strong>: <code>lang_value()</code>, <code>language_display_name()</code>, <code>get_data_dir()</code></li>
+<li><strong>Utilities</strong>: <code>lang_value()</code>, <code>language_display_name()</code>, <code>get_data_dir()</code>, <code>get_public_dir()</code></li>
+<li><strong>Static-asset lookup</strong>: <code>cover_image_cache</code> scans <code>&lt;public dir&gt;/assets/images</code> once for the per-project cover images, so a view can tell whether a project has one before rendering an <code>&lt;img&gt;</code></li>
 </ul>
+<p>The directory paths and display flags are process-global <code>OnceLock</code>s set from <code>dpe-server</code>'s config at startup (<code>set_data_dir</code>, <code>set_public_dir</code>, <code>set_show_placeholder_values</code>) and read directly by <code>dpe-web</code> views, which take no application state. Reuse that pattern rather than threading new values through <code>AppState</code>.</p>
 <p>Dependencies: <code>platform-metadata</code>, <code>serde</code>, <code>serde_json</code>, <code>tracing</code>, <code>ureq</code>.</p>
 <h3 id="dpe-api-oai-api-oai"><a class="header" href="#dpe-api-oai-api-oai"><code>dpe-api-oai</code> (api-oai/)</a></h3>
 <p>OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord). Usage is documented in <a href="./oai-pmh.html">OAI-PMH Endpoint</a>.</p>

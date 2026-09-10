@@ -97,6 +97,7 @@ mod tests {
     const EXPECTED_TABLES: &[&str] = &[
         "approved_records",
         "drafts",
+        "entity_proposals",
         "login_codes",
         "mail_sends",
         "review_rounds",

@@ -17,11 +17,12 @@
 //! depositor who cannot find "Keywords" in the section the published page shows
 //! it in would otherwise conclude the form lost it.
 
-use editor_core::agents::Agents;
+use editor_core::agents::{Agent, AgentScope};
 use editor_core::draft::{ProjectDraft, UrlSlot};
 use editor_core::form::{ChoiceSet, FormBody, Shape, GRANTS_KIND, REFERENCE_KIND};
 use editor_core::multilingual::{DraftMultilingual, UI_LANGUAGES};
 use maud::{html, Markup};
+use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::checkbox_group::checkbox_group;
 use mosaic_tiles::radio_group::radio_group;
 use mosaic_tiles::repeatable_list::repeatable_list;
@@ -34,6 +35,8 @@ use platform_metadata::project::CONTRIBUTOR_ROLES;
 use serde_json::Value;
 
 use super::registry::{Field, Obligation};
+use crate::form::INTENT;
+use crate::pages::section::{propose_changes_intent, PROPOSE_ORGANIZATION, PROPOSE_PERSON};
 
 /// Whether the form is open for editing.
 ///
@@ -91,7 +94,11 @@ pub fn field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<'_>
 /// naming nothing is worse than no `for` at all. The heading and the value are
 /// tied by proximity and by the same `field-*` treatment the tiles use, so a
 /// locked form reads as the same form.
-fn stated(field: &Field, draft: &ProjectDraft, why: Option<&str>) -> Markup {
+///
+/// `pub(crate)`: `crate::entity` reuses this verbatim for a proposal that is
+/// no longer live, rather than a second read-only renderer that could show a
+/// person or organisation's values differently from a project's.
+pub(crate) fn stated(field: &Field, draft: &ProjectDraft, why: Option<&str>) -> Markup {
     let editable_but_unbuilt = !field.display_only && field.shape.is_none();
     html! {
         div class="field" {
@@ -298,7 +305,18 @@ pub struct Rows<'a> {
     ///
     /// `None` renders the id bare, which is what a deployment with no data
     /// directory looks like — honest, and it still round-trips.
-    pub agents: Option<&'a Agents>,
+    pub agents: Option<&'a AgentScope<'a>>,
+    /// Whether an unresolved or resolved agent id also renders the controls that
+    /// start an entity proposal (REQ-3.1, REQ-3.2).
+    ///
+    /// Defaults to `false` (via `Rows`'s `Default`) rather than being inferred
+    /// from `agents.is_some()`: the entity form's own `affiliations` field reuses
+    /// this same row widget for its organisation picker, and posting one of
+    /// these buttons there would name an `intent` the entity route does not
+    /// dispatch — a control that silently falls through to a save nothing asked
+    /// for. Only the project section form, which does dispatch all three
+    /// intents, turns this on.
+    pub propose: bool,
 }
 
 /// The keys of the rows to render for `field`, in display order.
@@ -375,7 +393,7 @@ fn row_value(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, key: &str, pos
 /// Shares every piece of the row protocol with [`multilingual_rows`] — the
 /// hidden `{field}.row` key, the empty marker, the add and remove actions — and
 /// differs only in what a row contains.
-fn string_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
+pub(crate) fn string_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     let keys = row_keys(field, draft, rows);
     let stored = stored_rows(field, draft);
     let action = format!("{}/{}", rows.action, field.id);
@@ -424,7 +442,7 @@ pub(crate) const AGENT_LIST_ID: &str = "agent-suggestions";
 /// the dropdown reads as a list of people and organisations rather than of
 /// ids. The kind is stated beside the name because two committed organisations
 /// have person-like names.
-pub fn agent_suggestions(agents: &Agents) -> Markup {
+pub fn agent_suggestions(agents: &AgentScope) -> Markup {
     html! {
         datalist id=(AGENT_LIST_ID) {
             @for agent in agents.all() {
@@ -442,7 +460,7 @@ pub fn agent_suggestions(agents: &Agents) -> Markup {
 /// differently. The name is rendered beside the control instead, so a reader is
 /// not left looking at `person-001` — and an id that resolves to nobody says so
 /// there, which is the same thing submit refuses.
-fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
+pub(crate) fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     let keys = row_keys(field, draft, rows);
     let stored = stored_rows(field, draft);
     let action = format!("{}/{}", rows.action, field.id);
@@ -460,13 +478,19 @@ fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
             .input_type(InputType::Text)
             .value(id)
             .list(AGENT_LIST_ID);
-        match rows.agents.and_then(|agents| agents.get(id)) {
+        let resolved = rows.agents.and_then(|agents| agents.get(id));
+        match resolved {
             Some(found) => agent = agent.hint(format!("{} ({})", found.label, found.kind.label())),
             None if !id.trim().is_empty() => agent = agent.error(UNRESOLVED_AGENT),
             None => {}
         }
         let body = html! {
-            (agent)
+            div class="flex flex-col gap-2" {
+                (agent)
+                @if rows.propose {
+                    (propose_controls(resolved, id, &format!("row {}", position + 1)))
+                }
+            }
         };
         list = list.row(key, body);
     }
@@ -475,6 +499,59 @@ fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     }
     html! {
         (list)
+    }
+}
+
+/// REQ-3.1 and REQ-3.2's controls, beside an agent picker whose id does not
+/// resolve or does: named submits on the section's own form, exactly like
+/// `save`/`submit` — `sections.rs` already dispatches all three intents, so
+/// none of this needs a route of its own.
+///
+/// `id` empty renders nothing: an unfilled picker is not "no match", it is
+/// "nothing typed yet", and offering to propose an entity for it would be
+/// offering to propose nobody.
+///
+/// `row_context` is spliced into each button's accessible name, the same
+/// reason [`row_label`] numbers a row's own control: several rows' propose
+/// buttons would otherwise share one indistinguishable name.
+fn propose_controls(resolved: Option<&Agent>, id: &str, row_context: &str) -> Markup {
+    if id.trim().is_empty() {
+        return html! {};
+    }
+    html! {
+        @match resolved {
+            None => {
+                div class="flex flex-wrap gap-2" {
+                    ({
+                        button("Propose a new person")
+                            .variant(ButtonVariant::Secondary)
+                            .button_type(ButtonType::Submit)
+                            .name_value(INTENT, PROPOSE_PERSON)
+                            .aria_label(format!("Propose a new person ({row_context})"))
+                    })
+                    ({
+                        button("Propose a new organisation")
+                            .variant(ButtonVariant::Secondary)
+                            .button_type(ButtonType::Submit)
+                            .name_value(INTENT, PROPOSE_ORGANIZATION)
+                            .aria_label(
+                                format!("Propose a new organisation ({row_context})"),
+                            )
+                    })
+                }
+            }
+            Some(_) => {
+                div class="flex flex-wrap items-center gap-2" {
+                    ({
+                        button("Propose changes")
+                            .variant(ButtonVariant::Secondary)
+                            .button_type(ButtonType::Submit)
+                            .name_value(INTENT, propose_changes_intent(id))
+                            .aria_label(format!("Propose changes ({row_context})"))
+                    })
+                }
+            }
+        }
     }
 }
 
@@ -532,7 +609,8 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
             .input_type(InputType::Text)
             .value(&contributor)
             .list(AGENT_LIST_ID);
-        match rows.agents.and_then(|agents| agents.get(contributor.trim())) {
+        let resolved = rows.agents.and_then(|agents| agents.get(contributor.trim()));
+        match resolved {
             Some(found) => agent = agent.hint(format!("{} ({})", found.label, found.kind.label())),
             None if !contributor.trim().is_empty() => agent = agent.error(UNRESOLVED_AGENT),
             None => {}
@@ -540,6 +618,15 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
         let body = html! {
             div class="flex flex-col gap-3" {
                 (agent)
+                @if rows.propose {
+                    ({
+                        propose_controls(
+                            resolved,
+                            &contributor,
+                            &format!("row {}", position + 1),
+                        )
+                    })
+                }
                 ({
                     checkbox_group(format!("{prefix}.role"), ROLE_GROUP_LABEL)
                         .options(options.iter().map(|role| (*role, *role)))
@@ -722,7 +809,7 @@ fn row_member(field: &Field, stored: Option<&Value>, rows: Rows<'_>, prefix: &st
 
 /// A list of authority references - the reference half of
 /// [`text_or_reference_rows`], with no variant to choose.
-fn reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, types: &[&str]) -> Markup {
+pub(crate) fn reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, types: &[&str]) -> Markup {
     let keys = row_keys(field, draft, rows);
     let stored = stored_rows(field, draft);
     let action = format!("{}/{}", rows.action, field.id);
@@ -847,22 +934,14 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
                     // price adding a row costs.
                     @for (index, id) in funders.iter().chain(std::iter::once(&String::new())).enumerate() {
                         ({
-                            let resolved = rows
-                                .agents
-                                .and_then(|agents| agents.get(id.trim()));
-                            let label = match resolved {
-                                Some(agent) => format!("{} - {}", FUNDER_LABEL, agent.label),
-                                None if id.trim().is_empty() && index > 0 => {
-                                    ADD_FUNDER_LABEL.to_string()
-                                }
-                                None if id.trim().is_empty() => FUNDER_LABEL.to_string(),
-                                None => format!("{FUNDER_LABEL} - {UNRESOLVED_AGENT}"),
-                            };
-                            text_field(format!("{prefix}.funder"), label)
-                                .input_type(InputType::Text)
-                                .value(id)
-                                .list(AGENT_LIST_ID)
-                                .with_id(format!("{prefix}.funder-{index}"))
+                            funder_control(
+                                &prefix,
+                                index,
+                                id,
+                                rows.agents.and_then(|agents| agents.get(id.trim())),
+                                rows.propose,
+                                &format!("funder {} of grant {}", index + 1, position + 1),
+                            )
                         })
                     }
                     ({
@@ -908,6 +987,37 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
                         .hint(FUNDING_TEXT_HINT)
                 })
             }
+        }
+    }
+}
+
+/// One funder control, plus REQ-3.1/REQ-3.2's propose controls beside it when `propose` is set.
+///
+/// Its own function rather than inline in the funder loop, per this repo's rule on a nested
+/// `html!` `maudfmt` cannot see (a block passed where a call argument is expected).
+fn funder_control(
+    prefix: &str,
+    index: usize,
+    id: &str,
+    resolved: Option<&Agent>,
+    propose: bool,
+    row_context: &str,
+) -> Markup {
+    let label = match resolved {
+        Some(agent) => format!("{} - {}", FUNDER_LABEL, agent.label),
+        None if id.trim().is_empty() && index > 0 => ADD_FUNDER_LABEL.to_string(),
+        None if id.trim().is_empty() => FUNDER_LABEL.to_string(),
+        None => format!("{FUNDER_LABEL} - {UNRESOLVED_AGENT}"),
+    };
+    let field = text_field(format!("{prefix}.funder"), label)
+        .input_type(InputType::Text)
+        .value(id)
+        .list(AGENT_LIST_ID)
+        .with_id(format!("{prefix}.funder-{index}"));
+    html! {
+        div class="flex flex-col gap-2" {
+            (field)
+            @if propose { (propose_controls(resolved, id, row_context)) }
         }
     }
 }
@@ -1269,7 +1379,7 @@ fn long_text(field: &Field, draft: &ProjectDraft, rows: u32, maxlength: Option<u
 /// assistive technology, and each control's `<label>` is the language, so the
 /// group's name can only be a `<legend>`. Same reasoning as the checkbox and
 /// radio tiles, which is why the markup matches theirs.
-fn multilingual(field: &Field, draft: &ProjectDraft, rows: u32) -> Markup {
+pub(crate) fn multilingual(field: &Field, draft: &ProjectDraft, rows: u32) -> Markup {
     let value = draft.multilingual(field.id);
     let tags: Vec<&str> = UI_LANGUAGES.iter().copied().chain(value.extra_tags()).collect();
     let hint_id = field.hint.map(|_| format!("{}-hint", field.id));
@@ -1298,7 +1408,10 @@ fn multilingual(field: &Field, draft: &ProjectDraft, rows: u32) -> Markup {
 /// may be missing anything (REQ-1.9) — which leaves the accessible name as the
 /// only channel the tier has. As a sibling the pill was visible and nothing
 /// else: a reader tabbing to the control heard "Name, edit text".
-fn labelled(field: &Field) -> Markup {
+///
+/// `pub(crate)`: `crate::entity`'s own scalar control reuses this so a person or
+/// organisation's fields carry the pill the same way a project's do.
+pub(crate) fn labelled(field: &Field) -> Markup {
     html! {
         (field.label)
         @if let Some(obligation) = field.obligation {
@@ -1502,5 +1615,63 @@ mod tests {
                 assert!(!out.contains("name="), "{}: {out}", field.id);
             }
         }
+    }
+
+    /// The committed agent set, for a picker that actually has something to resolve against.
+    fn agent_corpus() -> editor_core::agents::Agents {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data");
+        let (agents, errors) = editor_core::agents::Agents::load_from(&dir.join("persons"), &dir.join("organizations"));
+        assert!(errors.is_empty(), "the committed agent set should load: {errors:?}");
+        agents
+    }
+
+    #[test]
+    fn propose_controls_appear_beside_an_unresolved_id_and_not_beside_a_resolved_one() {
+        // REQ-3.1/3.2: the picker cannot know which kind was meant, so both propose buttons offer
+        // beside an id that resolves to nobody; a resolved id offers only "propose changes".
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["organization-008", "person-999999"]));
+        let field = crate::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let rows = Rows {
+            posted: None,
+            action: "/x",
+            adding: None,
+            agents: Some(&scope),
+            propose: true,
+        };
+
+        let out = agent_rows(field, &draft, rows).into_string();
+        assert!(out.contains("Propose a new person"), "{out}");
+        assert!(out.contains("Propose a new organisation"), "{out}");
+        assert!(out.contains("Propose changes"), "{out}");
+        // The resolved id rides in the button's own value, so only the activated one posts it.
+        assert!(out.contains(r#"value="propose-changes:organization-008""#), "{out}");
+        // And nothing carries it in a field every row would post regardless of which button was
+        // clicked — the shape that made row 12's button propose a change to row 1's entity.
+        assert!(!out.contains(r#"name="propose.entity""#), "{out}");
+    }
+
+    #[test]
+    fn propose_controls_are_absent_when_the_row_widget_does_not_opt_in() {
+        // `Rows::propose` defaults to `false` — the entity form's own `affiliations` field reuses
+        // this same widget for its organisation picker, and must not offer a control its route
+        // does not dispatch.
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["person-999999"]));
+        let field = crate::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let rows = Rows {
+            posted: None,
+            action: "/x",
+            adding: None,
+            agents: Some(&scope),
+            propose: false,
+        };
+
+        let out = agent_rows(field, &draft, rows).into_string();
+        assert!(!out.contains("Propose"), "{out}");
     }
 }

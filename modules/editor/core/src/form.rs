@@ -134,6 +134,29 @@ impl FormBody {
         Self { pairs }
     }
 
+    /// The posted pairs with one row of `field_id` dropped, ready for [`Self::from_pairs`].
+    ///
+    /// **The `{field}.row` marker survives removing the last row.** With no marker in the body an
+    /// applier reads the field as absent and leaves the stored value alone, so removing the only
+    /// row would not stick — an empty marker is what says "this field has zero rows now" rather
+    /// than "this field was not posted".
+    ///
+    /// Here rather than in a handler because both write surfaces need it: the project form's
+    /// section rows and the entity form's. Two copies of a rule this subtle can drift silently, and
+    /// the failure is a removal that appears to work and does not.
+    #[must_use]
+    pub fn pairs_without_row(pairs: Vec<(String, String)>, field_id: &str, key: &str) -> Vec<(String, String)> {
+        let row_name = format!("{field_id}.row");
+        let mut kept: Vec<(String, String)> = pairs
+            .into_iter()
+            .filter(|(name, value)| name != &row_name || value != key)
+            .collect();
+        if !kept.iter().any(|(name, _)| name == &row_name) {
+            kept.push((row_name, String::new()));
+        }
+        kept
+    }
+
     /// The first value posted under `name`, or `None` when the name is absent.
     ///
     /// First rather than last: no browser sends a scalar field twice, so a
@@ -1190,6 +1213,46 @@ pub const GRANTS_KIND: &str = "grants";
 
 #[cfg(test)]
 mod tests {
+    /// The marker rule both row-removal call sites depend on.
+    ///
+    /// Removing the last row must leave an empty `{field}.row` behind: with no marker an applier
+    /// reads the field as not posted and leaves the stored value alone, so the removal would
+    /// appear to work and not stick. This is why the rule is one function and not a copy in each
+    /// handler.
+    #[test]
+    fn removing_the_last_row_leaves_an_empty_marker_behind() {
+        let pairs = vec![
+            ("keywords.row".to_string(), "r0".to_string()),
+            ("keywords.r0.en".to_string(), "only".to_string()),
+        ];
+        let kept = super::FormBody::pairs_without_row(pairs, "keywords", "r0");
+        assert!(
+            kept.contains(&("keywords.row".to_string(), String::new())),
+            "the field must still be posted, with zero rows: {kept:?}"
+        );
+    }
+
+    #[test]
+    fn removing_one_of_several_rows_adds_no_marker() {
+        let pairs = vec![
+            ("keywords.row".to_string(), "r0".to_string()),
+            ("keywords.row".to_string(), "r1".to_string()),
+        ];
+        let kept = super::FormBody::pairs_without_row(pairs, "keywords", "r0");
+        assert_eq!(kept, vec![("keywords.row".to_string(), "r1".to_string())]);
+    }
+
+    /// Another field's rows are untouched: the marker name is scoped to `field_id`.
+    #[test]
+    fn a_removal_leaves_another_fields_rows_alone() {
+        let pairs = vec![
+            ("keywords.row".to_string(), "r0".to_string()),
+            ("attributions.row".to_string(), "r0".to_string()),
+        ];
+        let kept = super::FormBody::pairs_without_row(pairs, "keywords", "r0");
+        assert!(kept.contains(&("attributions.row".to_string(), "r0".to_string())), "{kept:?}");
+    }
+
     use serde_json::json;
 
     use super::*;

@@ -62,6 +62,29 @@ pub fn normalize_page_url(url: &str) -> &'static str {
         // have to arrive as the same one.
         if let Some((shortcode, tail)) = rest.split_once('/') {
             if !shortcode.is_empty() {
+                // The entity form for one proposal (US-3), and its row actions. The segment is an
+                // `entity_id`, allocated without bound, so it collapses like every other variable
+                // one here. The row actions need their own entries for the reason the section ones
+                // do, below.
+                if let Some(proposal) = tail.strip_prefix("entities/") {
+                    if proposal.is_empty() {
+                        return "other";
+                    }
+                    if !proposal.contains('/') {
+                        return "/projects/{shortcode}/entities/{proposal}";
+                    }
+                    if let Some(rest) = proposal.split_once('/').map(|(_, rest)| rest) {
+                        if let Some(rest) = rest.strip_prefix("fields/") {
+                            if rest.ends_with("/add") {
+                                return "/projects/{shortcode}/entities/{proposal}/fields/{field}/add";
+                            }
+                            if rest.ends_with("/remove") {
+                                return "/projects/{shortcode}/entities/{proposal}/fields/{field}/{key}/remove";
+                            }
+                        }
+                    }
+                    return "other";
+                }
                 if let Some(section) = tail.strip_prefix("sections/") {
                     if !section.is_empty() && !section.contains('/') {
                         return "/projects/{shortcode}/sections/{section}";
@@ -138,6 +161,43 @@ mod tests {
         assert_eq!(normalize_page_url("/projects/0801d/sections/dataset/fields/keywords"), "other");
         assert_eq!(normalize_page_url("/projects/0801d/sections/dataset/nonsense/x/add"), "other");
     }
+    /// The entity form and its row actions are full-page routes, so each emits a
+    /// beacon of its own. The proposal segment is an `entity_id` — allocated
+    /// without bound, so it has to collapse — and without entries the routes
+    /// land in `"other"` beside genuinely unknown paths.
+    #[test]
+    fn the_entity_form_routes_are_attributed_and_their_segments_collapse() {
+        assert_eq!(
+            normalize_page_url("/projects/0801d/entities/person-417"),
+            "/projects/{shortcode}/entities/{proposal}"
+        );
+        assert_eq!(
+            normalize_page_url("/projects/0801d/entities/person-417/fields/givenNames/add"),
+            "/projects/{shortcode}/entities/{proposal}/fields/{field}/add"
+        );
+        assert_eq!(
+            normalize_page_url("/projects/080C/entities/organization-143/fields/sameAs/r2/remove"),
+            "/projects/{shortcode}/entities/{proposal}/fields/{field}/{key}/remove"
+        );
+        // The shortcode, the entity id, the field id and the row key are all
+        // unbounded, so none of them may reach the attribute verbatim.
+        for url in [
+            "/projects/080C/entities/person-417",
+            "/projects/080C/entities/person-417/fields/givenNames/add",
+            "/projects/080C/entities/organization-143/fields/sameAs/r2/remove",
+        ] {
+            let normalized = normalize_page_url(url);
+            for leaked in ["080C", "person-417", "organization-143", "givenNames", "sameAs", "r2"] {
+                assert!(!normalized.contains(leaked), "{url} leaked {leaked} as {normalized}");
+            }
+        }
+        // A shape that is none of the three stays "other".
+        assert_eq!(normalize_page_url("/projects/0801d/entities"), "other");
+        assert_eq!(normalize_page_url("/projects/0801d/entities/"), "other");
+        assert_eq!(normalize_page_url("/projects/0801d/entities/person-417/nonsense"), "other");
+        assert_eq!(normalize_page_url("/projects/0801d/entities/person-417/fields/x"), "other");
+    }
+
     use super::*;
 
     #[test]

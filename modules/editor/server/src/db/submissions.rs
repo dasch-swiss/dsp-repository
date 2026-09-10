@@ -1,7 +1,14 @@
 //! [`SubmissionRepository`] against SQLite.
+//!
+//! [`create`](Database::create) also flips the project's `draft` proposals to `submitted`, in the
+//! same transaction as the `submissions` INSERT. A submission that exists while its proposals still
+//! read `draft` is a submission RDU cannot review — the review surface selects `submitted` rows —
+//! and nothing in the schema would say the two disagreed, so the two writes cannot be allowed to
+//! land separately.
 
 use async_trait::async_trait;
-use editor_core::records::{Submission, SubmissionState};
+use editor_core::proposals::ProposalStatus;
+use editor_core::records::{normalize_shortcode, Submission, SubmissionState};
 use editor_core::repository::{RepositoryError, Result, SubmissionRepository};
 use rusqlite::{params, Row};
 use uuid::Uuid;
@@ -49,7 +56,31 @@ impl SubmissionRepository for Database {
                     submission.reviewer_note,
                     submission.review_state,
                 ],
-            )
+            )?;
+            // REQ-3.3: a proposal rides with the project's pending submission through the same
+            // review path, so it must carry the same status forward — a `draft` proposal on a
+            // project that is now `submitted` is invisible to the review surface, which selects
+            // `submitted` rows, and nothing in the schema would say the two disagreed.
+            tx.execute(
+                "UPDATE entity_proposals SET status = ?3, updated_at = ?4 \
+                 WHERE shortcode = ?1 AND status = ?2",
+                params![
+                    // Normalized here rather than trusted from the caller. `entity_proposals`
+                    // is keyed on the normalized shortcode — `create_new`/`create_change` always
+                    // fold before insert — while this method stores `submissions.shortcode`
+                    // exactly as given. Keyed on an unfolded `080C` this `UPDATE` matches zero
+                    // rows and reports nothing: the submission exists, its proposals stay
+                    // `draft`, and per this closure's own comment that makes them invisible to
+                    // the review surface with nothing in the schema showing the disagreement.
+                    // 24 of the 85 committed shortcodes are mixed case, so the failing shape is
+                    // ordinary.
+                    normalize_shortcode(&submission.shortcode),
+                    ProposalStatus::Draft.as_str(),
+                    ProposalStatus::Submitted.as_str(),
+                    submission.submitted_at,
+                ],
+            )?;
+            Ok(())
         })
         .await
         // `shortcode` is the only unique index here, so a constraint violation
@@ -128,8 +159,9 @@ impl SubmissionRepository for Database {
 #[cfg(test)]
 mod tests {
     use chrono::{DateTime, TimeZone, Utc};
+    use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation};
     use editor_core::records::{Role, User};
-    use editor_core::repository::UserRepository;
+    use editor_core::repository::{EntityProposalRepository, UserRepository};
 
     use super::super::tests::{count, test_db};
     use super::*;
@@ -166,6 +198,93 @@ mod tests {
             reviewed_at: None,
             reviewer_note: None,
             review_state: None,
+        }
+    }
+
+    fn a_proposal(shortcode: &str, entity_id: &str, status: ProposalStatus) -> EntityProposal {
+        EntityProposal {
+            id: Uuid::new_v4(),
+            shortcode: shortcode.to_string(),
+            entity_id: entity_id.to_string(),
+            kind: ProposalKind::Person,
+            operation: ProposalOperation::New,
+            payload: r#"{"name":"placeholder"}"#.to_string(),
+            status,
+            proposed_by: None,
+            created_at: at(10),
+            updated_at: at(10),
+            decision: None,
+            decided_by: None,
+            decided_at: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_create_flips_its_own_draft_proposals_to_submitted_and_leaves_another_project_alone() {
+        let db = test_db("submissions-create-flips-draft-proposals").await;
+        let own_draft = a_proposal("0801", "person-417", ProposalStatus::Draft);
+        let other_draft = a_proposal("0803", "person-418", ProposalStatus::Draft);
+        EntityProposalRepository::create_change(&db, &own_draft).await.unwrap();
+        EntityProposalRepository::create_change(&db, &other_draft).await.unwrap();
+
+        SubmissionRepository::create(&db, &submission("0801", None, at(11)))
+            .await
+            .unwrap();
+
+        let own = EntityProposalRepository::find(&db, own_draft.id).await.unwrap().unwrap();
+        assert_eq!(own.status, ProposalStatus::Submitted);
+        assert_eq!(own.updated_at, at(11), "stamped from the submission's submitted_at");
+        let other = EntityProposalRepository::find(&db, other_draft.id).await.unwrap().unwrap();
+        assert_eq!(other.status, ProposalStatus::Draft, "another project's proposal is untouched");
+    }
+
+    /// The mixed-case case `review_rounds.rs` has its own test for, on this side of the pair.
+    ///
+    /// `entity_proposals` is keyed on the folded shortcode; this method stores
+    /// `submissions.shortcode` as given. Keyed unfolded, the `UPDATE` matches nothing and says
+    /// nothing — the submission exists while its proposals stay `draft`, invisible to the
+    /// review surface. 24 of the 85 committed shortcodes are mixed case, so this is the
+    /// ordinary shape, not an edge case.
+    #[tokio::test]
+    async fn test_create_flips_proposals_for_a_mixed_case_shortcode() {
+        let db = test_db("submissions-create-mixed-case-shortcode").await;
+        let proposal = a_proposal("080C", "person-501", ProposalStatus::Draft);
+        EntityProposalRepository::create_change(&db, &proposal).await.unwrap();
+
+        let mut submission = submission("0801", None, at(11));
+        submission.shortcode = "080C".to_string();
+        SubmissionRepository::create(&db, &submission).await.unwrap();
+
+        let found = EntityProposalRepository::find(&db, proposal.id).await.unwrap().unwrap();
+        assert_eq!(found.status, ProposalStatus::Submitted, "the fold must reach the proposal row");
+    }
+
+    #[tokio::test]
+    async fn test_create_does_not_touch_a_proposal_that_is_not_draft() {
+        let db = test_db("submissions-create-ignores-non-draft-proposals").await;
+        for (index, status) in [
+            ProposalStatus::Submitted,
+            ProposalStatus::Accepted,
+            ProposalStatus::Rejected,
+            ProposalStatus::Withdrawn,
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            // A distinct `entity_id` per iteration: `create_change` writes the row as given, and
+            // `entity_proposals_allocated_id` refuses two `new`-operation rows sharing one id.
+            let proposal = a_proposal("0801", &format!("person-{}", 500 + index), status);
+            EntityProposalRepository::create_change(&db, &proposal).await.unwrap();
+
+            SubmissionRepository::create(&db, &submission("0801", None, at(11)))
+                .await
+                .unwrap();
+
+            let found = EntityProposalRepository::find(&db, proposal.id).await.unwrap().unwrap();
+            assert_eq!(found.status, status, "a proposal not in draft must not be touched");
+
+            let pending = SubmissionRepository::find_by_shortcode(&db, "0801").await.unwrap().unwrap();
+            SubmissionRepository::delete(&db, pending.id).await.unwrap();
         }
     }
 

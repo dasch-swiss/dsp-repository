@@ -12,12 +12,13 @@ use axum::body::Body;
 use axum::http::header::{COOKIE, SET_COOKIE};
 use axum::http::{Request, Response};
 use chrono::{DateTime, Utc};
+use editor_core::proposals::{EntityProposal, ProposalDecision};
 use editor_core::published::PublishedProjects;
 use editor_core::records::{ApprovedRecord, DraftRecord, LoginCode, ReviewRound, Session, Submission, User};
 use editor_core::repository::{
-    ApprovedRecordRepository, Attempt, DraftRepository, Issued, LoginCodeRepository, MailSendRepository, Repositories,
-    RepositoryError, Result, ReviewRoundRepository, SessionRepository, SubmissionRepository, Transition,
-    UserRepository,
+    ApprovedRecordRepository, Attempt, DraftRepository, EntityProposalRepository, Issued, LoginCodeRepository,
+    MailSendRepository, Repositories, RepositoryError, Result, ReviewRoundRepository, SessionRepository,
+    SubmissionRepository, Transition, UserRepository,
 };
 use uuid::Uuid;
 
@@ -818,5 +819,46 @@ impl ApprovedRecordRepository for FaultyDatabase {
 
     async fn delete(&self, id: Uuid) -> Result<bool> {
         ApprovedRecordRepository::delete(&*self.inner, id).await
+    }
+}
+
+#[async_trait]
+impl EntityProposalRepository for FaultyDatabase {
+    async fn create_new(&self, proposal: &EntityProposal, published_floor: u32) -> Result<EntityProposal> {
+        EntityProposalRepository::create_new(&*self.inner, proposal, published_floor).await
+    }
+
+    async fn create_change(&self, proposal: &EntityProposal) -> Result<()> {
+        EntityProposalRepository::create_change(&*self.inner, proposal).await
+    }
+
+    async fn update_payload(&self, id: Uuid, payload: &str, at: DateTime<Utc>) -> Result<()> {
+        EntityProposalRepository::update_payload(&*self.inner, id, payload, at).await
+    }
+
+    async fn set_decision(
+        &self,
+        id: Uuid,
+        decision: Option<ProposalDecision>,
+        by: Option<Uuid>,
+        at: DateTime<Utc>,
+    ) -> Result<()> {
+        EntityProposalRepository::set_decision(&*self.inner, id, decision, by, at).await
+    }
+
+    async fn find(&self, id: Uuid) -> Result<Option<EntityProposal>> {
+        EntityProposalRepository::find(&*self.inner, id).await
+    }
+
+    async fn list_for_shortcode(&self, shortcode: &str) -> Result<Vec<EntityProposal>> {
+        EntityProposalRepository::list_for_shortcode(&*self.inner, shortcode).await
+    }
+
+    async fn list_live_for_entity(&self, entity_id: &str) -> Result<Vec<EntityProposal>> {
+        EntityProposalRepository::list_live_for_entity(&*self.inner, entity_id).await
+    }
+
+    async fn withdraw(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
+        EntityProposalRepository::withdraw(&*self.inner, id, at).await
     }
 }

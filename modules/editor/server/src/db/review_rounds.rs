@@ -1,9 +1,9 @@
 //! [`ReviewRoundRepository`] against SQLite: the three transitions that end a
 //! review round, and the history they leave.
 //!
-//! Each transition spans three tables and is therefore one `write` closure
-//! rather than a caller-side sequence. Two properties come out of that, and
-//! both are the point of the module:
+//! Each transition spans three tables (four, once a project carries entity proposals — see below)
+//! and is therefore one `write` closure rather than a caller-side sequence. Two properties come out
+//! of that, and both are the point of the module:
 //!
 //! - **The delete is the terminal-state guard.** `DELETE FROM submissions WHERE id = ?` returns how
 //!   many rows it removed, and exactly one of two concurrent calls can see the row — so zero means
@@ -12,12 +12,29 @@
 //!   exists for: a reject landing after an approve destroys a record the collection endpoint has
 //!   already served.
 //! - **Nothing is written on a refusal.** The guard returns before the round is inserted, so an
-//!   already-reviewed submission leaves no second round and no second `approved_records` row.
-//!   Anything failing later rolls the delete back with it, so a round that cannot be written cannot
-//!   destroy the submission either.
+//!   already-reviewed submission leaves no second round and no second `approved_records` row — and,
+//!   by the same guard, no `entity_proposals` row moves either. Anything failing later rolls the
+//!   delete back with it, so a round that cannot be written cannot destroy the submission or move a
+//!   proposal.
+//!
+//! ## Each transition carries this shortcode's proposals along with it (REQ-3.3)
+//!
+//! `approve` reads each `submitted` proposal's own `decision` (accept/reject, set earlier in the
+//! round by the same control that decides a project field) and turns it into a status; a proposal
+//! left undecided stays `submitted` rather than being forced one way, which is why the review
+//! surface refuses an approval while any proposal is undecided — the same gate REQ-4.4 already
+//! applies to an undecided field. `request_changes` returns `submitted` proposals to `draft`
+//! without touching `decision`, `decided_by` or `decided_at` — REQ-4.5's per-field survival,
+//! applied to proposals. `discard` branches on `round.outcome`: a reject discards the proposals
+//! with the submission it discards; a withdrawal hands them back as drafts, because withdrawing
+//! reads as "take it back so I can keep editing" (see the architecture doc, "Reject and withdraw
+//! both leave the draft"). None of the three deletes a proposal row — a terminal one stays in
+//! `entity_proposals_allocated_id`, which is what stops its id being handed to a different entity
+//! later.
 
 use async_trait::async_trait;
-use editor_core::records::{ApprovedRecord, DraftRecord, ReviewOutcome, ReviewRound};
+use editor_core::proposals::{ProposalDecision, ProposalStatus};
+use editor_core::records::{normalize_shortcode, ApprovedRecord, DraftRecord, ReviewOutcome, ReviewRound};
 use editor_core::repository::{Result, ReviewRoundRepository, Transition};
 use rusqlite::{params, Row, Transaction};
 use uuid::Uuid;
@@ -72,6 +89,30 @@ fn insert_round(tx: &Transaction<'_>, round: &ReviewRound) -> rusqlite::Result<(
     Ok(())
 }
 
+/// Move this shortcode's `submitted` proposals to `status`, stamping `at`.
+///
+/// **The shortcode is normalized here rather than trusted from the caller.**
+/// `entity_proposals.shortcode` is always the folded key while `submissions.shortcode` stores
+/// whatever it was given, so keyed unfolded this `UPDATE` matches zero rows and reports nothing:
+/// the round ends, the submission is gone, and the proposals stay `submitted` for ever. 24 of the
+/// 85 committed shortcodes are mixed case.
+fn move_submitted_proposals(
+    tx: &Transaction<'_>,
+    shortcode: &str,
+    status: ProposalStatus,
+    at: chrono::DateTime<chrono::Utc>,
+) -> rusqlite::Result<usize> {
+    tx.execute(
+        "UPDATE entity_proposals SET status = ?3, updated_at = ?4 WHERE shortcode = ?1 AND status = ?2",
+        params![
+            normalize_shortcode(shortcode),
+            ProposalStatus::Submitted.as_str(),
+            status.as_str(),
+            at
+        ],
+    )
+}
+
 #[async_trait]
 impl ReviewRoundRepository for Database {
     async fn approve(&self, submission_id: Uuid, record: &ApprovedRecord, round: &ReviewRound) -> Result<Transition> {
@@ -94,6 +135,24 @@ impl ReviewRoundRepository for Database {
                 ],
             )?;
             insert_round(tx, &round)?;
+            // REQ-3.3: a `submitted` proposal's own `decision` becomes its status here. A row
+            // whose `decision` is NULL is left `submitted` rather than guessed at — what prevents
+            // that from being the end state is the review surface's approval gate, which refuses
+            // an approval while any proposal is undecided, the same rule it already applies to an
+            // undecided field.
+            tx.execute(
+                "UPDATE entity_proposals SET status = CASE decision WHEN ?3 THEN ?4 ELSE ?5 END, updated_at = ?6 \
+                 WHERE shortcode = ?1 AND status = ?2 AND decision IS NOT NULL",
+                params![
+                    // Normalized for the reason `move_submitted_proposals` gives.
+                    normalize_shortcode(&round.shortcode),
+                    ProposalStatus::Submitted.as_str(),
+                    ProposalDecision::Accept.as_str(),
+                    ProposalStatus::Accepted.as_str(),
+                    ProposalStatus::Rejected.as_str(),
+                    round.at,
+                ],
+            )?;
             Ok(Transition::Applied)
         })
         .await
@@ -129,6 +188,10 @@ impl ReviewRoundRepository for Database {
                 ],
             )?;
             insert_round(tx, &round)?;
+            // REQ-4.5, applied to proposals: the proposal stays alive holding its allocated id,
+            // and what RDU decided about it survives the return exactly as the per-field state
+            // does — `decision`, `decided_by` and `decided_at` are left untouched.
+            move_submitted_proposals(tx, &round.shortcode, ProposalStatus::Draft, round.at)?;
             Ok(Transition::Applied)
         })
         .await
@@ -142,6 +205,19 @@ impl ReviewRoundRepository for Database {
                 return Ok(Transition::AlreadyReviewed);
             }
             insert_round(tx, &round)?;
+            // Decision 2 and 3 on the issue: a reject discards the submission, so its proposals go
+            // with it; a withdrawal reads as "take it back so I can keep editing" (the architecture
+            // doc, "Reject and withdraw both leave the draft"), so the depositor keeps theirs. This
+            // one method serves both outcomes reaching here — `Approved` and `ChangesRequested`
+            // never do — so no proposal is touched for either of those.
+            let new_status = match round.outcome {
+                ReviewOutcome::Rejected => Some(ProposalStatus::Rejected),
+                ReviewOutcome::Withdrawn => Some(ProposalStatus::Draft),
+                ReviewOutcome::Approved | ReviewOutcome::ChangesRequested => None,
+            };
+            if let Some(new_status) = new_status {
+                move_submitted_proposals(tx, &round.shortcode, new_status, round.at)?;
+            }
             Ok(Transition::Applied)
         })
         .await
@@ -168,7 +244,12 @@ impl ReviewRoundRepository for Database {
 #[cfg(test)]
 mod tests {
     use chrono::{DateTime, TimeZone, Utc};
+    use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation};
     use editor_core::records::{Role, Submission, SubmissionState, User};
+    // `EntityProposalRepository` is not `use`d here: it and `ReviewRoundRepository` both declare
+    // `list_for_shortcode`, and bringing the former into scope makes every bare
+    // `db.list_for_shortcode(..)` call below ambiguous. Its methods are called through the fully
+    // qualified `entity_proposals()` helper below instead.
     use editor_core::repository::{ApprovedRecordRepository, DraftRepository, SubmissionRepository, UserRepository};
 
     use super::super::tests::{count, test_db};
@@ -247,6 +328,37 @@ mod tests {
         }
     }
 
+    /// A `submitted` proposal, optionally decided, on `shortcode`. Inserted with
+    /// [`EntityProposalRepository::create_change`], which writes the row as given rather than
+    /// allocating — exactly what is wanted here, since the status and decision are the point.
+    async fn a_submitted_proposal(
+        db: &Database,
+        shortcode: &str,
+        entity_id: &str,
+        decision: Option<ProposalDecision>,
+        decided_by: Option<Uuid>,
+    ) -> EntityProposal {
+        let proposal = EntityProposal {
+            id: Uuid::new_v4(),
+            shortcode: shortcode.to_string(),
+            entity_id: entity_id.to_string(),
+            kind: ProposalKind::Person,
+            operation: ProposalOperation::New,
+            payload: r#"{"name":"placeholder"}"#.to_string(),
+            status: ProposalStatus::Submitted,
+            proposed_by: None,
+            created_at: at(10),
+            updated_at: at(10),
+            decision,
+            decided_by,
+            decided_at: decision.map(|_| at(12)),
+        };
+        editor_core::repository::EntityProposalRepository::create_change(db, &proposal)
+            .await
+            .unwrap();
+        proposal
+    }
+
     #[tokio::test]
     async fn test_approve_moves_the_submission_into_an_approved_record_and_records_the_round() {
         // REQ-4.4. Three writes in one transaction: the submission goes, the
@@ -306,6 +418,61 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_approve_maps_decisions_to_statuses_and_leaves_an_undecided_one_submitted() {
+        // REQ-3.3: what RDU decided about a proposal this round becomes its status once the round
+        // ends. The undecided row staying `submitted` is not the intended end state — the review
+        // surface's approval gate is what prevents it, by refusing an approval while any proposal
+        // is undecided.
+        let db = test_db("rounds-approve-proposals").await;
+        let submission = a_submission(&db, None).await;
+        let accepted = a_submitted_proposal(&db, "0801", "person-501", Some(ProposalDecision::Accept), None).await;
+        let rejected = a_submitted_proposal(&db, "0801", "person-502", Some(ProposalDecision::Reject), None).await;
+        let undecided = a_submitted_proposal(&db, "0801", "person-503", None, None).await;
+
+        ReviewRoundRepository::approve(
+            &db,
+            submission.id,
+            &a_record(&submission, None),
+            &a_round(&submission, ReviewOutcome::Approved, None),
+        )
+        .await
+        .unwrap();
+
+        let found = |id| editor_core::repository::EntityProposalRepository::find(&db, id);
+        assert_eq!(found(accepted.id).await.unwrap().unwrap().status, ProposalStatus::Accepted);
+        assert_eq!(found(rejected.id).await.unwrap().unwrap().status, ProposalStatus::Rejected);
+        let still_submitted = found(undecided.id).await.unwrap().unwrap();
+        assert_eq!(still_submitted.status, ProposalStatus::Submitted);
+        assert_eq!(still_submitted.updated_at, at(10), "an untouched row keeps its own updated_at");
+    }
+
+    #[tokio::test]
+    async fn test_approve_touches_no_proposal_belonging_to_another_shortcode() {
+        let db = test_db("rounds-approve-proposals-other-project").await;
+        let submission = a_submission(&db, None).await;
+        let other = a_submitted_proposal(&db, "0803", "person-501", Some(ProposalDecision::Accept), None).await;
+
+        ReviewRoundRepository::approve(
+            &db,
+            submission.id,
+            &a_record(&submission, None),
+            &a_round(&submission, ReviewOutcome::Approved, None),
+        )
+        .await
+        .unwrap();
+
+        let found = editor_core::repository::EntityProposalRepository::find(&db, other.id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            found.status,
+            ProposalStatus::Submitted,
+            "another project's proposal is untouched"
+        );
+    }
+
+    #[tokio::test]
     async fn test_request_changes_writes_the_draft_and_records_the_round() {
         // REQ-4.5. The draft carries the *submitted* payload, so the depositor
         // resumes from what they sent rather than from whatever the draft held
@@ -314,6 +481,8 @@ mod tests {
         let author = a_user(&db, "a@x.test", Role::Depositor).await;
         let reviewer = a_user(&db, "rdu@x.test", Role::Rdu).await;
         let submission = a_submission(&db, Some(author)).await;
+        let proposal =
+            a_submitted_proposal(&db, "0801", "person-501", Some(ProposalDecision::Reject), Some(reviewer)).await;
         let draft = a_draft(&submission);
         let round = a_round(&submission, ReviewOutcome::ChangesRequested, Some(reviewer));
 
@@ -325,6 +494,16 @@ mod tests {
         );
 
         assert_eq!(count(&db, "submissions").await, 0);
+        // REQ-4.5's per-field property, applied to a proposal: it goes back to `draft`, but what
+        // RDU decided about it this round is retained rather than cleared.
+        let returned = editor_core::repository::EntityProposalRepository::find(&db, proposal.id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(returned.status, ProposalStatus::Draft);
+        assert_eq!(returned.decision, Some(ProposalDecision::Reject));
+        assert_eq!(returned.decided_by, proposal.decided_by);
+        assert_eq!(returned.decided_at, proposal.decided_at);
         // Struct equality, not just the payload: this upsert is a second copy
         // of `DraftRepository::upsert`'s — it has to run on *this* transaction,
         // so it cannot be shared — and a column added to one and not the other
@@ -344,6 +523,60 @@ mod tests {
         );
     }
 
+    /// The shortcode the round carries and the one the proposal is stored under
+    /// have to be the same string, and only one of the two tables normalizes on
+    /// write.
+    ///
+    /// 24 of the 85 committed shortcodes are mixed case, so this is the ordinary
+    /// shape rather than an edge case. Keyed on the shortcode as the round
+    /// spells it, the `UPDATE` matches zero rows and reports nothing: the round
+    /// ends, the submission is deleted, and the proposal is left `submitted`
+    /// against a submission that no longer exists — with nothing anywhere
+    /// saying the two disagreed.
+    #[tokio::test]
+    async fn test_a_mixed_case_shortcode_still_moves_its_proposals() {
+        let db = test_db("rounds-mixed-case-shortcode").await;
+        let reviewer = a_user(&db, "rdu@x.test", Role::Rdu).await;
+
+        let submission = Submission {
+            id: Uuid::new_v4(),
+            shortcode: "080C".to_string(),
+            payload: r#"{"name":"submitted"}"#.to_string(),
+            state: SubmissionState::InReview,
+            submitted_by: None,
+            submitted_at: at(11),
+            reviewed_by: None,
+            reviewed_at: Some(at(12)),
+            reviewer_note: None,
+            review_state: None,
+        };
+        SubmissionRepository::create(&db, &submission).await.unwrap();
+        let proposal =
+            a_submitted_proposal(&db, "080C", "person-501", Some(ProposalDecision::Accept), Some(reviewer)).await;
+
+        // The round is built with the shortcode as typed, which is what a handler
+        // reading it from the path would hand over.
+        let mut round = a_round(&submission, ReviewOutcome::Approved, Some(reviewer));
+        round.shortcode = "080C".to_string();
+
+        assert_eq!(
+            ReviewRoundRepository::approve(&db, submission.id, &a_record(&submission, Some(reviewer)), &round)
+                .await
+                .unwrap(),
+            Transition::Applied
+        );
+
+        let found = editor_core::repository::EntityProposalRepository::find(&db, proposal.id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            found.status,
+            ProposalStatus::Accepted,
+            "an accepted decision must reach the row"
+        );
+    }
+
     #[tokio::test]
     async fn test_request_changes_after_an_approve_writes_neither_draft_nor_round() {
         // The second shape of the race the guard exists for. Unguarded this
@@ -352,6 +585,9 @@ mod tests {
         // form for work that has left their hands.
         let db = test_db("rounds-request-changes-race").await;
         let submission = a_submission(&db, None).await;
+        // Undecided, so the approve leaves it `submitted` — exactly the row a second,
+        // unguarded transition would wrongly flip to `draft`.
+        let proposal = a_submitted_proposal(&db, "0801", "person-501", None, None).await;
         ReviewRoundRepository::approve(
             &db,
             submission.id,
@@ -373,6 +609,15 @@ mod tests {
             Transition::AlreadyReviewed
         );
 
+        assert_eq!(
+            editor_core::repository::EntityProposalRepository::find(&db, proposal.id)
+                .await
+                .unwrap()
+                .unwrap()
+                .status,
+            ProposalStatus::Submitted,
+            "a transition that hits the guard must not move a proposal either"
+        );
         assert_eq!(
             DraftRepository::find(&db, "0801").await.unwrap(),
             None,
@@ -403,6 +648,30 @@ mod tests {
             assert_eq!(count(&db, "submissions").await, 0, "{outcome}");
             assert_eq!(DraftRepository::find(&db, "0801").await.unwrap(), Some(draft), "{outcome}");
             assert_eq!(count(&db, "approved_records").await, 0, "{outcome}");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_discard_maps_submitted_proposals_by_outcome() {
+        // Decision 2 and 3 on the issue: a reject discards the proposals along with the
+        // submission; a withdrawal hands them back as drafts so the depositor can keep editing.
+        for (outcome, expected) in [
+            (ReviewOutcome::Rejected, ProposalStatus::Rejected),
+            (ReviewOutcome::Withdrawn, ProposalStatus::Draft),
+        ] {
+            let db = test_db(&format!("rounds-discard-proposals-{outcome}")).await;
+            let submission = a_submission(&db, None).await;
+            let proposal = a_submitted_proposal(&db, "0801", "person-501", Some(ProposalDecision::Accept), None).await;
+
+            ReviewRoundRepository::discard(&db, submission.id, &a_round(&submission, outcome, None))
+                .await
+                .unwrap();
+
+            let found = editor_core::repository::EntityProposalRepository::find(&db, proposal.id)
+                .await
+                .unwrap()
+                .unwrap();
+            assert_eq!(found.status, expected, "{outcome}");
         }
     }
 

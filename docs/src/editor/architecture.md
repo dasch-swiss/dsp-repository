@@ -31,7 +31,7 @@ Unlike DPE, the **HTML document shell lives in the view crate** (`editor-web/src
 
 ## Persistence
 
-One SQLite database, `rusqlite` with the `bundled` feature — the amalgamation is compiled by `cc` into the binary, which is what keeps the static musl image self-contained. `editor-core` owns the records and one repository trait per aggregate; `editor-server/src/db/` implements all seven against SQLite, so handlers depend on the ports and not on the driver.
+One SQLite database, `rusqlite` with the `bundled` feature — the amalgamation is compiled by `cc` into the binary, which is what keeps the static musl image self-contained. `editor-core` owns the records and one repository trait per aggregate; `editor-server/src/db/` implements all nine against SQLite, so handlers depend on the ports and not on the driver.
 
 `rusqlite` is pinned to **0.38, not 0.40**, because `deadpool-sqlite` 0.13 (the latest) requires `rusqlite ^0.38` and the two cannot coexist: `libsqlite3-sys` 0.36 and 0.38 both declare `links = "sqlite3"`, so cargo refuses to link both. Bump the pair together once `deadpool-sqlite` tracks 0.40.
 
@@ -54,7 +54,7 @@ File databases get `journal_mode=WAL` and `synchronous=NORMAL`; in-memory databa
 
 A forward-only, append-only list of statement batches guarded by `PRAGMA user_version`, applied at startup — no migration framework and no added dependency. Everything runs in one `BEGIN IMMEDIATE` transaction including the version bump, so a crash part-way leaves the database at the version it started from. A database reporting a *higher* version than the build knows stops startup: that is a rollback to an older image, and running anyway would query columns that do not exist.
 
-The tables are `users`, `user_shortcodes`, `sessions`, `login_codes`, `mail_sends`, `drafts`, `submissions`, `review_rounds` and `approved_records`, all `STRICT`. Migration `0002` added `users.failed_login_at` (a lockout has to be measured from somewhere, because the counter it gates resets only on success) and `login_codes.browser_token` (the pre-auth binding — see [Authentication](./authentication.md)). Migration `0003` added `mail_sends`, the append-only send log the daily caps count; it replaced counting live `login_codes` rows, which under-reported because a sign-in deletes codes that were mailed. `submissions.review_state` (the per-field decisions and substitutions RDU records while a review is in progress) and the whole `review_rounds` table are in `0001` rather than in a fourth migration: the service has never been deployed, so a migration would record a history nobody lived through. The list becomes append-only at the first deployment. `drafts`, `submissions` and `approved_records` carry their body as an opaque JSON `payload` string. It holds a serialized `editor_core::draft::ProjectDraft`, which is `#[serde(transparent)]` over the project's members, so the column already contains the project object and needs no migration to become typed; the persistence layer never interprets it.
+The tables are `users`, `user_shortcodes`, `sessions`, `login_codes`, `mail_sends`, `drafts`, `submissions`, `review_rounds`, `approved_records` and `entity_proposals`, all `STRICT`. Migration `0002` added `users.failed_login_at` (a lockout has to be measured from somewhere, because the counter it gates resets only on success) and `login_codes.browser_token` (the pre-auth binding — see [Authentication](./authentication.md)). Migration `0003` added `mail_sends`, the append-only send log the daily caps count; it replaced counting live `login_codes` rows, which under-reported because a sign-in deletes codes that were mailed. `submissions.review_state` (the per-field decisions and substitutions RDU records while a review is in progress) and the whole `review_rounds` table are in `0001` rather than in a fourth migration: the service has never been deployed, so a migration would record a history nobody lived through. The list becomes append-only at the first deployment. `entity_proposals` is in `0001` for the same reason. `drafts`, `submissions` and `approved_records` carry their body as an opaque JSON `payload` string. It holds a serialized `editor_core::draft::ProjectDraft`, which is `#[serde(transparent)]` over the project's members, so the column already contains the project object and needs no migration to become typed; the persistence layer never interprets it.
 
 ### In-memory variant
 
@@ -81,6 +81,66 @@ Three properties of the committed corpus decide the shape, each measured over al
 - **Nothing about the load is fatal.** An unset `EDITOR_DATA_DIR` is a configured state (the PR preview has no snapshot), and one malformed file among 85 is a problem with the image rather than a reason to refuse every request. Both are reported at `warn` with a count and one line per failing file, because "84 of 85" is findable where an exited process says only that it exited.
 
 `get` returning `None` does **not** mean the project does not exist. REQ-2.3 allows a project that exists only locally, whose form opens blank and whose REQ-1.1 pre-fill is empty, so a 404 needs the draft and submission records too — which is why `/projects/{shortcode}` answers 200 for an unpublished shortcode.
+
+### Entity proposals
+
+A depositor can propose a new person or organisation, or a change to one their project references (US-3). Proposals live in `entity_proposals`, **not** in the draft payload: `ProjectDraft` is `#[serde(transparent)]` over the project's members and `to_raw` deserializes it into `ProjectRaw`, so a non-contract member would be dropped on the way to a file with nothing saying so.
+
+The table is keyed by shortcode rather than being a child of `submissions`, although REQ-3.3 carries a proposal inside the project's pending submission. Every review outcome deletes the submission row while the proposal outlives it — an accepted one is on its way into a `persons/` or `organizations/` file, and a returned one is still the depositor's to finish. `review_rounds` is keyed the same way for the same reason.
+
+**`status` and `decision` are separate columns.** `status` is the lifecycle (`draft`, `submitted`, `accepted`, `rejected`, `withdrawn`); `decision` is what RDU recorded in the round now running (`accept`, `reject`, or null while undecided). The split is the one `submissions.review_state` makes for a project field: a decision is taken during a review and only becomes a status when the round ends, which is what lets request-changes hand the proposal back as a draft while retaining what was decided — REQ-4.5 requires exactly that for fields, and a proposal reviewed on the same surface must not lose it.
+
+Two predicates read those, and confusing them is the mistake to avoid. `EntityProposal::is_live` (`draft` or `submitted`) is "still in play — the depositor may edit it and a reviewer may still decide it". `is_referenceable` adds `accepted`: an accepted entity is not a file yet, so a project field naming it must still resolve, while a rejected one must fail resolution — that failure is what makes the referential-integrity gate possible. **Neither says anything about the allocated id**, which every row holds permanently.
+
+#### Id allocation is collision-free within the editor, and never reuses
+
+REQ-3.6 allocates `person-NNN` / `organization-NNN` at proposal time; REQ-5.4 renumbers only on collision *with the repository*, so nothing in the requirements stops two proposals inside the editor taking the same next id. Two things close that:
+
+- **The allocation is one transaction.** `EntityProposalRepository::create_new` selects the ids already taken and inserts the new row inside a single `write` closure, which is `BEGIN IMMEDIATE` on the pool's single writer connection. The second of two concurrent proposals always sees the first one's insert.
+- **A partial unique index makes it structural.** `entity_proposals_allocated_id` is `UNIQUE (entity_id) WHERE operation = 'new'`. It is partial because a `change` names an id somebody else allocated, and several projects may propose changes to one entity.
+
+The allocator is `proposals::next_entity_id`: one past the highest number it has seen, over the union of the published store and every id the editor has ever allocated — **terminal rows included**. Gaps are therefore deliberate. Nothing depends on the sequence being dense, while reuse would hand an id to a second entity after a sibling collection pull request may already carry it. `Agents::highest_id_number` supplies the published half, which the persistence layer cannot see.
+
+A second partial index, `entity_proposals_live_per_entity` on `(shortcode, entity_id) WHERE status IN ('draft', 'submitted')`, allows two projects to hold change proposals for one entity but not one project to hold two live ones for it. Two competing rows would show a reviewer separate decisions over one file, and whichever applied last would silently win.
+
+#### A change proposal is seeded with the whole published entity
+
+Accepting a change proposal writes its payload as the entity file, so a payload holding only the members a form happens to render would silently drop `affiliations`, `sameAs`, `email`, `alternativeName`, `canton` and `additional`. This is the property `ProjectDraft` gives a project — carry every member the editor does not manage unchanged (REQ-1.7), survive a member added to the contract without an editor change (REQ-1.8) — and an entity needs it for the same reason, so `Agents` keeps each entity's file body and `Agents::seed_payload` hands it over with `id` removed. A save merges into the stored payload rather than rebuilding it.
+
+**The payload never carries `id`.** It lives in `entity_id`, the column the allocator and the uniqueness index work on; a second copy would be free to drift. Every reader fills it in from `entity_id` and overwrites whatever it finds, so a payload that does carry one cannot make an entity resolve under an id nothing claimed.
+
+#### The entity form
+
+`GET | POST /projects/{shortcode}/entities/{proposal}`, plus the two row-action paths the repeatable fields need. A write shares the `GET` that renders it, like every other write here.
+
+`{proposal}` is a proposal's **`entity_id`** (`person-417`), not its row `id`. That is the value the propose controls post back and the summary links carry, and it makes a readable URL. A project may hold several rows for one `entity_id` over time — a withdrawn proposal, then a fresh one — but never more than one *live* one, because `entity_proposals_live_per_entity` says so; the resolver prefers the live row and otherwise the most recently touched, so a stale link still shows something coherent. A proposal under the wrong shortcode is a 404 rather than a 403, for the reason an unknown section id is: the reader invented the pairing.
+
+**A save merges into the stored payload and never rebuilds it.** That is the seeding property above, enforced at the write: only the members this form posts are applied, so anything else in the payload survives untouched.
+
+`jobTitles` is the one field whose applier needs help. `Shape::StringRows` removes a member when no row survives, which is right for every field of that shape except this one: `check_person` reads an *absent* `jobTitles` as unanswered and an *empty* one as a person with no job title, which 59 of the 416 committed persons already are. So an emptied `jobTitles` is kept as `[]` rather than dropped.
+
+REQ-3.1's start controls live on the agent rows themselves, where the picker already says an id resolves to nobody — the form is where it can be fixed, the same argument that comment makes about saying it at the row as well as at submit. Both a person and an organisation are offered, because the picker cannot know which was meant. A row whose id *does* resolve offers propose-changes instead (REQ-3.2). All three are named submits on the section's own form, so they need no route of their own.
+
+#### An incomplete address inherited from the published entity is passed through
+
+REQ-3.4 asks a proposed organisation for all four of `street`, `postalCode`, `locality` and `country`, or no `address` at all. Six of the 142 committed organizations satisfy neither — `organization-009`, `-033`, `-065`, `-089`, `-090` and `-137` are missing `street`, `postalCode` or both, and three of them sit outside Switzerland where a postal code may not apply. Applied literally, the rule would leave a depositor proposing any other change to one of those six a choice between inventing a street and deleting a locality and country that *are* recorded.
+
+So `check_organization` judges what the depositor wrote, not what they inherited: an `address` byte-equal to the published one passes, and any other incomplete one is refused. This is the carve-out `form::submit::typed_sentinels` already makes for a reference's `url` — `0110_h-steiner` holds `{"url": "MISSING"}` — and for the same stated reason: a live record must not become unsubmittable over data it did not write. `proposals::tests::six_committed_organizations_carry_an_incomplete_address` enumerates the six and fails if the corpus stops needing the carve-out.
+
+#### The review surface gives a proposal its own rows
+
+REQ-4.3 reviews changed project *fields*, and a proposed person is not one, so entity proposals would otherwise reach an approval without ever being displayed — and PRD Edge Case 3's referential-integrity question could not even arise, there being no per-entity action to invoke. Proposed entities therefore get their own rows below the field diff, each with an accept/reject control posting under `entity.{entity_id}`. That namespace cannot collide with the field surface's `decision.{field}` or with a member name.
+
+Approve gains two refusals beside the undecided-fields one:
+
+- **while any proposal is undecided**, for the reason the field gate exists: approving an undecided row commits bytes nobody looked at. `review_rounds`' `approve` leaves an undecided proposal `submitted` and names this gate as what prevents that, so the two halves are one coupling.
+- **while the payload still references a rejected entity** — PRD Edge Case 3. The approval is blocked and the referencing fields are named, so RDU substitutes them in place or requests changes; nothing is stripped silently.
+
+The second gate has a trap worth stating, because getting it wrong disables it without any test failing. At approve time every proposal's `status` is still `submitted` — the statuses change inside `approve`'s own transaction — so `is_referenceable`, which is status-based, answers **true** for a proposal RDU has just rejected. The scope the check runs against is therefore built from only the proposals that will *survive* the approval, filtered on `decision`, and the check runs over the **decided** payload rather than the submitted one, since a revert can remove a reference and a substitution can add one. It reuses `form::submit::unresolved_agents` rather than walking references a second way.
+
+#### What the two projects case does
+
+Two projects may propose changes to one entity, and the last collected wins. The review surface says so rather than blocking: blocking would strand one project on another project's review, while a silent overwrite would let RDU approve a change that is about to be replaced with nothing saying so.
 
 ### The form
 
@@ -162,6 +222,9 @@ DPE carries `/dpe/…` because it shares `repository.dasch.swiss` with other ser
 | `/projects/{shortcode}/sections/{section}` | GET, POST | signed in + assigned | One form section, and the save, autosave, submit, withdrawal or discard it makes. 200 even when the project is unpublished, per REQ-2.3. |
 | `…/sections/{section}/fields/{field}/add` | POST | signed in + assigned | One more row of a repeatable field. Under the section's URL so it resolves through the same `context()`. |
 | `…/sections/{section}/fields/{field}/{key}/remove` | POST | signed in + assigned | Drop one row. The key is in the path, not a button's name and value, because a programmatic submit omits the submitter's. |
+| `/projects/{shortcode}/entities/{proposal}` | GET, POST | signed in + assigned | One entity proposal's form, and the save or discard it makes. `{proposal}` is the proposal's `entity_id`. |
+| `…/entities/{proposal}/fields/{field}/add` | POST | signed in + assigned | One more row of a repeatable field on the entity form. |
+| `…/entities/{proposal}/fields/{field}/{key}/remove` | POST | signed in + assigned | Drop one row, for the reason the section's own row path gives. |
 | `/review` | GET | RDU | The review queue: every pending submission oldest first, and every draft. |
 | `/review/{shortcode}` | GET, POST | RDU | The field-by-field diff, and the claim, decision save, approve, request-changes or reject it makes. |
 | `/depositors` | GET, POST | RDU | The account list, and creating a depositor. |
@@ -294,14 +357,15 @@ The depositor reads all of it on the project form, inside the region a save repl
 
 `POST /projects/{shortcode}/sections/{section}` with `intent=submit` records the draft as the project's pending submission. The draft is written first and on both intents, so a refused submission costs the depositor the submission and never the editing.
 
-Six gates, in order:
+Seven gates, in order:
 
 1. **The draft must be a complete `ProjectRaw`.** A type-level failure means a member the contract requires has no value, and no per-field rule below can say anything useful about a shape that does not exist.
 2. **Every `Obligation::Required` field the submitter sees must be answered**, through `obligation::unsatisfied_required`. Narrower than it looks beside gate 1 and not redundant with it: every required field is a non-`Option` contract member, so an *absent* one already failed above, and what this catches is present-and-empty — `[]`, `{}`, `""`, a `MISSING` sentinel. It reads presence through the same function the section rail counts with, and the tier it gates on is bounded by what the published corpus answers; see [Obligation is a submit gate](#obligation-is-a-submit-gate-and-the-corpus-bounds-which-fields-carry-it).
-3. **Every agent reference must resolve**, through `form::submit::unresolved_agents`. The applier stores whatever id arrives, because a draft may hold a value that does not validate (REQ-1.9) — this is what stops an unresolvable reference reaching a published file, where the public project page would render a bare `person-001`.
-4. **No field may hold a placeholder sentinel a depositor typed**, through `form::submit::typed_sentinels`. Decided from the field's declared shape rather than from the value, because a stored sentinel is usually correct; see [where a field's shape and empty state are declared](#where-a-fields-shape-and-empty-state-are-declared) above.
-5. **Every `temporalCoverage` entry must resolve**, through `editor_core::submission::unresolved_temporal_coverage` — the same decision `dpe-server validate` and `dpe-api-oai` apply, over the same two tables, which `AppState` reads once at startup from `EDITOR_DATA_DIR`. With no data directory the tables are empty, so every free-text period is unresolvable and the submission is refused: the fail-safe direction, since the alternative opens a pull request that fails CI in a crate the editor never touches. It re-runs on **every** submit, which is what makes a resubmission revalidated rather than trusted because it was reviewed once.
-6. **The submission must change something.** The comparison is `editor_core::review::diff`, the one the review surface itself renders from, so "changes nothing" means the same thing in both places. Allowed through, an unchanged submission locks the depositor's own form on a queue entry a reviewer can only clear by rejecting it.
+3. **Every agent reference must resolve**, through `form::submit::unresolved_agents`. The applier stores whatever id arrives, because a draft may hold a value that does not validate (REQ-1.9) — this is what stops an unresolvable reference reaching a published file, where the public project page would render a bare `person-001`. It resolves against the published store **plus this project's own referenceable proposals**, so a depositor can reference an entity they have just proposed. `funding[].funders` is included; see [the agent store](./project-form.md#the-agent-store-and-how-a-reference-is-picked) for how long it was not.
+4. **Every live entity proposal must satisfy its own rules**, through `proposals::check_person` and `check_organization` — REQ-3.4's organisation rules, REQ-3.5's person rules, and the project-role guard on `jobTitles` that the PRD does not ask for but `dpe-server validate` enforces, so without it the editor could produce data that fails validation in a crate it never touches. It runs directly after the reference gate above, because both are about the entities a project points at and a depositor fixing one is usually fixing the other. The refusal names each proposal and each finding, with a link to the form that can fix it, the way a field outside the current section is already listed with a link to its section.
+5. **No field may hold a placeholder sentinel a depositor typed**, through `form::submit::typed_sentinels`. Decided from the field's declared shape rather than from the value, because a stored sentinel is usually correct; see [where a field's shape and empty state are declared](#where-a-fields-shape-and-empty-state-are-declared) above.
+6. **Every `temporalCoverage` entry must resolve**, through `editor_core::submission::unresolved_temporal_coverage` — the same decision `dpe-server validate` and `dpe-api-oai` apply, over the same two tables, which `AppState` reads once at startup from `EDITOR_DATA_DIR`. With no data directory the tables are empty, so every free-text period is unresolvable and the submission is refused: the fail-safe direction, since the alternative opens a pull request that fails CI in a crate the editor never touches. It re-runs on **every** submit, which is what makes a resubmission revalidated rather than trusted because it was reviewed once.
+7. **The submission must change something.** The comparison is `editor_core::review::diff`, the one the review surface itself renders from, so "changes nothing" means the same thing in both places. Allowed through, an unchanged submission locks the depositor's own form on a queue entry a reviewer can only clear by rejecting it.
 
 Two further checks run on **every** write rather than only on a submit, and therefore before these: the per-field cap, because an applier truncates silently and deferring it would let an over-cap save store the truncated value; and the concurrent-save baseline, because a save is exactly what would overwrite somebody else's work.
 

@@ -9,7 +9,7 @@
 //! gate and stays in its own module, because presence is what the section rail counts with and the
 //! two must read it through one function.
 
-use editor_core::agents::Agents;
+use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
 use editor_core::form::{FormBody, Shape, WhenCleared, MAX_VALUES_PER_FIELD};
 use platform_metadata::is_placeholder;
@@ -206,11 +206,26 @@ pub fn over_cap(audience: Audience, section: &Section, body: &FormBody) -> Vec<&
 /// (`agents::tests::every_id_the_committed_projects_refer_to_resolves`), so a dangling one can only
 /// have arrived after the fact — an agent file removed from under a project, which is a thing to
 /// report rather than to publish.
+///
+/// **`funding[].funders` is a fourth agent field and must stay in this filter.** It declares
+/// [`Shape::FundingRows`], so a filter naming only `AgentRows | AttributionRows` misses its 125
+/// references and lets a dangling funder reach a published file — where the project page renders a
+/// bare `organization-008`. `checks::contributor_refs` does not report funders either, so this
+/// gate is the only one that does.
 #[must_use]
-pub fn unresolved_agents(audience: Audience, draft: &ProjectDraft, agents: &Agents) -> Vec<(&'static Field, String)> {
+pub fn unresolved_agents(
+    audience: Audience,
+    draft: &ProjectDraft,
+    agents: &AgentScope,
+) -> Vec<(&'static Field, String)> {
     sections_for(audience)
         .flat_map(|section| section.fields_for(audience))
-        .filter(|field| matches!(field.shape, Some(Shape::AgentRows | Shape::AttributionRows)))
+        .filter(|field| {
+            matches!(
+                field.shape,
+                Some(Shape::AgentRows | Shape::AttributionRows | Shape::FundingRows)
+            )
+        })
         .flat_map(|field| {
             let rows = draft
                 .get(field.id)
@@ -219,15 +234,37 @@ pub fn unresolved_agents(audience: Audience, draft: &ProjectDraft, agents: &Agen
                 .unwrap_or_default();
             rows.iter()
                 // An `AgentRows` row *is* the id; an `AttributionRows` row
-                // holds it under `contributor` beside its roles. Read here
-                // rather than in two functions, so a field that refers to an
-                // agent cannot be added to one and forgotten in the other.
-                .filter_map(|row| row.as_str().or_else(|| row.get("contributor")?.as_str()))
+                // holds it under `contributor` beside its roles; a
+                // `FundingRows` row holds a whole list of them under `funders`.
+                // Read here rather than in three functions, so a field that
+                // refers to an agent cannot be added to one and forgotten in
+                // the others.
+                .flat_map(agent_ids_in_row)
                 .filter(|id| !agents.has(id))
                 .map(move |id| (field, id.to_string()))
                 .collect::<Vec<(&'static Field, String)>>()
         })
         .collect()
+}
+
+/// Every agent id one row of an agent-bearing field holds.
+///
+/// The three shapes spell a reference differently, and this is the single place
+/// that knows how: a bare string for `AgentRows`, `contributor` for
+/// `AttributionRows`, and a `funders` array for `FundingRows`. A grant with
+/// several funders yields several ids, which is why this returns a list rather
+/// than an `Option`.
+fn agent_ids_in_row(row: &Value) -> Vec<&str> {
+    if let Some(id) = row.as_str() {
+        return vec![id];
+    }
+    if let Some(id) = row.get("contributor").and_then(Value::as_str) {
+        return vec![id];
+    }
+    row.get("funders")
+        .and_then(Value::as_array)
+        .map(|funders| funders.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -485,6 +522,7 @@ mod tests {
         // resolves, so submit refuses no project already live. A failure here means the
         // agent store lost a file or a project gained a reference to nothing.
         let agents = agents();
+        let scope = AgentScope::published_only(&agents);
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
         let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
         assert!(errors.is_empty(), "{errors:?}");
@@ -494,12 +532,64 @@ mod tests {
             let raw = published.get(summary.shortcode).expect("a summary names a loaded project");
             let draft = ProjectDraft::from_raw(raw);
             for audience in [Audience::Everyone, Audience::RduOnly] {
-                for (field, id) in unresolved_agents(audience, &draft, &agents) {
+                for (field, id) in unresolved_agents(audience, &draft, &scope) {
                     refused.push(format!("{}: {}={id}", summary.shortcode, field.id));
                 }
             }
         }
         assert!(refused.is_empty(), "published projects refused for a reference: {refused:?}");
+    }
+
+    #[test]
+    fn a_grant_funder_that_resolves_to_nobody_is_refused() {
+        // `funding` declares `Shape::FundingRows`, so a filter over
+        // `AgentRows | AttributionRows` walked past it: the form warned in the
+        // funder's label and submit then accepted the project anyway, and
+        // `checks::contributor_refs` does not report funders either. A dangling
+        // funder reached a published file and rendered as a bare
+        // `organization-99999` on the public project page.
+        let agents = agents();
+        let mut draft = draft();
+        draft.set(
+            "funding",
+            json!([{ "funders": ["organization-002", "organization-99999"], "number": "1" }]),
+        );
+        let scope = AgentScope::published_only(&agents);
+        let named: Vec<(&str, String)> = unresolved_agents(Audience::Everyone, &draft, &scope)
+            .into_iter()
+            .map(|(field, id)| (field.id, id))
+            .collect();
+        assert_eq!(named, [("funding", "organization-99999".to_string())]);
+    }
+
+    #[test]
+    fn every_funder_of_a_grant_is_checked_not_only_the_first() {
+        // A grant carries a list, so one row can hold several references. Taking
+        // only the first would let a second dangling funder through behind a
+        // good one.
+        let agents = agents();
+        let mut draft = draft();
+        draft.set(
+            "funding",
+            json!([{ "funders": ["organization-002", "person-99998", "organization-99999"] }]),
+        );
+        let scope = AgentScope::published_only(&agents);
+        let ids: Vec<String> = unresolved_agents(Audience::Everyone, &draft, &scope)
+            .into_iter()
+            .map(|(_, id)| id)
+            .collect();
+        assert_eq!(ids, ["person-99998".to_string(), "organization-99999".to_string()]);
+    }
+
+    #[test]
+    fn free_text_funding_holds_no_references_to_check() {
+        // `Funding` is `#[serde(untagged)]`:
+        // a project whose funding is a single string has no funders at all, and
+        // reading one out of it would report the prose as a dangling id.
+        let agents = agents();
+        let mut draft = draft();
+        draft.set("funding", json!("No funding"));
+        assert!(unresolved_agents(Audience::Everyone, &draft, &AgentScope::published_only(&agents)).is_empty());
     }
 
     #[test]
@@ -510,7 +600,8 @@ mod tests {
         let agents = agents();
         let mut draft = draft();
         draft.set("contactPoint", json!(["organization-008", "person-99999"]));
-        let named: Vec<(&str, String)> = unresolved_agents(Audience::Everyone, &draft, &agents)
+        let scope = AgentScope::published_only(&agents);
+        let named: Vec<(&str, String)> = unresolved_agents(Audience::Everyone, &draft, &scope)
             .into_iter()
             .map(|(field, id)| (field.id, id))
             .collect();
@@ -526,7 +617,8 @@ mod tests {
         let mut draft = draft();
         draft.set("contactPoint", json!(["organization-008"]));
         let empty = editor_core::agents::Agents::default();
-        let refused: Vec<(&str, String)> = unresolved_agents(Audience::Everyone, &draft, &empty)
+        let scope = AgentScope::published_only(&empty);
+        let refused: Vec<(&str, String)> = unresolved_agents(Audience::Everyone, &draft, &scope)
             .into_iter()
             .map(|(field, id)| (field.id, id))
             .collect();

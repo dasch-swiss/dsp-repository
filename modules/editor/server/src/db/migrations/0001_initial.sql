@@ -202,3 +202,86 @@ CREATE TABLE approved_records (
 CREATE INDEX approved_records_uncollected ON approved_records (approved_at) WHERE collected_at IS NULL;
 CREATE INDEX approved_records_shortcode ON approved_records (shortcode);
 CREATE INDEX approved_records_approved_by ON approved_records (approved_by);
+
+-- Entity proposals (US-3): a person or organisation a depositor proposes to
+-- create, or a change to one their project already references.
+--
+-- A table of its own rather than a member of `drafts.payload`, and not by
+-- preference: `ProjectDraft` is `#[serde(transparent)]` over the project's JSON
+-- members and `to_raw` deserializes it into `ProjectRaw`, so a non-contract
+-- member would be dropped on the way to a file with nothing saying so.
+--
+-- It is deliberately NOT a child of `submissions`. REQ-3.3 carries a proposal
+-- inside the project's pending submission, but every review outcome deletes
+-- that row while the proposal outlives it — an accepted one is on its way to a
+-- pull request, and a returned one is still the depositor's to finish. Keyed by
+-- shortcode for the same reason `review_rounds` is.
+CREATE TABLE entity_proposals (
+    id           TEXT NOT NULL PRIMARY KEY,
+    shortcode    TEXT NOT NULL,
+    -- The allocated `person-NNN` / `organization-NNN`, or, for a `change`, the
+    -- id of the entity being changed. One namespace across both stores, because
+    -- `contactPoint`, `attributions[].contributor` and `funding[].funders` each
+    -- accept either kind and resolve through one lookup.
+    entity_id    TEXT NOT NULL,
+    kind         TEXT NOT NULL CHECK (kind IN ('person', 'organization')),
+    operation    TEXT NOT NULL CHECK (operation IN ('new', 'change')),
+    -- JSON: a `platform_metadata::Person` or `Organization` body. Opaque to
+    -- this layer, like `drafts.payload` — a half-filled proposal cannot
+    -- deserialize as the contract type yet, and deciding that is submit's job.
+    --
+    -- It does NOT carry `id`. That is `entity_id` beside it, which the
+    -- allocator and the uniqueness index work on, so a second copy in the
+    -- payload would be free to drift from the one actually claimed. Readers
+    -- fill it in from `entity_id` and overwrite whatever they find.
+    payload      TEXT NOT NULL,
+    status       TEXT NOT NULL CHECK (status IN ('draft', 'submitted', 'accepted', 'rejected', 'withdrawn')),
+    -- What RDU recorded about this proposal in the round now running, separate
+    -- from `status`, which is the lifecycle. The same split
+    -- `submissions.review_state` makes for a project field: a decision is taken
+    -- during the review and only becomes a status when the round ends, so
+    -- request-changes can hand the proposal back as a draft while retaining
+    -- what was decided — REQ-4.5 requires exactly that for fields, and a
+    -- proposal reviewed on the same surface must not lose it.
+    --
+    -- Null while undecided. An explicitly-undecided value would be the same
+    -- state written twice, which is the argument `review::Decision`'s docs make.
+    decision     TEXT CHECK (decision IN ('accept', 'reject')),
+    -- SET NULL, not CASCADE, for the reason `drafts.updated_by` is: removing an
+    -- account must not destroy the project's work.
+    proposed_by  TEXT REFERENCES users (id) ON DELETE SET NULL,
+    created_at   TEXT NOT NULL,
+    updated_at   TEXT NOT NULL,
+    -- Who accepted or rejected it, and when. The decision lives here and not in
+    -- `submissions.review_state`, which is keyed by project member: a proposal
+    -- is not one, and the submission carrying the state is deleted by the
+    -- transition that ends the round.
+    decided_by   TEXT REFERENCES users (id) ON DELETE SET NULL,
+    decided_at   TEXT
+) STRICT;
+
+-- An allocated id is claimed exactly once, whatever became of the proposal that
+-- claimed it. This is the guard REQ-3.6 needs and REQ-5.4 does not give: REQ-5.4
+-- renumbers on collision with the repository, and nothing in it stops two
+-- proposals inside the editor both taking the next free id. Terminal rows stay
+-- in the index on purpose — an id handed to a rejected proposal must not be
+-- handed to a different entity later, because a sibling collection pull request
+-- may already carry it.
+--
+-- Partial, on `new` only: a `change` names an id somebody else allocated, and
+-- several projects may propose changes to one entity (last collected wins).
+CREATE UNIQUE INDEX entity_proposals_allocated_id ON entity_proposals (entity_id) WHERE operation = 'new';
+
+-- One live proposal per project per entity. Without it a depositor who proposes
+-- changes to the same organisation twice has two rows the review surface would
+-- show as separate decisions over one file, and whichever applied last would
+-- silently win.
+CREATE UNIQUE INDEX entity_proposals_live_per_entity
+    ON entity_proposals (shortcode, entity_id) WHERE status IN ('draft', 'submitted');
+
+-- The form and the review surface both read one project's proposals.
+CREATE INDEX entity_proposals_shortcode_status ON entity_proposals (shortcode, status);
+-- Allocation takes the highest number for a kind, on the write path.
+CREATE INDEX entity_proposals_kind_entity_id ON entity_proposals (kind, entity_id);
+CREATE INDEX entity_proposals_proposed_by ON entity_proposals (proposed_by);
+CREATE INDEX entity_proposals_decided_by ON entity_proposals (decided_by);

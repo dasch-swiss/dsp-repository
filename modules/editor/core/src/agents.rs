@@ -13,6 +13,7 @@ use std::path::{Path, PathBuf};
 
 use platform_metadata::{Organization, Person};
 
+use crate::proposals::{entity_id_number, EntityProposal, ProposalKind};
 use crate::published::LoadError;
 
 /// One agent as a form needs it: the id it is stored as, and a name to show.
@@ -58,6 +59,14 @@ impl AgentKind {
 #[derive(Debug, Default)]
 pub struct Agents {
     by_id: BTreeMap<String, Agent>,
+    /// Each entity's file body, verbatim.
+    ///
+    /// Kept whole, and not folded into [`Agent`] — whose docs argue against widening it — because
+    /// accepting a `change` proposal writes its payload as the entity file. A payload seeded with
+    /// only the members some form renders drops the rest silently, which is the property
+    /// `ProjectDraft` gives a project (REQ-1.7, REQ-1.8). It is also the published side
+    /// [`crate::proposals::check_organization`] compares an address against.
+    bodies: BTreeMap<String, serde_json::Value>,
 }
 
 impl Agents {
@@ -69,11 +78,12 @@ impl Agents {
     #[must_use]
     pub fn load_from(persons: &Path, organizations: &Path) -> (Self, Vec<LoadError>) {
         let mut by_id = BTreeMap::new();
+        let mut bodies = BTreeMap::new();
         let mut errors = Vec::new();
         for (dir, kind) in [(persons, AgentKind::Person), (organizations, AgentKind::Organization)] {
-            read_agents_into(dir, kind, &mut by_id, &mut errors);
+            read_agents_into(dir, kind, &mut by_id, &mut bodies, &mut errors);
         }
-        (Self { by_id }, errors)
+        (Self { by_id, bodies }, errors)
     }
 
     /// One agent, or `None` for an id nothing holds.
@@ -88,9 +98,45 @@ impl Agents {
         self.by_id.contains_key(id)
     }
 
+    /// One entity's file body, verbatim, or `None` for an id nothing holds.
+    ///
+    /// See [`Self::bodies`] for why the whole body is kept. Callers wanting a *proposal payload*
+    /// want [`Self::seed_payload`] instead — this one still carries `id`, which a payload must not.
+    #[must_use]
+    pub fn body(&self, id: &str) -> Option<&serde_json::Value> {
+        self.bodies.get(id)
+    }
+
+    /// One entity's body as a proposal payload: the file body with `id` removed.
+    ///
+    /// `EntityProposal::payload` must not carry `id` — it lives in `entity_id`, the column the
+    /// allocator and the uniqueness index work on, and a second copy would be free to drift from
+    /// it. Stripping it here rather than at each call site is what keeps a seeded payload from
+    /// being the one place that invariant is forgotten.
+    #[must_use]
+    pub fn seed_payload(&self, id: &str) -> Option<serde_json::Value> {
+        let mut body = self.bodies.get(id)?.clone();
+        if let Some(members) = body.as_object_mut() {
+            members.remove("id");
+        }
+        Some(body)
+    }
+
     /// Every agent, in id order.
     pub fn all(&self) -> impl Iterator<Item = &Agent> {
         self.by_id.values()
+    }
+
+    /// The highest id number this store holds for `kind`, or `0` where it holds none.
+    ///
+    /// This is the `published_floor` argument
+    /// [`EntityProposalRepository::create_new`](crate::repository::EntityProposalRepository::create_new)
+    /// takes: that layer allocates against its own table alone and cannot see this store, so the
+    /// server has to pass in what it holds. Delegates to [`entity_id_number`] rather than
+    /// re-parsing ids so the two cannot disagree on what shape an id of `kind` has.
+    #[must_use]
+    pub fn highest_id_number(&self, kind: ProposalKind) -> u32 {
+        self.by_id.keys().filter_map(|id| entity_id_number(kind, id)).max().unwrap_or(0)
     }
 
     #[must_use]
@@ -104,9 +150,148 @@ impl Agents {
     }
 }
 
+/// Agent resolution for one project: the published store, plus that project's own entity
+/// proposals.
+///
+/// A depositor who proposes `person-417` has to be able to name it in `attributions` before it is
+/// ever a file, but a proposal is per-request database state and cannot live in [`Agents`]'s
+/// snapshot. This borrows the snapshot instead of cloning it: `AppState` is cloned per request and
+/// the published store holds 558 agents, which is exactly why [`Agents`] sits behind an `Arc`
+/// (see the `agents` field docs on `editor-server`'s `AppState`); copying it here to add a handful
+/// of proposed rows would undo that.
+#[derive(Debug)]
+pub struct AgentScope<'a> {
+    published: &'a Agents,
+    proposed: Vec<Agent>,
+}
+
+impl<'a> AgentScope<'a> {
+    /// The published store alone, for a surface with no project in hand.
+    #[must_use]
+    pub fn published_only(published: &'a Agents) -> Self {
+        Self { published, proposed: Vec::new() }
+    }
+
+    /// The published store plus the referenceable proposals among `proposals`.
+    ///
+    /// Only [`EntityProposal::is_referenceable`] proposals contribute: a rejected or withdrawn one
+    /// must not resolve, which is what lets the approval refuse a project still naming a rejected
+    /// entity instead of shipping a dangling reference. A proposal whose payload cannot be parsed
+    /// into the shape its kind promises contributes nothing either — see [`proposed_agent`].
+    #[must_use]
+    pub fn with_proposals(published: &'a Agents, proposals: &[EntityProposal]) -> Self {
+        let proposed = proposals
+            .iter()
+            .filter(|proposal| proposal.is_referenceable())
+            .filter_map(proposed_agent)
+            .collect();
+        Self { published, proposed }
+    }
+
+    /// One agent, or `None` for an id nothing holds.
+    ///
+    /// The published store wins over a proposed one: a `change` proposal names an id the store
+    /// already holds, and resolving to the proposed payload would show a reviewer the proposed
+    /// name where the surface is meant to show the published one beside it.
+    #[must_use]
+    pub fn get(&self, id: &str) -> Option<&Agent> {
+        self.published
+            .get(id)
+            .or_else(|| self.proposed.iter().find(|agent| agent.id == id))
+    }
+
+    /// Whether this id refers to something that exists.
+    #[must_use]
+    pub fn has(&self, id: &str) -> bool {
+        self.get(id).is_some()
+    }
+
+    /// The **published** entity's body, ignoring any proposal for it.
+    ///
+    /// Deliberately not "the body this scope resolves": the two callers both want the published
+    /// side specifically — one seeds a `change` proposal from it, the other compares a proposed
+    /// address against it to decide whether an incomplete one was inherited or written. Answering
+    /// with a proposal's payload would make a proposal grandfather itself.
+    #[must_use]
+    pub fn published_body(&self, id: &str) -> Option<&serde_json::Value> {
+        self.published.body(id)
+    }
+
+    /// The published entity's body as a proposal payload — see [`Agents::seed_payload`].
+    #[must_use]
+    pub fn seed_payload(&self, id: &str) -> Option<serde_json::Value> {
+        self.published.seed_payload(id)
+    }
+
+    /// Every agent: the published ones in id order, then the proposed ones the
+    /// published store does not already answer for.
+    ///
+    /// The filter is [`Self::get`]'s precedence rule, applied to the listing so
+    /// the two cannot disagree. Without it a `change` proposal — which by
+    /// definition names an id the store already holds — put a second
+    /// `<option>` into the shared `<datalist>` carrying the same `value` and a
+    /// different label, so the picker offered one organisation twice under two
+    /// names while `get` resolved only the published one.
+    pub fn all(&self) -> impl Iterator<Item = &Agent> {
+        self.published
+            .all()
+            .chain(self.proposed.iter().filter(|agent| self.published.get(&agent.id).is_none()))
+    }
+
+    /// How many distinct agents this scope resolves.
+    ///
+    /// Counted through [`Self::all`] rather than by adding the two sides, which
+    /// would double-count every `change` proposal.
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.all().count()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.published.is_empty() && self.proposed.is_empty()
+    }
+}
+
+/// One proposal's [`Agent`], or `None` when its payload does not parse into the shape its
+/// [`ProposalKind`] promises.
+///
+/// A half-filled proposal is normal — `payload` is opaque JSON for exactly that reason — so an id
+/// that resolves to a label nobody can compute is worse in a picker than an id that does not
+/// resolve; the caller skips it rather than erroring. The label is built the same way
+/// [`read_agent`] builds one: `person_label` for a person, `organization.name` for an
+/// organisation.
+///
+/// `entity_id` is written in before the contract types, which require an `id`, and the insert
+/// **overwrites** — so the column stays authoritative over anything the payload carries. See
+/// `EntityProposal::payload` for why it should carry none.
+fn proposed_agent(proposal: &EntityProposal) -> Option<Agent> {
+    let mut payload: serde_json::Value = serde_json::from_str(&proposal.payload).ok()?;
+    payload
+        .as_object_mut()?
+        .insert("id".to_string(), serde_json::Value::String(proposal.entity_id.clone()));
+    let (label, kind) = match proposal.kind {
+        ProposalKind::Person => {
+            let person: Person = serde_json::from_value(payload).ok()?;
+            (person_label(&person), AgentKind::Person)
+        }
+        ProposalKind::Organization => {
+            let organization: Organization = serde_json::from_value(payload).ok()?;
+            (organization.name, AgentKind::Organization)
+        }
+    };
+    Some(Agent { id: proposal.entity_id.clone(), label, kind })
+}
+
 /// Read one directory of agents of one kind, adding an error per file that did not load and per id
 /// already held.
-fn read_agents_into(dir: &Path, kind: AgentKind, by_id: &mut BTreeMap<String, Agent>, errors: &mut Vec<LoadError>) {
+fn read_agents_into(
+    dir: &Path,
+    kind: AgentKind,
+    by_id: &mut BTreeMap<String, Agent>,
+    bodies: &mut BTreeMap<String, serde_json::Value>,
+    errors: &mut Vec<LoadError>,
+) {
     let paths = match read_dir_sorted(dir) {
         Ok(paths) => paths,
         Err(message) => {
@@ -116,11 +301,12 @@ fn read_agents_into(dir: &Path, kind: AgentKind, by_id: &mut BTreeMap<String, Ag
     };
     for file in paths {
         match read_agent(&file, kind) {
-            Ok(agent) if by_id.contains_key(&agent.id) => errors.push(LoadError::File {
+            Ok((agent, _)) if by_id.contains_key(&agent.id) => errors.push(LoadError::File {
                 path: file,
                 message: format!("{} is already loaded; this file was ignored", agent.id),
             }),
-            Ok(agent) => {
+            Ok((agent, body)) => {
+                bodies.insert(agent.id.clone(), body);
                 by_id.insert(agent.id.clone(), agent);
             }
             Err(message) => errors.push(LoadError::File { path: file, message }),
@@ -141,16 +327,21 @@ fn read_dir_sorted(dir: &Path) -> Result<Vec<PathBuf>, String> {
     Ok(paths)
 }
 
-fn read_agent(path: &Path, kind: AgentKind) -> Result<Agent, String> {
+/// One agent and the file body it came from.
+///
+/// The body is returned beside the parsed agent rather than re-read later: this function already
+/// holds the bytes, and a second read could see a different file.
+fn read_agent(path: &Path, kind: AgentKind) -> Result<(Agent, serde_json::Value), String> {
     let json = std::fs::read_to_string(path).map_err(|error| error.to_string())?;
+    let body: serde_json::Value = serde_json::from_str(&json).map_err(|error| error.to_string())?;
     match kind {
         AgentKind::Person => {
             let person: Person = serde_json::from_str(&json).map_err(|error| error.to_string())?;
-            Ok(Agent { label: person_label(&person), id: person.id, kind })
+            Ok((Agent { label: person_label(&person), id: person.id, kind }, body))
         }
         AgentKind::Organization => {
             let organization: Organization = serde_json::from_str(&json).map_err(|error| error.to_string())?;
-            Ok(Agent { label: organization.name, id: organization.id, kind })
+            Ok((Agent { label: organization.name, id: organization.id, kind }, body))
         }
     }
 }
@@ -176,7 +367,11 @@ fn person_label(person: &Person) -> String {
 
 #[cfg(test)]
 mod tests {
+    use chrono::{DateTime, Utc};
+    use uuid::Uuid;
+
     use super::*;
+    use crate::proposals::{ProposalOperation, ProposalStatus};
 
     fn data_dir() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data")
@@ -252,6 +447,22 @@ mod tests {
     }
 
     #[test]
+    fn highest_id_number_over_the_committed_store_matches_the_corpus_size() {
+        // Same floors `proposals::tests` pins for `next_entity_id` against the identical corpus —
+        // this is the value the server actually has in hand to pass as `published_floor`.
+        let (agents, _) = committed();
+        assert_eq!(agents.highest_id_number(ProposalKind::Person), 416);
+        assert_eq!(agents.highest_id_number(ProposalKind::Organization), 142);
+    }
+
+    #[test]
+    fn highest_id_number_over_an_empty_store_is_zero() {
+        let agents = Agents::default();
+        assert_eq!(agents.highest_id_number(ProposalKind::Person), 0);
+        assert_eq!(agents.highest_id_number(ProposalKind::Organization), 0);
+    }
+
+    #[test]
     fn a_missing_directory_is_one_error_and_an_empty_set() {
         let (agents, errors) = Agents::load_from(
             Path::new("/nonexistent-editor-data/persons"),
@@ -280,5 +491,180 @@ mod tests {
         assert_eq!(errors.len(), 1, "{errors:?}");
         assert!(errors[0].to_string().contains("broken.json"), "{}", errors[0]);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    fn entity_proposal(
+        kind: ProposalKind,
+        operation: ProposalOperation,
+        entity_id: &str,
+        payload: &str,
+        status: ProposalStatus,
+    ) -> EntityProposal {
+        EntityProposal {
+            id: Uuid::nil(),
+            shortcode: "0801".to_string(),
+            entity_id: entity_id.to_string(),
+            kind,
+            operation,
+            payload: payload.to_string(),
+            status,
+            decision: None,
+            proposed_by: None,
+            created_at: DateTime::<Utc>::MIN_UTC,
+            updated_at: DateTime::<Utc>::MIN_UTC,
+            decided_by: None,
+            decided_at: None,
+        }
+    }
+
+    #[test]
+    fn published_only_resolves_a_committed_id_and_reports_the_published_count() {
+        let (agents, _) = committed();
+        let scope = AgentScope::published_only(&agents);
+        assert_eq!(
+            scope.get("person-001").map(|agent| agent.label.as_str()),
+            Some("Philippe Gonzalez")
+        );
+        assert_eq!(scope.len(), 558);
+    }
+
+    #[test]
+    fn with_proposals_resolves_a_proposed_person_to_its_payload_label() {
+        let (agents, _) = committed();
+        let payload = r#"{"givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#;
+        let proposal = entity_proposal(
+            ProposalKind::Person,
+            ProposalOperation::New,
+            "person-417",
+            payload,
+            ProposalStatus::Submitted,
+        );
+        let scope = AgentScope::with_proposals(&agents, &[proposal]);
+        assert_eq!(scope.get("person-417").map(|agent| agent.label.as_str()), Some("Ada Lovelace"));
+        assert_eq!(scope.len(), 559);
+    }
+
+    #[test]
+    fn a_rejected_or_withdrawn_proposal_does_not_resolve() {
+        let (agents, _) = committed();
+        let payload = r#"{"givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#;
+        for status in [ProposalStatus::Rejected, ProposalStatus::Withdrawn] {
+            let proposal = entity_proposal(ProposalKind::Person, ProposalOperation::New, "person-417", payload, status);
+            let scope = AgentScope::with_proposals(&agents, &[proposal]);
+            assert!(!scope.has("person-417"), "{status}");
+        }
+    }
+
+    #[test]
+    fn a_draft_submitted_or_accepted_proposal_resolves() {
+        let (agents, _) = committed();
+        let payload = r#"{"givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#;
+        for status in [
+            ProposalStatus::Draft,
+            ProposalStatus::Submitted,
+            ProposalStatus::Accepted,
+        ] {
+            let proposal = entity_proposal(ProposalKind::Person, ProposalOperation::New, "person-417", payload, status);
+            let scope = AgentScope::with_proposals(&agents, &[proposal]);
+            assert!(scope.has("person-417"), "{status}");
+        }
+    }
+
+    #[test]
+    fn a_change_proposal_resolves_to_the_published_name_not_the_proposed_one() {
+        let (agents, _) = committed();
+        let payload = r#"{"name":"A Different Name","url":"https://example.org/"}"#;
+        let proposal = entity_proposal(
+            ProposalKind::Organization,
+            ProposalOperation::Change,
+            "organization-008",
+            payload,
+            ProposalStatus::Submitted,
+        );
+        let scope = AgentScope::with_proposals(&agents, &[proposal]);
+        assert_eq!(
+            scope.get("organization-008").map(|agent| agent.label.as_str()),
+            Some("Dokumentationsbibliothek St. Moritz")
+        );
+    }
+
+    #[test]
+    fn a_change_proposal_does_not_offer_its_entity_twice_in_the_listing() {
+        // `all()` feeds the shared `<datalist>`, one `<option value=id>` per
+        // agent. A change proposal names an id the published store already
+        // holds, so listing both put two options with the same `value` and
+        // different labels into the picker — one organisation offered twice
+        // under two names, while `get` resolved only the published one. The
+        // listing has to agree with the lookup.
+        let (agents, _) = committed();
+        let proposal = entity_proposal(
+            ProposalKind::Organization,
+            ProposalOperation::Change,
+            "organization-008",
+            r#"{"name":"A Different Name","url":"https://example.org/"}"#,
+            ProposalStatus::Submitted,
+        );
+        let scope = AgentScope::with_proposals(&agents, &[proposal]);
+        assert_eq!(scope.len(), 558, "a change proposal adds no agent");
+        assert_eq!(
+            scope.all().filter(|agent| agent.id == "organization-008").count(),
+            1,
+            "organization-008 must be offered exactly once"
+        );
+    }
+
+    #[test]
+    fn the_entity_id_column_overrides_an_id_inside_the_payload() {
+        // The payload must not carry `id` at all, but if one arrives it cannot
+        // be allowed to win: the allocator and the uniqueness index work on
+        // `entity_id`, so an entity resolving under a payload-supplied id would
+        // be resolving under one nothing claimed.
+        let (agents, _) = committed();
+        let proposal = entity_proposal(
+            ProposalKind::Person,
+            ProposalOperation::New,
+            "person-417",
+            r#"{"id":"person-999","givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#,
+            ProposalStatus::Submitted,
+        );
+        let scope = AgentScope::with_proposals(&agents, &[proposal]);
+        assert!(scope.get("person-417").is_some(), "the allocated id resolves");
+        assert!(scope.get("person-999").is_none(), "the payload's id does not");
+    }
+
+    #[test]
+    fn an_unparsable_proposal_payload_resolves_to_nothing_and_does_not_panic() {
+        let (agents, _) = committed();
+        for payload in ["{}", "not json"] {
+            let proposal = entity_proposal(
+                ProposalKind::Person,
+                ProposalOperation::New,
+                "person-417",
+                payload,
+                ProposalStatus::Submitted,
+            );
+            let scope = AgentScope::with_proposals(&agents, &[proposal]);
+            assert!(!scope.has("person-417"), "{payload}");
+            assert_eq!(scope.len(), 558);
+        }
+    }
+
+    #[test]
+    fn all_yields_the_published_agents_in_id_order_then_the_proposed_ones() {
+        let (agents, _) = committed();
+        let payload = r#"{"givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#;
+        let proposal = entity_proposal(
+            ProposalKind::Person,
+            ProposalOperation::New,
+            "person-417",
+            payload,
+            ProposalStatus::Submitted,
+        );
+        let scope = AgentScope::with_proposals(&agents, &[proposal]);
+        let ids: Vec<&str> = scope.all().map(|agent| agent.id.as_str()).collect();
+        // Boundary assertion rather than re-deriving the published set's own order, which
+        // `the_committed_entity_store_loads_without_errors` and its siblings already pin.
+        assert_eq!(ids.first(), Some(&"organization-001"));
+        assert_eq!(ids.last(), Some(&"person-417"));
     }
 }

@@ -1,0 +1,78 @@
+name: a11y / editor
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Any editor crate (core/web/server), styles, assets, or the e2e suite.
+      # `modules/platform/**` covers the shared crates the editor renders
+      # through; `modules/mosaic/**` covers the tiles, which own accessibility
+      # here — a missing semantic method on a tile is the usual cause of an
+      # editor a11y failure, so a mosaic change must trigger this job.
+      - "modules/editor/**"
+      - "modules/platform/**"
+      - "modules/mosaic/**"
+  pull_request:
+    paths:
+      - "modules/editor/**"
+      - "modules/platform/**"
+      - "modules/mosaic/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    name: a11y / editor / WCAG 2.1 AA + no-JS
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install web-e2e-tests dependencies
+        run: cd modules/editor/web-e2e-tests && npm install
+
+      - name: Install Playwright browsers
+        run: cd modules/editor/web-e2e-tests && npx playwright install chromium --with-deps
+
+      - name: Build editor-server and stylesheet
+        # `cargo build -p editor-server --release` yields target/release/editor-server
+        # directly (the [[bin]] name), which the Playwright webServer launches.
+        # `just css-editor-release` builds the content-hashed app.css the release
+        # server discovers from modules/editor/public/assets at startup — without
+        # it every Tailwind-dependent assertion fails for an unrelated reason.
+        run: |
+          cargo build -p editor-server --release
+          just css-editor-release
+
+      - name: Run E2E, accessibility and no-JavaScript tests
+        # The whole suite rather than the accessibility spec alone: it runs in
+        # two projects, `chromium-js` and `chromium-nojs`, and neither subsumes
+        # the other. The no-JS pass catches a control with no submit button
+        # behind it; the JS pass catches a control Datastar has made inert.
+        # Running only the a11y spec would leave both uncovered in CI.
+        run: just test-e2e-editor
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-a11y-editor
+          path: modules/editor/web-e2e-tests/playwright-report/
+          retention-days: 7

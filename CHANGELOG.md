@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.8.5](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.4...v0.8.5) (2026-09-11)
+
+
+### Features
+
+* **editor-core,editor-web,editor-server,platform-metadata,mosaic-tiles:** Finish the project form and submit validation ([8a08f4e](https://github.com/dasch-swiss/dsp-repository/commit/8a08f4eb11ac535682f70c9ab422bb0f7d58c51a))
+* **editor-core,editor-web,editor-server:** Finish a review round ([668cce4](https://github.com/dasch-swiss/dsp-repository/commit/668cce44332f58fdf087bad2ca35ffa0c3bf23f6))
+* **editor-core,editor-web,editor-server:** Propose persons and organisations ([62398f0](https://github.com/dasch-swiss/dsp-repository/commit/62398f0f2047e33d87331309b3a7eab46b5b67c7))
+
+
+### Bug Fixes
+
+* **dpe-core,dpe-web,dpe-server:** Decide the cover image server-side so the fallback works without JavaScript ([625b462](https://github.com/dasch-swiss/dsp-repository/commit/625b462f6919b56fb01504c100a874ccc0dc70ac))
+* **dpe-data:** Add external website link for roud-oeuvres (0112) ([7824428](https://github.com/dasch-swiss/dsp-repository/commit/7824428bf295b94fe46220ed8e02d62009d0a1e5))
+* **editor-core,editor-web,editor-server:** Act on the review of [#384](https://github.com/dasch-swiss/dsp-repository/issues/384) ([860df18](https://github.com/dasch-swiss/dsp-repository/commit/860df18ea4a536569378a96a7dbd129a91ef0f3b))
+
+
+### Code Refactoring
+
+* **mosaic-tiles,editor-web:** Give the alert tile its own bottom margin ([76874dd](https://github.com/dasch-swiss/dsp-repository/commit/76874ddefdff005ff0ef32e5f94061feb0cbd405))
+
+
+### Miscellaneous Chores
+
+* **ci,platform-metadata:** Fail the build when a platform crate hardcodes a path into another module ([48cbd51](https://github.com/dasch-swiss/dsp-repository/commit/48cbd5176b0fd42a09fdff8a3ab0b0b353102216))
+* **dpe-data:** Point 0116 medframes at the migrated server ([1c26038](https://github.com/dasch-swiss/dsp-repository/commit/1c26038d5ef79dd1a0c01a789ba826bac7a17b85))
+* **dpe-data:** Update the demo URL for 0854 (Alice in DaSCHland) ([545f8b7](https://github.com/dasch-swiss/dsp-repository/commit/545f8b7272878b109c15fe8af1fda71b65d824c7))
+* **dpe-data:** Update the demo URL for 0854 (Alice in DaSCHland) ([97decfb](https://github.com/dasch-swiss/dsp-repository/commit/97decfba8823e8cb6d02dd0c95abc28eeb4ff20e))
+
 ## [0.8.4](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.3...v0.8.4) (2026-09-07)
 
 

@@ -24,13 +24,13 @@ It is not under `/dpe/api/v2/` and describes a *record* rather than a project. S
 | Environment | Base URL |
 |-------------|----------|
 | Local development (`just dev`) | `http://localhost:4000` |
-| DEV | `https://api.dev.dasch.swiss` |
-| Production | Not yet deployed |
+| DEV | `https://repository.dev.dasch.swiss` |
+| Production | `https://repository.dasch.swiss` |
 
 ## List all projects
 
 ```bash
-curl "https://api.dev.dasch.swiss/dpe/api/v2/projects"
+curl "https://repository.dev.dasch.swiss/dpe/api/v2/projects"
 ```
 
 Returns a JSON array containing every project. The list is **not paginated and not filtered** — the entire collection is returned in one response. (The HTML listing at `/dpe/projects` supports search and faceting; this JSON endpoint does not.)
@@ -40,7 +40,7 @@ Returns a JSON array containing every project. The list is **not paginated and n
 The path segment is the project **shortcode**, not the `id` field. Matching is case-insensitive, so `0803` and any case variant of an alphanumeric shortcode (e.g. `080c` for `080C`) resolve to the same project.
 
 ```bash
-curl "https://api.dev.dasch.swiss/dpe/api/v2/projects/0803"
+curl "https://repository.dev.dasch.swiss/dpe/api/v2/projects/0803"
 ```
 
 | Status | Returned when |

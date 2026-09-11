@@ -209,10 +209,14 @@ impl RoundSummary<'_> {
                 "The submission was discarded and the published project is unchanged. Your draft is still here, \
                  so you can change it and submit again.",
             ),
+            // REQ-2.2 binds this string: the form is depositor-facing, and the
+            // mechanism (a pull request against the repository) is the editor's
+            // problem rather than theirs. The wait matches
+            // `ProjectState::Approved`, which is the normative wording.
             ReviewOutcome::Approved => (
                 "RDU approved this project",
-                "It is recorded for a pull request against the repository, and the published page updates once \
-                 that is merged. Editing again starts the next round.",
+                "Your changes will appear on the public site with the next repository release — usually within a \
+                 few weeks. Editing again starts the next round.",
             ),
             ReviewOutcome::Withdrawn => (
                 "The submission was taken back",
@@ -394,6 +398,14 @@ pub struct SectionView<'a> {
     /// the section's own URL, so a row action resolves through the same
     /// audience gate, lock check and shortcode fold the save does.
     pub rows_action: String,
+    /// Whether an approved change is waiting for the repository release that
+    /// carries it (REQ-2.5).
+    ///
+    /// Not a [`Locked`] variant, although it reads like one: approve is the
+    /// only outcome that does *not* hand the project back, so the form stays
+    /// editable and what the depositor starts typing is the next cycle. A lock
+    /// here would refuse edits the lifecycle allows.
+    pub awaiting_release: bool,
 }
 
 impl SectionView<'_> {
@@ -688,6 +700,7 @@ fn form(view: &SectionView<'_>) -> Markup {
     let action = view.action();
     html! {
         @if let Some(round) = view.round.as_ref() { (review_round(round)) }
+        @if view.awaiting_release { (awaiting_release_notice()) }
         @if let Some(locked) = view.locked {
             ({
                 alert(locked.message())
@@ -789,6 +802,23 @@ fn errors_elsewhere(view: &SectionView<'_>) -> Markup {
             alert(body)
                 .variant(AlertVariant::Warning)
                 .title("Fields in other sections need changing")
+        })
+    }
+}
+
+/// REQ-2.5: an approved change is waiting for the release that carries it.
+///
+/// Informational rather than a warning: nothing is wrong and there is nothing
+/// for the depositor to do. The wording and the expected wait come from
+/// [`ProjectState::Approved`](editor_core::status::ProjectState), which is also
+/// what the list column and the `/states` page read, so the three cannot drift
+/// apart — REQ-2.1 and REQ-2.2 make that vocabulary normative.
+fn awaiting_release_notice() -> Markup {
+    html! {
+        ({
+            alert(editor_core::status::ProjectState::Approved.explanation())
+                .variant(AlertVariant::Info)
+                .title("Waiting for the next release")
         })
     }
 }
@@ -1101,6 +1131,7 @@ mod tests {
             posted: None,
             adding_row: None,
             rows_action: format!("/projects/0801d/sections/{section_id}/fields"),
+            awaiting_release: false,
             shortcode: "0801d",
             project_name: Some("Bernoulli-Euler Online"),
             section: section(section_id).expect("a known section"),

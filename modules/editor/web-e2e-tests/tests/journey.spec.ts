@@ -53,10 +53,12 @@ test.describe("edit, submit, review, approve", () => {
       ).toContainText(JOURNEY_SHORTCODE);
 
       // The queue's action is a control, not a link — a review is claimed by
-      // posting, because starting one changes state.
+      // posting, because starting one changes state. Scoped to this project's
+      // row rather than `.first()`: `status.spec.ts` also leaves a submission
+      // pending, and whichever sorts first is not necessarily this one.
       await page
+        .locator("tr", { hasText: JOURNEY_SHORTCODE })
         .getByRole("button", { name: /start review/i })
-        .first()
         .click();
       await expect(page).toHaveURL(new RegExp(`/review/${JOURNEY_SHORTCODE}`));
 

@@ -114,6 +114,25 @@ RDU accounts are deliberately **not** editable at `/depositors`: they appear in 
 
 A malformed entry stops startup rather than being skipped: every entry becomes an account that administers the service, so a typo is an administrator who can never sign in, and the symptom would otherwise be "my code never arrives" weeks later.
 
+### The startup comparison
+
+Every start compares the published project set baked into the image against the editor's own approved records, and reports what it found in one line:
+
+```
+projects.online=3 projects.waiting=1 projects.stranded=0 projects.removed_upstream=0 records.unreadable=0 records.retry_failed=0
+```
+
+`online` is the ordinary outcome — those changes are live and their local records have been discarded. `waiting` is also ordinary: those are approved and will go Online with the release that carries them.
+
+The line is logged at **`warn` rather than `info`** when any of the last four is non-zero, and each is a to-do rather than noise:
+
+- **`stranded`** — an approved record whose pull request was opened but whose data still does not match what shipped. Either the pull request merged *with reviewer edits*, or it was closed unmerged. Such a record can never go Online on its own, and the project will read "waiting for the next release" indefinitely. The per-record `warn` beside this line names the project and the fields that differ. Resolving it needs a force-online or force-discard decision from RDU.
+- **`removed_upstream`** — a record for a project the published set no longer holds. The record is kept deliberately: it may be the only surviving copy of that work.
+- **`unreadable`** — a record whose payload could not be parsed. Left untouched; the per-record `error` names it.
+- **`retry_failed`** — a record that matched but could not be discarded, or whose row was already gone. Harmless on its own and retried on the next start; a number that stays non-zero across restarts is worth investigating.
+
+A failure of the comparison as a whole is logged and **does not stop the process**, unlike the RDU-account reconciliation above. The cost of skipping it is a stale status label; the cost of refusing to start is the whole service.
+
 ### Diagnosing "I never got a code"
 
 No address appears in any log, so the trail is the account list's **last code sent** column plus the opaque `auth.subject` correlation id (the account's UUID) in the auth events. That column is the only diagnosis there is: an unconfigured relay and a failed send are each reported, but neither covers a code the relay accepted and never delivered, and the address may not go in a log.

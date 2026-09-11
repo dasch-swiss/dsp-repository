@@ -16,8 +16,20 @@
 //! different things — which is also which person the reader should go to.
 
 use editor_core::published::ProjectSummary;
+use editor_core::status::ProjectState;
 use maud::{html, Markup};
 use mosaic_tiles::table::{table, table_cell, table_head_cell};
+
+/// One row of a depositor's list: the published project, plus where that
+/// depositor's own changes to it have got to.
+///
+/// A pair rather than two parallel slices, because the row and its state are
+/// only ever read together and two slices can go out of step by one.
+#[derive(Debug, Clone, Copy)]
+pub struct AssignedProject<'a> {
+    pub summary: ProjectSummary<'a>,
+    pub state: ProjectState,
+}
 
 /// `GET /projects` for a depositor: the projects assigned to them.
 ///
@@ -25,13 +37,16 @@ use mosaic_tiles::table::{table, table_cell, table_head_cell};
 /// `rows.len()`: a shortcode with no published project is not a row. The
 /// difference is what separates "nobody has assigned you anything" from "your
 /// projects are not published yet".
-pub fn assigned(rows: &[ProjectSummary<'_>], assignments: usize) -> Markup {
+pub fn assigned(rows: &[AssignedProject<'_>], assignments: usize) -> Markup {
     html! {
         div class="max-w-4xl py-8" {
             h1 class="font-display text-2xl mb-2" { "Your projects" }
             @if !rows.is_empty() {
                 p class="text-gray-600 mb-6" { "These are the projects you may edit." }
-                (project_table("The projects assigned to your account", rows))
+                (assigned_table("The projects assigned to your account", rows))
+                p class="text-gray-600 mt-4" {
+                    a href="/states" class="underline" { "What do these states mean?" }
+                }
             } @else if assignments == 0 {
                 p class="text-gray-600" {
                     "No projects are assigned to your account yet. RDU assigns them; ask them to add yours."
@@ -78,6 +93,40 @@ pub fn rdu_overview(rows: &[ProjectSummary<'_>]) -> Markup {
                 a href="/depositors" class="underline" { "Manage depositor accounts" }
             }
         }
+    }
+}
+
+/// A depositor's list. Same shape as [`project_table`] plus the state column.
+///
+/// The extra column is deliberately **not** folded into `project_table` behind
+/// an `Option`: RDU's overview has no depositor whose changes a state could
+/// describe, so the column would always be empty there, and a shared function
+/// with a mode flag would invite exactly that.
+///
+/// "Your changes" rather than a second "Status": the published project has its
+/// own Ongoing/Finished status in the neighbouring column, and two columns
+/// headed Status would make a depositor read the wrong one.
+fn assigned_table(caption: &str, rows: &[AssignedProject<'_>]) -> Markup {
+    let head = html! {
+        tr {
+            (table_head_cell("Shortcode"))
+            (table_head_cell("Name"))
+            (table_head_cell("Status"))
+            (table_head_cell("Your changes"))
+        }
+    };
+    let body = html! {
+        @for row in rows {
+            tr {
+                (table_cell(project_link(&row.summary)))
+                (table_cell(row.summary.name))
+                (table_cell(status_label(row.summary.status)))
+                (table_cell(row.state.label()))
+            }
+        }
+    };
+    html! {
+        (table(caption).head(head).body(body))
     }
 }
 
@@ -143,11 +192,19 @@ mod tests {
         ProjectSummary { shortcode, name, status }
     }
 
+    /// An assigned row in the state the list shows for an untouched project.
+    fn row<'a>(shortcode: &'a str, name: &'a str, status: &'a str) -> AssignedProject<'a> {
+        AssignedProject {
+            summary: summary(shortcode, name, status),
+            state: ProjectState::Draft,
+        }
+    }
+
     #[test]
     fn test_the_list_links_each_project_by_shortcode_and_names_it() {
         let rows = [
-            summary("0801d", "Bernoulli-Euler Online", "ongoing"),
-            summary("080C", "Anton Webern", "finished"),
+            row("0801d", "Bernoulli-Euler Online", "ongoing"),
+            row("080C", "Anton Webern", "finished"),
         ];
         let out = assigned(&rows, 2).into_string();
         assert!(out.contains(r#"<a href="/projects/0801d""#), "{out}");
@@ -160,7 +217,7 @@ mod tests {
     fn test_the_list_shows_nothing_that_was_not_assigned() {
         // The whole point of the page: it is the depositor's own scope
         //, not a directory of every project.
-        let out = assigned(&[summary("0801d", "Bernoulli-Euler Online", "ongoing")], 1).into_string();
+        let out = assigned(&[row("0801d", "Bernoulli-Euler Online", "ongoing")], 1).into_string();
         assert!(!out.contains("0803"), "{out}");
     }
 
@@ -227,8 +284,12 @@ mod tests {
         // Both arrive from data: the shortcode from a path segment or a stored
         // assignment, the name from a project file.
         let hostile = "<script>alert(1)</script>";
-        let rows = [summary(hostile, hostile, hostile)];
-        for out in [assigned(&rows, 1).into_string(), rdu_overview(&rows).into_string()] {
+        let summaries = [summary(hostile, hostile, hostile)];
+        let assigned_rows = [row(hostile, hostile, hostile)];
+        for out in [
+            assigned(&assigned_rows, 1).into_string(),
+            rdu_overview(&summaries).into_string(),
+        ] {
             assert!(!out.contains("<script>alert(1)</script>"), "{out}");
             assert!(out.contains("&lt;script&gt;"), "{out}");
         }

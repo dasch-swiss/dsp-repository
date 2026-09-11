@@ -13,9 +13,10 @@
 //! the published set the form pre-fills from ([`published`]), the
 //! field-by-field comparison RDU reviews a submission through ([`review`]), the
 //! checks a draft must pass to be submitted ([`submission`]), the requests to
-//! add or change a person or organisation ([`proposals`]), and the canonical
+//! add or change a person or organisation ([`proposals`]), the canonical
 //! writer ([`canonical`]) that turns an approved draft back into a
-//! `projects/*.json` file byte-for-byte.
+//! `projects/*.json` file byte-for-byte, and what the startup comparison makes
+//! of published data against a local record ([`status`]).
 
 pub mod agents;
 pub mod canonical;
@@ -28,6 +29,7 @@ pub mod published;
 pub mod records;
 pub mod repository;
 pub mod review;
+pub mod status;
 pub mod submission;
 
 #[cfg(test)]

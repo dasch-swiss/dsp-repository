@@ -50,6 +50,8 @@ export const DEPOSITOR_SHORTCODES = [
   "0106",
   "0101",
   "0102",
+  "0107",
+  "0108",
 ] as const;
 
 /** Row add/remove assertions. */
@@ -66,6 +68,21 @@ export const NOTICE_SHORTCODE = DEPOSITOR_SHORTCODES[3];
  * read-only page from the moment this one runs.
  */
 export const JOURNEY_SHORTCODE = DEPOSITOR_SHORTCODES[4];
+/**
+ * The depositor-visible state sequence (REQ-2.1) and the waiting-for-release
+ * notice (REQ-2.5) — **one project per pass**, not one per spec.
+ *
+ * Every other mutating spec is idempotent enough to run twice against one
+ * server, because it asserts a transition rather than a starting point. This
+ * one walks the whole lifecycle from Online, so the second pass would begin
+ * wherever the first left off and read Approved where it expects Online. Both
+ * passes share a server, so the only way to give each a pristine project is to
+ * give each a different one. Keyed by Playwright project name.
+ */
+export const STATUS_SHORTCODES: Partial<Record<string, string>> = {
+  "chromium-js": DEPOSITOR_SHORTCODES[5],
+  "chromium-nojs": DEPOSITOR_SHORTCODES[6],
+};
 
 const PORT = 4101;
 export const BASE_URL = `http://127.0.0.1:${PORT}`;

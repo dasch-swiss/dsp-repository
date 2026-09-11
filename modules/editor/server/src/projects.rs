@@ -14,7 +14,13 @@
 //! to establish later.
 
 use axum::extract::{Path, State};
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use editor_core::draft::ProjectDraft;
+use editor_core::records::{normalize_shortcode, User};
+use editor_core::repository::{ApprovedRecordRepository, DraftRepository, RepositoryError, SubmissionRepository};
+use editor_core::status::{depositor_state, Comparison, ProjectState};
+use editor_web::pages::projects::AssignedProject;
 use platform_metadata::is_valid_shortcode;
 
 use crate::auth::guard::Authenticated;
@@ -43,7 +49,17 @@ pub(crate) async fn list(State(state): State<AppState>, Authenticated(user, _): 
         // the difference is a distinct state with a distinct message — a
         // depositor whose projects are merely unpublished must not be told
         // nobody assigned them anything.
-        let rows: Vec<_> = state.published.summaries_for(&user.shortcodes).collect();
+        let summaries: Vec<_> = state.published.summaries_for(&user.shortcodes).collect();
+        let mut rows = Vec::with_capacity(summaries.len());
+        for summary in summaries {
+            // One read set per row rather than one for the page: a depositor
+            // holds a handful of assignments, and the bulk query this would
+            // otherwise need is three new ports for a list that is never long.
+            match project_state(&state, summary.shortcode).await {
+                Ok(project) => rows.push(AssignedProject { summary, state: project }),
+                Err(error) => return storage_error(&state, &user, "read this project's state", &error),
+            }
+        }
         editor_web::pages::projects::assigned(&rows, user.shortcodes.len())
     };
     crate::render(
@@ -109,10 +125,90 @@ pub(crate) async fn detail(
     axum::response::Redirect::to(&format!("/projects/{shortcode}/sections/{}", section.id)).into_response()
 }
 
+/// `GET /states` — what each state means and how long Online takes (REQ-2.6).
+///
+/// Behind [`Authenticated`] like the rest: it explains a depositor's own
+/// projects, and the editor has no public pages besides the login flow.
+pub(crate) async fn states(State(state): State<AppState>, Authenticated(user, _): Authenticated) -> Response {
+    crate::render(
+        &state,
+        "What the states mean — DaSCH Metadata Editor",
+        StatusCode::OK,
+        Some(&user),
+        editor_web::pages::states::explanation(),
+    )
+}
+
+/// The state to show a depositor for one project (REQ-2.1).
+///
+/// Three reads and the published set. The comparison is made against the
+/// **approved record** where there is one, because that is the only local row
+/// whose publication is in question: a draft differing from published data is
+/// just an edit in progress, and comparing it would make every unsaved change
+/// look like a pending release.
+async fn project_state(state: &AppState, shortcode: &str) -> Result<ProjectState, RepositoryError> {
+    // The three record tables key on the *normalized* shortcode, while the
+    // summary carries the published set's own spelling — and 24 of the 85
+    // published shortcodes are mixed case. Querying `080C` against rows stored
+    // as `080c` finds nothing, which would read as "no local record" and so
+    // report those projects Online no matter what their depositor had pending.
+    let key = normalize_shortcode(shortcode);
+    let submission = SubmissionRepository::find_by_shortcode(&*state.db, &key)
+        .await?
+        .map(|s| s.state);
+    let has_draft = DraftRepository::find(&*state.db, &key).await?.is_some();
+    let (approved, comparison) = approved_comparison(state, &key).await?;
+
+    Ok(depositor_state(submission, approved, has_draft, &comparison))
+}
+
+/// How a project's newest approved record compares against the published set,
+/// and whether it holds one at all.
+///
+/// Shared with the form (`crate::sections`), which needs the same answer for
+/// REQ-2.5's waiting-for-release notice. One function because the rule it
+/// encodes is not obvious and must not drift: **the newest record is the one
+/// whose publication is in question** — `find_by_shortcode` orders oldest
+/// first, and a project holds more than one whenever collection has lagged.
+/// Two call sites deriving that separately would silently disagree the moment
+/// the selection changed.
+///
+/// `key` is a normalized shortcode. A record whose payload cannot be parsed is
+/// treated as no record rather than as an error: the page's job is to render a
+/// state, and refusing the whole list over one unreadable row would take every
+/// other project down with it. The startup pass is where an unreadable payload
+/// is reported.
+pub(crate) async fn approved_comparison(state: &AppState, key: &str) -> Result<(bool, Comparison), RepositoryError> {
+    let approved = ApprovedRecordRepository::find_by_shortcode(&*state.db, key).await?;
+    let local = approved
+        .last()
+        .and_then(|record| serde_json::from_str::<ProjectDraft>(&record.payload).ok());
+    Ok((
+        !approved.is_empty(),
+        Comparison::classify(state.published.get(key), local.as_ref()),
+    ))
+}
+
+/// Storage would not answer, so the page cannot show what it should.
+fn storage_error(state: &AppState, viewer: &User, what: &str, error: &RepositoryError) -> Response {
+    tracing::error!(error = %error, operation = what, "the project list could not reach storage");
+    crate::render(
+        state,
+        "Page unavailable — DaSCH Metadata Editor",
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Some(viewer),
+        editor_web::pages::problem::unavailable(
+            "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
+             keeps happening, the service needs attention.",
+        ),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use axum::http::StatusCode;
-    use editor_core::records::Role;
+    use editor_core::records::{normalize_shortcode, DraftRecord, Role};
+    use editor_core::repository::DraftRepository;
     use tower::ServiceExt;
 
     use crate::test_support::{
@@ -355,6 +451,90 @@ mod tests {
         assert!(
             !lines.iter().any(|line| line.contains("d@example.test")),
             "no address may reach a log or a span: {lines:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_mixed_case_assignment_still_finds_its_local_records() {
+        // The regression this exists for: `drafts` keys on the normalized
+        // shortcode, the published set spells `080C` with a capital, and 24 of
+        // the 85 published shortcodes are mixed case. Querying the stored
+        // spelling finds no draft, so the project reports Online while its
+        // depositor has unsaved work — a wrong answer for a quarter of the set.
+        let (state, _) = test_state("project-state-case").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["080C"]).await;
+        let session = a_session(&state, user.id).await;
+        DraftRepository::upsert(
+            &*state.db,
+            &DraftRecord {
+                shortcode: normalize_shortcode("080C"),
+                payload: r#"{"name":"Work in progress"}"#.to_string(),
+                updated_by: Some(user.id),
+                created_at: chrono::Utc::now(),
+                updated_at: chrono::Utc::now(),
+            },
+        )
+        .await
+        .expect("upsert");
+
+        let app = test_app(&state);
+        let body = body_string(as_session(&app, "/projects", &session).await).await;
+
+        assert!(
+            body.contains("Draft"),
+            "a project with a draft row must not read as Online: {body}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_published_project_with_nothing_pending_reads_online() {
+        // REQ-2.1 on the list, and the only place a depositor ever sees the
+        // result of REQ-2.4's discard.
+        let (state, _) = test_state("project-state-online").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let body = body_string(as_session(&app, "/projects", &session).await).await;
+
+        assert!(body.contains("Online"), "{body}");
+        assert!(body.contains("Your changes"), "the state column must be labelled: {body}");
+    }
+
+    #[tokio::test]
+    async fn the_state_explanation_page_is_reachable_and_linked_from_the_list() {
+        // REQ-2.6. A page nothing links to does not explain anything, so the
+        // link is part of the requirement rather than a nicety.
+        let (state, _) = test_state("project-state-explained").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let list = body_string(as_session(&app, "/projects", &session).await).await;
+        assert!(
+            list.contains(r#"href="/states""#),
+            "the list must link to the explanation: {list}"
+        );
+
+        let response = as_session(&app, "/states", &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = body_string(response).await;
+        for label in ["Draft", "Submitted", "In review", "Approved", "Online"] {
+            assert!(body.contains(label), "{label} is missing from the explanation page: {body}");
+        }
+        assert!(body.contains("few weeks"), "REQ-2.6 requires the expected wait: {body}");
+    }
+
+    #[tokio::test]
+    async fn the_state_explanation_page_is_not_public() {
+        // Every page but the login flow is behind `Authenticated`.
+        let (state, _) = test_state("project-state-guarded").await;
+        let app = test_app(&state);
+        let response = app.oneshot(get("/states")).await.expect("response");
+        assert_ne!(
+            response.status(),
+            StatusCode::OK,
+            "/states must not answer an unauthenticated request"
         );
     }
 }

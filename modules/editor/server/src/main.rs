@@ -22,6 +22,7 @@ mod entities;
 mod mail;
 mod page_url;
 mod projects;
+mod reconcile;
 mod review;
 mod router;
 mod sections;
@@ -579,6 +580,39 @@ async fn serve() -> ExitCode {
     let published = std::sync::Arc::new(load_published(config.data_dir.as_deref()));
     let temporal = std::sync::Arc::new(load_temporal(config.data_dir.as_deref()));
     let agents = std::sync::Arc::new(load_agents(config.data_dir.as_deref()));
+
+    // REQ-2.3/2.4, once per process: the published set is baked into the image,
+    // so the moment a deployment carrying an approved change starts is the
+    // moment that change is Online. Not fatal — see `reconcile`'s module docs;
+    // a failure here costs a stale label, and refusing to start costs the
+    // service.
+    match reconcile::reconcile_published(&*db, &published).await {
+        // Two spelled-out arms rather than one parameterised call: `tracing`
+        // resolves the level at compile time, so it cannot be a variable.
+        Ok(summary) if summary.needs_attention() => tracing::warn!(
+            projects.online = summary.online,
+            projects.waiting = summary.waiting,
+            projects.stranded = summary.stranded,
+            projects.removed_upstream = summary.removed_upstream,
+            records.unreadable = summary.unreadable,
+            records.retry_failed = summary.retry_failed,
+            "compared the published set against local records; some records need an RDU decision"
+        ),
+        Ok(summary) => tracing::info!(
+            projects.online = summary.online,
+            projects.waiting = summary.waiting,
+            projects.stranded = summary.stranded,
+            projects.removed_upstream = summary.removed_upstream,
+            records.unreadable = summary.unreadable,
+            records.retry_failed = summary.retry_failed,
+            "compared the published set against local records"
+        ),
+        Err(e) => tracing::error!(
+            error = %e,
+            "could not compare the published set against local records; every project keeps its stored state and \
+             the comparison is retried on the next start"
+        ),
+    }
 
     let state = AppState {
         css_href: resolve_css_href(&config.public_dir),

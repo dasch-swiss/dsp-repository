@@ -73,6 +73,18 @@ impl ApprovedRecordRepository for Database {
             .await?)
     }
 
+    async fn list_all(&self) -> Result<Vec<ApprovedRecord>> {
+        Ok(self
+            .read(|conn| {
+                // Same order as `list_uncollected`, so the startup log reads in
+                // the order records were approved rather than in rowid order.
+                let mut stmt = conn.prepare(&format!("{SELECT} ORDER BY approved_at, shortcode"))?;
+                let rows = stmt.query_map([], map_row)?;
+                rows.collect()
+            })
+            .await?)
+    }
+
     async fn mark_collected(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
         // `collected_at IS NULL` in the WHERE clause, so a re-run of a partly
         // successful collection cannot overwrite the time a record was first

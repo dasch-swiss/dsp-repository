@@ -213,6 +213,10 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
         // See [`crate::auth::guard`] for why that is an extractor and not a
         // middleware over a sub-router.
         .route("/projects", get(crate::projects::list))
+        // REQ-2.6. A flat route with no variable segment, so `page_url.rs`
+        // needs the matching `KNOWN_ROUTES` entry or its page views collapse
+        // into `other` with nothing failing.
+        .route("/states", get(crate::projects::states))
         // A redirect to the first section. Sections are real URLs rather than
         // fragment swaps, so the form is bookmarkable and Back-friendly.
         .route("/projects/{shortcode}", get(crate::projects::detail))

@@ -57,8 +57,12 @@ verify-checksums:
 check-platform-paths:
     bash .github/scripts/check-platform-paths.sh
 
+# Verify no Maud template uses Datastar's pre-RC.6 hyphen delimiter (`data-on-`, `data-attr-`, `data-class-`, `data-style-`): the attribute renders fine and the control is inert, so only a grep or a browser catches it. Run by `just check`. (DEV-6920)
+check-datastar-delimiters:
+    bash .github/scripts/check-datastar-delimiters.sh
+
 # Run all fmt and clippy checks
-check: verify-checksums check-platform-paths
+check: verify-checksums check-platform-paths check-datastar-delimiters
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable
@@ -128,6 +132,8 @@ test:
     bash .github/scripts/verify-checksums.test.sh
     # Platform-path gate (dependency-free)
     bash .github/scripts/check-platform-paths.test.sh
+    # Datastar delimiter gate (dependency-free)
+    bash .github/scripts/check-datastar-delimiters.test.sh
 
 # Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap
 commit-lint base="origin/main":

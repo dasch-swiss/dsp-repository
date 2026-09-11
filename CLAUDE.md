@@ -18,7 +18,6 @@ All authoritative documentation lives in `docs/src/`; `docs/src/SUMMARY.md` is t
 
 **Important:** Follow ALL the steps below during development.
 
-- **Always check with the developer before each step** — check in, instead of going down the wrong path.
 - **Use `just` for all commands** — `just --list` shows every recipe. Use `just`, not `cargo` or `npm`; prefer claude-specific recipes where they exist.
 
 Before considering ANY change as "done":

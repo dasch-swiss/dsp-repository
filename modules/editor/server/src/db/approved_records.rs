@@ -151,7 +151,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_uncollected_excludes_collected_records() {
-        // REQ-5.1: the public endpoint serves approved-and-uncollected only.
+        // The public endpoint serves approved-and-uncollected only.
         // Serving collected ones would reopen a pull request on every run.
         let db = test_db("approved-uncollected").await;
         let first = record("0801", None, at(12));
@@ -184,7 +184,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_failed_collection_leaves_the_record_for_the_next_run() {
-        // REQ-5.7. The record stays uncollected because nothing stamped it, which
+        // The record stays uncollected because nothing stamped it, which
         // is why `mark_collected` is a separate call after the pull request is
         // open rather than part of serving the endpoint.
         let db = test_db("approved-retry").await;
@@ -219,7 +219,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_find_by_shortcode_returns_every_record_for_that_project() {
-        // The startup comparison (REQ-2.3) needs all of a project's records, not
+        // The startup comparison needs all of a project's records, not
         // just the uncollected ones, to find the one that matches the published
         // data.
         let db = test_db("approved-by-shortcode").await;
@@ -240,7 +240,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_discards_the_local_record_once_the_change_is_online() {
-        // REQ-2.4: a record identical to the published data is dropped.
+        // A record identical to the published data is dropped.
         let db = test_db("approved-delete").await;
         let record = record("0801", None, at(12));
         ApprovedRecordRepository::create(&db, &record).await.unwrap();

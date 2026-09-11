@@ -127,7 +127,7 @@ pub(crate) fn render(
     (status, axum::response::Html(body.into_string())).into_response()
 }
 
-/// A 403 rendered as a page (REQ-1.3).
+/// A 403 rendered as a page.
 ///
 /// The status is what the requirement asks for; the page is because a bare 403
 /// is a dead end in a browser. Everything that reaches this is authenticated —
@@ -429,7 +429,7 @@ async fn serve() -> ExitCode {
 
     // An unset data directory is reported as unset rather than as some path the
     // editor invented. It is no longer harmless: with no published set the
-    // project list is empty and no form can be pre-filled (REQ-1.1), so the
+    // project list is empty and no form can be pre-filled, so the
     // load below says how many projects it found and every failure names its
     // file.
     let data_dir = config
@@ -472,7 +472,7 @@ async fn serve() -> ExitCode {
         }
     };
 
-    // RDU members exist without provisioning (REQ-7.2), so the configured ones
+    // RDU members exist without provisioning, so the configured ones
     // are created or promoted on every start. Fatal if it fails: an
     // administrator who cannot exist means nobody can administer the service,
     // and carrying on would hide that until someone tried to sign in.
@@ -501,7 +501,7 @@ async fn serve() -> ExitCode {
                 }
             }
         }
-        // REQ-6.8, and the PR preview's default: with no relay the service stays
+        // The PR preview's default: with no relay the service stays
         // usable and codes go to the log.
         None => std::sync::Arc::new(mail::ConsoleMailer),
     };
@@ -816,7 +816,7 @@ mod tests {
 
     #[tokio::test]
     async fn forbidden_renders_the_page_shell_with_a_403_and_a_way_out() {
-        // REQ-1.3 asks for the status; the page is what stops it being a dead
+        // The requirement asks for the status; the page is what stops it being a dead
         // end. The reader is signed in, so the shell's header renders their name
         // and its links are a route out.
         let (state, _) = test_support::test_state("forbidden").await;

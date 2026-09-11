@@ -5,7 +5,7 @@
 //! submit here would put the whole authentication flow behind a script load.
 //!
 //! Neither page renders the address the user typed. Not because the markup is a
-//! log — REQ-6.10 is about logs and traces — but because it never needs to: the
+//! log — the address must not reach a log or a trace — but because it never needs to: the
 //! browser is bound to its code by an `HttpOnly` cookie, so nothing has to be
 //! carried in a hidden field, and a page with no address on it cannot leak one
 //! through a screenshot, a shared URL or a cached response.
@@ -17,7 +17,7 @@
 //! do here is produce a link that goes nowhere.
 //!
 //! The error strings are the caller's, deliberately. Whether a message may say
-//! "that address is not registered" is an anti-enumeration decision (REQ-6.2)
+//! "that address is not registered" is an anti-enumeration decision
 //! and belongs with the handler that knows, not with the template.
 //!
 //! The banner and the two fields are Mosaic tiles. `alert` renders `role="alert"`

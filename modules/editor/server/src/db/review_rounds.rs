@@ -17,20 +17,20 @@
 //!   delete back with it, so a round that cannot be written cannot destroy the submission or move a
 //!   proposal.
 //!
-//! ## Each transition carries this shortcode's proposals along with it (REQ-3.3)
+//! ## Each transition carries this shortcode's proposals along with it
 //!
 //! `approve` reads each `submitted` proposal's own `decision` (accept/reject, set earlier in the
 //! round by the same control that decides a project field) and turns it into a status; a proposal
 //! left undecided stays `submitted` rather than being forced one way, which is why the review
-//! surface refuses an approval while any proposal is undecided — the same gate REQ-4.4 already
-//! applies to an undecided field. `request_changes` returns `submitted` proposals to `draft`
-//! without touching `decision`, `decided_by` or `decided_at` — REQ-4.5's per-field survival,
-//! applied to proposals. `discard` branches on `round.outcome`: a reject discards the proposals
-//! with the submission it discards; a withdrawal hands them back as drafts, because withdrawing
-//! reads as "take it back so I can keep editing" (see the architecture doc, "Reject and withdraw
-//! both leave the draft"). None of the three deletes a proposal row — a terminal one stays in
-//! `entity_proposals_allocated_id`, which is what stops its id being handed to a different entity
-//! later.
+//! surface refuses an approval while any proposal is undecided — the same gate an approval
+//! already applies to an undecided field. `request_changes` returns `submitted` proposals to
+//! `draft` without touching `decision`, `decided_by` or `decided_at` — the per-field survival
+//! request-changes gives a field, applied to proposals. `discard` branches on `round.outcome`: a
+//! reject discards the proposals with the submission it discards; a withdrawal hands them back as
+//! drafts, because withdrawing reads as "take it back so I can keep editing" (see the architecture
+//! doc, "Reject and withdraw both leave the draft"). None of the three deletes a proposal row — a
+//! terminal one stays in `entity_proposals_allocated_id`, which is what stops its id being handed
+//! to a different entity later.
 
 use async_trait::async_trait;
 use editor_core::proposals::{ProposalDecision, ProposalStatus};
@@ -135,7 +135,7 @@ impl ReviewRoundRepository for Database {
                 ],
             )?;
             insert_round(tx, &round)?;
-            // REQ-3.3: a `submitted` proposal's own `decision` becomes its status here. A row
+            // A `submitted` proposal's own `decision` becomes its status here. A row
             // whose `decision` is NULL is left `submitted` rather than guessed at — what prevents
             // that from being the end state is the review surface's approval gate, which refuses
             // an approval while any proposal is undecided, the same rule it already applies to an
@@ -188,9 +188,10 @@ impl ReviewRoundRepository for Database {
                 ],
             )?;
             insert_round(tx, &round)?;
-            // REQ-4.5, applied to proposals: the proposal stays alive holding its allocated id,
-            // and what RDU decided about it survives the return exactly as the per-field state
-            // does — `decision`, `decided_by` and `decided_at` are left untouched.
+            // Request-changes, applied to proposals: the proposal stays alive holding its allocated
+            // id, and what RDU decided about it survives the return exactly as the
+            // per-field state does — `decision`, `decided_by` and `decided_at` are left
+            // untouched.
             move_submitted_proposals(tx, &round.shortcode, ProposalStatus::Draft, round.at)?;
             Ok(Transition::Applied)
         })
@@ -361,7 +362,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_approve_moves_the_submission_into_an_approved_record_and_records_the_round() {
-        // REQ-4.4. Three writes in one transaction: the submission goes, the
+        // Three writes in one transaction: the submission goes, the
         // record it becomes appears, and the round says who approved what.
         let db = test_db("rounds-approve").await;
         let reviewer = a_user(&db, "rdu@x.test", Role::Rdu).await;
@@ -419,7 +420,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_approve_maps_decisions_to_statuses_and_leaves_an_undecided_one_submitted() {
-        // REQ-3.3: what RDU decided about a proposal this round becomes its status once the round
+        // What RDU decided about a proposal this round becomes its status once the round
         // ends. The undecided row staying `submitted` is not the intended end state — the review
         // surface's approval gate is what prevents it, by refusing an approval while any proposal
         // is undecided.
@@ -474,7 +475,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_request_changes_writes_the_draft_and_records_the_round() {
-        // REQ-4.5. The draft carries the *submitted* payload, so the depositor
+        // The draft carries the *submitted* payload, so the depositor
         // resumes from what they sent rather than from whatever the draft held
         // when they sent it; what RDU decided per field rides on the round.
         let db = test_db("rounds-request-changes").await;
@@ -494,8 +495,8 @@ mod tests {
         );
 
         assert_eq!(count(&db, "submissions").await, 0);
-        // REQ-4.5's per-field property, applied to a proposal: it goes back to `draft`, but what
-        // RDU decided about it this round is retained rather than cleared.
+        // The per-field retention property, applied to a proposal: it goes back to `draft`, but
+        // what RDU decided about it this round is retained rather than cleared.
         let returned = editor_core::repository::EntityProposalRepository::find(&db, proposal.id)
             .await
             .unwrap()
@@ -628,7 +629,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_discard_leaves_the_draft_alone() {
-        // REQ-4.6 and REQ-4.7 delete the submission; REQ-1.13 preserves drafts.
+        // Reject and withdraw both delete the submission, and both preserve the draft.
         // Reject must not destroy the depositor's work, and a withdrawal is the
         // depositor taking it back to keep editing.
         for outcome in [ReviewOutcome::Rejected, ReviewOutcome::Withdrawn] {

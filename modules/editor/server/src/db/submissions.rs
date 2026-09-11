@@ -57,7 +57,7 @@ impl SubmissionRepository for Database {
                     submission.review_state,
                 ],
             )?;
-            // REQ-3.3: a proposal rides with the project's pending submission through the same
+            // A proposal rides with the project's pending submission through the same
             // review path, so it must carry the same status forward — a `draft` proposal on a
             // project that is now `submitted` is invisible to the review surface, which selects
             // `submitted` rows, and nothing in the schema would say the two disagreed.
@@ -84,8 +84,7 @@ impl SubmissionRepository for Database {
         })
         .await
         // `shortcode` is the only unique index here, so a constraint violation
-        // is a second pending submission for one project — PRD Constraints'
-        // "one pending submission per project", reported rather than silently
+        // is a second pending submission for one project, reported rather than silently
         // replacing the first.
         .map_err(|e| e.into_repository_error(ENTITY))?;
         Ok(())
@@ -139,7 +138,7 @@ impl SubmissionRepository for Database {
     async fn list(&self) -> Result<Vec<Submission>> {
         Ok(self
             .read(|conn| {
-                // Oldest first (REQ-4.1), with the shortcode breaking ties so two
+                // Oldest first, with the shortcode breaking ties so two
                 // submissions made in the same instant have a stable order.
                 let mut stmt = conn.prepare(&format!("{SELECT} ORDER BY submitted_at, shortcode"))?;
                 let rows = stmt.query_map([], map_row)?;
@@ -308,7 +307,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_second_pending_submission_for_one_project_is_a_conflict() {
-        // PRD Constraints: one pending submission per project. Enforced by the
+        // One pending submission per project. Enforced by the
         // unique index rather than by handlers remembering to check, so a race
         // between two submits cannot produce two rows.
         let db = test_db("submissions-conflict").await;
@@ -360,7 +359,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_is_oldest_first() {
-        // REQ-4.1's review queue order.
+        // The review queue's order.
         let db = test_db("submissions-list").await;
         SubmissionRepository::create(&db, &submission("0803", None, at(13)))
             .await
@@ -383,7 +382,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_frees_the_project_for_a_new_submission() {
-        // Reject (REQ-4.6) and depositor discard (REQ-4.7) both delete, and the
+        // Reject and depositor discard both delete, and the
         // depositor must then be able to submit again.
         let db = test_db("submissions-delete").await;
         let first = submission("0801", None, at(11));

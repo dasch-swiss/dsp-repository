@@ -544,16 +544,14 @@ pub enum Shape {
 }
 
 impl Shape {
-    /// Whether a field of this shape renders a control that offers the shared
-    /// agent suggestion list.
+    /// Whether a field of this shape renders a control that refers to a person or organisation.
     ///
-    /// **Exhaustive on purpose.** A page renders that list once and only where something on it
-    /// needs one, so this and the renderer have to agree; a hand-written predicate that misses
-    /// a shape leaves its inputs pointing `list=` at a `<datalist>` that was never rendered,
-    /// which fails silently. Declared here, a new shape cannot be added without answering the
-    /// question.
+    /// **Exhaustive on purpose**, and declared here so a new shape cannot be added without
+    /// answering the question. It gates the proposals summary, which exists to be acted on beside
+    /// a picker; it used to gate the shared `<datalist>` those pickers pointed at, and the
+    /// silent failure then was a page whose inputs referenced a list that was never rendered.
     #[must_use]
-    pub const fn offers_agent_suggestions(self) -> bool {
+    pub const fn has_agent_picker(self) -> bool {
         match self {
             Self::AgentRows | Self::AttributionRows | Self::FundingRows => true,
             Self::Text(_)
@@ -566,6 +564,31 @@ impl Shape {
             | Self::TextOrReferenceRows(_)
             | Self::ReferenceRows(_)
             | Self::PublicationRows => false,
+        }
+    }
+
+    /// Whether a field of this shape renders as a list of rows, and therefore carries the add and
+    /// remove controls the row-action routes serve.
+    ///
+    /// **Exhaustive for the same reason [`Self::has_agent_picker`] is**, and it is the
+    /// same failure: the renderer emits an add control whose `formaction` the route then has to
+    /// accept, and a hand-written allowlist that misses a shape renders a button that answers
+    /// `404` and discards the whole form with it. Nothing compiles differently and no test that
+    /// only renders can see it. This is the list that was missed: `PublicationRows`,
+    /// `ReferenceRows`, `TextOrReferenceRows` and `FundingRows` all arrived with their controls
+    /// and without their routes.
+    #[must_use]
+    pub const fn has_rows(self) -> bool {
+        match self {
+            Self::AgentRows
+            | Self::AttributionRows
+            | Self::FundingRows
+            | Self::MultilingualRows
+            | Self::PublicationRows
+            | Self::ReferenceRows(_)
+            | Self::StringRows
+            | Self::TextOrReferenceRows(_) => true,
+            Self::Text(_) | Self::Multilingual | Self::Choice(_) | Self::Url(_) | Self::StringList(_) => false,
         }
     }
 }

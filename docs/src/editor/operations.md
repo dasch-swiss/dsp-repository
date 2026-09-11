@@ -55,14 +55,14 @@ Locally the default is `127.0.0.1:4100`, deliberately not DPE's 4000, so `just d
 | `EDITOR_DB_DIR` | No | *(none — in-memory)* | Directory holding the SQLite database. **Unset means in-memory**, not a path — see [Database](#database). Names the *directory*, never the database file. |
 | `EDITOR_DB_READERS` | No | `4` | Size of the reader connection pool. The writer pool is always one connection. |
 | `EDITOR_DB_BUSY_TIMEOUT_MS` | No | `5000` | SQLite `busy_timeout`, applied per connection. |
-| `EDITOR_RDU_EMAILS` | No | *(none)* | Comma-separated addresses that always have an RDU account (REQ-7.2). Reconciled on every start: missing accounts are created, an existing depositor listed here is promoted. Removing an address **does not revoke** the account — see [Login and mail](#login-and-mail). |
-| `EDITOR_SMTP_HOST` | No | *(none — console)* | SMTP relay host. **Unset means codes are written to the log** (REQ-6.8) and the service stays usable. That is the development and PR-preview default. |
+| `EDITOR_RDU_EMAILS` | No | *(none)* | Comma-separated addresses that always have an RDU account. Reconciled on every start: missing accounts are created, an existing depositor listed here is promoted. Removing an address **does not revoke** the account — see [Login and mail](#login-and-mail). |
+| `EDITOR_SMTP_HOST` | No | *(none — console)* | SMTP relay host. **Unset means codes are written to the log** and the service stays usable. That is the development and PR-preview default. |
 | `EDITOR_SMTP_PORT` | No | `587` | Submission with STARTTLS, which is what `smtp-relay.gmail.com` speaks. |
 | `EDITOR_SMTP_USERNAME` | No | *(none)* | Relay username. Must be set together with the password. |
 | `EDITOR_SMTP_PASSWORD` | No | *(none)* | Relay password. Redacted in any debug rendering of the configuration. |
 | `EDITOR_SMTP_FROM` | No | `noreply@dasch.swiss` | Envelope sender. Must be a domain with DKIM enabled in the Workspace Admin Console — see [Authentication](./authentication.md#relay-prerequisites-not-the-applications-job-but-they-block-delivery). |
 | `EDITOR_SMTP_BREAK_GLASS` | No | `false` | When a **configured** relay fails, write the undelivered code to the log instead of rolling it back. Off by default: it puts a live credential in the log pipeline. See [Login and mail](#login-and-mail). |
-| `EDITOR_LOGIN_COOLDOWN_SECS` | No | `60` | Before another code may be sent to the same address (REQ-6.5). Must be shorter than the ten-minute code lifetime, which startup validates. |
+| `EDITOR_LOGIN_COOLDOWN_SECS` | No | `60` | Before another code may be sent to the same address. Must be shorter than the ten-minute code lifetime, which startup validates. |
 | `EDITOR_LOGIN_MAX_FAILED` | No | `10` | Consecutive account-level failures before throttling. NIST SP 800-63B-4's ceiling is 100, which startup also validates. |
 | `EDITOR_LOGIN_LOCKOUT_SECS` | No | `900` | How long throttling lasts after the cap is reached. |
 | `EDITOR_MAIL_DAILY_CAP` | No | `500` | Codes that may be sent across **all** users in 24 hours. Sits below the relay's 10,000/day so a resend loop cannot exhaust a quota shared with other senders. |
@@ -116,12 +116,12 @@ A malformed entry stops startup rather than being skipped: every entry becomes a
 
 ### Diagnosing "I never got a code"
 
-No address appears in any log, so the trail is the account list's **last code sent** column plus the opaque `auth.subject` correlation id (the account's UUID) in the auth events. That column is the only diagnosis there is: REQ-6.8 covers an unconfigured relay and REQ-6.9 a failed send, but neither covers a code the relay accepted and never delivered, and REQ-6.10 forbids the address in a log.
+No address appears in any log, so the trail is the account list's **last code sent** column plus the opaque `auth.subject` correlation id (the account's UUID) in the auth events. That column is the only diagnosis there is: an unconfigured relay and a failed send are each reported, but neither covers a code the relay accepted and never delivered, and the address may not go in a log.
 
 - **"never"** — no code was ever handed to the relay for that account. Either they have not tried, or they typed a different address, or the send failed and was rolled back (which the log will say, with a status code).
 - **a timestamp** — a code went out. The problem is downstream: spam filtering, greylisting, or a mailbox they do not read.
 
-Before assuming a delivery problem, check the auth log for the outcome recorded against that `auth.subject`. Three refuse silently, because REQ-6.2 requires the response not to vary:
+Before assuming a delivery problem, check the auth log for the outcome recorded against that `auth.subject`. Three refuse silently, because anti-enumeration requires the response not to vary:
 
 - `auth.outcome = "locked_out"` — throttled after repeated wrong entries, and told only "that code is not valid".
 - `auth.outcome = "account_daily_cap"` — this account has had `EDITOR_MAIL_ACCOUNT_DAILY_CAP` codes in the last 24 hours. Logged at `WARN`: one account being driven that hard is the early warning for the global cap.
@@ -129,7 +129,7 @@ Before assuming a delivery problem, check the auth log for the outcome recorded 
 
 ### No relay configured
 
-With `EDITOR_SMTP_HOST` unset, every code is written to the log at `WARN` and the service stays usable (REQ-6.8). The log line carries the message body and **not** the recipient — whoever is testing knows the address they typed, and REQ-6.10 forbids one in a log.
+With `EDITOR_SMTP_HOST` unset, every code is written to the log at `WARN` and the service stays usable. The log line carries the message body and **not** the recipient — whoever is testing knows the address they typed, and an address may not go in a log.
 
 ### A broken relay
 
@@ -145,15 +145,15 @@ Unsetting `EDITOR_SMTP_HOST` entirely is the heavier version of the same escape 
 
 ### Signing in locally
 
-A fresh database has **no accounts**, and `POST /login` answers identically whether an address is known or not (REQ-6.2) — so with none configured you reach the code screen and no mail is sent, which looks like a broken relay and is not. Name an address first:
+A fresh database has **no accounts**, and `POST /login` answers identically whether an address is known or not — so with none configured you reach the code screen and no mail is sent, which looks like a broken relay and is not. Name an address first:
 
 ```bash
 EDITOR_RDU_EMAILS=you@dasch.swiss just dev-editor
 ```
 
-That account is created at startup (REQ-7.2) and is an RDU member, so it can reach `/depositors` and create depositors to test against.
+That account is created at startup and is an RDU member, so it can reach `/depositors` and create depositors to test against.
 
-With no relay and no `EDITOR_DB_DIR`, **the code is shown on the code-entry page** — nothing has to be read from anywhere. It is also written to the log (REQ-6.8); `just dev-editor` runs under bacon, so it appears in the output pane.
+With no relay and no `EDITOR_DB_DIR`, **the code is shown on the code-entry page** — nothing has to be read from anywhere. It is also written to the log; `just dev-editor` runs under bacon, so it appears in the output pane.
 
 Setting `EDITOR_DB_DIR` to keep accounts across restarts **turns the on-screen code off** — a durable database is one of the three conditions, because it is what separates a throwaway deployment from a real one. In that case read the code from the log instead:
 
@@ -170,7 +170,7 @@ grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
 
 Two knobs worth setting while testing:
 
-- `EDITOR_LOGIN_COOLDOWN_SECS=1` — otherwise a second code for the same address waits out the 60-second cooldown (REQ-6.5).
+- `EDITOR_LOGIN_COOLDOWN_SECS=1` — otherwise a second code for the same address waits out the 60-second cooldown.
 - `EDITOR_DB_DIR=<dir>` — unset means in-memory, so every restart begins with no depositors and no sessions. Set it when you want state to survive, and expect the on-screen code to disappear when you do.
 
 If you run the binary from outside the repository root, set `EDITOR_PUBLIC_DIR` to an absolute path as well: its default is relative, and a wrong working directory serves no stylesheet, which makes every page render unstyled rather than fail.
@@ -218,7 +218,7 @@ If virtiofs `mmap` ever misbehaves, the escape hatch is `locking_mode=EXCLUSIVE`
 
 ### Backups
 
-Optional, per the PRD. Git holds everything irreplaceable; a total loss of the volume costs drafts, in-flight submissions, approved records not yet collected and the depositor table, all re-creatable. `synchronous=NORMAL` is set with WAL on that basis: a commit no longer fsyncs, so an OS crash or power loss can lose the last transactions — never corrupt the database, and never on an application crash.
+Optional. Git holds everything irreplaceable; a total loss of the volume costs drafts, in-flight submissions, approved records not yet collected and the depositor table, all re-creatable. `synchronous=NORMAL` is set with WAL on that basis: a commit no longer fsyncs, so an OS crash or power loss can lose the last transactions — never corrupt the database, and never on an application crash.
 
 ## Resource Requirements
 

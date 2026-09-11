@@ -16,16 +16,16 @@
 //! - `HttpOnly` — script cannot read it, so an XSS cannot exfiltrate the session.
 //! - `Secure` — never sent over plaintext. `http://localhost` counts as a trustworthy origin in
 //!   Chrome and Firefox, so local development still works.
-//! - `SameSite=Lax` — not `Strict`, per REQ-6.3. `Strict` would drop the cookie on the first
-//!   navigation *into* the editor from a link in mail or chat, so the user would arrive signed out
-//!   and sign in again for nothing. `Lax` still sends the cookie on top-level cross-site `GET`, so
-//!   it is not a CSRF control by itself — which is why one exists separately.
+//! - `SameSite=Lax` — not `Strict`. `Strict` would drop the cookie on the first navigation *into*
+//!   the editor from a link in mail or chat, so the user would arrive signed out and sign in again
+//!   for nothing. `Lax` still sends the cookie on top-level cross-site `GET`, so it is not a CSRF
+//!   control by itself — which is why one exists separately.
 
 use std::time::Duration;
 
 use axum::http::header::{HeaderMap, HeaderValue, COOKIE};
 
-/// The authenticated session (REQ-6.3).
+/// The authenticated session.
 pub(crate) const SESSION: &str = "__Host-editor_session";
 
 /// The pre-auth binding: which browser asked for the outstanding code, and

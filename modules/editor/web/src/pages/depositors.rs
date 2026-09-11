@@ -1,9 +1,9 @@
-//! The RDU screens for depositor accounts (US-7): the list, the create and edit
+//! The RDU screens for depositor accounts: the list, the create and edit
 //! forms, and the removal confirmation.
 //!
 //! Every one of these is behind the RDU role, which is why they are the only
 //! pages in the editor that render an email address. That is not in tension with
-//! REQ-6.10: the requirement is about logs and traces, and RDU has to know which
+//! the address-disclosure rule: that one is about logs and traces, and RDU has to know which
 //! address an account signs in with — it is the only channel to its owner.
 //!
 //! ## View types rather than the domain record
@@ -14,9 +14,9 @@
 //!
 //! - A `User` carries `failed_logins` and `failed_login_at`. Those are authentication internals,
 //!   and a template that can see them is a template that can render them by accident.
-//! - Whether a row may be edited is a **rule** — RDU accounts come from configuration (REQ-7.2) —
-//!   and putting it in the struct makes the caller state it once instead of every template
-//!   re-deriving it from a role string.
+//! - Whether a row may be edited is a **rule** — RDU accounts come from configuration — and putting
+//!   it in the struct makes the caller state it once instead of every template re-deriving it from
+//!   a role string.
 //!
 //! Named fields rather than positional `&str` arguments for the same reason
 //! `Viewer` is a struct: three adjacent strings are silently interchangeable,
@@ -47,13 +47,13 @@ pub struct DepositorRow<'a> {
     pub last_code_at: Option<&'a str>,
     /// Whether this account may be edited and removed here.
     ///
-    /// False for RDU accounts: they come from `EDITOR_RDU_EMAILS` (REQ-7.2), so
+    /// False for RDU accounts: they come from `EDITOR_RDU_EMAILS`, so
     /// a change made here would be undone by the next restart, or — for an
     /// address no longer listed — would diverge from configuration invisibly.
     pub manageable: bool,
 }
 
-/// `GET /depositors` — every account, with the controls US-7 describes.
+/// `GET /depositors` — every account, with the controls for managing one.
 pub fn list(rows: &[DepositorRow<'_>]) -> Markup {
     html! {
         div class="py-8" {
@@ -109,7 +109,7 @@ fn list_row(row: &DepositorRow<'_>) -> Markup {
         } @else { (row.shortcodes.join(", ")) }
     };
     // The answer to "I never got a code" that does not need an address in a log
-    // (REQ-6.10). Absent means none was ever handed to the relay, which is a
+    //. Absent means none was ever handed to the relay, which is a
     // different problem from one that was sent and did not arrive.
     let last_code = html! {
         @match row.last_code_at {
@@ -137,7 +137,7 @@ fn list_row(row: &DepositorRow<'_>) -> Markup {
     }
 }
 
-/// The three fields a depositor account is made of (REQ-7.3), as typed.
+/// The three fields a depositor account is made of, as typed.
 ///
 /// `shortcodes` is the raw text of the field rather than a parsed list, so a
 /// rejected form comes back showing exactly what was entered — including the
@@ -227,14 +227,14 @@ pub struct RemovalImpact<'a> {
 
 /// `GET /depositors/{id}/remove` — the confirmation.
 ///
-/// REQ-7.5 deletes the account and its sessions unconditionally, so this page
+/// Removal deletes the account and its sessions unconditionally, so this page
 /// does not offer to refuse. What it does is make the consequences visible
 /// before the fact, because two of them are irreversible and neither is obvious:
 ///
 /// - the address goes with the row, and it is RDU's only channel to ask this person about work they
 ///   left behind, so it is shown here to be copied;
 /// - a submission they made stays pending with no author, which means it can be approved or
-///   rejected but never *returned* to its depositor (REQ-4.5).
+///   rejected but never *returned* to its depositor.
 ///
 /// Their drafts and submissions survive — the schema nulls the author rather
 /// than cascading — so the project's work is not destroyed along with the
@@ -338,7 +338,7 @@ mod tests {
 
     #[test]
     fn test_an_account_from_configuration_has_no_controls() {
-        // REQ-7.2 makes configuration the source of truth for RDU membership. A
+        // Configuration is the source of truth for RDU membership. A
         // change made here would be undone by the next restart, or would diverge
         // from configuration with nothing to say so.
         let out = list(&[DepositorRow {
@@ -358,9 +358,9 @@ mod tests {
 
     #[test]
     fn test_the_list_distinguishes_a_code_never_sent_from_one_that_was() {
-        // The support answer to "I never got a code": REQ-6.8 covers an
-        // unconfigured relay and REQ-6.9 a failed send, but neither covers
-        // accepted-then-undelivered, and REQ-6.10 forbids the address in a log.
+        // The support answer to "I never got a code": an unconfigured relay and a failed send
+        // are each reported, but neither covers accepted-then-undelivered, and the address must
+        // not go in a log.
         let none = list(&[depositor_row("a", &[], None)]).into_string();
         assert!(none.contains("never"), "{none}");
 
@@ -401,7 +401,7 @@ mod tests {
     }
 
     #[test]
-    fn test_the_create_form_posts_the_three_fields_req_7_3_names() {
+    fn test_the_create_form_posts_name_email_and_shortcodes() {
         let fields = DepositorFields { name: "", email: "", shortcodes: "" };
         let out = create(&fields, None).into_string();
         assert!(out.contains(r#"<form method="post" action="/depositors""#), "{out}");
@@ -445,8 +445,7 @@ mod tests {
 
     #[test]
     fn test_removal_shows_the_address_because_deleting_the_row_deletes_it() {
-        // It is RDU's only channel to ask about work left behind, and REQ-7.5
-        // takes it away.
+        // It is RDU's only channel to ask about work left behind, and removal takes it away.
         let impact = RemovalImpact {
             name: "A Depositor",
             email: "a.depositor@example.test",
@@ -460,7 +459,7 @@ mod tests {
 
     #[test]
     fn test_removal_names_the_submission_that_can_no_longer_be_returned() {
-        // REQ-4.5 returns a submission to its depositor. With the account gone
+        // Request-changes returns a submission to its depositor. With the account gone
         // there is no recipient, so it can be approved or rejected and nothing
         // else — which is the consequence worth seeing before the fact.
         let drafts = codes(&["0801", "080C"]);

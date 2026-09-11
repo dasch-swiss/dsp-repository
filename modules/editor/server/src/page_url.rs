@@ -62,7 +62,7 @@ pub fn normalize_page_url(url: &str) -> &'static str {
         // have to arrive as the same one.
         if let Some((shortcode, tail)) = rest.split_once('/') {
             if !shortcode.is_empty() {
-                // The entity form for one proposal (US-3), and its row actions. The segment is an
+                // The entity form for one proposal, and its row actions. The segment is an
                 // `entity_id`, allocated without bound, so it collapses like every other variable
                 // one here. The row actions need their own entries for the reason the section ones
                 // do, below.

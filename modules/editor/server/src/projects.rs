@@ -1,8 +1,8 @@
 //! `GET /projects`, and the `/projects/{shortcode}` redirect into the form.
 //!
 //! The editing surface is the project form's work. What lands here is the
-//! **scope**: REQ-1.2 confines a depositor to the shortcodes assigned to them,
-//! and REQ-1.3 makes anything else a 403. Both routes now read the published
+//! **scope**: a depositor is confined to the shortcodes assigned to them, and anything else is
+//! a 403. Both routes now read the published
 //! set for the projects' names, so the list is a real list. Both take
 //! [`Authenticated`](crate::auth::guard::Authenticated), so an unauthenticated
 //! request never reaches this module.
@@ -32,7 +32,7 @@ pub(crate) const NOT_ASSIGNED: &str =
 /// `GET /projects` — what this account may edit.
 pub(crate) async fn list(State(state): State<AppState>, Authenticated(user, _): Authenticated) -> Response {
     // Not one page with a branch inside it: an RDU account's `shortcodes` is
-    // empty by design (REQ-4.2), so rendering it through the depositor's list
+    // empty by design, so rendering it through the depositor's list
     // would tell an administrator they have no projects.
     let content = if user.is_rdu() {
         let rows: Vec<_> = state.published.summaries().collect();
@@ -86,11 +86,11 @@ pub(crate) async fn detail(
     // through the redirect.
     //
     // Nothing here answers 404 for an unknown shortcode either, and that is not
-    // an oversight: REQ-2.3 allows a project that exists only locally, so
+    // an oversight: a project may exist only locally, so
     // "absent from the published set" is not "does not exist" — the section
     // handler opens such a project blank rather than refusing it.
     if !user.may_reach(&shortcode) {
-        // REQ-1.3. Logged because a depositor repeatedly reaching for projects
+        // Logged because a depositor repeatedly reaching for projects
         // that are not theirs is worth seeing, and the two identifiers here are
         // both non-personal: an opaque account id and a shortcode.
         tracing::info!(
@@ -163,7 +163,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_depositor_reaching_an_unassigned_project_gets_a_403_page_with_a_way_back() {
-        // REQ-1.3 asks for the status. The page is because a bare 403 is a dead
+        // The requirement asks for the status. The page is because a bare 403 is a dead
         // end in a browser — the reader is signed in and has nothing to press.
         let (state, _) = test_state("project-forbidden").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801"]).await;
@@ -204,7 +204,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_rdu_opens_any_project_without_an_assignment() {
-        // REQ-4.2: RDU access is role-based, not per-project, which is why an
+        // RDU access is role-based, not per-project, which is why an
         // RDU account's assignment set is empty.
         let (state, _) = test_state("project-rdu").await;
         let user = a_user(&state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
@@ -271,8 +271,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_an_assignment_with_no_published_project_is_not_a_blank_row() {
-        // A project assigned before it is published, and REQ-2.3's local-only
-        // project, are both this state. It has to be distinguishable from
+        // A project assigned before it is published, and a project that exists only locally,
+        // are both this state. It has to be distinguishable from
         // having no assignments at all, or the depositor asks the wrong person.
         let (state, _) = test_state("list-unpublished").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["9999"]).await;
@@ -333,7 +333,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_refusal_is_logged_without_anything_personal_in_it() {
-        // REQ-6.10. The two identifiers are an opaque account id and a
+        // The two identifiers are an opaque account id and a
         // shortcode, and a depositor repeatedly reaching for projects that are
         // not theirs is worth being able to see.
         let (state, _) = test_state("project-log").await;

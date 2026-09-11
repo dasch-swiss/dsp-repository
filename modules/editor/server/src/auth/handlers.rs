@@ -1,7 +1,7 @@
 //! The five login routes: `GET`/`POST /login`, `GET`/`POST /login/code`, and
 //! `POST /logout`.
 //!
-//! Every `POST /login` answers identically (REQ-6.2). That is not one branch
+//! Every `POST /login` answers identically. That is not one branch
 //! being careful — it is the shape of [`issue`]: the outcome decides only
 //! whether mail is sent, never what the browser is told.
 
@@ -27,7 +27,7 @@ use crate::AppState;
 ///
 /// Wrong digits, an expired code, a consumed code, a code with its three strikes
 /// spent, a token that binds to nothing, and a throttled account all say this.
-/// A message that distinguished them would undo REQ-6.2: a token that resolves
+/// A message that distinguished them would undo anti-enumeration: a token that resolves
 /// to a live code only exists for an address that has an account, so "too many
 /// attempts" confirms the address is known to anyone willing to spend ten
 /// guesses. The cost is real — a throttled user is told nothing useful — and it
@@ -161,7 +161,7 @@ pub(crate) async fn login_submit(
 /// attacker who starts a sign-in for somebody else's address sees the code for
 /// it — which is why the gate is what it is and not a convenience flag.
 ///
-/// **It costs REQ-6.2 on this page.** The code-entry screen now differs between
+/// **It costs anti-enumeration on this page.** The code-entry screen now differs between
 /// an address with an account and one without, because a binding that resolves
 /// to nothing shows nothing. That is inherent to showing a code at all, it is
 /// confined to the same throwaway condition, and it is recorded in
@@ -253,7 +253,7 @@ pub(crate) async fn code_submit(
     }
 }
 
-/// `POST /logout` (REQ-6.6).
+/// `POST /logout`.
 ///
 /// Idempotent: a sign-out with no session still clears the cookie and lands on
 /// the login page, so a stale tab does not produce an error page.
@@ -300,7 +300,7 @@ pub(crate) async fn logout(State(state): State<AppState>, headers: HeaderMap) ->
 /// But an attacker supplies the presented cookie themselves — any non-empty
 /// value will do — so "known address" answered with a `Set-Cookie` and "unknown
 /// address" answered without one. One request per address, no timing needed,
-/// REQ-6.2 gone.
+/// and anti-enumeration gone.
 ///
 /// So the token is minted before anything is looked up and handed back whatever
 /// happens. When no code was issued, a binding the browser already owns is moved
@@ -359,9 +359,10 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
     let user = match UserRepository::find_by_email(&*state.db, email).await {
         Ok(Some(user)) => user,
         Ok(None) => {
-            // REQ-6.2. Nothing stored, nothing sent, and no identifier logged:
+            // The unknown-address branch answers identically. Nothing stored, nothing sent,
+            // and no identifier logged:
             // there is no account to correlate against, and the address itself
-            // may never reach a log (REQ-6.10).
+            // may never reach a log.
             outcome("unknown_address");
             tracing::info!("a login code was requested for an address with no account");
             return false;
@@ -372,7 +373,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
             return false;
         }
     };
-    // The correlation id (REQ-6.10). The account's own primary key is already
+    // The correlation id. The account's own primary key is already
     // opaque — a v4 UUID, not derived from the address — so a second identifier
     // would be one more thing to keep in step for no gain.
     span.record("auth.subject", tracing::field::display(user.id));
@@ -424,7 +425,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
         Ok(sent) if sent >= state.auth.account_daily_cap => {
             // `warn`, where the global cap is `error`: this is one account being
             // driven, which is the early warning, not the outage. The account id
-            // is already on the span, and the address is not in either (REQ-6.10).
+            // is already on the span, and the address is not in either.
             outcome("account_daily_cap");
             tracing::warn!(
                 // Not `mail.sent_24h`: that name carries the count across all
@@ -483,7 +484,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
             true
         }
         Err(error) => {
-            // REQ-6.9. The error is a classification and an SMTP status code and
+            // A failed send is reported. The error is a classification and an SMTP status code and
             // nothing else — a relay's reply text routinely quotes the recipient.
             tracing::error!(
                 error = %error,
@@ -511,7 +512,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
             } else {
                 // Roll the code back, and the cooldown with it. Leaving it would
                 // make the user wait out a cooldown for a code they never
-                // received, with REQ-6.5 refusing to send another.
+                // received, with the cooldown refusing to send another.
                 if let Err(error) = LoginCodeRepository::delete(&*state.db, code.id).await {
                     tracing::error!(error = %error, "could not roll back a login code whose delivery failed");
                 }
@@ -537,7 +538,7 @@ async fn record_send(state: &AppState, user_id: Uuid, now: DateTime<Utc>) {
 }
 
 /// Stamp when this account last had a code issued, so RDU can answer "I never
-/// got a code" without an address reaching a log (REQ-6.10).
+/// got a code" without an address reaching a log.
 async fn stamp_issued(state: &AppState, user_id: Uuid, now: DateTime<Utc>) {
     if let Err(error) = UserRepository::record_code_issued(&*state.db, user_id, now).await {
         tracing::warn!(error = %error, "could not stamp when a login code was issued");
@@ -617,7 +618,7 @@ async fn verify(
         return Err(());
     }
 
-    // REQ-6.4's three strikes, claimed before anything is compared. The claim is
+    // Three strikes per code, claimed before anything is compared. The claim is
     // the limit: reading `attempts` and incrementing it afterwards let every
     // simultaneous submission past the check at once, which is what made twenty
     // parallel guesses cost three strikes' worth of budget and none of the
@@ -626,7 +627,7 @@ async fn verify(
     match LoginCodeRepository::claim_attempt(&*state.db, code.id, secret::MAX_CODE_ATTEMPTS).await {
         Ok(Attempt::Claimed) => {}
         Ok(Attempt::Exhausted) => {
-            // REQ-6.4 doing its job.
+            // The attempt limit doing its job.
             outcome("code_invalidated");
             tracing::warn!("a code with its three attempts spent was submitted");
             return Err(());
@@ -781,7 +782,7 @@ mod tests {
         cookie_set(&response, cookie::SESSION).expect("a session cookie must be set")
     }
 
-    // ---- REQ-6.2: the response tells an attacker nothing ---------------------
+    // ---- Anti-enumeration: the response tells an attacker nothing ------------
 
     #[tokio::test]
     async fn test_a_known_and_an_unknown_address_get_byte_for_byte_the_same_answer() {
@@ -848,7 +849,7 @@ mod tests {
     async fn test_a_forged_binding_cannot_tell_a_known_address_from_an_unknown_one() {
         // The attacker supplies the cookie themselves — `cookie::read` accepts any
         // non-empty value, so no prior request is needed. If whether a cookie
-        // comes back depends on whether the address has an account, REQ-6.2 is
+        // comes back depends on whether the address has an account, anti-enumeration is
         // defeated in a single request, with no timing measurement.
         let (state, _) = test_state("enumerate-forged").await;
         a_user(&state, KNOWN).await;
@@ -874,7 +875,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_simultaneous_wrong_guesses_cannot_outrun_the_three_strike_limit() {
-        // REQ-6.4 is one of exactly two controls standing between a ~19.93-bit
+        // The attempt limit is one of exactly two controls standing between a ~19.93-bit
         // secret and a guesser. Reading `attempts` and then incrementing it
         // leaves a window in which every simultaneous submission passes the
         // check, so the limit has to BE the increment.
@@ -942,7 +943,7 @@ mod tests {
 
         request_code(&app, UNKNOWN, None).await;
 
-        assert!(mailer.sent().is_empty(), "REQ-6.2: nothing may be sent");
+        assert!(mailer.sent().is_empty(), "an unknown address may send nothing");
         assert_eq!(count_rows(&db, "login_codes").await, 0);
         assert_eq!(count_rows(&db, "users").await, 0);
     }
@@ -1237,7 +1238,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_the_reveal_puts_no_address_in_a_log() {
-        // REQ-6.10 is unaffected by any of this: the code reaches the page, the
+        // The address-disclosure rule is unaffected by any of this: the code reaches the page, the
         // address reaches neither the page nor a log.
         let (state, _) = revealing_state("reveal-no-address").await;
         a_user(&state, KNOWN).await;
@@ -1279,7 +1280,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_signing_in_stamps_when_the_code_was_issued() {
-        // REQ-6.10's diagnosis route: RDU answers "I never got a code" from this
+        // The diagnosis route that keeps addresses out of logs: RDU answers "I never got a
+        // code" from this
         // rather than from a log with an address in it.
         let (state, _) = test_state("stamp").await;
         let user_id = a_user(&state, KNOWN).await;
@@ -1320,7 +1322,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_three_wrong_entries_kill_the_code_even_for_the_right_digits() {
-        // REQ-6.4. The check is before the comparison, so the fourth attempt
+        // The check is before the comparison, so the fourth attempt
         // fails whatever it carries.
         let (state, mailer) = test_state("three-strikes").await;
         a_user(&state, KNOWN).await;
@@ -1390,7 +1392,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_the_cooldown_refuses_a_second_code_without_touching_the_first() {
-        // REQ-6.5, and the reason the binding is not re-issued: the browser that
+        // The cooldown, and the reason the binding is not re-issued: the browser that
         // asked keeps the code it can actually spend.
         let (state, mailer) = state_with("cooldown", RecordingMailer::new(), |auth| {
             auth.cooldown = Duration::from_secs(60);
@@ -1455,8 +1457,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_signing_in_does_not_reset_the_resend_cooldown() {
-        // REQ-6.5 is measured from the last code *issued*, and the cooldown's
-        // only anchor is the row itself. Deleting every code on a successful
+        // The cooldown is measured from the last code *issued*, and its only anchor is the
+        // row itself. Deleting every code on a successful
         // sign-in therefore deleted the anchor: request, sign in, request again,
         // and a second mail went out immediately.
         let (state, mailer) = state_with("cooldown-after-signin", RecordingMailer::new(), |auth| {
@@ -1571,7 +1573,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_the_per_account_cap_refuses_indistinguishably() {
-        // REQ-6.2. A capped account and an address with no account must answer
+        // A capped account and an address with no account must answer
         // byte for byte the same, or the cap becomes an enumeration oracle for
         // any address an attacker is willing to spend its budget on.
         let (state, _mailer) = state_with("account-cap-enumerate", RecordingMailer::new(), |auth| {
@@ -1709,7 +1711,7 @@ mod tests {
     #[tokio::test]
     async fn test_a_failed_send_rolls_the_code_and_its_cooldown_back() {
         // Otherwise the user waits out a cooldown for a code they never got, and
-        // REQ-6.5 refuses to send them another.
+        // the cooldown refuses to send them another.
         let db = Arc::new(open_test_db("send-fails").await);
         let mailer = RecordingMailer::failing();
         let state = state_over(db.clone(), mailer.clone(), |auth| {
@@ -1784,7 +1786,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::SEE_OTHER);
         assert_eq!(location(&response).as_deref(), Some("/login"));
         assert_eq!(cookie_set(&response, cookie::SESSION).as_deref(), Some(""));
-        assert_eq!(count_rows(&db, "sessions").await, 0, "REQ-6.6: the row goes too");
+        assert_eq!(count_rows(&db, "sessions").await, 0, "the session row goes too");
     }
 
     #[tokio::test]
@@ -1974,7 +1976,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_malformed_address_is_reported_rather_than_silently_accepted() {
-        // With REQ-6.2's identical response, a typo is otherwise indistinguishable
+        // With the identical anti-enumeration response, a typo is otherwise indistinguishable
         // from success and the user waits for mail that was never going anywhere.
         let (state, mailer) = test_state("malformed").await;
         let app = test_app(&state);
@@ -2026,7 +2028,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_failed_attempt_claim_refuses_a_code_it_never_compared() {
-        // REQ-6.4's strike is claimed *before* the digits are compared, so a
+        // A strike is claimed *before* the digits are compared, so a
         // claim that fails has to refuse. Letting the comparison happen anyway
         // would leave the three-attempt budget unenforced for as long as the
         // store is unwell, which is unlimited guesses against a live code.
@@ -2090,7 +2092,7 @@ mod tests {
         // The subtle one. Handing the browser the new token when the move failed
         // would point its cookie at nothing while the live code still pointed at
         // the old token — so every code the user entered would be refused until
-        // the cooldown ran out. And the response has to keep its shape (REQ-6.2):
+        // the cooldown ran out. And the response has to keep its shape:
         // a token of the same length comes back either way.
         let db = Arc::new(open_test_db("rebind-fails").await);
         let mailer = RecordingMailer::new();
@@ -2184,7 +2186,8 @@ mod tests {
         assert_eq!(user.failed_logins, 0, "the throttle did not advance");
         assert!(user.failed_login_at.is_none(), "and no lockout window was opened");
         // The per-code strike is a different write and it went through, so
-        // REQ-6.4 still bounds this code even while the account counter is stuck.
+        // The per-code attempt limit still bounds this code even while the account counter is
+        // stuck.
         let stored = LoginCodeRepository::find_by_browser_token(&*db, &binding)
             .await
             .unwrap()
@@ -2258,11 +2261,11 @@ mod tests {
         );
     }
 
-    // ---- REQ-6.10 -----------------------------------------------------------
+    // ---- No address in a log or a trace -------------------------------------
 
     #[tokio::test]
     async fn test_no_address_reaches_a_log_or_a_span_on_any_path() {
-        // REQ-6.10, over every branch that touches an address: unknown, issued,
+        // Over every branch that touches an address: unknown, issued,
         // wrong code, signed in, throttled, and a relay that refuses — the last
         // one especially, because an SMTP reply routinely quotes the recipient.
         let (state, mailer) = state_with("no-address-in-logs", RecordingMailer::new(), |auth| {

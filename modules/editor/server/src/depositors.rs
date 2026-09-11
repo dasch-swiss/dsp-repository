@@ -1,20 +1,20 @@
-//! Depositor account management (US-7), and the RDU-only guard the whole
+//! Depositor account management, and the RDU-only guard the whole
 //! surface sits behind.
 //!
 //! ## What the requirements say, and what they leave open
 //!
-//! REQ-7.3 creates an account from a name, an address and a set of shortcodes;
-//! REQ-7.4 refuses a duplicate address; REQ-7.5 removes the account and every
-//! session belonging to it. Update is **not** a requirement — US-7 has create
-//! and remove only — and it is here anyway, because without it correcting a
+//! An account is created from a name, an address and a set of shortcodes; a duplicate address
+//! is refused; removal takes the account and every session belonging to it. Update is **not** a
+//! requirement — create and remove are the whole of what was asked for — and it is here anyway,
+//! because without it correcting a
 //! misspelled name means deleting the account, which destroys its sessions, its
 //! assignments and the authorship of everything it touched, to fix a typo.
 //!
 //! ## RDU accounts are read-only here
 //!
 //! The list shows every account, because RDU needs to see who administers the
-//! service, but the controls act on depositors only. REQ-7.2 makes configuration
-//! the source of truth for RDU membership: an edit made here would be undone by
+//! service, but the controls act on depositors only. Configuration is the source of truth for
+//! RDU membership: an edit made here would be undone by
 //! the next restart, and a removal would either be undone the same way or — for
 //! an address no longer listed — leave the product and the configuration
 //! disagreeing with nothing to say so. Startup already warns about an `rdu`
@@ -28,7 +28,7 @@
 //! are not covered by that and are not reversible, so the confirmation page
 //! names both before the fact: the address is deleted with the row, and it is
 //! RDU's only channel to its owner; and a submission they made stays pending
-//! with no author, so REQ-4.5's "return to the depositor" has no recipient — it
+//! with no author, so returning it to the depositor has no recipient — it
 //! can be approved or rejected and nothing else.
 
 use axum::extract::{Path, State};
@@ -70,7 +70,7 @@ const GONE: &str = "That account no longer exists. It may have been removed in a
 const STORAGE_FAILED: &str = "The change could not be saved. Try again.";
 const RDU_IMMUTABLE: &str = "RDU accounts come from the EDITOR_RDU_EMAILS setting and cannot be changed here.";
 
-/// The form behind create and edit alike (REQ-7.3).
+/// The form behind create and edit alike.
 #[derive(Deserialize)]
 pub(crate) struct DepositorForm {
     name: String,
@@ -121,7 +121,7 @@ impl DepositorForm {
 ///
 /// The offending entry is quoted in the message. A shortcode is not personal
 /// data, and naming it is the difference between a fixable error and a puzzle —
-/// this is a page, not a log, so REQ-6.10 does not bear on it.
+/// this is a page, not a log, so the address-disclosure rule does not bear on it.
 fn parse_shortcodes(field: &str) -> Result<Vec<String>, String> {
     let mut assignments: Vec<String> = Vec::new();
     for entry in field.split([',', ' ', '\t', '\n', '\r']).filter(|e| !e.is_empty()) {
@@ -160,7 +160,7 @@ pub(crate) async fn list(State(state): State<AppState>, Rdu(viewer): Rdu) -> Res
             role: user.role.as_str(),
             shortcodes: &user.shortcodes,
             last_code_at: last_code_at.as_deref(),
-            // REQ-7.2: RDU membership comes from configuration, so the controls
+            // RDU membership comes from configuration, so the controls
             // here would be lying about what they can change.
             manageable: !user.is_rdu(),
         })
@@ -175,7 +175,7 @@ pub(crate) async fn create_form(State(state): State<AppState>, Rdu(viewer): Rdu)
     crate::render(&state, CREATE_TITLE, StatusCode::OK, Some(&viewer), page::create(&fields, None))
 }
 
-/// `POST /depositors` — create a depositor (REQ-7.3, REQ-7.4).
+/// `POST /depositors` — create a depositor.
 #[tracing::instrument(
     skip_all,
     fields(
@@ -207,7 +207,7 @@ pub(crate) async fn create(
         email: email.to_string(),
         name: name.to_string(),
         // Never from the form. RDU membership is configuration's to decide
-        // (REQ-7.2), so this surface can only ever make a depositor.
+        //, so this surface can only ever make a depositor.
         role: Role::Depositor,
         shortcodes,
         failed_logins: 0,
@@ -223,7 +223,8 @@ pub(crate) async fn create(
             tracing::info!(shortcodes = user.shortcodes.len(), "created a depositor account");
             Redirect::to("/depositors").into_response()
         }
-        // REQ-7.4. `email_normalized` is the only unique index on the table, so
+        // A duplicate address is refused. `email_normalized` is the only unique index on the
+        // table, so
         // a conflict here is a duplicate address and nothing else.
         Err(RepositoryError::Conflict { .. }) => {
             span.record("auth.outcome", "duplicate_email");
@@ -365,7 +366,7 @@ pub(crate) async fn remove_form(State(state): State<AppState>, Rdu(viewer): Rdu,
             // `list` returns every row regardless of state, so the state filter
             // is this handler's to apply. Everything short of `Approved`
             // qualifies: the warning is about work that can no longer be
-            // *returned* to its depositor (REQ-4.5), and an `InReview`
+            // *returned* to its depositor, and an `InReview`
             // submission is as unreturnable as a `Submitted` one — filtering to
             // `Submitted` alone would hide the case where the loss matters most.
             .filter(|submission| submission.submitted_by == Some(id) && submission.state != SubmissionState::Approved)
@@ -389,8 +390,7 @@ pub(crate) async fn remove_form(State(state): State<AppState>, Rdu(viewer): Rdu,
     )
 }
 
-/// `POST /depositors/{id}/remove` — delete the account and its sessions
-/// (REQ-7.5).
+/// `POST /depositors/{id}/remove` — delete the account and its sessions.
 #[tracing::instrument(
     skip_all,
     fields(
@@ -419,8 +419,7 @@ pub(crate) async fn remove(State(state): State<AppState>, Rdu(viewer): Rdu, Path
     match UserRepository::delete(&*state.db, target.id).await {
         Ok(()) => {
             // Sessions, login codes and shortcode assignments go with it through
-            // `ON DELETE CASCADE`, which is REQ-7.5's "and every session
-            // belonging to it".
+            // `ON DELETE CASCADE`, which is the "and every session belonging to it" half.
             span.record("auth.outcome", "removed");
             tracing::info!("removed a depositor account and its sessions");
             Redirect::to("/depositors").into_response()
@@ -711,7 +710,7 @@ mod route_tests {
         assert_eq!(location(&response).as_deref(), Some("/login?next=/depositors"));
     }
 
-    // ---- REQ-7.3 and REQ-7.4: creation --------------------------------------
+    // ---- Creation -----------------------------------------------------------
 
     #[tokio::test]
     async fn test_rdu_creates_a_depositor_with_a_name_address_and_projects() {
@@ -737,7 +736,7 @@ mod route_tests {
         assert_eq!(created.name, "A Depositor");
         assert_eq!(created.shortcodes, vec!["0801".to_string(), "080C".to_string()]);
         // The role is never taken from the form: RDU membership is
-        // configuration's to decide (REQ-7.2).
+        // configuration's to decide.
         assert_eq!(created.role, Role::Depositor);
         assert!(created.may_reach("0801"));
         assert!(!created.may_reach("0803"));
@@ -745,8 +744,8 @@ mod route_tests {
 
     #[tokio::test]
     async fn test_a_duplicate_address_is_refused_however_it_is_capitalised() {
-        // REQ-7.4. The uniqueness lives on the normalized address, so this can
-        // not be defeated by typing it differently.
+        // The uniqueness lives on the normalized address, so this cannot be defeated by
+        // typing it differently.
         let (state, _) = test_state("dep-duplicate").await;
         let (_, session) = rdu(&state).await;
         a_user(&state, DEPOSITOR_EMAIL, "A Depositor", Role::Depositor, &[]).await;
@@ -843,7 +842,7 @@ mod route_tests {
 
     #[tokio::test]
     async fn test_an_edit_onto_another_accounts_address_is_refused() {
-        // REQ-7.4 on the edit path. The create path had this covered and the
+        // The duplicate-address refusal on the edit path. The create path had this covered and the
         // edit path did not, though its `Conflict` arm is just as reachable:
         // `email_normalized` is the only unique column on `users`, so pointing
         // one account at another's address hits it.
@@ -881,7 +880,7 @@ mod route_tests {
     async fn test_dropping_a_shortcode_leaves_the_projects_draft_alone() {
         // A draft is keyed by shortcode, not by user, so it belongs to the
         // project. Taking away an assignment takes away access and nothing else,
-        // and RDU still sees the draft (REQ-1.11).
+        // and RDU still sees the draft.
         let (state, _) = test_state("dep-update-draft").await;
         let (_, session) = rdu(&state).await;
         let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;
@@ -917,12 +916,12 @@ mod route_tests {
         assert_eq!(draft.updated_by, Some(target.id), "and still names its last editor");
     }
 
-    // ---- REQ-7.5: removal ---------------------------------------------------
+    // ---- Removal ------------------------------------------------------------
 
     #[tokio::test]
     async fn test_removal_deletes_the_account_and_every_session_belonging_to_it() {
-        // REQ-7.5, and the second half is what stops a removed depositor going
-        // on using the tab they already had open.
+        // The sessions half is what stops a removed depositor going on using the tab they
+        // already had open.
         let db = Arc::new(open_test_db("dep-remove").await);
         let state = state_over(db.clone(), RecordingMailer::new(), |auth| auth.cooldown = Duration::ZERO);
         let (_, rdu_session) = rdu(&state).await;
@@ -1014,7 +1013,7 @@ mod route_tests {
     async fn test_the_confirmation_names_the_address_and_the_work_that_becomes_unreturnable() {
         // Both are irreversible and neither is obvious: the address is RDU's
         // only channel to this person, and a pending submission with no author
-        // can be approved or rejected but never returned (REQ-4.5).
+        // can be approved or rejected but never returned.
         let (state, _) = test_state("dep-remove-confirm").await;
         let (_, rdu_session) = rdu(&state).await;
         let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;
@@ -1058,7 +1057,7 @@ mod route_tests {
 
     #[tokio::test]
     async fn test_an_rdu_account_cannot_be_edited_or_removed_here() {
-        // REQ-7.2 makes configuration the source of truth. A change here would
+        // Configuration is the source of truth. A change here would
         // be undone by the next restart, or would diverge from configuration
         // with nothing to say so.
         let (state, _) = test_state("dep-rdu-immutable").await;
@@ -1105,9 +1104,9 @@ mod route_tests {
 
     #[tokio::test]
     async fn test_the_list_answers_i_never_got_a_code_without_an_address_in_a_log() {
-        // REQ-6.8 covers an unconfigured relay and REQ-6.9 a failed send;
-        // neither covers accepted-then-undelivered, and REQ-6.10 forbids the
-        // address in a log. This column is what is left.
+        // An unconfigured relay and a failed send are each reported; neither covers
+        // accepted-then-undelivered, and the address must not go in a log. This column is what
+        // is left.
         let (state, _) = test_state("dep-last-code").await;
         let (_, session) = rdu(&state).await;
         let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &[]).await;
@@ -1143,7 +1142,7 @@ mod route_tests {
         }
     }
 
-    // ---- Method discipline and REQ-6.10 -------------------------------------
+    // ---- Method discipline, and no address in a log -------------------------
 
     #[tokio::test]
     async fn test_every_write_shares_its_url_with_a_get_that_renders_a_page() {
@@ -1198,7 +1197,7 @@ mod route_tests {
 
     #[tokio::test]
     async fn test_no_address_reaches_a_log_or_a_span_on_any_account_path() {
-        // REQ-6.10. These handlers take an address in a form body and hold one
+        // These handlers take an address in a form body and hold one
         // on every record they touch, so they are the most likely place for one
         // to reach a span field.
         let (state, _) = test_state("dep-no-address-in-logs").await;

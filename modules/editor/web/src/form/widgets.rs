@@ -11,13 +11,13 @@
 //! at all. That is load-bearing, because a section posts only its own fields and
 //! an applier reads an absent name as "this section did not carry it" — so a
 //! display-only or not-yet-read field must submit no name, or an empty control
-//! would clear a value the save was never meant to touch (REQ-1.5, REQ-1.7).
+//! would clear a value the save was never meant to touch.
 //!
 //! A note rather than silence for a field whose widget has not landed: a
 //! depositor who cannot find "Keywords" in the section the published page shows
 //! it in would otherwise conclude the form lost it.
 
-use editor_core::agents::{Agent, AgentScope};
+use editor_core::agents::{Agent, AgentKind, AgentMatches, AgentScope};
 use editor_core::draft::{ProjectDraft, UrlSlot};
 use editor_core::form::{ChoiceSet, FormBody, Shape, GRANTS_KIND, REFERENCE_KIND};
 use editor_core::multilingual::{DraftMultilingual, UI_LANGUAGES};
@@ -36,7 +36,7 @@ use serde_json::Value;
 
 use super::registry::{Field, Obligation};
 use crate::form::INTENT;
-use crate::pages::section::{propose_changes_intent, PROPOSE_ORGANIZATION, PROPOSE_PERSON};
+use crate::pages::section::{propose_changes_intent, FIND_AGENT, PROPOSE_ORGANIZATION, PROPOSE_PERSON};
 
 /// Whether the form is open for editing.
 ///
@@ -48,10 +48,10 @@ pub enum Mode {
     /// Controls, and a save that writes.
     Editable,
     /// Values only — the project has a submission in review, so nothing may
-    /// change under the reviewer (REQ-4.x).
+    /// change under the reviewer.
     ReadOnly,
     /// Values only, because RDU accepted this field in the round being
-    /// answered (REQ-4.5).
+    /// answered.
     ///
     /// A third variant rather than [`Self::ReadOnly`] with a flag beside it,
     /// because the reader has to be told *which* of two reasons applies: a
@@ -237,8 +237,8 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: R
     match field.id {
         "name" | "officialName" => text(field, draft, InputType::Text),
         // `type="text"`, not `type="url"`: a draft may hold a value that does
-        // not validate (REQ-1.9), and a browser refusing to submit a half-typed
-        // address would block the save REQ-1.10 asks for — the same reason
+        // not validate, and a browser refusing to submit a half-typed
+        // address would block a save that must always be possible — the same reason
         // `text` below never sets `required`.
         "dataManagementPlan" => text(field, draft, InputType::Text),
         "startDate" | "endDate" | "accessRights.embargoDate" => text(field, draft, InputType::Date),
@@ -307,7 +307,7 @@ pub struct Rows<'a> {
     /// directory looks like — honest, and it still round-trips.
     pub agents: Option<&'a AgentScope<'a>>,
     /// Whether an unresolved or resolved agent id also renders the controls that
-    /// start an entity proposal (REQ-3.1, REQ-3.2).
+    /// start an entity proposal.
     ///
     /// Defaults to `false` (via `Rows`'s `Default`) rather than being inferred
     /// from `agents.is_some()`: the entity form's own `affiliations` field reuses
@@ -427,39 +427,166 @@ pub(crate) fn string_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -
     }
 }
 
-/// The `id` of the shared suggestion list, referenced by every agent input.
+/// The suffix a picker's search box posts under, appended to the control's unique name.
 ///
-/// One list per page rather than one per control: it carries every committed agent, and
-/// `attributions` runs to dozens of rows on one project, so a `<select>` per row would re-send the
-/// whole vocabulary per row on every save. The measured sizes are in
-/// `docs/src/editor/project-form.md`.
-pub(crate) const AGENT_LIST_ID: &str = "agent-suggestions";
+/// Read by nothing in `editor_core::form`: an applier reads the names it knows, so the query
+/// rides along in the body and is never stored. That is the whole reason it needs no field of its
+/// own anywhere.
+const QUERY_SUFFIX: &str = "q";
 
-/// The shared suggestion list, rendered once per page.
+/// The label on a picker's search box, and on the button that runs it.
+const FIND_AGENT_LABEL: &str = "Find a person or organisation";
+const FIND_AGENT_HINT: &str = "Search by name, then choose from the matches. Part of a name is enough.";
+const FIND_AGENT_BUTTON: &str = "Search";
+
+/// One agent picker: what the row refers to now, and the way to change it.
 ///
-/// Each option's **value is the id**, which is what the input holds and
-/// therefore what round-trips byte-for-byte; the option's text is the name, so
-/// the dropdown reads as a list of people and organisations rather than of
-/// ids. The kind is stated beside the name because two committed organisations
-/// have person-like names.
-pub fn agent_suggestions(agents: &AgentScope) -> Markup {
+/// ## Why this is a search and not a list
+///
+/// It replaces an `<input list=>` pointed at one shared `<datalist>` of all 558 agents. That
+/// control was reported as "seems to be a pull-down menu, but when I click it, nothing opens",
+/// and both halves were true: Chromium draws a dropdown arrow for any `input[list]`, and it
+/// filters the options against what the box already holds — which was the full id, so the only
+/// thing left to offer was the value already there. A depositor also had to know `person-417` to
+/// type it, and the datalist matched ids rather than the names it displayed.
+///
+/// A `<select>` of everything is what the datalist existed to avoid: one committed project has 56
+/// contributors, so at 31.7 KB a list that would be 1.8 MB on one page. A search narrows first and
+/// then offers a real `<select>`, which opens because it is a menu rather than looking like one.
+///
+/// ## What posts
+///
+/// `value_name` always, and nothing else the appliers read. Before a search it is a hidden input
+/// holding the stored id, so an untouched save round-trips byte-for-byte with no lookup in
+/// between — the property the old text input had and the reason its value was the id. After a
+/// search the `<select>` posts under that same name, with the current choice first and selected,
+/// so leaving it alone is still the identity. No applier changed for any of this.
+///
+/// `value_name` is shared by every funder control in a grant, which is how `apply_funding`
+/// collects them into one list; `unique` is what distinguishes them for element ids and for the
+/// search box, and is the same string for a control that holds only one value.
+fn agent_picker(value_name: &str, unique: &str, label: &str, id: &str, row_context: &str, rows: Rows<'_>) -> Markup {
+    let id = id.trim();
+    let resolved = rows.agents.and_then(|agents| agents.get(id));
+    let query_name = format!("{unique}.{QUERY_SUFFIX}");
+    let query = rows
+        .posted
+        .and_then(|body| body.get(&query_name))
+        .unwrap_or_default()
+        .to_string();
+    let matches = rows
+        .agents
+        .filter(|_| !query.trim().is_empty())
+        .map(|agents| agents.search(&query));
+
     html! {
-        datalist id=(AGENT_LIST_ID) {
-            @for agent in agents.all() {
-                option value=(agent.id) { (agent.label) " (" (agent.kind.label()) ")" }
+        div class="flex flex-col gap-2" {
+            @match matches.as_ref().filter(|found| !found.is_empty()) {
+                Some(found) => {
+                    ({
+                        let mut chooser = select(value_name, label)
+                            .with_id(unique)
+                            .selected(id);
+                        chooser = match resolved {
+                            Some(agent) => {
+                                chooser
+                                    .option(
+                                        id,
+                                        format!("Keep {} ({})", agent.label, agent.kind.label()),
+                                    )
+                            }
+                            None if id.is_empty() => chooser.option("", "Nobody chosen"),
+                            None => {
+                                chooser
+                                    .option(id, format!("Keep {id} ({UNRESOLVED_AGENT})"))
+                            }
+                        };
+                        for agent in found
+                            .offered()
+                            .iter()
+                            .filter(|agent| agent.id != id)
+                        {
+                            chooser = chooser
+                                .option(
+                                    &agent.id,
+                                    format!("{} ({})", agent.label, agent.kind.label()),
+                                );
+                        }
+                        chooser
+                            .hint(
+                                match found.truncated() {
+                                    true => {
+                                        format!(
+                                            "{} matches, showing the first {}. Add a word to narrow it.",
+                                            found.total(),
+                                            found.offered().len(),
+                                        )
+                                    }
+                                    false => {
+                                        format!(
+                                            "{} match{}.",
+                                            found.total(),
+                                            if found.total() == 1 { "" } else { "es" },
+                                        )
+                                    }
+                                },
+                            )
+                    })
+                }
+                None => {
+                    input type="hidden" name=(value_name) value=(id);
+                    p class="text-sm" {
+                        (label)
+                        ": "
+                        @match resolved {
+                            Some(agent) => {
+                                strong { (agent.label) }
+                                " ("
+                                (agent.kind.label())
+                                ")"
+                            }
+                            None if id.is_empty() => {
+                                span class="text-neutral-600" { "nobody chosen yet" }
+                            }
+                            None => {
+                                strong { (id) }
+                                " — "
+                                (UNRESOLVED_AGENT)
+                            }
+                        }
+                    }
+                }
+            }
+            div class="flex flex-wrap items-end gap-2" {
+                ({
+                    text_field(&query_name, FIND_AGENT_LABEL)
+                        .input_type(InputType::Text)
+                        .value(&query)
+                        .hint(FIND_AGENT_HINT)
+                        .with_id(format!("{unique}-{QUERY_SUFFIX}"))
+                })
+                ({
+                    button(FIND_AGENT_BUTTON)
+                        .variant(ButtonVariant::Secondary)
+                        .button_type(ButtonType::Submit)
+                        .name_value(INTENT, FIND_AGENT)
+                        .aria_label(format!("{FIND_AGENT_LABEL} ({row_context})"))
+                })
+            }
+            // Said here and not only at submit, and said for a search as well as for a stored id:
+            // the form is where it can be fixed.
+            @if matches.as_ref().is_some_and(AgentMatches::is_empty) {
+                p class="text-sm" {
+                    "Nothing matches “"
+                    (query)
+                    "”. Check the spelling, or propose a new entry below."
+                }
             }
         }
     }
 }
 
-/// A list of agent ids as editable rows, each resolved to a name.
-///
-/// The input holds the **id**, not the name. That is what keeps an untouched
-/// save byte-identical: the stored value goes into the control and comes back
-/// out of it unchanged, with no lookup in between that could fail or resolve
-/// differently. The name is rendered beside the control instead, so a reader is
-/// not left looking at `person-001` — and an id that resolves to nobody says so
-/// there, which is the same thing submit refuses.
+/// A list of agent ids as editable rows, each resolved to a name through [`agent_picker`].
 pub(crate) fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     let keys = row_keys(field, draft, rows);
     let stored = stored_rows(field, draft);
@@ -472,24 +599,22 @@ pub(crate) fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) ->
             Some(body) if body.has(&row_name) => body.get(&format!("{}.{key}", field.id)).unwrap_or_default(),
             _ => stored.get(position).and_then(|row| row.as_str()).unwrap_or_default(),
         };
-        // See `attribution_rows` for why the resolved name and the warning go
-        // through the control rather than beside it.
-        let mut agent = text_field(format!("{}.{key}", field.id), row_label(AGENT_ID_LABEL, position))
-            .input_type(InputType::Text)
-            .value(id)
-            .list(AGENT_LIST_ID);
-        let resolved = rows.agents.and_then(|agents| agents.get(id));
-        match resolved {
-            Some(found) => agent = agent.hint(format!("{} ({})", found.label, found.kind.label())),
-            None if !id.trim().is_empty() => agent = agent.error(UNRESOLVED_AGENT),
-            None => {}
-        }
+        let name = format!("{}.{key}", field.id);
+        let resolved = rows.agents.and_then(|agents| agents.get(id.trim()));
+        let row_context = format!("row {}", position + 1);
         let body = html! {
             div class="flex flex-col gap-2" {
-                (agent)
-                @if rows.propose {
-                    (propose_controls(resolved, id, &format!("row {}", position + 1)))
-                }
+                ({
+                    agent_picker(
+                        &name,
+                        &name,
+                        &row_label(AGENT_ID_LABEL, position),
+                        id,
+                        &row_context,
+                        rows,
+                    )
+                })
+                @if rows.propose { (propose_controls(resolved, id, &row_context)) }
             }
         };
         list = list.row(key, body);
@@ -502,7 +627,7 @@ pub(crate) fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) ->
     }
 }
 
-/// REQ-3.1 and REQ-3.2's controls, beside an agent picker whose id does not
+/// The controls that start an entity proposal, beside an agent picker whose id does not
 /// resolve or does: named submits on the section's own form, exactly like
 /// `save`/`submit` — `sections.rs` already dispatches all three intents, so
 /// none of this needs a route of its own.
@@ -514,6 +639,20 @@ pub(crate) fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) ->
 /// `row_context` is spliced into each button's accessible name, the same
 /// reason [`row_label`] numbers a row's own control: several rows' propose
 /// buttons would otherwise share one indistinguishable name.
+/// What the propose-changes button says, which names **the entity** and never the row it sits in.
+///
+/// A bare "Propose changes" read as an offer to propose whatever else the row held. On a
+/// contributor row that is the roles, and a reviewer took it exactly that way: the roles are
+/// project data, saved by "Save draft" like any other field, and `proposals::check_person` goes as
+/// far as refusing a project-role word in a person's `jobTitles` precisely because a role is not
+/// part of the person. Nothing behaved wrongly; the button's name was the whole problem.
+const fn propose_changes_label(kind: AgentKind) -> &'static str {
+    match kind {
+        AgentKind::Person => "Propose changes to this person's details",
+        AgentKind::Organization => "Propose changes to this organisation's details",
+    }
+}
+
 fn propose_controls(resolved: Option<&Agent>, id: &str, row_context: &str) -> Markup {
     if id.trim().is_empty() {
         return html! {};
@@ -540,14 +679,15 @@ fn propose_controls(resolved: Option<&Agent>, id: &str, row_context: &str) -> Ma
                     })
                 }
             }
-            Some(_) => {
+            Some(agent) => {
+                @let label = propose_changes_label(agent.kind);
                 div class="flex flex-wrap items-center gap-2" {
                     ({
-                        button("Propose changes")
+                        button(label)
                             .variant(ButtonVariant::Secondary)
                             .button_type(ButtonType::Submit)
                             .name_value(INTENT, propose_changes_intent(id))
-                            .aria_label(format!("Propose changes ({row_context})"))
+                            .aria_label(format!("{label} ({row_context})"))
                     })
                 }
             }
@@ -584,8 +724,18 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
                 .unwrap_or_default()
                 .to_string(),
         };
+        // Blanks are dropped, because the "add another role" input below posts under this same
+        // name and an untouched one sends an empty string. Read back as a role this row holds, it
+        // joined the option union as an unlabelled checkbox — ticked, since it is also in `held` —
+        // which is what a depositor saw appear after any re-render that keeps the posted body.
+        // `form::resolve_against` already discards it on the way into the draft, so this is the
+        // render catching up with what is actually stored.
         let held: Vec<String> = match posted {
-            Some(body) => body.all(&format!("{prefix}.role")).map(str::to_string).collect(),
+            Some(body) => body
+                .all(&format!("{prefix}.role"))
+                .filter(|role| !role.trim().is_empty())
+                .map(str::to_string)
+                .collect(),
             None => stored
                 .get(position)
                 .and_then(|row| row.get("contributorType"))
@@ -599,34 +749,26 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
                 options.push(role);
             }
         }
-        // Through `.hint()`/`.error()` rather than a sibling paragraph, so both
-        // are tied to the input by `aria-describedby` and the unresolved case
-        // also sets `aria-invalid`. As siblings they were announced to nobody: a
-        // reader tabbing onto the input heard its label and the raw id, and not
-        // the warning explaining why the id was wrong. `funding`'s funder
-        // controls already folded the same state into their label.
-        let mut agent = text_field(format!("{prefix}.contributor"), row_label(AGENT_ID_LABEL, position))
-            .input_type(InputType::Text)
-            .value(&contributor)
-            .list(AGENT_LIST_ID);
+        let contributor_name = format!("{prefix}.contributor");
         let resolved = rows.agents.and_then(|agents| agents.get(contributor.trim()));
-        match resolved {
-            Some(found) => agent = agent.hint(format!("{} ({})", found.label, found.kind.label())),
-            None if !contributor.trim().is_empty() => agent = agent.error(UNRESOLVED_AGENT),
-            None => {}
-        }
+        let row_context = format!("row {}", position + 1);
+        // The propose controls go **below** the role controls, not between them and the picker.
+        // Sandwiched there they read as an offer to propose the roles underneath them, which is
+        // how a reviewer read them — and the roles are project data that "Save draft" stores, with
+        // nothing to propose. Last in the row they follow everything the row is about, which is
+        // what they act on: the entity the picker names.
         let body = html! {
             div class="flex flex-col gap-3" {
-                (agent)
-                @if rows.propose {
-                    ({
-                        propose_controls(
-                            resolved,
-                            &contributor,
-                            &format!("row {}", position + 1),
-                        )
-                    })
-                }
+                ({
+                    agent_picker(
+                        &contributor_name,
+                        &contributor_name,
+                        &row_label(AGENT_ID_LABEL, position),
+                        &contributor,
+                        &row_context,
+                        rows,
+                    )
+                })
                 ({
                     checkbox_group(format!("{prefix}.role"), ROLE_GROUP_LABEL)
                         .options(options.iter().map(|role| (*role, *role)))
@@ -638,6 +780,7 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
                         .hint(ADD_ROLE_HINT)
                         .with_id(format!("{prefix}.role-add"))
                 })
+                @if rows.propose { (propose_controls(resolved, &contributor, &row_context)) }
             }
         };
         list = list.row(key, body);
@@ -916,8 +1059,15 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
         let prefix = format!("{}.{key}", field.id);
         let held = stored.get(position).copied();
         let row_name = format!("{}.row", field.id);
+        // Blanks are dropped for the reason `attribution_rows` gives, and here they *accumulated*:
+        // the render appends its own trailing blank below, so reading the posted one back as a
+        // held funder grew the row by one control on every re-render that keeps the body.
         let funders: Vec<String> = match rows.posted.filter(|body| body.has(&row_name)) {
-            Some(body) => body.all(&format!("{prefix}.funder")).map(str::to_string).collect(),
+            Some(body) => body
+                .all(&format!("{prefix}.funder"))
+                .filter(|id| !id.trim().is_empty())
+                .map(str::to_string)
+                .collect(),
             None => held
                 .and_then(|grant| grant.get("funders"))
                 .and_then(Value::as_array)
@@ -939,8 +1089,8 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
                                 index,
                                 id,
                                 rows.agents.and_then(|agents| agents.get(id.trim())),
-                                rows.propose,
                                 &format!("funder {} of grant {}", index + 1, position + 1),
+                                rows,
                             )
                         })
                     }
@@ -991,7 +1141,7 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     }
 }
 
-/// One funder control, plus REQ-3.1/REQ-3.2's propose controls beside it when `propose` is set.
+/// One funder control, plus the propose controls beside it when `propose` is set.
 ///
 /// Its own function rather than inline in the funder loop, per this repo's rule on a nested
 /// `html!` `maudfmt` cannot see (a block passed where a call argument is expected).
@@ -1000,24 +1150,22 @@ fn funder_control(
     index: usize,
     id: &str,
     resolved: Option<&Agent>,
-    propose: bool,
     row_context: &str,
+    rows: Rows<'_>,
 ) -> Markup {
-    let label = match resolved {
-        Some(agent) => format!("{} - {}", FUNDER_LABEL, agent.label),
-        None if id.trim().is_empty() && index > 0 => ADD_FUNDER_LABEL.to_string(),
-        None if id.trim().is_empty() => FUNDER_LABEL.to_string(),
-        None => format!("{FUNDER_LABEL} - {UNRESOLVED_AGENT}"),
+    let label = match id.trim().is_empty() && index > 0 {
+        true => ADD_FUNDER_LABEL,
+        false => FUNDER_LABEL,
     };
-    let field = text_field(format!("{prefix}.funder"), label)
-        .input_type(InputType::Text)
-        .value(id)
-        .list(AGENT_LIST_ID)
-        .with_id(format!("{prefix}.funder-{index}"));
+    // Every funder in a grant posts under one `{prefix}.funder`, which is how `apply_funding`
+    // collects them into a list — so the value name is shared and only the `unique` differs,
+    // which is what keeps each control's own search box and element ids apart.
+    let value_name = format!("{prefix}.funder");
+    let unique = format!("{prefix}.funder-{index}");
     html! {
         div class="flex flex-col gap-2" {
-            (field)
-            @if propose { (propose_controls(resolved, id, row_context)) }
+            (agent_picker(&value_name, &unique, label, id, row_context, rows))
+            @if rows.propose { (propose_controls(resolved, id, row_context)) }
         }
     }
 }
@@ -1336,8 +1484,8 @@ fn text(field: &Field, draft: &ProjectDraft, input_type: InputType) -> Markup {
         control = control.hint(hint);
     }
     // `required` is deliberately absent even on a `Required` field: a draft may
-    // be missing anything (REQ-1.9), and a browser refusing to save one is the
-    // opposite of what REQ-1.10 asks for. The obligation is stated in words
+    // be missing anything, and a browser refusing to save one is the
+    // opposite of a save that must always be possible. The obligation is stated in words
     // beside the field, and enforced at submit.
     html! {
         (control)
@@ -1405,7 +1553,7 @@ pub(crate) fn multilingual(field: &Field, draft: &ProjectDraft, rows: u32) -> Ma
 /// A field's label: its name, and its obligation as a pill **inside** it.
 ///
 /// Inside, because no input here carries `required` or `aria-required` — a draft
-/// may be missing anything (REQ-1.9) — which leaves the accessible name as the
+/// may be missing anything — which leaves the accessible name as the
 /// only channel the tier has. As a sibling the pill was visible and nothing
 /// else: a reader tabbing to the control heard "Name, edit text".
 ///
@@ -1549,7 +1697,7 @@ mod tests {
 
     #[test]
     fn every_field_states_its_obligation_inside_its_own_label() {
-        // Nothing here is `required` or `aria-required` (REQ-1.9/REQ-1.10), so a
+        // Nothing here is `required` or `aria-required`, so a
         // field's label is the only channel its obligation has: a pill rendered
         // beside the label is visible and nothing else, and a reader who tabs to
         // the control hears "Name, edit text".
@@ -1586,9 +1734,9 @@ mod tests {
 
     #[test]
     fn a_field_with_no_shape_renders_no_control_in_any_section() {
-        // The other direction, and the REQ-1.7 guarantee: a field no applier
-        // reads must post nothing at all, or an empty control would clear a
-        // value the save was never meant to touch.
+        // The other direction, and the guarantee that a draft carries what the editor does not
+        // manage: a field no applier reads must post nothing at all, or an empty control would
+        // clear a value the save was never meant to touch.
         let draft = published_draft();
         let mut posting: Vec<&str> = Vec::new();
         for section in SECTIONS {
@@ -1627,7 +1775,7 @@ mod tests {
 
     #[test]
     fn propose_controls_appear_beside_an_unresolved_id_and_not_beside_a_resolved_one() {
-        // REQ-3.1/3.2: the picker cannot know which kind was meant, so both propose buttons offer
+        // The picker cannot know which kind was meant, so both propose buttons offer
         // beside an id that resolves to nobody; a resolved id offers only "propose changes".
         let agents = agent_corpus();
         let scope = editor_core::agents::AgentScope::published_only(&agents);
@@ -1673,5 +1821,221 @@ mod tests {
 
         let out = agent_rows(field, &draft, rows).into_string();
         assert!(!out.contains("Propose"), "{out}");
+    }
+
+    /// Exactly what a browser posts for one contributor row: the hidden row key, the id, the
+    /// ticked role, and the untouched "add another role" input, which sends an empty string under
+    /// the same name.
+    fn posted_contributor_row() -> editor_core::form::FormBody {
+        editor_core::form::FormBody::from_pairs(vec![
+            ("attributions.row".to_string(), "r0".to_string()),
+            ("attributions.r0.contributor".to_string(), "person-001".to_string()),
+            ("attributions.r0.role".to_string(), "Author".to_string()),
+            ("attributions.r0.role".to_string(), String::new()),
+        ])
+    }
+
+    #[test]
+    fn a_picker_shows_no_menu_until_a_search_and_then_keeps_the_current_choice_first() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["organization-008"]));
+        let field = crate::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let fresh = Rows {
+            posted: None,
+            action: "/x",
+            adding: None,
+            agents: Some(&scope),
+            propose: true,
+        };
+
+        // Unsearched: the id posts from a hidden input, so an untouched save is the identity, and
+        // the row says in words who it refers to rather than showing a bare id.
+        let quiet = agent_rows(field, &draft, fresh).into_string();
+        assert!(
+            quiet.contains(r#"<input type="hidden" name="contactPoint.r0" value="organization-008">"#),
+            "{quiet}"
+        );
+        assert!(quiet.contains("Dokumentationsbibliothek St. Moritz"), "{quiet}");
+        assert!(!quiet.contains("<select"), "no menu before a search: {quiet}");
+
+        // Searched: a real `<select>` posting under the same name, with what the row already
+        // holds first and selected — so submitting without touching it still changes nothing.
+        let body = editor_core::form::FormBody::from_pairs(vec![
+            ("contactPoint.row".to_string(), "r0".to_string()),
+            ("contactPoint.r0".to_string(), "organization-008".to_string()),
+            ("contactPoint.r0.q".to_string(), "Universität".to_string()),
+        ]);
+        let searched = agent_rows(field, &draft, Rows { posted: Some(&body), ..fresh }).into_string();
+        assert!(
+            searched
+                .contains(r#"<select class="field-input field-select" id="contactPoint.r0" name="contactPoint.r0""#),
+            "a real menu, posting under the name the applier already reads: {searched}"
+        );
+        assert!(
+            searched.contains(r#"<option value="organization-008" selected>Keep Dokumentationsbibliothek St. Moritz (Organisation)</option>"#),
+            "the current choice is first and selected: {searched}"
+        );
+        // And the query survives the round trip, or the box would clear under the matches.
+        assert!(searched.contains(r#"value="Universität""#), "{searched}");
+        assert!(!searched.contains("<datalist"), "{searched}");
+    }
+
+    #[test]
+    fn a_search_that_matches_nobody_says_so_rather_than_offering_an_empty_menu() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["organization-008"]));
+        let field = crate::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let body = editor_core::form::FormBody::from_pairs(vec![
+            ("contactPoint.row".to_string(), "r0".to_string()),
+            ("contactPoint.r0".to_string(), "organization-008".to_string()),
+            ("contactPoint.r0.q".to_string(), "zzzznobodyzzzz".to_string()),
+        ]);
+        let out = agent_rows(
+            field,
+            &draft,
+            Rows {
+                posted: Some(&body),
+                action: "/x",
+                adding: None,
+                agents: Some(&scope),
+                propose: true,
+            },
+        )
+        .into_string();
+        assert!(!out.contains("<select"), "an empty menu is worse than a sentence: {out}");
+        assert!(out.contains("Nothing matches"), "{out}");
+        // The stored id is still what posts, so a fruitless search loses nothing.
+        assert!(
+            out.contains(r#"<input type="hidden" name="contactPoint.r0" value="organization-008">"#),
+            "{out}"
+        );
+    }
+
+    #[test]
+    fn a_contributor_rows_propose_control_follows_its_roles_and_names_the_entity() {
+        // Between the picker and the roles, a bare "Propose changes" read as an offer to propose
+        // the roles below it. It is not: roles are project data that a save stores, and
+        // `proposals::check_person` refuses a project-role word in a person's `jobTitles` for
+        // exactly that reason. So the button goes last and says what it acts on.
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set(
+            "attributions",
+            serde_json::json!([{ "contributor": "person-001", "contributorType": ["Author"] }]),
+        );
+        let field = crate::form::registry::field("attributions").expect("attributions is a known field");
+        let rows = Rows {
+            posted: None,
+            action: "/x",
+            adding: None,
+            agents: Some(&scope),
+            propose: true,
+        };
+
+        let out = attribution_rows(field, &draft, rows).into_string();
+        let roles = out.find(ADD_ROLE_LABEL).expect("the add-another-role control");
+        let propose = out.find("Propose changes").expect("the propose control");
+        assert!(propose > roles, "the propose control must follow the role controls: {out}");
+        // And it names the entity's kind, so the scope of the button is in the button.
+        assert!(out.contains("Propose changes to this person's details"), "{out}");
+    }
+
+    #[test]
+    fn a_propose_control_beside_an_organisation_says_organisation() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["organization-008"]));
+        let field = crate::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let rows = Rows {
+            posted: None,
+            action: "/x",
+            adding: None,
+            agents: Some(&scope),
+            propose: true,
+        };
+
+        let out = agent_rows(field, &draft, rows).into_string();
+        assert!(out.contains("Propose changes to this organisation's details"), "{out}");
+        assert!(!out.contains("person's details"), "{out}");
+    }
+
+    #[test]
+    fn the_add_another_role_input_does_not_come_back_as_an_unlabelled_checkbox() {
+        // It shares its wire name with the checkbox group, so its empty value was read back as a
+        // role this row holds and rendered as a ticked checkbox with no label. A depositor saw one
+        // appear on every re-render that keeps the posted body: a refusal, a row action, or the
+        // conflict notice.
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set(
+            "attributions",
+            serde_json::json!([{ "contributor": "person-001", "contributorType": ["Author"] }]),
+        );
+        let body = posted_contributor_row();
+        let field = crate::form::registry::field("attributions").expect("attributions is a known field");
+        let rows = Rows {
+            posted: Some(&body),
+            action: "/x",
+            adding: None,
+            agents: Some(&scope),
+            propose: true,
+        };
+
+        let out = attribution_rows(field, &draft, rows).into_string();
+        assert!(
+            !out.contains(r#"name="attributions.r0.role" value="""#),
+            "no role control may carry an empty value: {out}"
+        );
+        // The role that was actually posted still renders, and still ticked.
+        assert!(out.contains(r#"value="Author" checked"#), "{out}");
+    }
+
+    #[test]
+    fn a_grants_row_keeps_one_blank_funder_however_often_it_is_re_rendered() {
+        // The row renders one trailing blank so a second funder can be typed. Reading the posted
+        // blank back as a held funder meant the render appended a *second* one, so the row grew by
+        // a control every round trip: 2, 3, 4, 5.
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set(
+            "funding",
+            serde_json::json!([{ "funders": ["organization-002"], "number": "1" }]),
+        );
+        let field = crate::form::registry::field("funding").expect("funding is a known field");
+
+        let mut posted: Vec<(String, String)> = vec![
+            ("funding.row".to_string(), "r0".to_string()),
+            ("funding.kind".to_string(), "grants".to_string()),
+            ("funding.r0.funder".to_string(), "organization-002".to_string()),
+            ("funding.r0.funder".to_string(), String::new()),
+        ];
+        for round in 0..3 {
+            let body = editor_core::form::FormBody::from_pairs(posted.clone());
+            let rows = Rows {
+                posted: Some(&body),
+                action: "/x",
+                adding: None,
+                agents: Some(&scope),
+                propose: true,
+            };
+            let out = funding(field, &draft, rows).into_string();
+            let controls = out.matches(r#"name="funding.r0.funder""#).count();
+            assert_eq!(controls, 2, "round {round} rendered {controls} funder controls: {out}");
+
+            // Post back exactly what that render emitted, as the browser would.
+            posted.retain(|(name, _)| name != "funding.r0.funder");
+            posted.push(("funding.r0.funder".to_string(), "organization-002".to_string()));
+            for _ in 1..controls {
+                posted.push(("funding.r0.funder".to_string(), String::new()));
+            }
+        }
     }
 }

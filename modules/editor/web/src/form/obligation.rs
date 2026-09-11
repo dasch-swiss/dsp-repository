@@ -8,7 +8,7 @@
 //! permanently incomplete section for a complete project.
 //!
 //! Satisfied means **present**, not valid. A draft holds values that do not
-//! validate (REQ-1.9) and deciding that is submit's job (REQ-1.12); a rail
+//! validate and deciding that is submit's job; a rail
 //! stricter than the pill beside the field would disagree with it. A placeholder
 //! sentinel is not present — counting one would call a section complete while
 //! `endDate` held `"MISSING"`.

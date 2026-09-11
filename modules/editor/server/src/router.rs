@@ -237,7 +237,7 @@ fn build_router(state: AppState, public_dir: &std::path::Path) -> Router {
             "/projects/{shortcode}/sections/{section}/fields/{field}/{key}/remove",
             post(crate::sections::remove_row),
         )
-        // The entity form (US-3): one person or organisation proposal. `{proposal}` is the
+        // The entity form: one person or organisation proposal. `{proposal}` is the
         // proposal's `entity_id`, the same value `pages::section` already links to — see
         // `entities.rs`'s module docs for why. One `GET`/`POST` pair for the same reason the
         // section form's is: a rejected save re-renders at a path that still answers `GET`.

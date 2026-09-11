@@ -1,7 +1,7 @@
 //! The published project set, as baked into the deployment.
 //!
-//! REQ-1.1 pre-fills the form with "the current published metadata", and REQ-2.3
-//! compares the published set against local records at startup. Both need the
+//! The form is pre-filled with the project's current published metadata, and the published set
+//! is compared against local records at startup. Both need the
 //! `projects/*.json` files the image carries, read once and held in memory: the
 //! set cannot change without a redeployment, so nothing polls and nothing
 //! invalidates.
@@ -158,8 +158,8 @@ impl PublishedProjects {
 
     /// One published project, or `None` when the set has no such shortcode.
     ///
-    /// `None` does **not** mean the project does not exist: REQ-2.3 allows a
-    /// project that exists only locally, which has no published counterpart and
+    /// `None` does **not** mean the project does not exist: a project may exist only
+    /// locally, which has no published counterpart and
     /// whose form opens blank. Callers deciding a 404 have to consult local
     /// records too.
     #[must_use]
@@ -178,8 +178,7 @@ impl PublishedProjects {
     /// For a depositor's list: the assignments are the user's, the order and the
     /// names are the set's. An assignment naming no published project is skipped
     /// rather than rendered as a broken row — a project assigned before it is
-    /// published is a real state, and REQ-2.3's local-only project is the same
-    /// shape.
+    /// published is a real state, and a local-only project is the same shape.
     pub fn summaries_for<'a>(&'a self, shortcodes: &'a [String]) -> impl Iterator<Item = ProjectSummary<'a>> {
         self.by_shortcode
             .iter()
@@ -393,8 +392,8 @@ mod tests {
 
     #[test]
     fn an_assignment_naming_no_published_project_is_skipped_not_rendered_broken() {
-        // A project assigned before it is published is a real state, and so is
-        // REQ-2.3's local-only project.
+        // A project assigned before it is published is a real state, and so is a
+        // project that exists only locally.
         let (published, _) = PublishedProjects::load_from(&corpus());
         let assigned = vec!["0801d".to_string(), "9999".to_string()];
         let codes: Vec<&str> = published.summaries_for(&assigned).map(|s| s.shortcode).collect();
@@ -403,7 +402,7 @@ mod tests {
 
     #[test]
     fn an_unpublished_shortcode_is_absent_rather_than_an_error() {
-        // REQ-2.3: absent from the published set is not "does not exist".
+        // Absent from the published set is not "does not exist".
         let (published, _) = PublishedProjects::load_from(&corpus());
         assert!(published.get("9999").is_none());
     }

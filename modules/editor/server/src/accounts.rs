@@ -1,5 +1,5 @@
 //! Account bootstrap: the RDU members that configuration says must always
-//! exist (REQ-7.1, REQ-7.2).
+//! exist.
 //!
 //! Depositor accounts are created by RDU through the interface, which is
 //! DEV-6910's work. This module exists because RDU members are the exception —
@@ -45,7 +45,7 @@ pub(crate) async fn ensure_rdu(
                     name: default_name(address),
                     role: Role::Rdu,
                     // Empty by design: RDU access is role-based, not per-project
-                    // (REQ-4.2).
+                    //.
                     shortcodes: Vec::new(),
                     failed_logins: 0,
                     failed_login_at: None,

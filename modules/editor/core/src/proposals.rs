@@ -1,4 +1,4 @@
-//! Proposals to add or change a person or organisation (REQ-3.x).
+//! Proposals to add or change a person or organisation.
 //!
 //! A project field that refers to a contributor by id (`contactPoint`,
 //! `attributions[].contributor`, `funding[].funders`) can only name something
@@ -79,9 +79,9 @@ impl FromStr for ProposalKind {
 /// What a proposal does to the entity store.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProposalOperation {
-    /// A person or organisation that does not exist yet (REQ-3.1).
+    /// A person or organisation that does not exist yet.
     New,
-    /// A change to an entity the project already references (REQ-3.2).
+    /// A change to an entity the project already references.
     Change,
 }
 
@@ -339,7 +339,7 @@ pub struct EntityFinding {
     pub message: String,
 }
 
-/// Every rule a proposed organisation must satisfy (REQ-3.4), against
+/// Every rule a proposed organisation must satisfy, against
 /// `modules/platform/metadata/src/organization.rs`'s `Organization` shape.
 ///
 /// `published` is the entity as the committed store holds it, for a
@@ -348,7 +348,7 @@ pub struct EntityFinding {
 /// against.
 ///
 /// **An `address` byte-equal to `published`'s passes; any other incomplete one
-/// is refused.** REQ-3.4 wants all four of `street`, `postalCode`, `locality`
+/// is refused.** The rule wants all four of `street`, `postalCode`, `locality`
 /// and `country` or none, but six committed organizations satisfy neither, so
 /// judging an inherited value would make them unchangeable without inventing
 /// data. The editor architecture documentation names the six and the precedent;
@@ -356,7 +356,7 @@ pub struct EntityFinding {
 ///
 /// `sameAs` carries no rule beyond being where authority identifiers go: the
 /// contract types it as `Vec<AuthorityFileReference>` with a serde default, so
-/// an absent one already deserializes, and REQ-3.4 does not ask for one. The
+/// an absent one already deserializes, and no rule asks for one. The
 /// omission here is therefore decided, not forgotten.
 #[must_use]
 pub fn check_organization(payload: &serde_json::Value, published: Option<&serde_json::Value>) -> Vec<EntityFinding> {
@@ -377,11 +377,10 @@ pub fn check_organization(payload: &serde_json::Value, published: Option<&serde_
         });
     }
 
-    // `address` itself is optional (REQ-3.4: collect all four members or omit
-    // the section entirely). Once present, each of the four is required even
-    // if every one is blank — a section the depositor opened and left blank is
-    // not the same as one they never opened, and silently dropping it would
-    // discard what they typed rather than telling them to finish it.
+    // `address` itself is optional: collect all four members or omit the section entirely. Once
+    // present, each of the four is required even if every one is blank — a section the
+    // depositor opened and left blank is not the same as one they never opened, and silently
+    // dropping it would discard what they typed rather than telling them to finish it.
     //
     // Unless it is exactly what the published entity already held: see the
     // grandfathering paragraph in this function's docs for the six committed
@@ -406,13 +405,13 @@ pub fn check_organization(payload: &serde_json::Value, published: Option<&serde_
     findings
 }
 
-/// Every rule a proposed person must satisfy (REQ-3.5), against
+/// Every rule a proposed person must satisfy, against
 /// `modules/platform/metadata/src/person.rs`'s `Person` shape, including the
 /// project-role guard.
 ///
 /// `sameAs` carries no rule for the same reason as [`check_organization`]'s:
-/// REQ-3.5 places ORCID there rather than constraining it, and the contract
-/// already defaults an absent one.
+/// ORCID belongs there rather than being constrained, and the contract already defaults an
+/// absent one.
 #[must_use]
 pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
     let mut findings = Vec::new();
@@ -427,8 +426,8 @@ pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
         }
     }
 
-    // Present, and no more: REQ-3.5 asks that it be emitted and a non-defaulted
-    // `Vec<String>` is satisfied by `[]`, which many committed persons are.
+    // Present, and no more: the member has to be emitted, and a non-defaulted `Vec<String>`
+    // is satisfied by `[]`, which many committed persons are.
     //
     // `givenNames` and `familyNames` above do carry the stronger rule, because
     // none of the 416 is empty and a person with neither name renders as its own
@@ -441,7 +440,7 @@ pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
         });
     }
 
-    // The guard the issue adds beyond the PRD: `dpe-server validate` rejects a
+    // The guard the issue adds beyond what was asked for: `dpe-server validate` rejects a
     // committed file carrying a `platform_metadata::JOB_TITLE_ROLE_WORDS` entry
     // in `jobTitles` (modules/dpe/server/src/main.rs:568), because it is
     // invisible there to the OAI-PMH creator/contributor logic, which only
@@ -469,8 +468,8 @@ pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
 
 /// Whether `payload`'s `field` member is a JSON string that is non-blank after
 /// trimming. Missing, non-string, and all-whitespace all read as "not
-/// provided" — a form field can be absent, wrongly typed, or spaces alone, and
-/// REQ-3.4/3.5 treat the three as one failure.
+/// provided" — a form field can be absent, wrongly typed, or spaces alone, and the entity
+/// rules treat the three as one failure.
 fn holds_non_blank_string(payload: &serde_json::Value, field: &str) -> bool {
     payload
         .get(field)
@@ -959,8 +958,8 @@ mod tests {
 
     #[test]
     fn a_person_with_an_empty_job_titles_array_is_no_finding() {
-        // 59 of the 416 committed persons hold `"jobTitles": []`, and REQ-3.5
-        // asks only that the member be emitted. Demanding an entry would refuse
+        // 59 of the 416 committed persons hold `"jobTitles": []`, and the rule asks only that
+        // the member be emitted. Demanding an entry would refuse
         // a proposal for somebody who has no job title with no correct value to
         // type, while the published set carries 59 people in that exact state.
         let mut person = valid_person();

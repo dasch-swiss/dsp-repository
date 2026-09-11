@@ -131,7 +131,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_upsert_replaces_the_payload_and_keeps_the_original_created_at() {
-        // One draft per project, last write wins (PRD Constraints). `created_at`
+        // One draft per project, last write wins. `created_at`
         // records when the depositor started; refreshing it on every save would
         // lose that.
         let db = test_db("drafts-upsert").await;
@@ -167,7 +167,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_returns_every_draft_newest_first() {
-        // REQ-1.11: RDU sees all drafts, not only their own projects'.
+        // RDU sees all drafts, not only their own projects'.
         let db = test_db("drafts-list").await;
         db.upsert(&draft("0801", "a", None, at(11))).await.unwrap();
         db.upsert(&draft("0803", "b", None, at(13))).await.unwrap();

@@ -21,10 +21,10 @@
 
 CREATE TABLE users (
     id               TEXT    NOT NULL PRIMARY KEY,
-    -- As entered, plaintext (PRD Constraints: the app must decrypt to send, so
+    -- As entered, plaintext (the app must decrypt to send, so
     -- a key would sit beside the data).
     email            TEXT    NOT NULL,
-    -- Lowercased. Carries the uniqueness constraint (REQ-7.4) and every lookup,
+    -- Lowercased. Carries the uniqueness constraint and every lookup,
     -- so `A@x.test` cannot shadow `a@x.test`.
     email_normalized TEXT    NOT NULL UNIQUE,
     name             TEXT    NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE users (
     created_at       TEXT    NOT NULL
 ) STRICT;
 
--- Project assignments (REQ-1.2, REQ-7.3). A child table rather than a JSON
+-- Project assignments. A child table rather than a JSON
 -- column on `users`, so "who holds shortcode X" is answerable — needed when
 -- removing a shortcode from someone who has a draft on it.
 CREATE TABLE user_shortcodes (
@@ -66,9 +66,9 @@ CREATE TABLE login_codes (
     id          TEXT    NOT NULL PRIMARY KEY,
     user_id     TEXT    NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     -- Unhashed on purpose: it lives ten minutes, and anyone who can read this
-    -- table already holds `sessions` (PRD Constraints).
+    -- table already holds `sessions`.
     code        TEXT    NOT NULL,
-    -- Wrong entries against this code; three invalidates it (REQ-6.4).
+    -- Wrong entries against this code; three invalidates it.
     attempts    INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0),
     created_at  TEXT    NOT NULL,
     expires_at  TEXT    NOT NULL,
@@ -99,13 +99,13 @@ CREATE INDEX drafts_updated_at ON drafts (updated_at);
 
 CREATE TABLE submissions (
     id            TEXT NOT NULL PRIMARY KEY,
-    -- UNIQUE is PRD Constraints' "one pending submission per project", enforced
+    -- UNIQUE is the "one pending submission per project" constraint, enforced
     -- here rather than left as something handlers must remember.
     shortcode     TEXT NOT NULL UNIQUE,
     payload       TEXT NOT NULL,
-    -- REQ-2.1's Draft and Online are absent by design: a draft is a `drafts`
+    -- Draft and Online are absent by design: a draft is a `drafts`
     -- row, and Online is derived at startup, at which point the local record is
-    -- discarded (REQ-2.4).
+    -- discarded.
     state         TEXT NOT NULL CHECK (state IN ('submitted', 'in_review', 'approved')),
     submitted_by  TEXT REFERENCES users (id) ON DELETE SET NULL,
     submitted_at  TEXT NOT NULL,
@@ -129,23 +129,23 @@ CREATE TABLE submissions (
     review_state  TEXT
 ) STRICT;
 
--- The review queue is oldest first (REQ-4.1).
+-- The review queue is oldest first.
 CREATE INDEX submissions_submitted_at ON submissions (submitted_at);
 CREATE INDEX submissions_submitted_by ON submissions (submitted_by);
 CREATE INDEX submissions_reviewed_by ON submissions (reviewed_by);
 
 -- Finished review rounds: what was decided about a submission, by whom, and
--- what the depositor has to be told (REQ-4.4 to REQ-4.7).
+-- what the depositor has to be told.
 --
 -- Every outcome deletes the `submissions` row, so this is the only thing left
--- saying what happened. REQ-2.1 fixes the state list at five and has no
+-- saying what happened. The state list is fixed at five and has no
 -- Rejected, so a terminated round cannot be a submission state without adding a
 -- sixth.
 --
 -- Four things read it, and each would otherwise want a column of its own:
--- a rejection being visible at all (REQ-4.6 discards and notifications are out
+-- a rejection being visible at all (a rejection discards the submission and notifications are out
 -- of scope); a returned draft being distinguishable from one never submitted;
--- the per-field accepted state surviving the return (REQ-4.5), which is what
+-- the per-field accepted state surviving the return, which is what
 -- makes locking an accepted field possible; and the depositor seeing what RDU
 -- substituted for their value before approving. The last two read
 -- `review_state`.
@@ -161,7 +161,7 @@ CREATE TABLE review_rounds (
     -- nulled, and this is how two rounds recorded in the same second are told
     -- apart.
     submission_id TEXT NOT NULL,
-    -- `withdrawn` is the depositor's own discard (REQ-4.7). It is a round like
+    -- `withdrawn` is the depositor's own discard. It is a round like
     -- the others because it answers the same question — what became of the
     -- submission — and answering it from two places would leave the
     -- depositor's own action the one with no trace.
@@ -193,7 +193,7 @@ CREATE TABLE approved_records (
     approved_by  TEXT REFERENCES users (id) ON DELETE SET NULL,
     approved_at  TEXT NOT NULL,
     -- NULL while uncollected. A failed collection leaves it NULL, which is what
-    -- makes the next run retry it (REQ-5.7).
+    -- makes the next run retry it.
     collected_at TEXT
 ) STRICT;
 
@@ -203,7 +203,7 @@ CREATE INDEX approved_records_uncollected ON approved_records (approved_at) WHER
 CREATE INDEX approved_records_shortcode ON approved_records (shortcode);
 CREATE INDEX approved_records_approved_by ON approved_records (approved_by);
 
--- Entity proposals (US-3): a person or organisation a depositor proposes to
+-- Entity proposals: a person or organisation a depositor proposes to
 -- create, or a change to one their project already references.
 --
 -- A table of its own rather than a member of `drafts.payload`, and not by
@@ -211,7 +211,7 @@ CREATE INDEX approved_records_approved_by ON approved_records (approved_by);
 -- members and `to_raw` deserializes it into `ProjectRaw`, so a non-contract
 -- member would be dropped on the way to a file with nothing saying so.
 --
--- It is deliberately NOT a child of `submissions`. REQ-3.3 carries a proposal
+-- It is deliberately NOT a child of `submissions`. A proposal rides
 -- inside the project's pending submission, but every review outcome deletes
 -- that row while the proposal outlives it — an accepted one is on its way to a
 -- pull request, and a returned one is still the depositor's to finish. Keyed by
@@ -241,7 +241,7 @@ CREATE TABLE entity_proposals (
     -- `submissions.review_state` makes for a project field: a decision is taken
     -- during the review and only becomes a status when the round ends, so
     -- request-changes can hand the proposal back as a draft while retaining
-    -- what was decided — REQ-4.5 requires exactly that for fields, and a
+    -- what was decided — exactly what is required for fields, and a
     -- proposal reviewed on the same surface must not lose it.
     --
     -- Null while undecided. An explicitly-undecided value would be the same
@@ -261,7 +261,7 @@ CREATE TABLE entity_proposals (
 ) STRICT;
 
 -- An allocated id is claimed exactly once, whatever became of the proposal that
--- claimed it. This is the guard REQ-3.6 needs and REQ-5.4 does not give: REQ-5.4
+-- claimed it. This is the guard proposal-time allocation needs, and renumbering does not give: renumbering
 -- renumbers on collision with the repository, and nothing in it stops two
 -- proposals inside the editor both taking the next free id. Terminal rows stay
 -- in the index on purpose — an id handed to a rejected proposal must not be

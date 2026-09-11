@@ -1,4 +1,4 @@
-//! Email one-time-code login (US-6): issuing a code, verifying it, and the
+//! Email one-time-code login: issuing a code, verifying it, and the
 //! session it produces.
 //!
 //! ## This is a documented deviation, not a compliant design
@@ -12,19 +12,19 @@
 //!
 //! ## What the flow defends, in order
 //!
-//! 1. **Enumeration** (REQ-6.2). Every `POST /login` answers the same way — the same status, the
-//!    same location, the same cookie behaviour — whether the address is known, unknown, cooled
-//!    down, locked out or hit the daily cap. Only the mail differs, and only the address's owner
-//!    sees that.
+//! 1. **Enumeration**. Every `POST /login` answers the same way — the same status, the same
+//!    location, the same cookie behaviour — whether the address is known, unknown, cooled down,
+//!    locked out or hit the daily cap. Only the mail differs, and only the address's owner sees
+//!    that.
 //! 2. **Interception.** The code is bound to the browser that asked for it. NIST's stated objection
 //!    to email codes is interception in transit or at intermediate mail servers; a code read out of
 //!    a mailbox by anyone else is useless without that browser's cookie. It does **not** defend
 //!    attacker-initiated social engineering — an attacker who starts the login holds the binding —
 //!    and it is not claimed to.
-//! 3. **Guessing.** Three wrong entries kill a code (REQ-6.4), and an account-level counter that
-//!    survives invalidation and resend throttles the account itself. The per-code counter alone
-//!    hands out a fresh budget on every resend, which at a 60-second cooldown is ~4,320 guesses a
-//!    day against one address — around a 12% chance of hitting a six-digit code inside a month.
+//! 3. **Guessing.** Three wrong entries kill a code, and an account-level counter that survives
+//!    invalidation and resend throttles the account itself. The per-code counter alone hands out a
+//!    fresh budget on every resend, which at a 60-second cooldown is ~4,320 guesses a day against
+//!    one address — around a 12% chance of hitting a six-digit code inside a month.
 //! 4. **Replay.** A code authenticates once; the single-use check is the `WHERE consumed_at IS
 //!    NULL` in the update, so two simultaneous submissions cannot both win.
 //! 5. **Quota exhaustion.** Two daily send caps. A global one across all users, because the relay
@@ -53,7 +53,7 @@ use crate::config::EditorConfig;
 /// The knobs the login flow reads, resolved once at startup.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct AuthConfig {
-    /// How long before another code may be sent to one address (REQ-6.5).
+    /// How long before another code may be sent to one address.
     pub cooldown: Duration,
     /// Consecutive account-level failures tolerated before throttling.
     pub max_failed: u32,
@@ -105,7 +105,7 @@ pub(crate) fn delta(duration: Duration) -> chrono::TimeDelta {
 /// Deliberately not a validator. RFC 5322 addresses are stranger than any regex
 /// anyone writes for them, and the only judgement that counts is the relay's.
 /// This rejects what cannot be an address, so an obvious typo gets a message
-/// rather than a silent nothing — which, with REQ-6.2's identical response, is
+/// rather than a silent nothing — which, with the identical anti-enumeration response, is
 /// otherwise indistinguishable from success.
 pub(crate) fn is_plausible_address(candidate: &str) -> bool {
     if candidate.len() > 254 || candidate.matches('@').count() != 1 {

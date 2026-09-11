@@ -18,10 +18,10 @@ use std::str::FromStr;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-/// The two roles the editor recognises (REQ-7.1).
+/// The two roles the editor recognises.
 ///
-/// `rdu` members come from configuration and always exist without provisioning
-/// (REQ-7.2); depositors are rows created by RDU (REQ-7.3).
+/// `rdu` members come from configuration and always exist without
+/// provisioning; depositors are rows created by RDU.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Role {
     Depositor,
@@ -89,20 +89,19 @@ pub fn normalize_shortcode(shortcode: &str) -> String {
 
 /// A person who can log in.
 ///
-/// `email` is stored as entered and in plaintext (PRD Constraints: the
+/// `email` is stored as entered and in plaintext (the
 /// application must decrypt it to send mail, so a key would sit beside the
 /// data). `email_normalized` — lowercased — carries the uniqueness constraint
-/// and every lookup, so REQ-7.4 rejects `A@x.test` against a stored `a@x.test`
-/// and REQ-6.2's anti-enumeration lookup is case-insensitive too.
+/// and every lookup, so a sign-up for `A@x.test` is refused against a stored
+/// `a@x.test` and the anti-enumeration lookup is case-insensitive too.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct User {
     pub id: Uuid,
     pub email: String,
     pub name: String,
     pub role: Role,
-    /// Project shortcodes this user may reach (REQ-1.2, REQ-7.3). Empty for an
-    /// RDU member, whose access is role-based rather than per-project
-    /// (REQ-4.2).
+    /// Project shortcodes this user may reach. Empty for an RDU member, whose
+    /// access is role-based rather than per-project.
     pub shortcodes: Vec<String>,
     /// Consecutive failed authentications **for the account**, not for a code.
     /// NIST SP 800-63B-4: "Generating a new authentication secret SHALL NOT
@@ -116,7 +115,7 @@ pub struct User {
     /// with the counter.
     pub failed_login_at: Option<DateTime<Utc>>,
     /// When a login code was last issued, so RDU can answer "I never got a
-    /// code" without an address reaching a log (REQ-6.10).
+    /// code" without an address reaching a log.
     pub last_code_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
 }
@@ -124,10 +123,9 @@ pub struct User {
 impl User {
     /// Whether this user may reach the project identified by `shortcode`.
     ///
-    /// RDU is unconditional: REQ-4.2 makes RDU access role-based rather than
-    /// per-project, which is also why an RDU account's `shortcodes` is empty. A
-    /// depositor is scoped to their assignments (REQ-1.2), and anything else is
-    /// REQ-1.3's 403.
+    /// RDU is unconditional: RDU access is role-based rather than per-project, which is also
+    /// why an RDU account's `shortcodes` is empty. A depositor is scoped to their assignments,
+    /// and anything else is the 403.
     ///
     /// The comparison ignores ASCII case. The published set mixes `080C` with
     /// `0801a`, so which half of a shortcode is capitalised is not something an
@@ -163,7 +161,7 @@ impl User {
     /// folds too. Only the whole address is folded — the local part is
     /// case-sensitive per RFC 5321, but no mail provider anyone here uses
     /// treats it that way, and letting `A@x.test` and `a@x.test` both exist
-    /// would make REQ-7.4 depend on how the address was typed.
+    /// would make "this address is already taken" depend on how it was typed.
     #[must_use]
     pub fn normalize_email(email: &str) -> String {
         email.trim().to_lowercase()
@@ -176,7 +174,7 @@ impl User {
     }
 }
 
-/// An authenticated session (REQ-6.3).
+/// An authenticated session.
 ///
 /// `id` is the opaque token carried by the cookie, not a UUID: how it is minted
 /// is the auth layer's decision, and this layer only stores it.
@@ -191,16 +189,16 @@ pub struct Session {
     pub expires_at: DateTime<Utc>,
 }
 
-/// A one-time login code (REQ-6.1).
+/// A one-time login code.
 ///
 /// Stored unhashed, deliberately: it lives ten minutes, and anyone who can read
-/// this table already holds `sessions` (PRD Constraints).
+/// this table already holds `sessions`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LoginCode {
     pub id: Uuid,
     pub user_id: Uuid,
     pub code: String,
-    /// Wrong entries against *this* code. Three invalidates it (REQ-6.4); the
+    /// Wrong entries against *this* code. Three invalidates it; the
     /// account-level counter that survives a resend is [`User::failed_logins`].
     pub attempts: u32,
     pub created_at: DateTime<Utc>,
@@ -219,7 +217,7 @@ pub struct LoginCode {
     pub browser_token: Option<String>,
 }
 
-/// Work in progress on one project (REQ-1.10).
+/// Work in progress on one project.
 ///
 /// Keyed by shortcode: one draft per project, not per user — per-user multiple
 /// drafts are out of scope, and concurrency is last-write-wins.
@@ -239,9 +237,9 @@ pub struct DraftRecord {
 
 /// Where a submission sits in review.
 ///
-/// `Draft` and `Online` from REQ-2.1 are deliberately absent: a draft is a
+/// `Draft` and `Online`, the two remaining lifecycle states, are deliberately absent: a draft is a
 /// `drafts` row, and Online is derived at startup by comparing against the
-/// published set, at which point the local record is discarded (REQ-2.4).
+/// published set, at which point the local record is discarded.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SubmissionState {
     Submitted,
@@ -280,10 +278,10 @@ impl FromStr for SubmissionState {
     }
 }
 
-/// A submission awaiting or under review (REQ-1.12, REQ-4.x).
+/// A submission awaiting or under review.
 ///
 /// One per project at a time — the schema makes `shortcode` unique, which is
-/// PRD Constraints' "one pending submission per project" rather than a
+/// the "one pending submission per project" constraint rather than a
 /// convention handlers have to remember.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Submission {
@@ -314,7 +312,7 @@ pub struct Submission {
     pub review_state: Option<String>,
 }
 
-/// An approved record waiting to be collected into a pull request (REQ-5.1).
+/// An approved record waiting to be collected into a pull request.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ApprovedRecord {
     pub id: Uuid,
@@ -325,7 +323,7 @@ pub struct ApprovedRecord {
     pub approved_by: Option<Uuid>,
     pub approved_at: DateTime<Utc>,
     /// `None` while uncollected. A failed collection leaves it `None` so the
-    /// next run retries it (REQ-5.7).
+    /// next run retries it.
     pub collected_at: Option<DateTime<Utc>>,
 }
 
@@ -337,14 +335,14 @@ pub struct ApprovedRecord {
 /// action leaves the same trail as a reviewer's.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ReviewOutcome {
-    /// Accepted (REQ-4.4). An `approved_records` row now holds what was
+    /// Accepted. An `approved_records` row now holds what was
     /// approved, including anything RDU substituted.
     Approved,
-    /// Returned to the depositor as a draft, with a note (REQ-4.5).
+    /// Returned to the depositor as a draft, with a note.
     ChangesRequested,
-    /// Discarded by RDU. Published metadata is unchanged (REQ-4.6).
+    /// Discarded by RDU. Published metadata is unchanged.
     Rejected,
-    /// Discarded by the depositor who made it (REQ-4.7).
+    /// Discarded by the depositor who made it.
     Withdrawn,
 }
 
@@ -515,7 +513,7 @@ mod tests {
 
     #[test]
     fn test_a_depositor_reaches_only_the_projects_assigned_to_them() {
-        // REQ-1.2, and REQ-1.3's 403 is the other half.
+        // A depositor sees their assignments and nothing else; the 403 is the other half.
         let depositor = user(Role::Depositor, &["0801", "0812"]);
         assert!(depositor.may_reach("0801"));
         assert!(depositor.may_reach("0812"));
@@ -570,8 +568,8 @@ mod tests {
 
     #[test]
     fn test_rdu_reaches_every_project_without_an_assignment() {
-        // REQ-4.2: RDU access is role-based, not per-project, which is why an
-        // RDU account's `shortcodes` is empty.
+        // RDU access is role-based, not per-project, which is why an RDU account's
+        // `shortcodes` is empty.
         let rdu = user(Role::Rdu, &[]);
         assert!(rdu.may_reach("0801"));
         assert!(rdu.may_reach("anything"));

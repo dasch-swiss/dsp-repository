@@ -15,7 +15,7 @@
 //!   `/projects/080c` and `/projects/080C` a row each for one project.
 //! - **`Section::fields_for` is the only gate**, deciding both what renders and what is applied, so
 //!   a depositor cannot write an RDU-only field by naming it. A field with no declared shape is
-//!   never applied, so its stored value rides through untouched (REQ-1.7).
+//!   never applied, so its stored value rides through untouched.
 
 use axum::extract::{Path, State};
 use axum::http::{HeaderMap, StatusCode};
@@ -88,7 +88,7 @@ const WITHDRAW_REFUSED_STORAGE: &str = "The submission could not be taken back, 
 /// The field-level error an unresolvable `temporalCoverage` entry renders as.
 ///
 /// Says what to do, not only what is wrong: the `Reference` variant always
-/// resolves, which is the escape route REQ-1.15's refusal decision rests on —
+/// resolves, which is the escape route the decision to refuse rests on —
 /// without naming it, a depositor whose period the table does not know is
 /// simply stuck.
 /// The refusal a body over the per-field cap renders as.
@@ -195,7 +195,7 @@ struct Context<'a> {
     section: &'static Section,
     audience: Audience,
     /// The draft as it stands: the stored one, or the published project
-    /// pre-filled (REQ-1.1), or empty for a project with neither (REQ-2.3).
+    /// pre-filled, or empty for a project with neither.
     draft: ProjectDraft,
     /// The stored row, `None` when nothing has been saved over the published
     /// metadata yet. Its `created_at` is preserved across a save.
@@ -207,7 +207,7 @@ struct Context<'a> {
     /// a second lookup could see a different row.
     submission: Option<Submission>,
     /// Fields RDU accepted in the round being answered, which are therefore
-    /// fixed until the project is submitted again (REQ-4.5).
+    /// fixed until the project is submitted again.
     ///
     /// The applier skip reads this, not just the renderer: a control that does
     /// not render still posts nothing, but a hand-built body can name the field
@@ -234,7 +234,7 @@ struct Context<'a> {
     /// which is what keeps a renderer from quietly acquiring a second source of
     /// truth about the project.
     agents: editor_core::agents::AgentScope<'a>,
-    /// This project's own entity proposals (US-3), every status.
+    /// This project's own entity proposals, every status.
     ///
     /// Read once here rather than filtered at each use: [`Self::agents`] is built from it (only the
     /// referenceable ones contribute), the submit gate below walks the live ones, and the summary
@@ -259,7 +259,7 @@ struct Context<'a> {
     /// `drafts` needed a rule to guarantee.
     ///
     /// Every outcome shows, not only the one that asked for changes: a
-    /// rejection is otherwise invisible (REQ-4.6 discards and notifications are
+    /// rejection is otherwise invisible (a rejection discards the submission and notifications are
     /// out of scope), and an approval is where the depositor is shown what RDU
     /// substituted for their values. It shows until the next submission, which
     /// starts the next cycle.
@@ -417,7 +417,7 @@ async fn context<'a>(
     });
 
     // Every status, not only the live ones: `AgentScope::with_proposals` also resolves an
-    // `Accepted` proposal (REQ-3.6's referential-integrity gate needs that), and the submit gate
+    // `Accepted` proposal, which the referential-integrity gate needs, and the submit gate
     // below needs `is_live` per row to decide which to check.
     let proposals = match EntityProposalRepository::list_for_shortcode(&*state.db, &key).await {
         Ok(proposals) => proposals,
@@ -426,8 +426,8 @@ async fn context<'a>(
 
     let published = state.published.get(shortcode);
     let draft = match &record {
-        // A stored draft supersedes the published metadata: REQ-1.1 pre-fills
-        // from what is published, and REQ-1.10 keeps what was saved over it.
+        // A stored draft supersedes the published metadata: the form pre-fills from what is
+        // published, and what was saved wins over it.
         Some(record) => serde_json::from_str(&record.payload).unwrap_or_else(|error| {
             // A payload this build cannot parse is a stored-state problem, and
             // falling back to the published project would silently discard the
@@ -478,8 +478,8 @@ pub(crate) async fn show(
     render_page(&state, &user, &shortcode, &context, Rendering::default())
 }
 
-/// `POST /projects/{shortcode}/sections/{section}` — save the draft (REQ-1.10),
-/// submit it (REQ-1.12), or take a pending submission back (REQ-4.7).
+/// `POST /projects/{shortcode}/sections/{section}` — save the draft,
+/// submit it, or take a pending submission back.
 ///
 /// One URL and one `GET` for all three, discriminated by the `intent` pair the
 /// activated submit control carries — the same shape the review surface uses,
@@ -534,6 +534,7 @@ pub(crate) async fn act(
         Some(page::WITHDRAW_CONFIRM) => Intent::ConfirmWithdrawal,
         Some(page::DISCARD) => Intent::Discard,
         Some(page::DISCARD_CONFIRM) => Intent::ConfirmDiscard,
+        Some(page::FIND_AGENT) => Intent::FindAgent,
         Some(page::PROPOSE_PERSON) => Intent::ProposePerson,
         Some(page::PROPOSE_ORGANIZATION) => Intent::ProposeOrganization,
         // The entity rides in the value, so this matches the prefix rather than the whole
@@ -620,6 +621,21 @@ pub(crate) async fn act(
         return saved(&shortcode, &context, headers);
     }
 
+    // A search stores the body exactly as a save does — so nothing typed is at risk of being
+    // lost to a lookup — and then re-renders it, which is the whole of what it does. It keeps the
+    // posted body, unlike a save: the query lives only in the form, so a render that dropped it
+    // would clear the box and the matches with it. `saved` redirects for the same reason it must
+    // not here.
+    if intent == Intent::FindAgent {
+        span.record("form.outcome", "searched");
+        let rendering = Rendering { keep_posted: true, ..Rendering::default() };
+        return if is_enhanced(&headers) {
+            region(&shortcode, &context, rendering)
+        } else {
+            render_page(&state, &user, &shortcode, &context, rendering)
+        };
+    }
+
     // Same footing as submit below: the draft above is already written, so a proposal refused past
     // this point costs the depositor only the proposal, never whatever they just typed.
     if matches!(
@@ -676,8 +692,8 @@ fn apply_posted(context: &mut Context<'_>, body: &FormBody) -> usize {
     for field in context.section.fields_for(context.audience) {
         // An accepted field is skipped here, which is the gate. Not rendering
         // its control stops an ordinary browser posting it; only this stops a
-        // hand-built body, and REQ-4.5's point is that an accepted value
-        // cannot re-enter review altered.
+        // hand-built body, and the point of retaining per-field state is that an accepted
+        // value cannot re-enter review altered.
         if context.accepted_fields.iter().any(|accepted| accepted == field.id) {
             continue;
         }
@@ -857,13 +873,16 @@ async fn row_action(
     // The field has to be one this reader may write in this section, checked
     // through `fields_for` like every other write: without it the URL is a way
     // to name an RDU-only or a display-only field.
-    let Some(field) = context.section.fields_for(context.audience).find(|field| {
-        field.id == field_id
-            && matches!(
-                field.shape,
-                Some(Shape::MultilingualRows | Shape::StringRows | Shape::AgentRows | Shape::AttributionRows)
-            )
-    }) else {
+    //
+    // Whether the field has rows comes from `Shape::has_rows`, which is exhaustive, and not from
+    // a list of shapes written out here. The renderer emits an add control for every row shape,
+    // so an allowlist that misses one serves a `404` to a button the page itself drew — which is
+    // what four of the eight row shapes did.
+    let Some(field) = context
+        .section
+        .fields_for(context.audience)
+        .find(|field| field.id == field_id && field.shape.is_some_and(Shape::has_rows))
+    else {
         span.record("form.outcome", "unknown_field");
         return crate::not_found(State(state.clone())).await;
     };
@@ -908,11 +927,14 @@ enum Intent {
     ConfirmWithdrawal,
     Discard,
     ConfirmDiscard,
-    /// Start a proposal for a new person (REQ-3.1).
+    /// Run the agent pickers' searches and re-render. Stores the posted body like a save, and
+    /// changes nothing else.
+    FindAgent,
+    /// Start a proposal for a new person.
     ProposePerson,
-    /// Start a proposal for a new organisation (REQ-3.1).
+    /// Start a proposal for a new organisation.
     ProposeOrganization,
-    /// Propose a change to an entity this project already references (REQ-3.2).
+    /// Propose a change to an entity this project already references.
     ProposeChanges,
 }
 
@@ -928,6 +950,7 @@ impl Intent {
             Self::ConfirmWithdrawal => "withdraw-confirm",
             Self::Discard => "discard",
             Self::ConfirmDiscard => "discard-confirm",
+            Self::FindAgent => "find-agent",
             Self::ProposePerson => "propose-person",
             Self::ProposeOrganization => "propose-organization",
             Self::ProposeChanges => "propose-changes",
@@ -935,7 +958,7 @@ impl Intent {
     }
 }
 
-/// Record the draft as the project's pending submission (REQ-1.12).
+/// Record the draft as the project's pending submission.
 ///
 /// The draft has already been written, so every branch here leaves the
 /// depositor's work in place — a refusal costs them the submission, never the
@@ -1075,9 +1098,9 @@ async fn submit(
         return refused_with(state, user, shortcode, context, headers, SUBMIT_REFUSED_SENTINEL, &errors);
     }
 
-    // REQ-1.14, through the same function `dpe-server validate` and
-    // `dpe-api-oai` apply, so the three cannot disagree about what counts as a
-    // gap. Re-run on every submit, which is what makes a resubmission
+    // Every `temporalCoverage` entry has to resolve to a structured date, checked through the
+    // same function `dpe-server validate` and `dpe-api-oai` apply, so the three cannot disagree
+    // about what counts as a gap. Re-run on every submit, which is what makes a resubmission
     // revalidated rather than trusted because it was reviewed once.
     let unresolved = unresolved_temporal_coverage(&raw, &state.temporal.periods, &state.temporal.enrichment);
     if !unresolved.is_empty() {
@@ -1156,7 +1179,7 @@ async fn submit(
     }
 }
 
-/// Start an entity proposal (REQ-3.1/3.2), or refuse without creating one.
+/// Start an entity proposal, or refuse without creating one.
 ///
 /// The draft has already been written by the time this runs — `act` saves the posted body before
 /// dispatching on intent, on this path exactly as it does on submit — so a refusal here costs the
@@ -1414,7 +1437,7 @@ async fn discard(
     }
 }
 
-/// Take a pending submission back (REQ-4.7), or show the confirmation that
+/// Take a pending submission back, or show the confirmation that
 /// posts it.
 ///
 /// The form is read-only while a submission is pending, so this is the one
@@ -1583,8 +1606,8 @@ fn refused(
 
 /// A refused write, with any field-level errors beside the controls they name.
 ///
-/// Re-rendered rather than redirected on both paths, which is REQ-1.13: a
-/// redirect would throw away what was typed, and the invalid values are exactly
+/// Re-rendered rather than redirected on both paths: a redirect would throw away what was
+/// typed, and the invalid values are exactly
 /// what the depositor has to see to fix them.
 fn refused_with(
     state: &AppState,
@@ -1842,7 +1865,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let body = body_string(response).await;
         assert!(body.starts_with("<!DOCTYPE html>"), "{body}");
-        // REQ-1.1: the form opens pre-filled from the published metadata, with
+        // The form opens pre-filled from the published metadata, with
         // nothing saved over it yet.
         assert!(body.contains("Basler Edition der Bernoulli-Briefwechsel"), "{body}");
         assert!(body.contains(&format!(r#"action="{OVERVIEW}""#)), "{body}");
@@ -1886,7 +1909,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_project_that_is_not_assigned_is_a_403_on_the_form_too() {
-        // REQ-1.3, checked before anything is read: a 404 for an unpublished
+        // The access check runs before anything is read: a 404 for an unpublished
         // shortcode beside a 403 for a published one would make the pair an
         // oracle for which projects exist.
         let (state, _) = test_state("section-forbidden").await;
@@ -1912,7 +1935,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_save_stores_the_draft_and_redirects_to_the_get() {
-        // REQ-1.10, and POST-redirect-GET: a `POST` left in the history
+        // A save must always be possible, and POST-redirect-GET: a `POST` left in the history
         // re-posts on refresh.
         let (state, _) = test_state("section-save").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
@@ -2173,8 +2196,8 @@ mod tests {
 
     #[tokio::test]
     async fn a_rejected_submission_is_visible_to_the_depositor_with_its_reason() {
-        // The gap this closes: REQ-4.6 discards the submission, notifications
-        // are out of scope, and REQ-2.1's states have no Rejected — so without
+        // The gap this closes: a rejection discards the submission, notifications
+        // are out of scope, and the lifecycle states have no Rejected — so without
         // this the depositor's work vanishes with no signal whatever, and
         // repeated reject cycles leave no trace anywhere.
         let (state, _) = test_state("section-rejected").await;
@@ -2194,7 +2217,7 @@ mod tests {
 
     #[tokio::test]
     async fn an_approval_shows_the_depositor_the_value_rdu_put_in_place_of_theirs() {
-        // REQ-4.3 lets a reviewer edit before accepting and REQ-4.4 waives the
+        // A reviewer may edit before accepting and there is no second approver, which waives the
         // second approver, so a substituted value is seen by nobody unless the
         // depositor is shown it here.
         let (state, _) = test_state("section-substitution").await;
@@ -2242,7 +2265,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_returned_draft_is_distinguishable_from_one_never_submitted() {
-        // REQ-2.1 fixes the state list at five and has no "returned", so the
+        // The state list is fixed at five and has no "returned", so the
         // difference has to be the round rather than a sixth state.
         let (state, _) = test_state("section-returned-vs-fresh").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
@@ -2278,7 +2301,7 @@ mod tests {
 
     #[tokio::test]
     async fn submitting_a_draft_creates_the_pending_submission() {
-        // REQ-1.12. The submission carries the draft as it stands, and the
+        // The submission carries the draft as it stands, and the
         // plain path redirects so a refresh cannot re-post it.
         let (state, _) = test_state("section-submit").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
@@ -2322,7 +2345,7 @@ mod tests {
 
     #[tokio::test]
     async fn submitting_leaves_the_draft_in_place() {
-        // REQ-1.13, and what makes request-changes and withdraw work: the
+        // What makes request-changes and withdraw work: the
         // depositor comes back to the draft, so submit must not consume it.
         let (state, _) = test_state("section-submit-keeps-draft").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
@@ -2451,6 +2474,15 @@ mod tests {
     const DATASET: &str = "/projects/0801d/sections/dataset";
 
     /// A depositor with the dataset section open.
+    /// The stored draft for `shortcode`, as the repository holds it.
+    async fn stored_draft(state: &AppState, shortcode: &str) -> ProjectDraft {
+        let row = DraftRepository::find(&*state.db, shortcode)
+            .await
+            .expect("read")
+            .expect("a stored draft");
+        serde_json::from_str(&row.payload).expect("parses")
+    }
+
     async fn a_depositor_on(name: &str) -> (AppState, axum::Router, String) {
         let (state, _) = test_state(name).await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
@@ -2653,6 +2685,100 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_search_offers_matches_stores_the_body_and_changes_no_reference() {
+        // The picker's whole round trip: type a name, press Search, choose from the menu, save.
+        // The search itself must store what was typed like a save does — so nothing is lost to a
+        // lookup — while changing no reference of its own.
+        let (state, app, session) = a_depositor_on("section-agent-search").await;
+        const CONTRIBUTORS: &str = "/projects/0801d/sections/contributors";
+
+        // A contact point that resolves, saved through the form.
+        as_session(
+            &app,
+            post(CONTRIBUTORS, "contactPoint.row=r0&contactPoint.r0=organization-008"),
+            &session,
+        )
+        .await;
+
+        // Search from that row. The query rides in the body; the button names the intent.
+        let searched = body_string(
+            as_session(
+                &app,
+                post(
+                    CONTRIBUTORS,
+                    "contactPoint.row=r0&contactPoint.r0=organization-008\
+                     &contactPoint.r0.q=Bernoulli&intent=find-agent",
+                ),
+                &session,
+            )
+            .await,
+        )
+        .await;
+        assert!(searched.contains("<select"), "the search offers a real menu: {searched}");
+        assert!(searched.contains(r#"value="Bernoulli""#), "the query comes back in the box");
+        // A search decides nothing: the stored reference is still the one that was there.
+        let after_search = stored_draft(&state, "0801d").await;
+        assert_eq!(
+            after_search.get("contactPoint"),
+            Some(&serde_json::json!(["organization-008"])),
+            "a search must not change a reference"
+        );
+
+        // Now choose from the menu, which posts under the same name the applier already reads.
+        as_session(
+            &app,
+            post(CONTRIBUTORS, "contactPoint.row=r0&contactPoint.r0=organization-002"),
+            &session,
+        )
+        .await;
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("contactPoint"),
+            Some(&serde_json::json!(["organization-002"])),
+            "the chosen id is what lands in the draft"
+        );
+    }
+
+    #[tokio::test]
+    async fn every_add_and_remove_control_the_form_renders_resolves() {
+        // Posted to the URLs the pages themselves draw, over every section a depositor sees,
+        // rather than to hand-written paths for the fields someone remembered.
+        //
+        // The narrower version of this — naming `keywords` and `alternativeNames` — passed while
+        // eleven of the twenty-three controls answered `404` and threw the form away with it:
+        // `disciplines`, `spatialCoverage`, `temporalCoverage`, `publications` and `funding` all
+        // rendered an add button that `row_action`'s shape allowlist did not accept. `has_rows`
+        // is exhaustive so the shapes cannot drift apart again, and this is what checks that the
+        // route agrees with the markup.
+        let (_state, app, session) = a_depositor_on("section-row-actions-resolve").await;
+
+        let mut checked = 0;
+        for section in registry::sections_for(Audience::Everyone) {
+            let url = format!("/projects/0801d/sections/{}", section.id);
+            let rendered = body_string(as_session(&app, get(&url), &session).await).await;
+            let mut actions: Vec<&str> = rendered
+                .split(r#"formaction=""#)
+                .skip(1)
+                .filter_map(|rest| rest.split('"').next())
+                .collect();
+            actions.sort_unstable();
+            actions.dedup();
+            for action in actions {
+                let status = as_session(&app, post(action, ""), &session).await.status();
+                assert_eq!(
+                    status,
+                    StatusCode::OK,
+                    "{} renders {action}, which answers {status}",
+                    section.id
+                );
+                checked += 1;
+            }
+        }
+        // The count is asserted so a registry change that stops rendering row controls entirely
+        // cannot make this test vacuous.
+        assert!(checked >= 20, "only {checked} row controls were found to post to");
+    }
+
+    #[tokio::test]
     async fn a_row_action_against_a_project_in_review_is_refused() {
         // The lock is re-checked here and not only on the save path: a row
         // action is a write, and it resolves through the same `context()`.
@@ -2837,7 +2963,7 @@ mod tests {
 
     #[tokio::test]
     async fn submitting_an_unresolvable_period_is_refused_with_a_field_error() {
-        // REQ-1.14 and Success Criterion 2, applied through the same function
+        // Every `temporalCoverage` entry has to resolve, applied through the same function
         // `dpe-server validate` and `dpe-api-oai` use. Re-run on every submit,
         // which is what makes a resubmission revalidated rather than trusted
         // because it was reviewed once.
@@ -3027,11 +3153,10 @@ mod tests {
 
     #[tokio::test]
     async fn an_rdu_member_submitting_produces_a_submission_of_the_same_shape() {
-        // REQ-4.8. `may_reach` is already true for every project for an RDU
-        // account, so the direct-editing half was there; this is the half that
-        // makes the result reviewable. Identical in shape means it is
-        // `Submitted` with no reviewer — an RDU submission is not
-        // self-approving, which REQ-4.8 requires by asking for a *pending* one.
+        // `may_reach` is already true for every project for an RDU account, so the
+        // direct-editing half was there; this is the half that makes the result reviewable.
+        // Identical in shape means it is `Submitted` with no reviewer — an RDU submission is
+        // not self-approving, because what it has to produce is a *pending* submission.
         let (state, _) = test_state("section-submit-rdu").await;
         let rdu = a_user(&state, "rdu@example.test", "An RDU Member", Role::Rdu, &[]).await;
         let session = a_session(&state, rdu.id).await;
@@ -3052,8 +3177,8 @@ mod tests {
 
     #[tokio::test]
     async fn withdrawing_deletes_the_submission_and_records_the_round() {
-        // REQ-4.7. The draft is left, so the depositor keeps editing and can
-        // submit again (REQ-1.13).
+        // A withdrawal leaves the draft, so the depositor keeps editing and can
+        // submit again.
         let (state, _) = test_state("section-withdraw").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&state, user.id).await;
@@ -3077,7 +3202,7 @@ mod tests {
 
     #[tokio::test]
     async fn the_form_is_editable_again_after_a_withdrawal() {
-        // The observable point of REQ-4.7: the depositor got their form back.
+        // The observable point of a withdrawal: the depositor got their form back.
         // A withdrawal that left the lock in place would be indistinguishable
         // from one that failed.
         let (state, _) = test_state("section-withdraw-unlocks").await;
@@ -3550,7 +3675,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_project_mate_may_withdraw_the_submission_somebody_else_made() {
-        // REQ-4.7's "their own" reads as the project's, which is how the rest
+        // "Their own" submission reads as the project's, which is how the rest
         // of the service scopes access: one draft per project, and a
         // project-mate can already overwrite the draft the submission was made
         // from. Scoped to the submitter, a submission would be unwithdrawable
@@ -3643,7 +3768,7 @@ mod tests {
 
     #[tokio::test]
     async fn an_accepted_field_is_not_written_by_a_save() {
-        // REQ-4.5 retains the per-field state, and nothing stopped the
+        // Request-changes retains the per-field state, and nothing stopped the
         // depositor altering an accepted field — which then re-entered review
         // still flagged accepted. The gate is this applier skip: not rendering
         // the control stops an ordinary browser, and only this stops a
@@ -3878,8 +4003,8 @@ mod tests {
 
     #[tokio::test]
     async fn an_unpublished_project_opens_blank_without_reading_as_an_error() {
-        // REQ-2.3: absent from the published set is not "does not exist", and
-        // REQ-1.1's "current published metadata" is then empty.
+        // Absent from the published set is not "does not exist", and the published metadata
+        // the form pre-fills from is then empty.
         let (state, _) = test_state("section-unpublished").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["9999"]).await;
         let session = a_session(&state, user.id).await;
@@ -4111,7 +4236,7 @@ mod tests {
     /// Decision 5 on the issue, end to end.
     ///
     /// `organization-065` (Tanta University) is committed with no `postalCode`. A depositor
-    /// proposing any other change to it must not be made to invent one — REQ-3.4's "all four or
+    /// proposing any other change to it must not be made to invent one — "all four members or
     /// omit `address`" applies to what they wrote, not to what they inherited. The same carve-out
     /// `typed_sentinels` already makes for a reference `url` because `0110_h-steiner` holds
     /// `MISSING`.
@@ -4242,11 +4367,32 @@ mod tests {
         .await
         .unwrap();
 
-        // The `<datalist>` — and the summary panel — render only on a section holding an agent
-        // field, which "overview" is not: `contactPoint`/`attributions` are "contributors".
+        // The summary panel renders only on a section holding an agent field, which "overview" is
+        // not: `contactPoint`/`attributions` are "contributors".
         const CONTRIBUTORS: &str = "/projects/0801d/sections/contributors";
         let opened = body_string(as_session(&app, get(CONTRIBUTORS), &session).await).await;
-        assert!(opened.contains(r#"option value="person-417""#), "{opened}");
+        assert!(opened.contains("person-417"), "the summary names it: {opened}");
+
+        // And the picker's own search finds it by the name that payload gives it, which is what
+        // a depositor has to type to reference it. Searched through the picker's query name, the
+        // same round trip the "Search" button posts.
+        let searched = body_string(
+            as_session(
+                &app,
+                post(
+                    CONTRIBUTORS,
+                    "attributions.row=r0&attributions.r0.contributor=&attributions.r0.contributor.q=Lovelace\
+                     &intent=find-agent",
+                ),
+                &session,
+            )
+            .await,
+        )
+        .await;
+        assert!(
+            searched.contains(r#"value="person-417""#),
+            "the search must offer the proposal it just allocated: {searched}"
+        );
 
         // And a field naming it is no longer refused as unresolvable.
         as_session(
@@ -4266,8 +4412,8 @@ mod tests {
 
     #[tokio::test]
     async fn the_proposals_summary_lists_a_live_proposal_and_is_absent_with_none() {
-        // The summary is gated like the `<datalist>`, on a section holding an agent field —
-        // "contributors" (`contactPoint`/`attributions`), not "overview".
+        // The summary is gated on a section holding an agent field — "contributors"
+        // (`contactPoint`/`attributions`), not "overview".
         const CONTRIBUTORS: &str = "/projects/0801d/sections/contributors";
         let (state, _) = test_state("section-propose-summary").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;

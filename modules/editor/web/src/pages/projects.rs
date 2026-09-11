@@ -1,7 +1,7 @@
 //! The project list.
 //!
 //! What this page owns is the **scoping**: it shows a depositor exactly the
-//! projects assigned to them (REQ-1.2), named from the published set. The
+//! projects assigned to them, named from the published set. The
 //! editing surface is [`crate::pages::section`], which `/projects/{shortcode}`
 //! redirects into — there is no per-project landing page between the two, so
 //! that exactly one place decides where a project link lands.
@@ -9,7 +9,7 @@
 //! ## A row can be missing in two directions, and both are ordinary
 //!
 //! An assignment naming no published project is skipped rather than rendered as
-//! a nameless row: a project assigned before it is published, and REQ-2.3's
+//! a nameless row: a project assigned before it is published, and a
 //! project that exists only locally, are both real states, and a blank row would
 //! read as data loss. What must not happen is a depositor with assignments
 //! seeing an empty page with no explanation, so the two empty states say
@@ -50,7 +50,7 @@ pub fn assigned(rows: &[ProjectSummary<'_>], assignments: usize) -> Markup {
 
 /// `GET /projects` for an RDU member: every published project.
 ///
-/// RDU access is role-based rather than per-project (REQ-4.2), so there is no
+/// RDU access is role-based rather than per-project, so there is no
 /// assignment set to list and the account's own `shortcodes` is empty by design.
 /// The list is therefore the whole published set.
 pub fn rdu_overview(rows: &[ProjectSummary<'_>]) -> Markup {
@@ -159,7 +159,7 @@ mod tests {
     #[test]
     fn test_the_list_shows_nothing_that_was_not_assigned() {
         // The whole point of the page: it is the depositor's own scope
-        // (REQ-1.2), not a directory of every project.
+        //, not a directory of every project.
         let out = assigned(&[summary("0801d", "Bernoulli-Euler Online", "ongoing")], 1).into_string();
         assert!(!out.contains("0803"), "{out}");
     }

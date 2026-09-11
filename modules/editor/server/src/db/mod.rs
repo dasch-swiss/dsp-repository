@@ -208,8 +208,8 @@ impl DbError {
     ///
     /// Which unique index it was is not recoverable from the error, so the entity
     /// name comes from the call site: each table that maps this to
-    /// [`RepositoryError::Conflict`] has exactly one — a duplicate address for
-    /// REQ-7.4, a second pending submission for one project.
+    /// [`RepositoryError::Conflict`] has exactly one — a duplicate address, or a second
+    /// pending submission for one project.
     fn is_unique_violation(&self) -> bool {
         matches!(
             self,
@@ -449,7 +449,7 @@ fn init_connection(
         // fsyncs, so a power loss or OS crash can lose the last transactions —
         // never corrupt the database, and never on an application crash. That
         // trade is right here because git holds everything irreplaceable and the
-        // PRD makes backups optional; drafts and in-flight submissions are
+        // Backups are optional; drafts and in-flight submissions are
         // re-creatable.
         conn.pragma_update(None, "synchronous", "NORMAL")?;
     }

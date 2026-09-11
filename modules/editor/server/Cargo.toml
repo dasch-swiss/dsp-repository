@@ -29,7 +29,7 @@ serde_json.workspace = true
 rusqlite.workspace = true
 deadpool-sqlite.workspace = true
 async-trait.workspace = true
-# Mail (REQ-6.7). `rustls` rather than the default `native-tls`: the release
+# Mail. `rustls` rather than the default `native-tls`: the release
 # binary is static musl, and `native-tls` would need an OpenSSL to link against.
 # `ring` and `webpki-roots` are chosen explicitly — lettre resolves its own
 # crypto provider from its own features, so it never depends on which provider

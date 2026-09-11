@@ -198,7 +198,7 @@ pub struct EditorConfig {
 
     /// SMTP relay host, set via `EDITOR_SMTP_HOST`.
     ///
-    /// **No default, and unset means the console transport** (REQ-6.8): codes
+    /// **No default, and unset means the console transport**: codes
     /// are written to the log and the service stays usable. That is the
     /// development and PR-preview default — the Cloud Run preview is publicly
     /// reachable, so it must not be able to send mail through the shared relay
@@ -237,7 +237,7 @@ pub struct EditorConfig {
     /// failure log line names it so the remedy is found from the error itself.
     pub smtp_break_glass: bool,
 
-    /// Seconds before another code may be sent to the same address (REQ-6.5),
+    /// Seconds before another code may be sent to the same address,
     /// set via `EDITOR_LOGIN_COOLDOWN_SECS`.
     ///
     /// Validated to be shorter than [`CODE_TTL`]: a cooldown longer than the
@@ -296,7 +296,7 @@ pub struct EditorConfig {
     /// Idle session timeout in seconds, set via `EDITOR_SESSION_IDLE_SECS`.
     pub session_idle_secs: u64,
 
-    /// Comma-separated addresses that always have an RDU account (REQ-7.2), set
+    /// Comma-separated addresses that always have an RDU account, set
     /// via `EDITOR_RDU_EMAILS`.
     ///
     /// A single string rather than a `Vec<String>` because that is what an
@@ -468,11 +468,11 @@ impl EditorConfig {
         //
         // Development, `just dev-editor`, `just run-docker-editor` and the Cloud
         // Run PR preview all run as `DEV`, where the console transport is the
-        // point (REQ-6.8). Only `PROD` is refused.
+        // point. Only `PROD` is refused.
         if self.env == "PROD" && self.smtp_host.is_none() {
             return invalid(
                 "EDITOR_ENV=PROD requires EDITOR_SMTP_HOST. Without a relay every login code is written to the log \
-                 instead of being sent (REQ-6.8), which is correct for development and a standing credential leak in \
+                 instead of being sent, which is correct for development and a standing credential leak in \
                  production. Set the relay, or set EDITOR_ENV=DEV if this is not a production deployment"
                     .to_string(),
             );
@@ -480,15 +480,14 @@ impl EditorConfig {
         if self.smtp_break_glass && self.smtp_host.is_none() {
             return invalid(
                 "EDITOR_SMTP_BREAK_GLASS has no effect without EDITOR_SMTP_HOST — with no relay configured, every \
-                 code already goes to the log (REQ-6.8)"
+                 code already goes to the log"
                     .to_string(),
             );
         }
         // The position, never the value. This message reaches stderr through
         // `main`'s config-load report, which is container stderr and therefore
-        // the log pipeline — and an address in a log is exactly what REQ-6.10
-        // forbids. The operator holds the configuration, so an index is just as
-        // actionable.
+        // the log pipeline — and an address in a log is exactly what must not happen. The operator
+        // holds the configuration, so an index is just as actionable.
         for (index, address) in self.rdu_addresses().iter().enumerate() {
             if !crate::auth::is_plausible_address(address) {
                 return invalid(format!(
@@ -512,10 +511,10 @@ impl EditorConfig {
     ///
     /// - **Not `PROD`.** The published image sets `EDITOR_ENV=PROD`, so a production container is
     ///   excluded by its own default before anything else is considered.
-    /// - **No relay.** With one unset every code is already written to the log in plaintext
-    ///   (REQ-6.8), so showing it to the browser that just asked for it discloses nothing the
-    ///   deployment is not already doing. With a relay configured the code goes to a mailbox and
-    ///   the screen must not be a second channel.
+    /// - **No relay.** With one unset every code is already written to the log in plaintext, so
+    ///   showing it to the browser that just asked for it discloses nothing the deployment is not
+    ///   already doing. With a relay configured the code goes to a mailbox and the screen must not
+    ///   be a second channel.
     /// - **In-memory database.** `EDITOR_DB_DIR` unset means every account, session and code dies
     ///   with the process. This is the condition that separates a throwaway deployment from a real
     ///   one: an environment holding accounts people actually use has to mount a volume, or it
@@ -887,7 +886,7 @@ mod tests {
 
     #[test]
     fn break_glass_without_a_relay_is_refused_as_a_misunderstanding() {
-        // With no relay every code already goes to the log (REQ-6.8), so the
+        // With no relay every code already goes to the log, so the
         // variable would look like it was doing something and not be.
         figment::Jail::expect_with(|jail| {
             jail.set_env("EDITOR_SMTP_BREAK_GLASS", "true");

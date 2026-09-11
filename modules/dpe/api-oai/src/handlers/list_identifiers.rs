@@ -211,7 +211,7 @@ mod tests {
 
     #[test]
     fn project_set_returns_only_record_identifiers() {
-        // ListIdentifiers honours project: sets identically to ListRecords (REQ-1.2).
+        // ListIdentifiers honours project: sets identically to ListRecords.
         let mut params = make_params(Some("oai_dc"));
         params.set = Some("project:0803".to_string());
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
@@ -231,7 +231,7 @@ mod tests {
 
     #[test]
     fn cluster_set_returns_project_and_record_identifiers() {
-        // ListIdentifiers honours cluster: sets identically to ListRecords (REQ-2.3).
+        // ListIdentifiers honours cluster: sets identically to ListRecords.
         let mut params = make_params(Some("oai_dc"));
         params.set = Some("cluster:cluster-001".to_string());
         let clusters = vec![cluster_fixture("cluster-001", "EKWS", &["0803"])];

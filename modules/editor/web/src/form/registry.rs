@@ -10,8 +10,8 @@
 //! ## The vocabulary is the prototype's
 //!
 //! Labels and hints are taken from `dsp-incubator/metadata-editor-v2`'s actual
-//! screens rather than paraphrased, because REQ-2.1 and REQ-2.2 make the
-//! depositor-facing wording normative and the prototype is what was validated
+//! screens rather than paraphrased, because the depositor-facing wording is normative and the
+//! prototype is what was validated
 //! with users. Where the prototype's own summary and its screens disagree, the
 //! screens win.
 //!
@@ -35,9 +35,9 @@
 //!
 //! ## Three fields are absent on purpose
 //!
-//! `records`, `clusters` and `collections` are omitted entirely (REQ-1.6) —
+//! `records`, `clusters` and `collections` are omitted entirely —
 //! [`OMITTED`] names them so the completeness test can tell "decided against"
-//! from "forgotten". They still ride through a draft untouched (REQ-1.7); the
+//! from "forgotten". They still ride through a draft untouched; the
 //! omission is from the *form*, not from the data.
 
 use editor_core::draft::UrlSlot;
@@ -158,8 +158,7 @@ pub struct Field {
     /// cannot change it, and a "Required" pill beside a value they cannot
     /// supply is an instruction they cannot follow.
     pub obligation: Option<Obligation>,
-    /// Shown as a value, never as a control (REQ-1.5). Written back unchanged
-    /// (REQ-1.7).
+    /// Shown as a value, never as a control. Written back unchanged.
     pub display_only: bool,
     pub audience: Audience,
     /// How a posted body is read back into this field, or `None` for a field no
@@ -229,7 +228,7 @@ const fn hinted(
     }
 }
 
-/// Shorthand for a display-only field (REQ-1.5).
+/// Shorthand for a display-only field.
 const fn shown(id: &'static str, label: &'static str, hint: Option<&'static str>, audience: Audience) -> Field {
     Field {
         id,
@@ -238,8 +237,8 @@ const fn shown(id: &'static str, label: &'static str, hint: Option<&'static str>
         obligation: None,
         display_only: true,
         audience,
-        // Nothing reads a display-only field back, which is what REQ-1.5 and
-        // REQ-1.7 together say: shown as a value, written back unchanged.
+        // Nothing reads a display-only field back: it is shown as a value and written back
+        // unchanged.
         shape: None,
     }
 }
@@ -544,7 +543,7 @@ pub const FIELDS: &[Field] = &[
     ),
 ];
 
-/// The `ProjectRaw` members the form does not show at all (REQ-1.6).
+/// The `ProjectRaw` members the form does not show at all.
 ///
 /// Named rather than merely absent, so [`tests::every_contract_field_is_placed_or_omitted`]
 /// can tell a deliberate omission from a forgotten field.
@@ -739,8 +738,8 @@ mod tests {
 
     #[test]
     fn every_contract_field_is_either_placed_in_the_form_or_deliberately_omitted() {
-        // REQ-1.4: the form exposes every field that is not display-only or
-        // hidden. This is the test that fails when a field is added to
+        // The form exposes every field that is not display-only or omitted. This is the test
+        // that fails when a field is added to
         // `ProjectRaw` and nobody decides where it goes — without it the new
         // field is silently uneditable, and the only symptom is a depositor
         // unable to enter something.
@@ -774,7 +773,7 @@ mod tests {
     }
 
     #[test]
-    fn the_omitted_fields_are_exactly_the_three_req_1_6_names() {
+    fn the_omitted_fields_are_exactly_the_three_that_were_decided_against() {
         assert_eq!(OMITTED, ["records", "clusters", "collections"]);
         for omitted in OMITTED {
             assert!(field(omitted).is_none(), "{omitted} must not be a form field");
@@ -782,10 +781,10 @@ mod tests {
     }
 
     #[test]
-    fn the_display_only_fields_are_exactly_the_five_req_1_5_names() {
-        // REQ-1.5 names id, pid, shortcode, howToCite and legalInfo. A sixth
-        // would be a field a depositor can no longer edit, which is a
-        // requirement change rather than an implementation detail.
+    fn the_display_only_fields_are_exactly_the_five_that_were_decided() {
+        // They are id, pid, shortcode, howToCite and legalInfo. A sixth would be a field a
+        // depositor can no longer edit, which is a requirement change rather than an
+        // implementation detail.
         let display_only: BTreeSet<&str> =
             FIELDS.iter().filter(|field| field.display_only).map(|field| field.id).collect();
         assert_eq!(
@@ -918,8 +917,8 @@ mod tests {
 
     #[test]
     fn a_display_only_field_declares_no_shape() {
-        // REQ-1.5 and REQ-1.7 together: shown as a value, written back
-        // unchanged. A shape here would put an applier on a field the reader
+        // A display-only field is shown as a value and written back unchanged. A shape here
+        // would put an applier on a field the reader
         // cannot change, so an empty control would clear a value nobody touched.
         for field in FIELDS.iter().filter(|field| field.display_only) {
             assert!(field.shape.is_none(), "{} should declare no shape", field.id);
@@ -1258,7 +1257,7 @@ mod tests {
 
     #[test]
     fn a_hint_reads_as_a_sentence() {
-        // These are the depositor-facing wording REQ-2.1 makes normative, and a
+        // This is the depositor-facing wording, which is normative, and a
         // hint that is a fragment or a stray placeholder reads as unfinished.
         for field in FIELDS {
             if let Some(hint) = field.hint {

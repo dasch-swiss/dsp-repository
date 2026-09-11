@@ -1,4 +1,4 @@
-//! The review queue and the field-by-field diff surface (US-4).
+//! The review queue and the field-by-field diff surface.
 //!
 //! [`queue`] is `GET /review`; [`page`] is `GET /review/{shortcode}` and
 //! [`region`] is the part a decision save replaces, the same split — and for
@@ -95,13 +95,13 @@ pub const ACCEPT_ALL: &str = "accept-all";
 pub const CLAIM: &str = "claim";
 
 /// Accept the submission: it becomes an approved record on its way to a pull
-/// request (REQ-4.4).
+/// request.
 pub const APPROVE: &str = "approve";
 
-/// Return the submission to the depositor as a draft, with the note (REQ-4.5).
+/// Return the submission to the depositor as a draft, with the note.
 pub const REQUEST_CHANGES: &str = "request-changes";
 
-/// Discard the submission, leaving published metadata unchanged (REQ-4.6).
+/// Discard the submission, leaving published metadata unchanged.
 pub const REJECT: &str = "reject";
 
 /// The name the reviewer's note posts under.
@@ -377,11 +377,11 @@ pub enum Notice<'a> {
 /// page it produces is a confirmation and a way back to the queue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Finished {
-    /// REQ-4.4: an `approved_records` row now holds what was approved.
+    /// An `approved_records` row now holds what was approved.
     Approved,
-    /// REQ-4.5: the project is back with the depositor.
+    /// The project is back with the depositor.
     ChangesRequested,
-    /// REQ-4.6: discarded, published metadata unchanged.
+    /// Discarded, published metadata unchanged.
     Rejected,
 }
 
@@ -426,9 +426,9 @@ impl ReviewRow<'_> {
 
 /// One proposed person or organisation, as the review surface shows it below the field diff.
 ///
-/// A proposed entity is not a project field, so it gets no [`ReviewRow`] — REQ-4.3 reviews changed
-/// project fields, and a proposed person is not one. This is its own row, in its own region, with
-/// its own decision vocabulary ([`ProposalDecision`], not [`Decision`]).
+/// A proposed entity is not a project field, so it gets no [`ReviewRow`] — the field diff reviews
+/// changed project fields, and a proposed person is not one. This is its own row, in its own
+/// region, with its own decision vocabulary ([`ProposalDecision`], not [`Decision`]).
 pub struct EntityRow<'a> {
     pub proposal: &'a EntityProposal,
     /// The proposed entity, parsed from [`EntityProposal::payload`]. Owned rather than borrowed:
@@ -575,9 +575,12 @@ fn heading(view: &ReviewView<'_>) -> Markup {
 /// the section form's status region carries: `Danger` has `role="alert"`, an
 /// implicit assertive region, and screen readers do not agree on which
 /// politeness wins when one is nested inside a polite one.
+/// `sticky` for the reason the section form's own status region gives, and it bites hardest here:
+/// the diff is one row per changed field with the batch submit at the very bottom, so the notice
+/// answering that submit was always off-screen when it arrived.
 fn status(view: &ReviewView<'_>) -> Markup {
     html! {
-        div class="empty:hidden" aria-live="polite" {
+        div class="empty:hidden sticky top-0 z-10" aria-live="polite" {
             @match view.notice {
                 Some(Notice::Saved) => {
                     (alert("Review decisions saved.").variant(AlertVariant::Success))
@@ -958,7 +961,7 @@ fn confirm_approve(view: &ReviewView<'_>) -> Markup {
 /// Request-changes' and reject's confirmation, with the note both require.
 ///
 /// `required` on the control and enforced again on the server. For reject it is
-/// the whole rejection signal: REQ-4.6 discards the submission and
+/// the whole rejection signal: a rejection discards the submission and
 /// notifications are out of scope, so without a note the depositor's work
 /// vanishes with nothing saying why.
 fn confirm_note(view: &ReviewView<'_>, intent: &str) -> Markup {
@@ -1411,7 +1414,7 @@ mod tests {
     }
 
     #[test]
-    fn the_queue_shows_what_req_4_1_asks_for() {
+    fn the_queue_shows_the_shortcode_the_depositor_and_when_it_was_submitted() {
         let out = queue(&[queue_row()], &[draft_row()]).into_string();
         assert!(out.contains("0801d"), "{out}");
         assert!(out.contains("A Depositor"), "{out}");
@@ -1648,7 +1651,10 @@ mod tests {
         // announce at all.
         let rows = rows();
         let out = region(&view(&rows)).into_string();
-        assert!(out.contains(r#"<div class="empty:hidden" aria-live="polite"></div>"#), "{out}");
+        assert!(
+            out.contains(r#"<div class="empty:hidden sticky top-0 z-10" aria-live="polite"></div>"#),
+            "{out}"
+        );
     }
 
     #[test]

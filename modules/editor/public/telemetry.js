@@ -25,7 +25,7 @@ function addSignal(signal) {
   });
 }
 
-// --- Core Web Vitals (REQ-3.1) ---
+// --- Core Web Vitals ---
 function onVital(metric) {
   const entry = {
     type: 'web_vital',
@@ -69,7 +69,7 @@ onCLS(onVital);
 onTTFB(onVital);
 onFCP(onVital);
 
-// --- JavaScript errors (REQ-3.2) ---
+// --- JavaScript errors ---
 window.addEventListener('error', (e) => {
   const kind = e.target !== window ? 'resource_error' : 'js_error';
   // Cap errors per kind to prevent flood from repeated failures
@@ -109,7 +109,7 @@ window.addEventListener('unhandledrejection', (e) => {
   });
 });
 
-// --- Datastar SSE errors (REQ-3.3) ---
+// --- Datastar SSE errors ---
 document.addEventListener('datastar-sse-error', (e) => {
   errorCounts['datastar_sse'] = (errorCounts['datastar_sse'] ?? 0) + 1;
   if (errorCounts['datastar_sse'] > MAX_ERRORS_PER_KIND) return;
@@ -176,7 +176,7 @@ function getConnectionInfo() {
   };
 }
 
-// --- Beacon flush (REQ-3.4) ---
+// --- Beacon flush ---
 function flush() {
   if (buffer.length === 0) return;
 

@@ -120,7 +120,7 @@ impl LoginCodeRepository for Database {
     async fn claim_attempt(&self, id: Uuid, max_attempts: u32) -> Result<Attempt> {
         // One statement, on the writer connection, so the check and the
         // increment cannot be separated. `attempts < ?2` in the WHERE clause is
-        // REQ-6.4's three strikes: the fourth simultaneous guess updates zero
+        // the three-strikes limit: the fourth simultaneous guess updates zero
         // rows and never reaches a comparison. A read followed by an update
         // would let every request in flight pass the check at once, which is the
         // whole limit gone.
@@ -194,8 +194,8 @@ impl LoginCodeRepository for Database {
 
     async fn delete_unconsumed_for_user(&self, user_id: Uuid) -> Result<u64> {
         // `consumed_at IS NULL` is the whole point: the spent code stays, because
-        // it is the resend cooldown's only anchor — REQ-6.5 measures from the
-        // last code issued, and that row is the only thing recording it. The
+        // it is the resend cooldown's only anchor — the cooldown is measured from the last
+        // code issued, and that row is the only thing recording it. The
         // send caps do not read this table at all; they count `mail_sends`,
         // which is why deleting the mailed siblings below no longer hides them.
         let deleted = self
@@ -285,7 +285,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_an_expired_code_is_not_active() {
-        // Ten minutes is the whole point of the expiry (REQ-6.1); a code that
+        // Ten minutes is the whole point of the expiry; a code that
         // stayed active past it would be a standing credential in a mailbox.
         let db = test_db("codes-expired").await;
         let user_id = a_user(&db, "a@x.test").await;
@@ -339,7 +339,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_claim_attempt_hands_out_exactly_the_allowed_number() {
-        // REQ-6.4's three strikes per code.
+        // Three strikes per code.
         let db = test_db("codes-attempts").await;
         let user_id = a_user(&db, "a@x.test").await;
         let code = code(user_id, "123456", at(10), at(11));
@@ -479,7 +479,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_unless_issued_since_refuses_and_names_the_live_code() {
-        // REQ-6.5. Nothing comes back but the refusal: handing the caller the
+        // The cooldown. Nothing comes back but the refusal: handing the caller the
         // outstanding code, or its binding, would let anyone able to post an
         // address obtain the binding of a code already on its way to that
         // address's owner.
@@ -629,7 +629,7 @@ mod tests {
     #[tokio::test]
     async fn test_delete_unconsumed_spares_the_spent_code_and_other_users() {
         // The spent code has to survive: it is the resend cooldown's only anchor
-        // (REQ-6.5 measures from the last code issued). What the send caps count
+        // (it is measured from the last code issued). What the send caps count
         // is `mail_sends`, which this does not touch at all — which is the point
         // of the split, since the sibling deleted here was mailed.
         let db = test_db("codes-delete-unconsumed").await;

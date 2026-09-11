@@ -1,9 +1,9 @@
-//! The permissive draft representation (REQ-1.9).
+//! The permissive draft representation.
 //!
 //! A draft has to hold what `ProjectRaw` cannot: a field the depositor has not
 //! filled in yet, and a value that is present but invalid. It also has to carry
-//! every field the editor does not manage, unchanged (REQ-1.7), and to survive a
-//! field being added to `ProjectRaw` without an editor change (REQ-1.8).
+//! every field the editor does not manage, unchanged, and to survive a
+//! field being added to `ProjectRaw` without an editor change.
 //!
 //! Those three pull in the same direction, so a draft is the project's JSON
 //! members rather than a struct mirroring `ProjectRaw` with 36 `Option` fields.
@@ -119,7 +119,7 @@ pub enum UrlShape {
 }
 
 impl ProjectDraft {
-    /// Builds a draft from a project as loaded, losslessly (REQ-1.7).
+    /// Builds a draft from a project as loaded, losslessly.
     ///
     /// Null members are stripped so that "absent" has one meaning in a draft.
     /// Nothing is lost: every nullable field on `ProjectRaw` is an `Option`,
@@ -151,7 +151,7 @@ impl ProjectDraft {
 
     /// The publishable project, or why the draft is not one yet.
     ///
-    /// This is the submission gate (REQ-1.12's type-level half): a draft that
+    /// This is the submission gate's type-level half: a draft that
     /// omits a required field or holds an invalid value fails here.
     pub fn to_raw(&self) -> Result<ProjectRaw, DraftError> {
         serde_json::from_value(Value::Object(self.members.clone()))

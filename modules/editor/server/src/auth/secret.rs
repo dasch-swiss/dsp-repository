@@ -6,11 +6,11 @@ use base64::Engine;
 use rand::{Rng, RngCore};
 use subtle::ConstantTimeEq;
 
-/// How many wrong entries one code tolerates before it is dead (REQ-6.4).
+/// How many wrong entries one code tolerates before it is dead.
 ///
 /// Per **code**. The counter that survives a resend is on the account — see
-/// [`super::AuthConfig::max_failed`] — because REQ-6.4's three strikes on their
-/// own hand out a fresh budget every time a new code is issued.
+/// [`super::AuthConfig::max_failed`] — because three strikes per code on their own hand out a
+/// fresh budget every time a new code is issued.
 pub(crate) const MAX_CODE_ATTEMPTS: u32 = 3;
 
 /// A six-digit code, uniform over `000000..=999999`.

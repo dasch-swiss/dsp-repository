@@ -1,4 +1,4 @@
-//! The entity form: one person or organisation proposal (US-3), rendered
+//! The entity form: one person or organisation proposal, rendered
 //! inside the same page shell the project form uses.
 //!
 //! Mirrors `pages::section` in shape — [`page`] is the whole page, [`region`]
@@ -10,8 +10,8 @@
 //! Every field control here is [`crate::form::widgets`]'s own — `text_field`,
 //! the agent rows, the reference rows, the multilingual group — reused rather
 //! than rebuilt, which is what keeps this form behaving identically to the
-//! project form's fields of the same shape (the same suggestion list, the
-//! same "no person or organisation with this id" wording, the same
+//! project form's fields of the same shape (the same agent picker and its
+//! search, the same "no person or organisation with this id" wording, the same
 //! add/remove-by-round-trip protocol). The one shape genuinely new here is
 //! [`address_group`]: a flat group of scalar members, which nothing in the
 //! project form's registry needed before.
@@ -177,7 +177,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
 ];
 
 /// `address`'s six flat members, in display order, paired with their label.
-/// The first four are the ones REQ-3.4 and [`editor_core::proposals::check_organization`] ask
+/// The first four are the ones [`editor_core::proposals::check_organization`] asks
 /// for together or not at all; `canton` and `additional` are always optional, on the contract as
 /// well as here.
 pub const ADDRESS_MEMBERS: &[(&str, &str)] = &[
@@ -302,16 +302,6 @@ impl EntityView<'_> {
         fields_for(self.proposal.kind)
     }
 
-    /// Whether this kind's own fields offer the shared agent suggestion list — true for a person
-    /// (`affiliations`), false for an organisation, which has no field that names another agent.
-    /// Gated the same way `SectionView::has_agent_field` gates it: the list carries every
-    /// committed agent, so rendering it on a form with no field that needs it is pure weight.
-    fn has_agent_field(&self) -> bool {
-        self.fields()
-            .iter()
-            .any(|field| field.shape.is_some_and(Shape::offers_agent_suggestions))
-    }
-
     fn mode(&self) -> Mode {
         if self.over.is_some() {
             Mode::ReadOnly
@@ -326,7 +316,7 @@ impl EntityView<'_> {
             action: &self.rows_action,
             adding: self.adding_row,
             agents: self.agents,
-            // Never REQ-3.1/3.2's propose controls here: `affiliations` reuses
+            // Never the propose controls here: `affiliations` reuses
             // `agent_rows`, the same widget `contactPoint` uses, but this
             // route dispatches none of the three propose intents — see
             // `Rows::propose`'s own doc for why that would be a dead control.
@@ -374,9 +364,11 @@ pub fn region(view: &EntityView<'_>) -> Markup {
     }
 }
 
+/// `sticky` for the reason the section form's own status region gives: the controls that produce
+/// a notice are below it, and the enhanced path patches in place without moving the scroll.
 fn status(view: &EntityView<'_>) -> Markup {
     html! {
-        div class="empty:hidden" aria-live="polite" {
+        div class="empty:hidden sticky top-0 z-10" aria-live="polite" {
             @match view.notice {
                 Some(Notice::Saved) => { (alert("Saved.").variant(AlertVariant::Success)) }
                 Some(Notice::Discarded) => {
@@ -411,23 +403,25 @@ fn locked(view: &EntityView<'_>, over: Over) -> Markup {
 fn form(view: &EntityView<'_>) -> Markup {
     let action = view.action();
     html! {
+        // Posts the submitter's `formAction`, for the reason the project form's own `data-on:submit`
+        // gives at length: this form carries add and remove controls too, and posting the form's
+        // action instead made every one of them a plain save.
         form
             id="entity-form"
             method="post"
             action=(action)
             class="flex flex-col gap-6 mt-6"
-            data-on:submit={ "@post('" (action) "', {contentType: 'form'})" }
+            data-on:submit={
+                "@post(evt.submitter?.formAction || '"
+                (action)
+                "', {contentType: 'form'})"
+            }
         {
             @for field in view.fields() {
                 (entity_field_row(field, view.draft, view.mode(), view.rows()))
             }
             @if view.proposal.kind == ProposalKind::Organization { (address_group(view, false)) }
             (controls(view))
-            @if view.has_agent_field() {
-                @if let Some(agents) = view.agents {
-                    (crate::form::widgets::agent_suggestions(agents))
-                }
-            }
         }
     }
 }
@@ -526,9 +520,8 @@ fn address_group(view: &EntityView<'_>, read_only: bool) -> Markup {
     }
 }
 
-/// Save, and Discard behind its confirmation — the two controls REQ-3.x's
-/// entity form has, each a named submit on this one form, like the section
-/// form's own.
+/// Save, and Discard behind its confirmation — the two controls this entity form has, each a
+/// named submit on this one form, like the section form's own.
 fn controls(view: &EntityView<'_>) -> Markup {
     html! {
         @if view.confirming == Some(Confirmation::Discard) {

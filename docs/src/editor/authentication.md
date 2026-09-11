@@ -33,9 +33,9 @@ There is no resend endpoint. Asking again is another `POST /login`, governed by 
 
 | Control | What it stops |
 |---------|---------------|
-| Identical response for every outcome (REQ-6.2) | Learning which addresses have accounts |
+| Identical response for every outcome | Learning which addresses have accounts |
 | Browser binding (`login_codes.browser_token`) | A code read from the mailbox by someone else |
-| Three strikes per code (REQ-6.4) | Guessing against one code |
+| Three strikes per code | Guessing against one code |
 | Account counter surviving resend | Guessing across codes — see below |
 | Single use (`consumed_at`) | Replay |
 | Global daily send cap | Exhausting the shared relay quota, which locks out everyone |
@@ -52,11 +52,11 @@ The part that is easy to get wrong is the cookie, and the first version of this 
 
 The rule is therefore simpler and absolute: **a freshly minted token is returned on every request**, whatever the outcome. When no code was issued, a binding the browser already holds is *moved* onto the new token, so the code it owns stays spendable; when it holds nothing, the new token binds to nothing. The move is authorised by holding the old token, so it cannot be used to acquire the binding of a code on its way to somebody else. Every branch produces a byte-identical response.
 
-**A known limit: timing.** The response is identical; the work behind it is not. A request for an address with an account stores a row and hands a message to the relay, where one for an address without returns almost immediately. In production that is tens to hundreds of milliseconds, which is measurable over a network — so an attacker with a list of candidate addresses can still separate them, REQ-6.2's identical *response* notwithstanding.
+**A known limit: timing.** The response is identical; the work behind it is not. A request for an address with an account stores a row and hands a message to the relay, where one for an address without returns almost immediately. In production that is tens to hundreds of milliseconds, which is measurable over a network — so an attacker with a list of candidate addresses can still separate them, the identical *response* notwithstanding.
 
 This is not closed here, and it is stated rather than left implied because a page like this one is worthless if it overclaims. The fix is to hand the send to a background task so the response returns before the relay is contacted, which collapses the difference to a single database write — at the cost of a window in which a process stopped between storing a code and sending it leaves a user waiting out a cooldown for a code that was never sent. That trade deserves to be made deliberately rather than as a side effect. Until it is: the per-IP limit bounds probing, the population is about thirty people at largely guessable addresses, and what enumeration buys is knowing which of a small set of guessable addresses has an account.
 
-The same reasoning is why a failed send is not reported to the user. REQ-6.9 asks for a generic failure report; REQ-6.2 requires the response not to vary. Where they conflict, REQ-6.2 wins: telling the user "we could not send your code" tells an attacker the address exists. The failure is reported in the log instead.
+The same reasoning is why a failed send is not reported to the user. A generic failure report is asked for; the response must also not vary. Where they conflict, anti-enumeration wins: telling the user "we could not send your code" tells an attacker the address exists. The failure is reported in the log instead.
 
 ### Browser binding, and what it is not
 
@@ -76,13 +76,13 @@ Both count rows in `mail_sends`, an **append-only** record written when a messag
 
 A message that the relay refused is not recorded, because nothing was delivered and the code is rolled back with it. A message written to the log under `EDITOR_SMTP_BREAK_GLASS` **is** recorded: break-glass makes the log the delivery channel, the code stays live, and leaving it uncounted would take both caps off at exactly the moment the relay is broken and every live credential is going to the logs.
 
-`mail_sends` holds nothing but an account id and an instant — never an address (REQ-6.10) — and the hourly sweep prunes it at the caps' own 24-hour window, so retention and the count are the same span by construction.
+`mail_sends` holds nothing but an account id and an instant — never an address — and the hourly sweep prunes it at the caps' own 24-hour window, so retention and the count are the same span by construction.
 
-The code just spent is deliberately **not** deleted on sign-in, which an earlier version did. That row is the resend cooldown's only anchor — REQ-6.5 measures from the last code *issued* — so deleting it let a user sign in and be sent another code immediately.
+The code just spent is deliberately **not** deleted on sign-in, which an earlier version did. That row is the resend cooldown's only anchor — the cooldown is measured from the last code *issued* — so deleting it let a user sign in and be sent another code immediately.
 
 ### Throttling, and why it is time-based
 
-REQ-6.4's three strikes are per *code*, so each resend hands out a fresh budget. At a sixty-second cooldown that is about 4,320 guesses a day against one address, which is roughly a 12% chance of hitting a six-digit code within a month. NIST SP 800-63B-4 addresses this directly: *"Generating a new authentication secret SHALL NOT reset the failed authentication count."*
+The three strikes are per *code*, so each resend hands out a fresh budget. At a sixty-second cooldown that is about 4,320 guesses a day against one address, which is roughly a 12% chance of hitting a six-digit code within a month. NIST SP 800-63B-4 addresses this directly: *"Generating a new authentication secret SHALL NOT reset the failed authentication count."*
 
 So the counter lives on the account (`users.failed_logins`) and survives invalidation and resend. It clears only on a successful authentication — which means an account at the cap can never clear it by succeeding, because it cannot succeed. A latch would therefore be a permanent lock needing an unlock control that does not exist. Instead `users.failed_login_at` records the most recent failure and the account is refused for `EDITOR_LOGIN_LOCKOUT_SECS` after it.
 
@@ -107,7 +107,7 @@ Two, both `__Host-` prefixed, `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`:
 - `__Host-editor_login` — the pre-auth binding, living as long as the code (ten minutes).
 - `__Host-editor_session` — the session, living the absolute session lifetime.
 
-`SameSite=Lax` rather than `Strict` per REQ-6.3: `Strict` drops the cookie on the first navigation *into* the editor from a link in mail or chat, so the user would arrive signed out for no security gain that `Sec-Fetch-Site` does not already provide.
+`SameSite=Lax` rather than `Strict`: `Strict` drops the cookie on the first navigation *into* the editor from a link in mail or chat, so the user would arrive signed out for no security gain that `Sec-Fetch-Site` does not already provide.
 
 The `__Host-` prefix stops a sibling host *setting* a cookie of the same name that ours could not be told apart from. It does not stop a sibling host *triggering a request that carries* the real one — see [Architecture](./architecture.md#relationship-to-dpe) for why the editor has its own origin, and the CSRF middleware for what closes that.
 
@@ -133,7 +133,7 @@ Codes are stored unhashed, deliberately: a code lives ten minutes, and anyone ab
 
 ## Authorization
 
-Authentication says who is asking. Authorization says what they may reach, and it is two roles (REQ-7.1) and one predicate.
+Authentication says who is asking. Authorization says what they may reach, and it is two roles and one predicate.
 
 ### Two extractors, and why not a middleware
 
@@ -150,11 +150,11 @@ A middleware layered over a group of routes was the alternative and was rejected
 | Session, wrong role or wrong project | 403 rendered as a page | Signing in again will not help — it is the same account — so a login screen would read as a bug. |
 | A path that could never name a project | 404 | A 403 would assert the project exists and is merely closed to this account. |
 
-REQ-1.3 asks for a status and nothing else. It is rendered inside the page shell because a bare 403 is a dead end in a browser: the reader is signed in, has done nothing wrong, and has no control to press. The page links back to `/projects`, which every signed-in account can reach.
+The requirement asks for a status and nothing else. It is rendered inside the page shell because a bare 403 is a dead end in a browser: the reader is signed in, has done nothing wrong, and has no control to press. The page links back to `/projects`, which every signed-in account can reach.
 
 ### Per-project scope
 
-`User::may_reach` is the whole rule. RDU is unconditional, because REQ-4.2 makes RDU access role-based rather than per-project — which is also why an RDU account's assignment set is empty. A depositor is confined to their assignments (REQ-1.2).
+`User::may_reach` is the whole rule. RDU is unconditional, because RDU access is role-based rather than per-project — which is also why an RDU account's assignment set is empty. A depositor is confined to their assignments.
 
 The comparison **ignores ASCII case**. The published set mixes `080C` with `0801a`, so which half of a shortcode is capitalised is not something an RDU member typing an assignment can be expected to get right, and getting it wrong would deny a depositor their own project with no visible cause. It would be too generous if two projects differed only in case; none do.
 
@@ -175,24 +175,24 @@ The value is re-validated at each step it crosses rather than trusted from the l
 
 ### Accounts
 
-RDU membership comes from `EDITOR_RDU_EMAILS` and is reconciled at every start (REQ-7.2). Depositors are rows RDU creates, edits and removes at `/depositors` (US-7).
+RDU membership comes from `EDITOR_RDU_EMAILS` and is reconciled at every start. Depositors are rows RDU creates, edits and removes at `/depositors`.
 
 RDU accounts appear in that list but carry no controls. Configuration is the source of truth for them, so an edit made in the product would be undone by the next restart, and a removal would either be undone the same way or leave the product and the configuration disagreeing with nothing to say so. Startup's warning about an `rdu` account the configuration no longer lists stays the channel for that case.
 
-Removal is REQ-7.5 exactly — the row and every session belonging to it, through `ON DELETE CASCADE` — but it goes through a confirmation, because two of its consequences are irreversible and neither is visible from the list:
+Removal is exactly what was asked for — the row and every session belonging to it, through `ON DELETE CASCADE` — but it goes through a confirmation, because two of its consequences are irreversible and neither is visible from the list:
 
 - The **address** is deleted with the row, and it is RDU's only channel to its owner. The confirmation shows it to be copied first.
-- A **submission** the account made stays pending with no author. The schema nulls the author rather than cascading, so the work survives and the review queue's "last editor" reads as unknown rather than dangling — but REQ-4.5's "return to the depositor" then has no recipient, so it can be approved or rejected and nothing else.
+- A **submission** the account made stays pending with no author. The schema nulls the author rather than cascading, so the work survives and the review queue's "last editor" reads as unknown rather than dangling — but "return to the depositor" then has no recipient, so it can be approved or rejected and nothing else.
 
-Removing a **shortcode** from an account is not in that category. A draft is keyed by shortcode, not by user, so it belongs to the project: the assignment change takes away access and nothing else, RDU still sees the draft (REQ-1.11), and another assigned depositor can continue it.
+Removing a **shortcode** from an account is not in that category. A draft is keyed by shortcode, not by user, so it belongs to the project: the assignment change takes away access and nothing else, RDU still sees the draft, and another assigned depositor can continue it.
 
-**Update is not a requirement.** US-7 has create and remove only. It exists because without it, correcting a misspelled name means deleting the account — destroying its sessions, its assignments and the authorship of everything it touched — to fix a typo. The updated record is rebuilt from the stored one, so the role, the failure counter and its instant, the last-code stamp and the creation time survive an edit by construction.
+**Update is not a requirement.** Create and remove are the whole of what was asked for. It exists because without it, correcting a misspelled name means deleting the account — destroying its sessions, its assignments and the authorship of everything it touched — to fix a typo. The updated record is rebuilt from the stored one, so the role, the failure counter and its instant, the last-code stamp and the creation time survive an edit by construction.
 
-### Addresses on screen, and REQ-6.10
+### Addresses on screen, and keeping them out of logs
 
-The account screens are the only pages in the editor that render an email address, and they are RDU-only. That is not in tension with REQ-6.10, which is about logs and traces: RDU has to know which address an account signs in with, because it is the only channel to its owner. The page shell's header shows a **name** and never an address, everywhere including these screens.
+The account screens are the only pages in the editor that render an email address, and they are RDU-only. That is not in tension with the address-disclosure rule, which is about logs and traces: RDU has to know which address an account signs in with, because it is the only channel to its owner. The page shell's header shows a **name** and never an address, everywhere including these screens.
 
-The list also carries **last code sent** per account. REQ-6.8 covers an unconfigured relay and REQ-6.9 a failed send, but neither covers accepted-then-undelivered — spam filtering, greylisting — where the user sees success and no code. With REQ-6.10 forbidding the address in a log, this column is the only answer to "I never got a code". It is stamped when a code is handed to the relay successfully, so "never" and a timestamp are genuinely different diagnoses.
+The list also carries **last code sent** per account. An unconfigured relay and a failed send are each reported, but neither covers accepted-then-undelivered — spam filtering, greylisting — where the user sees success and no code. With the address barred from any log, this column is the only answer to "I never got a code". It is stamped when a code is handed to the relay successfully, so "never" and a timestamp are genuinely different diagnoses.
 
 ## Mail
 
@@ -204,7 +204,7 @@ The list also carries **last code sent** per account. REQ-6.8 covers an unconfig
 - **SPF** — remains the sending domain's responsibility; `dasch.swiss` must include Google. Set up.
 - **Quota** — the relay allows 10,000 recipients a day, and whether that is shared with other senders determines where `EDITOR_MAIL_DAILY_CAP` should sit. The default of 500 is well below the ceiling either way, and `EDITOR_MAIL_ACCOUNT_DAILY_CAP` must stay below it.
 
-### No address ever reaches a log (REQ-6.10)
+### No address ever reaches a log
 
 The claim is precisely "an account holder's address", not "any address": `EDITOR_SMTP_FROM` is logged once at startup, and it is a service mailbox nobody signs in with. There is also one channel this does not close — see [Observability](./observability.md) on `url.query`.
 
@@ -219,7 +219,7 @@ A test drives the unknown-address, issued, wrong-code, signed-in, malformed and 
 
 ### When there is no relay, and when the relay is broken
 
-With `EDITOR_SMTP_HOST` unset, codes are written to the log and the service stays usable (REQ-6.8). That is the development transport, the PR-preview transport, and the break-glass for a broken relay.
+With `EDITOR_SMTP_HOST` unset, codes are written to the log and the service stays usable. That is the development transport, the PR-preview transport, and the break-glass for a broken relay.
 
 **`EDITOR_ENV=PROD` with no relay is refused at startup.** That combination is the dangerous one precisely because nothing goes wrong: the service behaves normally and every login code for the life of the deployment sits in the log pipeline. Development, `just dev-editor`, `just run-docker-editor` and the PR preview all run as `DEV`, where the console transport is the point.
 
@@ -236,7 +236,7 @@ The code-entry screen therefore shows the code when **all three** of these hold,
 | Condition | Why it is in the predicate |
 |---|---|
 | `EDITOR_ENV` is not `PROD` | The published image sets `PROD`, so a production container is excluded by its own default before anything else is read. |
-| No `EDITOR_SMTP_HOST` | With no relay the code is **already** written to the log in plaintext (REQ-6.8). Showing it to the browser that just asked for it discloses nothing the deployment is not already doing. With a relay, the code goes to a mailbox and the screen must not become a second channel. |
+| No `EDITOR_SMTP_HOST` | With no relay the code is **already** written to the log in plaintext. Showing it to the browser that just asked for it discloses nothing the deployment is not already doing. With a relay, the code goes to a mailbox and the screen must not become a second channel. |
 | No `EDITOR_DB_DIR` | Everything dies with the process. This is the condition separating a throwaway deployment from a real one: an environment holding accounts people actually use has to mount a volume, or it loses them on every restart. |
 
 Together they describe a deployment with no relay, no durable state and no production flag — the PR preview, a local run, and nothing else. Startup logs a `warn` naming the state, so an operator sees it asserted rather than inferring it from three unset variables.
@@ -246,7 +246,7 @@ The predicate is deliberately **self-contained** rather than leaning on the `PRO
 ### What it costs, stated rather than left to be found
 
 - **A real disclosure, not a token one.** The code shown is the genuine CSPRNG value bound to the requesting browser's token. Anyone who can reach such a deployment can start a sign-in for any address and read that address's code. What makes it acceptable is not the size of the disclosure but where it can happen: no relay, no durable accounts, nothing that outlives the process.
-- **REQ-6.2 does not hold on this page in this mode.** The code-entry screen now differs between an address with an account and one without, because a binding that resolves to nothing shows nothing. That is inherent to showing a code at all. Everywhere else — including every `POST /login` — the identical-response property is untouched.
+- **Anti-enumeration does not hold on this page in this mode.** The code-entry screen now differs between an address with an account and one without, because a binding that resolves to nothing shows nothing. That is inherent to showing a code at all. Everywhere else — including every `POST /login` — the identical-response property is untouched.
 - **A spent or expired code is never shown**, and a browser only ever sees the code its own binding owns.
 
 ### What was rejected, and why

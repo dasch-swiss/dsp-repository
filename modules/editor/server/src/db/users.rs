@@ -78,7 +78,7 @@ impl UserRepository for Database {
         })
         .await
         // `email_normalized` is the only unique index on this table, so a
-        // constraint violation here is REQ-7.4's duplicate address.
+        // constraint violation here is a duplicate address.
         .map_err(|e| e.into_repository_error(ENTITY))
     }
 
@@ -116,7 +116,7 @@ impl UserRepository for Database {
 
     async fn delete(&self, id: Uuid) -> Result<()> {
         // Sessions, codes and shortcode assignments go with it via
-        // `ON DELETE CASCADE` (REQ-7.5) — which only fires because
+        // `ON DELETE CASCADE` — which only fires because
         // `PRAGMA foreign_keys` is set per connection outside any transaction.
         let deleted = self
             .write(move |tx| tx.execute("DELETE FROM users WHERE id = ?1", params![id.to_string()]))
@@ -148,8 +148,8 @@ impl UserRepository for Database {
     }
 
     async fn find_by_email(&self, email: &str) -> Result<Option<User>> {
-        // Normalized here, so callers pass whatever the user typed and REQ-6.2's
-        // anti-enumeration lookup cannot be defeated by capitalisation.
+        // Normalized here, so callers pass whatever the user typed and the anti-enumeration
+        // lookup cannot be defeated by capitalisation.
         let normalized = User::normalize_email(email);
         Ok(self
             .read_tx(move |tx| {
@@ -287,7 +287,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_rejects_a_duplicate_address_case_insensitively() {
-        // REQ-7.4. Folding case matters: without it `A@x.test` would be accepted
+        // Folding case matters: without it `A@x.test` would be accepted
         // alongside `a@x.test` and both would receive login codes.
         let db = test_db("users-duplicate").await;
         db.create(&depositor("a@x.test", &[])).await.unwrap();
@@ -342,7 +342,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_takes_sessions_codes_and_assignments_with_it() {
-        // REQ-7.5, and the observable proof that `PRAGMA foreign_keys` is on:
+        // Removal takes them all, and this is the observable proof that `PRAGMA foreign_keys`
+        // is on:
         // without it the cascade silently does nothing and orphaned sessions
         // accumulate against a deleted account.
         let db = test_db("users-delete-cascade").await;

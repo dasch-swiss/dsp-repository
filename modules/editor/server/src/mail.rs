@@ -1,9 +1,9 @@
-//! Sending the one-time code (REQ-6.7), and what happens when there is no relay
-//! (REQ-6.8) or the relay refuses (REQ-6.9).
+//! Sending the one-time code, and what happens when there is no relay
+//! or the relay refuses.
 //!
 //! ## Why no error message ever reaches a log
 //!
-//! REQ-6.10 forbids an account holder's address in a log or a trace, and an SMTP
+//! An account holder's address must never reach a log or a trace, and an SMTP
 //! failure is the one place such an address arrives from outside our own code: a
 //! relay's reply text routinely echoes the recipient — `550 5.1.1
 //! <someone@example.org> User unknown` is the canonical shape. Logging the
@@ -59,8 +59,7 @@ pub(crate) trait Mailer: Send + Sync {
     fn describe(&self) -> String;
 }
 
-/// REQ-6.8: no relay configured, so the message goes to the log and the service
-/// stays usable.
+/// No relay configured, so the message goes to the log and the service stays usable.
 ///
 /// This is the development and PR-preview transport, and it is the break-glass
 /// for a broken relay: unsetting `EDITOR_SMTP_HOST` routes every code here.
@@ -69,7 +68,7 @@ pub(crate) struct ConsoleMailer;
 #[async_trait]
 impl Mailer for ConsoleMailer {
     async fn send(&self, mail: &Mail) -> Result<(), MailError> {
-        // The recipient is deliberately absent (REQ-6.10). Whoever is reading
+        // The recipient is deliberately absent. Whoever is reading
         // this log typed the address themselves a moment ago; the enclosing
         // span carries the opaque subject id for the case where two people are
         // testing at once.
@@ -86,7 +85,7 @@ impl Mailer for ConsoleMailer {
     }
 }
 
-/// REQ-6.7: the Google Workspace relay, over STARTTLS.
+/// The Google Workspace relay, over STARTTLS.
 pub(crate) struct SmtpMailer {
     transport: lettre::AsyncSmtpTransport<lettre::Tokio1Executor>,
     from: lettre::message::Mailbox,
@@ -253,8 +252,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_the_console_transport_logs_the_body_and_not_the_recipient() {
-        // REQ-6.8 with REQ-6.10: the message is logged so the service stays
-        // usable without a relay, and the recipient is not part of it.
+        // The message is logged so the service stays usable without a relay, and the
+        // recipient is not part of it.
         //
         // The log is actually captured. The earlier version of this test only
         // checked that `send` returned `Ok` and that `describe()` mentioned the

@@ -2,14 +2,14 @@
 //!
 //! Today that is one rule beyond the type-level gate in
 //! [`ProjectDraft::to_raw`]: every `temporalCoverage` entry has to resolve to a
-//! structured date (REQ-1.14). `dpe-server validate` does not enforce it as a
+//! structured date. `dpe-server validate` does not enforce it as a
 //! blocker, and OAI-PMH needs it, so a submission carrying an unresolvable
 //! period would open a pull request that fails CI in a crate the editor never
 //! touches.
 //!
-//! REQ-1.15 asked whether to refuse such a submission or carry the enrichment
-//! row through to the pull request. Refusal, with a field-level error: Success
-//! Criterion 2 says so, and the depositor is not stranded, because
+//! Whether to refuse such a submission or carry the enrichment row through to the pull request
+//! was an open question. Refusal, with a field-level error: the success criteria say so, and the
+//! depositor is not stranded, because
 //! `temporalCoverage`'s `Reference` variant is always a resolvable path for
 //! recording a period the enrichment table does not know.
 //!
@@ -122,7 +122,7 @@ mod tests {
         )])
     }
 
-    /// Success Criterion 2: a submission whose `temporalCoverage` cannot resolve
+    /// A submission whose `temporalCoverage` cannot resolve
     /// is rejected.
     #[test]
     fn an_unresolvable_free_text_period_is_reported() {

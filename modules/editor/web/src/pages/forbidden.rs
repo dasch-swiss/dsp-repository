@@ -1,6 +1,6 @@
 //! The 403 page.
 //!
-//! REQ-1.3 specifies a status, not a page. A bare 403 is a dead end in a
+//! The requirement specifies a status, not a page. A bare 403 is a dead end in a
 //! browser: the reader is signed in, has done nothing wrong, and has no control
 //! to press. So the status is carried by a page inside the shell, with one
 //! obvious way back.
@@ -42,7 +42,7 @@ mod tests {
 
     #[test]
     fn test_the_page_offers_a_route_back() {
-        // The whole reason REQ-1.3's status is rendered as a page: a bare 403
+        // The whole reason the 403 is rendered as a page: a bare status
         // leaves a signed-in reader with nothing to press.
         let out = forbidden("nope").into_string();
         assert!(out.contains(r#"<a href="/projects""#), "{out}");

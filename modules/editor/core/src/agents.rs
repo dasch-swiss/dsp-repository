@@ -64,7 +64,7 @@ pub struct Agents {
     /// Kept whole, and not folded into [`Agent`] — whose docs argue against widening it — because
     /// accepting a `change` proposal writes its payload as the entity file. A payload seeded with
     /// only the members some form renders drops the rest silently, which is the property
-    /// `ProjectDraft` gives a project (REQ-1.7, REQ-1.8). It is also the published side
+    /// `ProjectDraft` gives a project. It is also the published side
     /// [`crate::proposals::check_organization`] compares an address against.
     bodies: BTreeMap<String, serde_json::Value>,
 }
@@ -226,12 +226,12 @@ impl<'a> AgentScope<'a> {
     /// Every agent: the published ones in id order, then the proposed ones the
     /// published store does not already answer for.
     ///
-    /// The filter is [`Self::get`]'s precedence rule, applied to the listing so
-    /// the two cannot disagree. Without it a `change` proposal — which by
-    /// definition names an id the store already holds — put a second
-    /// `<option>` into the shared `<datalist>` carrying the same `value` and a
-    /// different label, so the picker offered one organisation twice under two
-    /// names while `get` resolved only the published one.
+    /// Feeds [`Self::search`], which is what a picker offers.
+    ///
+    /// The filter is [`Self::get`]'s precedence rule, applied to the listing so the two cannot
+    /// disagree. Without it a `change` proposal — which by definition names an id the store
+    /// already holds — appeared twice, once under its published name and once under its proposed
+    /// one, while `get` resolved only the published one.
     pub fn all(&self) -> impl Iterator<Item = &Agent> {
         self.published
             .all()
@@ -250,6 +250,70 @@ impl<'a> AgentScope<'a> {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.published.is_empty() && self.proposed.is_empty()
+    }
+
+    /// The agents whose **name** or id contains `query`, case-insensitively, at most
+    /// [`SEARCH_LIMIT`] of them, in [`Self::all`]'s order.
+    ///
+    /// Name first, because a depositor knows the person and not `person-417`. The id is matched
+    /// too so that pasting one still works, and because an id is what the field ends up holding.
+    ///
+    /// **Capped rather than paged.** The cap exists to bound what one row's control weighs, and a
+    /// query matching more than this is a query that has not been narrowed yet — the count is
+    /// reported so the form can say so. Paging a picker would need a per-row cursor to survive a
+    /// re-render, which is a lot of machinery for "type another word".
+    #[must_use]
+    pub fn search(&self, query: &str) -> AgentMatches<'_> {
+        let needle = query.trim().to_lowercase();
+        if needle.is_empty() {
+            return AgentMatches { found: Vec::new(), total: 0 };
+        }
+        let mut matching: Vec<&Agent> = self
+            .all()
+            .filter(|agent| agent.label.to_lowercase().contains(&needle) || agent.id.to_lowercase().contains(&needle))
+            .collect();
+        let total = matching.len();
+        matching.truncate(SEARCH_LIMIT);
+        AgentMatches { found: matching, total }
+    }
+}
+
+/// How many matches one agent picker offers at once. See [`AgentScope::search`].
+pub const SEARCH_LIMIT: usize = 25;
+
+/// What [`AgentScope::search`] found: the capped matches, and how many there were in all.
+///
+/// `total` is carried so the form can distinguish "no such person" from "too many to show", which
+/// are opposite instructions to a depositor: the first means check the spelling, the second means
+/// add a word.
+#[derive(Debug)]
+pub struct AgentMatches<'a> {
+    found: Vec<&'a Agent>,
+    total: usize,
+}
+
+impl<'a> AgentMatches<'a> {
+    /// The matches to offer, at most [`SEARCH_LIMIT`].
+    #[must_use]
+    pub fn offered(&self) -> &[&'a Agent] {
+        &self.found
+    }
+
+    /// How many matched in all, which may exceed what [`Self::offered`] returns.
+    #[must_use]
+    pub const fn total(&self) -> usize {
+        self.total
+    }
+
+    /// Whether the cap hid some of them.
+    #[must_use]
+    pub const fn truncated(&self) -> bool {
+        self.total > SEARCH_LIMIT
+    }
+
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.total == 0
     }
 }
 
@@ -389,6 +453,37 @@ mod tests {
         // A count rather than "not empty": a loader that silently read half the store shows up as
         // ids the form cannot resolve, which reads like a data problem.
         assert_eq!(agents.len(), 558, "the committed store is 416 persons plus 142 organizations");
+    }
+
+    #[test]
+    fn a_search_matches_a_name_and_an_id_and_never_the_whole_store() {
+        let (agents, _) = committed();
+        let scope = AgentScope::published_only(&agents);
+
+        // By name, which is what a depositor knows. The `<datalist>` this replaced matched what
+        // the input held — an id — so a name typed into it suggested nothing.
+        let by_name = scope.search("dokumentationsbibliothek");
+        assert!(!by_name.is_empty(), "a committed organisation is named this");
+        assert!(
+            by_name.offered().iter().any(|agent| agent.id == "organization-008"),
+            "{:?}",
+            by_name.offered()
+        );
+
+        // Case-insensitively, and by id too, so pasting one still works.
+        assert_eq!(scope.search("ORGANIZATION-008").offered().len(), 1);
+
+        // An empty or blank query is not "everything": it is a picker nobody has searched yet,
+        // and answering it with 558 options is the control this replaced.
+        assert!(scope.search("").is_empty());
+        assert!(scope.search("   ").is_empty());
+
+        // A query that matches half the store is capped, and says so, rather than rendering a
+        // `<select>` of hundreds. "a" appears in almost every name.
+        let broad = scope.search("a");
+        assert!(broad.truncated(), "{} matches", broad.total());
+        assert_eq!(broad.offered().len(), SEARCH_LIMIT);
+        assert!(broad.total() > SEARCH_LIMIT);
     }
 
     #[test]
@@ -590,12 +685,10 @@ mod tests {
 
     #[test]
     fn a_change_proposal_does_not_offer_its_entity_twice_in_the_listing() {
-        // `all()` feeds the shared `<datalist>`, one `<option value=id>` per
-        // agent. A change proposal names an id the published store already
-        // holds, so listing both put two options with the same `value` and
-        // different labels into the picker — one organisation offered twice
-        // under two names, while `get` resolved only the published one. The
-        // listing has to agree with the lookup.
+        // `all()` is what `search` offers a picker. A change proposal names an id the
+        // published store already holds, so listing both offered one organisation twice under
+        // two names, while `get` resolved only the published one. The listing has to agree with
+        // the lookup.
         let (agents, _) = committed();
         let proposal = entity_proposal(
             ProposalKind::Organization,

@@ -12,10 +12,10 @@
 //!   *change* to content it already holds; one morphed in together with its text is widely reported
 //!   not to announce at all. `empty:hidden` is what keeps that free.
 //! - **No field is `required`, and the form is not `novalidate`.** A draft may be missing anything
-//!   (REQ-1.9) and saving one must always work (REQ-1.10), so nothing is `required`. Validation
-//!   stays on because `startDate`/`endDate` are `type="date"`, which cannot hold a half-typed date
-//!   — the value comes back empty, so with validation off, fiddling the year of a real date and
-//!   saving would clear it. Datastar gates its form path on the same flag.
+//!   and saving one must always work, so nothing is `required`. Validation stays on because
+//!   `startDate`/`endDate` are `type="date"`, which cannot hold a half-typed date — the value comes
+//!   back empty, so with validation off, fiddling the year of a real date and saving would clear
+//!   it. Datastar gates its form path on the same flag.
 
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
@@ -36,18 +36,17 @@ use crate::form::INTENT;
 /// The id the enhanced path's patch targets. Also the anchor a save returns to.
 pub const REGION_ID: &str = "project-section";
 
-/// Store the draft, changing nothing about the review cycle (REQ-1.10).
+/// Store the draft, changing nothing about the review cycle.
 ///
 /// Also what an unknown intent falls back to. A body naming a verb this build
 /// does not know must not submit or withdraw by typo: those two are not
 /// undoable by the depositor, and saving is.
 pub const SAVE: &str = "save";
 
-/// Validate the draft and record it as the project's pending submission
-/// (REQ-1.12).
+/// Validate the draft and record it as the project's pending submission.
 pub const SUBMIT: &str = "submit";
 
-/// Take a pending submission back, leaving the draft (REQ-4.7).
+/// Take a pending submission back, leaving the draft.
 pub const WITHDRAW: &str = "withdraw";
 
 /// Show the withdrawal confirmation, which posts [`WITHDRAW`].
@@ -71,13 +70,22 @@ pub const DISCARD: &str = "discard";
 /// and `DraftRepository::delete` cannot be undone.
 pub const DISCARD_CONFIRM: &str = "discard-confirm";
 
-/// Start a proposal for a new person (REQ-3.1).
+/// Run the agent pickers' searches and re-render, changing nothing else.
+///
+/// One intent for every picker on the page rather than one naming a row, because every search box
+/// posts with the form: the re-render simply offers matches for each one that is non-blank, so
+/// there is nothing for the intent to identify. It needs no route of its own for the reason the
+/// propose intents do not — it is a named submit on the section's own form — and it re-renders
+/// with the posted body kept, which is what carries the query back into the box.
+pub const FIND_AGENT: &str = "find-agent";
+
+/// Start a proposal for a new person.
 pub const PROPOSE_PERSON: &str = "propose-person";
 
-/// Start a proposal for a new organisation (REQ-3.1).
+/// Start a proposal for a new organisation.
 pub const PROPOSE_ORGANIZATION: &str = "propose-organization";
 
-/// Propose a change to an entity this project already references (REQ-3.2).
+/// Propose a change to an entity this project already references.
 ///
 /// The entity rides in the intent value — `propose-changes:person-417` — via
 /// [`propose_changes_intent`] and [`proposed_entity`].
@@ -176,9 +184,9 @@ pub struct RoundSummary<'a> {
     pub at: &'a str,
     /// Each field RDU put its own value in place of, with that value rendered.
     ///
-    /// The other half of the reason this surface exists. REQ-4.3 lets a
-    /// reviewer edit before accepting and REQ-4.4 waives the second approver,
-    /// so a substituted value is seen by nobody unless the depositor is shown
+    /// The other half of the reason this surface exists. A reviewer may edit before accepting
+    /// and there is no second approver, so a substituted value is seen by nobody unless the
+    /// depositor is shown
     /// it here.
     pub substitutions: &'a [(String, Value)],
 }
@@ -192,9 +200,9 @@ impl RoundSummary<'_> {
                 "This project is a draft again. Fields RDU accepted are fixed until you submit it again; \
                  everything else is yours to edit.",
             ),
-            // REQ-4.6 discards the submission and notifications are out of
+            // A rejection discards the submission and notifications are out of
             // scope, so without this the work vanishes with nothing saying
-            // why. The draft is kept (REQ-1.13), which is the other half of
+            // why. The draft is kept, which is the other half of
             // what the depositor needs to know.
             ReviewOutcome::Rejected => (
                 "RDU rejected this submission",
@@ -238,8 +246,8 @@ pub enum Notice<'a> {
     /// Somebody else saved the draft while this form was open. Carries their
     /// name where it is known, so the reader can go and ask rather than guess.
     Changed { by: Option<&'a str>, at: &'a str },
-    /// A new entity proposal was started, or an existing entity now has a change proposed (REQ-3.1,
-    /// REQ-3.2). Names the kind and the id, and links to the entity form, which is where the
+    /// A new entity proposal was started, or an existing entity now has a change proposed.
+    /// Names the kind and the id, and links to the entity form, which is where the
     /// depositor fills the proposal in — the propose controls allocate the id and nothing else.
     Proposed {
         kind: ProposalKind,
@@ -274,7 +282,7 @@ pub enum Confirmation {
 pub struct SectionView<'a> {
     pub shortcode: &'a str,
     /// The published project's name, or `None` for a shortcode the published set
-    /// does not hold (REQ-2.3).
+    /// does not hold.
     pub project_name: Option<&'a str>,
     pub section: &'static Section,
     /// Which fields and sections this reader sees. Not a permission check in
@@ -285,14 +293,14 @@ pub struct SectionView<'a> {
     /// `None` while the project is editable.
     pub locked: Option<Locked>,
     /// Field ids RDU accepted in the round being answered, which are therefore
-    /// fixed until it is submitted again (REQ-4.5).
+    /// fixed until it is submitted again.
     ///
     /// Ids rather than a per-field flag on the registry, because the set is
     /// per-round data and the registry is a constant. Empty whenever the latest
     /// round did not return the project — an approval's decisions are not a
     /// lock on work that has left the depositor's hands.
     pub accepted_fields: &'a [String],
-    /// Whether this reader may take the pending submission back (REQ-4.7), and
+    /// Whether this reader may take the pending submission back, and
     /// so whether the withdrawal control is offered at all.
     pub may_withdraw: bool,
     /// Whether this reader may discard the draft, and so whether the control is
@@ -322,7 +330,7 @@ pub struct SectionView<'a> {
     /// Separate from [`Self::errors`]: a proposal is not a registry field, so it cannot ride that
     /// field-keyed channel — `errors_elsewhere`'s lookup would resolve to nothing and drop it.
     pub proposal_findings: &'a [(String, ProposalKind, String)],
-    /// This project's own entity proposals (US-3), every status, the same slice the server's
+    /// This project's own entity proposals, every status, the same slice the server's
     /// section context holds.
     ///
     /// Every status rather than only the live ones: the summary this renders is `is_live()` alone,
@@ -331,14 +339,14 @@ pub struct SectionView<'a> {
     /// The latest finished review round, or `None` for a project nobody has
     /// reviewed.
     ///
-    /// On the form rather than on a page of its own: REQ-4.5 retains the note
-    /// and names nowhere to read it, and the place a depositor acts on it is
+    /// On the form rather than on a page of its own: the note is retained with nowhere else
+    /// named to read it, and the place a depositor acts on it is
     /// the form they act on it *in*. It rides inside the region, so a save
     /// leaves it in place.
     ///
     /// It shows until the depositor submits again, which starts the next
     /// cycle. That is also what makes a returned draft distinguishable from one
-    /// never submitted, without adding a state beyond REQ-2.1's five.
+    /// never submitted, without adding a sixth lifecycle state.
     pub round: Option<RoundSummary<'a>>,
     /// Who last saved the draft, when that was somebody other than this reader.
     ///
@@ -356,7 +364,7 @@ pub struct SectionView<'a> {
     /// tell whether the draft moved underneath it.
     pub baseline: Option<&'a str>,
     /// When the stored draft was last written, formatted. `None` when the form
-    /// is showing published metadata that nobody has saved over yet (REQ-1.1).
+    /// is showing published metadata that nobody has saved over yet.
     pub saved_at: Option<&'a str>,
     pub notice: Option<Notice<'a>>,
     /// The body that was posted, when this render is answering a `POST`.
@@ -443,13 +451,13 @@ impl SectionView<'_> {
     /// Whether any field this reader sees in this section offers the agent suggestion list, and
     /// therefore whether the list is worth its weight on this page.
     ///
-    /// The answer comes from `Shape::offers_agent_suggestions`, which is exhaustive, rather than
+    /// The answer comes from `Shape::has_agent_picker`, which is exhaustive, rather than
     /// from a list of shapes written out here: a predicate that misses a shape renders no list
     /// on a page whose inputs point at one, and nothing fails.
-    fn has_agent_field(&self) -> bool {
+    fn has_agent_picker_field(&self) -> bool {
         self.section
             .fields_for(self.audience)
-            .any(|field| field.shape.is_some_and(editor_core::form::Shape::offers_agent_suggestions))
+            .any(|field| field.shape.is_some_and(editor_core::form::Shape::has_agent_picker))
     }
 
     fn action(&self) -> String {
@@ -509,8 +517,8 @@ fn heading(view: &SectionView<'_>) -> Markup {
                 }
                 None => {
                     h1 class="font-display text-2xl mb-1" { "Project " (view.shortcode) }
-                    // REQ-2.3: a project may exist only locally, and REQ-1.1's
-                    // "current published metadata" is then empty. Said plainly,
+                    // A project may exist only locally, and the published metadata a form
+                    // pre-fills from is then empty. Said plainly,
                     // because a blank form with no explanation reads as a
                     // failure to load.
                     p class="text-gray-600" {
@@ -598,9 +606,18 @@ fn rail(view: &SectionView<'_>) -> Markup {
 /// module docs. `empty:hidden` is what keeps an always-present region free —
 /// without it every section carries an empty block's line box, the same reason
 /// the form tiles' error region carries `.field-error:empty`.
+///
+/// **`sticky` because the control that causes a notice is usually below it.** This region is at
+/// the top of the form column, and the enhanced path patches the region in place without moving
+/// the scroll position or the focus — so a depositor who clicked a propose button, an add button
+/// or a submit several screens down got a notice rendered where they could not see it, and read
+/// that as nothing having happened. The rail above uses the same idiom. It applies to every notice
+/// and not only the propose one: a refusal was as invisible, and a refusal saying nothing was
+/// saved is the worse one to miss. Screen readers were always told, through `aria-live`; this is
+/// the sighted half of the same message.
 fn status(view: &SectionView<'_>) -> Markup {
     html! {
-        div class="empty:hidden" aria-live="polite" {
+        div class="empty:hidden sticky top-0 z-10" aria-live="polite" {
             @match view.notice {
                 Some(Notice::Saved) => { (alert("Draft saved.").variant(AlertVariant::Success)) }
                 Some(Notice::Submitted) => {
@@ -684,12 +701,27 @@ fn form(view: &SectionView<'_>) -> Markup {
         // no `__prevent`: Datastar 1.0.2 calls `preventDefault` unconditionally
         // for a `submit` event on a form element, so adding one would be noise.
         // With no script it is an ordinary POST and the server redirects.
+        //
+        // **It posts the submitter's `formAction`, not the form's `action`.** Every add and remove
+        // control is a submit button carrying a `formaction` — that is how a row action reaches
+        // its own route while the whole form body goes with it — and `preventDefault` on the
+        // form's `submit` discards the submitter's URL along with the native submission. Posting
+        // the form's own action instead turned every one of those buttons into a plain save: the
+        // row route was never reached, no row was added or removed, and nothing failed. That is
+        // the enhanced path only; with no script the browser honours `formaction` itself, which
+        // is why the plain path always worked and this was invisible to any test that did not run
+        // a browser. `submitter.formAction` falls back to the form's action for a button with no
+        // `formaction` of its own, so save, submit and the propose intents are unaffected.
         form
             id="section-form"
             method="post"
             action=(action)
             class="flex flex-col gap-6"
-            data-on:submit={ "@post('" (action) "', {contentType: 'form'})" }
+            data-on:submit={
+                "@post(evt.submitter?.formAction || '"
+                (action)
+                "', {contentType: 'form'})"
+            }
             "data-on:change__debounce.1s"=[autosave.as_deref()]
         {
             // The revision this form was rendered from, so a save can tell
@@ -708,12 +740,6 @@ fn form(view: &SectionView<'_>) -> Markup {
                 }
             }
             (controls(view))
-            // Once per page, and only when a field on it holds agent ids — the list carries every committed agent,
-            // so rendering it on a section with no such field is pure weight. Inside the form is fine: a
-            // `<datalist>` submits nothing.
-            @if let Some(agents) = view.agents {
-                @if view.has_agent_field() { (crate::form::widgets::agent_suggestions(agents)) }
-            }
         }
     }
 }
@@ -843,12 +869,12 @@ fn proposal_findings_list(view: &SectionView<'_>) -> Markup {
 /// A short list of this project's own live proposals, each resolved to a label where its payload
 /// already gives one, and linked to its entity form.
 ///
-/// Gated on [`SectionView::has_agent_field`] like the shared `<datalist>`: a proposal exists to be
-/// referenced from an agent field, so a section with none has no use for the list either. Renders
-/// nothing at all with no live proposals — a panel with a heading and no rows would read as broken,
-/// not as "there is nothing here yet".
+/// Gated on [`SectionView::has_agent_picker_field`]: a proposal exists to be referenced from an
+/// agent field, so a section with none has no use for the list either.
+/// Renders nothing at all with no live proposals — a panel with a heading and no rows would read as
+/// broken, not as "there is nothing here yet".
 fn proposals_summary(view: &SectionView<'_>) -> Markup {
-    if !view.has_agent_field() {
+    if !view.has_agent_picker_field() {
         return html! {};
     }
     let live: Vec<&EntityProposal> = view.proposals.iter().filter(|proposal| proposal.is_live()).collect();
@@ -1036,11 +1062,10 @@ fn controls(view: &SectionView<'_>) -> Markup {
 mod tests {
     use editor_core::agents::{AgentScope, Agents};
     use editor_core::draft::ProjectDraft;
-    use editor_core::form::FormBody;
     use serde_json::json;
 
     use super::*;
-    use crate::form::registry::{field, section};
+    use crate::form::registry::section;
 
     /// The committed agent set, loaded once for the whole test binary.
     fn published_agents() -> &'static Agents {
@@ -1246,7 +1271,9 @@ mod tests {
         // `submit` event on a form element.
         let out = overview(&published_draft());
         assert!(
-            out.contains(r#"data-on:submit="@post('/projects/0801d/sections/overview', {contentType: 'form'})""#),
+            out.contains(
+                r#"data-on:submit="@post(evt.submitter?.formAction || '/projects/0801d/sections/overview', {contentType: 'form'})""#
+            ),
             "{out}"
         );
         assert!(!out.contains("submit__prevent"), "{out}");
@@ -1257,8 +1284,28 @@ mod tests {
     }
 
     #[test]
+    fn the_enhanced_path_posts_a_row_action_to_its_own_url_and_not_to_the_form_s() {
+        // The whole of the add/remove mechanism rests on the submit button's `formaction`, and
+        // `preventDefault` on the form's `submit` throws it away with the native submission. The
+        // fixed expression reads it back off the submitter, so a row action reaches its own route
+        // on the enhanced path as it always did on the plain one.
+        //
+        // The literal form action is the fallback, for a button — save, submit, a propose intent —
+        // that carries no `formaction`. `submitter.formAction` already resolves to the form's
+        // action for such a button; the fallback covers a submission with no submitter at all.
+        let out = overview(&published_draft());
+        assert!(out.contains("evt.submitter?.formAction"), "{out}");
+        // And the row controls still carry the URL it reads.
+        let dataset = page(&view(&published_draft(), "dataset", Audience::Everyone)).into_string();
+        assert!(
+            dataset.contains(r#"formaction="/projects/0801d/sections/dataset/fields/keywords/add""#),
+            "{dataset}"
+        );
+    }
+
+    #[test]
     fn a_display_only_field_renders_its_value_and_no_control() {
-        // REQ-1.5. A control here would post, and an empty one would clear a
+        // A display-only field. A control here would post, and an empty one would clear a
         // value the reader was never able to change.
         let out = page(&view(&published_draft(), "overview", Audience::RduOnly)).into_string();
         assert!(out.contains("Shortcode"), "{out}");
@@ -1268,45 +1315,49 @@ mod tests {
     }
 
     #[test]
-    fn the_agent_suggestion_list_is_rendered_once_and_only_where_a_field_needs_it() {
-        // It carries every committed agent, so rendering it per control, or on a section holding no
-        // agent field, is pure weight.
-        // Over **every** section and both audiences, not two hand-picked ones. A narrower version
-        // passes while `funding` — which also offers the list, and sits alone in the access
-        // section — renders inputs pointing at a `<datalist>` that was never on the page,
-        // so a depositor typing a funder got no suggestions and nothing failed.
+    fn no_page_ships_the_whole_agent_set_and_every_picker_can_be_searched() {
+        // The pickers used to point at one shared `<datalist>` of all 558 agents, which was
+        // 31.7 KB on every section holding an agent field and still did not open (see
+        // `widgets::agent_picker`). Nothing may ship that list again — the check is for a
+        // `<datalist>` anywhere, not for the old id, so reintroducing one under another name
+        // fails here too.
+        //
+        // Over **every** section and both audiences, not two hand-picked ones: the narrower
+        // version of the old test passed while `funding`, alone in the access section, pointed at
+        // a list that was never on the page.
         let mut draft = published_draft();
         draft.set("contactPoint", serde_json::json!(["organization-008"]));
         for audience in [Audience::Everyone, Audience::RduOnly] {
             for section in sections_for(audience) {
                 let out = page(&view(&draft, section.id, audience)).into_string();
-                let referenced = out.contains(r#"list="agent-suggestions""#);
-                let rendered = out.matches("<datalist").count();
-                assert!(
-                    !referenced || rendered == 1,
-                    "{} ({audience:?}) points at the suggestion list but renders {rendered} of them",
+                assert_eq!(
+                    out.matches("<datalist").count(),
+                    0,
+                    "{} ({audience:?}) ships a datalist again",
                     section.id
                 );
-                assert!(
-                    rendered <= 1,
-                    "{} ({audience:?}) renders the 31.7 KB list {rendered} times",
-                    section.id
-                );
+                assert!(!out.contains("list=\"agent-suggestions\""), "{} ({audience:?})", section.id);
             }
         }
 
+        // On a section that has an agent field, every picker carries its own search box and the
+        // id rides in a hidden input, which is what keeps an untouched save byte-exact.
         let contributors = page(&view(&draft, "contributors", Audience::Everyone)).into_string();
-        assert_eq!(contributors.matches("<datalist").count(), 1);
-        assert!(contributors.contains(r#"list="agent-suggestions""#), "the input points at it");
-        // The option's value is the id, which is what the input holds and
-        // therefore what round-trips; its text is the name.
         assert!(
-            contributors.contains(r#"<option value="organization-008">"#),
-            "an option carries the id as its value: {contributors}"
+            contributors.contains(r#"<input type="hidden" name="contactPoint.r0" value="organization-008">"#),
+            "the id posts from a hidden input: {contributors}"
+        );
+        assert!(
+            contributors.contains(r#"name="contactPoint.r0.q""#),
+            "the picker offers a search: {contributors}"
+        );
+        assert!(
+            contributors.contains(r#"value="find-agent""#),
+            "and a control to run it: {contributors}"
         );
 
         let image = page(&view(&draft, "image", Audience::Everyone)).into_string();
-        assert_eq!(image.matches("<datalist").count(), 0, "no agent field, no list");
+        assert!(!image.contains("find-agent"), "no agent field, no picker: {image}");
     }
 
     #[test]
@@ -1486,8 +1537,8 @@ mod tests {
 
     #[test]
     fn an_unpublished_project_opens_without_reading_as_a_failure() {
-        // REQ-2.3: a project may exist only locally, and REQ-1.1's "current
-        // published metadata" is then empty. A blank form with no explanation
+        // A project may exist only locally, and the published metadata a form pre-fills from
+        // is then empty. A blank form with no explanation
         // reads as a page that failed to load.
         let draft = ProjectDraft::default();
         let mut view = view(&draft, "overview", Audience::Everyone);
@@ -1527,8 +1578,8 @@ mod tests {
 
     #[test]
     fn no_field_is_required_or_the_browser_would_refuse_to_save_a_draft() {
-        // A draft may be missing anything (REQ-1.9) and saving one must always
-        // work (REQ-1.10). `required` on the name field would make an unfinished
+        // A draft may be missing anything and saving one must always
+        // work. `required` on the name field would make an unfinished
         // draft unsaveable on both paths — Datastar runs the same
         // `checkValidity()` the browser does.
         let out = overview(&published_draft());
@@ -1546,7 +1597,7 @@ mod tests {
 
     #[test]
     fn a_required_field_says_so_inside_its_own_label() {
-        // Nothing here is `required` or `aria-required` (REQ-1.9/REQ-1.10), so
+        // Nothing here is `required` or `aria-required`, so
         // the label is the only channel the obligation has. Rendered as a
         // sibling span it was visible and nothing else: a reader tabbing to the
         // control heard "Name, edit text".

@@ -1,8 +1,8 @@
-//! The entity form: `GET` and `POST /projects/{shortcode}/entities/{proposal}` (US-3).
+//! The entity form: `GET` and `POST /projects/{shortcode}/entities/{proposal}`.
 //!
 //! `{proposal}` is a proposal's **`entity_id`** (`person-417`, `organization-143`), not its row
 //! `id` — the same value `pages::section`'s `proposed_notice` and `proposals_summary` already
-//! link to, and the value REQ-3.1/3.2's propose controls post back under `propose.entity`. A
+//! link to, and the value the propose controls post back under `propose.entity`. A
 //! project may hold more than one row for one `entity_id` over time (a withdrawn proposal, then a
 //! fresh one for the same entity), but never more than one *live* one
 //! (`entity_proposals_live_per_entity`); [`proposal_for`] resolves the live one where there is
@@ -407,8 +407,7 @@ impl Intent {
 /// Merge one applier per field the entity's kind renders into the stored
 /// payload. Never rebuilds it: a field this form does not declare is simply
 /// never named in an `apply` call, so it survives untouched — the same
-/// property `ProjectDraft` gives a project (REQ-1.7/1.8), applied to an
-/// entity.
+/// property `ProjectDraft` gives a project, applied to an entity.
 fn apply_posted(draft: &mut ProjectDraft, kind: ProposalKind, body: &FormBody) {
     match kind {
         ProposalKind::Person => apply_person(body, draft),
@@ -451,7 +450,7 @@ fn apply_organization(body: &FormBody, draft: &mut ProjectDraft) {
     for (member, _) in page::ADDRESS_MEMBERS {
         apply(Shape::Text(WhenCleared::Drop), body, draft, &format!("address.{member}"));
     }
-    // REQ-3.4: all four of `street`, `postalCode`, `locality` and `country`,
+    // All four of `street`, `postalCode`, `locality` and `country`,
     // or no `address` at all. Each member above already drops itself when
     // cleared; what is left is dropping the container once every member it
     // ever held is gone — `ProjectDraft::remove`'s own docs say a dotted
@@ -686,7 +685,7 @@ mod tests {
 
     #[tokio::test]
     async fn the_address_rule_is_announced_at_the_address_controls() {
-        // `ADDRESS_HINT` is the only place REQ-3.4's "all four together or none" rule is stated.
+        // `ADDRESS_HINT` is the only place the "all four together or none" rule is stated.
         // As a bare sibling paragraph it was part of no control's accessible description, so a
         // reader tabbing onto Street heard "Street, edit text" and nothing about the rule whose
         // breach `check_organization` then refuses — the failure the codebase's own accessibility
@@ -821,13 +820,13 @@ mod tests {
         let payload = stored_payload(&state, "0801d").await;
         assert!(
             payload.get("address").is_none(),
-            "REQ-3.4: an all-empty address is omitted entirely: {payload}"
+            "an all-empty address is omitted entirely: {payload}"
         );
     }
 
     #[tokio::test]
     async fn an_address_with_one_member_still_typed_is_kept() {
-        // The other half of REQ-3.4's rule: only clearing *every* member drops the group — leaving
+        // The other half of the rule: only clearing *every* member drops the group — leaving
         // even one behind means the depositor is partway through it, and `check_organization`, not
         // this merge, is what judges an incomplete one.
         let (state, _) = test_state("entity-address-partial").await;

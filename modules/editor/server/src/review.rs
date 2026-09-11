@@ -346,8 +346,8 @@ pub(crate) async fn act(
     }
 }
 
-/// End the review round: approve (REQ-4.4), request changes (REQ-4.5) or
-/// reject (REQ-4.6).
+/// End the review round: approve, request changes or
+/// reject.
 ///
 /// Each asks for confirmation first, on the same URL, so a refused write
 /// re-renders somewhere that still answers `GET`. The confirmation is also
@@ -422,9 +422,9 @@ async fn finish(
             return refused(state, user, context, filter, headers, APPROVE_REFUSED_UNDECIDED_PROPOSAL);
         }
 
-        // PRD Edge Case 3, and the user's decision: an approval must not ship a reference to an
-        // entity that is about to be rejected. Nothing is stripped silently — RDU substitutes the
-        // referencing fields or requests changes instead.
+        // The referential-integrity case, and the user's decision: an approval must not ship a
+        // reference to an entity that is about to be rejected. Nothing is stripped silently
+        // — RDU substitutes the referencing fields or requests changes instead.
         //
         // The scope is built from only the proposals that will *survive* this approval, not from
         // every `Submitted` one. Every proposal here still carries `status: Submitted` — the status
@@ -501,7 +501,7 @@ async fn finish(
             ReviewRoundRepository::request_changes(&*state.db, context.submission.id, &draft, &round).await
         }
         // Reject leaves both the draft and the published metadata alone
-        // (REQ-4.6, REQ-1.13): the note is what the depositor gets, and their
+        //: the note is what the depositor gets, and their
         // work is still theirs to resubmit.
         ReviewOutcome::Rejected | ReviewOutcome::Withdrawn => {
             ReviewRoundRepository::discard(&*state.db, context.submission.id, &round).await
@@ -700,7 +700,7 @@ struct Context<'a> {
     submitted_at: String,
     /// Whether the reader is the account currently holding the submission.
     held_by_viewer: bool,
-    /// This submission's own entity proposals — REQ-4.3's entity half. Restricted to
+    /// This submission's own entity proposals — the entity half of the review. Restricted to
     /// [`ProposalStatus::Submitted`]: a proposal in any other status either belongs to a different
     /// submission cycle (`Draft`) or is already decided (the two terminal statuses), and neither
     /// gets a row here.
@@ -775,10 +775,10 @@ async fn context<'a>(state: &'a AppState, user: &User, shortcode: &'a str) -> Re
         Err(error) => return Err(storage_error(state, user, "read the accounts", &error)),
     };
 
-    // REQ-4.3's entity half: a proposed person or organisation is not a project field, so it gets
-    // no row in `rows` above — it gets one of its own, built from this submission's own proposals.
-    // `Draft` and the two terminal statuses are excluded: a `Draft` belongs to a submission cycle
-    // that has not happened yet, and a terminal one is already decided.
+    // The entity half of the review: a proposed person or organisation is not a project field, so
+    // it gets no row in `rows` above — it gets one of its own, built from this submission's own
+    // proposals. `Draft` and the two terminal statuses are excluded: a `Draft` belongs to a
+    // submission cycle that has not happened yet, and a terminal one is already decided.
     let entity_proposals: Vec<EntityProposal> =
         match EntityProposalRepository::list_for_shortcode(&*state.db, &key).await {
             Ok(proposals) => proposals
@@ -1225,7 +1225,7 @@ mod tests {
 
     #[tokio::test]
     async fn approving_creates_the_approved_record_and_clears_the_queue() {
-        // REQ-4.4. The submission leaves the queue and an `approved_records`
+        // The submission leaves the queue and an `approved_records`
         // row takes its place, on its way to a pull request.
         let (state, _) = test_state("review-approve").await;
         let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
@@ -1252,7 +1252,7 @@ mod tests {
 
     #[tokio::test]
     async fn approving_commits_the_reviewers_substitution_and_not_the_submitted_value() {
-        // REQ-4.3 permits editing before acceptance. The substitute is what
+        // Editing is permitted before acceptance. The substitute is what
         // gets committed; `submissions.payload` stayed the depositor's own
         // until the moment it was deleted, which is what lets their form show
         // them what was changed on their behalf.
@@ -1369,7 +1369,7 @@ mod tests {
 
     #[tokio::test]
     async fn an_rdu_member_can_approve_the_submission_they_made_themselves() {
-        // REQ-4.4: no second approver for an RDU member's own submission. What
+        // There is no second approver for an RDU member's own submission. What
         // that means here is that nothing distinguishes their own submission
         // from anyone else's — there is no second-approver step to waive, and
         // no self-approval check to add.
@@ -1391,7 +1391,7 @@ mod tests {
 
     #[tokio::test]
     async fn requesting_changes_returns_the_project_with_the_note_and_the_decisions() {
-        // REQ-4.5: the submission becomes a draft, and both the note and the
+        // The submission becomes a draft, and both the note and the
         // per-field accepted state are retained — the latter on the round,
         // which is what layer-3's field lock reads.
         let (state, _) = test_state("review-request-changes").await;
@@ -1433,8 +1433,8 @@ mod tests {
 
     #[tokio::test]
     async fn rejecting_discards_the_submission_and_leaves_the_draft() {
-        // REQ-4.6 discards and leaves published metadata unchanged; REQ-1.13
-        // preserves the draft, so the depositor's work is still theirs.
+        // A rejection discards the submission and leaves published metadata unchanged; the
+        // draft is preserved, so the depositor's work is still theirs.
         let (state, _) = test_state("review-reject").await;
         let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
         let submission = a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
@@ -1485,7 +1485,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_reject_with_no_note_is_refused() {
-        // The whole rejection signal. REQ-4.6 discards the submission and
+        // The whole rejection signal. A rejection discards the submission and
         // notifications are out of scope, so without a note the depositor's
         // work vanishes with nothing whatever saying why.
         let (state, _) = test_state("review-reject-no-note").await;
@@ -1511,7 +1511,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_request_changes_with_no_note_is_refused() {
-        // REQ-4.5 retains "the reviewer note", and it is the only thing telling
+        // Request-changes retains the reviewer note, and it is the only thing telling
         // the depositor what to do — a returned draft with no note is a form
         // they cannot act on.
         let (state, _) = test_state("review-changes-no-note").await;
@@ -2560,7 +2560,7 @@ mod tests {
     #[tokio::test]
     async fn approve_is_refused_when_the_payload_still_references_a_rejected_proposal() {
         // The point of the chunk: an approval must not ship a reference to an entity that is about
-        // to be rejected (PRD Edge Case 3).
+        // to be rejected.
         let (state, _) = test_state("review-approve-dangling-entity").await;
         let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
         let proposal = a_person_proposal(&state, "0801d").await;

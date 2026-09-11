@@ -326,7 +326,7 @@ fn collect_filtered_records(
             if repo.get_by_shortcode(&shortcode).is_none() {
                 return Err(OaiError::BadArgument(format!("unknown project set: project:{shortcode}")));
             }
-            // Records of this project only — no project entry (REQ-1.3).
+            // Records of this project only — no project entry.
             record_repo
                 .get_all()
                 .iter()
@@ -390,7 +390,7 @@ fn collect_entities(
 /// Collects all entities under a cluster: the project entries whose shortcode is a
 /// cluster member (and which exist in the repository) plus all their records.
 /// Project entries are deduplicated by shortcode and records by ARK suffix, so a
-/// shortcode listed more than once does not produce duplicate items (REQ-2.5).
+/// shortcode listed more than once does not produce duplicate items.
 #[allow(clippy::too_many_arguments)]
 fn collect_cluster(
     repo: &dyn ProjectRepository,

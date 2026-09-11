@@ -20,7 +20,7 @@
 //!
 //! `/` (a redirect), the two login screens, `/logout`, `/healthz`, the telemetry
 //! beacon, and the static assets. Everything else takes [`Authenticated`]. The
-//! collection endpoint (REQ-5.1) is the one route that will be public *and*
+//! collection endpoint is the one route that will be public *and*
 //! serve data; it does not exist yet, and when it lands it is public by being
 //! written without this extractor, which is a visible choice in its signature.
 

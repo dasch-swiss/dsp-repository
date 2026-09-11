@@ -6,9 +6,9 @@
 //! Two proposals for the same kind, submitted at once, still serialise through
 //! the single writer connection — so the second one's `SELECT` always sees the
 //! first one's `INSERT`, and the two can never compute the same next id. That
-//! is the guard REQ-3.6 needs and REQ-5.4 does not give: REQ-5.4 renumbers
-//! against the repository on collision, but nothing in it stops two proposals
-//! inside the editor from allocating the same id before either reaches it.
+//! is the guard allocating an id at proposal time needs, and that renumbering does not give:
+//! renumbering happens against the repository on collision, and nothing in it stops two
+//! proposals inside the editor from allocating the same id before either reaches it.
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};

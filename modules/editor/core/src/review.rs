@@ -193,8 +193,8 @@ impl ReviewState {
 
     /// Every field marked [`Decision::Accept`], in stored order.
     ///
-    /// This is what locks a field on a returned draft (REQ-4.5 retains the
-    /// per-field state and nothing stopped the depositor altering it): a field
+    /// This is what locks a field on a returned draft — request-changes retains the
+    /// per-field state, and nothing stopped the depositor altering it: a field
     /// RDU has already accepted must not re-enter review still flagged
     /// accepted while holding a value nobody accepted.
     ///
@@ -214,8 +214,8 @@ impl ReviewState {
     /// Every field RDU put its own value in place of, with that value.
     ///
     /// What the depositor is shown before an approval they get no other sight
-    /// of: REQ-4.3 permits editing before acceptance and REQ-4.4 waives the
-    /// second approver, so a substituted value is otherwise seen by nobody.
+    /// of: editing is permitted before acceptance and there is no second approver, so a
+    /// substituted value is otherwise seen by nobody.
     ///
     /// Reverted fields are excluded for the reason [`Self::accepted_fields`]
     /// gives about them, and because a revert stores no substitute anyway.
@@ -430,7 +430,7 @@ mod tests {
 
     #[test]
     fn test_accepted_fields_are_the_ones_a_returned_draft_locks() {
-        // REQ-4.5 retains the per-field state and nothing stopped the depositor
+        // Request-changes retains the per-field state, and nothing stopped the depositor
         // altering an accepted field, which then re-entered review still
         // flagged accepted. A reverted field is deliberately not locked: its
         // submitted value was discarded, so there is nothing to preserve and
@@ -452,9 +452,8 @@ mod tests {
 
     #[test]
     fn test_substitutions_are_what_the_depositor_is_shown() {
-        // REQ-4.3 permits editing before acceptance and REQ-4.4 waives the
-        // second approver, so a value RDU put in place of the depositor's is
-        // seen by nobody unless this reports it.
+        // Editing is permitted before acceptance and there is no second approver, so a value
+        // RDU put in place of the depositor's is seen by nobody unless this reports it.
         let mut state = ReviewState::new();
         state.set(
             "name",

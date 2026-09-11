@@ -12,9 +12,9 @@
 //! - a trailing newline
 //! - non-ASCII left unescaped
 //!
-//! Output goes through `ProjectRaw` and not through the draft's own members
-//! (REQ-1.8): a field added to the contract is carried without an editor
-//! change, and anything the contract does not declare is not written.
+//! Output goes through `ProjectRaw` and not through the draft's own members: a
+//! field added to the contract is carried without an editor change, and
+//! anything the contract does not declare is not written.
 //!
 //! `serde_json`'s string escaping already matches the committed files (`\n`,
 //! `\r`, `\t`, `\"`, and non-ASCII left as-is), so there is no custom escaping
@@ -154,7 +154,7 @@ mod tests {
         assert!(type_at < url_at, "type precedes url");
     }
 
-    /// REQ-1.8: what the writer emits is decided by `ProjectRaw`, so a field
+    /// What the writer emits is decided by `ProjectRaw`, so a field
     /// added to the contract appears in the output with no change here. Checked
     /// through `imageCredit`, which is declared last and absent from every
     /// committed file: it must land at the end, not sorted into the `i`s.

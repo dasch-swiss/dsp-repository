@@ -346,6 +346,17 @@ pub trait ApprovedRecordRepository: Send + Sync {
     /// the one that matches the published data.
     async fn find_by_shortcode(&self, shortcode: &str) -> Result<Vec<ApprovedRecord>>;
 
+    /// Every approved record, collected or not.
+    ///
+    /// The startup comparison's enumeration. It cannot walk the published set
+    /// instead: a record whose project the published set no longer holds is
+    /// exactly the fourth branch of REQ-2.3, and a walk keyed on published
+    /// shortcodes is structurally unable to see it. `list_uncollected` is no
+    /// substitute either — a record *is* collected by the time its change
+    /// ships, so filtering those out would hide every record that is about to
+    /// go Online.
+    async fn list_all(&self) -> Result<Vec<ApprovedRecord>>;
+
     /// Stamp a record as collected. Leaving it unstamped is what makes a failed
     /// collection retry on the next run.
     async fn mark_collected(&self, id: Uuid, at: DateTime<Utc>) -> Result<()>;

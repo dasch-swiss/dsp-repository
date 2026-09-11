@@ -34,6 +34,7 @@ const KNOWN_ROUTES: &[&str] = &[
     "/login",
     "/login/code",
     "/projects",
+    "/states",
     "/review",
     "/depositors",
     "/depositors/new",
@@ -205,6 +206,7 @@ mod tests {
         assert_eq!(normalize_page_url("/login"), "/login");
         assert_eq!(normalize_page_url("/login/code"), "/login/code");
         assert_eq!(normalize_page_url("/projects"), "/projects");
+        assert_eq!(normalize_page_url("/states"), "/states");
         assert_eq!(normalize_page_url("/review"), "/review");
         assert_eq!(normalize_page_url("/depositors"), "/depositors");
         assert_eq!(normalize_page_url("/depositors/new"), "/depositors/new");

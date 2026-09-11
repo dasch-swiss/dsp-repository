@@ -202,6 +202,10 @@ struct Context<'a> {
     record: Option<DraftRecord>,
     /// Set while a submission is awaiting or under review.
     locked: Option<page::Locked>,
+    /// Whether an approved change is waiting for the release that carries it
+    /// (REQ-2.5). Not a lock: approve is the only outcome that does not hand
+    /// the project back, so the form stays editable.
+    awaiting_release: bool,
     /// The pending submission, when there is one. The same read `locked` comes
     /// from, kept rather than reduced to a flag: withdrawing needs its id, and
     /// a second lookup could see a different row.
@@ -363,6 +367,17 @@ async fn context<'a>(
         SubmissionState::Approved => None,
     });
 
+    // REQ-2.5. An approved record that the published set does not yet carry is
+    // waiting for a release; one it does carry is already Online, and the
+    // startup pass will discard it. Read here rather than derived from `locked`
+    // because an approval leaves no submission row to read it from.
+    let awaiting_release = match crate::projects::approved_comparison(state, &key).await {
+        // A record the published set already carries is Online, not waiting —
+        // the startup pass will discard it.
+        Ok((held, comparison)) => held && !comparison.permits_online(),
+        Err(error) => return Err(storage_error(state, user, "read this project's approved records", &error)),
+    };
+
     // Newest first, so the head is the round that decides what the form says.
     // Read even while a submission is pending: the note describes the round the
     // depositor is answering, and the form is read-only rather than blank.
@@ -450,6 +465,7 @@ async fn context<'a>(
         draft,
         record,
         locked,
+        awaiting_release,
         submission,
         accepted_fields,
         round,
@@ -1757,6 +1773,7 @@ fn view<'a>(
         audience: context.audience,
         draft: &context.draft,
         locked: context.locked,
+        awaiting_release: context.awaiting_release,
         accepted_fields: &context.accepted_fields,
         // RDU too, not only the assigned depositors: `may_reach` is already
         // true for every project for an RDU account, and a submission nobody
@@ -1817,6 +1834,7 @@ mod tests {
     use axum::http::Request;
     use editor_core::canonical::write_draft;
     use editor_core::records::Role;
+    use editor_core::repository::ApprovedRecordRepository;
     use serde_json::{json, Value};
     use tower::ServiceExt;
 
@@ -4808,5 +4826,74 @@ mod tests {
             })
             .collect::<Vec<_>>()
             .join("&")
+    }
+
+    #[tokio::test]
+    async fn an_approved_change_not_yet_published_says_it_is_waiting_for_a_release() {
+        // REQ-2.5. Informational, not a lock: approve is the only outcome that
+        // does not hand the project back, so the form has to stay editable.
+        let (state, _) = test_state("section-awaiting-release").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let published = state.published.get("0801d").expect("a published fixture");
+        let mut approved = ProjectDraft::from_raw(published);
+        approved.set("name", serde_json::json!("What RDU Approved"));
+        ApprovedRecordRepository::create(
+            &*state.db,
+            &editor_core::records::ApprovedRecord {
+                id: uuid::Uuid::new_v4(),
+                shortcode: "0801d".to_string(),
+                payload: serde_json::to_string(&approved).expect("serializes"),
+                approved_by: Some(user.id),
+                approved_at: chrono::Utc::now(),
+                collected_at: None,
+            },
+        )
+        .await
+        .expect("create");
+
+        let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+
+        assert!(
+            body.contains("Waiting for the next release"),
+            "REQ-2.5 notice is missing: {body}"
+        );
+        assert!(body.contains("few weeks"), "REQ-2.6 wait must be stated with it: {body}");
+        assert!(
+            body.contains("Save draft"),
+            "the form must stay editable after an approval: {body}"
+        );
+    }
+
+    #[tokio::test]
+    async fn an_approved_change_already_published_does_not_claim_to_be_waiting() {
+        // The same record, but matching published data: it is Online, and the
+        // startup pass will discard it. Saying "waiting" here would be the
+        // stale label this phase exists to remove.
+        let (state, _) = test_state("section-awaiting-online").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let published = state.published.get("0801d").expect("a published fixture");
+        ApprovedRecordRepository::create(
+            &*state.db,
+            &editor_core::records::ApprovedRecord {
+                id: uuid::Uuid::new_v4(),
+                shortcode: "0801d".to_string(),
+                payload: serde_json::to_string(&ProjectDraft::from_raw(published)).expect("serializes"),
+                approved_by: Some(user.id),
+                approved_at: chrono::Utc::now(),
+                collected_at: Some(chrono::Utc::now()),
+            },
+        )
+        .await
+        .expect("create");
+
+        let body = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+
+        assert!(!body.contains("Waiting for the next release"), "already published: {body}");
     }
 }

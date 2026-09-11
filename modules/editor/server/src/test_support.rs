@@ -540,6 +540,15 @@ pub(crate) struct Faults {
     /// `ReviewRoundRepository::list_for_shortcode` — the read the depositor's
     /// form makes to find out what RDU said.
     pub review_rounds_list: bool,
+    /// `ApprovedRecordRepository::list_all` — the startup comparison's
+    /// enumeration, and the branch where a database that cannot be read must
+    /// leave every record alone rather than reconcile a set it never saw.
+    pub approved_records_list_all: bool,
+    /// `ApprovedRecordRepository::delete` answers `Ok(false)` — the row was
+    /// already gone. Reachable for real only as a race between two instances
+    /// sharing one database file, which is why it needs a seam: the startup
+    /// pass must not report a discard it did not make.
+    pub approved_records_delete_missing: bool,
 }
 
 /// A store that delegates every call to a real [`Database`] and fails the ones
@@ -813,11 +822,21 @@ impl ApprovedRecordRepository for FaultyDatabase {
         ApprovedRecordRepository::find_by_shortcode(&*self.inner, shortcode).await
     }
 
+    async fn list_all(&self) -> Result<Vec<ApprovedRecord>> {
+        if self.faults.approved_records_list_all {
+            return Err(injected("ApprovedRecordRepository::list_all"));
+        }
+        ApprovedRecordRepository::list_all(&*self.inner).await
+    }
+
     async fn mark_collected(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
         ApprovedRecordRepository::mark_collected(&*self.inner, id, at).await
     }
 
     async fn delete(&self, id: Uuid) -> Result<bool> {
+        if self.faults.approved_records_delete_missing {
+            return Ok(false);
+        }
         ApprovedRecordRepository::delete(&*self.inner, id).await
     }
 }

@@ -286,14 +286,14 @@ image CI publishes, under emulation.</p>
 <tr><td><code>EDITOR_DB_DIR</code></td><td>No</td><td><em>(none — in-memory)</em></td><td>Directory holding the SQLite database. <strong>Unset means in-memory</strong>, not a path — see <a href="#database">Database</a>. Names the <em>directory</em>, never the database file.</td></tr>
 <tr><td><code>EDITOR_DB_READERS</code></td><td>No</td><td><code>4</code></td><td>Size of the reader connection pool. The writer pool is always one connection.</td></tr>
 <tr><td><code>EDITOR_DB_BUSY_TIMEOUT_MS</code></td><td>No</td><td><code>5000</code></td><td>SQLite <code>busy_timeout</code>, applied per connection.</td></tr>
-<tr><td><code>EDITOR_RDU_EMAILS</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated addresses that always have an RDU account (REQ-7.2). Reconciled on every start: missing accounts are created, an existing depositor listed here is promoted. Removing an address <strong>does not revoke</strong> the account — see <a href="#login-and-mail">Login and mail</a>.</td></tr>
-<tr><td><code>EDITOR_SMTP_HOST</code></td><td>No</td><td><em>(none — console)</em></td><td>SMTP relay host. <strong>Unset means codes are written to the log</strong> (REQ-6.8) and the service stays usable. That is the development and PR-preview default.</td></tr>
+<tr><td><code>EDITOR_RDU_EMAILS</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated addresses that always have an RDU account. Reconciled on every start: missing accounts are created, an existing depositor listed here is promoted. Removing an address <strong>does not revoke</strong> the account — see <a href="#login-and-mail">Login and mail</a>.</td></tr>
+<tr><td><code>EDITOR_SMTP_HOST</code></td><td>No</td><td><em>(none — console)</em></td><td>SMTP relay host. <strong>Unset means codes are written to the log</strong> and the service stays usable. That is the development and PR-preview default.</td></tr>
 <tr><td><code>EDITOR_SMTP_PORT</code></td><td>No</td><td><code>587</code></td><td>Submission with STARTTLS, which is what <code>smtp-relay.gmail.com</code> speaks.</td></tr>
 <tr><td><code>EDITOR_SMTP_USERNAME</code></td><td>No</td><td><em>(none)</em></td><td>Relay username. Must be set together with the password.</td></tr>
 <tr><td><code>EDITOR_SMTP_PASSWORD</code></td><td>No</td><td><em>(none)</em></td><td>Relay password. Redacted in any debug rendering of the configuration.</td></tr>
 <tr><td><code>EDITOR_SMTP_FROM</code></td><td>No</td><td><code>noreply@dasch.swiss</code></td><td>Envelope sender. Must be a domain with DKIM enabled in the Workspace Admin Console — see <a href="./authentication.html#relay-prerequisites-not-the-applications-job-but-they-block-delivery">Authentication</a>.</td></tr>
 <tr><td><code>EDITOR_SMTP_BREAK_GLASS</code></td><td>No</td><td><code>false</code></td><td>When a <strong>configured</strong> relay fails, write the undelivered code to the log instead of rolling it back. Off by default: it puts a live credential in the log pipeline. See <a href="#login-and-mail">Login and mail</a>.</td></tr>
-<tr><td><code>EDITOR_LOGIN_COOLDOWN_SECS</code></td><td>No</td><td><code>60</code></td><td>Before another code may be sent to the same address (REQ-6.5). Must be shorter than the ten-minute code lifetime, which startup validates.</td></tr>
+<tr><td><code>EDITOR_LOGIN_COOLDOWN_SECS</code></td><td>No</td><td><code>60</code></td><td>Before another code may be sent to the same address. Must be shorter than the ten-minute code lifetime, which startup validates.</td></tr>
 <tr><td><code>EDITOR_LOGIN_MAX_FAILED</code></td><td>No</td><td><code>10</code></td><td>Consecutive account-level failures before throttling. NIST SP 800-63B-4's ceiling is 100, which startup also validates.</td></tr>
 <tr><td><code>EDITOR_LOGIN_LOCKOUT_SECS</code></td><td>No</td><td><code>900</code></td><td>How long throttling lasts after the cap is reached.</td></tr>
 <tr><td><code>EDITOR_MAIL_DAILY_CAP</code></td><td>No</td><td><code>500</code></td><td>Codes that may be sent across <strong>all</strong> users in 24 hours. Sits below the relay's 10,000/day so a resend loop cannot exhaust a quota shared with other senders.</td></tr>
@@ -337,19 +337,19 @@ image CI publishes, under emulation.</p>
 <p>RDU accounts are deliberately <strong>not</strong> editable at <code>/depositors</code>: they appear in the list, without controls. Configuration is the source of truth for them, so a change made in the product would be undone by the next restart, or would leave the product and the configuration disagreeing with nothing to say so.</p>
 <p>A malformed entry stops startup rather than being skipped: every entry becomes an account that administers the service, so a typo is an administrator who can never sign in, and the symptom would otherwise be "my code never arrives" weeks later.</p>
 <h3 id="diagnosing-i-never-got-a-code"><a class="header" href="#diagnosing-i-never-got-a-code">Diagnosing "I never got a code"</a></h3>
-<p>No address appears in any log, so the trail is the account list's <strong>last code sent</strong> column plus the opaque <code>auth.subject</code> correlation id (the account's UUID) in the auth events. That column is the only diagnosis there is: REQ-6.8 covers an unconfigured relay and REQ-6.9 a failed send, but neither covers a code the relay accepted and never delivered, and REQ-6.10 forbids the address in a log.</p>
+<p>No address appears in any log, so the trail is the account list's <strong>last code sent</strong> column plus the opaque <code>auth.subject</code> correlation id (the account's UUID) in the auth events. That column is the only diagnosis there is: an unconfigured relay and a failed send are each reported, but neither covers a code the relay accepted and never delivered, and the address may not go in a log.</p>
 <ul>
 <li><strong>"never"</strong> — no code was ever handed to the relay for that account. Either they have not tried, or they typed a different address, or the send failed and was rolled back (which the log will say, with a status code).</li>
 <li><strong>a timestamp</strong> — a code went out. The problem is downstream: spam filtering, greylisting, or a mailbox they do not read.</li>
 </ul>
-<p>Before assuming a delivery problem, check the auth log for the outcome recorded against that <code>auth.subject</code>. Three refuse silently, because REQ-6.2 requires the response not to vary:</p>
+<p>Before assuming a delivery problem, check the auth log for the outcome recorded against that <code>auth.subject</code>. Three refuse silently, because anti-enumeration requires the response not to vary:</p>
 <ul>
 <li><code>auth.outcome = "locked_out"</code> — throttled after repeated wrong entries, and told only "that code is not valid".</li>
 <li><code>auth.outcome = "account_daily_cap"</code> — this account has had <code>EDITOR_MAIL_ACCOUNT_DAILY_CAP</code> codes in the last 24 hours. Logged at <code>WARN</code>: one account being driven that hard is the early warning for the global cap.</li>
 <li><code>auth.outcome = "daily_cap"</code> — the whole service is at <code>EDITOR_MAIL_DAILY_CAP</code> and <strong>nobody</strong> can be sent a code. Logged at <code>ERROR</code>, and it means an outage is in progress rather than one user having a bad day.</li>
 </ul>
 <h3 id="no-relay-configured"><a class="header" href="#no-relay-configured">No relay configured</a></h3>
-<p>With <code>EDITOR_SMTP_HOST</code> unset, every code is written to the log at <code>WARN</code> and the service stays usable (REQ-6.8). The log line carries the message body and <strong>not</strong> the recipient — whoever is testing knows the address they typed, and REQ-6.10 forbids one in a log.</p>
+<p>With <code>EDITOR_SMTP_HOST</code> unset, every code is written to the log at <code>WARN</code> and the service stays usable. The log line carries the message body and <strong>not</strong> the recipient — whoever is testing knows the address they typed, and an address may not go in a log.</p>
 <h3 id="a-broken-relay"><a class="header" href="#a-broken-relay">A broken relay</a></h3>
 <p>Default behaviour: the send fails, the code and its cooldown are rolled back, the user's response is unchanged (it has to be — see the anti-enumeration reasoning in <a href="./authentication.html#anti-enumeration-is-a-property-of-the-response-not-a-branch">Authentication</a>), and the failure is logged with a classification and an SMTP status code.</p>
 <p>If the relay is broken long enough that people are locked out:</p>
@@ -360,11 +360,11 @@ image CI publishes, under emulation.</p>
 </ol>
 <p>Unsetting <code>EDITOR_SMTP_HOST</code> entirely is the heavier version of the same escape hatch: it routes everything to the log without trying the relay at all, and needs a second redeploy to undo.</p>
 <h3 id="signing-in-locally"><a class="header" href="#signing-in-locally">Signing in locally</a></h3>
-<p>A fresh database has <strong>no accounts</strong>, and <code>POST /login</code> answers identically whether an address is known or not (REQ-6.2) — so with none configured you reach the code screen and no mail is sent, which looks like a broken relay and is not. Name an address first:</p>
+<p>A fresh database has <strong>no accounts</strong>, and <code>POST /login</code> answers identically whether an address is known or not — so with none configured you reach the code screen and no mail is sent, which looks like a broken relay and is not. Name an address first:</p>
 <pre><code class="language-bash">EDITOR_RDU_EMAILS=you@dasch.swiss just dev-editor
 </code></pre>
-<p>That account is created at startup (REQ-7.2) and is an RDU member, so it can reach <code>/depositors</code> and create depositors to test against.</p>
-<p>With no relay and no <code>EDITOR_DB_DIR</code>, <strong>the code is shown on the code-entry page</strong> — nothing has to be read from anywhere. It is also written to the log (REQ-6.8); <code>just dev-editor</code> runs under bacon, so it appears in the output pane.</p>
+<p>That account is created at startup and is an RDU member, so it can reach <code>/depositors</code> and create depositors to test against.</p>
+<p>With no relay and no <code>EDITOR_DB_DIR</code>, <strong>the code is shown on the code-entry page</strong> — nothing has to be read from anywhere. It is also written to the log; <code>just dev-editor</code> runs under bacon, so it appears in the output pane.</p>
 <p>Setting <code>EDITOR_DB_DIR</code> to keep accounts across restarts <strong>turns the on-screen code off</strong> — a durable database is one of the three conditions, because it is what separates a throwaway deployment from a real one. In that case read the code from the log instead:</p>
 <pre><code class="language-bash">EDITOR_RDU_EMAILS=you@dasch.swiss \
 EDITOR_DATA_DIR=modules/dpe/server/data \
@@ -376,7 +376,7 @@ grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
 <p><strong>Anchor the match on the message body.</strong> The log record is JSON carrying <code>"timestamp":"   9.427448833s"</code>, which holds six-digit runs of its own — an unanchored <code>grep -o '[0-9]\{6\}'</code> returns one of those, and the sign-in then fails as <code>a wrong code was submitted</code>, which reads like a code-generation bug.</p>
 <p>Two knobs worth setting while testing:</p>
 <ul>
-<li><code>EDITOR_LOGIN_COOLDOWN_SECS=1</code> — otherwise a second code for the same address waits out the 60-second cooldown (REQ-6.5).</li>
+<li><code>EDITOR_LOGIN_COOLDOWN_SECS=1</code> — otherwise a second code for the same address waits out the 60-second cooldown.</li>
 <li><code>EDITOR_DB_DIR=&lt;dir&gt;</code> — unset means in-memory, so every restart begins with no depositors and no sessions. Set it when you want state to survive, and expect the on-screen code to disappear when you do.</li>
 </ul>
 <p>If you run the binary from outside the repository root, set <code>EDITOR_PUBLIC_DIR</code> to an absolute path as well: its default is relative, and a wrong working directory serves no stylesheet, which makes every page render unstyled rather than fail.</p>
@@ -408,7 +408,7 @@ grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
 <p>virtiofs is preferred over a block device with ext4, and only virtiofs gets the automatic ZFS snapshots. WAL is safe on it: SQLite's restriction is about multiple <strong>hosts</strong>, not multiple processes, and every accessor lives inside one guest VM.</p>
 <p>If virtiofs <code>mmap</code> ever misbehaves, the escape hatch is <code>locking_mode=EXCLUSIVE</code> set before first access, which skips the wal-index entirely — valid here because access is single-process. It is deliberately <strong>not</strong> a configuration knob: an untested code path is worse than a one-line change in <code>init_connection</code>, and the situation calling for it has never occurred.</p>
 <h3 id="backups"><a class="header" href="#backups">Backups</a></h3>
-<p>Optional, per the PRD. Git holds everything irreplaceable; a total loss of the volume costs drafts, in-flight submissions, approved records not yet collected and the depositor table, all re-creatable. <code>synchronous=NORMAL</code> is set with WAL on that basis: a commit no longer fsyncs, so an OS crash or power loss can lose the last transactions — never corrupt the database, and never on an application crash.</p>
+<p>Optional. Git holds everything irreplaceable; a total loss of the volume costs drafts, in-flight submissions, approved records not yet collected and the depositor table, all re-creatable. <code>synchronous=NORMAL</code> is set with WAL on that basis: a commit no longer fsyncs, so an OS crash or power loss can lose the last transactions — never corrupt the database, and never on an application crash.</p>
 <h2 id="resource-requirements"><a class="header" href="#resource-requirements">Resource Requirements</a></h2>
 <ul>
 <li><strong>Memory</strong>: ~50–100 MB typical</li>

@@ -42,6 +42,7 @@ install-e2e-requirements: _check-node
     # track a package-lock.json, so `ci` pins the runner to the same version the browsers match.
     cd modules/mosaic/playground-e2e-tests && npm ci && npx playwright install
     cd modules/dpe/web-e2e-tests && npm ci && npx playwright install
+    cd modules/editor/web-e2e-tests && npm ci && npx playwright install
 
 # Verify Node is on PATH. just runs recipes in sh, which does NOT see shell-function version managers (e.g. lazy nvm) — only real binaries on PATH. (DEV-6642)
 [private]
@@ -444,6 +445,16 @@ dev-editor-otel:
     PYROSCOPE_ENDPOINT=http://localhost:4040 \
     bacon serve-editor
 
+# Run the editor E2E suite: both the JavaScript-enabled and the javaScriptEnabled=false pass. Needs `cargo build -p editor-server --release` and `just css-editor-release` first; Playwright starts the binary itself.
+[group('editor')]
+test-e2e-editor: _check-node
+    cd modules/editor/web-e2e-tests && npx playwright test
+
+# Run the editor accessibility E2E tests (WCAG 2.1 AA via axe-core). Same build prerequisites as `test-e2e-editor`.
+[group('editor')]
+test-a11y-editor: _check-node
+    cd modules/editor/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium-js
+
 # Build the editor Docker image locally. Compiles the musl binary inside a Linux container, so this works on macOS too, and stages the same artifacts as the CI build action. Defaults to the host architecture; pass `arch=x86_64` for the one CI publishes.
 [group('editor')]
 build-docker-editor arch="": css-editor-release
@@ -510,3 +521,4 @@ run-docker-editor:
 lint-e2e: _check-node
     cd modules/dpe/web-e2e-tests && npx @biomejs/biome check .
     cd modules/mosaic/playground-e2e-tests && npx @biomejs/biome check .
+    cd modules/editor/web-e2e-tests && npx @biomejs/biome check .

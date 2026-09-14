@@ -47,7 +47,7 @@ assert_not_contains() {
 }
 
 make_repo() {
-  local dir; dir="$(mktemp -d)"
+  local dir; dir="$(mktemp -d "${TMPDIR:-/tmp}/advisory-repo.XXXXXX")"
   (
     cd "$dir" || exit 1
     git init -q -b base

@@ -64,7 +64,7 @@ check: verify-checksums check-platform-paths
     # maudfmt 0.1.8 has no --check mode, so verify it is a no-op on the `html!` macros by
     # formatting a throwaway copy of each tracked .rs file and diffing (non-mutating). maudfmt
     # leaves files without `html!` byte-identical, so iterating all .rs is safe.
-    tmp="$(mktemp)"
+    tmp="$(mktemp "${TMPDIR:-/tmp}/maudfmt.XXXXXX")"
     trap 'rm -f "$tmp"' EXIT
     rc=0
     while IFS= read -r -d '' f; do

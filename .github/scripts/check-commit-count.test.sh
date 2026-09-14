@@ -48,7 +48,7 @@ assert_fail() {
 # Tests pass BASE_REF=base to compute_range.
 make_repo() {
   local dir
-  dir="$(mktemp -d)"
+  dir="$(mktemp -d "${TMPDIR:-/tmp}/commit-count-repo.XXXXXX")"
   (
     cd "$dir" || exit 1
     git init -q -b base

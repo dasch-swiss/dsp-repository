@@ -138,7 +138,7 @@ format_comment() {
 # Deterministic and unit-tested; the network call lives in call_api.
 build_request_body() {
   local model="$1" max_tokens="$2" system="$3" user="$4" output_config="$5" userfile rc
-  userfile="$(mktemp)"
+  userfile="$(mktemp "${TMPDIR:-/tmp}/advisory-user.XXXXXX")"
   printf '%s' "$user" >"$userfile"
   jq -n \
     --arg model "$model" \
@@ -213,7 +213,7 @@ $diffs
   issues="$(jq -c '.issues // []' <<<"$text" 2>/dev/null || echo '[]')"
   count="$(issues_count "$issues")"
   if [ "$count" -gt 0 ]; then
-    local tmp; tmp="$(mktemp)"; format_comment "$issues" >"$tmp"
+    local tmp; tmp="$(mktemp "${TMPDIR:-/tmp}/advisory-comment.XXXXXX")"; format_comment "$issues" >"$tmp"
     post_comment "$tmp"; rm -f "$tmp"
   fi
   echo "advisory: $count suggestion(s)"

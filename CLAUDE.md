@@ -14,6 +14,8 @@ This repository is a Rust-based monorepo for the DaSCH Service Platform. It cont
 
 All authoritative documentation lives in `docs/src/`; `docs/src/SUMMARY.md` is the index. `CONVENTIONS.md` holds coding conventions and the PR template (work phase); `REVIEW.md` holds the code review checklist (review phase).
 
+Specs (PRDs and implementation plans) live in `docs/specs/`, outside the mdBook, and are the source of truth for intended behaviour. They stay in this repo — never in the central `dasch-specs` repository; this overrides any workflow-skill routing that would send them there. See `docs/specs/README.md` for the convention (dated topic folders, per-folder `NN-slug` numbering, `assets/` in Git LFS).
+
 ## Development Workflow
 
 **Important:** Follow ALL the steps below during development.

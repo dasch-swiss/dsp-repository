@@ -263,17 +263,17 @@
 <p>It is not under <code>/dpe/api/v2/</code> and describes a <em>record</em> rather than a project. See <a href="./oai-pmh.html#file-metadata-document">OAI-PMH → File-metadata document</a>.</p>
 <div class="table-wrapper"><table><thead><tr><th>Environment</th><th>Base URL</th></tr></thead><tbody>
 <tr><td>Local development (<code>just dev</code>)</td><td><code>http://localhost:4000</code></td></tr>
-<tr><td>DEV</td><td><code>https://api.dev.dasch.swiss</code></td></tr>
-<tr><td>Production</td><td>Not yet deployed</td></tr>
+<tr><td>DEV</td><td><code>https://repository.dev.dasch.swiss</code></td></tr>
+<tr><td>Production</td><td><code>https://repository.dasch.swiss</code></td></tr>
 </tbody></table>
 </div>
 <h2 id="list-all-projects"><a class="header" href="#list-all-projects">List all projects</a></h2>
-<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/api/v2/projects"
+<pre><code class="language-bash">curl "https://repository.dev.dasch.swiss/dpe/api/v2/projects"
 </code></pre>
 <p>Returns a JSON array containing every project. The list is <strong>not paginated and not filtered</strong> — the entire collection is returned in one response. (The HTML listing at <code>/dpe/projects</code> supports search and faceting; this JSON endpoint does not.)</p>
 <h2 id="fetch-a-single-project"><a class="header" href="#fetch-a-single-project">Fetch a single project</a></h2>
 <p>The path segment is the project <strong>shortcode</strong>, not the <code>id</code> field. Matching is case-insensitive, so <code>0803</code> and any case variant of an alphanumeric shortcode (e.g. <code>080c</code> for <code>080C</code>) resolve to the same project.</p>
-<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/api/v2/projects/0803"
+<pre><code class="language-bash">curl "https://repository.dev.dasch.swiss/dpe/api/v2/projects/0803"
 </code></pre>
 <div class="table-wrapper"><table><thead><tr><th>Status</th><th>Returned when</th></tr></thead><tbody>
 <tr><td><code>200 OK</code></td><td>The shortcode resolves to a project.</td></tr>

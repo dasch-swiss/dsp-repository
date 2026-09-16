@@ -4,6 +4,8 @@
 
 This repository is a Rust workspace structured as a monorepo. All Rust crates are organized as subdirectories within the `modules/` directory.
 
+Three files outside this book describe the repository for agents and reviewers and are kept current alongside the code: `ARCH-MAP.md` at the root (the component map — paths, public interfaces, dependency edges, boundary rules and their enforcement level), `CONTEXT.md` at the root plus one per bounded context (`modules/editor/CONTEXT.md`, `modules/dpe/CONTEXT.md`, `archive-area/CONTEXT.md`) and one per shared engine (`vitrinli/CONTEXT.md`, `chischtli/CONTEXT.md`), holding the domain vocabulary, and `docs/adr/` (architecture decision records). Five ADRs are in place. Three describe where the layout below is headed: Bazel as the build system (ADR-0001), the three areas of the Trusted Repository — `deposit-area/`, `archive-area/`, `access-area/` — replacing `modules/` at the root, beside `platform/`, `mosaic/`, `vitrinli/` and `chischtli/` (ADR-0002), and one modulith per area, composed of capabilities behind consumer-defined ports (ADR-0003). Two bind how surfaces are built: every user-facing surface is a server-rendered hypermedia application (ADR-0004), and every Access-Area landing page is FAIR-assessable by machine (ADR-0005). All five are accepted; until the migration lands, this page describes the layout as it is.
+
 ```txt
 modules/
 ├── dpe/                       # Discovery and Presentation Environment

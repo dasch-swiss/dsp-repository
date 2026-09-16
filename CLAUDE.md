@@ -12,7 +12,7 @@ This repository is a Rust-based monorepo for the DaSCH Service Platform. It cont
 
 ## Documentation
 
-All authoritative documentation lives in `docs/src/`; `docs/src/SUMMARY.md` is the index. `CONVENTIONS.md` holds coding conventions and the PR template (work phase); `REVIEW.md` holds the code review checklist (review phase).
+All authoritative documentation lives in `docs/src/`; `docs/src/SUMMARY.md` is the index. `CONVENTIONS.md` holds coding conventions and the PR template (work phase); `REVIEW.md` holds the code review checklist (review phase). Architecture map: `ARCH-MAP.md`; domain vocabulary: `CONTEXT.md` (root index plus one per bounded context); decisions: `docs/adr/`. Load these on demand for blast-radius, boundary and naming questions.
 
 ## Development Workflow
 

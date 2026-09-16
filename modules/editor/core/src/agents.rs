@@ -1,12 +1,10 @@
 //! The persons and organizations a project's fields refer to by id.
 //!
-//! `contactPoint`, `attributions[].contributor` and `funding[].funders` hold ids rather than
-//! values, so a form has to resolve one to a name and a submission naming one has to be checked
-//! against what exists. Read-only: nothing here proposes a new person or organization.
-//!
-//! Loaded per `AppState` rather than through `dpe-core`'s caches, which are a process-wide
-//! `OnceLock` keyed on a global data directory — under those, two tests with different fixtures see
-//! each other's entities.
+//! `contactPoint`, `attributions[].contributor` and `funding[].funders` hold
+//! ids, so a form has to resolve one to a name and a submission naming one has
+//! to be checked against what exists. Read-only. Loaded per `AppState` rather
+//! than through `dpe-core`'s process-wide `OnceLock` caches, under which two
+//! tests with different fixtures see each other's entities.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -18,9 +16,9 @@ use crate::published::LoadError;
 
 /// One agent as a form needs it: the id it is stored as, and a name to show.
 ///
-/// Do not split this into an enum per kind: the two contract types have different name shapes, but
-/// every consumer needs exactly the same two fields from both, so a variant per kind buys a match
-/// at each call site and no invariant.
+/// Do not split this into an enum per kind: every consumer needs the same two
+/// fields from both, so a variant per kind buys a match at each call site and
+/// no invariant.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Agent {
     /// `person-001`, `organization-008`.
@@ -61,10 +59,9 @@ pub struct Agents {
     by_id: BTreeMap<String, Agent>,
     /// Each entity's file body, verbatim.
     ///
-    /// Kept whole, and not folded into [`Agent`] — whose docs argue against widening it — because
-    /// accepting a `change` proposal writes its payload as the entity file. A payload seeded with
-    /// only the members some form renders drops the rest silently, which is the property
-    /// `ProjectDraft` gives a project. It is also the published side
+    /// Kept whole because accepting a `change` proposal writes its payload as
+    /// the entity file, and a payload seeded with only the members a form
+    /// renders drops the rest silently. Also the published side
     /// [`crate::proposals::check_organization`] compares an address against.
     bodies: BTreeMap<String, serde_json::Value>,
 }
@@ -72,9 +69,8 @@ pub struct Agents {
 impl Agents {
     /// Read the `*.json` files in both directories into one set.
     ///
-    /// Both are always loaded together: every field that refers to a person may refer to an
-    /// organization, so a caller holding only half would refuse valid ids. A missing directory
-    /// is one error and an empty set, not a failure to start.
+    /// Always together: every field that may refer to a person may refer to an
+    /// organization. A missing directory is one error and an empty set.
     #[must_use]
     pub fn load_from(persons: &Path, organizations: &Path) -> (Self, Vec<LoadError>) {
         let mut by_id = BTreeMap::new();
@@ -99,9 +95,8 @@ impl Agents {
     }
 
     /// One entity's file body, verbatim, or `None` for an id nothing holds.
-    ///
-    /// See [`Self::bodies`] for why the whole body is kept. Callers wanting a *proposal payload*
-    /// want [`Self::seed_payload`] instead — this one still carries `id`, which a payload must not.
+    /// Callers wanting a proposal payload want [`Self::seed_payload`]: this one
+    /// still carries `id`, which a payload must not.
     #[must_use]
     pub fn body(&self, id: &str) -> Option<&serde_json::Value> {
         self.bodies.get(id)
@@ -109,10 +104,9 @@ impl Agents {
 
     /// One entity's body as a proposal payload: the file body with `id` removed.
     ///
-    /// `EntityProposal::payload` must not carry `id` — it lives in `entity_id`, the column the
-    /// allocator and the uniqueness index work on, and a second copy would be free to drift from
-    /// it. Stripping it here rather than at each call site is what keeps a seeded payload from
-    /// being the one place that invariant is forgotten.
+    /// `EntityProposal::payload` must not carry `id`, which lives in `entity_id`,
+    /// the column the allocator and the uniqueness index work on. Stripped here
+    /// so no call site forgets.
     #[must_use]
     pub fn seed_payload(&self, id: &str) -> Option<serde_json::Value> {
         let mut body = self.bodies.get(id)?.clone();
@@ -129,11 +123,10 @@ impl Agents {
 
     /// The highest id number this store holds for `kind`, or `0` where it holds none.
     ///
-    /// This is the `published_floor` argument
+    /// The `published_floor` argument
     /// [`EntityProposalRepository::create_new`](crate::repository::EntityProposalRepository::create_new)
-    /// takes: that layer allocates against its own table alone and cannot see this store, so the
-    /// server has to pass in what it holds. Delegates to [`entity_id_number`] rather than
-    /// re-parsing ids so the two cannot disagree on what shape an id of `kind` has.
+    /// takes, since that layer cannot see this store. Delegates to
+    /// [`entity_id_number`] so the two cannot disagree on an id's shape.
     #[must_use]
     pub fn highest_id_number(&self, kind: ProposalKind) -> u32 {
         self.by_id.keys().filter_map(|id| entity_id_number(kind, id)).max().unwrap_or(0)
@@ -150,15 +143,12 @@ impl Agents {
     }
 }
 
-/// Agent resolution for one project: the published store, plus that project's own entity
-/// proposals.
+/// Agent resolution for one project: the published store, plus that project's
+/// own entity proposals.
 ///
-/// A depositor who proposes `person-417` has to be able to name it in `attributions` before it is
-/// ever a file, but a proposal is per-request database state and cannot live in [`Agents`]'s
-/// snapshot. This borrows the snapshot instead of cloning it: `AppState` is cloned per request and
-/// the published store holds 558 agents, which is exactly why [`Agents`] sits behind an `Arc`
-/// (see the `agents` field docs on `editor-server`'s `AppState`); copying it here to add a handful
-/// of proposed rows would undo that.
+/// A proposal is per-request database state and cannot live in [`Agents`]'s
+/// snapshot. The snapshot is borrowed, not cloned: `AppState` is cloned per
+/// request, which is why [`Agents`] sits behind an `Arc`.
 #[derive(Debug)]
 pub struct AgentScope<'a> {
     published: &'a Agents,
@@ -174,10 +164,10 @@ impl<'a> AgentScope<'a> {
 
     /// The published store plus the referenceable proposals among `proposals`.
     ///
-    /// Only [`EntityProposal::is_referenceable`] proposals contribute: a rejected or withdrawn one
-    /// must not resolve, which is what lets the approval refuse a project still naming a rejected
-    /// entity instead of shipping a dangling reference. A proposal whose payload cannot be parsed
-    /// into the shape its kind promises contributes nothing either — see [`proposed_agent`].
+    /// Only [`EntityProposal::is_referenceable`] proposals contribute, so a
+    /// rejected or withdrawn entity does not resolve and the approval can refuse
+    /// a project still naming it. A proposal whose payload does not parse
+    /// contributes nothing either.
     #[must_use]
     pub fn with_proposals(published: &'a Agents, proposals: &[EntityProposal]) -> Self {
         let proposed = proposals
@@ -188,11 +178,9 @@ impl<'a> AgentScope<'a> {
         Self { published, proposed }
     }
 
-    /// One agent, or `None` for an id nothing holds.
-    ///
-    /// The published store wins over a proposed one: a `change` proposal names an id the store
-    /// already holds, and resolving to the proposed payload would show a reviewer the proposed
-    /// name where the surface is meant to show the published one beside it.
+    /// One agent, or `None` for an id nothing holds. The published store wins
+    /// over a proposed one, so a `change` proposal shows the published name
+    /// where the surface puts the proposed one beside it.
     #[must_use]
     pub fn get(&self, id: &str) -> Option<&Agent> {
         self.published
@@ -206,12 +194,10 @@ impl<'a> AgentScope<'a> {
         self.get(id).is_some()
     }
 
-    /// The **published** entity's body, ignoring any proposal for it.
-    ///
-    /// Deliberately not "the body this scope resolves": the two callers both want the published
-    /// side specifically — one seeds a `change` proposal from it, the other compares a proposed
-    /// address against it to decide whether an incomplete one was inherited or written. Answering
-    /// with a proposal's payload would make a proposal grandfather itself.
+    /// The published entity's body, ignoring any proposal for it. Both callers
+    /// want the published side: one seeds a `change` proposal from it, the other
+    /// compares a proposed address against it, and a proposal must not
+    /// grandfather itself.
     #[must_use]
     pub fn published_body(&self, id: &str) -> Option<&serde_json::Value> {
         self.published.body(id)
@@ -224,14 +210,10 @@ impl<'a> AgentScope<'a> {
     }
 
     /// Every agent: the published ones in id order, then the proposed ones the
-    /// published store does not already answer for.
+    /// published store does not already answer for. Feeds [`Self::search`].
     ///
-    /// Feeds [`Self::search`], which is what a picker offers.
-    ///
-    /// The filter is [`Self::get`]'s precedence rule, applied to the listing so the two cannot
-    /// disagree. Without it a `change` proposal — which by definition names an id the store
-    /// already holds — appeared twice, once under its published name and once under its proposed
-    /// one, while `get` resolved only the published one.
+    /// The filter is [`Self::get`]'s precedence rule, so the listing and the
+    /// lookup cannot disagree about a `change` proposal.
     pub fn all(&self) -> impl Iterator<Item = &Agent> {
         self.published
             .all()
@@ -252,16 +234,13 @@ impl<'a> AgentScope<'a> {
         self.published.is_empty() && self.proposed.is_empty()
     }
 
-    /// The agents whose **name** or id contains `query`, case-insensitively, at most
+    /// The agents whose name or id contains `query`, case-insensitively, at most
     /// [`SEARCH_LIMIT`] of them, in [`Self::all`]'s order.
     ///
-    /// Name first, because a depositor knows the person and not `person-417`. The id is matched
-    /// too so that pasting one still works, and because an id is what the field ends up holding.
-    ///
-    /// **Capped rather than paged.** The cap exists to bound what one row's control weighs, and a
-    /// query matching more than this is a query that has not been narrowed yet — the count is
-    /// reported so the form can say so. Paging a picker would need a per-row cursor to survive a
-    /// re-render, which is a lot of machinery for "type another word".
+    /// The id is matched too, so pasting one works. Capped rather than paged: a
+    /// query matching more than this has not been narrowed yet, and the count is
+    /// reported so the form can say so. Paging a picker would need a per-row
+    /// cursor that survives a re-render.
     #[must_use]
     pub fn search(&self, query: &str) -> AgentMatches<'_> {
         let needle = query.trim().to_lowercase();
@@ -281,11 +260,8 @@ impl<'a> AgentScope<'a> {
 /// How many matches one agent picker offers at once. See [`AgentScope::search`].
 pub const SEARCH_LIMIT: usize = 25;
 
-/// What [`AgentScope::search`] found: the capped matches, and how many there were in all.
-///
-/// `total` is carried so the form can distinguish "no such person" from "too many to show", which
-/// are opposite instructions to a depositor: the first means check the spelling, the second means
-/// add a word.
+/// What [`AgentScope::search`] found: the capped matches, and how many there
+/// were in all, so the form can tell "no such person" from "too many to show".
 #[derive(Debug)]
 pub struct AgentMatches<'a> {
     found: Vec<&'a Agent>,
@@ -317,18 +293,12 @@ impl<'a> AgentMatches<'a> {
     }
 }
 
-/// One proposal's [`Agent`], or `None` when its payload does not parse into the shape its
-/// [`ProposalKind`] promises.
+/// One proposal's [`Agent`], or `None` when its payload does not parse into the
+/// shape its [`ProposalKind`] promises; the caller skips it, since a half-filled
+/// proposal is normal.
 ///
-/// A half-filled proposal is normal — `payload` is opaque JSON for exactly that reason — so an id
-/// that resolves to a label nobody can compute is worse in a picker than an id that does not
-/// resolve; the caller skips it rather than erroring. The label is built the same way
-/// [`read_agent`] builds one: `person_label` for a person, `organization.name` for an
-/// organisation.
-///
-/// `entity_id` is written in before the contract types, which require an `id`, and the insert
-/// **overwrites** — so the column stays authoritative over anything the payload carries. See
-/// `EntityProposal::payload` for why it should carry none.
+/// `entity_id` is written into the payload before parsing and overwrites any
+/// `id` there, so the column stays authoritative.
 fn proposed_agent(proposal: &EntityProposal) -> Option<Agent> {
     let mut payload: serde_json::Value = serde_json::from_str(&proposal.payload).ok()?;
     payload
@@ -460,8 +430,6 @@ mod tests {
         let (agents, _) = committed();
         let scope = AgentScope::published_only(&agents);
 
-        // By name, which is what a depositor knows. The `<datalist>` this replaced matched what
-        // the input held — an id — so a name typed into it suggested nothing.
         let by_name = scope.search("dokumentationsbibliothek");
         assert!(!by_name.is_empty(), "a committed organisation is named this");
         assert!(
@@ -473,8 +441,7 @@ mod tests {
         // Case-insensitively, and by id too, so pasting one still works.
         assert_eq!(scope.search("ORGANIZATION-008").offered().len(), 1);
 
-        // An empty or blank query is not "everything": it is a picker nobody has searched yet,
-        // and answering it with 558 options is the control this replaced.
+        // A blank query is a picker nobody has searched yet, not "everything".
         assert!(scope.search("").is_empty());
         assert!(scope.search("   ").is_empty());
 
@@ -685,10 +652,8 @@ mod tests {
 
     #[test]
     fn a_change_proposal_does_not_offer_its_entity_twice_in_the_listing() {
-        // `all()` is what `search` offers a picker. A change proposal names an id the
-        // published store already holds, so listing both offered one organisation twice under
-        // two names, while `get` resolved only the published one. The listing has to agree with
-        // the lookup.
+        // The listing has to agree with the lookup: a change proposal names an id
+        // the published store already holds.
         let (agents, _) = committed();
         let proposal = entity_proposal(
             ProposalKind::Organization,

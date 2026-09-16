@@ -1,31 +1,23 @@
 //! The two cookies the login flow uses, read and written by hand.
 //!
-//! Hand-rolled rather than `axum-extra`'s `CookieJar`: there are exactly two
-//! cookies, neither is signed or encrypted (both carry an opaque 256-bit token
-//! that means nothing without the row it addresses), and the alternative pulls
-//! in `cookie` and `time` for one `Set-Cookie` line. The same reasoning kept
-//! `RightmostXffKeyExtractor` local.
-//!
-//! ## The attributes, and which threat each one answers
-//!
 //! - `__Host-` prefix — a browser refuses to store the cookie unless it is `Secure`, `Path=/` and
-//!   carries no `Domain`. That last part is the point: without it, any `*.dasch.swiss` host can set
-//!   a `Domain=dasch.swiss` cookie of the same name, which our own requests would then carry and
+//!   carries no `Domain`. Without that last part, any `*.dasch.swiss` host can set a
+//!   `Domain=dasch.swiss` cookie of the same name, which our own requests would then carry and
 //!   which we could not tell apart from ours. It does **not** stop a sibling host triggering a
 //!   request that carries the real cookie — `Sec-Fetch-Site` does that.
 //! - `HttpOnly` — script cannot read it, so an XSS cannot exfiltrate the session.
 //! - `Secure` — never sent over plaintext. `http://localhost` counts as a trustworthy origin in
 //!   Chrome and Firefox, so local development still works.
-//! - `SameSite=Lax` — not `Strict`. `Strict` would drop the cookie on the first navigation *into*
-//!   the editor from a link in mail or chat, so the user would arrive signed out and sign in again
-//!   for nothing. `Lax` still sends the cookie on top-level cross-site `GET`, so it is not a CSRF
-//!   control by itself — which is why one exists separately.
+//! - `SameSite=Lax` — not `Strict`, which would drop the cookie on the first navigation *into* the
+//!   editor from a link in mail or chat, so the user would arrive signed out. `Lax` is not a CSRF
+//!   control by itself, which is why one exists separately.
+//!
+//! The argument is in `docs/src/editor/authentication.md`.
 
 use std::time::Duration;
 
 use axum::http::header::{HeaderMap, HeaderValue, COOKIE};
 
-/// The authenticated session.
 pub(crate) const SESSION: &str = "__Host-editor_session";
 
 /// The pre-auth binding: which browser asked for the outstanding code, and
@@ -36,11 +28,8 @@ pub(crate) const LOGIN: &str = "__Host-editor_login";
 /// `__Host-` prefix makes a browser reject the cookie without them.
 const ATTRIBUTES: &str = "Path=/; Secure; HttpOnly; SameSite=Lax";
 
-/// Read one cookie by name.
-///
-/// Walks every `Cookie` header, not just the first: HTTP/2 clients are free to
-/// split them, and a session that works over HTTP/1.1 and not HTTP/2 is a
-/// miserable thing to diagnose.
+/// Read one cookie by name, walking every `Cookie` header rather than the first:
+/// HTTP/2 clients are free to split them.
 pub(crate) fn read(headers: &HeaderMap, name: &str) -> Option<String> {
     headers
         .get_all(COOKIE)
@@ -53,10 +42,9 @@ pub(crate) fn read(headers: &HeaderMap, name: &str) -> Option<String> {
         .filter(|value| !value.is_empty())
 }
 
-/// A `Set-Cookie` value storing `value` for `max_age`.
-///
-/// `max_age` is bounded by the thing the token addresses — a cookie that
-/// outlives its row is a request that looks authenticated and is not.
+/// A `Set-Cookie` value storing `value` for `max_age`, which is bounded by the
+/// thing the token addresses — a cookie that outlives its row is a request that
+/// looks authenticated and is not.
 pub(crate) fn set(name: &str, value: &str, max_age: Duration) -> HeaderValue {
     // Values here are base64url, so there is nothing to escape; a header value
     // that somehow could not be built is treated as no cookie at all rather than
@@ -65,10 +53,9 @@ pub(crate) fn set(name: &str, value: &str, max_age: Duration) -> HeaderValue {
         .unwrap_or_else(|_| HeaderValue::from_static(""))
 }
 
-/// A `Set-Cookie` value that removes the cookie.
-///
-/// The attributes have to match the ones it was set with, or the browser keeps
-/// the original alongside the empty one and the user stays signed in.
+/// A `Set-Cookie` value that removes the cookie. The attributes have to match
+/// the ones it was set with, or the browser keeps the original alongside the
+/// empty one and the user stays signed in.
 pub(crate) fn clear(name: &str) -> HeaderValue {
     HeaderValue::from_str(&format!("{name}=; {ATTRIBUTES}; Max-Age=0")).unwrap_or_else(|_| HeaderValue::from_static(""))
 }
@@ -99,8 +86,6 @@ mod tests {
 
     #[test]
     fn test_reads_across_several_cookie_headers() {
-        // HTTP/2 clients may split them, and a session that works on HTTP/1.1 but
-        // not HTTP/2 is a miserable thing to diagnose.
         let headers = headers(&["other=1", "__Host-editor_session=abc"]);
         assert_eq!(read(&headers, SESSION), Some("abc".to_string()));
     }

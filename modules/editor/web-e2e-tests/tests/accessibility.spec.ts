@@ -54,7 +54,7 @@ test.describe("depositor — the form screens", () => {
     await expectNoViolations(page);
   });
 
-  // REQ-2.6's explanation page. A new full-page route is exactly what this
+  // The state-explanation page. A new full-page route is exactly what this
   // sweep exists to cover, and its `<dl>` of state names and descriptions is a
   // structure nothing else in the editor uses.
   test("the state-explanation page has no violations", async ({ page }) => {

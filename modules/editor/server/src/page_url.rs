@@ -1,32 +1,20 @@
 //! The editor's page-URL normalizer, passed into
 //! `platform_telemetry::collector::collect_route`.
 //!
-//! Bounds the `page.url` metric attribute to the editor's own routes so
-//! browser metrics stay breakable down by page without exploding cardinality
-//! on arbitrary paths. Lives here rather than in `platform-telemetry` because a
-//! shared crate cannot know one service's route table (`docs/src/repo_structure.md`
-//! → Shared Crates).
+//! Bounds the `page.url` metric attribute to the editor's own routes so browser
+//! metrics stay breakable down by page without exploding cardinality on
+//! arbitrary paths. Lives here rather than in `platform-telemetry` because a
+//! shared crate cannot know one service's route table
+//! (`docs/src/repo_structure.md` → Shared Crates).
 //!
 //! The editor is root-mounted, unlike DPE's `/dpe/…` prefix, since it runs on
-//! its own hostname. `/projects/{shortcode}/sections/{section}` has joined it, and
-//! `/projects/{shortcode}` **left** at the same moment: the scheme in
-//! `architecture.md` turned it into a redirect to the first section, and a
-//! redirect renders no beacon script, so no beacon can report it.
+//! its own hostname. `/` and `/projects/{shortcode}` are deliberately absent:
+//! both are redirects, so neither renders the beacon script and no beacon can
+//! report them. The normalizer still answers sanely if one somehow did.
 //!
-//! `/` is deliberately absent. It is a redirect, so it never renders the beacon
-//! script and no beacon can report it — the same reason `/` and `/dpe` are
-//! absent from DPE's list. The normalizer still answers sanely if one somehow
-//! did.
-//!
-//! A query string is stripped before matching. The beacon reports
-//! `location.pathname` today, so nothing arrives with one — but `/login?next=…`
-//! exists now, and an earlier version of this module relied on the beacon's
-//! shape instead of handling the query, with a test that asserted the *broken*
-//! outcome. Stripping is what actually survives the beacon one day sending
-//! `location.href`; asserting that it currently does not is not a guard.
-//!
-//! DPE's normalizer does not strip, and does not need to: it has no route that
-//! navigates by query.
+//! A query string is stripped before matching, so the normalizer survives the
+//! beacon one day sending `location.href` rather than today's
+//! `location.pathname`.
 //!
 //! REVIEW: new full-page routes in `router.rs` need a matching entry here —
 //! see `REVIEW.md`.
@@ -52,10 +40,9 @@ pub fn normalize_page_url(url: &str) -> &'static str {
         }
     }
     // Pattern matches for the routes with a variable segment, without
-    // allocating — `split_once` rather than `split().collect::<Vec<_>>()`, which
-    // an earlier version used while this comment claimed otherwise. A shortcode
-    // and an account id are both unbounded sets, so letting either through
-    // verbatim is the cardinality explosion this module exists to prevent.
+    // allocating. A shortcode and an account id are both unbounded sets, so
+    // letting either through verbatim is the cardinality explosion this module
+    // exists to prevent.
     if let Some(rest) = url.strip_prefix("/projects/") {
         // Both segments collapse. A section id is a closed set and would be safe
         // to keep, but a shortcode is not, and the pair is one attribute value:
@@ -64,9 +51,7 @@ pub fn normalize_page_url(url: &str) -> &'static str {
         if let Some((shortcode, tail)) = rest.split_once('/') {
             if !shortcode.is_empty() {
                 // The entity form for one proposal, and its row actions. The segment is an
-                // `entity_id`, allocated without bound, so it collapses like every other variable
-                // one here. The row actions need their own entries for the reason the section ones
-                // do, below.
+                // `entity_id`, allocated without bound, so it collapses.
                 if let Some(proposal) = tail.strip_prefix("entities/") {
                     if proposal.is_empty() {
                         return "other";
@@ -90,12 +75,9 @@ pub fn normalize_page_url(url: &str) -> &'static str {
                     if !section.is_empty() && !section.contains('/') {
                         return "/projects/{shortcode}/sections/{section}";
                     }
-                    // The row actions live under the section and render the
-                    // full page shell on the no-JavaScript path, so they emit a
-                    // beacon of their own. Without an entry they collapsed into
-                    // `"other"` — the field id and the row key are both
-                    // unbounded, so neither may be kept, but the two shapes are
-                    // worth telling apart from an unrecognised path.
+                    // The row actions render the full page shell on the
+                    // no-JavaScript path, so they emit a beacon of their own and
+                    // need their own entries.
                     if let Some(rest) = section.split_once('/').map(|(_, rest)| rest) {
                         if let Some(rest) = rest.strip_prefix("fields/") {
                             if rest.ends_with("/add") {
@@ -110,9 +92,6 @@ pub fn normalize_page_url(url: &str) -> &'static str {
             }
         }
     }
-    // The shortcode collapses, for the reason the project routes' does: it is
-    // an unbounded set, and letting it through verbatim is the cardinality
-    // explosion this module exists to prevent.
     if let Some(rest) = url.strip_prefix("/review/") {
         if !rest.is_empty() && !rest.contains('/') {
             return "/review/{shortcode}";
@@ -132,10 +111,8 @@ pub fn normalize_page_url(url: &str) -> &'static str {
 #[cfg(test)]
 mod tests {
 
-    /// The row actions render the page shell on the no-JavaScript path, so they
-    /// emit a beacon of their own. Without an entry they collapsed into
-    /// `"other"` alongside genuinely unknown paths — the module's own REVIEW
-    /// note asks for one whenever `router.rs` gains a full-page route.
+    /// The row actions emit their own beacon, so without an entry they land in
+    /// `"other"` beside genuinely unknown paths.
     #[test]
     fn the_row_action_routes_are_attributed_rather_than_bucketed_as_other() {
         assert_eq!(
@@ -146,9 +123,7 @@ mod tests {
             normalize_page_url("/projects/080C/sections/dataset/fields/keywords/r0/remove"),
             "/projects/{shortcode}/sections/{section}/fields/{field}/{key}/remove"
         );
-        // The field id and the row key are unbounded sets, so neither may reach
-        // the attribute verbatim — that is the cardinality explosion this
-        // module exists to prevent.
+        // Neither the field id nor the row key may reach the attribute verbatim.
         for url in [
             "/projects/0801d/sections/dataset/fields/keywords/add",
             "/projects/0801d/sections/dataset/fields/attributions/r7/remove",
@@ -162,10 +137,8 @@ mod tests {
         assert_eq!(normalize_page_url("/projects/0801d/sections/dataset/fields/keywords"), "other");
         assert_eq!(normalize_page_url("/projects/0801d/sections/dataset/nonsense/x/add"), "other");
     }
-    /// The entity form and its row actions are full-page routes, so each emits a
-    /// beacon of its own. The proposal segment is an `entity_id` — allocated
-    /// without bound, so it has to collapse — and without entries the routes
-    /// land in `"other"` beside genuinely unknown paths.
+    /// The entity form and its row actions each emit a beacon, and the proposal
+    /// segment is an unbounded `entity_id`.
     #[test]
     fn the_entity_form_routes_are_attributed_and_their_segments_collapse() {
         assert_eq!(
@@ -214,9 +187,6 @@ mod tests {
 
     #[test]
     fn variable_segments_collapse_to_their_pattern() {
-        // A shortcode and an account id are both unbounded sets. Letting either
-        // through verbatim is exactly the cardinality explosion this module
-        // exists to prevent.
         assert_eq!(
             normalize_page_url("/projects/0801/sections/overview"),
             "/projects/{shortcode}/sections/{section}"
@@ -237,8 +207,7 @@ mod tests {
 
     #[test]
     fn the_root_is_a_redirect_and_so_not_a_page() {
-        // It renders no beacon script, so no beacon can report it — same reason
-        // `/` and `/dpe` are absent from DPE's list.
+        // It renders no beacon script, so no beacon can report it.
         assert_eq!(normalize_page_url("/"), "other");
     }
 
@@ -249,12 +218,12 @@ mod tests {
         // Near misses stay bounded: a trailing segment does not mint a new
         // attribute value.
         assert_eq!(normalize_page_url("/login/code/extra"), "other");
-        // No longer a page: the edit form posts to `/depositors/{id}/edit`, so
-        // nothing renders here and a beacon cannot report it.
+        // Not a page: the edit form posts to `/depositors/{id}/edit`, so nothing
+        // renders here.
         assert_eq!(normalize_page_url("/depositors/0c1cd9ff-9a9f-4b0e"), "other");
         assert_eq!(normalize_page_url("/projects/"), "other");
-        // No longer a page: it is a redirect into the first section, so it
-        // renders no beacon script and nothing can report it.
+        // A redirect into the first section, so nothing renders and no beacon
+        // can report it.
         assert_eq!(normalize_page_url("/projects/0801"), "other");
         assert_eq!(normalize_page_url("/projects/0801a"), "other");
         // Near misses stay bounded rather than minting a pattern with a blank or
@@ -276,12 +245,8 @@ mod tests {
     fn a_query_is_stripped_rather_than_collapsing_the_page_into_other() {
         assert_eq!(normalize_page_url("/review/0801d?show=all"), "/review/{shortcode}");
         // `telemetry.js` sends `location.pathname`, so nothing arrives with a
-        // query today. The previous version of this test asserted that fact —
-        // `assert_ne!(normalize_page_url("/login?next=…"), "/login")` — and
-        // called itself the guard against the beacon one day sending
-        // `location.href`. It was the opposite: it pinned the broken outcome as
-        // expected, and would have stayed green through exactly that change
-        // while every login page view collapsed into `other`.
+        // query today; stripping is what survives it one day sending
+        // `location.href`.
         assert_eq!(normalize_page_url("/login?next=/projects"), "/login");
         assert_eq!(
             normalize_page_url("/projects/0801/sections/overview?x=1"),

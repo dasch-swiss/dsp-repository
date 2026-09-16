@@ -47,27 +47,18 @@ pub struct Secret(String);
 impl<'de> Deserialize<'de> for Secret {
     /// Hand-written, and load-bearing.
     ///
-    /// figment magic-parses environment values, so `EDITOR_SMTP_PASSWORD=1234567890`
-    /// arrives as a number. A derived `Deserialize` on this newtype would reject
-    /// it — and figment's type-mismatch error prints the value it found, straight
-    /// to stderr through `main`'s config-load report:
+    /// figment magic-parses environment values, so `EDITOR_SMTP_PASSWORD=1234567890` arrives as a
+    /// number. A derived `Deserialize` on this newtype would reject it, and figment's type-mismatch
+    /// error prints the value it found — straight to stderr through `main`'s config-load report.
+    /// [`Secret`]'s redacting [`fmt::Debug`] cannot help with that: the value leaks while it is
+    /// being turned *into* a `Secret`, upstream of the type. Accepting every scalar shape and
+    /// stringifying it removes the failure, and with it the message.
     ///
-    /// ```text
-    /// invalid type: found unsigned int `1234567890`, expected a string
-    /// for key "SMTP_PASSWORD" in `EDITOR_` environment variable(s)
-    /// ```
-    ///
-    /// [`Secret`]'s redacting [`fmt::Debug`] cannot help with that: the value
-    /// leaks while it is being turned *into* a `Secret`, upstream of the type.
-    /// Accepting every scalar shape and stringifying it removes the failure, and
-    /// with it the message.
-    ///
-    /// One edge worth knowing: a password figment reads as a *number* is
-    /// stringified back from the parsed value, so a leading zero (`0755`) or a
-    /// trailing one (`1.10`) is not preserved. It fails closed — the relay
-    /// rejects the credential — but choose a password that is not purely
-    /// numeric. A Google Workspace app password is sixteen lowercase letters, so
-    /// the intended one cannot hit this.
+    /// One edge worth knowing: a password figment reads as a *number* is stringified back from the
+    /// parsed value, so a leading zero (`0755`) or a trailing one (`1.10`) is not preserved. It
+    /// fails closed — the relay rejects the credential — but choose a password that is not purely
+    /// numeric. A Google Workspace app password is sixteen lowercase letters, so the intended one
+    /// cannot hit this.
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct AnyScalar;
 
@@ -250,9 +241,8 @@ pub struct EditorConfig {
     ///
     /// Ten for this population, far below NIST SP 800-63B-4's ceiling of 100.
     /// The counter is per **account** and survives code invalidation and
-    /// resend — a per-code counter hands out a fresh budget on every resend,
-    /// which at a 60-second cooldown is roughly 4,320 guesses a day against one
-    /// address.
+    /// resend, because a per-code counter hands out a fresh budget on every
+    /// resend.
     pub login_max_failed: u32,
 
     /// How long the throttle lasts once the account hits the cap, set via
@@ -276,14 +266,11 @@ pub struct EditorConfig {
     /// The most codes that may be sent to a **single account** in 24 hours, set
     /// via `EDITOR_MAIL_ACCOUNT_DAILY_CAP`.
     ///
-    /// [`Self::mail_daily_cap`] alone does not bound this. The resend cooldown
-    /// is per address, so at its sixty-second default one address can be sent
-    /// 1,440 codes a day against a global default of 500, and the per-IP limit
-    /// on `POST /login` (2,880 a day) does not bind first. One attacker, from
-    /// one address they know is registered, could therefore spend the entire
-    /// shared budget in about eight hours and stop everyone signing in, RDU
-    /// included — which is the outage the global cap exists to prevent, reached
-    /// about twenty times more cheaply than exhausting the relay.
+    /// [`Self::mail_daily_cap`] alone does not bound this. The resend cooldown is per address, so
+    /// one address can be sent far more codes a day than the global cap allows, and the per-IP
+    /// limit on `POST /login` does not bind first — one attacker, from one address they know is
+    /// registered, could spend the entire shared budget and stop everyone signing in, RDU included.
+    /// The arithmetic is in `docs/src/editor/authentication.md`.
     ///
     /// Twenty is far above any legitimate use: a person who cannot sign in
     /// after twenty codes in a day has a problem no further code solves.
@@ -533,9 +520,7 @@ impl EditorConfig {
     /// The condition above, named and tested on its own rather than folded into
     /// [`Self::reveals_login_code`], because what makes it safe is the
     /// conjunction of three environment facts and not the one decision that
-    /// currently reads it. It briefly had a second reader — the sample records
-    /// that made the review surfaces reachable before submit existed — which is
-    /// why it is named at all.
+    /// currently reads it.
     pub fn is_throwaway(&self) -> bool {
         self.env != "PROD" && self.smtp_host.is_none() && self.db_dir.is_none()
     }
@@ -837,10 +822,10 @@ mod tests {
 
     #[test]
     fn the_default_per_account_cap_leaves_the_global_budget_out_of_one_addresss_reach() {
-        // The numbers this issue turns on: the cooldown lets one address be sent
-        // 1,440 codes a day, which is nearly three times the global budget. The
-        // per-account default has to be far below the global one or the global
-        // cap stays exhaustible from a single address.
+        // The cooldown lets one address be sent 1,440 codes a day, nearly three
+        // times the global budget, so the per-account default has to be far
+        // below the global one or the global cap stays exhaustible from a single
+        // address.
         let config = EditorConfig::default();
         assert!(
             config.mail_account_daily_cap * 10 < config.mail_daily_cap,
@@ -991,10 +976,9 @@ mod reveal_tests {
         // reading it as a disjunction is how "it's only a preview" ends up
         // showing a login code on something holding accounts people use.
         //
-        // Asserted against `is_throwaway` directly. Comparing it with
-        // `reveals_login_code` would be a tautology — that method *is* this
-        // predicate — which is what this test had become once the second
-        // reader went.
+        // Asserted against `is_throwaway` directly: comparing it with
+        // `reveals_login_code` would be a tautology, since that method *is* this
+        // predicate.
         assert!(preview().is_throwaway(), "no relay, no durable state, not PROD");
         let relay = EditorConfig { smtp_host: Some("relay.test".to_string()), ..preview() };
         let durable = EditorConfig { db_dir: Some(std::path::PathBuf::from("/data")), ..preview() };

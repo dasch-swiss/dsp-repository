@@ -1,16 +1,10 @@
 //! The records the editor persists.
 //!
-//! Framework-free on purpose: no `rusqlite`, no Axum, no Maud. The SQLite
-//! column mapping lives in `editor-server`, behind the ports in
-//! [`crate::repository`].
-//!
-//! Three of these carry their body as an opaque `payload: String` of JSON,
-//! which is a [`ProjectDraft`](crate::draft::ProjectDraft) serialized: that type
-//! is `#[serde(transparent)]` over the project's members, so the column holds
-//! the project object itself and needs no migration to become typed. It stays a
-//! `String` here because this layer never interprets it, and the caller that
-//! does (the form's save and submit path) is the one that should decide when to
-//! parse.
+//! Framework-free: the SQLite column mapping lives in `editor-server`, behind
+//! the ports in [`crate::repository`]. A `payload: String` is a serialized
+//! [`ProjectDraft`](crate::draft::ProjectDraft), which is `#[serde(transparent)]`
+//! over the project's members; it stays opaque here because this layer never
+//! interprets it.
 
 use std::fmt;
 use std::str::FromStr;
@@ -69,19 +63,13 @@ impl FromStr for Role {
 
 /// The canonical storage key for a project shortcode: trimmed, ASCII-folded.
 ///
-/// One definition, because four things key on a shortcode and three of them are
-/// writes. `drafts`, `submissions` and `approved_records` all carry it as an
-/// exact-match column, while [`PublishedProjects::get`](crate::published::PublishedProjects::get)
-/// and [`User::may_reach`] both fold — the published set mixes `080C` with
-/// `0801a`, so a link typed either way has to reach the same project. Keying a
-/// write on the shortcode as typed would therefore give `/projects/080c` and
-/// `/projects/080C` a **row each** for one project, and two people editing it
-/// would each keep half the edits with nothing to say so. `submissions.shortcode`
-/// is unique, so the same mismatch would also make a pending-submission check
-/// silently miss.
-///
-/// ASCII rather than Unicode folding: `is_valid_shortcode` admits only ASCII
-/// alphanumerics, so the two cannot disagree about what a shortcode is.
+/// One definition, because `drafts`, `submissions` and `approved_records` key on
+/// it as an exact-match column while
+/// [`PublishedProjects::get`](crate::published::PublishedProjects::get) and
+/// [`User::may_reach`] fold. Keying a write on the shortcode as typed would give
+/// `/projects/080c` and `/projects/080C` a row each, and the unique
+/// `submissions.shortcode` check would miss a pending submission. ASCII rather
+/// than Unicode folding because `is_valid_shortcode` admits only ASCII.
 #[must_use]
 pub fn normalize_shortcode(shortcode: &str) -> String {
     shortcode.trim().to_ascii_lowercase()
@@ -89,11 +77,9 @@ pub fn normalize_shortcode(shortcode: &str) -> String {
 
 /// A person who can log in.
 ///
-/// `email` is stored as entered and in plaintext (the
-/// application must decrypt it to send mail, so a key would sit beside the
-/// data). `email_normalized` — lowercased — carries the uniqueness constraint
-/// and every lookup, so a sign-up for `A@x.test` is refused against a stored
-/// `a@x.test` and the anti-enumeration lookup is case-insensitive too.
+/// `email` is stored as entered and in plaintext: the application must read it
+/// to send mail, so a key would sit beside the data. `email_normalized`,
+/// lowercased, carries the uniqueness constraint and every lookup.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct User {
     pub id: Uuid,
@@ -108,11 +94,9 @@ pub struct User {
     /// reset the failed authentication count" — so this survives code
     /// invalidation and resend, and only a successful login clears it.
     pub failed_logins: u32,
-    /// When [`Self::failed_logins`] last went up, and therefore when a lockout
-    /// started. The counter alone cannot express a lockout that ends: it resets
-    /// only on success, and a locked-out account cannot succeed. Throttling is
-    /// time-based for that reason, and this is what it measures from. Cleared
-    /// with the counter.
+    /// When [`Self::failed_logins`] last went up, and so when a lockout started.
+    /// The counter alone cannot express a lockout that ends, since it resets only
+    /// on success; throttling measures from this. Cleared with the counter.
     pub failed_login_at: Option<DateTime<Utc>>,
     /// When a login code was last issued, so RDU can answer "I never got a
     /// code" without an address reaching a log.
@@ -123,24 +107,16 @@ pub struct User {
 impl User {
     /// Whether this user may reach the project identified by `shortcode`.
     ///
-    /// RDU is unconditional: RDU access is role-based rather than per-project, which is also
-    /// why an RDU account's `shortcodes` is empty. A depositor is scoped to their assignments,
-    /// and anything else is the 403.
+    /// RDU is unconditional: access is role-based, which is why an RDU account's
+    /// `shortcodes` is empty. A depositor is scoped to their assignments.
     ///
-    /// The comparison ignores ASCII case. The published set mixes `080C` with
-    /// `0801a`, so which half of a shortcode is capitalised is not something an
-    /// RDU member typing an assignment can be expected to get right — and
-    /// getting it wrong would deny a depositor their own project with no visible
-    /// cause. Two projects differing only in case would make this too generous;
-    /// no such pair exists in the published set.
-    ///
-    /// This is [`normalize_shortcode`]'s rule, compared rather than keyed — the
-    /// allocation-free form, since nothing here needs the string. It deliberately
-    /// does *not* trim: an argument reaches this only after `is_valid_shortcode`,
-    /// which admits no whitespace, and an authorization check is the last place
-    /// to be more permissive than the thing that validated its input.
-    /// [`tests::the_assignment_comparison_agrees_with_the_storage_key`] pins the
-    /// two against each other.
+    /// The comparison ignores ASCII case: the published set mixes `080C` with
+    /// `0801a`, and no two published shortcodes differ only in case. This is
+    /// [`normalize_shortcode`]'s rule, compared rather than keyed. It does not
+    /// trim: the argument has passed `is_valid_shortcode`, which admits no
+    /// whitespace, and an authorization check must not be more permissive than
+    /// the validator. `tests::the_assignment_comparison_agrees_with_the_storage_key`
+    /// pins the two against each other.
     #[must_use]
     pub fn may_reach(&self, shortcode: &str) -> bool {
         match self.role {
@@ -157,11 +133,10 @@ impl User {
 
     /// The lookup and uniqueness key: `email` lowercased.
     ///
-    /// `to_lowercase` rather than `to_ascii_lowercase` so a non-ASCII address
-    /// folds too. Only the whole address is folded — the local part is
-    /// case-sensitive per RFC 5321, but no mail provider anyone here uses
-    /// treats it that way, and letting `A@x.test` and `a@x.test` both exist
-    /// would make "this address is already taken" depend on how it was typed.
+    /// `to_lowercase` rather than `to_ascii_lowercase`, so a non-ASCII address
+    /// folds too. The whole address is folded: RFC 5321 makes the local part
+    /// case-sensitive, but no provider does, and two spellings of one address
+    /// would make "already taken" depend on how it was typed.
     #[must_use]
     pub fn normalize_email(email: &str) -> String {
         email.trim().to_lowercase()
@@ -209,11 +184,10 @@ pub struct LoginCode {
     /// The opaque token held by the browser that asked for this code, and the
     /// only browser that may spend it.
     ///
-    /// This is what blocks the attack email one-time codes are most exposed to:
-    /// an attacker triggers a login for the victim, talks them into reading the
-    /// code out, and spends it from their own machine. `None` binds to no
-    /// browser and so can never be verified — the fail-closed reading, which
-    /// matters because a row predating the column has it.
+    /// Blocks the attack email codes are most exposed to: triggering a login for
+    /// the victim and spending the read-out code from another machine. `None`
+    /// binds to no browser and can never be verified, which rows predating the
+    /// column rely on.
     pub browser_token: Option<String>,
 }
 
@@ -278,11 +252,8 @@ impl FromStr for SubmissionState {
     }
 }
 
-/// A submission awaiting or under review.
-///
-/// One per project at a time — the schema makes `shortcode` unique, which is
-/// the "one pending submission per project" constraint rather than a
-/// convention handlers have to remember.
+/// A submission awaiting or under review. One per project at a time: the
+/// schema makes `shortcode` unique.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Submission {
     pub id: Uuid,
@@ -295,20 +266,12 @@ pub struct Submission {
     pub submitted_at: DateTime<Utc>,
     pub reviewed_by: Option<Uuid>,
     pub reviewed_at: Option<DateTime<Utc>>,
-    /// The reviewer's *working* note, kept across saves while the review runs,
-    /// so backing out of a confirmation does not discard a written reason.
-    ///
-    /// What the depositor reads is [`ReviewRound::note`]: this row is deleted
-    /// by the transition that ends the round, so a note kept only here could
-    /// never reach them.
+    /// The reviewer's working note, kept across saves while the review runs.
+    /// What the depositor reads is [`ReviewRound::note`]: this row is deleted by
+    /// the transition that ends the round.
     pub reviewer_note: Option<String>,
-    /// A serialized [`ReviewState`](crate::review::ReviewState) — the per-field
-    /// decisions and substitutions RDU has recorded so far. `None` while nothing
-    /// has been decided.
-    ///
-    /// Opaque here for the same reason as `payload`: this layer stores it and
-    /// the reviewing handler is the one that should decide when to parse it,
-    /// and what to do about a payload it cannot read.
+    /// A serialized [`ReviewState`](crate::review::ReviewState), `None` while
+    /// nothing has been decided. Opaque here for the same reason as `payload`.
     pub review_state: Option<String>,
 }
 
@@ -331,8 +294,8 @@ pub struct ApprovedRecord {
 ///
 /// Not a [`SubmissionState`]: every variant deletes the submission, and the
 /// depositor-facing state list has no Rejected. [`Self::Withdrawn`] is the
-/// depositor's own discard, here rather than in a second place so that their
-/// action leaves the same trail as a reviewer's.
+/// depositor's own discard, here so their action leaves the same trail as a
+/// reviewer's.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ReviewOutcome {
     /// Accepted. An `approved_records` row now holds what was
@@ -358,12 +321,9 @@ impl ReviewOutcome {
         }
     }
 
-    /// Whether this outcome hands the project back for more editing.
-    ///
-    /// True for everything except [`Self::Approved`]: approve is the only
-    /// outcome that leaves the record somewhere else (an `approved_records` row
-    /// on its way to a pull request), so it is the only one after which editing
-    /// again starts the *next* cycle rather than continuing this one.
+    /// Whether this outcome hands the project back for more editing: everything
+    /// but [`Self::Approved`], the only outcome that moves the record on, so
+    /// editing after it starts the next cycle.
     #[must_use]
     pub const fn returns_the_project(self) -> bool {
         !matches!(self, Self::Approved)
@@ -393,11 +353,9 @@ impl FromStr for ReviewOutcome {
 /// One finished review round: what was decided about a submission, by whom, and
 /// what the depositor has to be told.
 ///
-/// **Append-only.** Written by the transition that ends the round and never
-/// updated, so the rows for one project are its review history and a later
-/// round cannot overwrite an earlier one. See the editor architecture
-/// documentation for what reads it and why it is a table rather than columns
-/// on `drafts`.
+/// Append-only: written by the transition that ends the round and never
+/// updated, so the rows for one project are its review history. The editor
+/// architecture documentation says what reads it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReviewRound {
     pub id: Uuid,
@@ -412,11 +370,8 @@ pub struct ReviewRound {
     /// withdrawal has nobody to address.
     pub note: Option<String>,
     /// The serialized [`ReviewState`](crate::review::ReviewState) as it stood
-    /// when the round ended, or `None` where nothing was decided.
-    ///
-    /// A snapshot, not a reference: the submission it came from is deleted by
-    /// the same transaction, so nothing else can answer which fields were
-    /// accepted or what was put in place of the depositor's values.
+    /// when the round ended, or `None` where nothing was decided. A snapshot:
+    /// the submission is deleted by the same transaction.
     pub review_state: Option<String>,
     /// Who ended the round, `None` once that account is removed; see
     /// [`DraftRecord::updated_by`]. For a withdrawal this is the depositor.
@@ -468,10 +423,8 @@ mod tests {
 
     #[test]
     fn test_an_unknown_stored_review_outcome_is_an_error() {
-        // `submitted` is a submission *state*, not an outcome. The two
-        // vocabularies share a table neighbourhood and one word (`approved`),
-        // so reading either one's value as the other has to fail rather than
-        // land on whichever variant sorts first.
+        // The two vocabularies share `approved`, so reading either as the other
+        // has to fail rather than land on whichever variant sorts first.
         assert!("submitted".parse::<ReviewOutcome>().is_err());
         assert!("in_review".parse::<ReviewOutcome>().is_err());
         assert_eq!("approved".parse::<ReviewOutcome>().unwrap(), ReviewOutcome::Approved);
@@ -479,9 +432,6 @@ mod tests {
 
     #[test]
     fn test_only_approval_does_not_return_the_project() {
-        // Approve moves the record to `approved_records`, on its way to a pull
-        // request; the other three leave the project with the depositor. The
-        // form reads this to decide whether it is editable again.
         assert!(!ReviewOutcome::Approved.returns_the_project());
         for outcome in [
             ReviewOutcome::ChangesRequested,
@@ -513,7 +463,6 @@ mod tests {
 
     #[test]
     fn test_a_depositor_reaches_only_the_projects_assigned_to_them() {
-        // A depositor sees their assignments and nothing else; the 403 is the other half.
         let depositor = user(Role::Depositor, &["0801", "0812"]);
         assert!(depositor.may_reach("0801"));
         assert!(depositor.may_reach("0812"));
@@ -527,10 +476,6 @@ mod tests {
 
     #[test]
     fn test_an_assignment_matches_however_it_is_capitalised() {
-        // The published set mixes `080C` with `0801a`, so an RDU member typing
-        // an assignment cannot be expected to get the case right — and getting
-        // it wrong would deny a depositor their own project with no visible
-        // cause.
         let depositor = user(Role::Depositor, &["080c"]);
         assert!(depositor.may_reach("080C"));
         assert!(depositor.may_reach("080c"));
@@ -568,8 +513,6 @@ mod tests {
 
     #[test]
     fn test_rdu_reaches_every_project_without_an_assignment() {
-        // RDU access is role-based, not per-project, which is why an RDU account's
-        // `shortcodes` is empty.
         let rdu = user(Role::Rdu, &[]);
         assert!(rdu.may_reach("0801"));
         assert!(rdu.may_reach("anything"));

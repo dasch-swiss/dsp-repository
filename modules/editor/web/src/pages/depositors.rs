@@ -1,31 +1,15 @@
 //! The RDU screens for depositor accounts: the list, the create and edit
 //! forms, and the removal confirmation.
 //!
-//! Every one of these is behind the RDU role, which is why they are the only
-//! pages in the editor that render an email address. That is not in tension with
-//! the address-disclosure rule: that one is about logs and traces, and RDU has to know which
-//! address an account signs in with — it is the only channel to its owner.
+//! Behind the RDU role, which is why these are the only pages that render an
+//! email address: RDU has to know which address an account signs in with. The
+//! address-disclosure rule is about logs and traces.
 //!
-//! ## View types rather than the domain record
-//!
-//! The page functions take small `&str`-shaped structs, not
-//! `editor_core::records::User`. Two reasons, and neither is layering
-//! ceremony:
-//!
-//! - A `User` carries `failed_logins` and `failed_login_at`. Those are authentication internals,
-//!   and a template that can see them is a template that can render them by accident.
-//! - Whether a row may be edited is a **rule** — RDU accounts come from configuration — and putting
-//!   it in the struct makes the caller state it once instead of every template re-deriving it from
-//!   a role string.
-//!
-//! Named fields rather than positional `&str` arguments for the same reason
-//! `Viewer` is a struct: three adjacent strings are silently interchangeable,
-//! and a swap here would put an address where a name belongs.
-//!
-//! The banner, the fields and the table are Mosaic tiles, shared with the login
-//! screens. The table tile is where the caption, the `scope="col"` headers and
-//! the keyboard-reachable scroll region come from — none of which this page had
-//! while it hand-rolled its own.
+//! The page functions take small `&str` structs, not `editor_core::records::User`:
+//! a `User` carries authentication internals a template could render by
+//! accident, and whether a row may be edited is a rule (RDU accounts come from
+//! configuration) the caller states once. Named fields rather than positional
+//! `&str` arguments, since three adjacent strings are silently interchangeable.
 
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
@@ -45,11 +29,9 @@ pub struct DepositorRow<'a> {
     /// When a code was last successfully handed to the relay, already formatted,
     /// or `None` if none ever was.
     pub last_code_at: Option<&'a str>,
-    /// Whether this account may be edited and removed here.
-    ///
-    /// False for RDU accounts: they come from `EDITOR_RDU_EMAILS`, so
-    /// a change made here would be undone by the next restart, or — for an
-    /// address no longer listed — would diverge from configuration invisibly.
+    /// Whether this account may be edited and removed here. False for RDU
+    /// accounts: they come from `EDITOR_RDU_EMAILS`, so a change here would be
+    /// undone by the next restart or diverge from configuration invisibly.
     pub manageable: bool,
 }
 
@@ -76,8 +58,7 @@ pub fn list(rows: &[DepositorRow<'_>]) -> Markup {
     }
 }
 
-/// The accounts table of [`list`]. "Actions" is a heading a screen reader needs
-/// and a sighted reader does not, so it is present but visually hidden — an
+/// The accounts table of [`list`]. "Actions" is present but visually hidden: an
 /// unlabelled column is one a screen reader announces as nothing at all.
 fn accounts_table(rows: &[DepositorRow<'_>]) -> Markup {
     let actions = html! {
@@ -108,9 +89,8 @@ fn list_row(row: &DepositorRow<'_>) -> Markup {
             span class="text-gray-500" { "—" }
         } @else { (row.shortcodes.join(", ")) }
     };
-    // The answer to "I never got a code" that does not need an address in a log
-    //. Absent means none was ever handed to the relay, which is a
-    // different problem from one that was sent and did not arrive.
+    // Absent means no code was ever handed to the relay, a different problem
+    // from one sent and not arrived.
     let last_code = html! {
         @match row.last_code_at {
             Some(at) => span class="text-sm" { (at) }
@@ -137,11 +117,8 @@ fn list_row(row: &DepositorRow<'_>) -> Markup {
     }
 }
 
-/// The three fields a depositor account is made of, as typed.
-///
-/// `shortcodes` is the raw text of the field rather than a parsed list, so a
-/// rejected form comes back showing exactly what was entered — including the
-/// entry that was wrong.
+/// The three fields a depositor account is made of, as typed. `shortcodes` is
+/// the raw text, so a rejected form comes back showing what was entered.
 pub struct DepositorFields<'a> {
     pub name: &'a str,
     pub email: &'a str,
@@ -162,11 +139,9 @@ pub fn create(fields: &DepositorFields<'_>, error: Option<&str>) -> Markup {
     }
 }
 
-/// `GET /depositors/{id}/edit`, which is also where it posts.
-///
-/// Form and action share one URL deliberately: a rejected submission re-renders
-/// at the path it posted to, so that path has to answer `GET` or a reload lands
-/// on a bare 405.
+/// `GET /depositors/{id}/edit`, which is also where it posts: a rejected
+/// submission re-renders at the path it posted to, so that path has to answer
+/// `GET` or a reload lands on a bare 405.
 pub fn edit(id: &str, fields: &DepositorFields<'_>, error: Option<&str>) -> Markup {
     let form = depositor_form(&format!("/depositors/{id}/edit"), "Save changes", fields, error);
     html! {
@@ -190,9 +165,8 @@ fn depositor_form(action: &str, submit_label: &str, fields: &DepositorFields<'_>
         ". Leave empty to assign none."
     };
     let name_field = text_field("name", "Name").value(fields.name).required();
-    // `autocomplete("off")` deliberately: whoever fills this in is entering
-    // somebody else's address, so offering their own is a wrong answer one
-    // keystroke away from being submitted.
+    // `autocomplete("off")`: whoever fills this in is entering somebody else's
+    // address, so offering their own is a wrong answer one keystroke away.
     let email_field = text_field("email", "Email address")
         .input_type(InputType::Email)
         .autocomplete("off")
@@ -225,20 +199,14 @@ pub struct RemovalImpact<'a> {
     pub submission_shortcodes: &'a [String],
 }
 
-/// `GET /depositors/{id}/remove` — the confirmation.
+/// `GET /depositors/{id}/remove`: the confirmation.
 ///
 /// Removal deletes the account and its sessions unconditionally, so this page
-/// does not offer to refuse. What it does is make the consequences visible
-/// before the fact, because two of them are irreversible and neither is obvious:
-///
-/// - the address goes with the row, and it is RDU's only channel to ask this person about work they
-///   left behind, so it is shown here to be copied;
-/// - a submission they made stays pending with no author, which means it can be approved or
-///   rejected but never *returned* to its depositor.
-///
-/// Their drafts and submissions survive — the schema nulls the author rather
-/// than cascading — so the project's work is not destroyed along with the
-/// account.
+/// makes the two irreversible consequences visible first: the address goes with
+/// the row and is RDU's only channel to this person, so it is shown to be
+/// copied; a submission they made stays pending with no author, so it can be
+/// approved or rejected but never returned. Drafts and submissions survive,
+/// since the schema nulls the author rather than cascading.
 pub fn confirm_removal(id: &str, impact: &RemovalImpact<'_>) -> Markup {
     html! {
         div class="max-w-lg py-8" {
@@ -338,9 +306,6 @@ mod tests {
 
     #[test]
     fn test_an_account_from_configuration_has_no_controls() {
-        // Configuration is the source of truth for RDU membership. A
-        // change made here would be undone by the next restart, or would diverge
-        // from configuration with nothing to say so.
         let out = list(&[DepositorRow {
             id: "rdu-1",
             name: "An Admin",
@@ -358,9 +323,7 @@ mod tests {
 
     #[test]
     fn test_the_list_distinguishes_a_code_never_sent_from_one_that_was() {
-        // The support answer to "I never got a code": an unconfigured relay and a failed send
-        // are each reported, but neither covers accepted-then-undelivered, and the address must
-        // not go in a log.
+        // The support answer to "I never got a code", without an address in a log.
         let none = list(&[depositor_row("a", &[], None)]).into_string();
         assert!(none.contains("never"), "{none}");
 
@@ -371,9 +334,8 @@ mod tests {
 
     #[test]
     fn test_the_accounts_table_says_what_it_lists_and_what_its_columns_are() {
-        // What the Mosaic table tile brought that the hand-rolled markup did
-        // not: a name for the table and its scroll region, and headers that
-        // declare the cells they govern instead of leaving it to be inferred.
+        // A name for the table and its scroll region, and headers that declare the
+        // cells they govern.
         let out = list(&[depositor_row("abc", &[], None)]).into_string();
         assert!(out.contains(r#"<caption class="sr-only">Accounts</caption>"#), "{out}");
         assert!(out.contains(r#"aria-label="Accounts""#), "{out}");
@@ -412,8 +374,7 @@ mod tests {
 
     #[test]
     fn test_a_rejected_form_comes_back_holding_what_was_typed() {
-        // Otherwise every rejection costs the whole form, and the entry that was
-        // wrong is the one thing the reader needs to see.
+        // The entry that was wrong is the one thing the reader needs to see.
         let fields = DepositorFields {
             name: "A Depositor",
             email: "taken@example.test",
@@ -429,10 +390,8 @@ mod tests {
 
     #[test]
     fn test_the_edit_form_posts_to_the_url_it_is_served_from() {
-        // Not merely "to the right account": the action must be the *same* URL
-        // the form was fetched from, because a rejected submission re-renders
-        // there. Posting to a path with no `GET` — which an earlier version did,
-        // at `/depositors/{id}` — strands a reload on a bare 405.
+        // The action must be the URL the form was fetched from, because a rejected
+        // submission re-renders there; a path with no GET strands a reload on a 405.
         let fields = DepositorFields {
             name: "A Depositor",
             email: "a@example.test",
@@ -459,9 +418,7 @@ mod tests {
 
     #[test]
     fn test_removal_names_the_submission_that_can_no_longer_be_returned() {
-        // Request-changes returns a submission to its depositor. With the account gone
-        // there is no recipient, so it can be approved or rejected and nothing
-        // else — which is the consequence worth seeing before the fact.
+        // With the account gone, request-changes has no recipient.
         let drafts = codes(&["0801", "080C"]);
         let submissions = codes(&["0801"]);
         let impact = RemovalImpact {
@@ -490,9 +447,8 @@ mod tests {
 
     #[test]
     fn test_removal_is_a_post_and_never_a_link() {
-        // A `GET` that deletes is the one shape the `Sec-Fetch-Site` CSRF
-        // control cannot cover, because navigations are exempt from it by
-        // necessity — any page could then delete an account with an `<img src>`.
+        // A GET that deletes is the one shape the Sec-Fetch-Site control cannot
+        // cover, since navigations are exempt.
         let impact = RemovalImpact {
             name: "A Depositor",
             email: "a@example.test",

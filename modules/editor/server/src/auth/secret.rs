@@ -15,17 +15,9 @@ pub(crate) const MAX_CODE_ATTEMPTS: u32 = 3;
 
 /// A six-digit code, uniform over `000000..=999999`.
 ///
-/// `random_range` samples the range by rejection, so every value is equally
-/// likely. `rng % 1_000_000` would not be: unless the generator's range is an
-/// exact multiple of the modulus, the low values come up slightly more often,
-/// which is the classic modulo bias and hands an attacker a better-than-uniform
-/// guessing order.
-///
-/// Six digits is ≈19.93 bits, marginally under OWASP ASVS 6.5.4's 20-bit floor.
-/// That is accepted rather than overlooked: the code lives ten minutes, tolerates
-/// three wrong entries, and sits behind a per-account counter and a per-IP limit.
-/// Seven digits would clear the floor and cost every user an extra keystroke on
-/// a control they use daily.
+/// Sampled by rejection, not `rng % 1_000_000`, which would bias the low values.
+/// Six digits is ≈19.93 bits, marginally under OWASP ASVS 6.5.4's 20-bit floor,
+/// and accepted: see `docs/src/editor/authentication.md`.
 pub(crate) fn code() -> String {
     let value: u32 = rand::rng().random_range(0..1_000_000);
     // Padded, so a value below 100000 is still six digits — dropping the leading
@@ -36,8 +28,6 @@ pub(crate) fn code() -> String {
 /// An opaque 256-bit token: the session id, and the pre-auth browser binding.
 ///
 /// URL-safe base64 without padding, so it needs no escaping in a cookie value.
-/// 256 bits rather than a UUID's 122 because these are bearer credentials looked
-/// up directly, and the cost of the extra bytes is nothing.
 pub(crate) fn token() -> String {
     let mut bytes = [0u8; 32];
     rand::rng().fill_bytes(&mut bytes);
@@ -47,11 +37,8 @@ pub(crate) fn token() -> String {
 /// Whether a submitted code equals the stored one, in constant time.
 ///
 /// A `==` on strings returns at the first differing byte, so the time it takes
-/// reveals how long a shared prefix is — enough to recover a six-digit code one
-/// digit at a time. `subtle` compares every byte regardless.
-///
-/// Length is not secret here (a code is always six digits), and `ConstantTimeEq`
-/// on slices reports unequal lengths as a mismatch without comparing.
+/// reveals how long a shared prefix is. `ConstantTimeEq` on slices compares every
+/// byte, and reports unequal lengths as a mismatch without comparing.
 pub(crate) fn code_matches(submitted: &str, stored: &str) -> bool {
     submitted.as_bytes().ct_eq(stored.as_bytes()).into()
 }
@@ -73,10 +60,9 @@ mod tests {
 
     #[test]
     fn test_the_whole_six_digit_range_is_reachable() {
-        // Both ends: a generator that dropped leading zeros would never produce a
-        // value below 100000, and one that sampled `0..999999` would never
-        // produce the top value. Over 20,000 draws either gap is a certainty to
-        // catch — the chance of seeing no value below 100000 is 0.9^20000.
+        // Both ends: a generator that dropped leading zeros would never produce
+        // a value below 100000, and one that sampled `0..999999` would never
+        // produce the top value. 20,000 draws makes either gap a certainty.
         let mut lowest = u32::MAX;
         let mut highest = 0;
         for _ in 0..20_000 {

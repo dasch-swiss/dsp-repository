@@ -1,12 +1,12 @@
 //! The entity form: `GET` and `POST /projects/{shortcode}/entities/{proposal}`.
 //!
 //! `{proposal}` is a proposal's **`entity_id`** (`person-417`, `organization-143`), not its row
-//! `id` — the same value `pages::section`'s `proposed_notice` and `proposals_summary` already
-//! link to, and the value the propose controls post back under `propose.entity`. A
-//! project may hold more than one row for one `entity_id` over time (a withdrawn proposal, then a
-//! fresh one for the same entity), but never more than one *live* one
+//! `id` — the same value `pages::section` links to and the propose controls post back under
+//! `propose.entity`. A project may hold more than one row for one `entity_id` over time (a
+//! withdrawn proposal, then a fresh one for the same entity), but never more than one *live* one
 //! (`entity_proposals_live_per_entity`); [`proposal_for`] resolves the live one where there is
-//! one, and otherwise the most recently touched, so a stale link still shows something coherent.
+//! one, and otherwise the most recently touched, so a stale link still shows something
+//! coherent.
 //!
 //! Same shape as `sections.rs`: [`context`] resolves a request in the order that module's own
 //! docs argue for — shape, then authorization, then anything that reads state — and a proposal
@@ -46,12 +46,11 @@ struct Context<'a> {
     /// The proposed entity, read from [`EntityProposal::payload`].
     ///
     /// [`ProjectDraft`] is reused here as a plain JSON-object accessor rather than a second type:
-    /// despite its name, `get`/`set`/`remove`/`multilingual`/`set_multilingual` touch nothing
-    /// project-specific — only `from_raw`/`to_raw` and the URL/funding-shape helpers do, and none
-    /// of those are called on a person or organisation. Reusing it is what lets this form reuse
-    /// `editor_core::form::apply`'s appliers and `editor_web::form::widgets`'s row and
-    /// multilingual composers verbatim, instead of a second implementation of row-key bookkeeping
-    /// and empty/unchanged handling built for entities alone.
+    /// despite its name, `get`/`set`/`remove`/`multilingual` touch nothing project-specific.
+    /// Reusing it is what lets this form reuse `editor_core::form::apply`'s appliers and
+    /// `editor_web::form::widgets`'s row and multilingual composers verbatim, instead of a second
+    /// implementation of row-key bookkeeping and empty/unchanged handling built for entities
+    /// alone.
     draft: ProjectDraft,
     agents: AgentScope<'a>,
     posted: Option<&'a FormBody>,
@@ -345,10 +344,9 @@ async fn discard(
             // The plain path **redirects**, like every other phase-changing write here and in
             // `sections.rs::phase_changed`: a `POST` left in the history re-posts on refresh, and
             // this one would then find the proposal already withdrawn and answer "no longer open,
-            // so there is nothing to discard" — a refusal surfacing from an ordinary reload, which
-            // is the reading the 303-after-write rule exists to prevent. The enhanced path still
-            // renders the region, because Datastar processes a body only on a 200 and would merge
-            // a followed redirect's whole page into it.
+            // so there is nothing to discard" — a refusal surfacing from an ordinary reload. The
+            // enhanced path still renders the region, because Datastar processes a body only on a
+            // 200 and would merge a followed redirect's whole page into it.
             if !is_enhanced(&headers) {
                 return redirect_here(shortcode, context);
             }
@@ -433,10 +431,10 @@ fn apply_person(body: &FormBody, draft: &mut ProjectDraft) {
 
 /// `jobTitles` must survive a save as `[]`, never disappear, once this form
 /// has rendered it — `check_person` reads an *absent* member as unanswered
-/// and an *empty* one as a person with no job title, which 59 of the 416
-/// committed persons already are. `apply(Shape::StringRows, …)` cannot tell
-/// the two apart on its own: it removes the field whenever no row survives,
-/// which is right for every field of this shape except this one.
+/// and an *empty* one as a person with no job title, which many committed
+/// persons already are. `apply(Shape::StringRows, …)` cannot tell the two
+/// apart on its own: it removes the field whenever no row survives, which is
+/// right for every field of this shape except this one.
 fn keep_job_titles_present(body: &FormBody, draft: &mut ProjectDraft) {
     if body.has("jobTitles.row") && draft.get("jobTitles").is_none() {
         draft.set("jobTitles", Value::Array(Vec::new()));

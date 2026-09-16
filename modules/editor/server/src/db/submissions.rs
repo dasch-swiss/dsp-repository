@@ -58,22 +58,16 @@ impl SubmissionRepository for Database {
                 ],
             )?;
             // A proposal rides with the project's pending submission through the same
-            // review path, so it must carry the same status forward — a `draft` proposal on a
-            // project that is now `submitted` is invisible to the review surface, which selects
-            // `submitted` rows, and nothing in the schema would say the two disagreed.
+            // review path, so it must carry the same status forward.
             tx.execute(
                 "UPDATE entity_proposals SET status = ?3, updated_at = ?4 \
                  WHERE shortcode = ?1 AND status = ?2",
                 params![
-                    // Normalized here rather than trusted from the caller. `entity_proposals`
-                    // is keyed on the normalized shortcode — `create_new`/`create_change` always
-                    // fold before insert — while this method stores `submissions.shortcode`
-                    // exactly as given. Keyed on an unfolded `080C` this `UPDATE` matches zero
-                    // rows and reports nothing: the submission exists, its proposals stay
-                    // `draft`, and per this closure's own comment that makes them invisible to
-                    // the review surface with nothing in the schema showing the disagreement.
-                    // 24 of the 85 committed shortcodes are mixed case, so the failing shape is
-                    // ordinary.
+                    // Normalized here rather than trusted from the caller: `entity_proposals`
+                    // is keyed on the folded shortcode, while this method stores
+                    // `submissions.shortcode` exactly as given. Keyed unfolded, this `UPDATE`
+                    // matches zero rows and reports nothing, leaving the submission's proposals
+                    // `draft` and invisible to the review surface.
                     normalize_shortcode(&submission.shortcode),
                     ProposalStatus::Draft.as_str(),
                     ProposalStatus::Submitted.as_str(),
@@ -237,13 +231,8 @@ mod tests {
         assert_eq!(other.status, ProposalStatus::Draft, "another project's proposal is untouched");
     }
 
-    /// The mixed-case case `review_rounds.rs` has its own test for, on this side of the pair.
-    ///
-    /// `entity_proposals` is keyed on the folded shortcode; this method stores
-    /// `submissions.shortcode` as given. Keyed unfolded, the `UPDATE` matches nothing and says
-    /// nothing — the submission exists while its proposals stay `draft`, invisible to the
-    /// review surface. 24 of the 85 committed shortcodes are mixed case, so this is the
-    /// ordinary shape, not an edge case.
+    /// The mixed-case case `review_rounds.rs` has its own test for, on this side of the pair:
+    /// keyed unfolded, the `UPDATE` matches nothing and the proposals stay `draft`.
     #[tokio::test]
     async fn test_create_flips_proposals_for_a_mixed_case_shortcode() {
         let db = test_db("submissions-create-mixed-case-shortcode").await;

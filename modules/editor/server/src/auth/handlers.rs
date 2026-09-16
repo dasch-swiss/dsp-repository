@@ -294,13 +294,11 @@ pub(crate) async fn logout(State(state): State<AppState>, headers: HeaderMap) ->
 /// now carry.
 ///
 /// **Always a token, on every path.** That is the anti-enumeration property, and
-/// the first version of this got it wrong in a way worth spelling out: it set a
-/// cookie only when a code had been issued *or* the browser presented none, on
-/// the reasoning that a browser already holding a binding should be left alone.
-/// But an attacker supplies the presented cookie themselves — any non-empty
-/// value will do — so "known address" answered with a `Set-Cookie` and "unknown
-/// address" answered without one. One request per address, no timing needed,
-/// and anti-enumeration gone.
+/// it is not automatic: a cookie set only when a code was issued, or only when
+/// the browser presented none, answers "known address" with a `Set-Cookie` and
+/// "unknown address" without one — one request per address, no timing needed.
+/// The presented cookie is attacker-supplied, so it cannot gate the response
+/// either.
 ///
 /// So the token is minted before anything is looked up and handed back whatever
 /// happens. When no code was issued, a binding the browser already owns is moved
@@ -359,10 +357,9 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
     let user = match UserRepository::find_by_email(&*state.db, email).await {
         Ok(Some(user)) => user,
         Ok(None) => {
-            // The unknown-address branch answers identically. Nothing stored, nothing sent,
-            // and no identifier logged:
-            // there is no account to correlate against, and the address itself
-            // may never reach a log.
+            // The unknown-address branch answers identically: nothing stored,
+            // nothing sent, and no identifier logged — there is no account to
+            // correlate against, and the address itself may never reach a log.
             outcome("unknown_address");
             tracing::info!("a login code was requested for an address with no account");
             return false;
@@ -417,10 +414,9 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
     }
 
     // The per-account cap, and it has to be checked as well as the global one
-    // rather than instead of it. The cooldown is per address, so one address
-    // fits 1,440 codes a day inside a global budget of 500: without this, one
-    // attacker with one known address exhausts the shared budget in about eight
-    // hours and nobody can sign in.
+    // rather than instead of it. The cooldown is per address, so without this one
+    // attacker with one known address exhausts the shared budget and nobody can
+    // sign in.
     match MailSendRepository::count_for_user_since(&*state.db, user.id, window).await {
         Ok(sent) if sent >= state.auth.account_daily_cap => {
             // `warn`, where the global cap is `error`: this is one account being
@@ -529,8 +525,7 @@ async fn issue_to_account(state: &AppState, email: &str, token: &str, now: DateT
 /// A failure here is logged and swallowed, because the message has already
 /// gone: there is nothing to roll back, and refusing the request now would deny
 /// a user a code they are about to receive. The cost is a cap that under-counts
-/// by one until the window rolls, which is strictly smaller than the accounting
-/// error this table replaced.
+/// by one until the window rolls.
 async fn record_send(state: &AppState, user_id: Uuid, now: DateTime<Utc>) {
     if let Err(error) = MailSendRepository::record(&*state.db, user_id, now).await {
         tracing::error!(error = %error, "a login code was sent but could not be recorded against the daily send caps");
@@ -619,11 +614,10 @@ async fn verify(
     }
 
     // Three strikes per code, claimed before anything is compared. The claim is
-    // the limit: reading `attempts` and incrementing it afterwards let every
-    // simultaneous submission past the check at once, which is what made twenty
-    // parallel guesses cost three strikes' worth of budget and none of the
-    // protection. A refusal here also covers a code consumed in a parallel
-    // request.
+    // the limit: reading `attempts` and incrementing it afterwards would let every
+    // simultaneous submission past the check at once, so twenty parallel guesses
+    // would cost three strikes' worth of budget and get twenty comparisons. A
+    // refusal here also covers a code consumed in a parallel request.
     match LoginCodeRepository::claim_attempt(&*state.db, code.id, secret::MAX_CODE_ATTEMPTS).await {
         Ok(Attempt::Claimed) => {}
         Ok(Attempt::Exhausted) => {
@@ -691,10 +685,10 @@ async fn verify(
         tracing::warn!(error = %error, "could not clear the account's failure counter after a successful sign-in");
     }
     // The account's *unspent* codes are now noise bound to browsers nobody is
-    // using. The one just consumed stays: it is the resend cooldown's only
-    // anchor, and deleting it let a user sign in and immediately be sent another
-    // code. The send caps are unaffected either way — they count `mail_sends`,
-    // and the siblings deleted here were mailed.
+    // using. The one just consumed stays: it is the resend cooldown's only anchor,
+    // and deleting it would let a user sign in and immediately be sent another
+    // code. The send caps are unaffected either way — they count `mail_sends`, and
+    // the siblings deleted here were mailed.
     if let Err(error) = LoginCodeRepository::delete_unconsumed_for_user(&*state.db, user.id).await {
         tracing::warn!(error = %error, "could not clear the account's remaining login codes");
     }
@@ -834,10 +828,10 @@ mod tests {
         assert_eq!(known_again.status(), unknown_again.status());
         assert_eq!(location(&known_again), location(&unknown_again));
 
-        // Both get a fresh binding. The earlier version of this handler set one
-        // only when a code had been issued or the browser presented none, which
-        // made "was a cookie set?" a one-request answer to "does this address
-        // have an account?" — see `issue`.
+        // Both get a fresh binding. Setting one only when a code had been issued,
+        // or only when the browser presented none, would make "was a cookie set?"
+        // a one-request answer to "does this address have an account?" — see
+        // `issue`.
         let known_cookie = cookie_set(&known_again, cookie::LOGIN).expect("a binding either way");
         let unknown_cookie = cookie_set(&unknown_again, cookie::LOGIN).expect("a binding either way");
         assert_eq!(known_cookie.len(), unknown_cookie.len());
@@ -1280,9 +1274,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_signing_in_stamps_when_the_code_was_issued() {
-        // The diagnosis route that keeps addresses out of logs: RDU answers "I never got a
-        // code" from this
-        // rather than from a log with an address in it.
+        // The diagnosis route that keeps addresses out of logs: RDU answers "I
+        // never got a code" from this rather than from a log with an address in
+        // it.
         let (state, _) = test_state("stamp").await;
         let user_id = a_user(&state, KNOWN).await;
         let app = test_app(&state);
@@ -1457,10 +1451,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_signing_in_does_not_reset_the_resend_cooldown() {
-        // The cooldown is measured from the last code *issued*, and its only anchor is the
-        // row itself. Deleting every code on a successful
-        // sign-in therefore deleted the anchor: request, sign in, request again,
-        // and a second mail went out immediately.
+        // The cooldown is measured from the last code *issued*, and its only
+        // anchor is the row itself. Deleting every code on a successful sign-in
+        // would delete the anchor: request, sign in, request again, and a second
+        // mail goes out immediately.
         let (state, mailer) = state_with("cooldown-after-signin", RecordingMailer::new(), |auth| {
             auth.cooldown = Duration::from_secs(600);
         })
@@ -1481,11 +1475,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_spent_code_still_counts_against_the_daily_cap() {
-        // A completed sign-in must not hand back send budget. It used to: the
-        // cap counted `login_codes` rows and sign-in deleted every one of them,
-        // including the code just spent. The cap counts `mail_sends` now, so
-        // this holds by construction — pinned here because it is the property,
-        // not the mechanism, that must survive.
+        // A completed sign-in must not hand back send budget. The caps count
+        // `mail_sends` rather than `login_codes` rows, so this holds by
+        // construction — pinned here because it is the property, not the
+        // mechanism, that must survive.
         let (state, mailer) = state_with("cap-after-signin", RecordingMailer::new(), |auth| {
             auth.cooldown = Duration::ZERO;
             auth.daily_cap = 2;
@@ -1536,11 +1529,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_one_address_cannot_spend_the_whole_global_budget() {
-        // The outage this closes: the cooldown is per address and defaults to
-        // sixty seconds, so one address fits 1,440 codes a day inside a global
-        // budget of 500. Without a per-account cap, one attacker with one known
-        // address stops everyone signing in — RDU included — in about eight
-        // hours.
+        // The outage this closes: the cooldown is per address, so without a
+        // per-account cap one attacker with one known address stops everyone
+        // signing in — RDU included.
         let (state, mailer) = state_with("account-cap", RecordingMailer::new(), |auth| {
             auth.cooldown = Duration::ZERO;
             auth.daily_cap = 100;
@@ -1599,9 +1590,9 @@ mod tests {
     #[tokio::test]
     async fn test_a_mailed_code_abandoned_at_sign_in_still_counts_against_the_cap() {
         // The under-count. Signing in deletes the user's *unconsumed* codes —
-        // correctly, they are live secrets nobody is using — but those codes
-        // were mailed. While the cap counted `login_codes` rows, that deletion
-        // handed the budget back, so real send volume could exceed the cap.
+        // correctly, they are live secrets nobody is using — but those codes were
+        // mailed, and a cap counting `login_codes` rows would hand that budget
+        // back, so real send volume could exceed it.
         let db = Arc::new(open_test_db("cap-counts-sends").await);
         let mailer = RecordingMailer::new();
         let state = state_over(db.clone(), mailer.clone(), |auth| {
@@ -1630,11 +1621,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_rolled_back_code_does_not_spend_the_cap() {
-        // The other half of counting sends rather than rows, and the half that
-        // was already right: a delivery that failed sent nothing, so it must
-        // not consume anyone's budget. The user gets their code once the relay
-        // is back, rather than being refused for a failure that was never
-        // theirs.
+        // The other half of counting sends rather than rows: a delivery that
+        // failed sent nothing, so it must not consume anyone's budget. The user
+        // gets their code once the relay is back, rather than being refused for a
+        // failure that was never theirs.
         let db = Arc::new(open_test_db("cap-ignores-failures").await);
         let mailer = RecordingMailer::failing();
         let state = state_over(db.clone(), mailer.clone(), |auth| {
@@ -2022,9 +2012,9 @@ mod tests {
     // Four calls in this module log a storage error and carry on, and each one
     // decides something: whether a guess is counted, whether a browser keeps a
     // spendable code, whether a throttle advances, whether a send is billed. A
-    // concrete `Database` in `AppState` made all four unreachable from a test —
-    // hence `Arc<dyn Repositories>` and `FaultyDatabase`, which delegates to a
-    // real store and fails only the call the test names.
+    // concrete `Database` in `AppState` would make all four unreachable from a
+    // test — hence `Arc<dyn Repositories>` and `FaultyDatabase`, which delegates
+    // to a real store and fails only the call the test names.
 
     #[tokio::test]
     async fn test_a_failed_attempt_claim_refuses_a_code_it_never_compared() {
@@ -2185,9 +2175,9 @@ mod tests {
         let user = UserRepository::find_by_id(&*db, user_id).await.unwrap().expect("the account");
         assert_eq!(user.failed_logins, 0, "the throttle did not advance");
         assert!(user.failed_login_at.is_none(), "and no lockout window was opened");
-        // The per-code strike is a different write and it went through, so
-        // The per-code attempt limit still bounds this code even while the account counter is
-        // stuck.
+        // The per-code strike is a different write and it went through, so the
+        // per-code attempt limit still bounds this code even while the account
+        // counter is stuck.
         let stored = LoginCodeRepository::find_by_browser_token(&*db, &binding)
             .await
             .unwrap()
@@ -2317,11 +2307,10 @@ mod tests {
         let failing_app = test_app(&failing_state);
         request_code(&failing_app, KNOWN, None).await;
 
-        // And the four branches that log a swallowed storage error. They were
-        // exempt from this test for want of a way to fail a storage call, which
-        // is what `FaultyDatabase` is for — and they are the paths where the
-        // logged value is a message from the driver, so they are the ones most
-        // likely to carry something the rest of the flow never sees.
+        // And the four branches that log a swallowed storage error, driven here
+        // through `FaultyDatabase`: they are the paths where the logged value is
+        // a message from the driver, so they are the ones most likely to carry
+        // something the rest of the flow never sees.
         let store = Arc::new(open_test_db("no-address-in-logs-faulty").await);
         let mailer = RecordingMailer::new();
         // Two, because `claim_attempt` failing short-circuits before the digits

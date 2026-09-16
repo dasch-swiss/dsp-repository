@@ -1,46 +1,29 @@
 //! SQLite persistence: the connection pools, the PRAGMAs, the schema, and the
 //! two entry points every query goes through.
 //!
-//! ## Why two pools
+//! [`Database`] holds a **writer** pool of exactly one connection and a **reader** pool of
+//! several, which makes the two rules this layer must not get wrong structural rather than
+//! conventional: reader connections are opened with `query_only=ON` in the per-connection init
+//! hook, so a write physically cannot go through [`Database::read`], and the only path that can
+//! write is [`Database::write`], which always opens `BEGIN IMMEDIATE`. One writer connection is
+//! deliberate rather than a limitation — SQLite allows one writer at a time regardless, so a
+//! second would only move the queue from the pool into SQLite.
 //!
-//! [`Database`] holds a **writer** pool of exactly one connection and a
-//! **reader** pool of several. That split is what makes the two rules this
-//! layer must not get wrong structural rather than conventional:
+//! Once `BEGIN IMMEDIATE` succeeds, SQLite guarantees nothing up to the matching `COMMIT` returns
+//! `SQLITE_BUSY`. A deferred `BEGIN` takes a read lock and tries to upgrade it at the first write,
+//! and that upgrade can fail, so the transaction dies part-way with `database is locked`. It only
+//! happens under concurrency, so it passes every test and then fails intermittently in production,
+//! where the error reads like tuning and the reflex is to raise `busy_timeout`, which cannot help:
+//! the lock is not being waited for, the upgrade is being refused. Django added
+//! `transaction_mode: IMMEDIATE` in 5.1 for exactly this.
 //!
-//! - Reader connections are opened with `query_only=ON` in the per-connection init hook, so a write
-//!   physically cannot go through [`Database::read`]. The only path that can write is
-//!   [`Database::write`], and that always opens `BEGIN IMMEDIATE`.
-//! - SQLite allows one writer at a time regardless. A second writer connection would not add
-//!   concurrency, it would move the queue from the pool (a bounded, observable wait) into SQLite
-//!   (`SQLITE_BUSY` once `busy_timeout` runs out). One writer connection means writes serialise in
-//!   the pool.
-//!
-//! ## Why `BEGIN IMMEDIATE` on every write
-//!
-//! Once `BEGIN IMMEDIATE` succeeds, SQLite guarantees nothing up to the
-//! matching `COMMIT` returns `SQLITE_BUSY`. A deferred `BEGIN` takes a read lock
-//! and tries to upgrade it at the first write, and that upgrade can fail — so
-//! the transaction dies part-way with `database is locked`. It only happens
-//! under concurrency, so it passes every test and then fails intermittently in
-//! production, where the error reads like tuning and the reflex is to raise
-//! `busy_timeout`, which cannot help: the lock is not being waited for, the
-//! upgrade is being refused. Django added `transaction_mode: IMMEDIATE` in 5.1
-//! for exactly this.
-//!
-//! ## Why every call goes through `interact`
-//!
-//! `rusqlite::Connection` is `!Sync`, so it cannot be shared behind an `Arc`,
-//! and putting it behind a `std::sync::Mutex` invites holding the guard across
-//! an `.await`, which stalls or deadlocks the executor. `deadpool-sqlite` keeps
-//! each connection on a thread of its own and hands it out only inside an
-//! `interact` closure, which is `FnOnce(&mut Connection) -> R + Send + 'static`
-//! — the connection cannot escape and no `.await` can happen while it is held.
-//! `pool.get()` is itself async, so nothing blocks a Tokio worker either.
-//!
-//! Long-lived read transactions are avoided the same way: a read is a closure
-//! that runs to completion on a blocking thread, so no read transaction can be
-//! left open across an `.await` to starve WAL checkpointing and let `-wal` grow
-//! without bound.
+//! Every call goes through `interact` because `rusqlite::Connection` is `!Sync`, so it cannot be
+//! shared behind an `Arc`, and putting it behind a `std::sync::Mutex` invites holding the guard
+//! across an `.await`. `deadpool-sqlite` keeps each connection on its own thread and hands it out
+//! only inside an `interact` closure, typed `FnOnce(&mut Connection) -> R + Send + 'static`, so
+//! the connection cannot escape and no `.await` can happen while it is held. A read is therefore a
+//! closure that runs to completion on a blocking thread, and no read transaction can be left open
+//! across an `.await` to starve WAL checkpointing and let `-wal` grow without bound.
 
 mod approved_records;
 mod drafts;
@@ -96,20 +79,16 @@ pub(crate) enum Source {
     ///
     /// **Its locking is not production's.** Shared cache means SQLite takes
     /// *table*-level locks, so a reader transaction can make a concurrent write
-    /// return `SQLITE_LOCKED` — which `busy_timeout` does not retry, since that
-    /// needs `sqlite3_unlock_notify`. A file database gets WAL, where readers
-    /// never block writers and the situation cannot arise. A concurrency test
+    /// return `SQLITE_LOCKED`, which `busy_timeout` does not retry. A file
+    /// database gets WAL, where readers never block writers. A concurrency test
     /// that occasionally loses a write here is seeing the test source, not a
     /// defect in the code under test.
     ///
     /// Never bare `:memory:`. Every `:memory:` database is distinct and visible
-    /// only to the connection that opened it, so each pooled connection would
-    /// get its own empty copy — and with a writer/reader split that is
-    /// unconditional: readers could never see anything the writer wrote. The
-    /// symptom is `no such table` that comes and goes with pool timing and test
-    /// order, which reads exactly like a migration bug; the usual "fix" of
-    /// migrating every connection hides it while making the tests prove nothing
-    /// about migration ordering.
+    /// only to the connection that opened it, so each pooled connection would get
+    /// its own empty copy and readers could never see anything the writer wrote.
+    /// The symptom is `no such table` that comes and goes with pool timing and
+    /// test order, which reads exactly like a migration bug.
     Memory(String),
 }
 
@@ -308,9 +287,6 @@ impl Database {
     ///
     /// Still a reader connection, so it cannot write, and still one closure, so
     /// the transaction cannot outlive the call and starve WAL checkpointing.
-    /// Routing these through [`Self::write`] instead would have been consistent
-    /// too, and would have put every authenticated request's user lookup behind
-    /// the single writer connection.
     pub(crate) async fn read_tx<T, F>(&self, f: F) -> Result<T, DbError>
     where
         F: FnOnce(&Transaction<'_>) -> rusqlite::Result<T> + Send + 'static,
@@ -448,9 +424,8 @@ fn init_connection(
         // NORMAL rather than the FULL default: with WAL, a commit no longer
         // fsyncs, so a power loss or OS crash can lose the last transactions —
         // never corrupt the database, and never on an application crash. That
-        // trade is right here because git holds everything irreplaceable and the
-        // Backups are optional; drafts and in-flight submissions are
-        // re-creatable.
+        // trade is right here because git holds everything irreplaceable, and
+        // drafts and in-flight submissions are re-creatable.
         conn.pragma_update(None, "synchronous", "NORMAL")?;
     }
 
@@ -525,9 +500,9 @@ mod tests {
     #[tokio::test]
     async fn test_the_reader_pool_is_sized_from_config_and_not_capped_at_one() {
         // `reader_count.max(MIN_READER_CONNECTIONS)` is a floor, and Rust's `max`
-        // returning the larger value reads as a ceiling to anyone who does not
-        // hold that in mind — it was misread as one in review. Pinned here so the
-        // sizing is a fact and not an inference from the expression.
+        // returning the larger value reads as a ceiling to anyone not holding
+        // that in mind. Pinned here so the sizing is a fact and not an inference
+        // from the expression.
         let db = Database::open(Source::memory_for_test("reader-count"), 4, Duration::from_secs(5))
             .await
             .expect("test database should open");

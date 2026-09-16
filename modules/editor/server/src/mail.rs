@@ -1,21 +1,16 @@
 //! Sending the one-time code, and what happens when there is no relay
 //! or the relay refuses.
 //!
-//! ## Why no error message ever reaches a log
-//!
 //! An account holder's address must never reach a log or a trace, and an SMTP
 //! failure is the one place such an address arrives from outside our own code: a
-//! relay's reply text routinely echoes the recipient — `550 5.1.1
-//! <someone@example.org> User unknown` is the canonical shape. Logging the
-//! transport error verbatim would therefore write addresses into Grafana on
-//! exactly the paths nobody tests.
+//! relay's reply routinely echoes the recipient, `550 5.1.1
+//! <someone@example.org> User unknown` being the canonical shape. So
+//! [`MailError`] carries a **classification and the three-digit status code**,
+//! and never the reply text.
 //!
 //! The configured sender is a different matter and is logged on purpose: see
-//! [`SmtpMailer::describe`].
-//!
-//! So [`MailError`] carries a **classification and the three-digit status code**,
-//! and never the reply text. What is lost is the relay's prose; what is kept is
-//! everything an operator acts on — permanent versus transient, and the code.
+//! [`SmtpMailer::describe`]. The argument is in
+//! `docs/src/editor/authentication.md`.
 
 use async_trait::async_trait;
 
@@ -117,20 +112,16 @@ impl SmtpMailer {
         let from: lettre::message::Mailbox = from.parse().map_err(|e| SmtpSetupError::From(format!("{e}")))?;
 
         // STARTTLS (RFC 2487) on 587, which is what `smtp-relay.gmail.com`
-        // speaks. `relay()` would be implicit TLS on 465; `starttls_relay` still
-        // requires the upgrade to succeed, so this is not an opportunistic
-        // downgrade path.
+        // speaks; `starttls_relay` still requires the upgrade to succeed, so this
+        // is not an opportunistic downgrade path.
+        //
         // `format!("{e}")` on an SMTP error is the operation this module's docs
         // forbid: `Display` on `lettre::transport::smtp::Error` appends its
         // source, and for a *connected* transport that source is the relay's
-        // reply — which quotes the recipient.
-        //
-        // It is safe here only because of where it sits. `starttls_relay` does
-        // exactly one fallible thing, `TlsParameters::new(host)`, and at that
-        // point there is no message, no envelope, no connection and no reply;
-        // the only external content reachable is `EDITOR_SMTP_HOST`, which is
-        // ours. Credentials are attached below, after this call, so no password
-        // can be in it either.
+        // reply — which quotes the recipient. It is safe only here, because
+        // `starttls_relay`'s one fallible step is `TlsParameters::new(host)`: no
+        // message, no envelope, no connection and no reply, and credentials are
+        // attached after this call.
         //
         // If anything ever routes a connected transport's error through
         // `SmtpSetupError::Relay` — a startup connectivity probe, a
@@ -252,13 +243,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_the_console_transport_logs_the_body_and_not_the_recipient() {
-        // The message is logged so the service stays usable without a relay, and the
-        // recipient is not part of it.
-        //
-        // The log is actually captured. The earlier version of this test only
-        // checked that `send` returned `Ok` and that `describe()` mentioned the
-        // variable — so adding `mail.to = %mail.to` to the event below would have
-        // left it green, on the transport the PR preview actually runs.
+        // The message is logged so the service stays usable without a relay, and
+        // the recipient is not part of it. The log is actually captured, so
+        // adding `mail.to = %mail.to` to the event below fails here rather than
+        // passing on the transport the PR preview runs.
         let mail = Mail {
             to: "someone@example.org".to_string(),
             subject: "Your sign-in code".to_string(),

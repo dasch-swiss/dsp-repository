@@ -1,24 +1,18 @@
 //! A multilingual value while it is being edited.
 //!
-//! The contract's [`Multilingual`] is a `BTreeMap`, so it is alphabetical and
-//! says nothing about the order a form should show. This type is the editing
-//! view over one: order-preserving, so the tags stay where the depositor sees
-//! them across a save and reload, and open, so a tag outside the four the UI
-//! offers is retained rather than dropped.
-//!
-//! No serde derives on purpose. A draft stores its fields as `serde_json`
-//! values ([`crate::draft`]), so this is constructed on demand, edited, and
-//! written back. The canonical writer sorts on the way out, which is why edit
-//! order here is free to differ from output order.
+//! The contract's [`Multilingual`] is a `BTreeMap`, alphabetical and silent
+//! about the order a form should show. This is the editing view over one:
+//! order-preserving, so tags stay where the depositor sees them across a save
+//! and reload, and open, so a tag outside the four the UI offers is kept. No
+//! serde derives: a draft stores fields as `serde_json` values, so this is
+//! built on demand and written back.
 
 use platform_metadata::utils::Multilingual;
 
 /// The language tags the form offers, in the order it offers them.
 ///
-/// Not a closed set: `ar` is live in two committed project files, and `cop`,
-/// `grc` and others appear in `dataLanguage`. Any tag present in the data is
-/// kept and editable; these four are merely the ones with a field rendered
-/// unprompted.
+/// Not a closed set: `ar`, `cop` and `grc` are live in the data, and any tag
+/// present is kept and editable.
 pub const UI_LANGUAGES: [&str; 4] = ["de", "en", "fr", "it"];
 
 /// Language tag to text, in editing order.
@@ -57,14 +51,12 @@ impl DraftMultilingual {
         Self { entries }
     }
 
-    /// The contract value. Alphabetical by construction, since [`Multilingual`]
-    /// is a `BTreeMap`; editing order is not carried into the written file.
-    /// Tags whose text is empty are dropped. An empty string is an editing
-    /// state, not a value: `to_raw` accepts it, being a valid `String`, so
-    /// publishing one would put `"en": ""` in the file, and DPE's `lang_value`
-    /// prefers `en` and would render a blank description rather than falling back
-    /// to the German the project still has. No committed file contains an empty
-    /// language value.
+    /// The contract value: alphabetical by construction, since [`Multilingual`]
+    /// is a `BTreeMap`, with empty texts dropped.
+    ///
+    /// An empty string is an editing state, not a value: `"en": ""` in a file
+    /// makes DPE's `lang_value` render a blank in place of the German the
+    /// project still has.
     #[must_use]
     pub fn to_contract(&self) -> Multilingual {
         self.entries.iter().filter(|(_, text)| !text.is_empty()).cloned().collect()
@@ -76,13 +68,12 @@ impl DraftMultilingual {
         self.entries.iter().find(|(t, _)| t == tag).map(|(_, text)| text.as_str())
     }
 
-    /// Sets one tag's text, replacing it in place if the tag is already
-    /// present and appending otherwise, so an edit never reorders the form.
+    /// Sets one tag's text, replacing in place or appending, so an edit never
+    /// reorders the form.
     ///
-    /// An empty `text` is stored, not dropped: a depositor clearing a field
-    /// mid-edit must not have the tag disappear from under the cursor. Use
-    /// [`Self::remove`] to drop one. [`Self::to_contract`] is where an empty tag
-    /// goes away, since nothing downstream rejects an empty string.
+    /// An empty `text` is stored, so a tag does not vanish from under the cursor
+    /// mid-edit; [`Self::to_contract`] is where it goes away, and
+    /// [`Self::remove`] drops one deliberately.
     pub fn set(&mut self, tag: &str, text: impl Into<String>) {
         let text = text.into();
         match self.entries.iter_mut().find(|(t, _)| t == tag) {

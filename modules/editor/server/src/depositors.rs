@@ -1,34 +1,24 @@
 //! Depositor account management, and the RDU-only guard the whole
 //! surface sits behind.
 //!
-//! ## What the requirements say, and what they leave open
+//! An account is created from a name, an address and a set of shortcodes; a duplicate address is
+//! refused; removal takes the account and every session belonging to it. Update is here because
+//! without it correcting a misspelled name means deleting the account, which destroys its
+//! sessions, its assignments and the authorship of everything it touched, to fix a typo.
 //!
-//! An account is created from a name, an address and a set of shortcodes; a duplicate address
-//! is refused; removal takes the account and every session belonging to it. Update is **not** a
-//! requirement — create and remove are the whole of what was asked for — and it is here anyway,
-//! because without it correcting a
-//! misspelled name means deleting the account, which destroys its sessions, its
-//! assignments and the authorship of everything it touched, to fix a typo.
+//! **RDU accounts are read-only here.** The list shows every account, because RDU needs to see who
+//! administers the service, but the controls act on depositors only. Configuration is the source
+//! of truth for RDU membership: an edit made here would be undone by the next restart, and a
+//! removal would either be undone the same way or — for an address no longer listed — leave the
+//! product and the configuration disagreeing with nothing to say so. Startup already warns about
+//! an `rdu` account the configuration does not list; that stays the channel for it.
 //!
-//! ## RDU accounts are read-only here
-//!
-//! The list shows every account, because RDU needs to see who administers the
-//! service, but the controls act on depositors only. Configuration is the source of truth for
-//! RDU membership: an edit made here would be undone by
-//! the next restart, and a removal would either be undone the same way or — for
-//! an address no longer listed — leave the product and the configuration
-//! disagreeing with nothing to say so. Startup already warns about an `rdu`
-//! account the configuration does not list; that stays the channel for it.
-//!
-//! ## What removal leaves behind
-//!
-//! The schema nulls the author of a draft, a submission and an approved record
-//! rather than cascading, so a depositor's work survives them and the review
-//! queue's "last editor" reads as unknown rather than dangling. Two consequences
-//! are not covered by that and are not reversible, so the confirmation page
-//! names both before the fact: the address is deleted with the row, and it is
-//! RDU's only channel to its owner; and a submission they made stays pending
-//! with no author, so returning it to the depositor has no recipient — it
+//! **What removal leaves behind.** The schema nulls the author of a draft, a submission and an
+//! approved record rather than cascading, so a depositor's work survives them and the review
+//! queue's "last editor" reads as unknown rather than dangling. Two consequences are not covered
+//! by that and are not reversible, so the confirmation page names both before the fact: the
+//! address is deleted with the row, and it is RDU's only channel to its owner; and a submission
+//! they made stays pending with no author, so returning it to the depositor has no recipient — it
 //! can be approved or rejected and nothing else.
 
 use axum::extract::{Path, State};
@@ -206,8 +196,8 @@ pub(crate) async fn create(
         id: Uuid::new_v4(),
         email: email.to_string(),
         name: name.to_string(),
-        // Never from the form. RDU membership is configuration's to decide
-        //, so this surface can only ever make a depositor.
+        // Never from the form. RDU membership is configuration's to decide, so
+        // this surface can only ever make a depositor.
         role: Role::Depositor,
         shortcodes,
         failed_logins: 0,
@@ -223,9 +213,8 @@ pub(crate) async fn create(
             tracing::info!(shortcodes = user.shortcodes.len(), "created a depositor account");
             Redirect::to("/depositors").into_response()
         }
-        // A duplicate address is refused. `email_normalized` is the only unique index on the
-        // table, so
-        // a conflict here is a duplicate address and nothing else.
+        // `email_normalized` is the only unique index on the table, so a conflict
+        // here is a duplicate address and nothing else.
         Err(RepositoryError::Conflict { .. }) => {
             span.record("auth.outcome", "duplicate_email");
             tracing::info!("refused a depositor whose address is already registered");
@@ -262,7 +251,7 @@ pub(crate) async fn edit_form(State(state): State<AppState>, Rdu(viewer): Rdu, P
 
 /// `POST /depositors/{id}` — change name, address and assignments.
 ///
-/// Not a requirement; see the module docs for why it is here anyway.
+/// See the module docs for why update exists.
 #[tracing::instrument(
     skip_all,
     fields(
@@ -297,16 +286,12 @@ pub(crate) async fn update(
     };
 
     // Built from the stored record rather than from the form, so the fields this
-    // surface does not own survive an edit.
-    //
-    // Worth being exact about which mechanism does what, because an earlier
-    // version of this comment credited the spread with all of it. The failure
-    // counter, its instant, the last-code stamp and the creation time survive
-    // because `UserRepository::update`'s statement does not write those columns.
-    // What the spread actually protects today is **`role`**, which that
-    // statement *does* write — so this is what stops a form ever promoting an
-    // account. It is kept rather than hand-copied because it is also what holds
-    // the invariant if that `UPDATE` is ever widened.
+    // surface does not own survive an edit. The failure counter, its instant, the
+    // last-code stamp and the creation time survive because
+    // `UserRepository::update`'s statement does not write those columns; what the
+    // spread protects is **`role`**, which that statement *does* write, so this is
+    // what stops a form ever promoting an account — and what holds the invariant
+    // if that `UPDATE` is ever widened.
     let updated = User {
         email: email.to_string(),
         name: name.to_string(),
@@ -619,7 +604,6 @@ mod route_tests {
 
     const DEPOSITOR_EMAIL: &str = "a.depositor@example.test";
 
-    /// A request carrying `session` as the session cookie.
     fn as_session(request: Request<Body>, session: &str) -> Request<Body> {
         crate::test_support::with_cookie(request, cookie::SESSION, session)
     }
@@ -842,10 +826,9 @@ mod route_tests {
 
     #[tokio::test]
     async fn test_an_edit_onto_another_accounts_address_is_refused() {
-        // The duplicate-address refusal on the edit path. The create path had this covered and the
-        // edit path did not, though its `Conflict` arm is just as reachable:
-        // `email_normalized` is the only unique column on `users`, so pointing
-        // one account at another's address hits it.
+        // The duplicate-address refusal on the edit path: `email_normalized` is
+        // the only unique column on `users`, so pointing one account at
+        // another's address hits it.
         let (state, _) = test_state("dep-update-duplicate").await;
         let (_, session) = rdu(&state).await;
         let first = a_user(&state, "first@example.test", "First", Role::Depositor, &[]).await;
@@ -1146,17 +1129,16 @@ mod route_tests {
 
     #[tokio::test]
     async fn test_every_write_shares_its_url_with_a_get_that_renders_a_page() {
-        // Two invariants, and the second is why this test changed shape.
+        // Two invariants.
         //
         // A state-changing `GET` is the one thing the `Sec-Fetch-Site` control
         // cannot cover, because a navigation from anywhere is a `GET` — so no
         // `GET` here may write.
         //
         // And every write must post to a URL that *answers* `GET`, because a
-        // rejected submission re-renders at the path it posted to. `POST
-        // /depositors/{id}` had no `GET`: reloading or sharing a rejected edit
-        // produced a bare 405 — no body, no shell, no way back. That is the dead
-        // end this service renders a 403 as a page precisely to avoid.
+        // rejected submission re-renders at the path it posted to. A write
+        // posting to a path with no `GET` strands it on a bare 405 — no body, no
+        // shell, no way back.
         let (state, _) = test_state("dep-method").await;
         let (_, session) = rdu(&state).await;
         let (target, _) = depositor(&state, DEPOSITOR_EMAIL, &["0801"]).await;

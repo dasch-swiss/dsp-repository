@@ -1,19 +1,14 @@
 //! The project list.
 //!
-//! What this page owns is the **scoping**: it shows a depositor exactly the
-//! projects assigned to them, named from the published set. The
-//! editing surface is [`crate::pages::section`], which `/projects/{shortcode}`
-//! redirects into — there is no per-project landing page between the two, so
-//! that exactly one place decides where a project link lands.
-//!
-//! ## A row can be missing in two directions, and both are ordinary
+//! This page owns the scoping: a depositor sees exactly the projects assigned to
+//! them, named from the published set. The editing surface is
+//! [`crate::pages::section`], which `/projects/{shortcode}` redirects into, so
+//! exactly one place decides where a project link lands.
 //!
 //! An assignment naming no published project is skipped rather than rendered as
-//! a nameless row: a project assigned before it is published, and a
-//! project that exists only locally, are both real states, and a blank row would
-//! read as data loss. What must not happen is a depositor with assignments
-//! seeing an empty page with no explanation, so the two empty states say
-//! different things — which is also which person the reader should go to.
+//! a nameless row: a project assigned before it is published, or one that
+//! exists only locally, is a real state. The two empty states say different
+//! things, because they send the reader to different people.
 
 use editor_core::published::ProjectSummary;
 use editor_core::status::ProjectState;
@@ -21,21 +16,17 @@ use maud::{html, Markup};
 use mosaic_tiles::table::{table, table_cell, table_head_cell};
 
 /// One row of a depositor's list: the published project, plus where that
-/// depositor's own changes to it have got to.
-///
-/// A pair rather than two parallel slices, because the row and its state are
-/// only ever read together and two slices can go out of step by one.
+/// depositor's own changes have got to. A pair rather than two parallel slices,
+/// which can go out of step by one.
 #[derive(Debug, Clone, Copy)]
 pub struct AssignedProject<'a> {
     pub summary: ProjectSummary<'a>,
     pub state: ProjectState,
 }
 
-/// `GET /projects` for a depositor: the projects assigned to them.
-///
-/// `assignments` is how many shortcodes the account holds, which is not
-/// `rows.len()`: a shortcode with no published project is not a row. The
-/// difference is what separates "nobody has assigned you anything" from "your
+/// `GET /projects` for a depositor. `assignments` is how many shortcodes the
+/// account holds, not `rows.len()`: a shortcode with no published project is not
+/// a row, and the difference separates "nobody assigned you anything" from "your
 /// projects are not published yet".
 pub fn assigned(rows: &[AssignedProject<'_>], assignments: usize) -> Markup {
     html! {
@@ -63,11 +54,8 @@ pub fn assigned(rows: &[AssignedProject<'_>], assignments: usize) -> Markup {
     }
 }
 
-/// `GET /projects` for an RDU member: every published project.
-///
-/// RDU access is role-based rather than per-project, so there is no
-/// assignment set to list and the account's own `shortcodes` is empty by design.
-/// The list is therefore the whole published set.
+/// `GET /projects` for an RDU member: the whole published set, since RDU access
+/// is role-based and the account's `shortcodes` is empty by design.
 pub fn rdu_overview(rows: &[ProjectSummary<'_>]) -> Markup {
     html! {
         div class="max-w-4xl py-8" {
@@ -85,9 +73,7 @@ pub fn rdu_overview(rows: &[ProjectSummary<'_>]) -> Markup {
                 }
                 (project_table("Every published project", rows))
             }
-            // The review queue is otherwise reachable only by typing its URL:
-            // nothing else in the interface links to it, so an RDU member has
-            // no way to find what is waiting for them.
+            // Nothing else in the interface links to the review queue.
             p class="mt-6 flex gap-6" {
                 a href="/review" class="underline" { "Review queue" }
                 a href="/depositors" class="underline" { "Manage depositor accounts" }
@@ -96,16 +82,11 @@ pub fn rdu_overview(rows: &[ProjectSummary<'_>]) -> Markup {
     }
 }
 
-/// A depositor's list. Same shape as [`project_table`] plus the state column.
+/// A depositor's list: [`project_table`] plus the state column.
 ///
-/// The extra column is deliberately **not** folded into `project_table` behind
-/// an `Option`: RDU's overview has no depositor whose changes a state could
-/// describe, so the column would always be empty there, and a shared function
-/// with a mode flag would invite exactly that.
-///
-/// "Your changes" rather than a second "Status": the published project has its
-/// own Ongoing/Finished status in the neighbouring column, and two columns
-/// headed Status would make a depositor read the wrong one.
+/// Not folded into `project_table` behind an `Option`: RDU's overview has no
+/// depositor whose changes a state could describe. Headed "Your changes" rather
+/// than a second "Status", which the neighbouring column already carries.
 fn assigned_table(caption: &str, rows: &[AssignedProject<'_>]) -> Markup {
     let head = html! {
         tr {
@@ -149,14 +130,9 @@ fn project_table(caption: &str, rows: &[ProjectSummary<'_>]) -> Markup {
     }
 }
 
-/// One row's link to its project.
-///
-/// A named function rather than an `@let link = html! { … }` inside the loop:
-/// `maudfmt` formats `html!` only at Rust statement position, so an in-macro
-/// `@let` is skipped and then reformatted by `cargo fmt` as ordinary Rust —
-/// which splits attributes across lines and puts spaces around `=`. It is not a
-/// rendering bug, but it comes back on every `cargo fmt` run. See the
-/// formatting note in `docs/src/mosaic/component-api-conventions.md`.
+/// One row's link. A named function rather than an in-macro `@let`: `maudfmt`
+/// formats `html!` only at statement position, so the `@let` form is mangled by
+/// `cargo fmt` on every run; see `docs/src/mosaic/component-api-conventions.md`.
 fn project_link(row: &ProjectSummary<'_>) -> Markup {
     html! {
         a href={ "/projects/" (row.shortcode) } class="underline font-mono font-bold" {
@@ -215,8 +191,6 @@ mod tests {
 
     #[test]
     fn test_the_list_shows_nothing_that_was_not_assigned() {
-        // The whole point of the page: it is the depositor's own scope
-        //, not a directory of every project.
         let out = assigned(&[row("0801d", "Bernoulli-Euler Online", "ongoing")], 1).into_string();
         assert!(!out.contains("0803"), "{out}");
     }
@@ -257,8 +231,6 @@ mod tests {
         assert!(out.contains("Bernoulli-Euler Online"), "{out}");
         assert!(out.contains("Anton Webern"), "{out}");
         assert!(out.contains(r#"href="/depositors""#), "{out}");
-        // Nothing else in the interface links to the review queue, so without
-        // this an RDU member has no way to find what is waiting for them.
         assert!(out.contains(r#"href="/review""#), "{out}");
     }
 

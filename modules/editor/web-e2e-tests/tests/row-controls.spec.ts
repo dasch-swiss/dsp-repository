@@ -106,10 +106,10 @@ test.describe("row controls change the row count", () => {
 test.describe("row controls resolve", () => {
   for (const section of SECTIONS) {
     test(`${section}: no formaction answers 404 or 405`, async ({ page }) => {
-      // Four row shapes were once missing from the route's shape allowlist, so
-      // eleven of twenty-three controls answered 404 while the page rendered
-      // perfectly. Status alone is not enough (see the suite above), but a
-      // control that cannot resolve at all is worth naming separately.
+      // A control missing from the route's shape allowlist answers 404 while the
+      // page renders perfectly. Status alone is not enough (see the suite
+      // above), but a control that cannot resolve at all is worth naming
+      // separately.
       const failures: string[] = [];
       page.on("response", (response) => {
         if (response.status() === 404 || response.status() === 405) {

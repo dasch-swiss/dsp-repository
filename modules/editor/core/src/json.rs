@@ -4,19 +4,12 @@ use serde_json::Value;
 
 /// Removes `null` object members, recursively.
 ///
-/// Object **members** only, never array elements: dropping an element would
-/// change a list's length, and `authorship`, `contributorType` and
-/// `typeOfData` are lists whose length is meaningful.
-///
-/// This is why `ProjectRaw` carries no `skip_serializing_if` on its `Option`
-/// fields. `dpe-server`'s `fragments.rs` serializes that type straight through
-/// `axum::Json`, so a `skip` attribute would silently drop null members from
-/// DPE's JSON API responses too. Stripping here keeps the change confined to
-/// what the editor writes.
-///
-/// Uses `retain` rather than `remove`: the workspace enables `serde_json`'s
-/// `preserve_order`, under which `Map::remove` is swap-remove and would shuffle
-/// the surviving keys out of declaration order.
+/// Object members only, never array elements: `authorship`, `contributorType`
+/// and `typeOfData` are lists whose length is data. `ProjectRaw` carries no
+/// `skip_serializing_if` because `dpe-server` serializes it through
+/// `axum::Json`, so the attribute would drop nulls from DPE's API too. `retain`
+/// rather than `remove`: under `preserve_order`, `Map::remove` is swap-remove
+/// and reorders the surviving keys.
 pub fn strip_null_members(value: &mut Value) {
     match value {
         Value::Object(map) => {

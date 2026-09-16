@@ -74,8 +74,7 @@ impl RecordingMailer {
 #[async_trait]
 impl Mailer for RecordingMailer {
     // `std::result::Result` spelled out: this file imports `editor_core`'s
-    // one-parameter `Result` alias for the 44 port methods below, which is what
-    // the sibling `db/*.rs` implementations do too.
+    // one-parameter `Result` alias for the port methods below.
     async fn send(&self, mail: &Mail) -> std::result::Result<(), MailError> {
         // Recorded even when the send fails, so a test can assert what would
         // have gone out and to whom.
@@ -146,10 +145,10 @@ pub(crate) fn state_over(
         // has to say so, and every other test proves the ordinary path.
         reveal_login_code: false,
         // The real committed corpus, not a fixture. Every project page renders
-        // from it, and a fixture of two invented projects would let a change
-        // that only works for invented data pass — the 85 real ones carry the
-        // mixed-case shortcodes, the `MISSING` placeholders and the five
-        // filenames that disagree with their shortcode.
+        // from it, and a fixture of invented projects would let a change that
+        // only works for invented data pass — the real set carries the
+        // mixed-case shortcodes, the `MISSING` placeholders and the filenames
+        // that disagree with their shortcode.
         published: published_corpus(),
         temporal: temporal_tables(),
         agents: agent_corpus(),
@@ -178,8 +177,8 @@ pub(crate) fn agent_corpus() -> Arc<editor_core::agents::Agents> {
 /// binary.
 ///
 /// The real ones, for the reason [`published_corpus`] gives about projects: a
-/// fixture of two invented periods would let submit validation pass while
-/// disagreeing with what `dpe-server validate` decides about the 85 committed
+/// fixture of invented periods would let submit validation pass while
+/// disagreeing with what `dpe-server validate` decides about the committed
 /// projects, which is the whole point of sharing the tables.
 pub(crate) fn temporal_tables() -> Arc<TemporalTables> {
     static TABLES: OnceLock<Arc<TemporalTables>> = OnceLock::new();
@@ -269,10 +268,9 @@ pub(crate) async fn count_rows(db: &Database, table: &'static str) -> i64 {
 /// Enough percent-encoding for the values these tests put in a form body.
 ///
 /// Deliberately not a general encoder: it covers exactly the characters the
-/// fixtures use. It lives here because the alternative was two copies escaping
-/// different sets — the auth tests escaped `@` and `+`, the account tests also
-/// `%`, space, comma and `/` — which is a difference that only ever shows up as
-/// one suite passing on input the other would mangle.
+/// fixtures use. One copy rather than one per suite, since two escaping
+/// different sets shows up only as one suite passing on input the other would
+/// mangle.
 pub(crate) fn urlencode(value: &str) -> String {
     value
         // `%` first, or the escapes below would be escaped again.
@@ -280,10 +278,8 @@ pub(crate) fn urlencode(value: &str) -> String {
         // `&` and `=` are the pair and name/value separators, so a value
         // holding either silently becomes two pairs or a renamed field. A
         // committed publication citation reads "in Di Natale A. & Basile C.",
-        // and without escaping `&` the round-trip test posted it truncated at
-        // "Di Natale A." and then compared the truncation against the file.
-        // Nothing failed until `publications` gained a control, because until
-        // then no shaped field's values contained one.
+        // which unescaped posts truncated at "Di Natale A." and then compares
+        // the truncation against the file.
         .replace('&', "%26")
         .replace('=', "%3D")
         // `#` starts a fragment, which a server never receives.
@@ -319,7 +315,6 @@ pub(crate) fn post(uri: &str, form: &str) -> Request<Body> {
         .expect("the request should build")
 }
 
-/// Attach a cookie to a request.
 pub(crate) fn with_cookie(mut request: Request<Body>, name: &str, value: &str) -> Request<Body> {
     request
         .headers_mut()
@@ -350,7 +345,6 @@ pub(crate) fn location<T>(response: &Response<T>) -> Option<String> {
         .map(str::to_string)
 }
 
-/// The response body as a string.
 pub(crate) async fn body_string(response: Response<Body>) -> String {
     let bytes = axum::body::to_bytes(response.into_body(), 1_000_000)
         .await
@@ -451,42 +445,28 @@ impl Drop for CaptureGuard {
 
 /// Capture everything logged on this thread until the guard is dropped.
 ///
-/// ## Why this installs a *global* subscriber rather than a thread-local one
+/// **A global subscriber, not a thread-local one.** `tracing::subscriber::set_default` per test is
+/// racy in a way that is invisible until it bites: `tracing` caches each callsite's *interest*
+/// process-globally while `set_default` is thread-local, so when any test on any other thread
+/// reaches a callsite while its own thread has no subscriber, that callsite is evaluated against
+/// `NoSubscriber`, cached as `Interest::never()`, and then emits nothing for **anyone** —
+/// including the thread that does have a capture installed. `rebuild_interest_cache()` does not
+/// close it either: the poisoning can happen again between the rebuild and the emit. The failure
+/// mode is worse than flakiness for a test asserting an address is *absent*, because a capture
+/// that comes back empty passes.
 ///
-/// The obvious shape — `tracing::subscriber::set_default` per test — is racy in
-/// a way that is invisible until it bites, and it bit: a test asserting a
-/// refusal is logged passed sixty times alone and failed twice in forty runs of
-/// the whole suite.
+/// So there is exactly one subscriber, installed once for the process and always enabled — no
+/// callsite can ever be cached as `never` — and routing to a thread-local sink is what keeps
+/// parallel tests from seeing each other's output.
 ///
-/// `tracing` caches each callsite's *interest* **process-globally**, while
-/// `set_default` is thread-local. So when any test on any other thread reaches a
-/// callsite while its own thread has no subscriber, that callsite is evaluated
-/// against `NoSubscriber`, cached as `Interest::never()`, and then emits nothing
-/// for **anyone** — including the thread that does have a capture installed.
-/// `rebuild_interest_cache()` does not close it either: the poisoning can happen
-/// again between the rebuild and the emit.
+/// **The sink is per-thread, so a test has to stay on the thread that installed it.**
+/// `#[tokio::test]` gives a current-thread runtime by default, which is what makes that hold;
+/// `flavor = "multi_thread"` lets the future resume on a thread with no sink and the capture comes
+/// back empty. Nothing logged from a `deadpool` `interact` closure is captured either.
 ///
-/// The failure mode is worse than flakiness for the tests asserting an address
-/// is *absent*, because a capture that comes back empty passes. Those were
-/// silently at risk of proving nothing.
-///
-/// So there is exactly one subscriber, installed once for the process, and it is
-/// always enabled — no callsite can ever be cached as `never`. Routing to a
-/// thread-local sink is what keeps parallel tests from seeing each other.
-///
-/// ## The sink is per-thread, so the runtime flavour still matters
-///
-/// A test has to stay on the thread that installed the sink. `#[tokio::test]`
-/// gives a current-thread runtime by default, which is what makes that hold —
-/// adding `flavor = "multi_thread"` lets the future resume on a thread with no
-/// sink and the capture comes back empty. Nothing logged from a `deadpool`
-/// `interact` closure is captured either, for the same reason.
-///
-/// An empty capture makes a "no address reached a log" assertion pass while
-/// proving nothing, so **every negative test here pairs one with a positive
-/// canary** — `assert!(!lines.is_empty())`, or an assertion that the account id
-/// *is* present. That canary is what fails first if the sink ever detaches.
-/// Keep the pairing on any new one.
+/// An empty capture makes a "no address reached a log" assertion pass while proving nothing, so
+/// **every negative test here pairs one with a positive canary** — `assert!(!lines.is_empty())`,
+/// or an assertion that the account id *is* present. Keep the pairing on any new one.
 pub(crate) fn capture_logs() -> (LogCapture, CaptureGuard) {
     use tracing_subscriber::layer::SubscriberExt;
 

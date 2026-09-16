@@ -11,13 +11,11 @@ use rusqlite::types::Type;
 use rusqlite::Row;
 use uuid::Uuid;
 
-/// Read a TEXT column as a [`Uuid`].
 pub(super) fn uuid_column(row: &Row<'_>, index: usize) -> rusqlite::Result<Uuid> {
     let raw: String = row.get(index)?;
     Uuid::parse_str(&raw).map_err(|e| rusqlite::Error::FromSqlConversionFailure(index, Type::Text, Box::new(e)))
 }
 
-/// Read a nullable TEXT column as an optional [`Uuid`].
 pub(super) fn optional_uuid_column(row: &Row<'_>, index: usize) -> rusqlite::Result<Option<Uuid>> {
     let raw: Option<String> = row.get(index)?;
     raw.map(|raw| {
@@ -26,15 +24,6 @@ pub(super) fn optional_uuid_column(row: &Row<'_>, index: usize) -> rusqlite::Res
     .transpose()
 }
 
-/// Read a nullable TEXT column through its [`FromStr`].
-///
-/// [`parsed_column`]'s shape for a column that is both parsed and nullable —
-/// `entity_proposals.decision`, where null is "undecided" and any stored word
-/// outside the vocabulary must surface rather than become a decision nobody
-/// took. Here rather than beside its one caller for the reason
-/// [`optional_uuid_column`] is: the pairing of a parse with a null is a
-/// mapping concern, and a second copy of it would be free to forget the
-/// `FromSqlConversionFailure`.
 pub(super) fn optional_parsed_column<T>(row: &Row<'_>, index: usize) -> rusqlite::Result<Option<T>>
 where
     T: FromStr,
@@ -48,8 +37,6 @@ where
     .transpose()
 }
 
-/// Read a TEXT column through its [`FromStr`] — the stored form of `role` and
-/// `state`, both of which also carry a `CHECK` constraint in the schema.
 pub(super) fn parsed_column<T>(row: &Row<'_>, index: usize) -> rusqlite::Result<T>
 where
     T: FromStr,
@@ -66,7 +53,6 @@ pub(super) fn row_count(counted: i64) -> u64 {
     counted.max(0).unsigned_abs()
 }
 
-/// A stored non-negative counter as `u32`.
 pub(super) fn counter(stored: i64) -> u32 {
     stored.clamp(0, i64::from(u32::MAX)) as u32
 }

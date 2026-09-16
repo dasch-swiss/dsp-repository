@@ -1,51 +1,26 @@
 //! The review queue and the field-by-field diff surface.
 //!
 //! [`queue`] is `GET /review`; [`page`] is `GET /review/{shortcode}` and
-//! [`region`] is the part a decision save replaces, the same split — and for
-//! the same reasons — as [`section`](super::section).
+//! [`region`] is the part a decision save replaces, the same split as
+//! [`section`](super::section).
 //!
-//! ## The diff is one form, not one request per field
-//!
-//! The surface offers accept, revert and edit-in-place *per field*; that does
-//! not mean a request per field, and making each one its own fetch would put
-//! partial failure back where the plan wanted it out of: a reviewer who accepts
-//! eight fields and loses the ninth to a dropped connection has a submission
-//! half-decided with nothing saying which half. One form posting one body is
-//! the batching, natively — every decision and every substituted value arrives
-//! together and is written in one transaction.
-//!
-//! It also keeps the surface working without JavaScript, which every other
-//! authenticated surface in this service does. The enhanced path is the same
-//! `@post(..., {contentType: 'form'})` the section form uses, so a save patches
-//! the region instead of reloading the page, and the plain path posts and is
-//! redirected.
-//!
-//! **The submit button's name reaches the server on both paths.** A native
-//! submit includes the activated button's name and value; Datastar 1.0.2's form
-//! mode appends them too, from `SubmitEvent.submitter`. That is what lets
-//! "Accept all" and "Save decisions" be two buttons on one form rather than two
-//! forms or a signal, and [`tests::accept_all_is_a_named_submit_on_the_same_form`]
-//! pins the markup half of it.
-//!
-//! ## Two namespaces, kept apart
+//! The diff is one form, not one request per field: every decision and every
+//! substituted value arrives in one body and is written in one transaction, so
+//! a dropped connection cannot leave a submission half-decided. It also works
+//! without JavaScript; the enhanced path is the same
+//! `@post(..., {contentType: 'form'})` the section form uses. The submit
+//! button's name reaches the server on both paths (a native submit includes it,
+//! Datastar's form mode appends `SubmitEvent.submitter`), which is what lets
+//! "Accept all" and "Save decisions" be two buttons on one form.
 //!
 //! A decision posts under `decision.{field}`; a substituted value posts under
-//! the field's own name — `{field}` for a scalar, `{field}.{tag}` for one
-//! language of a map — which is exactly what the section form posts and
-//! therefore exactly what `editor_core::form`'s appliers read. No registry id
-//! begins with `decision.`, so the two cannot collide, and the reviewer's edit
-//! goes through the same trimming, newline and placeholder rules a depositor's
-//! does rather than a second set that agrees with them by inspection.
+//! the field's own name, exactly what the section form posts, so a reviewer's
+//! edit goes through the same appliers as a depositor's. No registry id begins
+//! with `decision.`, so the two cannot collide.
 //!
-//! ## A project with no published counterpart
-//!
-//! A project can exist only locally, while the comparison assumes a published
-//! value per field. Rather than degenerate quietly, the surface says
-//! there is nothing to compare against and **offers no revert**: reverting means
-//! keeping the published value, and there is no published value — the choice
-//! would silently unset a field the contract requires. Accept and
-//! edit-in-place still apply, which is the whole of what a reviewer can
-//! meaningfully do to a record that is new.
+//! A project with no published counterpart gets no revert: reverting means
+//! keeping the published value, and there is none, so the choice would silently
+//! unset a field the contract requires. Accept and edit-in-place still apply.
 
 use editor_core::draft::ProjectDraft;
 use editor_core::proposals::{EntityProposal, ProposalDecision, ProposalKind, ProposalOperation};
@@ -72,17 +47,11 @@ pub const REGION_ID: &str = "review-surface";
 /// field id. Stated once, because the renderer and the decoder both spell it.
 pub const DECISION_PREFIX: &str = "decision";
 
-/// The name every proposed entity's decision control posts under, before its `entity_id` —
-/// [`DECISION_PREFIX`]'s counterpart for a proposal rather than a field.
-///
-/// A separate prefix rather than a proposal posting under `decision.{entity_id}` too: the two
-/// vocabularies differ (accept/reject here, accept/revert there), and a shared namespace would let
-/// a stray `decision.person-417` be read as a field decision on a field literally named
-/// `person-417`, which cannot happen but would be one string comparison away from being able to.
-/// Collision with a *field*'s own namespace is closed the same way `DECISION_PREFIX`'s own docs
-/// close it: no registry field id begins with `entity`, pinned by
-/// `tests::no_registry_field_id_begins_with_the_entity_decision_prefix` rather than only argued in
-/// prose.
+/// The name a proposed entity's decision control posts under, before its
+/// `entity_id`: [`DECISION_PREFIX`]'s counterpart for a proposal. A separate
+/// prefix because the vocabularies differ (accept/reject here, accept/revert
+/// there). No registry field id begins with `entity`, pinned by
+/// `tests::no_registry_field_id_begins_with_the_entity_decision_prefix`.
 pub const ENTITY_DECISION_PREFIX: &str = "entity";
 
 /// Store the decisions and substitutions the body carries.
@@ -107,13 +76,10 @@ pub const REJECT: &str = "reject";
 /// The name the reviewer's note posts under.
 pub const NOTE: &str = "note";
 
-/// The pair a confirmation's own submit adds, which is how the second post of
-/// a terminating action is told from the first.
-///
-/// A hidden input inside the prompt rather than a different intent value: the
-/// intent names *what* is being done and stays the same across both posts, so
-/// the two-step shape does not double the verb list — and a body that names an
-/// intent without this gets the prompt, never the write.
+/// The pair a confirmation's own submit adds, telling the second post of a
+/// terminating action from the first. A hidden input rather than a different
+/// intent value, so the two-step shape does not double the verb list; a body
+/// naming an intent without this gets the prompt, never the write.
 pub const CONFIRMED: &str = "confirmed";
 
 // --- The queue ------------------------------------------------------------
@@ -144,14 +110,10 @@ pub struct DraftRow<'a> {
     pub updated_at: &'a str,
 }
 
-/// `GET /review` — every pending submission, then every draft.
-///
-/// Both tables, not just the first: every RDU member sees every pending
-/// submission *and* every draft, so that RDU can help a depositor who is stuck
-/// before submitting. A draft is not reviewable,
-/// which is why it is a separate table rather than a row with no controls —
-/// one list mixing the two would invite a reviewer to look for an action that
-/// does not exist.
+/// `GET /review`: every pending submission, then every draft. Every RDU member
+/// sees every draft, so RDU can help a depositor stuck before submitting. A
+/// draft is not reviewable, so it is a separate table rather than a row with no
+/// controls.
 pub fn queue(pending: &[QueueRow<'_>], drafts: &[DraftRow<'_>]) -> Markup {
     html! {
         div class="py-8" {
@@ -241,12 +203,9 @@ fn queue_status(row: &QueueRow<'_>) -> Markup {
     }
 }
 
-/// The control that opens a submission.
-///
-/// A `POST`, not a link: opening a submission claims it, and a claim is a state
-/// change — a `GET` that changed state is one the `Sec-Fetch-Site` control
-/// cannot cover, because a navigation from anywhere is a `GET`. It posts to the
-/// submission's own review URL, which answers `GET`, so a refused claim
+/// The control that opens a submission. A `POST`, not a link: opening claims
+/// it, and a state-changing `GET` is one the `Sec-Fetch-Site` control cannot
+/// cover. It posts to the review URL, which answers `GET`, so a refused claim
 /// re-renders somewhere a reader can stay.
 fn review_control(row: &QueueRow<'_>) -> Markup {
     let action = format!("/review/{}", row.shortcode);
@@ -314,10 +273,8 @@ fn draft_row(row: &DraftRow<'_>) -> Markup {
     }
 }
 
-/// An account name, or what is shown once the account is gone.
-///
-/// The row outlives its author by design — removing an account must not destroy
-/// a project's work — so this states the absence rather than rendering an empty
+/// An account name, or what is shown once the account is gone: the row outlives
+/// its author by design, so the absence is stated rather than left as an empty
 /// cell that reads as a bug.
 fn editor_name(name: Option<&str>) -> Markup {
     html! {
@@ -340,9 +297,8 @@ pub const SHOW_ALL: &str = "all";
 /// Which rows the surface is showing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Filter {
-    /// Only the fields the submission changes. The default: a record has around
-    /// thirty members and a submission usually changes three, so showing every
-    /// row by default buries the ones that need a decision.
+    /// Only the fields the submission changes. The default: a submission usually
+    /// changes a few of some thirty members, and every row would bury them.
     Changed,
     /// Every field, changed or not.
     All,
@@ -370,11 +326,8 @@ pub enum Notice<'a> {
     Refused(&'a str),
 }
 
-/// A finished review round, as the surface confirms it.
-///
-/// Its own type rather than three more [`Notice`] variants, because a finished
-/// round has no diff left to render beside it — the submission is gone. The
-/// page it produces is a confirmation and a way back to the queue.
+/// A finished review round, as the surface confirms it. Its own type rather than
+/// [`Notice`] variants because a finished round has no diff left to render.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Finished {
     /// An `approved_records` row now holds what was approved.
@@ -390,15 +343,13 @@ pub struct ReviewRow<'a> {
     /// The project member name. The key for the decision control, the
     /// substituted value's control, and the stored decision.
     pub field: &'a str,
-    /// The registry entry, or `None` for a member the form does not know —
-    /// which is what a field added to the contract without an editor change
-    /// looks like from here. It is what decides both the wording and the control, so the review
-    /// surface and the depositor's form cannot render a field differently.
+    /// The registry entry, or `None` for a member the form does not know, which is
+    /// what a field added to the contract without an editor change looks like. It
+    /// decides both wording and control, so review and form cannot differ.
     pub registry: Option<&'static Field>,
     pub published: Option<&'a Value>,
-    /// The submitted value, as the depositor sent it. Never replaced by the
-    /// reviewer's substitute: the two are shown together, because there is no
-    /// second approver and nobody else would ever see the change.
+    /// The submitted value as the depositor sent it, never replaced by the
+    /// substitute: the two are shown together, since no second approver sees it.
     pub submitted: Option<&'a Value>,
     /// What the reviewer put in place of it, or `None` where they left it.
     pub substitute: Option<&'a Value>,
@@ -424,20 +375,16 @@ impl ReviewRow<'_> {
     }
 }
 
-/// One proposed person or organisation, as the review surface shows it below the field diff.
-///
-/// A proposed entity is not a project field, so it gets no [`ReviewRow`] — the field diff reviews
-/// changed project fields, and a proposed person is not one. This is its own row, in its own
-/// region, with its own decision vocabulary ([`ProposalDecision`], not [`Decision`]).
+/// One proposed person or organisation, below the field diff. Not a [`ReviewRow`]:
+/// a proposed entity is not a project field, and it has its own decision
+/// vocabulary ([`ProposalDecision`], not [`Decision`]).
 pub struct EntityRow<'a> {
     pub proposal: &'a EntityProposal,
-    /// The proposed entity, parsed from [`EntityProposal::payload`]. Owned rather than borrowed:
-    /// nothing else on the page needs the parsed value to outlive this row, and parsing it once per
-    /// request is cheaper than threading a second lifetime through for it.
+    /// The proposed entity, parsed from [`EntityProposal::payload`]. Owned:
+    /// nothing else needs the parsed value to outlive this row.
     pub payload: Value,
-    /// The published entity's body, for [`ProposalOperation::Change`] — `None` for
-    /// [`ProposalOperation::New`], which has no published side to compare against, the same
-    /// situation an unpublished project is in.
+    /// The published entity's body for a [`ProposalOperation::Change`]; `None` for
+    /// a [`ProposalOperation::New`], which has nothing to compare against.
     pub published: Option<&'a Value>,
     /// Other projects, by their published shortcode, holding a live proposal for this same entity.
     /// Empty where nobody else has touched it.
@@ -460,21 +407,18 @@ pub struct ReviewView<'a> {
     /// Whether the reader is the one holding it.
     pub held_by_viewer: bool,
     pub rows: &'a [ReviewRow<'a>],
-    /// This submission's proposed entities, in submission order. Rendered below the field diff,
-    /// inside the same `<form>` — a proposal's decision has to arrive with a terminating action
-    /// exactly as a field's does, or approving straight after deciding one would act on whatever
-    /// was last saved rather than on what is on screen.
+    /// This submission's proposed entities, in submission order, rendered inside
+    /// the same `<form>`: a proposal's decision has to arrive with a terminating
+    /// action exactly as a field's does.
     pub entity_rows: &'a [EntityRow<'a>],
     pub filter: Filter,
     pub notice: Option<Notice<'a>>,
     /// The note as it stands, so a refused terminating action does not throw
     /// away what the reviewer typed.
     pub note: &'a str,
-    /// Which terminating control, if any, is asking for confirmation.
-    ///
-    /// Approve, request-changes and reject are all irreversible from this
-    /// surface — the submission row is gone either way — so each asks once. The
-    /// prompt is where the note becomes required for the two that carry one.
+    /// Which terminating control, if any, is asking for confirmation. All three
+    /// are irreversible from this surface, so each asks once; the prompt is where
+    /// the note becomes required.
     pub confirming: Option<&'a str>,
 }
 
@@ -487,12 +431,9 @@ impl ReviewView<'_> {
         self.rows.iter().filter(|row| row.changed).count()
     }
 
-    /// Changed rows nobody has decided yet.
-    ///
-    /// Approve is refused while this is non-zero: taking an undecided row
-    /// ships bytes nobody looked at, which is what a field-by-field surface
-    /// exists to prevent. "Accept all remaining" makes clearing it one click,
-    /// so the refusal is never a dead end.
+    /// Changed rows nobody has decided yet. Approve is refused while this is
+    /// non-zero: an undecided row ships bytes nobody looked at. "Accept all
+    /// remaining" makes clearing it one click.
     fn undecided(&self) -> usize {
         self.rows.iter().filter(|row| row.changed && row.decision.is_none()).count()
     }
@@ -516,13 +457,9 @@ pub fn page(view: &ReviewView<'_>) -> Markup {
     }
 }
 
-/// The summary, the status region and the diff form — everything a save can
-/// change.
-///
-/// The counts are inside it deliberately: a save that accepted four fields and
-/// left the tally at zero would be the review surface's version of the section
-/// rail going stale, which is the failure the form's region boundary exists to
-/// prevent.
+/// The summary, the status region and the diff form: everything a save can
+/// change. The counts are inside because a save that left the tally stale would
+/// be this surface's version of the section rail going stale.
 pub fn region(view: &ReviewView<'_>) -> Markup {
     html! {
         section id=(REGION_ID) {
@@ -567,17 +504,12 @@ fn heading(view: &ReviewView<'_>) -> Markup {
 /// The live region a save writes its outcome into.
 ///
 /// Present from the first load and empty: an `aria-live` region announces a
-/// *change* to content it already holds, and one morphed in together with its
-/// text is widely reported not to announce at all. `empty:hidden` is what keeps
-/// an always-present region free of a stray line box.
-///
-/// `AlertVariant::Warning` rather than `Danger` for a refusal, for the reason
-/// the section form's status region carries: `Danger` has `role="alert"`, an
-/// implicit assertive region, and screen readers do not agree on which
-/// politeness wins when one is nested inside a polite one.
-/// `sticky` for the reason the section form's own status region gives, and it bites hardest here:
-/// the diff is one row per changed field with the batch submit at the very bottom, so the notice
-/// answering that submit was always off-screen when it arrived.
+/// change to content it already holds, and one morphed in with its text is
+/// widely reported not to announce. `Warning` rather than `Danger` for a refusal:
+/// `Danger` has `role="alert"`, an implicit assertive region, and screen readers
+/// disagree on which politeness wins when nested. `sticky` because the batch
+/// submit sits at the very bottom of the diff, so its notice would otherwise
+/// arrive off-screen.
 fn status(view: &ReviewView<'_>) -> Markup {
     html! {
         div class="empty:hidden sticky top-0 z-10" aria-live="polite" {
@@ -598,14 +530,10 @@ fn status(view: &ReviewView<'_>) -> Markup {
     }
 }
 
-/// What a project with no published counterpart means for this review.
-///
-/// Stated once at the top rather than beside each field. It is a fact about the
-/// *record*, not about any one field, so repeating it per row says the same
-/// thing thirty times — and a paragraph rendered next to a control is not part
-/// of that control's accessible description, so a reader tabbing straight to
-/// the input never hears it at all. The per-row half is the "Not published yet"
-/// column, which every reader gets.
+/// What a project with no published counterpart means for this review, stated
+/// once at the top: it is a fact about the record, and a paragraph beside a
+/// control is not part of its accessible description. The per-row half is the
+/// "Not published yet" column.
 fn unpublished_banner(view: &ReviewView<'_>) -> Markup {
     if view.published {
         return html! {};
@@ -623,14 +551,10 @@ fn unpublished_banner(view: &ReviewView<'_>) -> Markup {
     }
 }
 
-/// Who holds the submission, and the way to take it over.
-///
-/// Visible rather than blocking, which is the whole of this service's answer to
-/// two reviewers on one submission: there is no lock, decisions are
-/// last-write-wins like a draft, and the one thing that must not happen
-/// silently is a second reviewer overwriting the first without either of them
-/// knowing. A lock would need a release path and a stale-lock timeout, and
-/// would strand a submission whenever somebody closed a tab.
+/// Who holds the submission, and the way to take it over. Visible rather than
+/// blocking: there is no lock, decisions are last-write-wins like a draft, and
+/// what must not happen silently is a second reviewer overwriting the first. A
+/// lock would need a release path and a stale-lock timeout.
 fn claim_banner(view: &ReviewView<'_>) -> Markup {
     let Some(reviewer) = view.reviewer else {
         return html! {};
@@ -645,9 +569,7 @@ fn claim_banner(view: &ReviewView<'_>) -> Markup {
     let take_over = html! {
         form method="post" action=(view.action()) class="mt-2" {
             input type="hidden" name=(INTENT) value=(CLAIM);
-            // The same reason the diff form carries it: a take-over that
-            // dropped the filter would return a reviewer from "every field" to
-            // the changed-only view, as if rows had disappeared.
+            // The filter travels with the take-over, as with the save.
             @if view.filter == Filter::All {
                 input type="hidden" name=(SHOW) value=(SHOW_ALL);
             }
@@ -704,10 +626,9 @@ fn diff_form(view: &ReviewView<'_>) -> Markup {
     let action = view.action();
     let rows: Vec<&ReviewRow<'_>> = view.visible().collect();
     html! {
-        // `contentType: 'form'` posts the body as `application/x-www-form-urlencoded`,
-        // which is what `editor_core::form` reads; Datastar sends no signals on
-        // a form-content-type request. No `__prevent`: the bundle calls
-        // `preventDefault` unconditionally for a `submit` event on a form.
+        // contentType: 'form' posts urlencoded, which editor_core::form reads, and
+        // Datastar sends no signals with it. No __prevent: the bundle calls
+        // preventDefault unconditionally on a form's submit.
         form
             id="review-form"
             method="post"
@@ -715,10 +636,8 @@ fn diff_form(view: &ReviewView<'_>) -> Markup {
             class="flex flex-col gap-4"
             data-on:submit={ "@post('" (action) "', {contentType: 'form'})" }
         {
-            // The filter travels with the save, or a reviewer looking at every
-            // field is silently returned to the changed-only view by their own
-            // save — on the enhanced path without even a navigation to explain
-            // it.
+            // The filter travels with the save, or a reviewer looking at every field
+            // is silently returned to the changed-only view.
             @if view.filter == Filter::All {
                 input type="hidden" name=(SHOW) value=(SHOW_ALL);
             }
@@ -788,10 +707,9 @@ fn operation_label(operation: ProposalOperation) -> &'static str {
     }
 }
 
-/// This kind's members, label then JSON key: `editor_web::entity`'s own field list, plus `address`
-/// for an organisation, which that module omits because it renders and applies the address as a
-/// flat group of scalars rather than through one of `Shape`'s per-field controls. The review row
-/// has no such split — it only ever reads a value — so `address` is one member like any other here.
+/// This kind's members, label then JSON key: `editor_web::entity`'s field list plus
+/// `address` for an organisation, which that module renders as a flat group; the
+/// review row only reads a value, so `address` is one member like any other.
 fn entity_members(kind: ProposalKind) -> Vec<(&'static str, &'static str)> {
     let mut members: Vec<(&'static str, &'static str)> =
         entity::fields_for(kind).iter().map(|field| (field.label, field.id)).collect();
@@ -829,11 +747,9 @@ fn entity_member_row(label: &str, member: &str, row: &EntityRow<'_>) -> Markup {
     }
 }
 
-/// Two projects may hold live proposals for the same entity at once (decision 4 on the issue): the
-/// review surface names the other project here rather than blocking, because blocking would strand
-/// one project on another project's review, while a silent overwrite would let RDU approve a
-/// change that is about to be replaced with nothing saying so — whichever is approved last simply
-/// wins.
+/// Two projects may hold live proposals for one entity at once: the surface
+/// names the other project rather than blocking, which would strand one project
+/// on another's review. Whichever is approved last wins.
 fn cross_project_notice(row: &EntityRow<'_>) -> Markup {
     if row.other_projects.is_empty() {
         return html! {};
@@ -872,15 +788,10 @@ fn entity_decision_control(row: &EntityRow<'_>) -> Markup {
 }
 
 /// The three controls that end the review round, and the note they carry.
-///
-/// Inside the diff form, not beside it. The note and every recorded decision
-/// have to arrive with the action: a separate form would post neither, so
-/// approving would ship the decisions as they were last *saved* rather than as
-/// they stand on screen — a difference nothing on the page would explain.
-///
-/// Each asks once before writing. All three are irreversible from here: the
-/// submission row is gone whichever is chosen, and only approve leaves a record
-/// anywhere else.
+/// Inside the diff form: the note and every recorded decision have to arrive
+/// with the action, or approving would ship the decisions as last saved rather
+/// than as they stand on screen. Each asks once before writing; all three are
+/// irreversible from here.
 fn finish(view: &ReviewView<'_>) -> Markup {
     html! {
         div class="mt-6 rounded border border-neutral-300 bg-white p-4 flex flex-col gap-4" {
@@ -900,9 +811,8 @@ fn finish_choices(view: &ReviewView<'_>) -> Markup {
     let undecided = view.undecided();
     html! {
         @if undecided > 0 {
-            // Said before the control rather than only on the refusal: a
-            // reviewer who knows why approve will refuse can clear it in one
-            // click instead of discovering it by being turned away.
+            // Said before the control, so a reviewer can clear it in one click rather
+            // than by being turned away.
             p class="text-sm text-neutral-600" {
                 strong { (undecided) }
                 (if undecided == 1 { " change has" } else { " changes have" })
@@ -922,12 +832,9 @@ fn finish_choices(view: &ReviewView<'_>) -> Markup {
                     .variant(ButtonVariant::Secondary)
                     .name_value(INTENT, REQUEST_CHANGES)
             })
-            // `Outline` and not a destructive variant, which Mosaic does not
-            // have: adding one is its own change, with a showcase and a CSS
-            // class. What actually guards the action is the confirmation step,
-            // the prose naming what is lost, and the "Yes, reject" label —
-            // colour is never the only signal here, for the reason
-            // `Obligation::label` gives.
+            // Outline, not a destructive variant Mosaic does not have: the confirmation
+            // step and the "Yes, reject" label guard the action, and colour is never
+            // the only signal.
             ({
                 button("Reject")
                     .variant(ButtonVariant::Outline)
@@ -958,12 +865,10 @@ fn confirm_approve(view: &ReviewView<'_>) -> Markup {
     }
 }
 
-/// Request-changes' and reject's confirmation, with the note both require.
-///
-/// `required` on the control and enforced again on the server. For reject it is
-/// the whole rejection signal: a rejection discards the submission and
-/// notifications are out of scope, so without a note the depositor's work
-/// vanishes with nothing saying why.
+/// Request-changes' and reject's confirmation, with the note both require:
+/// `required` on the control and enforced on the server. For reject it is the
+/// whole signal, since the submission is discarded and notifications are out of
+/// scope.
 fn confirm_note(view: &ReviewView<'_>, intent: &str) -> Markup {
     let (heading, label, action) = if intent == REJECT {
         (
@@ -998,16 +903,10 @@ fn confirm_note(view: &ReviewView<'_>, intent: &str) -> Markup {
     }
 }
 
-/// A confirmation's two buttons.
-///
-/// "Not now" carries no intent at all, so it falls through to a plain save —
-/// which re-renders this surface with the decisions intact and the prompt gone.
-/// A verb of its own would be one more that could write.
-///
-/// It needs [`ButtonType::Submit`] said explicitly: the builder defaults to
-/// `type="button"`, and only `name_value` promotes it — which is exactly what
-/// this button must not do. Left at the default it renders inside the form and
-/// does nothing at all.
+/// A confirmation's two buttons. "Not now" carries no intent, so it falls
+/// through to a plain save that re-renders with the prompt gone. It needs
+/// [`ButtonType::Submit`] said explicitly: the builder defaults to
+/// `type="button"` and only `name_value` promotes it.
 fn confirm_buttons(label: &str, intent: &str) -> Markup {
     html! {
         input type="hidden" name=(CONFIRMED) value="1";
@@ -1098,10 +997,8 @@ fn row_values(view: &ReviewView<'_>, row: &ReviewRow<'_>) -> Markup {
                     "Published"
                 }
                 @if view.published { (value_markup(row.published)) } @else {
-                    // Not the same as a published project holding no value for
-                    // this field: there is no published project at all, and a
-                    // reader told "Not set" would look for the field rather
-                    // than for the record.
+                    // No published project at all, not a published project holding no
+                    // value: "Not set" would send a reader looking for the field.
                     p class="italic text-neutral-600" { "Not published yet" }
                 }
             }
@@ -1116,10 +1013,7 @@ fn row_values(view: &ReviewView<'_>, row: &ReviewRow<'_>) -> Markup {
 }
 
 /// The submitted value, as a control where the reviewer may edit it and as a
-/// reading rendering everywhere else.
-///
-/// A row the reviewer has reverted renders read-only whatever its shape: the
-/// value they would be editing is not the one that would be committed, and a
+/// reading elsewhere. A reverted row renders read-only whatever its shape: a
 /// control that posts into a decision it contradicts is a trap.
 fn submitted_side(row: &ReviewRow<'_>) -> Markup {
     let reverted = row.decision == Some(Decision::Revert);
@@ -1135,11 +1029,8 @@ fn submitted_side(row: &ReviewRow<'_>) -> Markup {
     }
 }
 
-/// What the depositor actually sent, shown beneath the reviewer's replacement.
-///
-/// Only where the two differ. There is no second approver, so a value RDU
-/// substituted is seen by nobody unless the submitted one stays beside it — and
-/// the depositor is shown the same pair later.
+/// What the depositor sent, beneath the reviewer's replacement, only where they
+/// differ: no second approver sees a substituted value otherwise.
 fn submitted_original(row: &ReviewRow<'_>) -> Markup {
     if row.substitute.is_none() {
         return html! {};
@@ -1152,46 +1043,28 @@ fn submitted_original(row: &ReviewRow<'_>) -> Markup {
     }
 }
 
-/// The in-place editor for one row.
-///
-/// **The form's own control**, over the value that would be committed, rather
-/// than a second dispatch here. The second one diverged the moment it existed:
-/// it keyed off whether the value happened to contain a newline, so `startDate`
-/// rendered as free text where the form gives a date picker, and
-/// `shortDescription` lost the 200-character cap its own hint promises — with
-/// nothing server-side to catch either, because the cap is an HTML attribute.
-///
-/// The control posts under the field's own name, so `editor_core::form`'s
-/// appliers read a reviewer's edit exactly as they read a depositor's: the same
-/// trimming, the same newline normalisation, the same placeholder rules.
+/// The in-place editor for one row: the form's own control over the value that
+/// would be committed, not a second dispatch, which would diverge (a date field
+/// rendered as free text, a character cap lost). The control posts under the
+/// field's own name, so the appliers read a reviewer's edit as a depositor's.
 fn editor(row: &ReviewRow<'_>) -> Markup {
     let Some(field) = row.registry else { return html! {} };
     let Some(shape) = field.shape else { return html! {} };
-    // A one-member draft holding what would be committed. `set` with a
-    // `Value::Null` removes the member, which is exactly a substitution that
-    // cleared the field: the control then renders empty, as the form's does.
+    // A one-member draft holding what would be committed; set with Null removes
+    // the member, so a cleared substitution renders empty as the form's does.
     let mut outgoing = ProjectDraft::default();
     if let Some(value) = row.outgoing() {
         outgoing.set(field.id, value.clone());
     }
-    // `Rows::default()` deliberately: no posted body and no add/remove action.
-    // A reviewer is looking at what was *submitted*, so a repeatable field
-    // renders its stored rows read-only-ish rather than an editing state, and
-    // there is no blank row to keep alive across a round trip here.
+    // Rows::default(): no posted body and no add/remove action, since a reviewer
+    // looks at what was submitted.
     control(field, &outgoing, shape, crate::form::widgets::Rows::default())
 }
 
-/// Accept / revert / undecided for one field.
-///
-/// A radio group and not a pair of buttons, because the three states have to be
-/// distinguishable and reversible: a button that has been pressed says nothing
-/// about a field being *back* to undecided, and a revert is not the absence of
-/// an accept. The tile's own documentation is the reason the third
-/// choice is explicit — a radio group cannot be returned to unset, so "not
-/// reviewed yet" has to be a choice of its own.
-///
-/// Revert is absent entirely where nothing is published: it means "keep the
-/// published value", and there is none.
+/// Accept / revert / undecided for one field. A radio group, not buttons: the
+/// three states have to be distinguishable and reversible, and a radio group
+/// cannot be returned to unset, so "not reviewed yet" is a choice of its own.
+/// Revert is absent where nothing is published.
 fn decision_control(view: &ReviewView<'_>, row: &ReviewRow<'_>) -> Markup {
     let legend = format!("{} — decision", row.label());
     let selected = row.decision.map_or("", Decision::as_str);
@@ -1294,12 +1167,9 @@ mod tests {
         }
     }
 
-    /// A minimal proposal fixture.
-    ///
-    /// `id`, `created_at` and `updated_at` are `Default::default()` rather than named
-    /// `uuid`/`chrono` values: neither crate is a dependency of `editor-web` — this crate never
-    /// needs to *construct* one, only to render a value whose type `editor-core` already names
-    /// — and none of these three rows are read by anything the review surface renders.
+    /// A minimal proposal fixture. `id` and the timestamps are `Default::default()`:
+    /// neither `uuid` nor `chrono` is a dependency of this crate, and nothing the
+    /// surface renders reads them.
     fn an_entity_proposal(kind: ProposalKind, operation: ProposalOperation, entity_id: &str) -> EntityProposal {
         EntityProposal {
             id: Default::default(),
@@ -1320,8 +1190,7 @@ mod tests {
 
     #[test]
     fn no_registry_field_id_begins_with_the_entity_decision_prefix() {
-        // The collision `ENTITY_DECISION_PREFIX`'s own docs argue against, pinned rather than only
-        // argued in prose — the same argument `DECISION_PREFIX`'s docs make for its own namespace.
+        // The collision ENTITY_DECISION_PREFIX's docs argue against, pinned.
         for section in crate::form::registry::sections_for(crate::form::registry::Audience::RduOnly) {
             for field in section.fields_for(crate::form::registry::Audience::RduOnly) {
                 assert!(
@@ -1350,8 +1219,7 @@ mod tests {
         let out = entity_row(&row).into_string();
         assert!(out.contains("Person"), "{out}");
         assert!(out.contains("person-417"), "{out}");
-        // A repeatable member is summarised by `value_markup`, the same as everywhere else it is
-        // reused; a scalar one is the plain content.
+        // A repeatable member is summarised by value_markup, a scalar is plain.
         assert!(out.contains("ada@example.org"), "{out}");
         assert!(out.contains("Not published yet"), "{out}");
     }
@@ -1423,8 +1291,6 @@ mod tests {
 
     #[test]
     fn the_queue_lists_drafts_as_well_as_submissions() {
-        // RDU sees every draft, so it can help a depositor who is stuck before
-        // submitting.
         let out = queue(&[], &[draft_row()]).into_string();
         assert!(out.contains("Drafts in progress"), "{out}");
         assert!(out.contains(r#"href="/projects/080C""#), "{out}");
@@ -1433,8 +1299,6 @@ mod tests {
 
     #[test]
     fn opening_a_submission_is_a_post_and_not_a_link() {
-        // A claim changes state, and the same-origin CSRF control exempts `GET`
-        // by necessity — a navigation from anywhere is a `GET`.
         let out = queue(&[queue_row()], &[]).into_string();
         assert!(out.contains(r#"<form method="post" action="/review/0801d""#), "{out}");
         assert!(out.contains(r#"value="claim""#), "{out}");
@@ -1462,9 +1326,6 @@ mod tests {
 
     #[test]
     fn the_diff_posts_the_whole_form_rather_than_one_request_per_field() {
-        // The batching the per-field controls need: every decision and
-        // every substituted value arrives in one body, so partial failure is one
-        // server-side transaction rather than N independent ones.
         let rows = rows();
         let out = page(&view(&rows)).into_string();
         assert!(out.contains(r#"action="/review/0801d""#), "{out}");
@@ -1480,18 +1341,14 @@ mod tests {
             out.contains(r#"data-on:submit="@post('/review/0801d', {contentType: 'form'})""#),
             "{out}"
         );
-        // Keyed plugin attributes use `:`, not `-`. The hyphen form is a console
-        // error and an inert control, and a test asserting presence passes either way.
+        // Keyed plugin attributes use `:`; the hyphen form is inert.
         assert!(!out.contains("data-on-submit"), "{out}");
     }
 
     #[test]
     fn accept_all_is_a_named_submit_on_the_same_form() {
-        // Both paths carry it: a native submit posts the activated button's
-        // name and value, and Datastar 1.0.2's form mode appends the
-        // `SubmitEvent`'s submitter to the body it builds. A `formaction` would
-        // work on the plain path only — the bundle posts to the URL in
-        // `@post`, so the second destination would be silently ignored.
+        // A formaction would work on the plain path only: the bundle posts to the
+        // URL in @post and ignores it.
         let rows = rows();
         let out = page(&view(&rows)).into_string();
         assert!(out.contains(r#"name="intent" value="save""#), "{out}");
@@ -1500,8 +1357,6 @@ mod tests {
 
     #[test]
     fn only_changed_fields_are_shown_by_default() {
-        // Around thirty members, usually three of them changed: showing every
-        // row by default buries the ones that need a decision.
         let rows = rows();
         let out = page(&view(&rows)).into_string();
         assert!(out.contains("Name"), "{out}");
@@ -1522,8 +1377,6 @@ mod tests {
 
     #[test]
     fn a_changed_field_offers_accept_revert_and_not_reviewed_yet() {
-        // Three states, all reversible. A radio group cannot be returned to
-        // unset, so "not reviewed yet" has to be a choice of its own.
         let rows = rows();
         let out = page(&view(&rows)).into_string();
         assert!(out.contains(r#"name="decision.name""#), "{out}");
@@ -1534,8 +1387,6 @@ mod tests {
 
     #[test]
     fn an_editable_field_posts_under_its_own_name() {
-        // The same name the section form posts, so `editor_core::form`'s
-        // appliers read a reviewer's edit exactly as they read a depositor's.
         let rows = rows();
         let out = page(&view(&rows)).into_string();
         assert!(out.contains(r#"name="name""#), "{out}");
@@ -1555,9 +1406,6 @@ mod tests {
 
     #[test]
     fn a_reverted_field_renders_read_only() {
-        // The value the reviewer would be editing is not the one that would be
-        // committed, so a control posting into a decision that discards it is a
-        // trap.
         let mut rows = rows();
         rows[0].decision = Some(Decision::Revert);
         let out = page(&view(&rows)).into_string();
@@ -1567,9 +1415,6 @@ mod tests {
 
     #[test]
     fn a_substituted_value_is_shown_beside_what_the_depositor_sent() {
-        // There is no second approver, so a value RDU put in place of the
-        // depositor's is seen by nobody unless the submitted one stays beside
-        // it.
         let substitute = json!("A reviewer's wording");
         let mut rows = rows();
         rows[0].decision = Some(Decision::Accept);
@@ -1583,18 +1428,12 @@ mod tests {
 
     #[test]
     fn an_unpublished_project_offers_no_revert_and_says_why() {
-        // A local-only project: revert means keeping the published value, and
-        // there is none — offering it would silently unset a field the contract
-        // requires.
         let rows = rows();
         let mut view = view(&rows);
         view.published = false;
         view.project_name = None;
         let out = page(&view).into_string();
         assert!(out.contains("Not published yet"), "{out}");
-        // Said once, at the top: it is a fact about the record, not about any
-        // one field, and a paragraph beside a control is not part of that
-        // control's accessible description.
         assert_eq!(out.matches("Nothing published to compare against").count(), 1, "{out}");
         assert!(out.contains("no field can be reverted"), "{out}");
         assert!(!out.contains(r#"value="revert""#), "{out}");
@@ -1603,9 +1442,6 @@ mod tests {
 
     #[test]
     fn a_second_reviewer_is_told_who_has_it_and_is_not_blocked() {
-        // No lock: a lock needs a release path and a stale-lock timeout, and
-        // would strand a submission whenever somebody closed a tab. What must
-        // not happen silently is one reviewer overwriting another.
         let rows = rows();
         let mut view = view(&rows);
         view.reviewer = Some("Another Reviewer");
@@ -1646,9 +1482,6 @@ mod tests {
 
     #[test]
     fn the_status_region_is_present_and_empty_from_the_first_load() {
-        // An `aria-live` region announces a change to content it already holds;
-        // one morphed in together with its text is widely reported not to
-        // announce at all.
         let rows = rows();
         let out = region(&view(&rows)).into_string();
         assert!(
@@ -1659,9 +1492,6 @@ mod tests {
 
     #[test]
     fn a_refusal_is_a_warning_and_not_a_danger_alert() {
-        // `Danger` carries `role="alert"`, an implicit assertive region, and
-        // screen readers do not agree on which politeness wins when one is
-        // nested inside a polite one.
         let rows = rows();
         let mut view = view(&rows);
         view.notice = Some(Notice::Refused("Nothing was saved."));

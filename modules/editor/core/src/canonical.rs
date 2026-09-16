@@ -1,9 +1,8 @@
 //! The canonical `projects/*.json` writer.
 //!
-//! One function decides what a project file looks like, so an approved
-//! submission is byte-comparable with what is committed and a review diff shows
-//! only what the depositor actually changed. The form is the one the 85
-//! committed files already hold:
+//! One function decides what a project file looks like, so a review diff shows
+//! only what the depositor changed. The form is the one the committed files
+//! hold:
 //!
 //! - members in `ProjectRaw`'s field declaration order, nested objects included
 //! - `null` members dropped, recursively
@@ -12,13 +11,10 @@
 //! - a trailing newline
 //! - non-ASCII left unescaped
 //!
-//! Output goes through `ProjectRaw` and not through the draft's own members: a
-//! field added to the contract is carried without an editor change, and
-//! anything the contract does not declare is not written.
-//!
-//! `serde_json`'s string escaping already matches the committed files (`\n`,
-//! `\r`, `\t`, `\"`, and non-ASCII left as-is), so there is no custom escaping
-//! here. The 85-file round-trip test is what holds that claim up.
+//! Output goes through `ProjectRaw`, so a field added to the contract is written
+//! without an editor change and an undeclared key is not written at all.
+//! `serde_json`'s string escaping matches the committed files, so there is no
+//! custom escaping; the corpus round-trip test holds that claim up.
 //!
 //! [`Multilingual`]: platform_metadata::utils::Multilingual
 
@@ -36,12 +32,9 @@ const INDENT: &[u8] = b"    ";
 
 /// Serializes a project in the canonical form.
 ///
-/// The `Value` detour exists to drop `null` members: `ProjectRaw` cannot carry
-/// `skip_serializing_if`, because `dpe-server` serializes it through
-/// `axum::Json` and that attribute would change DPE's API responses too. It is
-/// order-safe because the workspace enables `serde_json`'s `preserve_order`;
-/// without that feature `Value` is `BTreeMap`-backed and this would alphabetise
-/// every key in the file.
+/// The `Value` detour drops `null` members; [`strip_null_members`] says why
+/// `ProjectRaw` cannot skip them itself. It is order-safe only under
+/// `serde_json`'s `preserve_order`, which the workspace enables.
 pub fn write_project(project: &ProjectRaw) -> Result<String, serde_json::Error> {
     let mut value = serde_json::to_value(project)?;
     strip_null_members(&mut value);

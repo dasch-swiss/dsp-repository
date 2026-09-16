@@ -1,35 +1,24 @@
 //! The field-by-field comparison RDU reviews a submission through, and the
 //! per-field decisions it records.
 //!
-//! Two halves that stay apart on purpose. [`diff`] is a pure comparison of two
-//! drafts and knows nothing about a form or a reviewer; [`ReviewState`] is what
-//! a reviewer decided, stored beside the submission and read back by the
-//! surface that renders it. Neither knows a field's label — that is the
-//! registry's, in `editor-web`, and the dependency runs the other way.
+//! [`diff`] is a pure comparison of two drafts; [`ReviewState`] is what a
+//! reviewer decided, stored beside the submission. Neither knows a field's
+//! label: that is the registry's, in `editor-web`, and the dependency runs the
+//! other way.
 //!
-//! ## The comparison is over top-level members, not registry fields
+//! The comparison is over top-level members, not registry fields: enumerating
+//! the registry would show a reviewer only the fields the form knows, so a
+//! change arriving through any other path would be approved without being
+//! displayed. The union of both sides is the row set. No registry id is nested
+//! (`accessRights.embargoDate` is the only dotted one), so top-level
+//! granularity loses no editable field; a nested change shows as its parent
+//! member changing.
 //!
-//! A draft is the project's JSON members ([`ProjectDraft`]), including members
-//! no applier touches and members added to the contract since this build.
-//! Enumerating the registry instead would show a reviewer only
-//! the fields the *form* knows, so a change arriving through any other path
-//! would be approved without ever being displayed. The union of both sides is
-//! therefore the row set, and the registry supplies wording for the ids it
-//! recognises.
-//!
-//! No registry id in the form is nested (`accessRights.embargoDate` is the only
-//! dotted one and has no shape), so top-level granularity loses no editable
-//! field today. A nested change shows as its parent member changing.
-//!
-//! ## What "changed" means
-//!
-//! Equality of the stored `serde_json::Value`s. That is stricter than the
-//! comparison [`crate::form`] applies to a submitted value — which forgives
-//! surrounding whitespace and a CRLF — and it has to be: those rules exist so
-//! that *saving* an untouched form writes no bytes, and by the time a
-//! submission exists they have already been applied. A difference that survives
-//! them is a real difference in what would be committed, and hiding it from a
-//! reviewer would approve bytes nobody saw.
+//! "Changed" is equality of the stored `serde_json::Value`s. That is stricter
+//! than the whitespace and CRLF forgiveness [`crate::form`] applies, and has to
+//! be: those rules have already run by the time a submission exists, so a
+//! difference that survives them is a real difference in what would be
+//! committed, and hiding it would approve bytes nobody saw.
 
 use std::collections::BTreeMap;
 
@@ -40,11 +29,9 @@ use crate::draft::ProjectDraft;
 
 /// What a reviewer decided about one field.
 ///
-/// Absent — no entry in [`ReviewState`] — is a third state and the initial one:
-/// the field is changed and nobody has looked at it yet. It is not a variant
-/// here because "undecided" is the absence of a decision, and giving it a
-/// stored form would let a field be explicitly undecided, which is the same
-/// thing written two ways.
+/// Absent from [`ReviewState`] is the initial, undecided state. Not a variant:
+/// "undecided" is the absence of a decision, and a stored form would be the same
+/// thing written twice.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Decision {
@@ -65,9 +52,8 @@ impl Decision {
     }
 
     /// Parse a posted decision. `None` for anything else, including the empty
-    /// value an "undecided" control posts — a hand-built body naming a decision
-    /// this build does not know must leave the field undecided rather than pick
-    /// one.
+    /// value an undecided control posts, so an unknown posted decision leaves the
+    /// field undecided rather than picking one.
     #[must_use]
     pub fn parse(value: &str) -> Option<Self> {
         match value {
@@ -81,12 +67,9 @@ impl Decision {
 /// One field's review: the decision, and the value a reviewer put in place of
 /// the submitted one.
 ///
-/// The substitute is kept *here* rather than written into the submission's
-/// payload, which would be the shorter path and would destroy evidence: the
-/// depositor's own value is what a later screen has to show them beside what
-/// RDU substituted — a depositor's submission needs no second approver, so
-/// nobody else sees the change — and an overwritten payload cannot answer what
-/// was submitted.
+/// The substitute is kept here rather than written into the payload: the
+/// depositor's own value has to be shown beside RDU's later, and with no second
+/// approver nobody else would see the change.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct FieldReview {
     /// `None` while the field is still undecided.
@@ -95,19 +78,16 @@ pub struct FieldReview {
     /// The reviewer's replacement for the submitted value, or `None` where they
     /// left it alone.
     ///
-    /// `Some(Value::Null)` is a reviewer *clearing* a field the contract types
-    /// as an `Option` — the applier removed the member, and that is a real
-    /// substitution. It has to be representable: with absence meaning
-    /// "unchanged", `substitute.or(submitted)` could not express a cleared
-    /// field at all, and the surface would keep offering the submitted value.
+    /// `Some(Value::Null)` is a reviewer clearing an `Option` field, a real
+    /// substitution. With absence meaning "unchanged", `substitute.or(submitted)`
+    /// could not express it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<Value>,
 }
 
 impl FieldReview {
-    /// Whether this entry says anything at all. An empty one is dropped rather
-    /// than stored, so a reload cannot tell "decided nothing" from "never
-    /// touched" — because they are the same state.
+    /// Whether this entry says anything. An empty one is dropped rather than
+    /// stored, since "decided nothing" and "never touched" are the same state.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.decision.is_none() && self.value.is_none()
@@ -116,10 +96,9 @@ impl FieldReview {
 
 /// Every field decision on one submission.
 ///
-/// Serializes as a plain object keyed by field id, which is what the
+/// Serializes as an object keyed by field id, which is what the
 /// `submissions.review_state` column holds. A `BTreeMap` so the stored JSON is
-/// stable across writes — the column is compared in tests and read by a human
-/// debugging a review.
+/// stable across writes.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct ReviewState {
@@ -135,10 +114,9 @@ impl ReviewState {
 
     /// Parse a stored `review_state` column.
     ///
-    /// A payload this build cannot read is an empty state and an error in the
-    /// log, never a refusal: the reviewer can still see the diff and decide
-    /// again, where a 500 would strand the submission until someone edited the
-    /// database.
+    /// A payload this build cannot read is an empty state and an error for the
+    /// log, never a refusal: the reviewer can decide again, where a 500 would
+    /// strand the submission.
     #[must_use]
     pub fn parse(stored: Option<&str>) -> (Self, Option<serde_json::Error>) {
         match stored {
@@ -193,15 +171,10 @@ impl ReviewState {
 
     /// Every field marked [`Decision::Accept`], in stored order.
     ///
-    /// This is what locks a field on a returned draft — request-changes retains the
-    /// per-field state, and nothing stopped the depositor altering it: a field
-    /// RDU has already accepted must not re-enter review still flagged
-    /// accepted while holding a value nobody accepted.
-    ///
-    /// Reverted fields are deliberately *not* here. A revert discards the
-    /// submitted value, so the depositor has nothing to preserve and every
-    /// reason to try again — locking it would leave them a field they were told
-    /// to fix and cannot touch.
+    /// What locks a field on a returned draft: request-changes keeps the
+    /// per-field state, and an accepted field the depositor then altered must
+    /// not re-enter review flagged accepted. Reverted fields are excluded: the
+    /// depositor has to redo them.
     #[must_use]
     pub fn accepted_fields(&self) -> Vec<&str> {
         self.fields
@@ -213,12 +186,9 @@ impl ReviewState {
 
     /// Every field RDU put its own value in place of, with that value.
     ///
-    /// What the depositor is shown before an approval they get no other sight
-    /// of: editing is permitted before acceptance and there is no second approver, so a
-    /// substituted value is otherwise seen by nobody.
-    ///
-    /// Reverted fields are excluded for the reason [`Self::accepted_fields`]
-    /// gives about them, and because a revert stores no substitute anyway.
+    /// What the depositor is shown before an approval; with no second approver
+    /// a substituted value is otherwise seen by nobody. Reverted fields are
+    /// excluded, and a revert stores no substitute anyway.
     #[must_use]
     pub fn substitutions(&self) -> Vec<(&str, &Value)> {
         self.fields
@@ -254,17 +224,12 @@ impl FieldDiff {
 /// Compare a submission against the published project, member by member.
 ///
 /// `published` is `None` for a project that exists only locally, which is not
-/// the same as a published project holding none of these members:
-/// there is no published side to revert *to*, and the surface says so rather
-/// than offering a revert that would silently unset a required field. The
-/// comparison itself is identical either way — an absent project answers `None`
-/// for every member — so only the framing differs.
+/// a published project holding none of these members: there is no published
+/// side to revert to, and the surface says so rather than offering a revert.
 ///
-/// Order is the submission's own member order (which is `ProjectRaw`'s
-/// declaration order, the same order the canonical writer emits), with any
-/// member only the published project has appended. A member the submission
-/// dropped is therefore still a row, at the end: a removal is a change a
-/// reviewer has to see, and one sorted out of the list is one nobody rejects.
+/// Order is the submission's own member order (`ProjectRaw`'s declaration
+/// order, which the canonical writer emits), with members only the published
+/// project has appended, so a member the submission dropped is still a row.
 #[must_use]
 pub fn diff(published: Option<&ProjectDraft>, submitted: &ProjectDraft) -> Vec<FieldDiff> {
     let mut rows: Vec<FieldDiff> = submitted
@@ -364,10 +329,6 @@ mod tests {
 
     #[test]
     fn test_a_difference_only_in_whitespace_is_still_a_difference() {
-        // The form's own comparison forgives surrounding whitespace so an
-        // untouched save writes no bytes. By the time a submission exists those
-        // rules have already run, so anything left is a real difference in what
-        // would be committed — and a reviewer must not approve bytes nobody saw.
         let published = draft(json!({ "name": "Bernoulli" }));
         let submitted = draft(json!({ "name": "Bernoulli " }));
         assert!(diff(Some(&published), &submitted)[0].changed());
@@ -408,8 +369,6 @@ mod tests {
 
     #[test]
     fn test_an_unreadable_review_state_is_empty_rather_than_an_error() {
-        // The reviewer can still see the diff and decide again; a refusal would
-        // strand the submission until someone edited the database.
         let (state, error) = ReviewState::parse(Some("not json"));
         assert!(state.is_empty());
         assert!(error.is_some());
@@ -430,11 +389,6 @@ mod tests {
 
     #[test]
     fn test_accepted_fields_are_the_ones_a_returned_draft_locks() {
-        // Request-changes retains the per-field state, and nothing stopped the depositor
-        // altering an accepted field, which then re-entered review still
-        // flagged accepted. A reverted field is deliberately not locked: its
-        // submitted value was discarded, so there is nothing to preserve and
-        // the depositor has every reason to try again.
         let mut state = ReviewState::new();
         state.set("name", FieldReview { decision: Some(Decision::Accept), value: None });
         state.set("abstract", FieldReview { decision: Some(Decision::Revert), value: None });
@@ -452,8 +406,6 @@ mod tests {
 
     #[test]
     fn test_substitutions_are_what_the_depositor_is_shown() {
-        // Editing is permitted before acceptance and there is no second approver, so a value
-        // RDU put in place of the depositor's is seen by nobody unless this reports it.
         let mut state = ReviewState::new();
         state.set(
             "name",
@@ -471,10 +423,8 @@ mod tests {
 
     #[test]
     fn test_a_cleared_field_is_a_substitution_the_depositor_sees() {
-        // `Some(Value::Null)` is a reviewer clearing a field, which is a real
-        // substitution — the one an `or`-shaped alternative could not express.
-        // Filtering it out here would hide exactly the case where the
-        // depositor's value disappeared rather than changed.
+        // `Some(Value::Null)` is a reviewer clearing a field, a real substitution;
+        // filtering it out would hide exactly the case where a value disappeared.
         let mut state = ReviewState::new();
         state.set(
             "endDate",

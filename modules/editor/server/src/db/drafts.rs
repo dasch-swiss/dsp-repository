@@ -131,9 +131,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_upsert_replaces_the_payload_and_keeps_the_original_created_at() {
-        // One draft per project, last write wins. `created_at`
-        // records when the depositor started; refreshing it on every save would
-        // lose that.
+        // One draft per project, last write wins.
         let db = test_db("drafts-upsert").await;
         let author = a_user(&db).await;
         db.upsert(&draft("0801", "first", Some(author), at(11))).await.unwrap();

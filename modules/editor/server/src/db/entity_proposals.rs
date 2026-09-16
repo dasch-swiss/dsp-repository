@@ -5,10 +5,9 @@
 //! inside one `write` closure, which is `Database::write`'s `BEGIN IMMEDIATE`.
 //! Two proposals for the same kind, submitted at once, still serialise through
 //! the single writer connection — so the second one's `SELECT` always sees the
-//! first one's `INSERT`, and the two can never compute the same next id. That
-//! is the guard allocating an id at proposal time needs, and that renumbering does not give:
-//! renumbering happens against the repository on collision, and nothing in it stops two
-//! proposals inside the editor from allocating the same id before either reaches it.
+//! first one's `INSERT`, and the two can never compute the same next id. Renumbering upstream
+//! does not give that guard: it happens on collision against the repository, and nothing in it
+//! stops two proposals inside the editor allocating the same id first.
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -318,8 +317,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_an_allocated_id_is_not_reused_after_its_proposal_is_rejected() {
-        // Decision 2 on the issue: a rejected row is terminal but stays in the
-        // uniqueness index, so the id it took is spent for good.
+        // A rejected row is terminal but stays in the uniqueness index, so the
+        // id it took is spent for good.
         let db = test_db("entity-proposals-no-reuse-after-reject").await;
         let first = EntityProposalRepository::create_new(
             &db,
@@ -519,12 +518,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_known_status_reads_back_through_its_from_str() {
-        // Pins that `parsed_column` is actually wired to `status` here, the way
-        // `submissions.rs`'s equivalent test does. The unknown-status case
-        // itself is `proposals.rs`'s
-        // `test_unknown_stored_proposal_status_is_an_error_not_a_default` and is not
-        // repeated here — reaching a corrupt row would mean defeating the `CHECK`
-        // constraint on the write.
+        // Pins that `parsed_column` is wired to `status` here. The unknown-status
+        // case lives in `proposals.rs` and is not repeated: reaching a corrupt
+        // row would mean defeating the `CHECK` constraint on the write.
         let db = test_db("entity-proposals-status-round-trip").await;
         let mut proposal = a_proposal("0801", "person-417", ProposalKind::Person, ProposalOperation::New);
         proposal.status = ProposalStatus::Submitted;

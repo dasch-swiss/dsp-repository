@@ -1,21 +1,18 @@
-//! Which control each field renders — the `FIELD_RENDERERS` half of the
-//! prototype's split, keyed by the same ids [`registry`](super::registry) is.
+//! Which control each field renders, keyed by the same ids
+//! [`registry`](super::registry) is.
 //!
-//! The dispatch is a `match` on the field **id**, not on the shape: two fields
-//! can share a shape and want different controls (`provenance` and
+//! The dispatch is a `match` on the field id, not on the shape: two fields can
+//! share a shape and want different controls (`provenance` and
 //! `dataManagementPlan` are both an `Option<String>`, one a paragraph and one a
 //! URL).
 //!
 //! A field renders in one of three states, and which one decides whether it
-//! **posts**: a control posts even when empty, a value and a note post nothing
-//! at all. That is load-bearing, because a section posts only its own fields and
-//! an applier reads an absent name as "this section did not carry it" — so a
-//! display-only or not-yet-read field must submit no name, or an empty control
-//! would clear a value the save was never meant to touch.
-//!
-//! A note rather than silence for a field whose widget has not landed: a
-//! depositor who cannot find "Keywords" in the section the published page shows
-//! it in would otherwise conclude the form lost it.
+//! posts: a control posts even when empty, a value and a note post nothing. A
+//! section posts only its own fields and an applier reads an absent name as
+//! "not carried", so a display-only or not-yet-read field must submit no name,
+//! or an empty control would clear a value the save was never meant to touch. A
+//! note rather than silence for a field whose widget has not landed, so a
+//! depositor does not conclude the form lost it.
 
 use editor_core::agents::{Agent, AgentKind, AgentMatches, AgentScope};
 use editor_core::draft::{ProjectDraft, UrlSlot};
@@ -38,11 +35,8 @@ use super::registry::{Field, Obligation};
 use crate::form::INTENT;
 use crate::pages::section::{propose_changes_intent, FIND_AGENT, PROPOSE_ORGANIZATION, PROPOSE_PERSON};
 
-/// Whether the form is open for editing.
-///
-/// A named type rather than a `bool` argument: `field_row(field, draft, true)`
-/// at a call site says nothing about which way round `true` is, and the two
-/// renderings differ by whether a save can change the project.
+/// Whether the form is open for editing. A named type rather than a `bool`
+/// argument, which says nothing about which way round `true` is at a call site.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     /// Controls, and a save that writes.
@@ -50,22 +44,16 @@ pub enum Mode {
     /// Values only — the project has a submission in review, so nothing may
     /// change under the reviewer.
     ReadOnly,
-    /// Values only, because RDU accepted this field in the round being
-    /// answered.
-    ///
-    /// A third variant rather than [`Self::ReadOnly`] with a flag beside it,
-    /// because the reader has to be told *which* of two reasons applies: a
-    /// whole-form lock lifts when the review finishes, and this one lifts when
-    /// the field is submitted again. Told the wrong one, a depositor waits for
-    /// the wrong event.
+    /// Values only, because RDU accepted this field in the round being answered.
+    /// A third variant because the reader has to be told which of two reasons
+    /// applies: a whole-form lock lifts when the review finishes, this one when
+    /// the field is submitted again.
     Accepted,
 }
 
-/// What a reader is told about a field RDU has already accepted.
-///
-/// It renders as a value with no control, so nothing about it posts and the
-/// applier that would write it is not run either — the note explains a gate
-/// that is enforced server-side, rather than being the gate.
+/// What a reader is told about a field RDU has already accepted. It renders as
+/// a value with no control, so nothing posts; the note explains a gate enforced
+/// server-side.
 const ACCEPTED_BY_RDU: &str = "RDU accepted this value, so it is fixed while you answer this review. It is submitted \
                                unchanged, and becomes editable again after the next review round.";
 
@@ -88,16 +76,10 @@ pub fn field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<'_>
     }
 }
 
-/// A field rendered as a value or as a note, with its own label above it.
-///
-/// Not a `<label>`: there is no control for one to point at, and a `for`
-/// naming nothing is worse than no `for` at all. The heading and the value are
-/// tied by proximity and by the same `field-*` treatment the tiles use, so a
-/// locked form reads as the same form.
-///
-/// `pub(crate)`: `crate::entity` reuses this verbatim for a proposal that is
-/// no longer live, rather than a second read-only renderer that could show a
-/// person or organisation's values differently from a project's.
+/// A field rendered as a value or as a note, with its own label above it. Not a
+/// `<label>`: there is no control for one to point at, and a `for` naming
+/// nothing is worse than none. `pub(crate)` because `crate::entity` reuses this
+/// for a proposal that is no longer live.
 pub(crate) fn stated(field: &Field, draft: &ProjectDraft, why: Option<&str>) -> Markup {
     let editable_but_unbuilt = !field.display_only && field.shape.is_none();
     html! {
@@ -107,8 +89,8 @@ pub(crate) fn stated(field: &Field, draft: &ProjectDraft, why: Option<&str>) -> 
             @if editable_but_unbuilt {
                 p class="field-hint" { (NOT_READ_YET) }
             } @else if let Some(why) = why {
-                // Instead of the hint, not beside it: the hint says what to
-                // type, which is not what this reader can do.
+                // Instead of the hint: the hint says what to type, which this reader
+                // cannot do.
                 p class="field-hint" { (why) }
             } @else if let Some(hint) = field.hint {
                 p class="field-hint" { (hint) }
@@ -122,17 +104,11 @@ fn value_display(field: &Field, draft: &ProjectDraft) -> Markup {
     value_markup(draft.get(field.id))
 }
 
-/// Any project member, rendered for reading.
-///
-/// Takes a `Value` rather than a field and a draft because the review surface
-/// renders two of them side by side — a published one and a submitted one — and
-/// neither is "the draft's". One rendering for both, so a reviewer comparing a
-/// value against the form that produced it is comparing like with like.
-///
-/// A placeholder sentinel is *not* shown: `MISSING` and `CALCULATED` are the
-/// platform's "no value yet" markers, filtered out of DPE's UI and of OAI-PMH's
-/// output, so showing one here would be the only place in the platform that
-/// presents an internal marker as a value.
+/// Any project member, rendered for reading. Takes a `Value` because the review
+/// surface renders a published and a submitted one side by side; one rendering
+/// for both. A placeholder sentinel is not shown: `MISSING` and `CALCULATED` are
+/// filtered out of DPE's UI and OAI-PMH output, so showing one here would present
+/// an internal marker as a value.
 pub(crate) fn value_markup(value: Option<&Value>) -> Markup {
     html! {
         @match value {
@@ -153,24 +129,17 @@ pub(crate) fn value_markup(value: Option<&Value>) -> Markup {
     }
 }
 
-/// A language map as the form's editing view over it, in UI-tag order.
-///
-/// Same construction as [`ProjectDraft::multilingual`], for a value already in
-/// hand rather than one looked up by field id — a row of a repeatable field is
-/// exactly that, which is why this is `pub`: `untouched_form_round_trip` builds
-/// the body a row would post and has to read a row the same way the widget
+/// A language map as the form's editing view over it, in UI-tag order. `pub`
+/// because `untouched_form_round_trip` has to read a row the same way the widget
 /// does, or it tests a body no browser would send.
 pub fn as_multilingual(value: &Value) -> DraftMultilingual {
     let contract = serde_json::from_value(value.clone()).unwrap_or_default();
     DraftMultilingual::from_contract(&contract)
 }
 
-/// Whether a stored object is a language map rather than a structured value.
-///
-/// Every member being a short lowercase tag holding a string is what separates
-/// `{"en": "…"}` from `{"type": …, "url": …}`. A structured value is summarised
-/// by its member count instead, which is honest about not rendering it rather
-/// than showing a half-parsed version of it.
+/// Whether a stored object is a language map rather than a structured value:
+/// every member is a short lowercase tag holding a string. A structured value is
+/// summarised by its member count instead.
 pub(crate) fn is_language_map(value: &Value) -> bool {
     value.as_object().is_some_and(|members| {
         !members.is_empty()
@@ -204,13 +173,9 @@ fn count_summary(count: usize) -> String {
     }
 }
 
-/// The language a tag names, or the tag itself.
-///
-/// Covers every tag in the committed corpus: `en` (940 values), `de` (244),
-/// `fr` (124), `ar` (18) and `it` (7). Anything else falls back to the tag,
-/// which is honest — a wrong name is worse than a raw code, and the set of tags
-/// is deliberately open ([`UI_LANGUAGES`] is what the form *offers*, not what it
-/// accepts).
+/// The language a tag names, or the tag itself. Covers every tag in the committed
+/// corpus; anything else falls back to the tag, since a wrong name is worse than
+/// a raw code and the set of tags is open.
 pub(crate) fn language_name(tag: &str) -> &str {
     match tag {
         "de" => "German",
@@ -222,32 +187,22 @@ pub(crate) fn language_name(tag: &str) -> &str {
     }
 }
 
-/// The control for one editable field, dispatched by id.
-///
-/// `pub(crate)` because the review surface renders the *same* control over the
-/// value it would commit. A second dispatch there diverged silently — a date
-/// rendered as free text, and `shortDescription` lost the 200-character cap its
-/// own hint promises, with nothing server-side to catch either.
-///
-/// The `match` is exhaustive over the ids the registry declares a shape for, and
-/// the fallback is not a silent default: it renders the same note an unbuilt
-/// field gets, so a field given a shape without a control here is visible rather
-/// than posting under a name with no way to enter a value.
+/// The control for one editable field, dispatched by id. `pub(crate)` because the
+/// review surface renders the same control over the value it would commit; a
+/// second dispatch would diverge silently. The fallback renders the unbuilt-field
+/// note rather than a silent default, so a field given a shape without a control
+/// here is visible.
 pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: Rows<'_>) -> Markup {
     match field.id {
         "name" | "officialName" => text(field, draft, InputType::Text),
-        // `type="text"`, not `type="url"`: a draft may hold a value that does
-        // not validate, and a browser refusing to submit a half-typed
-        // address would block a save that must always be possible — the same reason
-        // `text` below never sets `required`.
+        // type="text", not type="url": a draft may hold a value that does not
+        // validate, and a browser refusing a half-typed address would block a save.
         "dataManagementPlan" => text(field, draft, InputType::Text),
         "startDate" | "endDate" | "accessRights.embargoDate" => text(field, draft, InputType::Date),
-        // Two choices, so both are visible at once and picking one is a single
-        // action. A `<select>` for two options hides half the answer behind a
-        // click and reads worse to a screen reader.
+        // Two choices, both visible at once; a <select> for two options hides half
+        // the answer behind a click.
         "status" => radio(field, draft, choices(shape)),
-        // `type="text"`, like `dataManagementPlan` and for the same reason: a draft may hold a value that does not
-        // validate, and a browser refusing to submit a half-typed address would block the save.
+        // type="text", for the reason dataManagementPlan gives.
         "url" | "secondaryUrl" => url(field, draft, slot(shape)),
         "typeOfData" | "dataLanguage" => string_list(field, draft, set(shape)),
         "keywords" | "alternativeNames" => multilingual_rows(field, draft, rows),
@@ -258,9 +213,8 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: R
         "spatialCoverage" => reference_rows(field, draft, rows, reference_types(shape)),
         "publications" => publication_rows(field, draft, rows),
         "funding" => funding(field, draft, rows),
-        // Four choices whose labels run to "Open Access with Restrictions", and
-        // exactly one is current. Radios would be four long lines competing
-        // with the fields around them.
+        // Four choices with long labels and exactly one current: radios would be
+        // four long lines competing with the fields around them.
         "accessRights.accessRights" => dropdown(field, draft, choices(shape)),
         "dataPublicationYear" => year(field, draft),
         "shortDescription" => long_text(field, draft, 2, Some(SHORT_DESCRIPTION_MAX)),
@@ -268,9 +222,8 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: R
         "description" => multilingual(field, draft, 5),
         "abstract" => multilingual(field, draft, 2),
         // Unreachable while the registry and this dispatch agree, which
-        // `tests::every_shaped_field_has_a_control` pins. Rendered rather than
-        // panicked: a missing control is a gap in this file, and taking the
-        // whole section down for it would hide every other field too.
+        // tests::every_shaped_field_has_a_control pins. Rendered rather than
+        // panicked, so a missing control does not take the whole section down.
         _ => {
             debug_assert!(false, "{} declares {shape:?} but no control", field.id);
             stated(field, draft, None)
@@ -278,55 +231,35 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: R
     }
 }
 
-/// What a repeatable field needs beyond the draft: the body that was posted, and
-/// where its add and remove controls submit to.
-///
-/// A named type rather than two arguments, because both are `Option`-ish and
-/// only repeatable fields read either — a positional pair would let every other
-/// control's call site scramble them silently.
+/// What a repeatable field needs beyond the draft: the posted body, and where its
+/// add and remove controls submit to. A named type because both are `Option`-ish
+/// and a positional pair would let call sites scramble them silently.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Rows<'a> {
-    /// The posted body, when this render is answering a `POST`.
-    ///
-    /// **This is what keeps a freshly added row alive.** A row with no text in
-    /// any language is never stored — `apply_multilingual_rows` drops it, and it
-    /// must, or a file fills up with empty objects — so an added-but-unfilled
-    /// row exists only in the form. The tile renders a hidden `{field}.row` for
-    /// every row including a blank one, so the body carries its key back and the
-    /// re-render finds it here. Nothing is held server-side between requests.
+    /// The posted body, when this render is answering a `POST`. What keeps a
+    /// freshly added row alive: a row with no text is never stored, so it exists
+    /// only in the form, and the hidden `{field}.row` carries its key back.
     pub posted: Option<&'a FormBody>,
     /// Base URL for the add and remove controls: `{base}/add` and
     /// `{base}/{key}/remove`.
     pub action: &'a str,
     /// The field one more blank row was just asked for.
     pub adding: Option<&'a str>,
-    /// The agents an id field may refer to, for resolving an id to a name and
-    /// for the shared suggestion list.
-    ///
-    /// `None` renders the id bare, which is what a deployment with no data
-    /// directory looks like — honest, and it still round-trips.
+    /// The agents an id field may refer to. `None` renders the id bare, which is
+    /// what a deployment with no data directory looks like.
     pub agents: Option<&'a AgentScope<'a>>,
-    /// Whether an unresolved or resolved agent id also renders the controls that
-    /// start an entity proposal.
-    ///
-    /// Defaults to `false` (via `Rows`'s `Default`) rather than being inferred
-    /// from `agents.is_some()`: the entity form's own `affiliations` field reuses
-    /// this same row widget for its organisation picker, and posting one of
-    /// these buttons there would name an `intent` the entity route does not
-    /// dispatch — a control that silently falls through to a save nothing asked
-    /// for. Only the project section form, which does dispatch all three
-    /// intents, turns this on.
+    /// Whether an agent id also renders the controls that start an entity
+    /// proposal. Defaults to `false`: the entity form's `affiliations` field reuses
+    /// this widget, and its route does not dispatch the propose intents, so a
+    /// button there would fall through to a save. Only the section form turns
+    /// this on.
     pub propose: bool,
 }
 
-/// The keys of the rows to render for `field`, in display order.
-///
-/// From the posted body when there is one, so what a depositor typed and any
-/// blank row they added both survive the round trip. From the stored list
-/// otherwise, keyed **positionally** — a stored list is positional, so `r0` is
-/// its first row, and the key only has to stay stable for the life of one
-/// rendered form: the body carries the keys back in DOM order and the applier
-/// rebuilds the list from that, never from a number.
+/// The keys of the rows to render for `field`, in display order: from the posted
+/// body when there is one, so a typed value and an added blank row survive the
+/// round trip; positionally from the stored list otherwise. The applier rebuilds
+/// the list from the keys in DOM order, never from a number.
 fn row_keys(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Vec<String> {
     let row_name = format!("{}.row", field.id);
     let mut keys: Vec<String> = match rows.posted {
@@ -339,12 +272,8 @@ fn row_keys(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Vec<String> 
     keys
 }
 
-/// A row key not already in use.
-///
-/// The smallest free `rN` rather than the next after the highest, because keys
-/// arrive from the body and a removed middle row leaves a gap: appending after
-/// the highest would work too, but this keeps the set dense and the accessible
-/// "Remove keyword 2" labels matching what a reader counts on the page.
+/// A row key not already in use: the smallest free `rN`, so the set stays dense
+/// and the accessible "Remove keyword 2" labels match what a reader counts.
 fn next_row_key(keys: &[String]) -> String {
     (0..=keys.len())
         .map(|n| format!("r{n}"))
@@ -364,12 +293,8 @@ fn stored_rows<'a>(field: &Field, draft: &'a ProjectDraft) -> Vec<&'a Value> {
 }
 
 /// One row's language map, from the body when this is a re-render and from the
-/// stored list otherwise.
-///
-/// The two never mix: a posted body is the whole truth about what the form
-/// currently holds, and a stored list is the whole truth about what a fresh
-/// `GET` shows. Reading texts from one and keys from the other is how a
-/// re-render ends up showing a value the depositor did not type.
+/// stored list otherwise. The two never mix: reading texts from one and keys from
+/// the other shows a value the depositor did not type.
 fn row_value(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, key: &str, position: usize) -> DraftMultilingual {
     let row_name = format!("{}.row", field.id);
     match rows.posted {
@@ -387,12 +312,8 @@ fn row_value(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, key: &str, pos
     }
 }
 
-/// A list of single strings: one text control per row, added and removed by
-/// server round-trip.
-///
-/// Shares every piece of the row protocol with [`multilingual_rows`] — the
-/// hidden `{field}.row` key, the empty marker, the add and remove actions — and
-/// differs only in what a row contains.
+/// A list of single strings: one text control per row, sharing the row protocol
+/// with [`multilingual_rows`] and differing only in what a row contains.
 pub(crate) fn string_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     let keys = row_keys(field, draft, rows);
     let stored = stored_rows(field, draft);
@@ -427,11 +348,8 @@ pub(crate) fn string_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -
     }
 }
 
-/// The suffix a picker's search box posts under, appended to the control's unique name.
-///
-/// Read by nothing in `editor_core::form`: an applier reads the names it knows, so the query
-/// rides along in the body and is never stored. That is the whole reason it needs no field of its
-/// own anywhere.
+/// The suffix a picker's search box posts under. Read by nothing in
+/// `editor_core::form`, so the query rides along in the body and is never stored.
 const QUERY_SUFFIX: &str = "q";
 
 /// The label on a picker's search box, and on the button that runs it.
@@ -441,30 +359,18 @@ const FIND_AGENT_BUTTON: &str = "Search";
 
 /// One agent picker: what the row refers to now, and the way to change it.
 ///
-/// ## Why this is a search and not a list
+/// A search, not a `<datalist>` or a `<select>` of everything: a datalist
+/// filters its options against what the box already holds, so with the full id
+/// in the box it offers nothing, and a select of all agents on a project with
+/// dozens of contributors would be megabytes. A search narrows first and then
+/// offers a real `<select>`.
 ///
-/// It replaces an `<input list=>` pointed at one shared `<datalist>` of all 558 agents. That
-/// control was reported as "seems to be a pull-down menu, but when I click it, nothing opens",
-/// and both halves were true: Chromium draws a dropdown arrow for any `input[list]`, and it
-/// filters the options against what the box already holds — which was the full id, so the only
-/// thing left to offer was the value already there. A depositor also had to know `person-417` to
-/// type it, and the datalist matched ids rather than the names it displayed.
-///
-/// A `<select>` of everything is what the datalist existed to avoid: one committed project has 56
-/// contributors, so at 31.7 KB a list that would be 1.8 MB on one page. A search narrows first and
-/// then offers a real `<select>`, which opens because it is a menu rather than looking like one.
-///
-/// ## What posts
-///
-/// `value_name` always, and nothing else the appliers read. Before a search it is a hidden input
-/// holding the stored id, so an untouched save round-trips byte-for-byte with no lookup in
-/// between — the property the old text input had and the reason its value was the id. After a
-/// search the `<select>` posts under that same name, with the current choice first and selected,
-/// so leaving it alone is still the identity. No applier changed for any of this.
-///
-/// `value_name` is shared by every funder control in a grant, which is how `apply_funding`
-/// collects them into one list; `unique` is what distinguishes them for element ids and for the
-/// search box, and is the same string for a control that holds only one value.
+/// `value_name` posts always, and nothing else the appliers read. Before a
+/// search it is a hidden input holding the stored id, so an untouched save
+/// round-trips byte-for-byte; after a search the `<select>` posts under the same
+/// name with the current choice first and selected. `value_name` is shared by
+/// every funder control in a grant, which is how `apply_funding` collects them;
+/// `unique` distinguishes them for element ids and the search box.
 fn agent_picker(value_name: &str, unique: &str, label: &str, id: &str, row_context: &str, rows: Rows<'_>) -> Markup {
     let id = id.trim();
     let resolved = rows.agents.and_then(|agents| agents.get(id));
@@ -573,8 +479,7 @@ fn agent_picker(value_name: &str, unique: &str, label: &str, id: &str, row_conte
                         .aria_label(format!("{FIND_AGENT_LABEL} ({row_context})"))
                 })
             }
-            // Said here and not only at submit, and said for a search as well as for a stored id:
-            // the form is where it can be fixed.
+            // Said here and not only at submit: the form is where it can be fixed.
             @if matches.as_ref().is_some_and(AgentMatches::is_empty) {
                 p class="text-sm" {
                     "Nothing matches “"
@@ -627,25 +532,9 @@ pub(crate) fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) ->
     }
 }
 
-/// The controls that start an entity proposal, beside an agent picker whose id does not
-/// resolve or does: named submits on the section's own form, exactly like
-/// `save`/`submit` — `sections.rs` already dispatches all three intents, so
-/// none of this needs a route of its own.
-///
-/// `id` empty renders nothing: an unfilled picker is not "no match", it is
-/// "nothing typed yet", and offering to propose an entity for it would be
-/// offering to propose nobody.
-///
-/// `row_context` is spliced into each button's accessible name, the same
-/// reason [`row_label`] numbers a row's own control: several rows' propose
-/// buttons would otherwise share one indistinguishable name.
-/// What the propose-changes button says, which names **the entity** and never the row it sits in.
-///
-/// A bare "Propose changes" read as an offer to propose whatever else the row held. On a
-/// contributor row that is the roles, and a reviewer took it exactly that way: the roles are
-/// project data, saved by "Save draft" like any other field, and `proposals::check_person` goes as
-/// far as refusing a project-role word in a person's `jobTitles` precisely because a role is not
-/// part of the person. Nothing behaved wrongly; the button's name was the whole problem.
+/// What the propose-changes button says, naming the entity and never the row it
+/// sits in: a bare "Propose changes" on a contributor row reads as an offer to
+/// propose the roles, which are project data.
 const fn propose_changes_label(kind: AgentKind) -> &'static str {
     match kind {
         AgentKind::Person => "Propose changes to this person's details",
@@ -653,6 +542,11 @@ const fn propose_changes_label(kind: AgentKind) -> &'static str {
     }
 }
 
+/// The controls that start an entity proposal, beside an agent picker: named
+/// submits on the section's own form, which dispatches all three intents. `id`
+/// empty renders nothing, since an unfilled picker is not "no match". `row_context`
+/// goes into each button's accessible name, as [`row_label`] numbers a row's
+/// control.
 fn propose_controls(resolved: Option<&Agent>, id: &str, row_context: &str) -> Markup {
     if id.trim().is_empty() {
         return html! {};
@@ -695,16 +589,11 @@ fn propose_controls(resolved: Option<&Agent>, id: &str, row_context: &str) -> Ma
     }
 }
 
-/// A list of contributor rows: an agent picker plus that contributor's roles.
-///
-/// The roles are a checkbox group over the offered vocabulary **unioned with whatever this row
-/// already holds**, plus a text input for one more. Same shape as `dataLanguage` and for the same
-/// reason: the corpus spells the same role several ways, so a closed offer would drop a project's
-/// own wording on the first save.
-///
-/// Both the group and the "add another" input post under
-/// `{field}.{key}.role`, so `FormBody::all` collects them together and no
-/// second wire name is needed.
+/// A list of contributor rows: an agent picker plus that contributor's roles as a
+/// checkbox group over the offered vocabulary unioned with what the row holds,
+/// plus a text input for one more. Open for the reason `dataLanguage` is: the
+/// corpus spells the same role several ways. Group and input post under
+/// `{field}.{key}.role`, so `FormBody::all` collects them together.
 fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     let keys = row_keys(field, draft, rows);
     let stored = stored_rows(field, draft);
@@ -724,12 +613,9 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
                 .unwrap_or_default()
                 .to_string(),
         };
-        // Blanks are dropped, because the "add another role" input below posts under this same
-        // name and an untouched one sends an empty string. Read back as a role this row holds, it
-        // joined the option union as an unlabelled checkbox — ticked, since it is also in `held` —
-        // which is what a depositor saw appear after any re-render that keeps the posted body.
-        // `form::resolve_against` already discards it on the way into the draft, so this is the
-        // render catching up with what is actually stored.
+        // Blanks are dropped: the "add another role" input posts under this same
+        // name and an untouched one sends an empty string, which would come back
+        // as a ticked, unlabelled checkbox.
         let held: Vec<String> = match posted {
             Some(body) => body
                 .all(&format!("{prefix}.role"))
@@ -752,11 +638,8 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
         let contributor_name = format!("{prefix}.contributor");
         let resolved = rows.agents.and_then(|agents| agents.get(contributor.trim()));
         let row_context = format!("row {}", position + 1);
-        // The propose controls go **below** the role controls, not between them and the picker.
-        // Sandwiched there they read as an offer to propose the roles underneath them, which is
-        // how a reviewer read them — and the roles are project data that "Save draft" stores, with
-        // nothing to propose. Last in the row they follow everything the row is about, which is
-        // what they act on: the entity the picker names.
+        // The propose controls go below the role controls: sandwiched between the
+        // picker and the roles they read as an offer to propose the roles.
         let body = html! {
             div class="flex flex-col gap-3" {
                 ({
@@ -801,18 +684,12 @@ const fn reference_types(shape: Shape) -> &'static [&'static str] {
     }
 }
 
-/// A list of rows that are each an authority reference or free text.
-///
-/// **Both branches are always in the DOM, and the inactive one is `hidden`
-/// rather than `disabled`.** That is the whole mechanism: a `hidden` input is
-/// still submitted, so the server receives both candidates plus the
-/// discriminant and can keep the unchosen one — a depositor who switches to a
-/// reference and back finds their text still there. `disabled` would submit
-/// nothing and lose it.
-///
-/// Switching branches is a **server round-trip**: the chosen branch follows what the row holds, so
-/// picking the other radio and saving re-renders with it visible. The control then behaves
-/// identically with and without JavaScript, and this form stays free of signal bindings.
+/// A list of rows that are each an authority reference or free text. Both
+/// branches are always in the DOM, the inactive one `hidden` rather than
+/// `disabled`: a hidden input is still submitted, so the server receives both
+/// candidates plus the discriminant and a depositor who switches and back finds
+/// their text still there. Switching branches is a server round-trip, so the
+/// control behaves identically with and without JavaScript.
 fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, types: &[&str]) -> Markup {
     let keys = row_keys(field, draft, rows);
     let stored = stored_rows(field, draft);
@@ -825,9 +702,8 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
         let prefix = format!("{}.{key}", field.id);
         let held = stored.get(position);
 
-        // A stored row is a reference when it has a URL; that is the same test
-        // `ProjectDraft::coverage_shapes` applies, and serde's own attempt
-        // order agrees — `AuthorityFileReference` is declared first.
+        // A stored row is a reference when it has a URL, the same test
+        // ProjectDraft::coverage_shapes applies.
         let is_reference = match posted {
             Some(body) => body.get(&format!("{prefix}.kind")) == Some(REFERENCE_KIND),
             None => held.and_then(|row| row.get("url")).is_some(),
@@ -1034,17 +910,14 @@ fn publication_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
     }
 }
 
-/// Funding: either a list of grants or one free text.
-///
-/// The discriminant is on the **field**, not per row, so the chooser sits above
-/// the list rather than inside each row. Both branches stay in the DOM with the
-/// inactive one `hidden`, for the reason [`text_or_reference_rows`] gives.
+/// Funding: either a list of grants or one free text. The discriminant is on the
+/// field, so the chooser sits above the list; both branches stay in the DOM with
+/// the inactive one `hidden`, as in [`text_or_reference_rows`].
 fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     let stored = stored_rows(field, draft);
     let is_grants = match rows.posted.filter(|body| body.has(&format!("{}.kind", field.id))) {
         Some(body) => body.get(&format!("{}.kind", field.id)) == Some(GRANTS_KIND),
-        // A string is the free-text variant; anything else, including absent, renders as grants, which is what
-        // almost every project holds.
+        // A string is the free-text variant; anything else renders as grants.
         None => !draft.get(field.id).is_some_and(Value::is_string),
     };
     let free_text = match rows.posted {
@@ -1059,9 +932,8 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
         let prefix = format!("{}.{key}", field.id);
         let held = stored.get(position).copied();
         let row_name = format!("{}.row", field.id);
-        // Blanks are dropped for the reason `attribution_rows` gives, and here they *accumulated*:
-        // the render appends its own trailing blank below, so reading the posted one back as a
-        // held funder grew the row by one control on every re-render that keeps the body.
+        // Blanks are dropped: the render appends its own trailing blank below, so a
+        // posted blank read back as a funder would grow the row on every re-render.
         let funders: Vec<String> = match rows.posted.filter(|body| body.has(&row_name)) {
             Some(body) => body
                 .all(&format!("{prefix}.funder"))
@@ -1078,10 +950,8 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
             key,
             html! {
                 div class="flex flex-col gap-2" {
-                    // One control per stored funder plus a blank, all posting
-                    // under one name so `FormBody::all` collects them. Adding
-                    // several funders takes a save each, which is the same
-                    // price adding a row costs.
+                    // One control per stored funder plus a blank, all posting under one
+                    // name so FormBody::all collects them.
                     @for (index, id) in funders.iter().chain(std::iter::once(&String::new())).enumerate() {
                         ({
                             funder_control(
@@ -1142,9 +1012,7 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
 }
 
 /// One funder control, plus the propose controls beside it when `propose` is set.
-///
-/// Its own function rather than inline in the funder loop, per this repo's rule on a nested
-/// `html!` `maudfmt` cannot see (a block passed where a call argument is expected).
+/// Its own function per the repo's rule on nested `html!` `maudfmt` cannot see.
 fn funder_control(
     prefix: &str,
     index: usize,
@@ -1157,9 +1025,8 @@ fn funder_control(
         true => ADD_FUNDER_LABEL,
         false => FUNDER_LABEL,
     };
-    // Every funder in a grant posts under one `{prefix}.funder`, which is how `apply_funding`
-    // collects them into a list — so the value name is shared and only the `unique` differs,
-    // which is what keeps each control's own search box and element ids apart.
+    // Every funder in a grant posts under one {prefix}.funder, which is how
+    // apply_funding collects them; only unique differs, for ids and the search box.
     let value_name = format!("{prefix}.funder");
     let unique = format!("{prefix}.funder-{index}");
     html! {
@@ -1220,36 +1087,24 @@ const ADD_ROLE_HINT: &str = "For a role the list does not offer. Type it and sav
 /// The label on an agent row's control.
 const AGENT_ID_LABEL: &str = "Person or organisation";
 
-/// What is shown beside an id that resolves to nobody.
-///
-/// Said here as well as at submit, because the form is where it can be fixed:
-/// told only at submit, a depositor would have to find which of 56 rows the
-/// refusal meant.
+/// What is shown beside an id that resolves to nobody. Said here as well as at
+/// submit, because the form is where it can be fixed.
 const UNRESOLVED_AGENT: &str = "No person or organisation with this id — pick one from the list.";
 
-/// A row control's label, with the row's own position in it.
-///
-/// Five rows whose value controls are all called "Link" are five
-/// indistinguishable entries in a screen reader's form-field list, and stepping
-/// through the list in document order is the only way to tell row 3 from row 5.
-/// The repeatable-list tile already numbers its Remove buttons for exactly this
-/// reason; this gives the row's own control the same treatment.
+/// A row control's label, with the row's own position in it: five controls all
+/// called "Link" are indistinguishable in a screen reader's form-field list. The
+/// repeatable-list tile numbers its Remove buttons for the same reason.
 fn row_label(label: &str, position: usize) -> String {
     format!("{label} {}", position + 1)
 }
 
-/// The label on a single-value row's control.
-///
-/// A row's own label, not the field's: the field is named by the list's
-/// `<legend>`, and every control still needs an accessible name of its own —
-/// five rows all called "Additional material" would read identically.
+/// The label on a single-value row's control: a row's own label, since the field
+/// is named by the list's `<legend>` and every control needs a name of its own.
 const ROW_VALUE_LABEL: &str = "Link";
 
-/// What one row of a repeatable field is called, for the accessible "Remove
-/// <noun> 2" labels the tile builds.
-///
-/// The field's label singularised crudely, because the alternative is a second
-/// vocabulary in the registry for the sake of one word per field.
+/// What one row of a repeatable field is called, for the tile's "Remove <noun> 2"
+/// labels: the field's label singularised crudely, rather than a second
+/// vocabulary in the registry for one word per field.
 fn row_noun(field: &Field) -> String {
     let label = field.label.to_lowercase();
     label.strip_suffix('s').map_or(label.clone(), str::to_string)
@@ -1288,13 +1143,9 @@ fn multilingual_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mar
     }
 }
 
-/// The values a [`Shape::Choice`] offers, or none for any other shape.
-///
-/// Unreachable while the registry and [`control`]'s dispatch agree, which
-/// `tests::every_shaped_field_has_a_control` pins. Empty rather than a panic,
-/// for the same reason `control`'s own fallback arm renders a note: a group with
-/// no options is a visible gap in this file, and taking the section down for it
-/// would hide every other field too.
+/// The values a [`Shape::Choice`] offers, or none for any other shape. Unreachable
+/// while the registry and [`control`]'s dispatch agree; empty rather than a panic,
+/// so a group with no options is a visible gap rather than a dead section.
 const fn choices(shape: Shape) -> &'static [&'static str] {
     match shape {
         Shape::Choice(values) => values,
@@ -1302,12 +1153,9 @@ const fn choices(shape: Shape) -> &'static [&'static str] {
     }
 }
 
-/// Which choice set a shape names, defaulting to an empty closed one.
-///
-/// Unreachable while the registry and [`control`]'s dispatch agree, which
-/// `tests::every_shaped_field_has_a_control` pins. Closed-and-empty is the
-/// fail-safe of the two: it renders a group with no options, which is a visible
-/// gap, where an open one would accept anything a hand-built body sent.
+/// Which choice set a shape names, defaulting to an empty closed one: the
+/// fail-safe of the two, since an open one would accept anything a hand-built
+/// body sent.
 const fn set(shape: Shape) -> ChoiceSet {
     match shape {
         Shape::StringList(set) => set,
@@ -1325,16 +1173,11 @@ fn stored_list<'a>(field: &Field, draft: &'a ProjectDraft) -> Vec<&'a str> {
 }
 
 /// A list of strings as a checkbox group, plus a way in for a value the offer
-/// does not carry.
-///
-/// **The options are the offer unioned with whatever the project already holds**, the same rule the
-/// multilingual widget follows and for the same reason: a value with no control posts nothing, so a
-/// list rebuilt from the body would drop it — and `dataLanguage` holds far more tags than the UI
-/// offers.
-///
-/// An open set also gets a text input **named after the field itself**, so a typed value arrives as
-/// one more repeated value and `apply_string_list` reads it with the rest. No route and no
-/// client-side splicing: the next render finds it in the stored list and gives it a checkbox.
+/// does not carry. The options are the offer unioned with what the project
+/// holds, as the multilingual widget does: a value with no control posts nothing
+/// and would be dropped. An open set also gets a text input named after the
+/// field itself, so a typed value arrives as one more repeated value and the next
+/// render gives it a checkbox.
 fn string_list(field: &Field, draft: &ProjectDraft, set: ChoiceSet) -> Markup {
     let stored = stored_list(field, draft);
     let mut options: Vec<&str> = set.offered().to_vec();
@@ -1383,12 +1226,9 @@ fn label_for(field: &Field, value: &str) -> String {
     value.to_string()
 }
 
-/// Which URL slot a shape names, defaulting to the secondary.
-///
-/// Unreachable while the registry and [`control`]'s dispatch agree, which
-/// `tests::every_shaped_field_has_a_control` pins. The secondary is the safer
-/// fallback of the two: it is the depositor's own field, so a control wired to
-/// it by mistake cannot show or overwrite the RDU-only DaSCH address.
+/// Which URL slot a shape names, defaulting to the secondary: the depositor's own
+/// field, so a control wired to it by mistake cannot overwrite the RDU-only DaSCH
+/// address.
 const fn slot(shape: Shape) -> UrlSlot {
     match shape {
         Shape::Url(slot) => slot,
@@ -1396,12 +1236,9 @@ const fn slot(shape: Shape) -> UrlSlot {
     }
 }
 
-/// One of the project's two URLs, as a plain text control.
-///
-/// Reads through [`ProjectDraft::url_slot`], so it renders whichever
-/// representation the project stores the pair in without knowing which. A
-/// placeholder sentinel renders empty, for the same reason [`scalar_value`]
-/// does it — two committed projects hold `url: ["MISSING"]`.
+/// One of the project's two URLs, as a plain text control. Reads through
+/// [`ProjectDraft::url_slot`], so it renders whichever representation the project
+/// stores; a placeholder renders empty, as [`scalar_value`] does.
 fn url(field: &Field, draft: &ProjectDraft, slot: UrlSlot) -> Markup {
     let value = draft.url_slot(slot).filter(|text| !is_placeholder(text)).unwrap_or_default();
     let mut control = text_field(field.id, labelled(field)).input_type(InputType::Text).value(value);
@@ -1413,12 +1250,8 @@ fn url(field: &Field, draft: &ProjectDraft, slot: UrlSlot) -> Markup {
     }
 }
 
-/// A closed choice as a radio group: every option visible, one current.
-///
-/// The wire value doubles as the label, because both vocabularies are already
-/// depositor-facing prose — `Ongoing`, `Open Access with Restrictions`. A
-/// separate label table would be a second thing to keep in step with
-/// `platform_metadata`'s slices for no gain.
+/// A closed choice as a radio group. The wire value doubles as the label, because
+/// both vocabularies are already depositor-facing prose.
 fn radio(field: &Field, draft: &ProjectDraft, values: &[&str]) -> Markup {
     let mut control = radio_group(field.id, labelled(field))
         .options(values.iter().map(|value| (*value, *value)))
@@ -1434,15 +1267,10 @@ fn radio(field: &Field, draft: &ProjectDraft, values: &[&str]) -> Markup {
     }
 }
 
-/// A closed choice as a `<select>`.
-///
-/// **No placeholder option.** The contract types these as enums with no unset
-/// variant, so "nothing chosen" is not a state a project can hold — and
-/// `apply_choice` ignores a value outside the offered set, so a placeholder
-/// would be an option that silently does nothing when picked. A project that
-/// somehow holds no value renders with nothing selected, which the browser
-/// shows as the first option; the stored value is unchanged until a real pick
-/// posts one.
+/// A closed choice as a `<select>`, with no placeholder option: the contract
+/// types these as enums with no unset variant, and `apply_choice` ignores a value
+/// outside the offered set, so a placeholder would silently do nothing when
+/// picked.
 fn dropdown(field: &Field, draft: &ProjectDraft, values: &[&str]) -> Markup {
     let mut control = select(field.id, labelled(field)).options(values.iter().map(|value| (*value, *value)));
     if let Some(current) = draft.get(field.id).and_then(Value::as_str) {
@@ -1456,17 +1284,13 @@ fn dropdown(field: &Field, draft: &ProjectDraft, values: &[&str]) -> Markup {
     }
 }
 
-/// The character bound the prototype's screens put on the teaser, and the
-/// registry's hint states ("Up to 200 characters"), so the control enforces what
-/// the reader was told.
+/// The character bound the registry's hint states ("Up to 200 characters"), so
+/// the control enforces what the reader was told.
 const SHORT_DESCRIPTION_MAX: u32 = 200;
 
 /// The value a scalar control shows: the stored string, with a placeholder
-/// sentinel rendered as empty.
-///
-/// This is the rule the whole untouched-save guarantee rests on. 131 sentinels
-/// sit across 8 paths in the 85 committed files, 24 of them `endDate`; each one
-/// renders empty here and posts empty, and `apply_text` is what recognises that
+/// sentinel rendered as empty. The rule the untouched-save guarantee rests on:
+/// each sentinel renders empty and posts empty, and `apply_text` recognises that
 /// an empty submit against a stored sentinel is not a clear.
 fn scalar_value<'a>(field: &Field, draft: &'a ProjectDraft) -> &'a str {
     draft
@@ -1483,10 +1307,8 @@ fn text(field: &Field, draft: &ProjectDraft, input_type: InputType) -> Markup {
     if let Some(hint) = field.hint {
         control = control.hint(hint);
     }
-    // `required` is deliberately absent even on a `Required` field: a draft may
-    // be missing anything, and a browser refusing to save one is the
-    // opposite of a save that must always be possible. The obligation is stated in words
-    // beside the field, and enforced at submit.
+    // required is absent even on a Required field: a draft may be missing
+    // anything. The obligation is stated in words and enforced at submit.
     html! {
         (control)
     }
@@ -1516,17 +1338,10 @@ fn long_text(field: &Field, draft: &ProjectDraft, rows: u32, maxlength: Option<u
 }
 
 /// A language map: one labelled control per language, inside a group named by
-/// the field.
-///
-/// The tags rendered are [`UI_LANGUAGES`] plus whatever the value already
-/// carries. Offering only a closed set would drop `ar` — live in two committed
-/// files — on the first save, because a tag with no control posts nothing and a
-/// map rebuilt from the body would not carry it.
-///
-/// A `<fieldset>` rather than a bare `<div>`: the field's own name has to reach
-/// assistive technology, and each control's `<label>` is the language, so the
-/// group's name can only be a `<legend>`. Same reasoning as the checkbox and
-/// radio tiles, which is why the markup matches theirs.
+/// the field. The tags are [`UI_LANGUAGES`] plus whatever the value carries;
+/// a closed set would drop `ar` on the first save, since a tag with no control
+/// posts nothing. A `<fieldset>` because each control's `<label>` is the
+/// language, so the field's own name can only be a `<legend>`.
 pub(crate) fn multilingual(field: &Field, draft: &ProjectDraft, rows: u32) -> Markup {
     let value = draft.multilingual(field.id);
     let tags: Vec<&str> = UI_LANGUAGES.iter().copied().chain(value.extra_tags()).collect();
@@ -1550,15 +1365,10 @@ pub(crate) fn multilingual(field: &Field, draft: &ProjectDraft, rows: u32) -> Ma
     }
 }
 
-/// A field's label: its name, and its obligation as a pill **inside** it.
-///
-/// Inside, because no input here carries `required` or `aria-required` — a draft
-/// may be missing anything — which leaves the accessible name as the
-/// only channel the tier has. As a sibling the pill was visible and nothing
-/// else: a reader tabbing to the control heard "Name, edit text".
-///
-/// `pub(crate)`: `crate::entity`'s own scalar control reuses this so a person or
-/// organisation's fields carry the pill the same way a project's do.
+/// A field's label: its name, and its obligation as a pill inside it. Inside,
+/// because no input carries `required` or `aria-required`, which leaves the
+/// accessible name as the only channel the tier has. `pub(crate)` because
+/// `crate::entity`'s scalar control reuses it.
 pub(crate) fn labelled(field: &Field) -> Markup {
     html! {
         (field.label)
@@ -1569,12 +1379,8 @@ pub(crate) fn labelled(field: &Field) -> Markup {
     }
 }
 
-/// The pill's classes, as a complete literal string per tier.
-///
-/// Not assembled from the tier's name: `@import 'tailwindcss'` collects classes
-/// by scanning source text, so a class built at runtime is a class the build
-/// never sees, and the pill renders unstyled with no error anywhere. Same reason
-/// `AlertVariant::css_class` spells each one out.
+/// The pill's classes, as a complete literal per tier: Tailwind collects classes
+/// by scanning source text, so a class built at runtime renders unstyled.
 const fn pill_class(obligation: Obligation) -> &'static str {
     match obligation {
         Obligation::Required => "w-fit rounded bg-warning-50 px-2 py-0.5 text-xs font-bold text-warning-800",
@@ -1609,17 +1415,10 @@ mod tests {
 
     #[test]
     fn every_shaped_field_has_a_control() {
-        // The test `control`'s fallback arm names. Without it that arm's
-        // `debug_assert!` is the only guard, and it is compiled out of a release
-        // build — so a field given a shape in the registry with no arm here
-        // renders the "not editable yet" note instead of a control, silently,
-        // and a `Required` field becomes unfillable in production with nothing
-        // failing in CI.
-        //
-        // Every section for the audience that sees the most, because rendering
-        // one section covers a third of the shaped fields: `dataManagementPlan`
-        // is in `access`, `provenance` and `dataPublicationYear` in `dataset`,
-        // `imageCredit` in `image`.
+        // The fallback arm's debug_assert! is compiled out of a release build, so
+        // a field given a shape with no arm here would render the unbuilt note in
+        // production with nothing failing in CI. Every section, for the audience
+        // that sees the most.
         let draft = published_draft();
         let mut unrendered: Vec<&str> = Vec::new();
         for section in SECTIONS {
@@ -1634,17 +1433,11 @@ mod tests {
                     Some(Shape::Multilingual) => UI_LANGUAGES
                         .iter()
                         .all(|tag| out.contains(&format!(r#"name="{}.{tag}""#, field.id))),
-                    // A group posts under the field's name from each of its
-                    // controls, so the name appearing at all is the same
-                    // evidence a scalar gives.
+                    // A group posts under the field's name from each control.
                     Some(Shape::Choice(_)) => out.contains(&format!(r#"name="{}""#, field.id)),
-                    // A URL slot posts under the field's own name, like a
-                    // scalar — the slot decides where it is *stored*, not what
-                    // it is called on the wire.
+                    // A URL slot posts under the field's own name, like a scalar.
                     Some(Shape::Url(_) | Shape::StringList(_)) => out.contains(&format!(r#"name="{}""#, field.id)),
-                    // A repeatable field posts its rows under `{field}.row`,
-                    // and posts that name even when the list is empty — the
-                    // marker is what lets a depositor clear the last row.
+                    // A repeatable field posts {field}.row even when empty: the marker.
                     Some(
                         Shape::MultilingualRows
                         | Shape::StringRows
@@ -1654,9 +1447,7 @@ mod tests {
                         | Shape::ReferenceRows(_)
                         | Shape::PublicationRows,
                     ) => out.contains(&format!(r#"name="{}.row""#, field.id)),
-                    // Funding's discriminant is on the field rather than the
-                    // row, and the row marker appears only on the grants
-                    // branch, so the discriminant is what always posts.
+                    // Funding's discriminant is on the field, so it is what always posts.
                     Some(Shape::FundingRows) => out.contains(&format!(r#"name="{}.kind""#, field.id)),
                 };
                 if !posts {
@@ -1672,19 +1463,13 @@ mod tests {
 
     #[test]
     fn every_shaped_field_is_reached_by_this_test_at_all() {
-        // The canary for the test above, which asserts an *absence*: it would
-        // pass just as well if `SECTIONS` reached none of the shaped fields, at
-        // which point it proves nothing and nobody can tell.
+        // The canary for the absence above.
         let shaped: Vec<&str> = FIELDS
             .iter()
             .filter(|field| field.is_editable())
             .map(|field| field.id)
             .collect();
-        // Every editable field, since none is left without a control: the count
-        // is `FIELDS` minus the six display-only ones.
-        // A count rather than "more than none": this is the canary for a test
-        // that asserts an absence, so it has to move deliberately as shapes
-        // land rather than drifting.
+        // A count, so the canary moves deliberately as shapes land.
         assert_eq!(shaped.len(), 29, "{shaped:?}");
         let reached: Vec<&str> = SECTIONS
             .iter()
@@ -1697,15 +1482,8 @@ mod tests {
 
     #[test]
     fn every_field_states_its_obligation_inside_its_own_label() {
-        // Nothing here is `required` or `aria-required`, so a
-        // field's label is the only channel its obligation has: a pill rendered
-        // beside the label is visible and nothing else, and a reader who tabs to
-        // the control hears "Name, edit text".
-        //
-        // Asserted per field over every section rather than on one example,
-        // because each control builder composes its own label — `text`, `year`,
-        // `long_text`, `multilingual` and `stated` are five places to forget it,
-        // and forgetting it in one renders identically to a sighted reader.
+        // The label is the only channel an obligation has, and each control
+        // builder composes its own label, so this is asserted per field.
         let draft = published_draft();
         let mut silent: Vec<&str> = Vec::new();
         for section in SECTIONS {
@@ -1734,8 +1512,7 @@ mod tests {
 
     #[test]
     fn a_field_with_no_shape_renders_no_control_in_any_section() {
-        // The other direction, and the guarantee that a draft carries what the editor does not
-        // manage: a field no applier reads must post nothing at all, or an empty control would
+        // A field no applier reads must post nothing, or an empty control would
         // clear a value the save was never meant to touch.
         let draft = published_draft();
         let mut posting: Vec<&str> = Vec::new();
@@ -1796,16 +1573,16 @@ mod tests {
         assert!(out.contains("Propose changes"), "{out}");
         // The resolved id rides in the button's own value, so only the activated one posts it.
         assert!(out.contains(r#"value="propose-changes:organization-008""#), "{out}");
-        // And nothing carries it in a field every row would post regardless of which button was
-        // clicked — the shape that made row 12's button propose a change to row 1's entity.
+        // Nothing carries it in a field every row would post regardless of which
+        // button was clicked.
         assert!(!out.contains(r#"name="propose.entity""#), "{out}");
     }
 
     #[test]
     fn propose_controls_are_absent_when_the_row_widget_does_not_opt_in() {
-        // `Rows::propose` defaults to `false` — the entity form's own `affiliations` field reuses
-        // this same widget for its organisation picker, and must not offer a control its route
-        // does not dispatch.
+        // Rows::propose defaults to false; the entity form's affiliations field
+        // reuses this widget and must not offer a control its route does not
+        // dispatch.
         let agents = agent_corpus();
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let mut draft = published_draft();
@@ -1917,10 +1694,8 @@ mod tests {
 
     #[test]
     fn a_contributor_rows_propose_control_follows_its_roles_and_names_the_entity() {
-        // Between the picker and the roles, a bare "Propose changes" read as an offer to propose
-        // the roles below it. It is not: roles are project data that a save stores, and
-        // `proposals::check_person` refuses a project-role word in a person's `jobTitles` for
-        // exactly that reason. So the button goes last and says what it acts on.
+        // Between the picker and the roles, a bare "Propose changes" reads as an
+        // offer to propose the roles, which are project data.
         let agents = agent_corpus();
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let mut draft = published_draft();
@@ -1967,10 +1742,8 @@ mod tests {
 
     #[test]
     fn the_add_another_role_input_does_not_come_back_as_an_unlabelled_checkbox() {
-        // It shares its wire name with the checkbox group, so its empty value was read back as a
-        // role this row holds and rendered as a ticked checkbox with no label. A depositor saw one
-        // appear on every re-render that keeps the posted body: a refusal, a row action, or the
-        // conflict notice.
+        // It shares its wire name with the checkbox group, so its empty value would
+        // come back as a ticked checkbox with no label on every re-render.
         let agents = agent_corpus();
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let mut draft = published_draft();
@@ -1999,9 +1772,8 @@ mod tests {
 
     #[test]
     fn a_grants_row_keeps_one_blank_funder_however_often_it_is_re_rendered() {
-        // The row renders one trailing blank so a second funder can be typed. Reading the posted
-        // blank back as a held funder meant the render appended a *second* one, so the row grew by
-        // a control every round trip: 2, 3, 4, 5.
+        // Reading the posted blank back as a held funder would append a second
+        // blank on every round trip.
         let agents = agent_corpus();
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let mut draft = published_draft();

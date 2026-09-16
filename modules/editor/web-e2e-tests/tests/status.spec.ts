@@ -7,9 +7,9 @@ import {
 } from "../playwright.config";
 
 /**
- * The depositor-visible states (REQ-2.1), the waiting-for-release notice
- * (REQ-2.5), the state-explanation page (REQ-2.6) and the forbidden vocabulary
- * (REQ-2.2) — driven through a real browser.
+ * The depositor-visible states, the waiting-for-release notice, the
+ * state-explanation page and the forbidden vocabulary — driven through a real
+ * browser.
  *
  * `editor-web` already asserts all four against rendered markup, and that is
  * not this file's duplicate. A rendering test reads what one view function
@@ -41,11 +41,11 @@ function shortcode() {
 const overview = () => `/projects/${shortcode()}/sections/overview`;
 const editedName = () => `Status spec ${shortcode()}`;
 
-/** REQ-2.2. Lowercased; `pull request` is the phrase, not the bare word. */
+/** Lowercased; `pull request` is the phrase, not the bare word. */
 const FORBIDDEN = ["export", "json", "transfer", "commit", "pull request"];
 
 /**
- * The page's visible text, which is what REQ-2.2 bounds.
+ * The page's visible text, which is what the vocabulary rule bounds.
  *
  * `innerText` rather than `textContent`: it is the rendered text, so it omits
  * `<script>` bodies and anything hidden. With JavaScript disabled it still
@@ -98,8 +98,8 @@ test.describe("depositor-visible status", () => {
   test("the state-explanation page names every state and the expected wait", async ({
     browser,
   }) => {
-    // REQ-2.6, and the link that makes it findable — a page reachable only by
-    // typing its URL explains nothing.
+    // The link that makes it findable — a page reachable only by typing its URL
+    // explains nothing.
     const context = await browser.newContext({ storageState: DEPOSITOR_STATE });
     try {
       const page = await context.newPage();
@@ -132,7 +132,7 @@ test.describe("depositor-visible status", () => {
     browser,
   }) => {
     // The resting state, and the only place a depositor ever sees the result of
-    // REQ-2.4's discard: the record is deleted at startup, so by the time any
+    // the startup discard: the record is deleted at startup, so by the time any
     // page loads there is nothing left but this.
     const context = await browser.newContext({ storageState: DEPOSITOR_STATE });
     try {
@@ -206,9 +206,9 @@ test.describe("depositor-visible status", () => {
   test("an approved change reads Approved and says it is waiting for a release", async ({
     browser,
   }) => {
-    // REQ-2.5. The record is approved but the published set this deployment
-    // carries does not hold it, so it is waiting — and the form stays editable,
-    // because approve is the only outcome that does not hand the project back.
+    // The record is approved but the published set this deployment carries does
+    // not hold it, so it is waiting — and the form stays editable, because
+    // approve is the only outcome that does not hand the project back.
     const rdu = await browser.newContext({ storageState: RDU_STATE });
     const depositor = await browser.newContext({
       storageState: DEPOSITOR_STATE,

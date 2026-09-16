@@ -336,6 +336,19 @@ image CI publishes, under emulation.</p>
 <p><strong>RDU members</strong> come from <code>EDITOR_RDU_EMAILS</code>, which is reconciled on every start. Adding an address creates or promotes an account on the next deploy. <strong>Removing one does not revoke anything</strong> — startup logs a warning naming any <code>rdu</code> account the configuration no longer lists, and the account has to be removed by hand. Treat that warning as a to-do, not as noise.</p>
 <p>RDU accounts are deliberately <strong>not</strong> editable at <code>/depositors</code>: they appear in the list, without controls. Configuration is the source of truth for them, so a change made in the product would be undone by the next restart, or would leave the product and the configuration disagreeing with nothing to say so.</p>
 <p>A malformed entry stops startup rather than being skipped: every entry becomes an account that administers the service, so a typo is an administrator who can never sign in, and the symptom would otherwise be "my code never arrives" weeks later.</p>
+<h3 id="the-startup-comparison"><a class="header" href="#the-startup-comparison">The startup comparison</a></h3>
+<p>Every start compares the published project set baked into the image against the editor's own approved records, and reports what it found in one line:</p>
+<pre><code>projects.online=3 projects.waiting=1 projects.stranded=0 projects.removed_upstream=0 records.unreadable=0 records.retry_failed=0
+</code></pre>
+<p><code>online</code> is the ordinary outcome — those changes are live and their local records have been discarded. <code>waiting</code> is also ordinary: those are approved and will go Online with the release that carries them.</p>
+<p>The line is logged at <strong><code>warn</code> rather than <code>info</code></strong> when any of the last four is non-zero, and each is a to-do rather than noise:</p>
+<ul>
+<li><strong><code>stranded</code></strong> — an approved record whose pull request was opened but whose data still does not match what shipped. Either the pull request merged <em>with reviewer edits</em>, or it was closed unmerged. Such a record can never go Online on its own, and the project will read "waiting for the next release" indefinitely. The per-record <code>warn</code> beside this line names the project and the fields that differ. Resolving it needs a force-online or force-discard decision from RDU.</li>
+<li><strong><code>removed_upstream</code></strong> — a record for a project the published set no longer holds. The record is kept deliberately: it may be the only surviving copy of that work.</li>
+<li><strong><code>unreadable</code></strong> — a record whose payload could not be parsed. Left untouched; the per-record <code>error</code> names it.</li>
+<li><strong><code>retry_failed</code></strong> — a record that matched but could not be discarded, or whose row was already gone. Harmless on its own and retried on the next start; a number that stays non-zero across restarts is worth investigating.</li>
+</ul>
+<p>A failure of the comparison as a whole is logged and <strong>does not stop the process</strong>, unlike the RDU-account reconciliation above. The cost of skipping it is a stale status label; the cost of refusing to start is the whole service.</p>
 <h3 id="diagnosing-i-never-got-a-code"><a class="header" href="#diagnosing-i-never-got-a-code">Diagnosing "I never got a code"</a></h3>
 <p>No address appears in any log, so the trail is the account list's <strong>last code sent</strong> column plus the opaque <code>auth.subject</code> correlation id (the account's UUID) in the auth events. That column is the only diagnosis there is: an unconfigured relay and a failed send are each reported, but neither covers a code the relay accepted and never delivered, and the address may not go in a log.</p>
 <ul>

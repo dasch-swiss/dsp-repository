@@ -1,17 +1,13 @@
 //! `GET /projects`, and the `/projects/{shortcode}` redirect into the form.
 //!
-//! The editing surface is the project form's work. What lands here is the
-//! **scope**: a depositor is confined to the shortcodes assigned to them, and anything else is
-//! a 403. Both routes now read the published
-//! set for the projects' names, so the list is a real list. Both take
-//! [`Authenticated`](crate::auth::guard::Authenticated), so an unauthenticated
-//! request never reaches this module.
+//! What lands here is the **scope**: a depositor is confined to the shortcodes
+//! assigned to them, and anything else is a 403. Both routes read the published
+//! set for the projects' names, and both take [`Authenticated`], so an
+//! unauthenticated request never reaches this module.
 //!
-//! The 403 is answered before the record is read, and it always will be: an
-//! authorization check that runs after a lookup leaks the project's existence
-//! through the difference between 403 and 404. Here there is nothing to look up
-//! yet, so the ordering costs nothing to establish now and would cost a rewrite
-//! to establish later.
+//! The 403 is answered before the record is read: an authorization check that
+//! runs after a lookup leaks the project's existence through the difference
+//! between 403 and 404.
 
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -79,10 +75,9 @@ pub(crate) async fn list(State(state): State<AppState>, Authenticated(user, _): 
 /// `page_url.rs`'s `KNOWN_ROUTES`: a redirect renders no beacon script, so no
 /// beacon can report it.
 ///
-/// The 404-then-403 order is the same as everywhere else in this module, and the
-/// redirect target is deliberately the *same* section for both audiences — a
-/// destination that depended on the role is one more thing to get wrong in a
-/// link shared between a depositor and a reviewer.
+/// The redirect target is deliberately the *same* section for both audiences — a
+/// destination that depended on the role is one more thing to get wrong in a link
+/// shared between a depositor and a reviewer.
 pub(crate) async fn detail(
     State(state): State<AppState>,
     Authenticated(user, _): Authenticated,
@@ -94,17 +89,14 @@ pub(crate) async fn detail(
     if !is_valid_shortcode(&shortcode) {
         return crate::not_found(State(state)).await;
     }
-    // The authorization check runs before anything is read, and has to:
-    // answering 404 for a shortcode that is not published and 403 for one that
-    // is would make the pair an oracle for which projects exist, to a reader who
-    // is not allowed to know. Redirecting an unassigned reader to the section
-    // URL would merely move the 403 one request later, and leak the same thing
-    // through the redirect.
+    // The authorization check runs before anything is read: 404 for a shortcode
+    // that is not published and 403 for one that is would make the pair an oracle
+    // for which projects exist, to a reader who is not allowed to know.
     //
-    // Nothing here answers 404 for an unknown shortcode either, and that is not
-    // an oversight: a project may exist only locally, so
-    // "absent from the published set" is not "does not exist" — the section
-    // handler opens such a project blank rather than refusing it.
+    // Nothing answers 404 for an unknown shortcode either: a project may exist
+    // only locally, so "absent from the published set" is not "does not exist",
+    // and the section handler opens such a project blank rather than refusing
+    // it.
     if !user.may_reach(&shortcode) {
         // Logged because a depositor repeatedly reaching for projects
         // that are not theirs is worth seeing, and the two identifiers here are
@@ -125,7 +117,7 @@ pub(crate) async fn detail(
     axum::response::Redirect::to(&format!("/projects/{shortcode}/sections/{}", section.id)).into_response()
 }
 
-/// `GET /states` — what each state means and how long Online takes (REQ-2.6).
+/// `GET /states` — what each state means and how long Online takes.
 ///
 /// Behind [`Authenticated`] like the rest: it explains a depositor's own
 /// projects, and the editor has no public pages besides the login flow.
@@ -139,7 +131,7 @@ pub(crate) async fn states(State(state): State<AppState>, Authenticated(user, _)
     )
 }
 
-/// The state to show a depositor for one project (REQ-2.1).
+/// The state to show a depositor for one project.
 ///
 /// Three reads and the published set. The comparison is made against the
 /// **approved record** where there is one, because that is the only local row
@@ -148,10 +140,10 @@ pub(crate) async fn states(State(state): State<AppState>, Authenticated(user, _)
 /// look like a pending release.
 async fn project_state(state: &AppState, shortcode: &str) -> Result<ProjectState, RepositoryError> {
     // The three record tables key on the *normalized* shortcode, while the
-    // summary carries the published set's own spelling — and 24 of the 85
-    // published shortcodes are mixed case. Querying `080C` against rows stored
-    // as `080c` finds nothing, which would read as "no local record" and so
-    // report those projects Online no matter what their depositor had pending.
+    // summary carries the published set's own spelling. Querying `080C` against
+    // rows stored as `080c` finds nothing, which would read as "no local record"
+    // and report those projects Online no matter what their depositor had
+    // pending.
     let key = normalize_shortcode(shortcode);
     let submission = SubmissionRepository::find_by_shortcode(&*state.db, &key)
         .await?
@@ -165,13 +157,10 @@ async fn project_state(state: &AppState, shortcode: &str) -> Result<ProjectState
 /// How a project's newest approved record compares against the published set,
 /// and whether it holds one at all.
 ///
-/// Shared with the form (`crate::sections`), which needs the same answer for
-/// REQ-2.5's waiting-for-release notice. One function because the rule it
-/// encodes is not obvious and must not drift: **the newest record is the one
-/// whose publication is in question** — `find_by_shortcode` orders oldest
-/// first, and a project holds more than one whenever collection has lagged.
-/// Two call sites deriving that separately would silently disagree the moment
-/// the selection changed.
+/// Shared with the form (`crate::sections`), which needs the same answer for the
+/// waiting-for-release notice. **The newest record is the one whose publication
+/// is in question** — `find_by_shortcode` orders oldest first, and a project
+/// holds more than one whenever collection has lagged.
 ///
 /// `key` is a normalized shortcode. A record whose payload cannot be parsed is
 /// treated as no record rather than as an error: the page's job is to render a
@@ -215,7 +204,6 @@ mod tests {
         a_session, a_user, body_string, capture_logs, get, location, test_app, test_state, with_cookie,
     };
 
-    /// `GET uri` as `session`.
     async fn as_session(app: &axum::Router, uri: &str, session: &str) -> axum::response::Response {
         app.clone()
             .oneshot(with_cookie(get(uri), crate::auth::cookie::SESSION, session))
@@ -237,9 +225,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_the_redirect_target_does_not_depend_on_the_role() {
-        // A destination that differed by role is one more thing to get wrong in
-        // a link shared between a depositor and a reviewer, and both audiences
-        // see `overview` first.
+        // Both audiences see `overview` first.
         let (state, _) = test_state("project-first-section").await;
         let depositor = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801"]).await;
         let rdu = a_user(&state, "rdu@dasch.swiss", "An Admin", Role::Rdu, &[]).await;
@@ -259,8 +245,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_depositor_reaching_an_unassigned_project_gets_a_403_page_with_a_way_back() {
-        // The requirement asks for the status. The page is because a bare 403 is a dead
-        // end in a browser — the reader is signed in and has nothing to press.
+        // A bare 403 is a dead end in a browser: the reader is signed in and has
+        // nothing to press.
         let (state, _) = test_state("project-forbidden").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801"]).await;
         let session = a_session(&state, user.id).await;
@@ -429,9 +415,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_refusal_is_logged_without_anything_personal_in_it() {
-        // The two identifiers are an opaque account id and a
-        // shortcode, and a depositor repeatedly reaching for projects that are
-        // not theirs is worth being able to see.
         let (state, _) = test_state("project-log").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801"]).await;
         let session = a_session(&state, user.id).await;
@@ -456,11 +439,10 @@ mod tests {
 
     #[tokio::test]
     async fn a_mixed_case_assignment_still_finds_its_local_records() {
-        // The regression this exists for: `drafts` keys on the normalized
-        // shortcode, the published set spells `080C` with a capital, and 24 of
-        // the 85 published shortcodes are mixed case. Querying the stored
-        // spelling finds no draft, so the project reports Online while its
-        // depositor has unsaved work — a wrong answer for a quarter of the set.
+        // `drafts` keys on the normalized shortcode while the published set
+        // spells `080C` with a capital. Querying the stored spelling finds no
+        // draft, so the project reports Online while its depositor has unsaved
+        // work.
         let (state, _) = test_state("project-state-case").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["080C"]).await;
         let session = a_session(&state, user.id).await;
@@ -488,8 +470,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_published_project_with_nothing_pending_reads_online() {
-        // REQ-2.1 on the list, and the only place a depositor ever sees the
-        // result of REQ-2.4's discard.
+        // The only place a depositor sees the result of the startup discard.
         let (state, _) = test_state("project-state-online").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&state, user.id).await;
@@ -503,8 +484,8 @@ mod tests {
 
     #[tokio::test]
     async fn the_state_explanation_page_is_reachable_and_linked_from_the_list() {
-        // REQ-2.6. A page nothing links to does not explain anything, so the
-        // link is part of the requirement rather than a nicety.
+        // A page nothing links to does not explain anything, so the link is part
+        // of it.
         let (state, _) = test_state("project-state-explained").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&state, user.id).await;

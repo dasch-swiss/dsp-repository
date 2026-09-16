@@ -212,9 +212,7 @@ mod tests {
         let error = SessionRepository::create(&db, &session("token-1", Uuid::new_v4(), at(18)))
             .await
             .expect_err("a session for an unknown user must be refused");
-        // A foreign-key failure is not a duplicate. Reported as `Conflict` it
-        // would read as "session already exists" and send the reader looking for
-        // a second row that is not there, so only unique and primary-key
+        // A foreign-key failure is not a duplicate: only unique and primary-key
         // violations map to `Conflict`.
         assert!(
             matches!(error, RepositoryError::Backend(_)),

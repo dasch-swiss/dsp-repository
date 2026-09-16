@@ -1,19 +1,11 @@
 //! The persistence ports, one trait per aggregate.
 //!
 //! Framework-free: the traits name domain records and [`RepositoryError`], never
-//! a `rusqlite` type. `editor-server` implements all nine against SQLite, so the
-//! handlers Phase 3 onwards writes depend on these and not on the driver.
-//!
-//! Every method is `async` and boxed via `async_trait` rather than left as a
-//! bare `async fn` in a trait: the futures have to be `Send` to be awaited
-//! inside an Axum handler. Native `async fn` in traits gives that only by
-//! spelling out `-> impl Future + Send` on every signature.
-//!
-//! It also keeps the traits dyn-compatible, which [`Repositories`] and
-//! `AppState` depend on: the state holds an `Arc<dyn Repositories>`, so a test
-//! can put a fake behind it and make a chosen call fail. That is the only way to
-//! reach the paths that log a storage error and carry on, and they are where the
-//! non-obvious correctness arguments live.
+//! a `rusqlite` type. Every method is `async` and boxed via `async_trait`
+//! rather than a bare `async fn` in a trait: the futures have to be `Send` to be
+//! awaited inside an Axum handler, and the traits have to stay dyn-compatible
+//! for the `Arc<dyn Repositories>` in `AppState`, which is how a test puts a
+//! fake behind it and makes a chosen call fail.
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -25,14 +17,10 @@ use crate::records::{ApprovedRecord, DraftRecord, LoginCode, ReviewRound, Sessio
 /// What can go wrong in a repository call.
 ///
 /// [`Self::Backend`] keeps the driver error as a `source` without naming its
-/// type, so this crate stays free of a database dependency.
-///
-/// Its `Display` includes that source. It has to: every call site logs with
-/// `%error`, and `Display` on a thiserror type is exactly the format string — so
-/// without the `{0}` every storage failure in the service logged the words
-/// "storage backend failed" and nothing whatever about which one. The driver's
-/// message names tables, columns and SQL parameter *names*, never bound values,
-/// so this does not reopen the address-disclosure channel a storage error otherwise would.
+/// type, so this crate stays free of a database dependency. Its `Display`
+/// includes that source, because every call site logs with `%error`. The
+/// driver's message names tables, columns and parameter names, never bound
+/// values, so it does not reopen the address-disclosure channel.
 #[derive(Debug, thiserror::Error)]
 pub enum RepositoryError {
     /// The row addressed by an update or delete does not exist.
@@ -73,10 +61,9 @@ pub trait UserRepository: Send + Sync {
     /// already taken.
     async fn create(&self, user: &User) -> Result<()>;
 
-    /// Replace name, address, role and shortcode assignments.
-    ///
-    /// Create and remove are the whole of what was asked for; update exists because removing a
-    /// shortcode from someone holding a draft on it is otherwise undefined.
+    /// Replace name, address, role and shortcode assignments. Exists because
+    /// removing a shortcode from someone holding a draft on it is otherwise
+    /// undefined.
     async fn update(&self, user: &User) -> Result<()>;
 
     /// Delete a user. `ON DELETE CASCADE` takes its sessions, codes and
@@ -94,19 +81,15 @@ pub trait UserRepository: Send + Sync {
     async fn list(&self) -> Result<Vec<User>>;
 
     /// Record a failed authentication and return the account's new consecutive-
-    /// failure count. Survives code invalidation and resend by construction: the
-    /// counter lives on the user, not on the code.
+    /// failure count. The counter lives on the user, not on the code, so it
+    /// survives code invalidation and resend.
     ///
-    /// `decay_before` makes the counter a rolling window rather than a ratchet.
-    /// A failure whose predecessor is older than that instant starts the count at
-    /// one; otherwise it adds to it. Without the decay the counter only ever
-    /// rises, so once an account has reached its cap a *single* wrong entry after
-    /// each lockout expires re-locks it — a permanent, cheap denial of service
-    /// against any address an attacker knows is registered.
-    ///
-    /// NIST SP 800-63B-4 is not in the way: it requires that generating a new
-    /// authentication secret not reset the count, and says nothing about an
-    /// elapsed throttling window.
+    /// `decay_before` makes the counter a rolling window: a failure whose
+    /// predecessor is older than that instant starts the count at one. Without
+    /// it a single wrong entry after each lockout expires re-locks the account
+    /// forever, a cheap denial of service against any known address. NIST SP
+    /// 800-63B-4 forbids resetting the count on a new secret and says nothing
+    /// about an elapsed window.
     async fn record_failed_login(&self, id: Uuid, at: DateTime<Utc>, decay_before: DateTime<Utc>) -> Result<u32>;
 
     /// Clear the counter and the instant. Only a successful authentication may
@@ -157,12 +140,9 @@ pub enum Issued {
     New,
     /// A code was issued to this user too recently, so nothing was stored.
     ///
-    /// Carries nothing on purpose. Returning the outstanding code — or its
-    /// browser binding — would be the obvious convenience and a hole: anyone who
-    /// can post an address could then ask for the binding of a code already on
-    /// its way to that address's owner, which is precisely what the binding
-    /// exists to prevent. A browser that already holds the right token keeps it
-    /// by being left alone, not by being handed it again.
+    /// Carries nothing: returning the outstanding code or its binding would
+    /// hand anyone who can post an address the binding of a code on its way to
+    /// that address's owner.
     Cooled,
 }
 
@@ -172,13 +152,11 @@ pub trait LoginCodeRepository: Send + Sync {
     async fn create(&self, code: &LoginCode) -> Result<()>;
 
     /// Insert `code` unless this user was already issued one at or after
-    /// `not_before` — the resend cooldown, applied as a
-    /// compare-and-set.
+    /// `not_before`: the resend cooldown, as a compare-and-set.
     ///
     /// Atomic rather than a read followed by [`Self::create`]: reads go to the
     /// reader pool, so two simultaneous requests for one address would both see
-    /// no recent code, both insert, and both send. That is two live codes and
-    /// two mails against a relay quota the global daily cap exists to protect.
+    /// no recent code, both insert and both send.
     async fn create_unless_issued_since(&self, code: &LoginCode, not_before: DateTime<Utc>) -> Result<Issued>;
 
     /// The code a browser is bound to, by the token it holds. `None` for a token
@@ -193,32 +171,24 @@ pub trait LoginCodeRepository: Send + Sync {
     /// The user's newest code that has not expired and has not been consumed.
     async fn find_active_for_user(&self, user_id: Uuid, now: DateTime<Utc>) -> Result<Option<LoginCode>>;
 
-    /// Claim one of this code's three attempts, and report what
-    /// happened.
+    /// Claim one of this code's attempts, and report what happened.
     ///
-    /// The check and the increment are one statement on purpose. Reading
-    /// `attempts` and then incrementing it leaves a window in which every
-    /// simultaneous submission passes the check, and the three-attempt limit is one of exactly
-    /// two controls standing between a ~19.93-bit secret and a guesser — so the
-    /// limit has to *be* the increment. Anything but [`Attempt::Claimed`] means
-    /// the caller must not compare.
-    ///
-    /// The outcomes are distinguished because they are different events for an
-    /// operator: [`Attempt::Exhausted`] is the attempt limit doing its job, while
-    /// [`Attempt::AlreadySpent`] is usually one person with two tabs open, and
-    /// telling the second one it used up its guesses sends support down the
-    /// wrong path.
+    /// The check and the increment are one statement: read-then-increment lets
+    /// every simultaneous submission pass the check, and the attempt limit is
+    /// one of two controls between a ~20-bit secret and a guesser. Anything but
+    /// [`Attempt::Claimed`] means the caller must not compare.
+    /// [`Attempt::Exhausted`] is the limit doing its job; [`Attempt::AlreadySpent`]
+    /// is usually one person with two tabs, and telling them they used up their
+    /// guesses sends support down the wrong path.
     async fn claim_attempt(&self, id: Uuid, max_attempts: u32) -> Result<Attempt>;
 
     /// Move a live code's binding from `presented` to `replacement`, and report
     /// whether one moved.
     ///
     /// The `WHERE browser_token = presented` is the authorisation: only a browser
-    /// that already holds the binding can move it, so this cannot be used to
-    /// acquire the binding of a code on its way to somebody else. It exists so
-    /// that every `POST /login` can hand back a fresh token — which is what makes
-    /// the response identical for an address with an account and one without —
-    /// without stranding the code the requesting browser already owns.
+    /// that already holds the binding can move it. Exists so every `POST /login`
+    /// can hand back a fresh token, which keeps the response identical for a
+    /// known and an unknown address, without stranding the code the browser owns.
     async fn rebind_browser_token(&self, presented: &str, replacement: &str) -> Result<bool>;
 
     /// Mark a code used, once. `false` means it was already consumed — a replay,
@@ -228,25 +198,17 @@ pub trait LoginCodeRepository: Send + Sync {
     /// Delete a user's codes that were never spent, leaving any consumed one in
     /// place.
     ///
-    /// Called after a successful sign-in, to invalidate codes still live in
-    /// browsers nobody is using. It deliberately does **not** take the consumed
-    /// code with it, which an earlier version did: that row is the only anchor
-    /// the resend cooldown has — it is measured from the last code *issued* —
-    /// so deleting it let a user sign in and immediately be sent another code.
-    ///
-    /// The send caps no longer depend on any of this. They count
-    /// [`MailSendRepository`] rows, which is why the siblings this deletes —
-    /// codes that were mailed and then abandoned — no longer vanish from the
-    /// count along with the rows.
+    /// Called after a successful sign-in. The consumed code stays because the
+    /// resend cooldown is measured from the last code issued; deleting it would
+    /// let a user sign in and immediately be sent another code.
     async fn delete_unconsumed_for_user(&self, user_id: Uuid) -> Result<u64>;
 
     /// Undo [`Self::consume`], returning the code to a spendable state.
     ///
-    /// For the window between consuming a correct code and having a session to
-    /// show for it: if session creation fails, the code has been spent, the user
-    /// is told it was invalid, and the cooldown refuses them another — locked out
-    /// by an error that was never theirs. Reopening it costs nothing, because
-    /// nobody was authenticated.
+    /// For session creation failing after a correct code was consumed: otherwise
+    /// the user is told the code was invalid and the cooldown refuses another,
+    /// locked out by an error that was never theirs. Reopening costs nothing,
+    /// because nobody was authenticated.
     async fn unconsume(&self, id: Uuid) -> Result<bool>;
 
     /// Drop expired codes. Returns how many went.
@@ -256,16 +218,11 @@ pub trait LoginCodeRepository: Send + Sync {
 /// An append-only record of the mail that went out, and the only thing the
 /// daily send caps count.
 ///
-/// Separate from [`LoginCodeRepository`] because it records a different fact. A
-/// login code is state with a ten-minute life that is rolled back, spent and
-/// swept; a send is an event that already happened and cannot be taken back.
-/// Counting the former to bound the latter is what made the cap read low:
-/// delivery failures remove rows for sends that never happened (correct), and a
-/// successful sign-in removes the user's other unspent codes, which *were*
-/// mailed (not correct).
-///
-/// Nothing here identifies a message beyond who it went to and when. The
-/// recipient is the account id, never the address.
+/// Separate from [`LoginCodeRepository`] because a send is an event that
+/// already happened, while a code is state that is rolled back, spent and
+/// swept; counting codes made the cap read low. Nothing here identifies a
+/// message beyond who it went to and when: the recipient is the account id,
+/// never the address.
 #[async_trait]
 pub trait MailSendRepository: Send + Sync {
     /// Record one message as sent. Append-only: there is no update and no
@@ -279,19 +236,16 @@ pub trait MailSendRepository: Send + Sync {
 
     /// Sends to one account since `since`, for the per-account daily cap.
     ///
-    /// The global cap alone does not bound this: the resend cooldown is per
-    /// address, so at its sixty-second default one address can be sent 1,440
-    /// codes a day against a global default of 500. One attacker with one known
-    /// address could therefore spend the whole shared budget and stop everyone
-    /// signing in, which is the outage the global cap exists to prevent,
-    /// reached about twenty times more cheaply than exhausting the relay.
+    /// The global cap alone does not bound this: the cooldown is per address, so
+    /// at its sixty-second default one address can be sent 1,440 codes a day
+    /// against a global default of 500, and one known address could spend the
+    /// whole shared budget.
     async fn count_for_user_since(&self, user_id: Uuid, since: DateTime<Utc>) -> Result<u64>;
 
     /// Drop sends older than `cutoff`. Returns how many went.
     ///
     /// The caller passes the caps' own window, so retention and the count are
-    /// the same span by construction: pruning anything the count still reads
-    /// would silently free budget.
+    /// one span; pruning anything the count still reads would free budget.
     async fn delete_before(&self, cutoff: DateTime<Utc>) -> Result<u64>;
 }
 
@@ -350,11 +304,9 @@ pub trait ApprovedRecordRepository: Send + Sync {
     ///
     /// The startup comparison's enumeration. It cannot walk the published set
     /// instead: a record whose project the published set no longer holds is
-    /// exactly the fourth branch of REQ-2.3, and a walk keyed on published
-    /// shortcodes is structurally unable to see it. `list_uncollected` is no
-    /// substitute either — a record *is* collected by the time its change
-    /// ships, so filtering those out would hide every record that is about to
-    /// go Online.
+    /// invisible to such a walk. `list_uncollected` is no substitute either: a
+    /// record is collected by the time its change ships, so filtering those out
+    /// would hide every record about to go Online.
     async fn list_all(&self) -> Result<Vec<ApprovedRecord>>;
 
     /// Stamp a record as collected. Leaving it unstamped is what makes a failed
@@ -368,12 +320,11 @@ pub trait ApprovedRecordRepository: Send + Sync {
 
 /// Whether a terminating review action found the submission it named.
 ///
-/// The terminal-state guard, as a return value rather than a check the caller
-/// makes first: a `find` followed by a write is two statements with a window
-/// between them, and two reviewers deciding at once is the case this exists
-/// for. Every method returning it deletes the submission by id inside the same
-/// transaction that records the round, so the delete's own row count is what
-/// decides — and exactly one of two concurrent calls can see a row.
+/// The terminal-state guard as a return value rather than a prior check: a
+/// `find` followed by a write has a window, and two reviewers deciding at once
+/// is the case this exists for. Every method returning it deletes the
+/// submission inside the transaction that records the round, so the delete's
+/// row count decides.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Transition {
     /// The submission was there. It is gone, and the round is recorded.
@@ -382,32 +333,23 @@ pub enum Transition {
     AlreadyReviewed,
 }
 
-/// The transitions that end a review round — approve, request changes, reject and withdraw —
-/// and the history they leave.
+/// The transitions that end a review round and the history they leave.
 ///
-/// Each writing method spans three tables and is therefore one method rather
-/// than a caller-side sequence: a reject that deleted the submission and then
-/// failed to record the round would destroy the depositor's work and leave
-/// nothing saying it ever existed, which is the failure the round table exists
-/// to prevent. `submissions` is the row every one of them deletes, so its
-/// delete is also the terminal-state guard — see [`Transition`].
+/// Each writing method spans three tables in one transaction: a reject that
+/// deleted the submission and then failed to record the round would destroy
+/// the depositor's work with nothing saying it existed. The `submissions`
+/// delete is also the terminal-state guard, see [`Transition`].
 #[async_trait]
 pub trait ReviewRoundRepository: Send + Sync {
-    /// Approve: delete the submission, insert the approved record it
-    /// becomes, record the round.
-    ///
-    /// The record's payload is what RDU approved — the submitted draft with
-    /// every accepted substitution applied and every reverted field put back —
-    /// computed by the caller, which is the only layer that knows the form's
-    /// appliers.
+    /// Approve: delete the submission, insert the approved record it becomes,
+    /// record the round. The record's payload is what RDU approved, computed
+    /// by the caller, the only layer that knows the form's appliers.
     async fn approve(&self, submission_id: Uuid, record: &ApprovedRecord, round: &ReviewRound) -> Result<Transition>;
 
-    /// Request changes: delete the submission, write the draft it
-    /// becomes, record the round.
-    ///
-    /// The draft carries the submitted payload, so the depositor resumes from
-    /// what they sent rather than from whatever the draft held when they sent
-    /// it. What RDU decided per field rides on the round, not the draft.
+    /// Request changes: delete the submission, write the draft it becomes,
+    /// record the round. The draft carries the submitted payload, so the
+    /// depositor resumes from what they sent; what RDU decided per field rides
+    /// on the round.
     async fn request_changes(
         &self,
         submission_id: Uuid,
@@ -415,12 +357,9 @@ pub trait ReviewRoundRepository: Send + Sync {
         round: &ReviewRound,
     ) -> Result<Transition>;
 
-    /// Reject or withdraw: delete the submission and record
-    /// the round, leaving both the draft and the published metadata alone.
-    ///
-    /// One method for two outcomes because the write is identical — they differ
-    /// only in [`ReviewRound::outcome`] and in who is allowed to ask, which is
-    /// the handler's rule.
+    /// Reject or withdraw: delete the submission and record the round, leaving
+    /// the draft and the published metadata alone. One method because the write
+    /// is identical; the outcome and who may ask are the handler's.
     async fn discard(&self, submission_id: Uuid, round: &ReviewRound) -> Result<Transition>;
 
     /// Every round on one project, **newest first**, so the head of the list is
@@ -474,20 +413,12 @@ pub trait EntityProposalRepository: Send + Sync {
 
 /// Every port at once, so one handle can serve all of them.
 ///
-/// The nine traits above are the units of dependency — a function that only
-/// looks up accounts should say `&dyn UserRepository` and mean it. This is for
-/// the callers that cannot, because Rust has no way to spell a trait object over
-/// several traits at once: `AppState`, which every handler shares and which
-/// therefore needs all nine, and the few functions that genuinely need more than
-/// one port (the session lookup reads a session *and* its account).
-///
-/// The blanket impl is what keeps this free: anything implementing the nine
-/// ports is a `Repositories` without saying so, so neither the SQLite
-/// implementation nor a test fake ever writes `impl Repositories`.
-///
-/// A method is still called through the port that declares it —
-/// `UserRepository::find_by_email(&*state.db, …)` — because `dyn Repositories`
-/// implements each supertrait. Nothing here widens what a call site can reach.
+/// The nine traits are the units of dependency: a function that only looks up
+/// accounts says `&dyn UserRepository`. This is for `AppState`, which every
+/// handler shares and which needs all nine, since Rust has no trait object over
+/// several traits. The blanket impl means neither the SQLite implementation nor
+/// a test fake writes `impl Repositories`, and a method is still called through
+/// the port that declares it, so nothing here widens what a call site reaches.
 pub trait Repositories:
     UserRepository
     + SessionRepository

@@ -1,20 +1,15 @@
 //! Account bootstrap: the RDU members that configuration says must always
 //! exist.
 //!
-//! Depositor accounts are created by RDU through the interface, which is
-//! DEV-6910's work. This module exists because RDU members are the exception —
-//! "defined in configuration and shall always exist without provisioning" — and
-//! because without it there is no account in a fresh database, so the login flow
-//! cannot be exercised anywhere except a test.
+//! Depositor accounts are created by RDU through the interface. RDU members are
+//! the exception — defined in configuration and always present without
+//! provisioning — and without this there is no account in a fresh database, so
+//! the login flow cannot be exercised anywhere except a test.
 //!
-//! ## What it does not do
-//!
-//! An address removed from the configuration is **reported, not revoked**. The
-//! removal policy — demote and keep the row, or delete it and its sessions,
-//! drafts and submissions — is a role-model decision that belongs with the rest
-//! of account management, and inventing half of it here would pre-empt it. A
-//! startup warning names any `rdu` account the configuration no longer lists, so
-//! the gap is visible rather than silent.
+//! An address removed from the configuration is **reported, not revoked**: the
+//! removal policy belongs with the rest of account management, so a startup
+//! warning names any `rdu` account the configuration no longer lists and nothing
+//! else happens.
 
 use chrono::{DateTime, Utc};
 use editor_core::records::{Role, User};
@@ -38,14 +33,11 @@ pub(crate) async fn ensure_rdu(
                 let user = User {
                     id: Uuid::new_v4(),
                     email: address.clone(),
-                    // There is no name in the configuration, and inventing a
-                    // pretty one would be a guess. The local part is what the
-                    // person calls themselves in the address they gave, and RDU
-                    // can change it once account editing exists.
+                    // There is no name in the configuration; the local part is
+                    // what the person called themselves in the address they gave.
                     name: default_name(address),
                     role: Role::Rdu,
-                    // Empty by design: RDU access is role-based, not per-project
-                    //.
+                    // Empty by design: RDU access is role-based, not per-project.
                     shortcodes: Vec::new(),
                     failed_logins: 0,
                     failed_login_at: None,
@@ -73,13 +65,10 @@ pub(crate) async fn ensure_rdu(
     Ok(changed)
 }
 
-/// The display name for an address with no name attached: its local part.
 fn default_name(address: &str) -> String {
     address.split('@').next().unwrap_or(address).to_string()
 }
 
-/// Warn about every `rdu` account the configuration no longer lists.
-///
 /// Deliberately a report and not a revocation — see the module docs.
 async fn report_unlisted(db: &dyn UserRepository, addresses: &[String]) -> Result<(), RepositoryError> {
     let listed: Vec<String> = addresses.iter().map(|address| User::normalize_email(address)).collect();
@@ -155,8 +144,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_an_existing_depositor_is_promoted_rather_than_ignored() {
-        // Configuration is the statement of who administers the service; leaving
-        // the row as a depositor would silently ignore it.
         let db = test_db("rdu-promote").await;
         let existing = User {
             id: Uuid::new_v4(),
@@ -184,8 +171,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_removing_an_address_leaves_the_account_and_says_so() {
-        // The removal policy belongs with account management; what belongs here
-        // is that the gap is visible rather than silent.
         let db = test_db("rdu-unlisted").await;
         ensure_rdu(&db, &addresses(&["rdu@dasch.swiss"]), at(10)).await.unwrap();
 

@@ -1,26 +1,15 @@
 //! The checks a draft must pass to become a pending submission.
 //!
-//! Today that is one rule beyond the type-level gate in
-//! [`ProjectDraft::to_raw`]: every `temporalCoverage` entry has to resolve to a
-//! structured date. `dpe-server validate` does not enforce it as a
-//! blocker, and OAI-PMH needs it, so a submission carrying an unresolvable
-//! period would open a pull request that fails CI in a crate the editor never
-//! touches.
-//!
-//! Whether to refuse such a submission or carry the enrichment row through to the pull request
-//! was an open question. Refusal, with a field-level error: the success criteria say so, and the
-//! depositor is not stranded, because
-//! `temporalCoverage`'s `Reference` variant is always a resolvable path for
-//! recording a period the enrichment table does not know.
+//! One rule beyond the type-level gate in [`ProjectDraft::to_raw`]: every
+//! `temporalCoverage` entry has to resolve to a structured date. `dpe-server
+//! validate` does not block on it and OAI-PMH needs it, so a submission carrying
+//! an unresolvable period would open a pull request that fails CI. The
+//! depositor is never stranded: `temporalCoverage`'s `Reference` variant always
+//! resolves.
 //!
 //! The rule is [`platform_metadata::temporal_coverage::completeness_gap`], the
-//! same decision `dpe-server validate` and `dpe-api-oai`'s
-//! `every_committed_temporal_coverage_resolves` apply, so the three cannot drift
-//! on what counts as a gap. Nothing needed extracting: that function was already
-//! pure over the two tables. What this module adds is the entry index, which a
-//! command-line report does not need and a form field does.
-//!
-//! Turning these into rendered errors is the submit path's job (DEV-6913).
+//! same function `dpe-server validate` and `dpe-api-oai` apply, so the three
+//! cannot drift on what counts as a gap.
 //!
 //! [`ProjectDraft::to_raw`]: crate::draft::ProjectDraft::to_raw
 
@@ -122,8 +111,6 @@ mod tests {
         )])
     }
 
-    /// A submission whose `temporalCoverage` cannot resolve
-    /// is rejected.
     #[test]
     fn an_unresolvable_free_text_period_is_reported() {
         let project = project_with(vec![free_text("A period nobody has enriched")]);

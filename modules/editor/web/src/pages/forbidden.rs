@@ -1,19 +1,11 @@
 //! The 403 page.
 //!
-//! The requirement specifies a status, not a page. A bare 403 is a dead end in a
-//! browser: the reader is signed in, has done nothing wrong, and has no control
-//! to press. So the status is carried by a page inside the shell, with one
-//! obvious way back.
-//!
-//! `/projects` is that way back for every case, and can be, because everything
-//! that renders this page is already authenticated — an unauthenticated request
-//! is redirected to login long before it reaches here — and `/projects` is
-//! reachable by any signed-in account, RDU included.
-//!
-//! The message is the caller's. What a reader may be told differs by case: that
-//! a project is not theirs is safe to say, because they had to name the
-//! shortcode to get here, whereas an RDU-only page should not describe what it
-//! holds.
+//! A bare 403 is a dead end in a browser: the reader is signed in and has no
+//! control to press, so the status is carried by a page inside the shell with
+//! one way back. `/projects` is that way back for every case, since everything
+//! rendering this page is already authenticated and `/projects` is reachable by
+//! any signed-in account. The message is the caller's: whether a reader may be
+//! told what a page holds differs by case.
 
 use maud::{html, Markup};
 
@@ -42,8 +34,6 @@ mod tests {
 
     #[test]
     fn test_the_page_offers_a_route_back() {
-        // The whole reason the 403 is rendered as a page: a bare status
-        // leaves a signed-in reader with nothing to press.
         let out = forbidden("nope").into_string();
         assert!(out.contains(r#"<a href="/projects""#), "{out}");
     }

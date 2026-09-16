@@ -17,20 +17,11 @@
 //!   delete back with it, so a round that cannot be written cannot destroy the submission or move a
 //!   proposal.
 //!
-//! ## Each transition carries this shortcode's proposals along with it
-//!
-//! `approve` reads each `submitted` proposal's own `decision` (accept/reject, set earlier in the
-//! round by the same control that decides a project field) and turns it into a status; a proposal
-//! left undecided stays `submitted` rather than being forced one way, which is why the review
-//! surface refuses an approval while any proposal is undecided — the same gate an approval
-//! already applies to an undecided field. `request_changes` returns `submitted` proposals to
-//! `draft` without touching `decision`, `decided_by` or `decided_at` — the per-field survival
-//! request-changes gives a field, applied to proposals. `discard` branches on `round.outcome`: a
-//! reject discards the proposals with the submission it discards; a withdrawal hands them back as
-//! drafts, because withdrawing reads as "take it back so I can keep editing" (see the architecture
-//! doc, "Reject and withdraw both leave the draft"). None of the three deletes a proposal row — a
-//! terminal one stays in `entity_proposals_allocated_id`, which is what stops its id being handed
-//! to a different entity later.
+//! Each transition carries this shortcode's proposals with it: `approve` turns each `submitted`
+//! proposal's own `decision` into a status, `request_changes` returns them to `draft` untouched,
+//! and `discard` rejects or re-drafts them by `round.outcome`. None of the three deletes a
+//! proposal row — a terminal one stays in `entity_proposals_allocated_id`, which is what stops
+//! its id being handed to a different entity later.
 
 use async_trait::async_trait;
 use editor_core::proposals::{ProposalDecision, ProposalStatus};
@@ -94,8 +85,7 @@ fn insert_round(tx: &Transaction<'_>, round: &ReviewRound) -> rusqlite::Result<(
 /// **The shortcode is normalized here rather than trusted from the caller.**
 /// `entity_proposals.shortcode` is always the folded key while `submissions.shortcode` stores
 /// whatever it was given, so keyed unfolded this `UPDATE` matches zero rows and reports nothing:
-/// the round ends, the submission is gone, and the proposals stay `submitted` for ever. 24 of the
-/// 85 committed shortcodes are mixed case.
+/// the round ends, the submission is gone, and the proposals stay `submitted` for ever.
 fn move_submitted_proposals(
     tx: &Transaction<'_>,
     shortcode: &str,
@@ -135,11 +125,10 @@ impl ReviewRoundRepository for Database {
                 ],
             )?;
             insert_round(tx, &round)?;
-            // A `submitted` proposal's own `decision` becomes its status here. A row
-            // whose `decision` is NULL is left `submitted` rather than guessed at — what prevents
-            // that from being the end state is the review surface's approval gate, which refuses
-            // an approval while any proposal is undecided, the same rule it already applies to an
-            // undecided field.
+            // A `submitted` proposal's own `decision` becomes its status here. A row whose
+            // `decision` is NULL is left `submitted` rather than guessed at; what prevents that
+            // being the end state is the review surface's approval gate, which refuses an
+            // approval while any proposal is undecided.
             tx.execute(
                 "UPDATE entity_proposals SET status = CASE decision WHEN ?3 THEN ?4 ELSE ?5 END, updated_at = ?6 \
                  WHERE shortcode = ?1 AND status = ?2 AND decision IS NOT NULL",
@@ -188,10 +177,8 @@ impl ReviewRoundRepository for Database {
                 ],
             )?;
             insert_round(tx, &round)?;
-            // Request-changes, applied to proposals: the proposal stays alive holding its allocated
-            // id, and what RDU decided about it survives the return exactly as the
-            // per-field state does — `decision`, `decided_by` and `decided_at` are left
-            // untouched.
+            // Request-changes, applied to proposals: the proposal stays alive holding its
+            // allocated id, and `decision`, `decided_by` and `decided_at` are left untouched.
             move_submitted_proposals(tx, &round.shortcode, ProposalStatus::Draft, round.at)?;
             Ok(Transition::Applied)
         })
@@ -206,11 +193,10 @@ impl ReviewRoundRepository for Database {
                 return Ok(Transition::AlreadyReviewed);
             }
             insert_round(tx, &round)?;
-            // Decision 2 and 3 on the issue: a reject discards the submission, so its proposals go
-            // with it; a withdrawal reads as "take it back so I can keep editing" (the architecture
-            // doc, "Reject and withdraw both leave the draft"), so the depositor keeps theirs. This
-            // one method serves both outcomes reaching here — `Approved` and `ChangesRequested`
-            // never do — so no proposal is touched for either of those.
+            // A reject discards the submission, so its proposals go with it; a withdrawal
+            // reads as "take it back so I can keep editing" (the architecture doc, "Reject and
+            // withdraw both leave the draft"), so the depositor keeps theirs. `Approved` and
+            // `ChangesRequested` never reach here.
             let new_status = match round.outcome {
                 ReviewOutcome::Rejected => Some(ProposalStatus::Rejected),
                 ReviewOutcome::Withdrawn => Some(ProposalStatus::Draft),
@@ -421,9 +407,8 @@ mod tests {
     #[tokio::test]
     async fn test_approve_maps_decisions_to_statuses_and_leaves_an_undecided_one_submitted() {
         // What RDU decided about a proposal this round becomes its status once the round
-        // ends. The undecided row staying `submitted` is not the intended end state — the review
-        // surface's approval gate is what prevents it, by refusing an approval while any proposal
-        // is undecided.
+        // ends. The undecided row staying `submitted` is not the intended end state — the
+        // review surface's approval gate is what prevents it.
         let db = test_db("rounds-approve-proposals").await;
         let submission = a_submission(&db, None).await;
         let accepted = a_submitted_proposal(&db, "0801", "person-501", Some(ProposalDecision::Accept), None).await;
@@ -528,12 +513,9 @@ mod tests {
     /// have to be the same string, and only one of the two tables normalizes on
     /// write.
     ///
-    /// 24 of the 85 committed shortcodes are mixed case, so this is the ordinary
-    /// shape rather than an edge case. Keyed on the shortcode as the round
-    /// spells it, the `UPDATE` matches zero rows and reports nothing: the round
-    /// ends, the submission is deleted, and the proposal is left `submitted`
-    /// against a submission that no longer exists — with nothing anywhere
-    /// saying the two disagreed.
+    /// Keyed on the shortcode as the round spells it, the `UPDATE` matches zero rows and
+    /// reports nothing: the round ends, the submission is deleted, and the proposal is left
+    /// `submitted` against a submission that no longer exists.
     #[tokio::test]
     async fn test_a_mixed_case_shortcode_still_moves_its_proposals() {
         let db = test_db("rounds-mixed-case-shortcode").await;
@@ -654,8 +636,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_discard_maps_submitted_proposals_by_outcome() {
-        // Decision 2 and 3 on the issue: a reject discards the proposals along with the
-        // submission; a withdrawal hands them back as drafts so the depositor can keep editing.
+        // A reject discards the proposals along with the submission; a withdrawal hands them
+        // back as drafts so the depositor can keep editing.
         for (outcome, expected) in [
             (ReviewOutcome::Rejected, ProposalStatus::Rejected),
             (ReviewOutcome::Withdrawn, ProposalStatus::Draft),

@@ -13,26 +13,20 @@ use super::{cookie, delta, secret, AuthConfig};
 
 /// How stale `last_seen_at` may get before a request writes it forward.
 ///
-/// The idle timeout needs the timestamp to advance, and advancing it on every
-/// request would put a write on the single writer connection in front of every
-/// page view. A minute of slack costs nothing against a timeout measured in
-/// hours.
+/// Advancing it on every request would put a write on the single writer
+/// connection in front of every page view.
 ///
-/// This is the **one** state change a `GET` performs, and it is deliberate. It
-/// is worth naming because the router's method discipline rests on "no `GET`
-/// mutates state": the exception is sound because the write carries nothing the
-/// requester supplied, is idempotent, and is the requester's own row — there is
-/// nothing for a cross-site request to achieve by triggering it, which is what
-/// makes it different from the "mark as read" bookkeeping the same argument gets
-/// used for.
+/// This is the **one** state change a `GET` performs, against the router's "no
+/// `GET` mutates state" discipline. It is sound because the write carries nothing
+/// the requester supplied, is idempotent, and touches the requester's own row, so
+/// there is nothing for a cross-site request to achieve by triggering it.
 const TOUCH_INTERVAL: Duration = Duration::from_secs(60);
 
 /// Mint a session for `user_id`.
 ///
-/// The id is a fresh 256-bit token every time, which is what makes session
-/// rotation on login automatic: nothing the browser held before authentication
-/// can become the authenticated session id, so a fixated pre-auth value has
-/// nowhere to go.
+/// The id is a fresh 256-bit token every time, so nothing the browser held before
+/// authentication can become the authenticated session id and a fixated pre-auth
+/// value has nowhere to go.
 pub(crate) async fn begin(
     db: &dyn SessionRepository,
     auth: &AuthConfig,
@@ -56,13 +50,7 @@ pub(crate) async fn begin(
 /// The signed-in user, if the request carries a live session.
 ///
 /// Fails closed on every error: a database that cannot answer produces `None`
-/// (unauthenticated) rather than a guess, because the alternative is treating an
-/// unreadable session as a valid one.
-///
-/// Returns the user rather than the session too. Nothing needs the session row
-/// once it has been checked — the id is in the cookie and the timestamps have
-/// already been acted on — and returning it would invite a caller to make a
-/// decision from a value this function has finished with.
+/// rather than a guess.
 pub(crate) async fn current(
     db: &dyn Repositories,
     auth: &AuthConfig,
@@ -80,9 +68,9 @@ pub(crate) async fn current(
         }
     };
 
-    // Absolute expiry and idle timeout, in that order. Both delete the row: a
-    // session that can never be used again is only a source of confusion in the
-    // table, and `delete_expired` runs on nobody's schedule yet.
+    // Both deadlines delete the row: a session that can never be used again is
+    // only a source of confusion in the table, and `delete_expired` runs on
+    // nobody's schedule yet.
     let idle_deadline = session.last_seen_at + delta(auth.session_idle);
     if now >= session.expires_at || now >= idle_deadline {
         let _ = SessionRepository::delete(db, &id).await;
@@ -112,20 +100,13 @@ pub(crate) async fn current(
         }
     }
 
-    // The earlier of the two deadlines, which is what a page can honestly warn
-    // about. They behave differently and the difference is why only the earlier
-    // one is useful: the absolute expiry is fixed at sign-in and never moves,
-    // while the idle one advances on every request — including an autosave — so
-    // a page that showed only the idle one would promise a time that changes
-    // the moment anything happens.
+    // The earlier of the two deadlines is the one a page can honestly warn about:
+    // the absolute expiry never moves, while the idle one advances on every
+    // request, including an autosave.
     Some(Viewer { user, signed_out_at: session.expires_at.min(idle_deadline) })
 }
 
 /// Who is signed in, and when that stops being true.
-///
-/// The deadline rides along because it comes from the row this function already
-/// read: asking for it separately would mean a second read of the same session
-/// on every request that wants to warn about it.
 #[derive(Debug, Clone)]
 pub(crate) struct Viewer {
     pub(crate) user: User,
@@ -135,11 +116,9 @@ pub(crate) struct Viewer {
 
 /// What [`end`] did.
 ///
-/// Three states rather than a boolean, because "there was no session" and "the
-/// delete failed" are opposite facts and collapsing them makes the sign-out log
-/// assert the session was already gone while the row is still there. An alert
-/// keyed on the outcome could then never tell a stale tab from a session that
-/// outlived its own sign-out.
+/// Three states rather than a boolean: "there was no session" and "the delete
+/// failed" are opposite facts, and collapsing them makes the sign-out log assert
+/// the session was already gone while the row is still there.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Ended {
     /// The row is gone. Carries the account it belonged to, so sign-out is
@@ -151,14 +130,11 @@ pub(crate) enum Ended {
     Failed,
 }
 
-/// Delete the session the request carries.
 pub(crate) async fn end(db: &dyn SessionRepository, headers: &HeaderMap) -> Ended {
     let Some(id) = cookie::read(headers, cookie::SESSION) else {
         return Ended::NoSession;
     };
-    // Read before delete so the account can be named in the log. Two statements
-    // rather than one `DELETE … RETURNING`, because the port is shared with the
-    // other aggregates and none of them needs the returning form.
+    // Read before delete so the account can be named in the log.
     let user_id = match SessionRepository::find(db, &id).await {
         Ok(Some(session)) => Some(session.user_id),
         Ok(None) => None,

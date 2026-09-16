@@ -1,13 +1,11 @@
 //! What submit refuses that needs the field registry to decide.
 //!
-//! The two other submit gates do not: `ProjectDraft::to_raw` is a contract question and
-//! `unresolved_temporal_coverage` is a data question, so both live in `editor-core` beside what
-//! they read. These need a field's *declared shape* and its audience, which is registry knowledge,
-//! and `server -> web -> core` puts that here.
-//!
-//! [`obligation::unsatisfied_required`](super::obligation::unsatisfied_required) is the third such
-//! gate and stays in its own module, because presence is what the section rail counts with and the
-//! two must read it through one function.
+//! `ProjectDraft::to_raw` is a contract question and `unresolved_temporal_coverage`
+//! a data question, so both live in `editor-core`; these need a field's declared
+//! shape and audience, which is registry knowledge, and `server -> web -> core`
+//! puts that here. [`obligation::unsatisfied_required`](super::obligation::unsatisfied_required)
+//! stays in its own module because the rail counts presence through the same
+//! function.
 
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
@@ -17,32 +15,22 @@ use serde_json::Value;
 
 use super::registry::{sections_for, Audience, Field, Section};
 
-/// Every field whose stored value is a placeholder sentinel the editor could not legitimately have
-/// written there, which leaves one way for it to have arrived: a depositor typed it.
+/// Every field whose stored value is a placeholder sentinel the editor could not
+/// have written there, which leaves one way for it to have arrived: a depositor
+/// typed it.
 ///
-/// Such a value is a dead end. A submitted value is stored verbatim, so typing `MISSING` stores
-/// what DPE and OAI-PMH filter out, renders as an *empty* control, and then survives every later
-/// empty submit because `apply_text` reads that as "not a clear" — the field reads empty, will not
-/// clear, and is only editable by typing some other value first.
+/// Such a value is a dead end: it renders as an empty control and survives every
+/// later empty submit, because `apply_text` reads that as "not a clear", so the
+/// field is only editable by typing some other value first.
 ///
-/// ## The rule is read off the shape, not off the value
-///
-/// A sentinel in a draft is usually **correct**: [`WhenCleared::Placeholder`] means the editor
-/// itself writes one when a depositor clears the field, and the committed corpus is full of them.
-/// Refusing every stored sentinel would refuse those, so the question is not "is this a sentinel"
-/// but "could clearing this field have produced one":
-///
-/// - [`WhenCleared::Placeholder`] — a sentinel *is* the cleared state, so typing one is
-///   indistinguishable from clearing and has the same effect. Allowed, and nothing is lost by
-///   allowing it.
-/// - [`WhenCleared::Drop`] — the cleared state is an absent member, so a stored sentinel cannot
-///   have come from clearing. Refused.
-/// - [`Shape::Multilingual`] — an empty text drops its tag (`DraftMultilingual::to_contract`), so
-///   the same argument applies per tag. Refused.
-///
-/// That is why the check is derived from the registry's declared shape rather than from a
-/// comparison against the published project: a project with no published counterpart has nothing to
-/// compare against, and the shape answers for it anyway.
+/// The rule is read off the shape, not off the value. A sentinel in a draft is
+/// usually correct: [`WhenCleared::Placeholder`] means the editor itself writes
+/// one on clear, and the committed corpus is full of them. So the question is
+/// "could clearing this field have produced one": yes for
+/// [`WhenCleared::Placeholder`], no for [`WhenCleared::Drop`] (the cleared state
+/// is an absent member) and no for [`Shape::Multilingual`] (an empty text drops
+/// its tag). Derived from the shape rather than compared against the published
+/// project because a local-only project has nothing to compare against.
 #[must_use]
 pub fn typed_sentinels(audience: Audience, draft: &ProjectDraft) -> Vec<&'static Field> {
     sections_for(audience)
@@ -72,11 +60,8 @@ fn holds_typed_sentinel(field: &Field, draft: &ProjectDraft) -> bool {
     match shape {
         Shape::Text(WhenCleared::Placeholder) => false,
         Shape::Text(WhenCleared::Drop) => value.as_str().is_some_and(is_placeholder),
-        // A row of plain strings, so the same argument as an open list applies:
-        // a depositor can type anything, including a sentinel.
-        // Same rule as the variant rows below: everything a depositor types is
-        // checked, and a reference `url` is excused because the published data
-        // spells that member with a sentinel of its own.
+        // Plain strings a depositor may type, checked as the variant rows below
+        // are; a reference url is excused for the same reason as Shape::Url.
         Shape::ReferenceRows(_) => value.as_array().is_some_and(|rows| {
             rows.iter()
                 .filter_map(Value::as_object)
@@ -84,18 +69,11 @@ fn holds_typed_sentinel(field: &Field, draft: &ProjectDraft) -> bool {
                 .filter_map(Value::as_str)
                 .any(is_placeholder)
         }),
-        // A citation, an identifier, a grant number and a funding note are all
-        // typed, and none of the committed values is a sentinel, so every
-        // string in them is checked.
+        // Every string is typed and no committed value is a sentinel.
         Shape::PublicationRows | Shape::FundingRows => holds_placeholder(value),
-        // A text row is a language map and a reference row's label is typed, so
-        // both are checked — but a reference's **`url` is excused**, for the
-        // same reason `Shape::Url` is entirely: it is a member the published
-        // data spells with a sentinel of its own.
-        // `0110_h-steiner` holds `{"type": "URL", "url": "MISSING"}`, and
-        // refusing it would make a live project unsubmittable over data it did
-        // not write. It is also the only committed sentinel anywhere in either
-        // field, so nothing else here has to be given up.
+        // The label is typed and checked; the url is excused as Shape::Url is:
+        // `0110_h-steiner` holds `{"type": "URL", "url": "MISSING"}`, and refusing
+        // it would make a live project unsubmittable over data it did not write.
         Shape::TextOrReferenceRows(_) => value.as_array().is_some_and(|rows| {
             rows.iter()
                 .filter_map(Value::as_object)
@@ -115,9 +93,8 @@ fn holds_typed_sentinel(field: &Field, draft: &ProjectDraft) -> bool {
         Shape::StringRows | Shape::AgentRows => value
             .as_array()
             .is_some_and(|rows| rows.iter().filter_map(Value::as_str).any(is_placeholder)),
-        // Each row is a language map, so the same argument as `Multilingual`
-        // applies per row: an empty text drops its tag, so a sentinel cannot
-        // have come from clearing one.
+        // A language map per row: an empty text drops its tag, so a sentinel
+        // cannot have come from clearing.
         Shape::MultilingualRows => value.as_array().is_some_and(|rows| {
             rows.iter()
                 .filter_map(Value::as_object)
@@ -125,22 +102,15 @@ fn holds_typed_sentinel(field: &Field, draft: &ProjectDraft) -> bool {
                 .filter_map(Value::as_str)
                 .any(is_placeholder)
         }),
-        // An open list can hold anything a depositor types, so a sentinel
-        // typed as a language tag reaches the file and the platform then reads
-        // that entry as no value. A closed set cannot: `apply_string_list`
-        // stores only an offered value, and no vocabulary offers a sentinel.
+        // An open list stores whatever a depositor types; a closed set stores
+        // only an offered value, and no vocabulary offers a sentinel.
         Shape::StringList(_) => value
             .as_array()
             .is_some_and(|items| items.iter().filter_map(Value::as_str).any(is_placeholder)),
-        // A URL slot's sentinel is the published data's own empty state —
-        // two projects hold `url: ["MISSING"]` — and `apply_url` leaves it
-        // alone rather than writing over it, exactly as
-        // `WhenCleared::Placeholder` does.
+        // The published data's own empty state, which `apply_url` leaves alone.
         Shape::Url(_) => false,
-        // A closed set cannot hold a sentinel: `apply_choice` stores only a
-        // listed value, and `registry`'s contract test pins that every
-        // committed value is one too. So a sentinel here came from the
-        // published data, not from a depositor.
+        // `apply_choice` stores only a listed value, so a sentinel here came from
+        // the published data.
         Shape::Choice(_) => false,
         Shape::Multilingual => value
             .as_object()
@@ -149,36 +119,26 @@ fn holds_typed_sentinel(field: &Field, draft: &ProjectDraft) -> bool {
 }
 
 /// Every field in `section` whose posted body carries more values than one field
-/// may hold.
+/// may hold: the cap a depositor can see, where [`FormBody::entries`] stopping at
+/// [`MAX_VALUES_PER_FIELD`] would silently discard the rest.
 ///
-/// The cap a depositor can *see*: [`FormBody::entries`] stops at [`MAX_VALUES_PER_FIELD`] on its
-/// own, which silently discards everything past it, so the value stored is quietly not what was
-/// sent.
-///
-/// Checked **before any applier runs**, and on a save as well as a submit — deferred to submit
-/// alone, an over-cap save truncates and stores, and the submit that follows sees a draft already
-/// within the cap and passes it.
-///
-/// One number rather than a cap per field: this is input hygiene, not a product rule about how many
-/// languages a description may have.
+/// Checked before any applier runs, on a save as well as a submit: deferred to
+/// submit alone, an over-cap save truncates and stores, and the submit that
+/// follows sees a draft within the cap. One number rather than a cap per field:
+/// input hygiene, not a product rule.
 #[must_use]
 pub fn over_cap(audience: Audience, section: &Section, body: &FormBody) -> Vec<&'static Field> {
     section
         .fields_for(audience)
         .filter(|field| match field.shape {
-            // A scalar posts one value under its own name. A body repeating it
-            // is a hand-built one, and `FormBody::get` takes the first — there
-            // is no accumulation to bound.
+            // A scalar posts one value; `FormBody::get` takes the first, so there is
+            // nothing to bound.
             None | Some(Shape::Text(_) | Shape::Choice(_) | Shape::Url(_)) => false,
             Some(Shape::Multilingual) => body.exceeds_entries(field.id, MAX_VALUES_PER_FIELD),
-            // Repeated under one name rather than suffixed, so it needs the
-            // other counter — a checkbox group and an "add another" input both
-            // post under the field's own name.
+            // Repeated under one name rather than suffixed.
             Some(Shape::StringList(_)) => body.exceeds_all(field.id, MAX_VALUES_PER_FIELD),
-            // Rows arrive as repeated `{field}.row` values, so the count to
-            // bound is the number of rows — each row's own languages are
-            // bounded by the same cap under its own prefix, which is why this
-            // does not have to walk them.
+            // Rows are repeated `{field}.row` values, and each row's own languages
+            // are bounded by the same cap under their own prefix.
             Some(
                 Shape::MultilingualRows
                 | Shape::StringRows
@@ -194,24 +154,17 @@ pub fn over_cap(audience: Audience, section: &Section, body: &FormBody) -> Vec<&
 }
 
 /// Every agent-reference field holding an id that resolves to nobody, with the
-/// offending ids.
+/// offending ids: the submit-time half of `Shape::AgentRows`, since the applier
+/// stores whatever arrives. A dangling reference stops here rather than
+/// rendering as a bare `person-001` on the public project page.
 ///
-/// The submit-time half of `Shape::AgentRows`. The applier stores whatever arrives, because a draft
-/// is allowed to hold a value that does not validate and deciding that is submit's job — so this is
-/// what stops an unresolvable reference reaching a published file, where it would render as a bare
-/// `person-001` on the public project page.
+/// A dangling reference in a field the depositor did not touch is still refused:
+/// every committed reference resolves, so a dangling one can only have arrived
+/// after the fact, which is a thing to report rather than publish.
 ///
-/// **A dangling reference in a field the depositor did not touch is still refused**, deliberately:
-/// every committed reference resolves
-/// (`agents::tests::every_id_the_committed_projects_refer_to_resolves`), so a dangling one can only
-/// have arrived after the fact — an agent file removed from under a project, which is a thing to
-/// report rather than to publish.
-///
-/// **`funding[].funders` is a fourth agent field and must stay in this filter.** It declares
-/// [`Shape::FundingRows`], so a filter naming only `AgentRows | AttributionRows` misses its 125
-/// references and lets a dangling funder reach a published file — where the project page renders a
-/// bare `organization-008`. `checks::contributor_refs` does not report funders either, so this
-/// gate is the only one that does.
+/// `funding[].funders` is a fourth agent field and must stay in this filter: it
+/// declares [`Shape::FundingRows`], and `checks::contributor_refs` does not
+/// report funders either, so this gate is the only one that does.
 #[must_use]
 pub fn unresolved_agents(
     audience: Audience,
@@ -233,12 +186,8 @@ pub fn unresolved_agents(
                 .map(Vec::as_slice)
                 .unwrap_or_default();
             rows.iter()
-                // An `AgentRows` row *is* the id; an `AttributionRows` row
-                // holds it under `contributor` beside its roles; a
-                // `FundingRows` row holds a whole list of them under `funders`.
-                // Read here rather than in three functions, so a field that
-                // refers to an agent cannot be added to one and forgotten in
-                // the others.
+                // The three shapes spell a reference differently; read in one place
+                // so a new agent field cannot be added to one and forgotten in another.
                 .flat_map(agent_ids_in_row)
                 .filter(|id| !agents.has(id))
                 .map(move |id| (field, id.to_string()))
@@ -247,13 +196,9 @@ pub fn unresolved_agents(
         .collect()
 }
 
-/// Every agent id one row of an agent-bearing field holds.
-///
-/// The three shapes spell a reference differently, and this is the single place
-/// that knows how: a bare string for `AgentRows`, `contributor` for
-/// `AttributionRows`, and a `funders` array for `FundingRows`. A grant with
-/// several funders yields several ids, which is why this returns a list rather
-/// than an `Option`.
+/// Every agent id one row of an agent-bearing field holds: a bare string for
+/// `AgentRows`, `contributor` for `AttributionRows`, the `funders` array for
+/// `FundingRows`, which is why this returns a list.
 fn agent_ids_in_row(row: &Value) -> Vec<&str> {
     if let Some(id) = row.as_str() {
         return vec![id];
@@ -281,8 +226,7 @@ mod tests {
         ProjectDraft::from_raw(published.get("0801d").expect("0801d is in the committed corpus"))
     }
 
-    /// The dead end this module exists to close, reproduced end to end through
-    /// the real applier rather than asserted about it.
+    /// The dead end this module closes, reproduced through the real applier.
     #[test]
     fn a_typed_sentinel_in_an_optional_field_cannot_be_cleared_again() {
         use editor_core::form::{apply, FormBody};
@@ -350,8 +294,7 @@ mod tests {
 
     #[test]
     fn the_corpus_really_does_carry_the_sentinels_this_module_must_not_refuse() {
-        // The canary for the test above, which asserts an absence: with no
-        // sentinel anywhere in the corpus it would pass while proving nothing.
+        // The canary for the absence above.
         let draft = draft();
         let held: Vec<&str> = draft
             .fields()
@@ -362,9 +305,7 @@ mod tests {
 
     #[test]
     fn a_sentinel_is_allowed_where_clearing_the_field_writes_one() {
-        // `endDate` is `WhenCleared::Placeholder`, so `"MISSING"` is what the editor writes when a
-        // depositor clears it, and the committed projects hold it. Refusing it would make
-        // every ongoing project unsubmittable.
+        // endDate is WhenCleared::Placeholder, so MISSING is what clearing writes.
         let mut draft = draft();
         draft.set("endDate", json!("MISSING"));
         assert!(typed_sentinels(Audience::Everyone, &draft).is_empty());
@@ -372,10 +313,8 @@ mod tests {
 
     #[test]
     fn a_sentinel_typed_into_one_language_of_a_map_is_caught() {
-        // An empty text drops its tag, so a sentinel cannot have come from
-        // clearing — and unlike a scalar it renders *visibly* in the textarea,
-        // which is why the refusal has to name the field rather than trusting
-        // the depositor to notice.
+        // Unlike a scalar, a sentinel in a language map renders visibly, so the
+        // refusal has to name the field.
         let mut draft = draft();
         draft.set("abstract", json!({"en": "A real abstract", "de": "CALCULATED"}));
         assert_eq!(
@@ -389,10 +328,8 @@ mod tests {
 
     #[test]
     fn both_sentinel_words_are_refused_and_a_lookalike_is_not() {
-        // `is_placeholder` matches `CALCULATED` as well as `MISSING`, so a fix
-        // naming only the one the bug report mentioned would leave half of it
-        // open. An exact compare is also what keeps a real value that merely
-        // contains the word out of the refusal.
+        // Both sentinel words, and an exact compare so a real value containing the
+        // word passes.
         let mut draft = draft();
         for word in ["MISSING", "CALCULATED"] {
             draft.set("provenance", json!(word));
@@ -407,14 +344,9 @@ mod tests {
         }
     }
 
-    /// The most values any single list in the committed corpus holds, measured
-    /// rather than assumed: `attributions` reaches 56 and `publications` 50,
-    /// while the widest language map is 3 tags.
-    ///
-    /// Here so the cap and the data cannot silently invert. A project arriving
-    /// with more values than the cap allows would be refused on a save, which
-    /// is a depositor blocked by input hygiene — so this fails first, and
-    /// somebody raises the cap deliberately.
+    /// The most values any list in the committed corpus holds, so the cap and the
+    /// data cannot silently invert: a project over the cap would be refused on
+    /// save, so this fails first and somebody raises the cap deliberately.
     #[test]
     fn the_cap_is_above_anything_the_committed_corpus_holds() {
         use editor_core::form::MAX_VALUES_PER_FIELD;
@@ -485,10 +417,7 @@ mod tests {
     fn a_repeated_tag_does_not_count_twice_towards_the_cap() {
         use editor_core::form::{FormBody, MAX_VALUES_PER_FIELD};
 
-        // The cap counts distinct tags, because that is what the stored map
-        // holds — `apply_multilingual` folds case and keeps the first. A body
-        // repeating one tag many times is odd, but it is not a large value, and
-        // refusing it would refuse something that stores as a single entry.
+        // The cap counts distinct tags, which is what the stored map holds.
         let section = crate::form::registry::section("overview").expect("overview");
         let repeated: Vec<(String, String)> = (0..MAX_VALUES_PER_FIELD * 4)
             .map(|_| ("description.en".to_string(), "text".to_string()))
@@ -500,10 +429,8 @@ mod tests {
     fn the_cap_never_names_a_field_the_section_does_not_show() {
         use editor_core::form::FormBody;
 
-        // The check is section-scoped because a POST carries one section, and a
-        // refusal naming a field the reader is not posting would be
-        // unactionable. `description` is in overview, so a body posting it
-        // against the dataset section is reported by neither.
+        // Section-scoped because a POST carries one section; a refusal naming a
+        // field the reader is not posting would be unactionable.
         let dataset = crate::form::registry::section("dataset").expect("dataset");
         let over: Vec<(String, String)> = (0..500).map(|n| (format!("description.l{n}"), "text".to_string())).collect();
         assert!(over_cap(Audience::Everyone, dataset, &FormBody::from_pairs(over)).is_empty());
@@ -518,9 +445,7 @@ mod tests {
 
     #[test]
     fn no_published_project_is_refused_for_an_unresolvable_agent() {
-        // The same guarantee the required tier has, for references: every committed agent id
-        // resolves, so submit refuses no project already live. A failure here means the
-        // agent store lost a file or a project gained a reference to nothing.
+        // Every committed agent id resolves, so submit refuses no live project.
         let agents = agents();
         let scope = AgentScope::published_only(&agents);
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
@@ -542,12 +467,9 @@ mod tests {
 
     #[test]
     fn a_grant_funder_that_resolves_to_nobody_is_refused() {
-        // `funding` declares `Shape::FundingRows`, so a filter over
-        // `AgentRows | AttributionRows` walked past it: the form warned in the
-        // funder's label and submit then accepted the project anyway, and
-        // `checks::contributor_refs` does not report funders either. A dangling
-        // funder reached a published file and rendered as a bare
-        // `organization-99999` on the public project page.
+        // `funding` declares Shape::FundingRows, so a filter over AgentRows |
+        // AttributionRows walks past it and a dangling funder reaches a published
+        // file.
         let agents = agents();
         let mut draft = draft();
         draft.set(
@@ -564,9 +486,7 @@ mod tests {
 
     #[test]
     fn every_funder_of_a_grant_is_checked_not_only_the_first() {
-        // A grant carries a list, so one row can hold several references. Taking
-        // only the first would let a second dangling funder through behind a
-        // good one.
+        // One row can hold several references.
         let agents = agents();
         let mut draft = draft();
         draft.set(
@@ -583,9 +503,8 @@ mod tests {
 
     #[test]
     fn free_text_funding_holds_no_references_to_check() {
-        // `Funding` is `#[serde(untagged)]`:
-        // a project whose funding is a single string has no funders at all, and
-        // reading one out of it would report the prose as a dangling id.
+        // Free-text funding has no funders, and reading one out of it would report
+        // the prose as a dangling id.
         let agents = agents();
         let mut draft = draft();
         draft.set("funding", json!("No funding"));
@@ -594,9 +513,7 @@ mod tests {
 
     #[test]
     fn an_id_that_resolves_to_nobody_is_named_with_its_field() {
-        // The refusal has to name the id as well as the field: `attributions`
-        // reaches 56 rows on one committed project, so "one of these is wrong"
-        // is not actionable.
+        // The id as well as the field: attributions reaches dozens of rows.
         let agents = agents();
         let mut draft = draft();
         draft.set("contactPoint", json!(["organization-008", "person-99999"]));
@@ -610,10 +527,8 @@ mod tests {
 
     #[test]
     fn an_empty_agent_set_refuses_every_reference_rather_than_accepting_them() {
-        // What a deployment with no data directory looks like. The fail-safe
-        // direction, and the same one the temporal tables take: accepting
-        // references nothing can resolve would publish a page rendering bare
-        // ids.
+        // A deployment with no data directory: accepting references nothing can
+        // resolve would publish bare ids.
         let mut draft = draft();
         draft.set("contactPoint", json!(["organization-008"]));
         let empty = editor_core::agents::Agents::default();
@@ -633,15 +548,9 @@ mod tests {
 
     #[test]
     fn a_field_the_form_does_not_read_is_never_refused() {
-        // No applier touches it, so its value came from the published data and rides through
-        // unchanged. Refusing it would strand a project on a field that renders no control
-        // at all.
+        // No applier touches a field with no shape, so a sentinel in it came from
+        // the published data; `legalInfo` is maintained by RDU elsewhere.
         let mut draft = draft();
-        // Every editable field has a control now, so the fields with no shape
-        // are exactly the display-only ones — which is the case that still
-        // matters: `legalInfo` is maintained by RDU elsewhere and rides through
-        // a save untouched, so a sentinel in it came from the
-        // published data.
         draft.set("legalInfo", json!(["MISSING"]));
         assert!(
             field("legalInfo").expect("legalInfo").shape.is_none(),

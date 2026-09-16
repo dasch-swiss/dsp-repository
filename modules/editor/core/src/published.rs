@@ -1,36 +1,19 @@
 //! The published project set, as baked into the deployment.
 //!
-//! The form is pre-filled with the project's current published metadata, and the published set
-//! is compared against local records at startup. Both need the
-//! `projects/*.json` files the image carries, read once and held in memory: the
-//! set cannot change without a redeployment, so nothing polls and nothing
-//! invalidates.
+//! The `projects/*.json` files the image carries, read once and held in memory:
+//! the set cannot change without a redeployment, so nothing polls and nothing
+//! invalidates. Filesystem access rather than a repository port, because this
+//! is a read of an immutable snapshot; the loader takes a directory, which is
+//! all a test needs.
 //!
-//! Filesystem access rather than a repository port. The ports in
-//! [`crate::repository`] exist because the editor *writes* through them and a
-//! test has to be able to make a write fail; this is a read of an immutable
-//! snapshot, so a trait would buy an indirection with one implementation. The
-//! loader takes a directory, which is all a test needs.
+//! The `shortcode` field is the key, not the filename: `projects/0801_bebb.json`
+//! holds project `0801d`, and its siblings under `0801_*` are `0801a` through
+//! `0801e`. Keying on the stem would file all five under a shortcode no project
+//! has.
 //!
-//! ## The `shortcode` field is the key, not the filename
-//!
-//! Five of the 85 committed files disagree with the shortcode they hold —
-//! `projects/0801_bebb.json` is project `0801d`, and its four siblings under
-//! `0801_*` are `0801a` through `0801e`. Keying on the filename stem would file
-//! all five under `0801`, a shortcode no project actually has: all five would be
-//! unreachable by the code they are addressed by, and four would be dropped as
-//! duplicates of the first.
-//!
-//! ## Lookup folds case
-//!
-//! 24 of the 85 shortcodes are mixed case (`080C`, `081B`, `085F`). Folding
-//! matches [`User::may_reach`](crate::records::User::may_reach), which folds for
-//! the same reason: which half of a shortcode is capitalised is not something a
-//! person typing one can be expected to get right. No two committed shortcodes
-//! collide when folded, so nothing is made ambiguous by it — asserted by
-//! [`PublishedProjects::load_from`] returning a
-//! [`LoadError::DuplicateShortcode`] rather than letting one file quietly
-//! replace another.
+//! Lookup folds case, matching [`User::may_reach`](crate::records::User::may_reach):
+//! the committed shortcodes mix `080C` with `0801a`. Two files that collide when
+//! folded are a [`LoadError::DuplicateShortcode`], never a silent replace.
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -40,10 +23,8 @@ use platform_metadata::project::ProjectRaw;
 
 /// A published project could not be read.
 ///
-/// One per file, so a single bad file names itself instead of collapsing the
-/// whole load. None of these is fatal: a service that refuses to start because
-/// one of 85 snapshots is malformed is worse than one serving the other 84 and
-/// saying which is missing.
+/// One per file, so a bad file names itself. None is fatal: serving the rest
+/// and naming the missing one beats refusing to start.
 #[derive(Debug)]
 pub enum LoadError {
     /// The directory itself could not be listed.
@@ -76,11 +57,8 @@ impl fmt::Display for LoadError {
 
 impl std::error::Error for LoadError {}
 
-/// One project as a list needs it: enough to render a row, without the caller
-/// holding a whole `ProjectRaw` per line.
-///
-/// Borrowed from the loaded set rather than owned, so building a list allocates
-/// nothing.
+/// One project as a list needs it, borrowed from the loaded set so building a
+/// list allocates nothing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ProjectSummary<'a> {
     /// As written in the file, not folded — this is what a link and a heading
@@ -104,13 +82,9 @@ impl PublishedProjects {
     /// Read every `*.json` file directly under `dir`.
     ///
     /// Returns whatever loaded plus one [`LoadError`] per file that did not, so
-    /// the caller can log each and carry on. An unreadable directory yields an
-    /// empty set and one error — the deployment has no snapshot, which is a
-    /// condition to report rather than a reason to refuse to start.
-    ///
-    /// Only the top level is read: `dir` also holds `persons/`,
-    /// `organizations/` and `clusters/`, and recursing would file an
-    /// organization under whatever shortcode its JSON happened to parse as.
+    /// the caller can log each and carry on; an unreadable directory yields an
+    /// empty set and one error. Only the top level is read: `dir` also holds
+    /// `persons/`, `organizations/` and `clusters/`.
     #[must_use]
     pub fn load_from(dir: &Path) -> (Self, Vec<LoadError>) {
         let mut errors = Vec::new();
@@ -122,9 +96,8 @@ impl PublishedProjects {
             }
         };
 
-        // Collected and sorted before parsing so that which of two files
-        // claiming one shortcode wins does not depend on directory order — the
-        // report has to name the same file every run to be actionable.
+        // Sorted before parsing, so which of two files claiming one shortcode
+        // wins does not depend on directory order.
         let mut paths: Vec<PathBuf> = Vec::new();
         for entry in entries {
             match entry {
@@ -158,10 +131,8 @@ impl PublishedProjects {
 
     /// One published project, or `None` when the set has no such shortcode.
     ///
-    /// `None` does **not** mean the project does not exist: a project may exist only
-    /// locally, which has no published counterpart and
-    /// whose form opens blank. Callers deciding a 404 have to consult local
-    /// records too.
+    /// `None` does not mean the project does not exist: a local-only project has
+    /// no published counterpart. A 404 decision consults local records too.
     #[must_use]
     pub fn get(&self, shortcode: &str) -> Option<&ProjectRaw> {
         self.by_shortcode.get(&fold(shortcode))
@@ -173,12 +144,8 @@ impl PublishedProjects {
     }
 
     /// The projects named by `shortcodes`, in shortcode order, skipping any the
-    /// set does not hold.
-    ///
-    /// For a depositor's list: the assignments are the user's, the order and the
-    /// names are the set's. An assignment naming no published project is skipped
-    /// rather than rendered as a broken row — a project assigned before it is
-    /// published is a real state, and a local-only project is the same shape.
+    /// set does not hold: a project assigned before it is published, or one that
+    /// exists only locally.
     pub fn summaries_for<'a>(&'a self, shortcodes: &'a [String]) -> impl Iterator<Item = ProjectSummary<'a>> {
         self.by_shortcode
             .iter()
@@ -260,11 +227,6 @@ mod tests {
 
     #[test]
     fn a_project_is_keyed_by_its_shortcode_field_not_its_filename() {
-        // `projects/0801_bebb.json` holds project `0801d`, and its four siblings
-        // under `0801_*` are `0801a`..`0801e`. Keying on the filename stem would
-        // file all five under `0801` — a shortcode no project actually has — so
-        // all five would be unreachable by the code they are addressed by, and
-        // four of them would be dropped as duplicates on top.
         let (published, _) = PublishedProjects::load_from(&corpus());
         for shortcode in ["0801a", "0801b", "0801c", "0801d", "0801e"] {
             assert!(published.get(shortcode).is_some(), "{shortcode} should be reachable");
@@ -288,8 +250,6 @@ mod tests {
 
     #[test]
     fn a_missing_directory_is_an_empty_set_and_one_error_not_a_panic() {
-        // A deployment with no snapshot is a condition to report, not a reason
-        // to refuse to start.
         let (published, errors) = PublishedProjects::load_from(Path::new("no-such-directory"));
         assert!(published.is_empty());
         assert_eq!(errors.len(), 1);
@@ -351,9 +311,6 @@ mod tests {
 
     #[test]
     fn only_json_files_directly_in_the_directory_are_read() {
-        // The data directory also holds `persons/`, `organizations/` and
-        // `clusters/`; recursing would file an organization under whatever
-        // shortcode its JSON happened to parse as.
         let dir = dir_with("mixed", &[("project", project_json("0903", "A Project"))]);
         std::fs::write(dir.join("notes.txt"), "not a project").expect("write");
         std::fs::create_dir_all(dir.join("persons")).expect("subdir");
@@ -392,8 +349,6 @@ mod tests {
 
     #[test]
     fn an_assignment_naming_no_published_project_is_skipped_not_rendered_broken() {
-        // A project assigned before it is published is a real state, and so is a
-        // project that exists only locally.
         let (published, _) = PublishedProjects::load_from(&corpus());
         let assigned = vec!["0801d".to_string(), "9999".to_string()];
         let codes: Vec<&str> = published.summaries_for(&assigned).map(|s| s.shortcode).collect();

@@ -1,23 +1,17 @@
 //! Proposals to add or change a person or organisation.
 //!
-//! A project field that refers to a contributor by id (`contactPoint`,
-//! `attributions[].contributor`, `funding[].funders`) can only name something
+//! A project field that refers to a contributor by id can only name something
 //! that already exists, so a depositor who needs a new person or organisation,
-//! or a correction to an existing one, cannot express that inside the project
-//! draft. A proposal is the separate record that carries such a request
-//! through its own review, independent of the project submission it may ride
-//! alongside.
+//! or a correction to one, cannot express that in the project draft. A proposal
+//! carries such a request through its own review. `payload` is opaque JSON for
+//! the reason [`DraftRecord::payload`](crate::records::DraftRecord::payload) is:
+//! a proposal can be half-filled, and only [`check_person`] and
+//! [`check_organization`] decide whether it is complete enough to submit.
 //!
-//! Framework-free, like the rest of this crate: no `rusqlite`, no Axum, no
-//! Maud. `payload` is opaque JSON for the same reason
-//! [`DraftRecord::payload`](crate::records::DraftRecord::payload) is — a
-//! proposal can be half-filled, and only [`check_person`]/[`check_organization`]
-//! decide whether it is complete enough to submit.
-//!
-//! [`next_entity_id`] is monotonic and never reuses a number, so the sequence has gaps by design:
-//! reuse would let two entities carry one id at different times, and anything collected while the
-//! first was live would then resolve to the second. The editor architecture documentation carries
-//! the rest.
+//! [`next_entity_id`] never reuses a number, so the sequence has gaps by design:
+//! reuse would let two entities carry one id at different times, and anything
+//! collected while the first was live would resolve to the second. The editor
+//! architecture documentation carries the rest.
 
 use std::fmt;
 use std::str::FromStr;
@@ -46,9 +40,8 @@ impl ProposalKind {
     }
 
     /// The word shown beside a proposal, so a list mixing both kinds says which
-    /// is which. British spelling for the organisation, matching
-    /// [`AgentKind::label`](crate::agents::AgentKind::label) — the two label an
-    /// entity of the same kind and must not disagree on how it reads.
+    /// is which. British spelling, matching
+    /// [`AgentKind::label`](crate::agents::AgentKind::label).
     #[must_use]
     pub const fn label(self) -> &'static str {
         match self {
@@ -160,12 +153,9 @@ impl FromStr for ProposalStatus {
 }
 /// What RDU recorded about a proposal in the round now running.
 ///
-/// Not [`review::Decision`](crate::review::Decision), whose second variant is
-/// `Revert` — "keep the published value". A proposed *new* entity has no
-/// published value to keep, so the only honest opposite of accepting one is
-/// rejecting it. The two vocabularies are therefore separate rather than shared,
-/// and a control on the review surface posts this one for a proposal and that
-/// one for a project field.
+/// Not [`review::Decision`](crate::review::Decision), whose opposite of accept
+/// is "keep the published value": a proposed new entity has no published value,
+/// so the only honest opposite is rejecting it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProposalDecision {
     /// Take the proposal: on approval its entity becomes a file.
@@ -217,17 +207,15 @@ pub struct EntityProposal {
     pub entity_id: String,
     pub kind: ProposalKind,
     pub operation: ProposalOperation,
-    /// The proposed entity as JSON — a `platform_metadata::Person` or
+    /// The proposed entity as JSON, a `platform_metadata::Person` or
     /// `Organization` body. Opaque here, like
     /// [`DraftRecord::payload`](crate::records::DraftRecord::payload): a
     /// half-filled proposal cannot deserialize as the contract type, and
-    /// deciding whether it is complete is [`check_person`]'s and
-    /// [`check_organization`]'s job.
+    /// [`check_person`] and [`check_organization`] decide completeness.
     ///
-    /// **A producer must leave `id` out.** It lives in [`Self::entity_id`], the
-    /// column the uniqueness index and the allocator work on; a second copy
-    /// here would be free to drift from it. Readers fill it in from
-    /// `entity_id` and overwrite whatever they find.
+    /// A producer must leave `id` out. It lives in [`Self::entity_id`], the
+    /// column the uniqueness index and the allocator work on; readers fill it in
+    /// from there and overwrite whatever they find.
     pub payload: String,
     pub status: ProposalStatus,
     /// `None` once that account is removed; see
@@ -244,18 +232,13 @@ pub struct EntityProposal {
 
 impl EntityProposal {
     /// Whether this proposal is still in play: the depositor may edit it and a
-    /// reviewer may still decide it.
+    /// reviewer may still decide it. True for [`ProposalStatus::Draft`] and
+    /// [`ProposalStatus::Submitted`]; [`ProposalStatus::Accepted`] is excluded
+    /// because nothing about it can change any more.
     ///
-    /// True for [`ProposalStatus::Draft`] and [`ProposalStatus::Submitted`].
-    /// [`ProposalStatus::Accepted`] is excluded because nothing about it can
-    /// change any more — it is on its way into a `persons`/`organizations`
-    /// file — and the two terminal statuses because they are over.
-    ///
-    /// **This says nothing about the allocated id.** Every row holds its id
+    /// This says nothing about the allocated id: every row holds its id
     /// permanently, terminal ones included, which is why they stay in the
-    /// uniqueness index; see the module docs on why reuse is refused. Reading
-    /// this as "the id is free again" is the mistake that would hand an
-    /// already-collected id to a second entity.
+    /// uniqueness index.
     #[must_use]
     pub fn is_live(&self) -> bool {
         matches!(self.status, ProposalStatus::Draft | ProposalStatus::Submitted)
@@ -264,12 +247,10 @@ impl EntityProposal {
     /// Whether a project field may name this proposal's `entity_id` without
     /// submit refusing the reference.
     ///
-    /// Wider than [`Self::is_live`] by exactly [`ProposalStatus::Accepted`]: an
-    /// accepted proposal's entity is not a file yet, so the published store
-    /// cannot answer for it, and the project that proposed it is referring to
-    /// something that will exist. Narrower than "every row" by the two terminal
-    /// statuses, which is the whole point of the referential-integrity gate —
-    /// a rejected entity must make the approval refuse rather than resolve.
+    /// Wider than [`Self::is_live`] by [`ProposalStatus::Accepted`], whose entity
+    /// is not a file yet but will exist. Narrower than every row by the two
+    /// terminal statuses: a rejected entity must make the approval refuse rather
+    /// than resolve.
     #[must_use]
     pub fn is_referenceable(&self) -> bool {
         matches!(
@@ -280,10 +261,8 @@ impl EntityProposal {
 }
 
 /// The numeric suffix of `id`, if `id` has the shape `{kind.as_str()}-N`.
-///
-/// `None` for a different kind's prefix, a missing or non-numeric suffix, or a
-/// number too large for `u32` — every one of those is "not an id of this
-/// kind" rather than a value to recover from.
+/// `None` for anything else: a different kind's prefix, a missing or non-numeric
+/// suffix, or a number too large for `u32`.
 #[must_use]
 pub fn entity_id_number(kind: ProposalKind, id: &str) -> Option<u32> {
     let suffix = id.strip_prefix(kind.as_str())?.strip_prefix('-')?;
@@ -292,37 +271,29 @@ pub fn entity_id_number(kind: ProposalKind, id: &str) -> Option<u32> {
 
 /// Format an allocated id: `person-417`, `organization-143`.
 ///
-/// Zero-padded to at least three digits so an allocated id is spelled the way
-/// the committed corpus spells one (`person-001` .. `person-416`); a number
-/// past 999 is written in full rather than truncated.
-///
-/// The padding is cosmetic, **not** an ordering guarantee. It happens to make
-/// string order agree with numeric order while every id has three digits, and
-/// stops doing so at `person-1000` — which is why allocation parses these back
-/// to numbers rather than comparing them as strings, and why the store must not
+/// Zero-padded to at least three digits, as the committed corpus spells them; a
+/// number past 999 is written in full. The padding is cosmetic, not an ordering
+/// guarantee: string order stops agreeing with numeric order at `person-1000`,
+/// which is why allocation parses ids back to numbers and the store must not
 /// answer "the highest id" with a TEXT `MAX`.
 #[must_use]
 pub fn format_entity_id(kind: ProposalKind, number: u32) -> String {
     format!("{}-{number:03}", kind.as_str())
 }
 
-/// The next id to allocate for `kind`, given every id already taken — the union
-/// of the published store and every id this editor has ever allocated,
-/// terminal proposals included (see the module docs on why reuse is refused).
+/// The next id to allocate for `kind`, given every id already taken: the union
+/// of the published store and every id this editor has ever allocated, terminal
+/// proposals included.
 ///
-/// One past the highest number found for `kind` in `taken`, or `1` if none is.
-/// Entries of the other kind, or that do not parse as this kind's shape, are
-/// ignored rather than rejected: `taken` is expected to be an unfiltered union
-/// of two id spaces.
+/// One past the highest number found for `kind`, or `1` if none is. Entries of
+/// the other kind, or that do not parse as this kind's shape, are ignored:
+/// `taken` is an unfiltered union of two id spaces.
 #[must_use]
 pub fn next_entity_id<'a>(kind: ProposalKind, taken: impl Iterator<Item = &'a str>) -> String {
     let highest = taken.filter_map(|id| entity_id_number(kind, id)).max().unwrap_or(0);
-    // Saturating, not `+ 1`: `entity_id_number` accepts any `u32`, and `taken`
-    // includes ids read from committed files, so a hand-authored
-    // `person-4294967295.json` would overflow here — a panic in a debug build
-    // and a wrap to `person-000` in a release one. Saturating leaves the
-    // allocation to fail closed on the store's uniqueness constraint instead of
-    // handing out an id that is already taken.
+    // Saturating, not `+ 1`: `taken` includes ids read from committed files, so a
+    // hand-authored `person-4294967295.json` would overflow here. Saturating
+    // leaves the allocation to fail closed on the store's uniqueness constraint.
     format_entity_id(kind, highest.saturating_add(1))
 }
 
@@ -339,25 +310,19 @@ pub struct EntityFinding {
     pub message: String,
 }
 
-/// Every rule a proposed organisation must satisfy, against
-/// `modules/platform/metadata/src/organization.rs`'s `Organization` shape.
+/// Every rule a proposed organisation must satisfy, against the `Organization`
+/// shape in `modules/platform/metadata/src/organization.rs`.
 ///
 /// `published` is the entity as the committed store holds it, for a
-/// [`ProposalOperation::Change`], and `None` for a
-/// [`ProposalOperation::New`] — there is nothing to compare a new entity
-/// against.
+/// [`ProposalOperation::Change`], and `None` for a [`ProposalOperation::New`].
 ///
-/// **An `address` byte-equal to `published`'s passes; any other incomplete one
-/// is refused.** The rule wants all four of `street`, `postalCode`, `locality`
-/// and `country` or none, but six committed organizations satisfy neither, so
+/// An `address` byte-equal to `published`'s passes; any other incomplete one is
+/// refused. The rule wants all four of `street`, `postalCode`, `locality` and
+/// `country` or none, but six committed organizations satisfy neither, and
 /// judging an inherited value would make them unchangeable without inventing
-/// data. The editor architecture documentation names the six and the precedent;
-/// [`tests::six_committed_organizations_carry_an_incomplete_address`] pins them.
-///
-/// `sameAs` carries no rule beyond being where authority identifiers go: the
-/// contract types it as `Vec<AuthorityFileReference>` with a serde default, so
-/// an absent one already deserializes, and no rule asks for one. The
-/// omission here is therefore decided, not forgotten.
+/// data. `tests::six_committed_organizations_carry_an_incomplete_address` pins
+/// them. `sameAs` carries no rule: the contract defaults an absent one, and no
+/// rule asks for one.
 #[must_use]
 pub fn check_organization(payload: &serde_json::Value, published: Option<&serde_json::Value>) -> Vec<EntityFinding> {
     let mut findings = Vec::new();
@@ -377,14 +342,10 @@ pub fn check_organization(payload: &serde_json::Value, published: Option<&serde_
         });
     }
 
-    // `address` itself is optional: collect all four members or omit the section entirely. Once
-    // present, each of the four is required even if every one is blank — a section the
-    // depositor opened and left blank is not the same as one they never opened, and silently
-    // dropping it would discard what they typed rather than telling them to finish it.
-    //
-    // Unless it is exactly what the published entity already held: see the
-    // grandfathering paragraph in this function's docs for the six committed
-    // organizations that rule would otherwise strand.
+    // `address` is optional, but once present each of the four is required even
+    // if every one is blank: a section the depositor opened and left blank must
+    // not be silently dropped. Unless it is exactly what the published entity
+    // held; see the grandfathering paragraph in this function's docs.
     if let Some(address) = payload.get("address").filter(|value| !value.is_null()) {
         let inherited_unchanged = published
             .and_then(|entity| entity.get("address"))
@@ -405,13 +366,9 @@ pub fn check_organization(payload: &serde_json::Value, published: Option<&serde_
     findings
 }
 
-/// Every rule a proposed person must satisfy, against
-/// `modules/platform/metadata/src/person.rs`'s `Person` shape, including the
-/// project-role guard.
-///
-/// `sameAs` carries no rule for the same reason as [`check_organization`]'s:
-/// ORCID belongs there rather than being constrained, and the contract already defaults an
-/// absent one.
+/// Every rule a proposed person must satisfy, against the `Person` shape in
+/// `modules/platform/metadata/src/person.rs`, including the project-role guard.
+/// `sameAs` carries no rule, as in [`check_organization`].
 #[must_use]
 pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
     let mut findings = Vec::new();
@@ -426,12 +383,10 @@ pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
         }
     }
 
-    // Present, and no more: the member has to be emitted, and a non-defaulted `Vec<String>`
-    // is satisfied by `[]`, which many committed persons are.
-    //
-    // `givenNames` and `familyNames` above do carry the stronger rule, because
-    // none of the 416 is empty and a person with neither name renders as its own
-    // id, which `agents::person_label` documents as unselectable in a picker.
+    // Present, and no more: a non-defaulted `Vec<String>` is satisfied by `[]`,
+    // which many committed persons hold. `givenNames` and `familyNames` carry
+    // the stronger rule because a person with neither renders as its own id,
+    // which `agents::person_label` documents as unselectable in a picker.
     if !payload.get("jobTitles").is_some_and(serde_json::Value::is_array) {
         findings.push(EntityFinding {
             field: "jobTitles",
@@ -440,13 +395,10 @@ pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
         });
     }
 
-    // The guard the issue adds beyond what was asked for: `dpe-server validate` rejects a
-    // committed file carrying a `platform_metadata::JOB_TITLE_ROLE_WORDS` entry
-    // in `jobTitles` (modules/dpe/server/src/main.rs:568), because it is
-    // invisible there to the OAI-PMH creator/contributor logic, which only
-    // reads `attributions`. Without this check the editor could hand a
-    // depositor's proposal straight through to a file that fails that
-    // validation later.
+    // `dpe-server validate` rejects a committed file carrying a
+    // `platform_metadata::JOB_TITLE_ROLE_WORDS` entry in `jobTitles`, because the
+    // OAI-PMH creator/contributor logic reads only `attributions`. Refusing here
+    // stops a proposal that would fail that validation later.
     if let Some(job_titles) = payload.get("jobTitles").and_then(|value| value.as_array()) {
         for (index, title) in job_titles.iter().enumerate() {
             if let Some(title) = title.as_str() {
@@ -540,11 +492,8 @@ mod tests {
 
     #[test]
     fn test_a_proposal_decision_does_not_read_a_field_decision() {
-        // `review::Decision`'s stored forms are `accept` and `revert`. The two
-        // vocabularies share a word, so reading either as the other has to fail
-        // rather than land on whichever variant sorts first — the argument
-        // `records::test_an_unknown_stored_review_outcome_is_an_error` makes
-        // about `submitted` and `approved`.
+        // The two vocabularies share `accept`, so reading either as the other has
+        // to fail rather than land on whichever variant sorts first.
         assert!("revert".parse::<ProposalDecision>().is_err());
         assert_eq!("accept".parse::<ProposalDecision>().unwrap(), ProposalDecision::Accept);
     }
@@ -670,14 +619,9 @@ mod tests {
         assert_eq!(next_entity_id(ProposalKind::Person, taken.into_iter()), "person-006");
     }
 
-    /// Allocation must not degrade into string comparison, which is the shape the
-    /// three-digit padding invites once ids pass 999.
-    ///
-    /// Over these four, lexicographic order puts `person-99` last and would
-    /// allocate `person-100` — an id below two already taken, which then
-    /// collides on the store's uniqueness index for every later proposal.
-    /// SQLite's `MAX(entity_id)` on a TEXT column answers exactly that, so this
-    /// pins the arithmetic against the optimisation somebody will reach for.
+    /// Allocation must not degrade into string comparison once ids pass 999:
+    /// lexicographic order would allocate `person-100` below ids already taken,
+    /// and SQLite's `MAX(entity_id)` on a TEXT column answers exactly that.
     #[test]
     fn allocation_is_numeric_not_lexicographic_past_three_digits() {
         let taken = ["person-002", "person-99", "person-417", "person-1000"];
@@ -696,20 +640,11 @@ mod tests {
     }
 
     fn data_dir() -> PathBuf {
-        // Mirrors `published::tests::corpus()`: the committed store this editor
-        // allocates against.
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data")
     }
 
-    /// Every entity id in `dir`, read from each file's `id` **member**.
-    ///
-    /// Not from the filename stem, although all 558 committed files currently
-    /// agree with theirs: `agents::Agents::load_from` keys on the `id` member,
-    /// so allocating against filenames would be testing a set the runtime never
-    /// sees. `published`'s module docs record what that costs when the two
-    /// diverge — five of the 85 project files disagree with their own
-    /// `shortcode`, and keying on the stem filed all five under a shortcode no
-    /// project has.
+    /// Every entity id in `dir`, read from each file's `id` member, which is what
+    /// the runtime keys on, not the filename stem.
     fn ids_in(dir: &Path) -> Vec<String> {
         let mut ids: Vec<String> = json_files(dir)
             .map(|path| {
@@ -803,10 +738,8 @@ mod tests {
 
     #[test]
     fn an_incomplete_address_inherited_unchanged_from_the_published_entity_is_no_finding() {
-        // `organization-065` (Tanta University) is committed with no
-        // `postalCode`. A depositor proposing any other change to it must not be
-        // made to invent one, so an address byte-equal to the published one is
-        // passed through — the carve-out this function's docs set out.
+        // `organization-065` is committed without a `postalCode`, so an address
+        // byte-equal to the published one passes.
         let published = json!({
             "id": "organization-065",
             "name": "Tanta University",
@@ -838,16 +771,13 @@ mod tests {
 
     #[test]
     fn a_new_organisation_gets_no_grandfathering() {
-        // `None` published side: a new entity has nothing to inherit, so an
-        // incomplete address is refused however it arrived.
         let mut org = valid_organization();
         org["address"] = json!({ "street": "", "postalCode": "1015", "locality": "Lausanne", "country": "CH" });
         assert!(!check_organization(&org, None).is_empty());
     }
 
-    /// The corpus fact the carve-out rests on, enumerated rather than assumed.
-    /// If a data change completed all six addresses, the carve-out would have no
-    /// reason to exist and this says so.
+    /// The corpus fact the carve-out rests on, enumerated: if a data change
+    /// completed all six addresses, the carve-out would have no reason to exist.
     #[test]
     fn six_committed_organizations_carry_an_incomplete_address() {
         let mut incomplete = Vec::new();
@@ -906,8 +836,6 @@ mod tests {
 
     #[test]
     fn an_address_with_all_four_members_blank_is_still_a_finding() {
-        // The depositor opened the section and typed nothing into it; that is
-        // not the same as never opening it, and must not be silently dropped.
         let mut org = valid_organization();
         org["address"] = json!({
             "street": "",
@@ -958,18 +886,15 @@ mod tests {
 
     #[test]
     fn a_person_with_an_empty_job_titles_array_is_no_finding() {
-        // 59 of the 416 committed persons hold `"jobTitles": []`, and the rule asks only that
-        // the member be emitted. Demanding an entry would refuse
-        // a proposal for somebody who has no job title with no correct value to
-        // type, while the published set carries 59 people in that exact state.
+        // 59 committed persons hold `"jobTitles": []`, and the rule asks only that
+        // the member be emitted.
         let mut person = valid_person();
         person["jobTitles"] = json!([]);
         assert!(check_person(&person).is_empty(), "{:?}", check_person(&person));
     }
 
     /// The corpus fact the rule above rests on, enumerated rather than taken on
-    /// trust: if a future data change made every committed person carry a job
-    /// title, the weaker rule would no longer have a reason to exist.
+    /// trust.
     #[test]
     fn the_committed_person_set_contains_people_with_no_job_title() {
         let mut without = 0;
@@ -1008,14 +933,9 @@ mod tests {
         assert!(check_person(&person).is_empty());
     }
 
-    /// Why the role guard needs no carve-out of the kind the address rule has.
-    ///
-    /// None of the 416 committed persons holds a `JOB_TITLE_ROLE_WORDS` entry in
-    /// `jobTitles`, which is also why `dpe-server validate` passes on the
-    /// corpus. So the guard can be unconditional: applying it to a change
-    /// proposal cannot refuse anybody over data they did not write. If a role
-    /// word ever lands in the committed set, this fails and the guard needs the
-    /// same grandfathering `check_organization`'s address rule has.
+    /// Why the role guard needs no carve-out of the kind the address rule has: no
+    /// committed person holds a role word in `jobTitles`. If one lands, this
+    /// fails and the guard needs the address rule's grandfathering.
     #[test]
     fn no_committed_person_holds_a_project_role_in_job_titles() {
         let mut offenders = Vec::new();

@@ -194,10 +194,10 @@ impl LoginCodeRepository for Database {
 
     async fn delete_unconsumed_for_user(&self, user_id: Uuid) -> Result<u64> {
         // `consumed_at IS NULL` is the whole point: the spent code stays, because
-        // it is the resend cooldown's only anchor — the cooldown is measured from the last
-        // code issued, and that row is the only thing recording it. The
-        // send caps do not read this table at all; they count `mail_sends`,
-        // which is why deleting the mailed siblings below no longer hides them.
+        // it is the resend cooldown's only anchor, measured from the last code
+        // issued. The send caps do not read this table at all — they count
+        // `mail_sends` — so deleting the mailed siblings below does not hide
+        // them.
         let deleted = self
             .write(move |tx| {
                 tx.execute(

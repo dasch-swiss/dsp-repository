@@ -32,15 +32,12 @@ fn map_row(row: &Row<'_>) -> rusqlite::Result<User> {
     })
 }
 
-/// Read one user's shortcode assignments.
 fn shortcodes_of(tx: &Transaction<'_>, user_id: Uuid) -> rusqlite::Result<Vec<String>> {
     let mut stmt = tx.prepare("SELECT shortcode FROM user_shortcodes WHERE user_id = ?1 ORDER BY shortcode")?;
     let rows = stmt.query_map(params![user_id.to_string()], |row| row.get(0))?;
     rows.collect()
 }
 
-/// Replace a user's shortcode assignments with `shortcodes`.
-///
 /// Delete-then-insert rather than a diff: the set is a handful of entries, and a
 /// diff would have to be right about both directions to avoid leaving an
 /// assignment behind.
@@ -342,10 +339,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_takes_sessions_codes_and_assignments_with_it() {
-        // Removal takes them all, and this is the observable proof that `PRAGMA foreign_keys`
-        // is on:
-        // without it the cascade silently does nothing and orphaned sessions
-        // accumulate against a deleted account.
+        // Removal takes them all, and this is the observable proof that
+        // `PRAGMA foreign_keys` is on: without it the cascade silently does
+        // nothing and orphaned sessions accumulate against a deleted account.
         let db = test_db("users-delete-cascade").await;
         let user = depositor("a@x.test", &["0801"]);
         db.create(&user).await.unwrap();

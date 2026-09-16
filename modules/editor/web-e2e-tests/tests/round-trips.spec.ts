@@ -31,9 +31,9 @@ test("a role group grows no controls and carries no empty value across round tri
     await page.goto(url);
   }
 
-  // Controls multiplying on every round trip is one of the defects the PR #384
-  // review found: the re-render keeps the posted body and appends to it rather
-  // than replacing it, so the group grows by one set per save.
+  // Controls multiplying on every round trip: the re-render keeps the posted
+  // body and appends to it rather than replacing it, so the group grows by one
+  // set per save.
   expect(
     await roleControls.count(),
     `role controls multiplied across ${ROUND_TRIPS} saves (${before} → ${await roleControls.count()})`,

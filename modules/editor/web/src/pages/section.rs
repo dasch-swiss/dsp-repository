@@ -3,19 +3,14 @@
 //! [`page`] is the whole page; [`region`] is the part a save replaces. Both come
 //! from one [`SectionView`], so the plain and enhanced paths cannot drift.
 //!
-//! Three invariants:
-//!
-//! - **The region is the rail, the status and the form together**, under one id. Patching only the
-//!   `<form>` leaves the rail showing the counts from before the save, so answering the last
-//!   required field goes quiet while the rail still says something is missing.
-//! - **The status region is rendered empty from the first load.** An `aria-live` region announces a
-//!   *change* to content it already holds; one morphed in together with its text is widely reported
-//!   not to announce at all. `empty:hidden` is what keeps that free.
-//! - **No field is `required`, and the form is not `novalidate`.** A draft may be missing anything
-//!   and saving one must always work, so nothing is `required`. Validation stays on because
-//!   `startDate`/`endDate` are `type="date"`, which cannot hold a half-typed date — the value comes
-//!   back empty, so with validation off, fiddling the year of a real date and saving would clear
-//!   it. Datastar gates its form path on the same flag.
+//! The region is the rail, the status and the form together, under one id:
+//! patching only the `<form>` leaves the rail showing the counts from before the
+//! save. The status region is rendered empty from the first load: an `aria-live`
+//! region announces a change to content it already holds, and one morphed in
+//! with its text is widely reported not to announce. No field is `required` and
+//! the form is not `novalidate`: a draft may be missing anything, and validation
+//! stays on because `type="date"` cannot hold a half-typed date, so with it off,
+//! fiddling the year of a real date and saving would clear it.
 
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
@@ -36,11 +31,9 @@ use crate::form::INTENT;
 /// The id the enhanced path's patch targets. Also the anchor a save returns to.
 pub const REGION_ID: &str = "project-section";
 
-/// Store the draft, changing nothing about the review cycle.
-///
-/// Also what an unknown intent falls back to. A body naming a verb this build
-/// does not know must not submit or withdraw by typo: those two are not
-/// undoable by the depositor, and saving is.
+/// Store the draft, changing nothing about the review cycle. Also what an
+/// unknown intent falls back to: a typo must not submit or withdraw, which the
+/// depositor cannot undo, and saving is.
 pub const SAVE: &str = "save";
 
 /// Validate the draft and record it as the project's pending submission.
@@ -49,34 +42,23 @@ pub const SUBMIT: &str = "submit";
 /// Take a pending submission back, leaving the draft.
 pub const WITHDRAW: &str = "withdraw";
 
-/// Show the withdrawal confirmation, which posts [`WITHDRAW`].
-///
-/// Two steps rather than one, because a withdrawal cannot be undone by the
-/// depositor — the submission's place in the queue and whatever a reviewer has
-/// already recorded on it both go. It shares this URL rather than taking one of
-/// its own, for the reason every other write here does: a refused post
-/// re-renders somewhere that still answers `GET`.
+/// Show the withdrawal confirmation, which posts [`WITHDRAW`]. Two steps because
+/// a withdrawal cannot be undone by the depositor; it shares this URL so a
+/// refused post re-renders somewhere that still answers `GET`.
 pub const WITHDRAW_CONFIRM: &str = "withdraw-confirm";
 
-/// Discarding the draft, once confirmed.
-///
-/// "Discard" rather than "delete", in the wire vocabulary as well as on the
-/// control, because what goes is the draft and never the project: a project with
-/// no draft still has its published metadata, and the form re-opens showing it. "Delete the draft"
-/// reads to a depositor like deleting their work from the repository.
+/// Discarding the draft, once confirmed. "Discard" rather than "delete": what
+/// goes is the draft, never the project, and "delete the draft" reads to a
+/// depositor like deleting their work from the repository.
 pub const DISCARD: &str = "discard";
 
 /// Asking first. The draft is the only copy of whatever has not been submitted,
 /// and `DraftRepository::delete` cannot be undone.
 pub const DISCARD_CONFIRM: &str = "discard-confirm";
 
-/// Run the agent pickers' searches and re-render, changing nothing else.
-///
-/// One intent for every picker on the page rather than one naming a row, because every search box
-/// posts with the form: the re-render simply offers matches for each one that is non-blank, so
-/// there is nothing for the intent to identify. It needs no route of its own for the reason the
-/// propose intents do not — it is a named submit on the section's own form — and it re-renders
-/// with the posted body kept, which is what carries the query back into the box.
+/// Run the agent pickers' searches and re-render, changing nothing else. One
+/// intent for every picker because every search box posts with the form; it
+/// re-renders with the posted body kept, which carries the query back.
 pub const FIND_AGENT: &str = "find-agent";
 
 /// Start a proposal for a new person.
@@ -85,23 +67,18 @@ pub const PROPOSE_PERSON: &str = "propose-person";
 /// Start a proposal for a new organisation.
 pub const PROPOSE_ORGANIZATION: &str = "propose-organization";
 
-/// Propose a change to an entity this project already references.
-///
-/// The entity rides in the intent value — `propose-changes:person-417` — via
+/// Propose a change to an entity this project already references. The entity
+/// rides in the intent value (`propose-changes:person-417`) via
 /// [`propose_changes_intent`] and [`proposed_entity`].
 ///
-/// **It must not move to a field of its own.** A section renders every field inside one `<form>`
-/// and a resolved agent row repeats in it (`attributions` reaches 56 rows on one project), so a
-/// per-row field shares one name across all of them: every submit posts all 56 values and
-/// `FormBody::get` takes the first, whichever row was clicked. Only the activated button posts its
-/// name and value — natively and through Datastar's `SubmitEvent.submitter` — so the value is the
-/// one place exactly one entity can arrive from.
+/// It must not move to a field of its own: a section renders every resolved
+/// agent row inside one `<form>`, so a per-row field shares one name across all
+/// of them and `FormBody::get` takes the first. Only the activated button posts
+/// its name and value, natively and through `SubmitEvent.submitter`.
 pub const PROPOSE_CHANGES: &str = "propose-changes";
 
-/// The separator between [`PROPOSE_CHANGES`] and the entity id it carries.
-///
-/// A colon because no entity id contains one: they are `person-NNN` and `organization-NNN`, so the
-/// split cannot land inside an id.
+/// The separator between [`PROPOSE_CHANGES`] and the entity id: no entity id
+/// contains a colon.
 const PROPOSE_CHANGES_SEPARATOR: char = ':';
 
 /// The intent value a "Propose changes" control on `entity_id`'s row posts.
@@ -110,10 +87,9 @@ pub fn propose_changes_intent(entity_id: &str) -> String {
     format!("{PROPOSE_CHANGES}{PROPOSE_CHANGES_SEPARATOR}{entity_id}")
 }
 
-/// The entity id a posted intent carries, or `None` when it is not a propose-changes intent.
-///
-/// An empty id answers `None` rather than `Some("")`: a body naming the verb with no entity has
-/// asked for nothing, which is the same refusal as naming an entity that resolves to nobody.
+/// The entity id a posted intent carries, or `None` when it is not a
+/// propose-changes intent. An empty id answers `None`: naming the verb with no
+/// entity has asked for nothing.
 #[must_use]
 pub fn proposed_entity(intent: &str) -> Option<&str> {
     intent
@@ -122,21 +98,15 @@ pub fn proposed_entity(intent: &str) -> Option<&str> {
         .filter(|entity_id| !entity_id.is_empty())
 }
 
-/// The name a form posts the draft revision it was rendered from under.
-///
-/// What makes a concurrent overwrite visible: the draft is one row and `upsert` is last-write-wins,
-/// so without this a save silently replaces work somebody else did while this form was open.
-///
-/// A courtesy check between people, not a security control: a body that omits
-/// it is saved without complaint, because a hand-built request has no form to
-/// have been rendered from and nothing is protected by refusing it.
+/// The name a form posts the draft revision it was rendered from under. The
+/// draft is one row and `upsert` is last-write-wins, so without this a save
+/// silently replaces somebody else's work. A courtesy check between people, not
+/// a security control: a body that omits it is saved without complaint.
 pub const BASELINE: &str = "baseline";
 
-/// Why the form is read-only.
-///
-/// A reason rather than a `bool`, because the page has to say which it is: a
-/// depositor whose work is queued and one whose work a reviewer has open should
-/// not be told the same thing, and only one of them can expect it back soon.
+/// Why the form is read-only. A reason rather than a `bool`: a depositor whose
+/// work is queued and one whose work a reviewer has open should not be told the
+/// same thing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Locked {
     /// Submitted and waiting for a reviewer to pick it up.
@@ -169,12 +139,8 @@ impl Locked {
     }
 }
 
-/// The latest finished review round, as the depositor's form shows it.
-///
-/// Everything here is about *communicating* the round. The one thing the round
-/// also governs mechanically — which fields are fixed — is
-/// [`SectionView::accepted_fields`], separately, because the applier skip that
-/// enforces it is not a rendering concern.
+/// The latest finished review round, as the depositor's form shows it. This
+/// communicates the round; which fields are fixed is [`SectionView::accepted_fields`].
 pub struct RoundSummary<'a> {
     pub outcome: ReviewOutcome,
     /// What RDU wrote. Required for a rejection and a request-changes, absent
@@ -182,12 +148,8 @@ pub struct RoundSummary<'a> {
     pub note: Option<&'a str>,
     /// Already formatted; the server owns the format.
     pub at: &'a str,
-    /// Each field RDU put its own value in place of, with that value rendered.
-    ///
-    /// The other half of the reason this surface exists. A reviewer may edit before accepting
-    /// and there is no second approver, so a substituted value is seen by nobody unless the
-    /// depositor is shown
-    /// it here.
+    /// Each field RDU put its own value in place of, with that value. There is no
+    /// second approver, so a substituted value is seen by nobody unless shown here.
     pub substitutions: &'a [(String, Value)],
 }
 
@@ -201,18 +163,14 @@ impl RoundSummary<'_> {
                  everything else is yours to edit.",
             ),
             // A rejection discards the submission and notifications are out of
-            // scope, so without this the work vanishes with nothing saying
-            // why. The draft is kept, which is the other half of
-            // what the depositor needs to know.
+            // scope, so this is the only thing that says why.
             ReviewOutcome::Rejected => (
                 "RDU rejected this submission",
                 "The submission was discarded and the published project is unchanged. Your draft is still here, \
                  so you can change it and submit again.",
             ),
-            // REQ-2.2 binds this string: the form is depositor-facing, and the
-            // mechanism (a pull request against the repository) is the editor's
-            // problem rather than theirs. The wait matches
-            // `ProjectState::Approved`, which is the normative wording.
+            // Depositor-facing, so the mechanism is not named; the wait matches
+            // ProjectState::Approved, the normative wording.
             ReviewOutcome::Approved => (
                 "RDU approved this project",
                 "Your changes will appear on the public site with the next repository release — usually within a \
@@ -250,31 +208,21 @@ pub enum Notice<'a> {
     /// Somebody else saved the draft while this form was open. Carries their
     /// name where it is known, so the reader can go and ask rather than guess.
     Changed { by: Option<&'a str>, at: &'a str },
-    /// A new entity proposal was started, or an existing entity now has a change proposed.
-    /// Names the kind and the id, and links to the entity form, which is where the
-    /// depositor fills the proposal in — the propose controls allocate the id and nothing else.
+    /// A proposal was started or a change proposed; links to the entity form, which
+    /// is where the depositor fills it in.
     Proposed {
         kind: ProposalKind,
         operation: ProposalOperation,
         entity_id: &'a str,
     },
-    /// The write was refused, and why. The whole-form kind: a live submission,
-    /// nothing to submit, or storage that would not take the write. Field-level
-    /// errors are [`SectionView::errors`], which is a different thing — they
-    /// name a control the reader can go and fix.
+    /// The write was refused, and why: the whole-form kind. Field-level errors are
+    /// [`SectionView::errors`], which name a control the reader can fix.
     Refused(&'a str),
 }
 
-/// Everything one section rendering needs.
-///
-/// A struct rather than a long argument list: half of these are `Option`s of
-/// similar types, and adjacent optional arguments of one type are silently
-/// swappable — the same reason the form tiles' shell is a struct.
-/// An action that asks before it acts.
-///
-/// Both are irreversible for the person doing them: a withdrawal drops whatever
-/// a reviewer had recorded, and a discard drops the only copy of unsubmitted
-/// work.
+/// An action that asks before it acts. Both are irreversible for the person
+/// doing them: a withdrawal drops whatever a reviewer had recorded, and a
+/// discard drops the only copy of unsubmitted work.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Confirmation {
     /// Taking a pending submission back.
@@ -283,86 +231,57 @@ pub enum Confirmation {
     Discard,
 }
 
+/// Everything one section rendering needs. A struct rather than a long argument
+/// list: half of these are `Option`s of similar types, and adjacent optional
+/// arguments of one type are silently swappable.
 pub struct SectionView<'a> {
     pub shortcode: &'a str,
     /// The published project's name, or `None` for a shortcode the published set
     /// does not hold.
     pub project_name: Option<&'a str>,
     pub section: &'static Section,
-    /// Which fields and sections this reader sees. Not a permission check in
-    /// itself — the registry is consulted by the decoder too, so the form and
-    /// the save cannot disagree about which fields a depositor owns.
+    /// Which fields and sections this reader sees. The registry is consulted by
+    /// the decoder too, so the form and the save cannot disagree.
     pub audience: Audience,
     pub draft: &'a ProjectDraft,
     /// `None` while the project is editable.
     pub locked: Option<Locked>,
-    /// Field ids RDU accepted in the round being answered, which are therefore
-    /// fixed until it is submitted again.
-    ///
-    /// Ids rather than a per-field flag on the registry, because the set is
-    /// per-round data and the registry is a constant. Empty whenever the latest
-    /// round did not return the project — an approval's decisions are not a
-    /// lock on work that has left the depositor's hands.
+    /// Field ids RDU accepted in the round being answered, fixed until the next
+    /// submit. Ids rather than a registry flag because the set is per-round data;
+    /// empty when the latest round did not return the project.
     pub accepted_fields: &'a [String],
     /// Whether this reader may take the pending submission back, and
     /// so whether the withdrawal control is offered at all.
     pub may_withdraw: bool,
-    /// Whether this reader may discard the draft, and so whether the control is
-    /// offered at all.
-    ///
-    /// False without a stored draft — there is nothing to discard, and the form
-    /// is already showing published metadata — and false while a submission is
-    /// pending, because the draft is what the depositor comes back to when RDU
-    /// returns the project.
+    /// Whether this reader may discard the draft. False without a stored draft, and
+    /// false while a submission is pending: the draft is what the depositor comes
+    /// back to when RDU returns the project.
     pub may_discard: bool,
-    /// Which confirmation is showing, if any.
-    ///
-    /// A named type rather than one `bool` per action: the second one turned
-    /// two independent flags into four states, two of which are nonsense
-    /// (both confirmations at once), and a reader of the call site could not
-    /// tell which `false` meant what.
+    /// Which confirmation is showing, if any. A named type rather than one `bool`
+    /// per action, which allows two nonsense states.
     pub confirming: Option<Confirmation>,
     /// Per-field submit errors, keyed by the path the field posts under
-    /// (`temporalCoverage[0]`, not `temporalCoverage`), in field order.
-    ///
-    /// Separate from [`Notice::Refused`]: these name a control the reader can
-    /// go and fix, and a refusal names the form as a whole.
+    /// (`temporalCoverage[0]`), in field order. Separate from [`Notice::Refused`]:
+    /// these name a control the reader can fix.
     pub errors: &'a [(String, String)],
-    /// Findings against this project's own live proposals, from the latest submit refusal — one row
-    /// per finding, each naming which proposal it is about.
-    ///
-    /// Separate from [`Self::errors`]: a proposal is not a registry field, so it cannot ride that
-    /// field-keyed channel — `errors_elsewhere`'s lookup would resolve to nothing and drop it.
+    /// Findings against this project's own live proposals, from the latest submit
+    /// refusal. Separate from [`Self::errors`]: a proposal is not a registry field,
+    /// so `errors_elsewhere`'s lookup would drop it.
     pub proposal_findings: &'a [(String, ProposalKind, String)],
-    /// This project's own entity proposals, every status, the same slice the server's
-    /// section context holds.
-    ///
-    /// Every status rather than only the live ones: the summary this renders is `is_live()` alone,
-    /// filtered here rather than upstream, so there is one place that decides which proposals show.
+    /// This project's own entity proposals, every status: the summary filters to
+    /// `is_live()` here, so one place decides which proposals show.
     pub proposals: &'a [EntityProposal],
     /// The latest finished review round, or `None` for a project nobody has
-    /// reviewed.
-    ///
-    /// On the form rather than on a page of its own: the note is retained with nowhere else
-    /// named to read it, and the place a depositor acts on it is
-    /// the form they act on it *in*. It rides inside the region, so a save
-    /// leaves it in place.
-    ///
-    /// It shows until the depositor submits again, which starts the next
-    /// cycle. That is also what makes a returned draft distinguishable from one
-    /// never submitted, without adding a sixth lifecycle state.
+    /// reviewed. On the form because that is where a depositor acts on it, and
+    /// inside the region so a save leaves it in place. It shows until the depositor
+    /// submits again, which is what makes a returned draft distinguishable from
+    /// one never submitted without a sixth lifecycle state.
     pub round: Option<RoundSummary<'a>>,
-    /// Who last saved the draft, when that was somebody other than this reader.
-    ///
-    /// `None` for a draft this reader saved themselves, which is the ordinary
-    /// case and would be noise — and `None` for an editor whose account has
-    /// since been removed, where the row survives with a null author.
+    /// Who last saved the draft, when that was somebody other than this reader;
+    /// `None` for their own saves and for a removed account.
     pub last_editor: Option<&'a str>,
-    /// When this reader will be signed out, formatted — and only when that is
-    /// close enough to be worth saying.
-    ///
-    /// `None` the rest of the time, which is nearly always: a warning
-    /// permanently on screen is a warning nobody reads.
+    /// When this reader will be signed out, formatted, and only when that is close
+    /// enough to say: a warning permanently on screen is a warning nobody reads.
     pub signed_out_at: Option<&'a str>,
     /// The stored draft's revision, posted back under [`BASELINE`] so a save can
     /// tell whether the draft moved underneath it.
@@ -371,40 +290,25 @@ pub struct SectionView<'a> {
     /// is showing published metadata that nobody has saved over yet.
     pub saved_at: Option<&'a str>,
     pub notice: Option<Notice<'a>>,
-    /// The body that was posted, when this render is answering a `POST`.
-    ///
-    /// Only repeatable fields read it, and what they need it for is the one
-    /// thing the draft cannot hold: a row a depositor added but has not filled
-    /// in. Such a row is never stored — an empty row must not reach a published
-    /// file — so it lives in the form, and the body is where a re-render finds
-    /// it again.
-    ///
-    /// `None` after a successful save, deliberately: the save commits every row
-    /// that has any text in it, and a row that still has none is not data. It
-    /// is `Some` for a refusal and for add/remove, where the editing state is
-    /// exactly what has to survive.
+    /// The body that was posted, when this render is answering a `POST`. Only
+    /// repeatable fields read it, for the one thing the draft cannot hold: a row a
+    /// depositor added but has not filled in, which is never stored. `None` after a
+    /// successful save, since a row with no text is not data; `Some` for a refusal
+    /// and for add/remove.
     pub posted: Option<&'a FormBody>,
     /// The field one more blank row was just asked for.
     pub adding_row: Option<&'a str>,
-    /// The agents an id field may refer to.
-    ///
-    /// Borrowed from `AppState`'s immutable snapshot, so no page allocates a
-    /// copy of 558 entries.
+    /// The agents an id field may refer to, borrowed from `AppState`'s snapshot.
     pub agents: Option<&'a AgentScope<'a>>,
-    /// Base URL a repeatable field's add and remove controls submit to.
-    ///
-    /// Owned, so [`Rows`] can stay a plain borrow. Built by the caller rather
-    /// than here, because the route shape belongs to the router: `/fields` under
-    /// the section's own URL, so a row action resolves through the same
-    /// audience gate, lock check and shortcode fold the save does.
+    /// Base URL a repeatable field's add and remove controls submit to: `/fields`
+    /// under the section's own URL, built by the caller because the route shape
+    /// belongs to the router, so a row action resolves through the same audience
+    /// gate, lock check and shortcode fold the save does.
     pub rows_action: String,
     /// Whether an approved change is waiting for the repository release that
-    /// carries it (REQ-2.5).
-    ///
-    /// Not a [`Locked`] variant, although it reads like one: approve is the
-    /// only outcome that does *not* hand the project back, so the form stays
-    /// editable and what the depositor starts typing is the next cycle. A lock
-    /// here would refuse edits the lifecycle allows.
+    /// carries it. Not a [`Locked`] variant: approve is the only outcome that does
+    /// not hand the project back, so the form stays editable and what the
+    /// depositor types is the next cycle.
     pub awaiting_release: bool,
 }
 
@@ -438,13 +342,9 @@ impl SectionView<'_> {
         path == field || path.strip_prefix(field).is_some_and(|rest| rest.starts_with('['))
     }
 
-    /// Errors naming a field this section does not show, with the section it
-    /// is in.
-    ///
-    /// The form is sectioned and submit validation is whole-project, so a
-    /// refusal is routinely about a field the reader is not looking at.
-    /// Rendered per field only, the message would be nowhere on the page and
-    /// the refusal would read as a dead end.
+    /// Errors naming a field this section does not show, with the section it is
+    /// in. Submit validation is whole-project, so a refusal is routinely about a
+    /// field the reader is not looking at.
     fn errors_elsewhere(&self) -> Vec<(&'static Section, &str, &str)> {
         let shown: Vec<&str> = self.section.fields_for(self.audience).map(|field| field.id).collect();
         self.errors
@@ -460,12 +360,9 @@ impl SectionView<'_> {
             .collect()
     }
 
-    /// Whether any field this reader sees in this section offers the agent suggestion list, and
-    /// therefore whether the list is worth its weight on this page.
-    ///
-    /// The answer comes from `Shape::has_agent_picker`, which is exhaustive, rather than
-    /// from a list of shapes written out here: a predicate that misses a shape renders no list
-    /// on a page whose inputs point at one, and nothing fails.
+    /// Whether any field this reader sees offers the agent suggestion list. From
+    /// `Shape::has_agent_picker`, which is exhaustive, rather than a list of shapes
+    /// here that could miss one.
     fn has_agent_picker_field(&self) -> bool {
         self.section
             .fields_for(self.audience)
@@ -476,23 +373,16 @@ impl SectionView<'_> {
         format!("/projects/{}/sections/{}", self.shortcode, self.section.id)
     }
 
-    /// What a repeatable field needs: the posted body, and the base URL its add
-    /// and remove controls submit to.
-    ///
-    /// The base is the section's own URL plus `/fields`, so a row action
-    /// resolves through the same handler chain as the save — the audience gate,
-    /// the lock check and the shortcode fold are the section's, not a second
-    /// copy.
+    /// What a repeatable field needs: the posted body, and the base URL its add and
+    /// remove controls submit to; see [`Self::rows_action`].
     fn rows(&self) -> Rows<'_> {
         Rows {
             posted: self.posted,
             action: &self.rows_action,
             adding: self.adding_row,
             agents: self.agents,
-            // This is the section form, which dispatches all three propose
-            // intents (`sections.rs`) — unlike the entity form's own
-            // `affiliations` picker, which reuses these same row widgets but
-            // must not offer a control its route does not handle.
+            // The section form dispatches all three propose intents, unlike the entity
+            // form's affiliations picker, which reuses these widgets.
             propose: true,
         }
     }
@@ -529,10 +419,8 @@ fn heading(view: &SectionView<'_>) -> Markup {
                 }
                 None => {
                     h1 class="font-display text-2xl mb-1" { "Project " (view.shortcode) }
-                    // A project may exist only locally, and the published metadata a form
-                    // pre-fills from is then empty. Said plainly,
-                    // because a blank form with no explanation reads as a
-                    // failure to load.
+                    // A project may exist only locally; a blank form with no explanation
+                    // reads as a failure to load.
                     p class="text-gray-600" {
                         "This project is not in the published set this deployment carries, so there was nothing \
                          to pre-fill. Anything you enter is kept as a draft."
@@ -546,29 +434,18 @@ fn heading(view: &SectionView<'_>) -> Markup {
     }
 }
 
-/// The rail link's accessible name, when its two lines would otherwise run
-/// together.
-///
-/// The title and the progress are adjacent `<span>`s with no whitespace between
-/// them, because a flex column is what puts them on two lines — so the name
-/// computation concatenates them into "Overview5 of 5 required". A separator in
-/// the markup would either show as stray punctuation or depend on a
-/// whitespace-only flex item not being rendered, so the name is stated instead.
-///
-/// `None` for a section with no requirements, where the visible title is already
-/// the whole name and an `aria-label` repeating it would be one more string to
-/// keep in step. The label always *starts* with the visible title, which is what
-/// WCAG 2.5.3 (Label in Name) asks of an `aria-label` over visible text.
+/// The rail link's accessible name. The title and the progress are adjacent
+/// `<span>`s with no whitespace between them, so the name computation would
+/// give "Overview5 of 5 required". `None` for a section with no requirements,
+/// where the visible title is the whole name. The label starts with the visible
+/// title, as WCAG 2.5.3 asks of an `aria-label` over visible text.
 fn rail_link_label(title: &str, progress: &SectionProgress) -> Option<String> {
     progress.has_requirements().then(|| format!("{title}, {}", progress.summary()))
 }
 
-/// One rail link's classes.
-///
-/// Two complete literal strings rather than a base plus a conditional suffix:
-/// Tailwind collects classes by scanning source text, so a class assembled at
-/// runtime is one the build never emits — and the failure is silent, an
-/// unstyled link with no error anywhere.
+/// One rail link's classes, as two complete literals: Tailwind collects classes
+/// by scanning source text, so a class assembled at runtime is never emitted and
+/// the link is silently unstyled.
 const fn rail_link_class(current: bool) -> &'static str {
     if current {
         "flex flex-col rounded bg-neutral-100 px-3 py-2 font-bold focus-visible:outline-2 \
@@ -579,11 +456,8 @@ const fn rail_link_class(current: bool) -> &'static str {
     }
 }
 
-/// The section rail: every section this reader sees, with its obligation state.
-///
-/// A `<nav>` with a list, because it is navigation and a screen reader user
-/// needs to be able to jump to it and count the items. The current section
-/// carries `aria-current="page"` rather than only a colour.
+/// The section rail: a `<nav>` with a list, so a screen reader user can jump to
+/// it and count the items; the current section carries `aria-current="page"`.
 fn rail(view: &SectionView<'_>) -> Markup {
     html! {
         nav class="md:sticky md:top-4" aria-label="Form sections" {
@@ -599,11 +473,8 @@ fn rail(view: &SectionView<'_>) -> Markup {
                         {
                             span { (section.title) }
                             @if progress.has_requirements() {
-                                // Both numbers, always, and in words: a rail
-                                // that showed only what is outstanding cannot
-                                // tell a finished section from an empty one, and
-                                // one that marked completion with a colour or a
-                                // tick alone would not say it to everyone.
+                                // Both numbers, in words: a rail showing only what is outstanding
+                                // cannot tell a finished section from an empty one.
                                 span class="text-xs text-neutral-600" { (progress.summary()) }
                             }
                         }
@@ -614,19 +485,14 @@ fn rail(view: &SectionView<'_>) -> Markup {
     }
 }
 
-/// The live region a save writes its outcome into. Always present; see the
-/// module docs. `empty:hidden` is what keeps an always-present region free —
-/// without it every section carries an empty block's line box, the same reason
-/// the form tiles' error region carries `.field-error:empty`.
+/// The live region a save writes its outcome into. Always present, see the module
+/// docs; `empty:hidden` keeps an always-present region free of a line box.
 ///
-/// **`sticky` because the control that causes a notice is usually below it.** This region is at
-/// the top of the form column, and the enhanced path patches the region in place without moving
-/// the scroll position or the focus — so a depositor who clicked a propose button, an add button
-/// or a submit several screens down got a notice rendered where they could not see it, and read
-/// that as nothing having happened. The rail above uses the same idiom. It applies to every notice
-/// and not only the propose one: a refusal was as invisible, and a refusal saying nothing was
-/// saved is the worse one to miss. Screen readers were always told, through `aria-live`; this is
-/// the sighted half of the same message.
+/// `sticky` because the control that causes a notice is usually below it: the
+/// enhanced path patches the region in place without moving the scroll, so a
+/// notice rendered at the top of the column is invisible to a depositor who
+/// clicked several screens down. Screen readers hear it through `aria-live`;
+/// this is the sighted half.
 fn status(view: &SectionView<'_>) -> Markup {
     html! {
         div class="empty:hidden sticky top-0 z-10" aria-live="polite" {
@@ -669,19 +535,13 @@ fn status(view: &SectionView<'_>) -> Markup {
                 Some(Notice::Refused(message)) => { (alert(message).variant(AlertVariant::Warning)) }
                 None => {}
             }
-            // Outside the `@match`, because it is not an outcome of anything
-            // the reader just did — it is true of the session whatever the
-            // last action was, including none.
-            // Inside the live region, beside the refusal it details rather than
-            // above the form heading: the refusal is what gets announced, and
-            // it is about fields the reader cannot see, so the list of them has
-            // to announce with it. Outside, the announcement said what needed
-            // changing and the detail was silent.
+            // Inside the live region, beside the refusal it details: the refusal is what
+            // gets announced, and it is about fields the reader cannot see, so the list
+            // has to announce with it.
             (errors_elsewhere(view))
             (proposal_findings_elsewhere(view))
-            // Outside the `@match`, because it is not an outcome of anything
-            // the reader just did — it is true of the session whatever the last
-            // action was, including none.
+            // Not an outcome of anything the reader just did: true of the session
+            // whatever the last action was.
             @if let Some(at) = view.signed_out_at { (sign_out_notice(at)) }
         }
     }
@@ -689,10 +549,9 @@ fn status(view: &SectionView<'_>) -> Markup {
 
 /// The section's fields, and the control that saves them.
 fn form(view: &SectionView<'_>) -> Markup {
-    // Only on a form a save can actually change: a read-only one has no
-    // controls for `change` to fire from, so the attribute could never do
-    // anything, and advertising a save the handler would refuse is worse than
-    // not offering one.
+    // Only on a form a save can change: a read-only one has no controls for
+    // change to fire from, and advertising a save the handler would refuse is
+    // worse than none.
     let autosave = view
         .locked
         .is_none()
@@ -709,22 +568,18 @@ fn form(view: &SectionView<'_>) -> Markup {
             })
         }
         h2 class="font-display text-xl mb-4" { (view.section.title) }
-        // The `action` is the URL this form was fetched from, so a rejected save
-        // re-renders somewhere that still answers `GET`. `data-on:submit` needs
-        // no `__prevent`: Datastar 1.0.2 calls `preventDefault` unconditionally
-        // for a `submit` event on a form element, so adding one would be noise.
-        // With no script it is an ordinary POST and the server redirects.
+        // The action is the URL this form was fetched from, so a rejected save
+        // re-renders somewhere that answers GET. No __prevent: Datastar calls
+        // preventDefault unconditionally on a form's submit. With no script it is an
+        // ordinary POST.
         //
-        // **It posts the submitter's `formAction`, not the form's `action`.** Every add and remove
-        // control is a submit button carrying a `formaction` — that is how a row action reaches
-        // its own route while the whole form body goes with it — and `preventDefault` on the
-        // form's `submit` discards the submitter's URL along with the native submission. Posting
-        // the form's own action instead turned every one of those buttons into a plain save: the
-        // row route was never reached, no row was added or removed, and nothing failed. That is
-        // the enhanced path only; with no script the browser honours `formaction` itself, which
-        // is why the plain path always worked and this was invisible to any test that did not run
-        // a browser. `submitter.formAction` falls back to the form's action for a button with no
-        // `formaction` of its own, so save, submit and the propose intents are unaffected.
+        // It posts the submitter's formAction, not the form's action: every add and
+        // remove control is a submit button carrying a formaction, and preventDefault
+        // discards the submitter's URL with the native submission, so posting the
+        // form's action would turn every row control into a plain save. Only a
+        // browser with JavaScript can see that. submitter.formAction falls back to
+        // the form's action for a button without one, so save, submit and the
+        // propose intents are unaffected.
         form
             id="section-form"
             method="post"
@@ -737,16 +592,13 @@ fn form(view: &SectionView<'_>) -> Markup {
             }
             "data-on:change__debounce.1s"=[autosave.as_deref()]
         {
-            // The revision this form was rendered from, so a save can tell
-            // whether the draft moved underneath it. Absent when there is no
-            // stored draft: there is nothing to have moved.
+            // The revision this form was rendered from; absent with no stored draft.
             @if let Some(baseline) = view.baseline {
                 input type="hidden" name=(BASELINE) value=(baseline);
             }
             @for field in view.section.fields_for(view.audience) {
-                // No wrapper and no obligation pill here: the pill is inside the
-                // field's own label, which is the only way it reaches a screen
-                // reader now that nothing is `required`. See `widgets::labelled`.
+                // No obligation pill here: it is inside the field's own label, the only
+                // way it reaches a screen reader now that nothing is required.
                 (field_row(field, view.draft, view.mode_of(field.id), view.rows()))
                 @for message in view.errors_for(field.id) {
                     (alert(message).variant(AlertVariant::Warning))
@@ -781,11 +633,8 @@ fn review_round(round: &RoundSummary<'_>) -> Markup {
     }
 }
 
-/// Errors about fields another section shows, each a link to the section that
-/// shows it.
-///
-/// A link and not just a name: the field is one navigation away and the reader
-/// has no other way to know which of six sections holds it.
+/// Errors about fields another section shows, each a link to that section: the
+/// reader has no other way to know which of six sections holds the field.
 fn errors_elsewhere(view: &SectionView<'_>) -> Markup {
     let elsewhere = view.errors_elsewhere();
     if elsewhere.is_empty() {
@@ -806,13 +655,10 @@ fn errors_elsewhere(view: &SectionView<'_>) -> Markup {
     }
 }
 
-/// REQ-2.5: an approved change is waiting for the release that carries it.
-///
-/// Informational rather than a warning: nothing is wrong and there is nothing
-/// for the depositor to do. The wording and the expected wait come from
-/// [`ProjectState::Approved`](editor_core::status::ProjectState), which is also
-/// what the list column and the `/states` page read, so the three cannot drift
-/// apart — REQ-2.1 and REQ-2.2 make that vocabulary normative.
+/// An approved change is waiting for the release that carries it.
+/// Informational: nothing is wrong and there is nothing to do. The wording comes
+/// from [`ProjectState::Approved`](editor_core::status::ProjectState), which the
+/// list column and the `/states` page also read, so the three cannot drift.
 fn awaiting_release_notice() -> Markup {
     html! {
         ({
@@ -823,10 +669,9 @@ fn awaiting_release_notice() -> Markup {
     }
 }
 
-/// A proposal was just started, named by kind and id, with a link onward.
-///
-/// Its own function rather than inline in `status`'s `@match`, per this repo's rule on a nested
-/// `html!` passed as a call argument (`maudfmt` skips it and `cargo fmt` then mangles it).
+/// A proposal was just started, named by kind and id, with a link onward. Its
+/// own function per this repo's rule on a nested `html!` passed as a call
+/// argument (`maudfmt` skips it and `cargo fmt` mangles it).
 fn proposed_notice(
     view: &SectionView<'_>,
     kind: ProposalKind,
@@ -852,12 +697,9 @@ fn proposed_notice(
     }
 }
 
-/// Findings against this project's own live proposals, from the latest submit refusal, each linked
-/// to that proposal's entity form.
-///
-/// A parallel function to [`errors_elsewhere`] rather than a shared one: a proposal is not a
-/// registry field, so `errors_elsewhere`'s `section_of` lookup would resolve to nothing and drop
-/// every one of these silently.
+/// Findings against this project's own live proposals, each linked to its entity
+/// form. Parallel to [`errors_elsewhere`] rather than shared: a proposal is not a
+/// registry field, so `section_of` would drop every one of these.
 fn proposal_findings_elsewhere(view: &SectionView<'_>) -> Markup {
     if view.proposal_findings.is_empty() {
         return html! {};
@@ -872,14 +714,10 @@ fn proposal_findings_elsewhere(view: &SectionView<'_>) -> Markup {
     }
 }
 
-/// The list inside [`proposal_findings_elsewhere`]'s alert.
-///
-/// Its own function, and not by preference: a `html!` block nested as a call argument is skipped by
-/// `maudfmt` and then flattened by `cargo fmt`, which is this repo's rule
-/// (`modules/dpe/CLAUDE.md`) and is what happened to the first version of this — `@ for`,
-/// `class = "…"`, an arbitrary mid-expression break — with `just check` green, because that check
-/// verifies `maudfmt` is a no-op and `maudfmt` never looked inside. `changed_notice` below carries
-/// the same note about the same trap.
+/// The list inside [`proposal_findings_elsewhere`]'s alert. Its own function per
+/// the repo's rule on nested `html!` (`modules/dpe/CLAUDE.md`): `maudfmt` skips a
+/// block passed as a call argument and `cargo fmt` then flattens it, with `just
+/// check` green because it only verifies `maudfmt` is a no-op.
 fn proposal_findings_list(view: &SectionView<'_>) -> Markup {
     html! {
         ul class="flex flex-col gap-2" {
@@ -896,13 +734,11 @@ fn proposal_findings_list(view: &SectionView<'_>) -> Markup {
     }
 }
 
-/// A short list of this project's own live proposals, each resolved to a label where its payload
-/// already gives one, and linked to its entity form.
-///
-/// Gated on [`SectionView::has_agent_picker_field`]: a proposal exists to be referenced from an
-/// agent field, so a section with none has no use for the list either.
-/// Renders nothing at all with no live proposals — a panel with a heading and no rows would read as
-/// broken, not as "there is nothing here yet".
+/// This project's own live proposals, each resolved to a label where its payload
+/// gives one, linked to its entity form. Gated on
+/// [`SectionView::has_agent_picker_field`], since a proposal exists to be
+/// referenced from an agent field; renders nothing with no live proposals,
+/// because an empty panel reads as broken.
 fn proposals_summary(view: &SectionView<'_>) -> Markup {
     if !view.has_agent_picker_field() {
         return html! {};
@@ -913,12 +749,9 @@ fn proposals_summary(view: &SectionView<'_>) -> Markup {
     }
     html! {
         div class="rounded border border-neutral-300 bg-white p-4 mb-6" {
-            // `h2`, not `h3`: this panel renders *above* the section form, whose
-            // own title is an `h2`, and the page heading is the only `h1`. As an
-            // `h3` the outline ran 1 -> 3 -> 2, so a reader navigating by level
-            // got a broken tree, and one jumping from the `h1` to the next `h2`
-            // skipped this panel entirely although it sits first in reading
-            // order.
+            // h2, not h3: this panel renders above the section form, whose title is
+            // an h2, and an h3 here breaks the outline for a reader navigating by
+            // level.
             h2 class="font-display text-base mb-2" { "Proposed persons and organisations" }
             ul class="flex flex-col gap-1" {
                 @for proposal in &live {
@@ -957,14 +790,8 @@ fn sign_out_notice(at: &str) -> Markup {
     }
 }
 
-/// What a reader is told when somebody else saved the draft underneath them.
-///
-/// A named function rather than an `html!` block spliced into the `@match` arm,
-/// which is this repo's rule (`modules/dpe/CLAUDE.md`) and not a stylistic one:
-/// `maudfmt` skips a block nested as a call argument and `cargo fmt` then
-/// flattens it. The first version of this sat inline and was already mangled —
-/// `@ match`, `p class = "mt-2"` — with `just check` green, because the check
-/// verifies `maudfmt` is a no-op and `maudfmt` never looked at it.
+/// What a reader is told when somebody else saved the draft underneath them. A
+/// named function per the repo's rule on nested `html!` (`modules/dpe/CLAUDE.md`).
 fn changed_notice(by: Option<&str>, at: &str) -> Markup {
     let body = html! {
         p {
@@ -988,14 +815,10 @@ fn changed_notice(by: Option<&str>, at: &str) -> Markup {
 }
 
 /// The write controls, which depend on where the project sits in the cycle.
-///
-/// Every one of them is a named submit on the *same* form, as the review
-/// surface's pair is: a native submit posts the activated button's name and
-/// value, and Datastar 1.0.2's form mode appends them from
-/// `SubmitEvent.submitter`. A second form would have to carry the fields again
-/// to submit them, and `formaction` would be honoured on the plain path and
-/// silently ignored on the enhanced one, where the bundle posts to the URL in
-/// `@post`.
+/// Every one is a named submit on the same form: a native submit posts the
+/// activated button's name and value and Datastar's form mode appends them from
+/// `SubmitEvent.submitter`, while a `formaction` would be silently ignored on the
+/// enhanced path.
 fn controls(view: &SectionView<'_>) -> Markup {
     html! {
         @if view.confirming == Some(Confirmation::Discard) {
@@ -1010,10 +833,8 @@ fn controls(view: &SectionView<'_>) -> Markup {
                             .button_type(ButtonType::Submit)
                             .name_value(INTENT, DISCARD)
                     })
-                    // A link for the same reason declining a withdrawal is one:
-                    // backing out must write nothing, and a button with no
-                    // intent falls through to `save`, which would answer "saved"
-                    // to somebody who has just decided not to.
+                    // A link, as for declining a withdrawal: backing out must write
+                    // nothing, and a button with no intent falls through to save.
                     (link("Keep the draft", view.action()))
                 }
             }
@@ -1029,11 +850,9 @@ fn controls(view: &SectionView<'_>) -> Markup {
                             .button_type(ButtonType::Submit)
                             .name_value(INTENT, WITHDRAW)
                     })
-                    // A link, not a button. Backing out has to write nothing,
-                    // and a button with no intent falls through to `save` —
-                    // which this form refuses while a submission is pending,
-                    // so declining a withdrawal would answer "nothing was
-                    // saved", the opposite of the reassurance it is for.
+                    // A link, not a button: a button with no intent falls through to save,
+                    // which this form refuses while a submission is pending, so declining
+                    // would answer "nothing was saved".
                     (link("Keep waiting", view.action()))
                 }
             }
@@ -1160,16 +979,9 @@ mod tests {
 
     #[test]
     fn an_error_about_another_section_announces_with_the_refusal_that_names_it() {
-        // Whole-project submit validation against a sectioned form means the
-        // field at fault is routinely not on this page. The refusal is what
-        // gets announced, so the list of those fields has to be inside the
-        // `aria-live` region with it — rendered above the form heading instead,
-        // the announcement said something needed changing and the detail was
-        // silent.
-        //
-        // Asserted on `status` alone, which is the region: slicing it out of a
-        // whole rendering cannot distinguish "inside" from "just after", since
-        // the alert it holds is itself a `<div>`.
+        // The refusal is what gets announced, so the list of fields it is about has
+        // to be inside the aria-live region with it. Asserted on status alone, the
+        // region itself.
         let draft = published_draft();
         let errors = [(
             "temporalCoverage[0]".to_string(),
@@ -1192,10 +1004,8 @@ mod tests {
 
     #[test]
     fn an_error_about_a_field_on_this_page_is_not_listed_as_elsewhere() {
-        // The two renderings are exclusive: a field with a control on this page
-        // gets its error beside that control, and listing it in the
-        // other-sections block as well would send the reader away from the
-        // input they are looking at.
+        // Exclusive renderings: an error beside its control is not also listed as
+        // elsewhere.
         let draft = published_draft();
         let errors = [("name".to_string(), "must not be empty".to_string())];
         let mut view = view(&draft, "overview", Audience::Everyone);
@@ -1210,18 +1020,10 @@ mod tests {
 
     #[test]
     fn no_section_renders_the_same_element_id_twice() {
-        // A duplicate `id` silently breaks every `label for` and
-        // `aria-describedby` pointing at it: the browser resolves them to the
-        // *first* element with that id, so the second control announces the
-        // wrong name and clicking its label focuses the wrong box.
-        //
-        // Easy to produce here, because several controls deliberately share a **name** so
-        // `FormBody::all` collects their values into one list, and the tiles default an
-        // element's id to its name — so any such control needs an explicit id.
-        //
-        // Over every section and both audiences, on a project that carries data in the repeatable
-        // fields: an empty list renders no rows and would hide the row-level collisions
-        // entirely.
+        // A duplicate id silently breaks every label-for and aria-describedby
+        // pointing at it. Easy to produce here because several controls share a
+        // name and the tiles default an id to its name. Over every section and
+        // both audiences, on a project with data in the repeatable fields.
         let mut draft = published_draft();
         draft.set("contactPoint", serde_json::json!(["organization-008", "person-001"]));
         draft.set(
@@ -1252,11 +1054,9 @@ mod tests {
 
     #[test]
     fn an_editable_form_autosaves_on_change_and_a_locked_one_does_not() {
-        // `change` rather than `input`: the response patches this whole region,
-        // so a trigger that fired mid-keystroke would patch the field being
-        // typed into. And nothing on a read-only form — it has no controls for
-        // `change` to fire from, so the attribute could never act, and
-        // advertising a save the handler would refuse is worse than none.
+        // change rather than input: the response patches the whole region, so a
+        // mid-keystroke trigger would patch the field being typed into. Nothing on
+        // a read-only form.
         let draft = published_draft();
         let editable = page(&view(&draft, "overview", Audience::Everyone)).into_string();
         assert!(editable.contains("data-on:change__debounce.1s"), "{editable}");
@@ -1286,8 +1086,7 @@ mod tests {
 
     #[test]
     fn the_form_posts_to_the_url_it_was_fetched_from() {
-        // A write posting to a path with no `GET` strands a rejected save on a
-        // bare 405 — the dead end `POST /depositors/{id}` briefly was.
+        // A write posting to a path with no GET strands a rejected save on a 405.
         let out = overview(&published_draft());
         assert!(out.contains(r#"action="/projects/0801d/sections/overview""#), "{out}");
         assert!(out.contains(r#"method="post""#), "{out}");
@@ -1295,11 +1094,6 @@ mod tests {
 
     #[test]
     fn the_enhanced_path_posts_the_form_body_rather_than_signals() {
-        // `contentType: 'form'` is what makes the body
-        // `application/x-www-form-urlencoded`; Datastar transmits no signals on a
-        // form-content-type request, which is what `editor_core::form` reads.
-        // No `__prevent`: the bundle calls `preventDefault` unconditionally for a
-        // `submit` event on a form element.
         let out = overview(&published_draft());
         assert!(
             out.contains(
@@ -1308,22 +1102,15 @@ mod tests {
             "{out}"
         );
         assert!(!out.contains("submit__prevent"), "{out}");
-        // Keyed plugin attributes use `:`, not `-`. The hyphen form is a console
-        // error and an inert control, and a snapshot asserting the attribute is
-        // present passes either way.
+        // Keyed plugin attributes use `:`; the hyphen form is inert.
         assert!(!out.contains("data-on-submit"), "{out}");
     }
 
     #[test]
     fn the_enhanced_path_posts_a_row_action_to_its_own_url_and_not_to_the_form_s() {
-        // The whole of the add/remove mechanism rests on the submit button's `formaction`, and
-        // `preventDefault` on the form's `submit` throws it away with the native submission. The
-        // fixed expression reads it back off the submitter, so a row action reaches its own route
-        // on the enhanced path as it always did on the plain one.
-        //
-        // The literal form action is the fallback, for a button — save, submit, a propose intent —
-        // that carries no `formaction`. `submitter.formAction` already resolves to the form's
-        // action for such a button; the fallback covers a submission with no submitter at all.
+        // preventDefault on the form's submit throws the submitter's formaction away,
+        // so the expression reads it back off the submitter; the literal action is
+        // the fallback for a submission with no submitter.
         let out = overview(&published_draft());
         assert!(out.contains("evt.submitter?.formAction"), "{out}");
         // And the row controls still carry the URL it reads.
@@ -1336,8 +1123,8 @@ mod tests {
 
     #[test]
     fn a_display_only_field_renders_its_value_and_no_control() {
-        // A display-only field. A control here would post, and an empty one would clear a
-        // value the reader was never able to change.
+        // A control here would post, and an empty one would clear a value the
+        // reader could never change.
         let out = page(&view(&published_draft(), "overview", Audience::RduOnly)).into_string();
         assert!(out.contains("Shortcode"), "{out}");
         assert!(!out.contains(r#"name="shortcode""#), "{out}");
@@ -1347,15 +1134,9 @@ mod tests {
 
     #[test]
     fn no_page_ships_the_whole_agent_set_and_every_picker_can_be_searched() {
-        // The pickers used to point at one shared `<datalist>` of all 558 agents, which was
-        // 31.7 KB on every section holding an agent field and still did not open (see
-        // `widgets::agent_picker`). Nothing may ship that list again — the check is for a
-        // `<datalist>` anywhere, not for the old id, so reintroducing one under another name
-        // fails here too.
-        //
-        // Over **every** section and both audiences, not two hand-picked ones: the narrower
-        // version of the old test passed while `funding`, alone in the access section, pointed at
-        // a list that was never on the page.
+        // Nothing may ship the whole agent set as a <datalist>: the check is for a
+        // datalist anywhere, not an id. Over every section and both audiences,
+        // because funding sits alone in the access section.
         let mut draft = published_draft();
         draft.set("contactPoint", serde_json::json!(["organization-008"]));
         for audience in [Audience::Everyone, Audience::RduOnly] {
@@ -1393,9 +1174,8 @@ mod tests {
 
     #[test]
     fn an_agent_row_shows_the_resolved_name_beside_the_id() {
-        // The input has to hold the id for the round trip to be exact, so the
-        // name is rendered beside it — otherwise a depositor is looking at
-        // `organization-008` with no way to know who that is.
+        // The input holds the id for the round trip, so the name is rendered beside
+        // it.
         let mut draft = published_draft();
         draft.set("contactPoint", serde_json::json!(["organization-008"]));
         let out = page(&view(&draft, "contributors", Audience::Everyone)).into_string();
@@ -1405,9 +1185,7 @@ mod tests {
 
     #[test]
     fn an_agent_id_that_resolves_to_nobody_says_so_in_the_form() {
-        // Said here as well as at submit, because the form is where it can be
-        // fixed: told only at submit, a depositor would have to work out which
-        // row the refusal meant.
+        // Said here as well as at submit, because the form is where it can be fixed.
         let mut draft = published_draft();
         draft.set("contactPoint", serde_json::json!(["person-99999"]));
         let out = page(&view(&draft, "contributors", Audience::Everyone)).into_string();
@@ -1416,12 +1194,9 @@ mod tests {
 
     #[test]
     fn no_field_renders_the_not_editable_yet_note_any_more() {
-        // This replaces a test that asserted the note *appears*, which had no
-        // subject left once every editable field gained a control. The note
-        // itself is kept in `widgets::stated` as the fallback a new contract
-        // field lands on, so what is worth pinning now is that nothing reaches
-        // it — a field that did would be silently uneditable while looking
-        // registered.
+        // The note is kept in widgets::stated as the fallback a new contract field
+        // lands on; nothing may reach it today, or that field is silently
+        // uneditable.
         let draft = published_draft();
         let mut reached: Vec<&str> = Vec::new();
         for section in sections_for(Audience::RduOnly) {
@@ -1450,10 +1225,8 @@ mod tests {
 
     #[test]
     fn a_placeholder_sentinel_renders_as_an_empty_control() {
-        // The rule the whole untouched-save guarantee rests on: `MISSING` is
-        // filtered out of DPE and of OAI-PMH, so showing it here would make this
-        // the one place in the platform that presents an internal marker as a
-        // value — and the depositor would then have to delete it by hand.
+        // MISSING is filtered out of DPE and OAI-PMH, so showing it here would present
+        // an internal marker as a value the depositor has to delete by hand.
         let mut draft = published_draft();
         draft.set("endDate", json!("MISSING"));
         let out = overview(&draft);
@@ -1463,9 +1236,8 @@ mod tests {
 
     #[test]
     fn a_language_map_renders_the_offered_languages_plus_any_the_value_carries() {
-        // Offering only a closed set would drop `ar` — live in two committed
-        // files — on the first save: a tag with no control posts nothing, and a
-        // map rebuilt from the body would not carry it.
+        // A closed set would drop ar on the first save: a tag with no control posts
+        // nothing.
         let mut draft = published_draft();
         draft.set("description", json!({"en": "English text", "ar": "نص عربي"}));
         let out = overview(&draft);
@@ -1502,9 +1274,8 @@ mod tests {
         let draft = published_draft();
         let filled = overview(&draft);
         let empty = page(&view(&ProjectDraft::default(), "overview", Audience::Everyone)).into_string();
-        // A depositor's overview is all answered for this project, so the two
-        // renderings must differ — which they cannot if only what is outstanding
-        // is shown.
+        // The two renderings must differ, which they cannot if only what is
+        // outstanding is shown.
         let progress = section_progress(section("overview").expect("overview"), Audience::Everyone, &draft);
         assert!(filled.contains(&progress.summary()), "{filled}");
         assert!(empty.contains(&format!("0 of {} required", progress.required)), "{empty}");
@@ -1522,9 +1293,6 @@ mod tests {
 
     #[test]
     fn the_status_region_is_in_the_dom_before_there_is_anything_to_announce() {
-        // An `aria-live` region announces a *change* to content it already
-        // holds; one inserted together with its text is widely reported not to
-        // announce at all, and the enhanced path is exactly that case.
         let out = overview(&published_draft());
         assert!(out.contains(r#"aria-live="polite""#), "{out}");
     }
@@ -1568,9 +1336,7 @@ mod tests {
 
     #[test]
     fn an_unpublished_project_opens_without_reading_as_a_failure() {
-        // A project may exist only locally, and the published metadata a form pre-fills from
-        // is then empty. A blank form with no explanation
-        // reads as a page that failed to load.
+        // A blank form with no explanation reads as a page that failed to load.
         let draft = ProjectDraft::default();
         let mut view = view(&draft, "overview", Audience::Everyone);
         view.project_name = None;
@@ -1595,10 +1361,8 @@ mod tests {
 
     #[test]
     fn the_region_carries_the_id_the_enhanced_path_patches_and_the_rail_with_it() {
-        // Datastar matches a `text/html` response by `id` in `outer` mode, so the
-        // id has to be on the region's own root — and the region has to include
-        // the rail, or a save that answers the last required field leaves the
-        // rail still saying something is missing.
+        // Datastar matches a text/html response by id in outer mode, so the id has
+        // to be on the region's root, and the region has to include the rail.
         let out = region(&view(&published_draft(), "overview", Audience::Everyone)).into_string();
         assert!(out.starts_with(&format!(r#"<section id="{REGION_ID}""#)), "{out}");
         assert!(out.contains(r#"aria-label="Form sections""#), "{out}");
@@ -1609,10 +1373,8 @@ mod tests {
 
     #[test]
     fn no_field_is_required_or_the_browser_would_refuse_to_save_a_draft() {
-        // A draft may be missing anything and saving one must always
-        // work. `required` on the name field would make an unfinished
-        // draft unsaveable on both paths — Datastar runs the same
-        // `checkValidity()` the browser does.
+        // required on the name field would make an unfinished draft unsaveable on
+        // both paths: Datastar runs the same checkValidity() the browser does.
         let out = overview(&published_draft());
         // The *attribute*, not the word — "Required" is the obligation pill and
         // "5 of 5 required" is the rail, and both must stay.
@@ -1628,10 +1390,8 @@ mod tests {
 
     #[test]
     fn a_required_field_says_so_inside_its_own_label() {
-        // Nothing here is `required` or `aria-required`, so
-        // the label is the only channel the obligation has. Rendered as a
-        // sibling span it was visible and nothing else: a reader tabbing to the
-        // control heard "Name, edit text".
+        // Nothing is required or aria-required, so the label is the only channel
+        // the obligation has; a sibling span reaches nobody.
         let out = overview(&published_draft());
         assert!(
             out.contains(r#"<label class="field-label" for="name">Name <span"#),
@@ -1646,10 +1406,8 @@ mod tests {
 
     #[test]
     fn the_refused_notice_carries_no_live_role_of_its_own() {
-        // `AlertVariant::Danger` renders `role="alert"`, an implicit assertive
-        // live region; nested inside this polite one, screen readers disagree
-        // about which politeness wins and some interrupt. The region announces;
-        // the alert only styles.
+        // Danger renders role="alert", an assertive region nested in this polite
+        // one; the region announces, the alert only styles.
         let draft = published_draft();
         let mut view = view(&draft, "overview", Audience::Everyone);
         view.notice = Some(Notice::Refused("Nothing was saved."));
@@ -1661,9 +1419,6 @@ mod tests {
 
     #[test]
     fn a_rail_link_s_accessible_name_does_not_run_its_two_lines_together() {
-        // The title and the progress are adjacent spans with no whitespace
-        // between them, so the name computation would give "Overview5 of 5
-        // required".
         let out = overview(&published_draft());
         assert!(out.contains(r#"aria-label="Overview, 5 of 5 required""#), "{out}");
         // A section with no requirements needs no label: the visible title is
@@ -1690,19 +1445,10 @@ mod tests {
     }
 }
 
-/// Snapshots of the rendered form.
-///
-/// Separate from the assertions above because they answer a different question.
-/// Each test up there names one rule and fails with it; these pin the *whole*
-/// markup, so a change nobody was thinking about — a control quietly becoming a
-/// value, a posted name changing, an `aria-*` attribute going missing — shows up
-/// as a diff rather than as nothing. Neither replaces the other: a snapshot
-/// cannot say which rule broke, and a rule cannot notice what it does not
-/// mention.
-///
-/// Deterministic by construction: the data is a committed project, and every
-/// timestamp reaches the view as a string the caller formats, so nothing here
-/// reads a clock.
+/// Snapshots of the rendered form, separate from the rule tests: each of those
+/// names one rule, and these pin the whole markup so a change nobody was
+/// thinking about shows up as a diff. Deterministic: the data is a committed
+/// project and every timestamp arrives as a string.
 #[cfg(test)]
 mod snapshots {
     use super::tests::{published_draft, view};

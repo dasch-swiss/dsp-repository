@@ -1,40 +1,16 @@
 //! Email one-time-code login: issuing a code, verifying it, and the
 //! session it produces.
 //!
-//! ## This is a documented deviation, not a compliant design
+//! **A documented deviation, not a compliant design.** NIST SP 800-63B-4
+//! §3.1.3.1 and OWASP ASVS 5.0 V6.6 both prohibit email as an authentication
+//! mechanism outright, and their carve-out for address verification and recovery
+//! codes does not cover using one as the login. ASVS 6.1.1 and 6.3.3 require the
+//! deviation and its rationale to be written down: they are in
+//! `docs/src/editor/authentication.md`.
 //!
-//! NIST SP 800-63B-4 §3.1.3.1 and OWASP ASVS 5.0 V6.6 both prohibit email as an
-//! authentication mechanism outright, and the carve-out is narrow: it covers
-//! codes sent to *verify an address* or as *recovery* codes, not codes used as
-//! the login. ASVS 6.1.1 and 6.3.3 require such a deviation and its rationale to
-//! be written down, so it is — in `docs/src/editor/authentication.md`. Nothing
-//! in this module should be read as evidence that the design complies.
-//!
-//! ## What the flow defends, in order
-//!
-//! 1. **Enumeration**. Every `POST /login` answers the same way — the same status, the same
-//!    location, the same cookie behaviour — whether the address is known, unknown, cooled down,
-//!    locked out or hit the daily cap. Only the mail differs, and only the address's owner sees
-//!    that.
-//! 2. **Interception.** The code is bound to the browser that asked for it. NIST's stated objection
-//!    to email codes is interception in transit or at intermediate mail servers; a code read out of
-//!    a mailbox by anyone else is useless without that browser's cookie. It does **not** defend
-//!    attacker-initiated social engineering — an attacker who starts the login holds the binding —
-//!    and it is not claimed to.
-//! 3. **Guessing.** Three wrong entries kill a code, and an account-level counter that survives
-//!    invalidation and resend throttles the account itself. The per-code counter alone hands out a
-//!    fresh budget on every resend, which at a 60-second cooldown is ~4,320 guesses a day against
-//!    one address — around a 12% chance of hitting a six-digit code inside a month.
-//! 4. **Replay.** A code authenticates once; the single-use check is the `WHERE consumed_at IS
-//!    NULL` in the update, so two simultaneous submissions cannot both win.
-//! 5. **Quota exhaustion.** Two daily send caps. A global one across all users, because the relay
-//!    quota is shared: an attacker looping resend across the known addresses would otherwise lock
-//!    out everyone, RDU included. And a per-account one, because the global cap alone is
-//!    exhaustible from a single address — the cooldown is per address, so 1,440 codes a day fit
-//!    inside it against a global default of 500. Both count messages actually sent
-//!    ([`editor_core::repository::MailSendRepository`]), not live code rows.
-//! 6. **Fixation.** The session id is a fresh token, so nothing held before authentication can
-//!    become the authenticated session.
+//! The flow defends enumeration, interception, guessing, replay, quota
+//! exhaustion and fixation. Which control answers which, and the numbers behind
+//! the caps and the throttle, are in the same page.
 
 pub(crate) mod cookie;
 pub(crate) mod guard;
@@ -93,20 +69,17 @@ impl From<&EditorConfig> for AuthConfig {
 /// Saturates rather than unwrapping: every value here comes from config that
 /// validation has already bounded, and a panic in an auth path is a worse
 /// failure than an implausibly distant deadline.
-///
-/// `pub(crate)` because the hourly sweep converts [`crate::config::SEND_WINDOW`]
-/// the same way, and two copies of the saturation policy is one too many.
 pub(crate) fn delta(duration: Duration) -> chrono::TimeDelta {
     chrono::TimeDelta::from_std(duration).unwrap_or(chrono::TimeDelta::MAX)
 }
 
 /// Whether `candidate` could be an address at all.
 ///
-/// Deliberately not a validator. RFC 5322 addresses are stranger than any regex
-/// anyone writes for them, and the only judgement that counts is the relay's.
-/// This rejects what cannot be an address, so an obvious typo gets a message
-/// rather than a silent nothing — which, with the identical anti-enumeration response, is
-/// otherwise indistinguishable from success.
+/// Deliberately not a validator: RFC 5322 addresses are stranger than any regex
+/// written for them, and the only judgement that counts is the relay's. This
+/// rejects what cannot be an address, so an obvious typo gets a message rather
+/// than a silent nothing that the anti-enumeration response makes
+/// indistinguishable from success.
 pub(crate) fn is_plausible_address(candidate: &str) -> bool {
     if candidate.len() > 254 || candidate.matches('@').count() != 1 {
         return false;
@@ -124,7 +97,7 @@ pub(crate) fn is_plausible_address(candidate: &str) -> bool {
 
 /// Whether this account is currently throttled.
 ///
-/// Time-based rather than a latch, and that is forced rather than chosen. NIST
+/// Time-based rather than a latch, and that is forced. NIST
 /// SP 800-63B-4 says the counter resets only on a successful authentication, and
 /// an account at the cap cannot authenticate — so a latch would be a permanent
 /// lock needing an unlock control that does not exist.
@@ -169,9 +142,7 @@ mod tests {
     #[test]
     fn test_the_code_lifetime_is_not_configurable() {
         // Ten minutes is a ceiling NIST §3.1.3.2 and ASVS 6.5.5 both impose, so
-        // the only thing a knob could express is a violation of both. It is a
-        // constant for that reason, and `AuthConfig` deliberately has no field
-        // for it.
+        // the only thing a knob could express is a violation of both.
         assert_eq!(crate::config::CODE_TTL, Duration::from_secs(600));
     }
 

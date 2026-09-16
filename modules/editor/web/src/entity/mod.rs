@@ -1,20 +1,12 @@
-//! The entity form: one person or organisation proposal, rendered
-//! inside the same page shell the project form uses.
+//! The entity form: one person or organisation proposal, rendered inside the
+//! same page shell the project form uses.
 //!
-//! Mirrors `pages::section` in shape — [`page`] is the whole page, [`region`]
-//! is the part a save replaces, and both come from one [`EntityView`] so the
-//! plain and enhanced paths cannot drift — but answers for one proposal
-//! rather than one project section, and has no rail: a person or organisation
-//! is one page, not several.
-//!
-//! Every field control here is [`crate::form::widgets`]'s own — `text_field`,
-//! the agent rows, the reference rows, the multilingual group — reused rather
-//! than rebuilt, which is what keeps this form behaving identically to the
-//! project form's fields of the same shape (the same agent picker and its
-//! search, the same "no person or organisation with this id" wording, the same
-//! add/remove-by-round-trip protocol). The one shape genuinely new here is
-//! [`address_group`]: a flat group of scalar members, which nothing in the
-//! project form's registry needed before.
+//! Mirrors `pages::section`: [`page`] is the whole page, [`region`] the part a
+//! save replaces, both from one [`EntityView`] so the plain and enhanced paths
+//! cannot drift. No rail, since an entity is one page. Every field control is
+//! [`crate::form::widgets`]'s own, so this form behaves like the project form's
+//! fields of the same shape; the one new shape is `address_group`, a flat group
+//! of scalar members.
 
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
@@ -38,23 +30,16 @@ pub const REGION_ID: &str = "entity-form";
 /// Store the draft (Save), matching [`crate::pages::section::SAVE`]'s wire word.
 pub const SAVE: &str = "save";
 
-/// Show the discard confirmation, which posts [`DISCARD`].
-///
-/// Its own two-step shape for the reason the project form's withdrawal and
-/// discard are: the row's allocated id is never handed out again once
-/// discarded (it survives as a tombstone — see
-/// [`editor_core::proposals::next_entity_id`]'s module docs), so the control
-/// asks first.
+/// Show the discard confirmation, which posts [`DISCARD`]. Two-step because a
+/// discarded proposal's id is never handed out again; see
+/// [`editor_core::proposals::next_entity_id`].
 pub const DISCARD_CONFIRM: &str = "discard-confirm";
 
 /// Withdraw the proposal, once confirmed.
 pub const DISCARD: &str = "discard";
 
 /// The authority sources a `sameAs` reference may come from, on both a person
-/// and an organisation — the committed corpus carries `ORCID`, `GND` and
-/// `URL` for a person and none yet for an organisation, so the same three are
-/// offered to both rather than inventing a narrower list an organisation's
-/// first `sameAs` would then have to be widened for.
+/// and an organisation: the committed corpus carries `ORCID`, `GND` and `URL`.
 pub const SAME_AS_TYPES: &[&str] = &["ORCID", "GND", "URL"];
 
 /// A person's fields, in display order. Exactly `Person`'s members
@@ -115,19 +100,15 @@ const PERSON_FIELDS: &[Field] = &[
         obligation: Some(Obligation::Optional),
         display_only: false,
         audience: Audience::Everyone,
-        // `type="text"`, not `type="email"`, for the reason every scalar
-        // control in the project form is: a payload may hold a value that
-        // does not validate, and a browser refusing to submit a half-typed
-        // address would block the save nothing here requires.
+        // type="text", not type="email": a payload may hold a value that does not
+        // validate, and a browser refusing a half-typed address would block the save.
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
     },
 ];
 
-/// An organisation's fields, in display order. Exactly `Organization`'s
-/// members (`modules/platform/metadata/src/organization.rs`) except
-/// `address`, which [`address_group`] renders and applies separately — it is
-/// a flat group of scalars, not one of [`Shape`]'s repeatable or scalar
-/// shapes.
+/// An organisation's fields, in display order. Exactly `Organization`'s members
+/// (`modules/platform/metadata/src/organization.rs`) except `address`, a flat
+/// group of scalars that `address_group` renders and applies.
 const ORGANIZATION_FIELDS: &[Field] = &[
     Field {
         id: "name",
@@ -189,27 +170,17 @@ pub const ADDRESS_MEMBERS: &[(&str, &str)] = &[
     ("additional", "Additional address line"),
 ];
 
-/// Why the four are asked for together, stated once rather than on each of the
-/// four controls — the rule is about the group, not about any one member of
-/// it.
+/// The rule is about the group, so it is stated once rather than on each control.
 const ADDRESS_HINT: &str =
     "Street, postal code, locality and country are needed together: fill in all four, or leave the whole address \
      blank. Canton and the additional line are always optional.";
 
-/// The id [`ADDRESS_HINT`]'s paragraph carries, so the fieldset can point at it.
-///
-/// A fixed id rather than a generated one: the address group renders at most
-/// once per entity form, so a document-wide constant cannot duplicate — and a
-/// duplicate id would be the bug this is here to avoid rather than a risk it
-/// takes.
+/// The id [`ADDRESS_HINT`]'s paragraph carries. Fixed rather than generated: the
+/// group renders at most once per form, so it cannot duplicate.
 const ADDRESS_HINT_ID: &str = "address-hint";
 
-/// This kind's fields, in display order.
-///
-/// `pub`: `editor-server`'s row actions (add/remove a row) need it too, to
-/// check that a posted field id is one this proposal's kind actually renders
-/// before applying anything against it — the same check the section form
-/// makes against its own registry.
+/// This kind's fields, in display order. `pub` because `editor-server`'s row
+/// actions check that a posted field id is one this kind renders.
 #[must_use]
 pub fn fields_for(kind: ProposalKind) -> &'static [Field] {
     match kind {
@@ -218,18 +189,11 @@ pub fn fields_for(kind: ProposalKind) -> &'static [Field] {
     }
 }
 
-/// Why the form is not offered — a proposal that is no longer
-/// [`EntityProposal::is_live`].
-///
-/// Only the two terminal statuses reach this: `Draft` and `Submitted` are both
-/// live per [`EntityProposal::is_live`] (a submitted proposal is still the
-/// depositor's to finish — its own status does not lock it the way a
-/// submitted *project* draft locks the section form), so there is no
-/// "submitted" reading here to confuse with these.
-///
-/// A named type rather than a `bool`, for the reason `pages::section::Locked`
-/// is: the two readings say different things about what happens next, and a
-/// depositor reading the wrong one waits for an event that is not coming.
+/// Why the form is not offered: a proposal that is no longer
+/// [`EntityProposal::is_live`]. Only the two terminal statuses reach this, since
+/// a submitted proposal is still the depositor's to finish. A named type rather
+/// than a `bool` because the two readings say different things about what
+/// happens next.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Over {
     /// RDU accepted it; it is on its way into the repository as a file.
@@ -316,10 +280,8 @@ impl EntityView<'_> {
             action: &self.rows_action,
             adding: self.adding_row,
             agents: self.agents,
-            // Never the propose controls here: `affiliations` reuses
-            // `agent_rows`, the same widget `contactPoint` uses, but this
-            // route dispatches none of the three propose intents — see
-            // `Rows::propose`'s own doc for why that would be a dead control.
+            // Never the propose controls: this route dispatches none of the propose
+            // intents, so they would be dead controls; see Rows::propose.
             propose: false,
         }
     }
@@ -403,9 +365,8 @@ fn locked(view: &EntityView<'_>, over: Over) -> Markup {
 fn form(view: &EntityView<'_>) -> Markup {
     let action = view.action();
     html! {
-        // Posts the submitter's `formAction`, for the reason the project form's own `data-on:submit`
-        // gives at length: this form carries add and remove controls too, and posting the form's
-        // action instead made every one of them a plain save.
+        // Posts the submitter's formAction: this form carries add and remove
+        // controls, and posting the form's action would make each a plain save.
         form
             id="entity-form"
             method="post"
@@ -426,20 +387,13 @@ fn form(view: &EntityView<'_>) -> Markup {
     }
 }
 
-/// One field: its control, dispatched on its own [`Shape`] rather than on
-/// [`crate::form::widgets::control`]'s per-id dispatch.
-///
-/// That dispatch is keyed on the *project's* field ids — `"url"` there means
-/// one of the project's two URL slots, read through `ProjectDraft::url_slot`
-/// — and an organisation's plain `url: String` member would silently take
-/// that branch and read the wrong thing. Every id here is this module's own,
-/// so matching on the shape it declares is exhaustive and cannot collide.
+/// One field's control, dispatched on its own [`Shape`] rather than on
+/// [`crate::form::widgets::control`]'s per-id dispatch: that one is keyed on the
+/// project's field ids, where `"url"` means a URL slot, and an organisation's
+/// plain `url` member would silently take that branch.
 fn entity_field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<'_>) -> Markup {
     if mode != Mode::Editable {
-        // `stated` does not care which shape a field has — it renders
-        // whatever `Value` is stored — so a proposal that is no longer live
-        // needs nothing beyond the field itself and the widget every other
-        // read-only field on this form already uses.
+        // stated renders whatever Value is stored, whichever shape the field has.
         return stated(field, draft, None);
     }
     match field.shape {
@@ -452,16 +406,13 @@ fn entity_field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<
     }
 }
 
-/// A plain scalar text control — `name`, `url`, `email`. Not
+/// A plain scalar text control: `name`, `url`, `email`. Not
 /// `crate::form::widgets::control`'s dispatch, for the reason
-/// [`entity_field_row`] gives; this is the same handful of lines that
-/// dispatch would have run for a `Shape::Text` field, so nothing about the
-/// control itself is new.
+/// [`entity_field_row`] gives.
 fn scalar_text(field: &Field, draft: &ProjectDraft) -> Markup {
     let value = draft.get(field.id).and_then(Value::as_str).unwrap_or_default();
-    // `type="text"`, not `type="url"` or `type="email"`: a payload may hold a
-    // value that does not validate, and a browser refusing to submit a
-    // half-typed one would block the save nothing here requires.
+    // type="text": a payload may hold a value that does not validate, and a
+    // browser refusing a half-typed one would block the save.
     let mut control = text_field(field.id, labelled(field)).input_type(InputType::Text).value(value);
     if let Some(hint) = field.hint {
         control = control.hint(hint);
@@ -471,26 +422,17 @@ fn scalar_text(field: &Field, draft: &ProjectDraft) -> Markup {
     }
 }
 
-/// `address`: a flat group of six scalar members, which is why it is not one
-/// of [`Shape`]'s repeatable or scalar shapes — nothing else in the project
-/// form's registry needed a shape like it. `read_only` renders values instead
-/// of controls, the way [`entity_field_row`]'s [`Mode::ReadOnly`] branch does
-/// for every other field on this form.
+/// `address`: a flat group of six scalar members, which is why it is not one of
+/// [`Shape`]'s shapes. `read_only` renders values instead of controls.
 fn address_group(view: &EntityView<'_>, read_only: bool) -> Markup {
     let member = |name: &str| -> String {
         let path = format!("address.{name}");
         view.draft.get(&path).and_then(Value::as_str).unwrap_or_default().to_string()
     };
-    // `aria-describedby` on the fieldset, not a bare sibling paragraph.
-    // [`ADDRESS_HINT`] is the only place the "all four together or none" rule is
-    // stated, and a paragraph rendered beside a control is not part of that
-    // control's accessible description — so as a sibling it was announced to
-    // nobody: a reader tabbing onto Street heard "Street, edit text" and
-    // nothing about the rule whose breach `check_organization` then refuses.
-    // The same argument the agent controls' `.hint()`/`.error()` already make.
-    // `mosaic_tiles`' `group_shell` does this for `radio_group` and
-    // `checkbox_group`, but it is `pub(super)` to that crate and one caller does
-    // not justify a public tile.
+    // aria-describedby on the fieldset: a paragraph rendered beside a control is
+    // not part of its accessible description, so as a sibling the rule would be
+    // announced to nobody. mosaic_tiles' group_shell does this for radio_group
+    // and checkbox_group but is pub(super) to that crate.
     html! {
         fieldset class="field field-group" aria-describedby=(ADDRESS_HINT_ID) {
             legend class="field-label" { "Address" }
@@ -568,10 +510,8 @@ mod tests {
 
     use super::*;
 
-    /// Every member of the contract type, as serde spells it.
-    ///
-    /// Read off a serialized instance rather than listed here: a second list would be one more
-    /// thing to forget, which is the whole failure this test exists to catch.
+    /// Every member of the contract type, read off a serialized instance so there
+    /// is no second list to forget.
     fn members(value: &serde_json::Value) -> Vec<String> {
         let mut names: Vec<String> = value
             .as_object()
@@ -591,17 +531,9 @@ mod tests {
     }
 
     /// The form's field list must cover every member of `Person`, and no others.
-    ///
-    /// Prose cannot hold this. Add a member to `Person` and nothing fails to compile: the field
-    /// list, `entities.rs`'s applier and `proposals::check_person` all keep silently ignoring it,
-    /// so a depositor has no way to set it, review never shows it, and a change proposal that
-    /// round-trips through the form is the only place the loss would ever surface. The project
-    /// form's own registry is pinned to the data for exactly this reason — see the architecture
-    /// doc on why two registry tests hold it "to the data rather than to a list repeated in
-    /// prose".
-    ///
-    /// `id` is excluded on both sides: it lives in `EntityProposal::entity_id`, and the payload
-    /// deliberately does not carry one.
+    /// Add a member to `Person` and nothing fails to compile: the field list, the
+    /// applier and `check_person` all keep silently ignoring it. `id` is excluded
+    /// on both sides: it lives in `EntityProposal::entity_id`.
     #[test]
     fn the_person_field_list_covers_every_contract_member() {
         let person = Person {
@@ -642,10 +574,8 @@ mod tests {
         };
         let serialized = serde_json::to_value(&organization).expect("an organization serializes");
 
-        // `address` is deliberately not a `Field`: it is a flat group of six controls rendered by
-        // `address_group`, because the contract nests it while the form does not. Named here
-        // rather than filtered out of the contract side, so the test still fails if the group is
-        // ever dropped — every member has to be accounted for somewhere, and this says where.
+        // address is deliberately not a Field; named here rather than filtered out
+        // so the test still fails if the group is ever dropped.
         let mut covered = declared(ORGANIZATION_FIELDS);
         covered.push("address".to_string());
         covered.sort();

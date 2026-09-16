@@ -3,20 +3,14 @@ use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 
 use crate::view::Viewer;
 
-/// The global header: DaSCH logo and the service name, both linking home, plus
-/// the signed-in identity and the sign-out control when there is a session.
+/// The global header: logo and service name linking home, plus the signed-in
+/// identity and the sign-out control when there is a session.
 ///
-/// Deliberately thinner than DPE's. DPE's header carries public wayfinding
-/// (Help, "Deposit Data at DaSCH"); the editor is an authenticated tool whose
-/// users arrive knowing why they are here.
-///
-/// Sign-out is a `<form method="post">`, not a link. A `GET /logout` would be a
-/// state-changing GET — which is the one thing the `Sec-Fetch-Site` CSRF control
-/// cannot protect, since navigations are exempt from it by necessity. Any page
-/// on the internet could then log a user out with an `<img src>`.
-///
-/// The name is shown, never the address: the header appears on every page and
-/// in every screenshot, and the name is what identifies the account to its owner.
+/// Sign-out is a `<form method="post">`, not a link: a `GET /logout` is a
+/// state-changing GET, which the `Sec-Fetch-Site` CSRF control cannot protect
+/// since navigations are exempt, so any page could log a user out with an
+/// `<img src>`. The name is shown, never the address: the header is on every
+/// page and in every screenshot.
 pub fn header(viewer: Option<Viewer<'_>>) -> Markup {
     html! {
         div class="bg-white shadow-xs" {
@@ -80,9 +74,6 @@ mod tests {
 
     #[test]
     fn sign_out_is_never_a_link() {
-        // A `GET /logout` is a state-changing GET, the one shape the
-        // `Sec-Fetch-Site` control cannot cover — navigations are exempt from it
-        // by necessity, so any page could log a user out with an `<img src>`.
         let out = header(Some(Viewer { name: "A Depositor" })).into_string();
         assert!(!out.contains(r#"<a href="/logout""#), "{out}");
     }

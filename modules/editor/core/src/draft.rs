@@ -1,40 +1,20 @@
 //! The permissive draft representation.
 //!
-//! A draft has to hold what `ProjectRaw` cannot: a field the depositor has not
-//! filled in yet, and a value that is present but invalid. It also has to carry
-//! every field the editor does not manage, unchanged, and to survive a
-//! field being added to `ProjectRaw` without an editor change.
-//!
-//! Those three pull in the same direction, so a draft is the project's JSON
-//! members rather than a struct mirroring `ProjectRaw` with 36 `Option` fields.
-//! An absent key is a missing field, any `Value` is an accepted value whether it
-//! validates or not, and a key the editor has never heard of rides through
-//! untouched. Validity is decided once, at [`ProjectDraft::to_raw`], which is
-//! the submission boundary.
-//!
-//! ## Why the untagged variants need no separate tag
+//! A draft holds what `ProjectRaw` cannot: a field not filled in yet, a value
+//! present but invalid, every field the editor does not manage, and a field
+//! added to `ProjectRaw` since this build. So a draft is the project's JSON
+//! members: an absent key is a missing field, any `Value` is accepted whether it
+//! validates or not, and an unknown key rides through untouched. Validity is
+//! decided once, at [`ProjectDraft::to_raw`].
 //!
 //! `TemporalCoverage`, `Discipline` and `Funding` are `#[serde(untagged)]`, and
-//! untagged deserialization takes the first variant that fits. The risk the
-//! issue names is a project whose `funding` is free text being forced into the
-//! grant shape. That cannot happen here: the value keeps its JSON kind verbatim
-//! in [`Self::members`], so a `Value::String` can only ever deserialize as
-//! `Funding::Text` (a string is not an array, so `Grants` cannot fit).
+//! the variant is derived from the value's JSON kind (`ProjectDraft::funding_shape`
+//! and friends) rather than stored: a stored tag would be a second source of
+//! truth able to drift from the value the file is built from.
 //!
-//! The variant is therefore *derived* rather than stored, by
-//! [`Self::funding_shape`] and friends, each of which asks the question in
-//! serde's own attempt order. A stored tag would be a second source of truth
-//! able to drift from the value it describes, and it is the value that the
-//! written file is built from.
-//!
-//! ## `url`
-//!
-//! Zero of the 85 committed files use the structured object form: 36 hold a
-//! one-element string array, 38 a two-element array, 11 omit `url` entirely.
-//! Writing the object form would rewrite 74 files, so the editor writes back
-//! whatever form it read, and uses the object form only where there was no
-//! prior value. [`Self::url_shape`] reports the form and [`Self::set_url`]
-//! honours it.
+//! `url` is written back in whatever form it was read, and the object form is
+//! used only where there was no prior value; `ProjectDraft::url_shape` reports
+//! the form and `ProjectDraft::set_url_slot` honours it.
 
 use platform_metadata::project::ProjectRaw;
 use platform_metadata::utils::Multilingual;
@@ -59,9 +39,6 @@ pub struct ProjectDraft {
 pub enum DraftError {
     /// The draft is missing a required field, or holds a value of the wrong
     /// shape for one. Carries `serde_json`'s message, which names the field.
-    ///
-    /// Per-field error paths for the form are a separate concern (DEV-7045
-    /// extracts `validate`'s rules with paths); this is the type-level gate.
     #[error("draft is not a publishable project: {0}")]
     NotPublishable(String),
 
@@ -92,12 +69,10 @@ pub enum FundingShape {
 
 /// Which of the two URLs a field owns.
 ///
-/// The project contract keeps a DaSCH address and an external one, and *where*
-/// it keeps them depends on the project's vintage — so a field cannot simply
-/// name a member. The two slots are also owned by different audiences (`url` is
-/// RDU-only, `secondaryUrl` is a depositor's), which is the reason they are
-/// written independently rather than as a pair: a depositor editing the external
-/// site must not be able to touch the DaSCH one, and must not lose it either.
+/// Where the contract keeps the DaSCH address and the external one depends on
+/// the project's vintage, so a field cannot simply name a member. `url` is
+/// RDU-only and `secondaryUrl` is a depositor's, so the two are written
+/// independently: a depositor must neither touch the DaSCH one nor lose it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UrlSlot {
     /// The DaSCH platform address — `url`, or element 0 of the legacy array.
@@ -121,26 +96,15 @@ pub enum UrlShape {
 impl ProjectDraft {
     /// Builds a draft from a project as loaded, losslessly.
     ///
-    /// Null members are stripped so that "absent" has one meaning in a draft.
-    /// Nothing is lost: every nullable field on `ProjectRaw` is an `Option`,
-    /// and serde reads a missing `Option` as `None` (asserted over all 85
-    /// committed files by the round-trip test).
-    ///
-    /// Member order is `ProjectRaw`'s field declaration order, because
-    /// `serde_json::to_value` follows the serializer under the workspace's
-    /// `preserve_order` feature. That is also the order the canonical writer
-    /// emits, so a draft nobody edited writes back byte-identically.
+    /// Null members are stripped so that "absent" has one meaning; nothing is
+    /// lost, since every nullable field on `ProjectRaw` is an `Option`. Member
+    /// order is `ProjectRaw`'s declaration order under `preserve_order`, which
+    /// is also what the canonical writer emits.
     #[must_use]
     pub fn from_raw(raw: &ProjectRaw) -> Self {
-        // Both panics are unreachable for the contract as it stands: every field
-        // is a `String`, an `Option`, a `Vec`, a `BTreeMap<String, _>`, a `Value`
-        // or a struct of those, none of which can fail to serialize, and a struct
-        // always serializes to an object. They are loud rather than degrading
-        // because the degraded value would be an *empty* draft, which is
-        // indistinguishable from a project with no fields: the form would render
-        // blank and a save would write `{}` over the depositor's project. A
-        // future field with a fallible `Serialize` has to fail visibly, and the
-        // round-trip test fails first, in CI.
+        // Loud rather than degrading: the degraded value would be an empty draft,
+        // indistinguishable from a project with no fields, and a save would write
+        // `{}` over the depositor's project.
         let mut value = serde_json::to_value(raw).expect("ProjectRaw serializes");
         strip_null_members(&mut value);
         let Value::Object(members) = value else {
@@ -160,14 +124,9 @@ impl ProjectDraft {
 
     /// One field's raw value, or `None` when the field is not set.
     ///
-    /// A **dotted** field is followed segment by segment, so
-    /// `accessRights.embargoDate` reads the member inside `accessRights`. Every
-    /// other reader here does the same, which is what lets the field registry
-    /// name a nested member and have the form, the applier, the rail and the
-    /// submit gate all agree about what it points at. Without it a dotted id
-    /// looked up a top-level member that does not exist, so the field read as
-    /// unset whatever the project held — silently, since nothing else about it
-    /// would look wrong.
+    /// A dotted field is followed segment by segment, so `accessRights.embargoDate`
+    /// reads the member inside `accessRights`. Every reader here does the same,
+    /// which is what lets the field registry name a nested member.
     #[must_use]
     pub fn get(&self, field: &str) -> Option<&Value> {
         let (root, rest) = split_path(field);
@@ -180,14 +139,10 @@ impl ProjectDraft {
 
     /// Sets one field's raw value, valid or not.
     ///
-    /// A `Value::Null` removes the field instead of storing a null, so a draft
-    /// never holds the ambiguity `from_raw` strips out.
-    ///
-    /// A dotted field writes the nested member, creating the objects on the way
-    /// down where they are absent — a project whose `accessRights` is missing
-    /// still has to be able to take an embargo date. A segment holding a
-    /// non-object is replaced, because the alternative is a write that silently
-    /// does nothing.
+    /// A `Value::Null` removes the field instead of storing a null. A dotted
+    /// field writes the nested member, creating the objects on the way down; a
+    /// segment holding a non-object is replaced, because the alternative is a
+    /// write that silently does nothing.
     pub fn set(&mut self, field: &str, value: Value) {
         let (root, rest) = split_path(field);
         if rest.is_empty() {
@@ -227,11 +182,9 @@ impl ProjectDraft {
 
     /// Drops one field. Returns whether it was set.
     ///
-    /// A dotted field drops only the nested member; the object holding it stays,
-    /// even when it is left empty. `canonical::write_draft` strips empty and
-    /// null members on the way out, so the file is the same either way, and
-    /// removing the parent here would drop its *siblings* — clearing an embargo
-    /// date would take the access-rights choice with it.
+    /// A dotted field drops only the nested member; the object holding it stays.
+    /// Removing the parent would drop its siblings: clearing an embargo date
+    /// would take the access-rights choice with it.
     pub fn remove(&mut self, field: &str) -> bool {
         let (root, rest) = split_path(field);
         if rest.is_empty() {
@@ -330,15 +283,11 @@ impl ProjectDraft {
     /// One of the two URLs, as a plain string, or `None` where the project has
     /// none in that slot.
     ///
-    /// Reads whichever representation the project actually uses: most keep the pair positionally in
-    /// a `url` array, some keep the secondary in its own `secondaryUrl` member, and one project
-    /// holds a one-element array *and* a member.
-    ///
-    /// So the array is not simply "the form". For the secondary it answers only when it actually
-    /// has a second element, and the member answers otherwise — returning early on the array's
-    /// mere presence reads that project's external website as absent, and an untouched save
-    /// then deletes it. No project has a two-element array and a member, so there is never a
-    /// contradiction to resolve.
+    /// Reads whichever representation the project uses: the pair positionally in
+    /// a `url` array, the secondary in its own `secondaryUrl` member, or both.
+    /// The array answers for the secondary only when it has a second element;
+    /// returning early on its presence reads a member-held website as absent,
+    /// and an untouched save then deletes it.
     #[must_use]
     pub fn url_slot(&self, slot: UrlSlot) -> Option<&str> {
         let array = self.get("url").and_then(Value::as_array);
@@ -359,12 +308,9 @@ impl ProjectDraft {
     /// Whether this project keeps its secondary URL positionally, and therefore
     /// whether a write to that slot goes into the `url` array.
     ///
-    /// Its current home wins, so a save preserves the representation rather than
-    /// migrating it: the one project holding both a one-element array and a
-    /// `secondaryUrl` member keeps using the member. Only when nothing is
-    /// stored is there a choice, and then the array wins if there is one —
-    /// which is what the 38 projects carrying a secondary positionally look
-    /// like.
+    /// The current home wins, so a save preserves the representation rather than
+    /// migrating it. Only when nothing is stored is there a choice, and then the
+    /// array wins if there is one.
     fn secondary_in_array(&self) -> bool {
         match self.get("url").and_then(Value::as_array) {
             Some(array) => array.len() > 1 || self.get("secondaryUrl").is_none(),
@@ -374,16 +320,13 @@ impl ProjectDraft {
 
     /// Writes one of the two URLs, leaving the other alone.
     ///
-    /// **Do not fold these into one setter taking both.** Writing the pair together clears both
-    /// when the primary is `None`, and "no primary, has a secondary" is a state published
-    /// projects are already in — `url` is RDU-only and `secondaryUrl` is a depositor's, so the
-    /// two must be writable independently.
-    ///
-    /// Each write touches only the slot's own home, so the stored representation survives and an
-    /// untouched save is byte-identical. One forced exception: clearing the primary while a
-    /// *positional* secondary exists cannot be written as an array, element 0 being the
-    /// primary, so that case moves the secondary into its own member and drops `url` — the form
-    /// other projects already use for this state.
+    /// Do not fold these into one setter taking both: writing the pair together
+    /// clears both when the primary is `None`, and "no primary, has a secondary"
+    /// is a state published projects are in. Each write touches only the slot's
+    /// own home, so an untouched save is byte-identical. One forced exception:
+    /// clearing the primary while a positional secondary exists cannot be written
+    /// as an array, element 0 being the primary, so the secondary moves into its
+    /// own member and `url` is dropped.
     pub fn set_url_slot(&mut self, slot: UrlSlot, value: Option<&str>) {
         match slot {
             UrlSlot::Secondary => {
@@ -443,8 +386,6 @@ impl ProjectDraft {
     }
 }
 
-/// A JSON string, so the array arms above read as data rather than as
-/// conversions.
 fn text(value: &str) -> Value {
     Value::String(value.to_string())
 }
@@ -460,10 +401,8 @@ fn coverage_shape(entry: &Value) -> TextOrReference {
     }
 }
 
-/// A field id as a root member plus the nested segments under it.
-///
-/// One place, because `get`, `set` and `remove` must agree about what a dotted
-/// id points at; three copies of a two-line split is how they stop agreeing.
+/// A field id as a root member plus the nested segments under it. One place, so
+/// `get`, `set` and `remove` agree about what a dotted id points at.
 fn split_path(field: &str) -> (&str, Vec<&str>) {
     let mut segments = field.split('.');
     let root = segments.next().unwrap_or(field);
@@ -540,8 +479,6 @@ mod tests {
         assert!(draft.get("provenance").is_none());
     }
 
-    /// The failure the issue names: free-text funding must not be forced into
-    /// the grant shape.
     #[test]
     fn free_text_funding_stays_free_text_through_the_draft() {
         let mut draft = ProjectDraft::from_raw(&sample_raw());
@@ -598,18 +535,10 @@ mod tests {
         assert!(draft.multilingual("noSuchField").is_empty());
     }
 
-    /// Finding 2: an array stays an array. 74 of the 85 files would otherwise
-    /// be rewritten into the object form.
-
-    /// The 11 files that omit `url`, and every new project: no prior value, so
-    /// the structured form is the one to introduce.
-
     #[test]
     fn a_dotted_field_reads_the_nested_member_rather_than_a_top_level_one() {
-        // `accessRights.embargoDate` is the registry's one dotted id. Read as a
-        // top-level member it is always absent, so the field renders empty
-        // whatever the project holds and the rail counts it unsatisfied — with
-        // nothing else about it looking wrong.
+        // The registry's one dotted id; read as a top-level member it is always
+        // absent, and nothing else about it looks wrong.
         let mut draft = ProjectDraft::from_raw(&sample_raw());
         draft.set(
             "accessRights",
@@ -656,8 +585,6 @@ mod tests {
 
     #[test]
     fn a_dotted_set_of_null_removes_the_nested_member_only() {
-        // `set(_, Null)` removes rather than storing a null at every depth, so a
-        // draft never holds the ambiguity `from_raw` strips out.
         let mut draft = ProjectDraft::default();
         draft.set(
             "accessRights",
@@ -689,8 +616,6 @@ mod tests {
 
     #[test]
     fn a_slot_read_follows_whichever_form_the_project_uses() {
-        // Projects keep the pair positionally, or the secondary in its own member, or one project
-        // both — so the array answers for the secondary only when it has a second element.
         let mut draft = ProjectDraft::default();
         draft.set(
             "url",
@@ -710,9 +635,6 @@ mod tests {
 
     #[test]
     fn writing_one_slot_leaves_the_other_alone_in_the_array_form() {
-        // The property the old paired `set_url` could not offer: `url` is
-        // RDU-only and `secondaryUrl` is a depositor's, so each write must be
-        // confined to its own slot.
         let mut draft = ProjectDraft::default();
         draft.set(
             "url",
@@ -748,9 +670,6 @@ mod tests {
 
     #[test]
     fn clearing_the_primary_moves_the_secondary_to_its_own_member() {
-        // The one case the array form cannot express: element 0 *is* the primary, so "no primary,
-        // has a secondary" has no positional writing. The member form does, and it is the
-        // form committed projects already use.
         let mut draft = ProjectDraft::default();
         draft.set(
             "url",
@@ -769,10 +688,8 @@ mod tests {
 
     #[test]
     fn a_secondary_survives_a_write_on_a_project_that_has_no_primary() {
-        // The regression the old paired API had: `set_url(None, Some(x))`
-        // cleared both members, and 11 published projects are in precisely the
-        // "no primary, has a secondary" state — so editing the external site on
-        // one of them would have wiped it.
+        // Published projects exist with a secondary and no primary; editing the
+        // external site on one must not wipe it.
         let mut draft = ProjectDraft::default();
         draft.set("secondaryUrl", json!({"type": "URL", "url": "https://roud.unil.ch/"}));
 
@@ -800,11 +717,8 @@ mod tests {
 
     #[test]
     fn a_one_element_array_beside_a_member_reads_the_member_as_the_secondary() {
-        // `0112_roud` is the shape this got wrong: a one-element `url` array
-        // *and* a `secondaryUrl` member. Returning early on the array's
-        // presence read the secondary as absent, and the untouched-save round
-        // trip then deleted it — caught only because that test runs over the
-        // committed bytes rather than a fixture.
+        // `0112_roud`: a one-element `url` array *and* a `secondaryUrl` member;
+        // the member is the secondary.
         let mut draft = ProjectDraft::default();
         draft.set("url", json!(["https://app.ls-prod-server.dasch.swiss/project/0112"]));
         draft.set("secondaryUrl", json!({"type": "URL", "url": "https://roud.unil.ch/"}));
@@ -818,10 +732,8 @@ mod tests {
 
     #[test]
     fn a_write_keeps_a_secondary_in_the_home_it_already_has() {
-        // The representation survives the save: this project keeps its
-        // secondary in the member, so a write goes there and the array is left
-        // as the one element it is. Writing it positionally instead would give
-        // the project two homes for one value.
+        // The representation survives the save: the secondary stays in the member
+        // and the array stays one element, not two homes for one value.
         let mut draft = ProjectDraft::default();
         draft.set("url", json!(["https://app.ls-prod-server.dasch.swiss/project/0112"]));
         draft.set("secondaryUrl", json!({"type": "URL", "url": "https://roud.unil.ch/"}));
@@ -840,9 +752,8 @@ mod tests {
 
     #[test]
     fn a_first_secondary_on_a_positional_project_goes_into_the_array() {
-        // 35 projects have a one-element array and no member at all; adding an
-        // external site to one of those should make it look like the 38 that
-        // already carry theirs positionally, not introduce a second form.
+        // A one-element array and no member: the new secondary goes positional,
+        // like the projects that already carry theirs that way.
         let mut draft = ProjectDraft::default();
         draft.set("url", json!(["https://app.dasch.swiss/project/0119"]));
 

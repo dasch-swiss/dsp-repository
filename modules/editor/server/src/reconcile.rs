@@ -1,5 +1,5 @@
-//! The startup comparison: published data against local records (REQ-2.3), and
-//! the Online transition it decides (REQ-2.4).
+//! The startup comparison: published data against local records, and the Online
+//! transition it decides.
 //!
 //! Runs once per process, before the listener binds. Once is enough: the
 //! published set is baked into the image, so the moment a deployment carrying
@@ -8,12 +8,10 @@
 //! **It makes exactly one write — deleting a record whose data the published
 //! set now carries.** That is safe by construction: the comparison authorising
 //! the delete is the proof the content is already published. Everything else is
-//! reported and left alone, including a *stranded* record — one already
-//! collected that still differs, because its pull request merged with reviewer
-//! edits or was closed unmerged, so REQ-2.4 can never fire for it. No automatic
-//! resolution is correct there; force-online and force-discard are Phase 9's
-//! and are RDU decisions. A record for a project dropped upstream is kept too:
-//! it may be the only surviving copy of that work.
+//! reported and left alone — a *stranded* record (already collected, still
+//! differing, because its pull request merged with reviewer edits or was closed
+//! unmerged) needs an RDU decision, and a record for a project dropped upstream
+//! may be the only surviving copy of that work.
 //!
 //! **A failure here is not fatal**, unlike [`crate::accounts::ensure_rdu`]. The
 //! cost is a stale status label; refusing to start costs the whole service.
@@ -29,7 +27,7 @@ pub(crate) struct Reconciliation {
     /// Records whose data the published set now carries. Deleted: the project
     /// is Online.
     pub online: usize,
-    /// Records still waiting for the release that carries them (REQ-2.5).
+    /// Records still waiting for the release that carries them.
     pub waiting: usize,
     /// Collected records that still differ — a merged-with-edits or
     /// closed-unmerged pull request. Needs an RDU decision.
@@ -45,8 +43,7 @@ pub(crate) struct Reconciliation {
 }
 
 impl Reconciliation {
-    /// Whether anything needs a human. Keeps the caller from restating the
-    /// rule at the log site.
+    /// Whether anything needs a human.
     pub(crate) const fn needs_attention(self) -> bool {
         self.stranded > 0 || self.removed_upstream > 0 || self.unreadable > 0 || self.retry_failed > 0
     }
@@ -73,13 +70,12 @@ pub(crate) async fn reconcile_published(
 
         match Comparison::classify(published.get(&record.shortcode), Some(&local)) {
             Comparison::Matches => {
-                // REQ-2.4. The delete is the whole transition: with no approved
-                // record and no submission, the project derives as Online.
-                // The returned `bool` is load-bearing: `false` means there was
-                // no row to delete, which two instances sharing one database
-                // file reach on a rolling restart. Counting that as a discard
-                // would overstate the summary and hide a real deletion bug
-                // behind an identical success line.
+                // The delete is the whole transition: with no approved record
+                // and no submission, the project derives as Online. The returned
+                // `bool` is load-bearing — `false` means there was no row, which
+                // two instances sharing one database file reach on a rolling
+                // restart, and counting it as a discard would hide a real
+                // deletion bug behind an identical success line.
                 match db.delete(record.id).await {
                     Ok(true) => {
                         summary.online += 1;
@@ -178,7 +174,6 @@ mod tests {
     /// A project the committed published set really holds.
     const PUBLISHED_SHORTCODE: &str = "0801d";
 
-    /// An approved record holding `payload` for `shortcode`.
     fn record(shortcode: &str, payload: &str, collected: bool) -> ApprovedRecord {
         ApprovedRecord {
             id: Uuid::new_v4(),
@@ -190,7 +185,6 @@ mod tests {
         }
     }
 
-    /// The published project's own data, as a record payload would hold it.
     fn published_payload(published: &PublishedProjects, shortcode: &str) -> String {
         let raw = published.get(shortcode).expect("the fixture project is published");
         serde_json::to_string(&ProjectDraft::from_raw(raw)).expect("a draft serializes")
@@ -198,9 +192,8 @@ mod tests {
 
     #[tokio::test]
     async fn a_record_matching_published_data_goes_online_and_is_discarded() {
-        // Success Criterion 4, and the REQ-2.3/2.4 test the issue asks for: a
-        // deployment carrying an approved change reports the project Online and
-        // has discarded the local record.
+        // A deployment carrying an approved change reports the project Online
+        // and has discarded the local record.
         let db = open_test_db("reconcile-online").await;
         let published = published_corpus();
         let payload = published_payload(&published, PUBLISHED_SHORTCODE);
@@ -222,7 +215,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_record_that_differs_is_left_waiting_for_its_release() {
-        // REQ-2.5. The record stays: it has not shipped.
+        // The record stays: it has not shipped.
         let db = open_test_db("reconcile-waiting").await;
         let published = published_corpus();
         let mut draft: ProjectDraft =
@@ -250,8 +243,8 @@ mod tests {
     #[tokio::test]
     async fn a_collected_record_that_still_differs_is_stranded_not_merely_waiting() {
         // The sharp case: the pull request merged *with reviewer edits*, so
-        // published data can never byte-equal the record and REQ-2.4 can never
-        // fire. Distinguished from waiting only by `collected_at`.
+        // published data can never byte-equal the record. Distinguished from
+        // waiting only by `collected_at`.
         let db = open_test_db("reconcile-stranded").await;
         let published = published_corpus();
         let mut draft: ProjectDraft =
@@ -387,12 +380,10 @@ mod tests {
 
     #[tokio::test]
     async fn a_record_already_gone_is_not_counted_as_a_discard_this_pass_made() {
-        // `delete` answers `Ok(false)` when the row is already gone — two
-        // instances sharing one database file over a rolling restart is the
-        // ordinary way to reach it, so the pass sees the record in `list_all`
-        // and then finds nothing to delete. Counting that as a discard would
-        // overstate the summary and, worse, make a genuine deletion bug (a
-        // `WHERE` that stopped matching) log exactly like a success.
+        // `delete` answers `Ok(false)` when the row is already gone, which two
+        // instances sharing one database file reach on a rolling restart.
+        // Counting it as a discard would make a genuine deletion bug log exactly
+        // like a success.
         use crate::test_support::{Faults, FaultyDatabase};
 
         let db = std::sync::Arc::new(open_test_db("reconcile-already-gone").await);

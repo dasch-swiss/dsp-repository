@@ -1,34 +1,18 @@
 //! The canonical writer, held against the whole committed corpus.
 //!
-//! `load -> draft -> canonical write` must be byte-identical for every one of
-//! the 85 project files. That is a hard oracle: it pins member order at every
-//! depth, indentation, the trailing newline, null-stripping, language-key order
-//! and `serde_json`'s string escaping all at once, which is why the writer needs
-//! no hand-written escaping and no per-field order table.
-//!
-//! It also pins the claim `ProjectDraft::from_raw` rests on, that stripping null
-//! members loses nothing: a field it drops has to come back as `None` for
-//! `to_raw` to succeed here.
-//!
-//! ## Regenerating the corpus
+//! `load -> draft -> canonical write` must be byte-identical for every
+//! committed project file. That pins member order at every depth, indentation,
+//! the trailing newline, null-stripping, language-key order and `serde_json`'s
+//! escaping at once, and it pins the claim `ProjectDraft::from_raw` rests on:
+//! stripping null members loses nothing.
 //!
 //! ```text
 //! CANONICALIZE_PROJECT_FILES=1 cargo test -p editor-core --test canonical_round_trip
 //! ```
 //!
-//! rewrites each file with what the writer produces instead of asserting. Use it
-//! when a deliberate change to the canonical form lands, and commit the result
-//! as its own commit so the reformat is reviewable apart from the code that
-//! caused it. Generating the corpus *from* the writer is the point: a separate
-//! script would have to agree with the writer by inspection, and a near-miss
-//! there surfaces later as a failing round-trip that looks like a writer bug.
-//!
-//! ## Why this test reads DPE's data directory
-//!
-//! It is the published corpus, not DPE's private fixture: the editor's whole job
-//! is to read and write these files, and asserting against the real 85 is the
-//! only version of this test worth having. `platform-metadata` is the crate that
-//! must not reach for a service's data directory, and it does not.
+//! rewrites each file with what the writer produces instead of asserting. Commit
+//! the result as its own commit, so the reformat is reviewable apart from the
+//! code that caused it.
 
 use std::path::{Path, PathBuf};
 
@@ -114,12 +98,6 @@ fn every_committed_project_file_round_trips_byte_identically() {
     );
 }
 
-/// The corpus is what makes the round-trip assertion meaningful, so a silent
-/// drop to a handful of files would hollow it out without failing anything.
-///
-/// Adding or removing a project is expected to fail this: bump the number in the
-/// same commit as the data change. The runbook in `modules/dpe/CLAUDE.md` says so
-/// too.
 #[test]
 fn the_corpus_is_the_whole_published_set() {
     assert_eq!(

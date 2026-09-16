@@ -1,35 +1,28 @@
 //! What a depositor is told about a project, and how the startup comparison
 //! decides it.
 //!
-//! [`ProjectState`] is the five-value vocabulary REQ-2.1 makes normative — the
-//! *only* states a depositor may see. [`Comparison`] is what reading the
-//! published set against a local record yields at startup (REQ-2.3), and the
-//! input to the Online decision (REQ-2.4).
+//! [`ProjectState`] is the closed five-value list a depositor may see.
+//! [`Comparison`] is what reading the published set against a local record
+//! yields at startup, and the input to the Online decision.
 //!
-//! **The comparison is [`crate::review::diff`], not a second one.** It already
-//! compares member by member and already models an absent published side as
-//! `None`. A comparison written here would be a second definition of "changed"
-//! from the one RDU reviews through, and the two would drift.
-//!
-//! **Nothing canonicalises, sorts or serialises before comparing, and nothing
-//! should.** A draft holds members as `serde_json::Value`, whose `Map` equality
-//! delegates to its backing map; both a `BTreeMap` and the `IndexMap` from
-//! `preserve_order` compare by key rather than position. Language-map key order
-//! therefore cannot register as a change, as a property of the types rather
-//! than a rule a caller has to keep. Pinned by
-//! [`tests::language_map_key_order_is_not_a_change`].
+//! The comparison is [`crate::review::diff`], not a second one: a comparison
+//! written here would be a second definition of "changed" from the one RDU
+//! reviews through, and the two would drift. Nothing canonicalises, sorts or
+//! serialises before comparing: `serde_json::Value`'s map equality compares by
+//! key, so language-map key order cannot register as a change. Pinned by
+//! `tests::language_map_key_order_is_not_a_change`.
 use platform_metadata::project::ProjectRaw;
 
 use crate::draft::ProjectDraft;
 use crate::records::SubmissionState;
 use crate::review::diff;
 
-/// The states REQ-2.1 permits a depositor to see, and no others.
+/// The states a depositor may see, and no others; the list is closed.
 ///
 /// A superset of [`SubmissionState`], which is only what the database stores:
-/// `Draft` is a `drafts` row and `Online` is derived, so neither has a stored
-/// form. [`Self::label`] and [`Self::explanation`] are the normative
-/// depositor-facing strings REQ-2.2 bounds; three surfaces read them from here.
+/// `Draft` is a `drafts` row and `Online` is derived. [`Self::label`] and
+/// [`Self::explanation`] are the normative depositor-facing wording, read by
+/// three surfaces.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ProjectState {
     /// Being edited: a `drafts` row exists, or the project is not published.
@@ -45,7 +38,7 @@ pub enum ProjectState {
 }
 
 impl ProjectState {
-    /// The depositor-facing spelling, checked against REQ-2.2's forbidden words.
+    /// The depositor-facing spelling; the forbidden-word test reads it.
     #[must_use]
     pub const fn label(self) -> &'static str {
         match self {
@@ -66,8 +59,8 @@ impl ProjectState {
         Self::Online,
     ];
 
-    /// What the state-explanation page (REQ-2.6) says this state means. Here
-    /// rather than in a view because REQ-2.2 makes the wording normative.
+    /// What the state-explanation page says this state means. Here rather than
+    /// in a view because the wording is normative.
     #[must_use]
     pub const fn explanation(self) -> &'static str {
         match self {
@@ -95,14 +88,12 @@ impl ProjectState {
     }
 }
 
-/// What the startup comparison found for one project (REQ-2.3).
+/// What the startup comparison found for one project.
 ///
-/// REQ-2.3 names three branches and admits a fourth by omission: a project the
-/// published set *dropped* while a local record survives. Presence alone cannot
-/// tell that from "never published", so [`Self::classify`] separates them by
-/// whether the record carries the `id`/`pid` assigned on first publication —
-/// treating a deletion as a new project would offer to republish something
-/// removed on purpose.
+/// Three branches plus a fourth: a project the published set *dropped* while a
+/// local record survives. Presence alone cannot tell that from "never
+/// published", so [`Self::classify`] separates them by whether the record
+/// carries the `id`/`pid` assigned on first publication.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Comparison {
     /// In the published set, with no local record: unchanged.
@@ -111,23 +102,19 @@ pub enum Comparison {
     /// because that one is the resting state read as Online, and "nothing
     /// anywhere" must never be read that way.
     Absent,
-    /// Local only, and never published — a new project. Unreachable in v1,
-    /// which edits existing projects only (no requirement allocates a project's
-    /// `id`, `pid` or `shortcode`, and REQ-1.5 makes all three display-only).
-    /// Kept because REQ-2.3 names the branch and a v2 that adds creation should
-    /// find it here rather than invent it.
+    /// Local only, and never published: a new project. Unreachable while the
+    /// editor edits existing projects only, since nothing allocates an `id`,
+    /// `pid` or `shortcode`; kept so a build that adds creation finds the branch.
     NewAndUnpublished,
     /// In both, and publishing the local record would change nothing. The
-    /// precondition for Online (REQ-2.4).
+    /// precondition for Online.
     Matches,
     /// In both, and they differ. Carries the member names that differ, so a
     /// collision can name them rather than saying only that something moved.
     Differs { changed: Vec<String> },
     /// A local record exists for a project the published set no longer holds.
-    ///
-    /// The fourth branch. Never resolved automatically: the local record is the
-    /// only surviving copy of the depositor's work, and an upstream deletion is
-    /// not evidence that it should be destroyed.
+    /// Never resolved automatically: the local record is the only surviving
+    /// copy of the depositor's work.
     RemovedUpstream,
 }
 
@@ -162,9 +149,9 @@ impl Comparison {
         }
     }
 
-    /// Whether this comparison lets an Approved record go Online (REQ-2.4).
-    /// [`Self::Matches`] only — `Unchanged` says there was no record to
-    /// compare, not that a change shipped.
+    /// Whether this comparison lets an Approved record go Online: [`Self::Matches`]
+    /// only. `Unchanged` says there was no record to compare, not that a change
+    /// shipped.
     #[must_use]
     pub const fn permits_online(&self) -> bool {
         matches!(self, Self::Matches)
@@ -180,9 +167,9 @@ impl Comparison {
 
 /// Whether this local record describes a project that was published once.
 ///
-/// `id` and `pid` are assigned on first publication and are display-only
-/// (REQ-1.5), so a depositor can neither set nor clear them — which makes this
-/// a property of the data rather than a flag a write path must remember.
+/// `id` and `pid` are assigned on first publication and are display-only, so a
+/// depositor can neither set nor clear them: a property of the data, not a flag
+/// a write path must remember.
 fn was_published(local: &ProjectDraft) -> bool {
     ["id", "pid"].iter().any(|field| {
         local
@@ -194,17 +181,12 @@ fn was_published(local: &ProjectDraft) -> bool {
 
 /// The state a depositor is shown for one project.
 ///
-/// **Online is the resting state, not a moment, and has to be.** REQ-2.4
-/// discards the local record once its data is published and
-/// [`crate::records::ReviewRound`] does not keep the approved payload, so after
-/// the discard nothing records that a change shipped. Were Online only the
-/// instant of the transition, no depositor would ever see it. So Online is what
-/// a published project with nothing pending *is*; it drops out the moment
-/// something is pending again. This is also what makes the five states total
-/// over every project, which REQ-2.1 needs.
-///
-/// A live submission outranks a draft: a project cannot be both under review
-/// and editable.
+/// Online is the resting state, not a moment: the startup pass discards the
+/// local record once its data is published and [`crate::records::ReviewRound`]
+/// keeps no payload, so nothing else records that a change shipped. Online is
+/// therefore what a published project with nothing pending *is*, and it drops
+/// out the moment something is pending again. A live submission outranks a
+/// draft: a project cannot be both under review and editable.
 #[must_use]
 pub fn depositor_state(
     submission: Option<SubmissionState>,
@@ -223,10 +205,9 @@ pub fn depositor_state(
         };
     }
     if approved {
-        // REQ-2.4 as a rendering rule: the startup pass discards a matching
-        // record, but a record approved *while this process is running* has not
-        // met a startup yet, and reading it as Approved until the next restart
-        // would be a stale label the page can avoid for free.
+        // The startup pass discards a matching record, but one approved while
+        // this process runs has not met a startup yet; reading it as Approved
+        // until the next restart would be a stale label.
         return if comparison.permits_online() {
             ProjectState::Online
         } else {
@@ -291,10 +272,8 @@ mod tests {
 
     #[test]
     fn language_map_key_order_is_not_a_change() {
-        // The requirement the issue calls out. It holds because `Value`'s
-        // object equality is an `IndexMap` key lookup rather than a positional
-        // walk — so this passes without anything sorting or canonicalising
-        // first, and would fail loudly if that ever stopped being true.
+        // Holds because `Value`'s object equality is an `IndexMap` key lookup
+        // rather than a positional walk, so nothing sorts or canonicalises first.
         let mut raw = published_raw();
         raw.description = serde_json::from_value(json!({ "de": "Deutscher Text", "en": "English text" }))
             .expect("a multilingual map deserializes");
@@ -375,8 +354,7 @@ mod tests {
     #[test]
     fn a_published_project_with_nothing_pending_is_online() {
         // The resting state. If this were Draft, Online would be unobservable:
-        // REQ-2.4 discards the record, and no depositor loads the page inside
-        // the instant between the comparison and the delete.
+        // the startup pass discards the record before any depositor loads a page.
         assert_eq!(
             depositor_state(None, false, false, &Comparison::Unchanged),
             ProjectState::Online
@@ -400,10 +378,8 @@ mod tests {
 
     #[test]
     fn a_discarded_record_leaves_the_project_reading_online() {
-        // The end-to-end shape of REQ-2.4 as a depositor sees it: the startup
-        // pass deletes the record, so the very next page load has no submission,
-        // no record and no draft — and must say the change is live rather than
-        // silently reverting to Draft.
+        // The startup pass deletes the record, so the next page load has no
+        // submission, no record and no draft, and must say the change is live.
         assert_eq!(
             depositor_state(None, false, false, &Comparison::Unchanged),
             ProjectState::Online
@@ -412,16 +388,14 @@ mod tests {
 
     #[test]
     fn the_five_states_are_exactly_the_requirement() {
-        // REQ-2.1 makes this list closed. A sixth state added without a
-        // requirement change fails here.
+        // The list is closed; a sixth state fails here.
         let labels: Vec<&str> = ProjectState::ALL.iter().map(|state| state.label()).collect();
         assert_eq!(labels, ["Draft", "Submitted", "In review", "Approved", "Online"]);
     }
 
     #[test]
     fn every_state_explains_itself_and_approved_states_the_wait() {
-        // REQ-2.6 requires the expected wait, and Approved is the only state
-        // that has one.
+        // Approved is the only state with an expected wait to state.
         for state in ProjectState::ALL {
             assert!(!state.explanation().is_empty(), "{state:?} needs an explanation");
         }

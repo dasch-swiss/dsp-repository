@@ -1,6 +1,6 @@
 //! The review surfaces: `GET /review`, and `GET`/`POST /review/{shortcode}`.
 //!
-//! Every handler here takes [`Rdu`](crate::auth::guard::Rdu), which puts the
+//! Every handler here takes [`Rdu`], which puts the
 //! access rule in one place: RDU access is role-based rather than per-project,
 //! so there is no assignment to check and no per-project 403 to render. A depositor's
 //! session gets the 403 page from the extractor, and no session is redirected
@@ -346,8 +346,7 @@ pub(crate) async fn act(
     }
 }
 
-/// End the review round: approve, request changes or
-/// reject.
+/// End the review round: approve, request changes or reject.
 ///
 /// Each asks for confirmation first, on the same URL, so a refused write
 /// re-renders somewhere that still answers `GET`. The confirmation is also
@@ -500,9 +499,9 @@ async fn finish(
             };
             ReviewRoundRepository::request_changes(&*state.db, context.submission.id, &draft, &round).await
         }
-        // Reject leaves both the draft and the published metadata alone
-        //: the note is what the depositor gets, and their
-        // work is still theirs to resubmit.
+        // Reject leaves both the draft and the published metadata alone: the
+        // note is what the depositor gets, and their work is still theirs to
+        // resubmit.
         ReviewOutcome::Rejected | ReviewOutcome::Withdrawn => {
             ReviewRoundRepository::discard(&*state.db, context.submission.id, &round).await
         }
@@ -2158,11 +2157,11 @@ mod tests {
 
     #[tokio::test]
     async fn the_in_place_editor_is_the_control_the_depositor_form_renders() {
-        // Not a second dispatch. The first one keyed off whether the value
-        // happened to hold a newline, so `startDate` came out as free text
-        // where the form gives a date picker, and `shortDescription` lost the
-        // 200-character cap its own hint promises — with nothing server-side to
-        // catch either, because the cap is an HTML attribute.
+        // Not a second dispatch. Keying off whether the value happens to hold a
+        // newline would render `startDate` as free text where the form gives a
+        // date picker, and lose `shortDescription` the 200-character cap its own
+        // hint promises — with nothing server-side to catch either, because the
+        // cap is an HTML attribute.
         let (state, _) = test_state("review-controls").await;
         let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
         a_submission(

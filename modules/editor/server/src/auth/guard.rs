@@ -1,28 +1,14 @@
 //! Who may reach a route, and what happens to a request that may not.
 //!
-//! ## The default is closed, and it is closed by the type system
+//! Authentication is an **extractor**, not a middleware. A handler that names
+//! [`Authenticated`] cannot run without a live session, because the argument is
+//! what runs the check, and a handler that does not name it is visibly public in
+//! its signature. The argument against a middleware is in
+//! `docs/src/editor/authentication.md`.
 //!
-//! Authentication is an **extractor**, not a middleware, and that is the whole
-//! design. A handler that names [`Authenticated`] in its arguments cannot run
-//! without a live session, because the argument is what runs the check; a
-//! handler that does not name it is visibly public at the point anyone reads it.
-//! There is no ordering to get right and no sub-router to remember to attach
-//! something to.
-//!
-//! A middleware layered over a group of routes would have been the other option,
-//! and the router already carries one positional invariant of exactly that shape
-//! — the traced/untraced split, which is invisible in the route table and
-//! reversible by moving one line. Adding a second one, where the failure mode is
-//! an unauthenticated route rather than a missing span, was not worth the
-//! symmetry.
-//!
-//! ## What is deliberately public
-//!
-//! `/` (a redirect), the two login screens, `/logout`, `/healthz`, the telemetry
-//! beacon, and the static assets. Everything else takes [`Authenticated`]. The
-//! collection endpoint is the one route that will be public *and*
-//! serve data; it does not exist yet, and when it lands it is public by being
-//! written without this extractor, which is a visible choice in its signature.
+//! Deliberately public: `/` (a redirect), the two login screens, `/logout`,
+//! `/healthz`, the telemetry beacon and the static assets. Everything else takes
+//! [`Authenticated`].
 
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
@@ -70,10 +56,9 @@ impl FromRequestParts<AppState> for Authenticated {
 /// there is one place that decides what "signed in" means and one that decides
 /// what "RDU" means.
 ///
-/// The two refusals are deliberately different. No session is a redirect to
-/// login, because signing in fixes it. A session that is not RDU's is a 403
-/// page, because signing in again will not: it is the same account, and sending
-/// them to a login screen they are already past reads as a bug.
+/// The two refusals differ: no session redirects to login, because signing in
+/// fixes it; a session that is not RDU's is a 403 page, because signing in again
+/// will not, and a login screen they are already past reads as a bug.
 #[derive(Debug, Clone)]
 pub(crate) struct Rdu(pub(crate) User);
 
@@ -83,16 +68,11 @@ impl FromRequestParts<AppState> for Rdu {
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
         let Authenticated(user, _) = Authenticated::from_request_parts(parts, state).await?;
         if !user.is_rdu() {
-            // Worth a line: a depositor reaching an administration URL is either
-            // a stale bookmark or someone trying doors, and both are things an
-            // operator should be able to see. The only identifier is the
-            // account's own opaque id.
-            // No `http.route` here on purpose. The enclosing server span
-            // already carries it, set from `MatchedPath` by the OTel layer, so
-            // an event field would be a second value for one semconv attribute
-            // in a single trace — and the concrete path is the wrong one of the
-            // two, since semconv defines `http.route` as the matched template.
-            // `auth.subject` is what makes this line useful.
+            // Worth a line: a depositor reaching an administration URL is
+            // either a stale bookmark or someone trying doors. No `http.route`
+            // field here on purpose — the enclosing server span already carries
+            // it from `MatchedPath`, and semconv defines it as the matched
+            // template rather than the concrete path.
             tracing::info!("refused an RDU-only page to an account that is not RDU");
             return Err(crate::forbidden(state, &user, crate::depositors::RDU_ONLY));
         }
@@ -102,13 +82,9 @@ impl FromRequestParts<AppState> for Rdu {
 
 /// Where to send this request back to once its owner has signed in.
 ///
-/// `GET` only, deliberately. `next` exists to land someone where they were
-/// *going*, and a `POST`'s destination is a side effect rather than a page:
-/// re-issuing it after sign-in is not something a redirect can do, and sending
-/// the browser to a `GET` of the same path would look like the write happened.
-/// What should happen to a write that arrives after a session expires — stash
-/// and replay, or lean on draft autosave — is a decision the plan pins to the
-/// form work, because it is the form that has something to lose.
+/// `GET` only: a `POST`'s destination is a side effect rather than a page, and
+/// sending the browser to a `GET` of the same path after sign-in would look like
+/// the write happened.
 fn destination(parts: &Parts) -> Option<&str> {
     if parts.method != Method::GET {
         return None;
@@ -121,12 +97,8 @@ fn destination(parts: &Parts) -> Option<&str> {
 /// No percent-encoding, and that is a property of [`safe_next`] rather than an
 /// omission: the characters it admits are all legal, unreserved query
 /// characters. Widening `safe_next` without adding encoding here would be a
-/// header-injection bug in a `Location`, and what stops that are the *negative*
-/// tests — admitting `?` fails `test_a_query_is_not_carried`, admitting `%`
-/// fails `test_the_shapes_that_become_an_absolute_url_after_one_transformation_are_refused`.
-/// `test_every_admitted_destination_is_safe_to_embed_without_encoding` documents
-/// the pairing but iterates a fixed list, so it would not catch a widening on
-/// its own.
+/// header-injection bug in a `Location`, and the negative tests below are what
+/// stop that.
 pub(crate) fn login_url(next: Option<&str>) -> String {
     match next {
         Some(next) => format!("/login?{NEXT}={next}"),
@@ -176,14 +148,10 @@ pub(crate) fn destination_or_root(next: Option<&str>) -> &str {
 /// - `%2f%2fevil.example` is the same thing after one decode, which is why `%` is not admitted.
 /// - A `\r` or `\n` splits the `Location` header.
 ///
-/// So: a leading `/`, then ASCII alphanumerics and `/`, `-`, `_`, `.` only. No
-/// `..` segment, because a destination that walks upward is either an attack or
-/// a bug and neither should be followed. Not the login screens themselves, which
-/// would loop.
-///
-/// The query is dropped rather than carried. No route in this service navigates
-/// by query today, so admitting one would be widening the surface for nothing —
-/// and it is `?` and `&` that make the encoding question real.
+/// A `..` segment is refused because a destination that walks upward is either
+/// an attack or a bug, and the login screens are refused because they would
+/// loop. The query is dropped: no route here navigates by query, and `?` and `&`
+/// are what make the encoding question real.
 pub(crate) fn safe_next(candidate: &str) -> Option<&str> {
     let ok = !candidate.is_empty()
         && candidate.len() <= MAX_NEXT_LEN
@@ -223,10 +191,6 @@ mod tests {
 
     #[test]
     fn test_an_absolute_url_is_never_a_destination() {
-        // The value comes from a query string, so a login link carrying it is
-        // attacker-authored: without this, the editor's own sign-in page becomes
-        // a redirector a phishing mail can point at, arriving from the real
-        // origin with a real certificate.
         for candidate in [
             "https://evil.example",
             "http://evil.example/x",
@@ -273,8 +237,6 @@ mod tests {
 
     #[test]
     fn test_a_query_is_not_carried() {
-        // No route navigates by query, so admitting one would widen the surface
-        // for nothing — and `?`/`&` are what make the encoding question real.
         assert_eq!(safe_next("/projects?x=1"), None);
         assert_eq!(safe_next("/projects#frag"), None);
     }
@@ -354,8 +316,7 @@ mod tests {
 
     #[test]
     fn test_a_write_is_not_sent_back_to_itself() {
-        // A POST's destination is a side effect, not a page. Redirecting to a
-        // GET of the same path after sign-in would look like the write landed.
+        // A POST's destination is a side effect, not a page.
         assert_eq!(destination(&parts("POST", "/depositors")), None);
         assert_eq!(destination(&parts("DELETE", "/depositors/x")), None);
     }

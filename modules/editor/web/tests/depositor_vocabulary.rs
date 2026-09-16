@@ -1,25 +1,12 @@
-//! REQ-2.2: the words a depositor must never be shown.
+//! The words a depositor must never be shown: *export*, *JSON*, *transfer*,
+//! *commit* and *pull request*. Each names a mechanism rather than an outcome.
 //!
-//! "The editor shall not expose the words *export*, *JSON*, *transfer*,
-//! *commit* or *pull request* to a depositor." Every one of them names a
-//! mechanism rather than an outcome — a depositor is publishing their project's
-//! metadata, and how it gets there is the editor's problem.
-//!
-//! ## Rendered text, not source strings
-//!
-//! The assertion runs against **rendered markup with its tags stripped**, which
-//! is what a depositor actually reads. A grep over the source would both miss
-//! and over-report: it cannot see a word assembled from a constant and a
-//! `format!`, and it fires on every doc comment and identifier that mentions
-//! the mechanism deliberately — this file among them.
-//!
-//! Attribute values are dropped with the tags. That is correct here and
-//! deliberate: `href="/projects/0801d"` and `class="..."` are not prose, and a
-//! word inside one is not a word the reader is shown. The one attribute that
-//! *is* read aloud is `aria-label`, so those are kept; see [`visible_text`].
-//!
-//! The browser-level half of this requirement lives in the E2E suite, which
-//! drives the real pages including the ones assembled by `editor-server`.
+//! The assertion runs against rendered markup with its tags stripped, which is
+//! what a depositor reads: a grep over the source cannot see a word assembled
+//! from a constant and a `format!`, and fires on every doc comment that names
+//! the mechanism deliberately. Attribute values are dropped with the tags, since
+//! `href` and `class` are not prose; `aria-label` is read aloud and kept, see
+//! [`visible_text`]. The browser-level half lives in the E2E suite.
 
 use editor_core::draft::ProjectDraft;
 use editor_core::published::{ProjectSummary, PublishedProjects};
@@ -29,18 +16,13 @@ use editor_web::form::registry::{self, Audience};
 use editor_web::pages::projects::AssignedProject;
 use editor_web::pages::{projects, section, states};
 
-/// The words REQ-2.2 closes out, lowercased for a case-folded search.
-///
-/// `pull request` is two words on purpose: the requirement names the phrase,
-/// and "request" alone is ordinary English the editor needs ("request changes").
+/// The forbidden words, lowercased for a case-folded search. `pull request` is
+/// two words on purpose: "request" alone is ordinary English the editor needs.
 const FORBIDDEN: &[&str] = &["export", "json", "transfer", "commit", "pull request"];
 
-/// The text a reader is actually shown: markup with tags removed, plus the
-/// `aria-label` values a screen reader announces.
-///
-/// Crude on purpose — a real HTML parser would be a dependency bought to make a
-/// string search marginally tidier, and the inputs are this crate's own markup
-/// rather than arbitrary documents.
+/// The text a reader is shown: markup with tags removed, plus the `aria-label`
+/// values a screen reader announces. Crude on purpose: the inputs are this
+/// crate's own markup, not arbitrary documents.
 fn visible_text(markup: &str) -> String {
     let mut text = String::with_capacity(markup.len());
     let mut rest = markup;
@@ -76,9 +58,8 @@ fn published() -> PublishedProjects {
 
 #[test]
 fn the_state_vocabulary_itself_carries_none_of_the_forbidden_words() {
-    // The labels and explanations are the normative strings REQ-2.1 closes, and
-    // they are rendered on three different surfaces. Checking them directly
-    // means a new state cannot slip a forbidden word past the page tests.
+    // The normative strings, rendered on three surfaces; checking them directly
+    // means a new state cannot slip a word past the page tests.
     for state in ProjectState::ALL {
         assert!(
             forbidden_words_in(state.label()).is_empty(),
@@ -131,16 +112,13 @@ fn the_project_list_carries_none_of_the_forbidden_words_in_any_state() {
 
 #[test]
 fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
-    // The largest depositor-facing surface by far: field labels, hints and the
-    // obligation badges, over a real committed project so the rendered values
-    // are the ones a depositor reads rather than placeholders.
+    // The largest depositor-facing surface, over a real committed project so the
+    // rendered values are the ones a depositor reads.
     let published = published();
     let raw = published.get("0801d").expect("the fixture project");
     let draft = ProjectDraft::from_raw(raw);
-
-    // Every review outcome, not just the absent one. The round summary is
-    // depositor-facing prose that renders only in this slot, so a `None` here
-    // leaves REQ-2.2 unchecked over the whole of it.
+    // Every review outcome: the round summary is depositor-facing prose that
+    // renders only in this slot.
     let rounds = [
         None,
         Some(ReviewOutcome::Approved),
@@ -181,8 +159,7 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
             adding_row: None,
             agents: None,
             rows_action: format!("/projects/0801d/sections/{}/fields", section_def.id),
-            // REQ-2.5's notice is depositor-facing text too, and it is only
-            // rendered in this state.
+            // The waiting-for-release notice is depositor-facing text too.
             awaiting_release: true,
         };
         let markup = section::page(&view).into_string();
@@ -197,9 +174,8 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
 
 #[test]
 fn the_check_would_notice_a_forbidden_word_that_was_actually_rendered() {
-    // The canary. Every assertion above is an absence, and an absence passes
-    // just as happily when the check is broken — a `visible_text` that returned
-    // an empty string would make the whole file green.
+    // The canary: every assertion above is an absence, and an absence passes
+    // when the check is broken.
     let markup = "<p class=\"json\">We will commit your JSON export in a pull request.</p>";
     let found = forbidden_words_in(markup);
     assert_eq!(

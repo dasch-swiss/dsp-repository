@@ -1,44 +1,23 @@
 //! What the form knows about each project field, and how the fields are grouped.
 //!
 //! Data, not rendering. Every editable `ProjectRaw` member has one [`Field`]
-//! here — its label, its help text, whether it is required, whether it is
-//! display-only, and who may see it — and every [`Section`] is an ordered list
-//! of field ids. Which *control* a field renders is a separate concern, keyed by
-//! the same ids; that split is the prototype's `FIELD_META` / `FIELD_RENDERERS`
-//! shape, and it is what lets the grouping change without touching a renderer.
+//! here and every [`Section`] is an ordered list of field ids; which control a
+//! field renders is a separate concern keyed by the same ids, so the grouping
+//! can change without touching a renderer.
 //!
-//! ## The vocabulary is the prototype's
+//! Labels and hints are the `dsp-incubator/metadata-editor-v2` prototype's
+//! screens, not paraphrased: the depositor-facing wording is normative and the
+//! prototype is what was validated with users. One departure: a hint never
+//! states an obligation. The pill states the tier and [`Obligation::Required`]
+//! is enforced at submit, so a hint repeating it is redundant where it agrees
+//! and a second source of truth where it does not; no control carries
+//! `required`, because a draft may be missing anything.
 //!
-//! Labels and hints are taken from `dsp-incubator/metadata-editor-v2`'s actual
-//! screens rather than paraphrased, because the depositor-facing wording is normative and the
-//! prototype is what was validated
-//! with users. Where the prototype's own summary and its screens disagree, the
-//! screens win.
-//!
-//! **One deliberate departure: a hint never states an obligation.** The
-//! prototype's hints carried phrases like "Required before publishing" and
-//! "required even for a draft", which were written against its two required
-//! tiers. The pill now states the tier and [`Obligation::Required`] is enforced
-//! at submit, so a hint repeating it is at best redundant and was at worst
-//! wrong in two directions at once: a hint saying "before publishing" beside a
-//! pill that blocks a *submission* understates the gate, and "required even for
-//! a draft" contradicts the draft's own permissiveness — a draft may be missing anything, which is
-//! why no control here carries `required`. The hints say what goes in the field;
-//! the pill says whether it has to be there.
-//!
-//! ## Grouping
-//!
-//! One scheme, the prototype's `dpe` default: the sections mirror the published
-//! project page, so the structure a depositor edits in is the structure they
-//! read in. The prototype carried two further schemes behind a developer panel
-//! for comparison; they are not product surface and are not here.
-//!
-//! ## Three fields are absent on purpose
-//!
-//! `records`, `clusters` and `collections` are omitted entirely —
-//! [`OMITTED`] names them so the completeness test can tell "decided against"
-//! from "forgotten". They still ride through a draft untouched; the
-//! omission is from the *form*, not from the data.
+//! The sections mirror the published project page, so the structure a
+//! depositor edits in is the structure they read in. `records`, `clusters` and
+//! `collections` are omitted from the form on purpose; [`OMITTED`] names them so
+//! the completeness test can tell "decided against" from "forgotten". They ride
+//! through a draft untouched.
 
 use editor_core::draft::UrlSlot;
 use editor_core::form::{ChoiceSet, Shape, WhenCleared};
@@ -63,46 +42,33 @@ const OPTIONAL_STRING: Shape = Text(WhenCleared::Drop);
 /// spells them.
 const PLACE_SOURCES: &[&str] = &["Geonames", "Pleiades", "Gazetteer", "URL"];
 
-/// The authority sources a `temporalCoverage` reference may come from, spelled as the committed
-/// data spells them.
-///
-/// A closed offer, unlike the role vocabulary beside it: these are the
-/// resolvers the platform actually consults, and an unknown one is a link
-/// nothing can dereference. `URL` is kept because a committed entry uses it and
-/// dropping it would refuse that project.
+/// The authority sources a `temporalCoverage` reference may come from, as the
+/// committed data spells them. A closed offer: these are the resolvers the
+/// platform consults, and an unknown one is a link nothing can dereference.
+/// `URL` stays because a committed entry uses it.
 const PERIOD_SOURCES: &[&str] = &["Chronontology", "Periodo", "URL"];
 
 /// The authority sources a `disciplines` reference may come from. Every committed reference is
 /// `Skos` — the SNSF and UNESCO vocabularies are both published as SKOS.
 const DISCIPLINE_SOURCES: &[&str] = &["Skos"];
 
-/// How much a field is expected of a depositor.
+/// How much a field is expected of a depositor: one required tier plus two
+/// degrees of encouragement, since a draft may be missing anything and
+/// everything required has to be there to submit.
 ///
-/// The prototype distinguished "required" from "required before publishing" and
-/// then collapsed the two, because a depositor cannot act on the difference: a
-/// draft may be missing anything, and everything in both tiers has to be there
-/// to submit. What is left is a single required tier plus two degrees of
-/// encouragement.
-///
-/// ## The required tier is bounded by what the published corpus satisfies
-///
-/// **A field is `Required` only if the published corpus answers it.** [`Obligation::Required`] is a
-/// literal submit gate, so tiering a field the published projects leave unset would refuse every
-/// one of them — an unenforceable tier that therefore goes unenforced. Such a field is
-/// `Recommended`, with its publication requirement stated in the hint: a different gate, owned by
-/// RDU at publication.
-///
-/// `obligation::tests::the_required_fields_the_committed_corpus_does_not_answer_are_the_measured_ones` keeps it
-/// true — it fails the day a field is tiered `Required` that the corpus cannot answer.
+/// A field is `Required` only if the published corpus answers it.
+/// [`Obligation::Required`] is a literal submit gate, so tiering a field the
+/// published projects leave unset would refuse every one of them. Such a field
+/// is `Recommended`, with its publication requirement in the hint: a different
+/// gate, owned by RDU at publication.
+/// `obligation::tests::the_required_fields_the_committed_corpus_does_not_answer_are_the_measured_ones`
+/// keeps it true.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Obligation {
     /// Must be present to submit — a literal gate, not an encouragement.
     Required,
-    /// Encouraged, and never blocks a submission.
-    ///
-    /// Also where a field the repository needs before *publishing* sits, when
-    /// the published corpus shows it is not there today. The hint carries that;
-    /// see the tier note above.
+    /// Encouraged, and never blocks a submission. Also where a field the
+    /// repository needs before publishing sits while the corpus lacks it.
     Recommended,
     /// Add if relevant.
     Optional,
@@ -135,12 +101,9 @@ impl Obligation {
 pub enum Audience {
     /// Every account that may reach the project.
     Everyone,
-    /// RDU members only.
-    ///
-    /// Not a permission — a depositor cannot reach these whatever they post,
-    /// because the decoder consults this registry too. It is here rather than in
-    /// the renderer so that the form and the decoder cannot disagree about which
-    /// fields a depositor owns.
+    /// RDU members only. Not a permission: the decoder consults this registry
+    /// too, so a depositor cannot reach these whatever they post, and the form
+    /// and the decoder cannot disagree about which fields a depositor owns.
     RduOnly,
 }
 
@@ -162,12 +125,8 @@ pub struct Field {
     pub display_only: bool,
     pub audience: Audience,
     /// How a posted body is read back into this field, or `None` for a field no
-    /// applier touches — a display-only one, or one whose control has not landed
-    /// ([`NOT_READ_YET`]).
-    ///
-    /// The single declaration of the field's contract shape and of what clearing
-    /// it means; the round-trip test derives its table from here rather than
-    /// keeping a second copy.
+    /// applier touches. The single declaration of the field's contract shape and
+    /// of what clearing it means; the round-trip test derives its table from here.
     pub shape: Option<Shape>,
 }
 
@@ -178,12 +137,9 @@ impl Field {
         !self.display_only && matches!(self.audience, Audience::Everyone)
     }
 
-    /// Whether the form renders a control for this field at all.
-    ///
-    /// False for a display-only field and for one the form does not read yet;
-    /// the two render differently (a value against a stated note), which is why
-    /// [`Self::display_only`] stays a separate fact rather than being inferred
-    /// from an absent shape.
+    /// Whether the form renders a control for this field. False for a
+    /// display-only field and for one the form does not read; the two render
+    /// differently, which is why [`Self::display_only`] stays a separate fact.
     #[must_use]
     pub const fn is_editable(&self) -> bool {
         self.shape.is_some()
@@ -203,12 +159,8 @@ pub struct Section {
     pub audience: Audience,
 }
 
-/// Shorthand for an editable field.
-///
-/// Every editable field has a hint, which is why there is no hintless variant:
-/// a control whose label alone is enough has not turned up, and the fields where
-/// it might (`name`, `status`) are exactly the ones a depositor most needs told
-/// what goes in them.
+/// Shorthand for an editable field. Every editable field has a hint, so there is
+/// no hintless variant.
 const fn hinted(
     id: &'static str,
     label: &'static str,
@@ -385,11 +337,9 @@ pub const FIELDS: &[Field] = &[
         Everyone,
         Some(OPTIONAL_STRING),
     ),
-    // The id is the nested member holding the choice, not the object around it:
-    // `accessRights` is `{accessRights, embargoDate}`, so a shape on the object
-    // would have to write the whole thing and would take the embargo date with
-    // it. `ProjectDraft` follows dotted ids, so naming the member is all this
-    // needs — the same shape `accessRights.embargoDate` beside it already had.
+    // The id is the nested member holding the choice: `accessRights` is
+    // `{accessRights, embargoDate}`, and a shape on the object would take the
+    // embargo date with it. `ProjectDraft` follows dotted ids.
     hinted(
         "accessRights.accessRights",
         "Access rights",
@@ -398,9 +348,9 @@ pub const FIELDS: &[Field] = &[
         Everyone,
         Some(Choice(ACCESS_RIGHTS_VALUES)),
     ),
-    // `Optional`, and deliberately not gated on the choice beside it: almost no published project with "Embargoed
-    // Access" carries a date, so a rule requiring one would refuse them all. Same lesson as the tier note on
-    // `Obligation`.
+    // Optional and not gated on the choice beside it: almost no published project
+    // with "Embargoed Access" carries a date, so a rule requiring one would refuse
+    // them all.
     hinted(
         "accessRights.embargoDate",
         "Embargo release date",
@@ -470,8 +420,8 @@ pub const FIELDS: &[Field] = &[
         Everyone,
         Some(OPTIONAL_STRING),
     ),
-    // `Recommended`: no published project has it, which makes it the clearest case of the tier note on
-    // `Obligation` — RDU compiles it, and gating a submission on it would refuse the entire live corpus.
+    // Recommended: no published project has it, RDU compiles it, and gating a
+    // submission on it would refuse the entire live corpus.
     hinted(
         "documentationMaterial",
         "Documentation material",
@@ -543,16 +493,13 @@ pub const FIELDS: &[Field] = &[
     ),
 ];
 
-/// The `ProjectRaw` members the form does not show at all.
-///
-/// Named rather than merely absent, so [`tests::every_contract_field_is_placed_or_omitted`]
-/// can tell a deliberate omission from a forgotten field.
+/// The `ProjectRaw` members the form does not show at all. Named rather than
+/// merely absent, so the completeness test can tell a deliberate omission from a
+/// forgotten field.
 pub const OMITTED: &[&str] = &["records", "clusters", "collections"];
 
-/// The sections, in the order the rail shows them.
-///
-/// The prototype's `dpe` scheme: the grouping mirrors the published project
-/// page, so the structure a depositor edits in is the structure they read in.
+/// The sections, in the order the rail shows them: the published project page's
+/// grouping, so the structure a depositor edits in is the one they read in.
 pub const SECTIONS: &[Section] = &[
     Section {
         id: "overview",
@@ -644,11 +591,8 @@ pub fn section(id: &str) -> Option<&'static Section> {
 }
 
 /// The section a field is shown in, or `None` for a field no section lists.
-///
-/// The form is sectioned and submit validation is whole-project, so an error
-/// can name a field the reader is not currently looking at. Without this the
-/// refusal says "the fields below say what needs changing" and nothing below
-/// says anything — a dead end.
+/// Submit validation is whole-project, so an error can name a field the reader
+/// is not looking at; without this the refusal points at nothing.
 #[must_use]
 pub fn section_of(field_id: &str) -> Option<&'static Section> {
     SECTIONS.iter().find(|section| section.fields.contains(&field_id))
@@ -690,12 +634,8 @@ mod tests {
     use super::*;
 
     /// The contract as `ProjectRaw` serializes it, read off a real committed
-    /// project rather than listed here — a field added to the contract has to
-    /// show up without this file being edited.
-    ///
-    /// `ProjectRaw` carries no `skip_serializing_if`, so an unset `Option`
-    /// serializes as `null` and is still a member: this is the whole contract
-    /// and not just the parts this project happens to fill in.
+    /// project so a field added to the contract shows up without editing this
+    /// file. Nulls are members: `ProjectRaw` carries no `skip_serializing_if`.
     fn contract() -> serde_json::Value {
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
         let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
@@ -704,7 +644,6 @@ mod tests {
         serde_json::to_value(project).expect("ProjectRaw serializes")
     }
 
-    /// The contract's top-level members.
     fn contract_members() -> BTreeSet<String> {
         contract()
             .as_object()
@@ -720,11 +659,8 @@ mod tests {
         id.split_once('.').map_or(id, |(root, _)| root)
     }
 
-    /// Whether a registry id resolves segment by segment, so a dotted id is
-    /// checked against the nested member it names and not merely against its
-    /// root. A `null` anywhere on the path counts as unresolved: the sample
-    /// project cannot answer for that member, and a check that cannot check
-    /// should say so rather than pass.
+    /// Whether a registry id resolves segment by segment. A `null` on the path
+    /// counts as unresolved: a check that cannot check should say so.
     fn resolves(contract: &serde_json::Value, id: &str) -> bool {
         let mut current = contract;
         for segment in id.split('.') {
@@ -738,11 +674,8 @@ mod tests {
 
     #[test]
     fn every_contract_field_is_either_placed_in_the_form_or_deliberately_omitted() {
-        // The form exposes every field that is not display-only or omitted. This is the test
-        // that fails when a field is added to
-        // `ProjectRaw` and nobody decides where it goes — without it the new
-        // field is silently uneditable, and the only symptom is a depositor
-        // unable to enter something.
+        // Fails when a field is added to ProjectRaw and nobody decides where it
+        // goes; otherwise the new field is silently uneditable.
         let placed: BTreeSet<&str> = FIELDS.iter().map(|field| root_of(field.id)).collect();
         let omitted: BTreeSet<&str> = OMITTED.iter().copied().collect();
         let unplaced: Vec<String> = contract_members()
@@ -757,12 +690,8 @@ mod tests {
 
     #[test]
     fn nothing_is_registered_that_the_contract_does_not_have() {
-        // The other direction: a field renamed in the contract leaves a registry
-        // entry that renders a control posting to nothing. Dotted ids are
-        // followed the whole way down, because checking only the root would pass
-        // `accessRights.embargoDate` on the strength of `accessRights` existing,
-        // while the nested member could be renamed or dropped with nothing
-        // failing.
+        // Dotted ids are followed the whole way down, because checking only the
+        // root would pass accessRights.embargoDate on the strength of accessRights.
         let contract = contract();
         let unknown: Vec<&str> = FIELDS
             .iter()
@@ -782,9 +711,8 @@ mod tests {
 
     #[test]
     fn the_display_only_fields_are_exactly_the_five_that_were_decided() {
-        // They are id, pid, shortcode, howToCite and legalInfo. A sixth would be a field a
-        // depositor can no longer edit, which is a requirement change rather than an
-        // implementation detail.
+        // A sixth would be a field a depositor can no longer edit: a requirement
+        // change, not an implementation detail.
         let display_only: BTreeSet<&str> =
             FIELDS.iter().filter(|field| field.display_only).map(|field| field.id).collect();
         assert_eq!(
@@ -793,9 +721,8 @@ mod tests {
         );
     }
 
-    /// Every committed project, parsed as the contract sees it — nulls intact,
-    /// because an unset `Option` serializes as `null` and that is the only way to
-    /// tell an `Option` member from a required one.
+    /// Every committed project, parsed as the contract sees it, nulls intact: the
+    /// only way to tell an Option member from a required one.
     fn contracts() -> Vec<serde_json::Value> {
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
         let (published, errors) = editor_core::published::PublishedProjects::load_from(&dir);
@@ -811,23 +738,14 @@ mod tests {
         contracts
     }
 
-    /// The fields the form does not read back yet.
-    ///
-    /// **Empty: every editable field has a control.** The test below is what keeps it so — a new
-    /// `ProjectRaw` member placed in a section without a shape lands here and fails, rather
-    /// than rendering as a note nobody notices.
-    ///
-    /// The rendering it names is still in `widgets::stated`, unreached by any field today and
-    /// deliberately kept: it is what a *new* field falls back to, and a depositor who cannot
-    /// find a field the published page shows would otherwise conclude the form lost it.
+    /// The fields the form does not read back yet. Empty: every editable field has
+    /// a control, and the test below keeps it so. The fallback rendering stays in
+    /// `widgets::stated`, for the next new field.
     const NOT_READ_YET_IDS: &[&str] = &[];
 
-    /// `typeOfData` is a closed vocabulary with no enum behind it, so nothing but this test says
-    /// the offered set still covers the committed data. A project holding a kind the form does
-    /// not offer has it dropped on the first save.
-    ///
-    /// Here rather than beside the slice in `platform-metadata`, because a platform crate takes no
-    /// path into a service's data directory (`.github/scripts/check-platform-paths.sh`).
+    /// `typeOfData` is a closed vocabulary with no enum behind it, so only this
+    /// test says the offered set covers the committed data. Here rather than in
+    /// `platform-metadata`, which takes no path into a service's data directory.
     #[test]
     fn the_offered_data_kinds_cover_every_value_the_corpus_holds() {
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
@@ -849,11 +767,8 @@ mod tests {
     }
 
     /// Every role several projects share is either offered or deliberately not.
-    ///
-    /// Measured by project spread rather than by use count: a role one project repeats is that
-    /// project's wording, and the open set is what carries it. Three projects is the line.
-    /// Case-insensitive, because supplying one casing where the data has several is the offer's
-    /// whole purpose.
+    /// Measured by project spread, three projects being the line, and
+    /// case-insensitively.
     #[test]
     fn the_offered_roles_cover_the_roles_several_projects_share() {
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");
@@ -901,12 +816,8 @@ mod tests {
 
     #[test]
     fn the_fields_the_form_does_not_read_yet_are_named() {
-        // A field with no shape renders a note instead of a control, and no
-        // applier touches it — so a *new* contract field defaulting into this
-        // state would be silently uneditable while looking registered. The
-        // completeness test above only asks that a field be placed in a section;
-        // this is what asks whether the form can actually read it. The list is
-        // empty, so this now asserts that every editable field is readable.
+        // A field with no shape renders a note instead of a control, so a new
+        // contract field defaulting into this state would be silently uneditable.
         let unread: BTreeSet<&str> = FIELDS
             .iter()
             .filter(|field| !field.display_only && field.shape.is_none())
@@ -917,9 +828,8 @@ mod tests {
 
     #[test]
     fn a_display_only_field_declares_no_shape() {
-        // A display-only field is shown as a value and written back unchanged. A shape here
-        // would put an applier on a field the reader
-        // cannot change, so an empty control would clear a value nobody touched.
+        // A shape here would put an applier on a field the reader cannot change,
+        // so an empty control would clear a value nobody touched.
         for field in FIELDS.iter().filter(|field| field.display_only) {
             assert!(field.shape.is_none(), "{} should declare no shape", field.id);
             assert!(!field.is_editable(), "{} should render no control", field.id);
@@ -928,13 +838,9 @@ mod tests {
 
     #[test]
     fn a_scalar_shape_s_empty_state_matches_whether_the_contract_requires_the_field() {
-        // The inversion this declaration exists to prevent, checked against the
-        // committed data rather than against a list repeated here: `Placeholder`
-        // is for a member the contract types as a `String`, so it is present in
-        // all 85 files, and `Drop` is for an `Option`, so it is null or absent in
-        // at least one. Getting it backwards is invisible — `Drop` on a required
-        // `String` leaves every ongoing project unpublishable until an end date
-        // it does not have is entered, and nothing fails.
+        // Placeholder is for a String member, present in every file; Drop is for an
+        // Option, null or absent in at least one. Getting it backwards is invisible:
+        // Drop on a required String leaves every ongoing project unpublishable.
         let contracts = contracts();
         for field in FIELDS {
             let Some(Shape::Text(when_cleared)) = field.shape else {
@@ -966,9 +872,8 @@ mod tests {
 
     #[test]
     fn a_declared_shape_matches_the_json_kind_the_contract_holds() {
-        // A `Multilingual` shape on a string member, or a `Text` shape on a
-        // language map, renders a control that posts under names the applier
-        // never reads: the field looks editable and every save is a no-op.
+        // A shape on the wrong JSON kind renders a control that posts under names
+        // the applier never reads, so every save is a no-op.
         for contract in contracts() {
             for field in FIELDS {
                 let Some(shape) = field.shape else { continue };
@@ -986,14 +891,6 @@ mod tests {
                         "{} declares a language map but the contract holds {value}",
                         field.id
                     ),
-                    // Stronger than the arms above: a choice must not merely be
-                    // a string, it must be one the applier accepts back. A
-                    // committed value outside the offered set is a control that
-                    // silently resets the field on the first save.
-                    // The pair is stored positionally on 74 projects and as
-                    // members on 11, so the only thing worth asserting is that
-                    // it is *not* a bare string — which is the one shape
-                    // `url_slot` cannot read either way.
                     Shape::AgentRows | Shape::StringRows => {
                         let rows = value.as_array().unwrap_or_else(|| {
                             panic!("{} declares string rows but the contract holds {value}", field.id)
@@ -1037,9 +934,7 @@ mod tests {
                             panic!("{} declares variant rows but the contract holds {value}", field.id)
                         });
                         for row in rows {
-                            // A reference must name a source the form offers,
-                            // or the committed entry is one no control can
-                            // reproduce; a text row is a language map.
+                            // A reference must name an offered source; a text row is a map.
                             match row.get("url") {
                                 Some(_) => {
                                     let source = row.get("type").and_then(serde_json::Value::as_str).unwrap_or("");
@@ -1085,10 +980,8 @@ mod tests {
                         let items = value
                             .as_array()
                             .unwrap_or_else(|| panic!("{} declares a list but the contract holds {value}", field.id));
-                        // A closed vocabulary must cover what the corpus holds,
-                        // or the applier drops a committed value on the first
-                        // save. An open one is open, so there is nothing to
-                        // check beyond the kind.
+                        // A closed vocabulary must cover what the corpus holds, or a committed
+                        // value is dropped on the first save.
                         let unknown: Vec<&str> = items
                             .iter()
                             .filter_map(serde_json::Value::as_str)
@@ -1100,11 +993,15 @@ mod tests {
                             field.id
                         );
                     }
+                    // Positional on most projects and as members on a few, so only "not a
+                    // bare string" is worth asserting.
                     Shape::Url(_) => assert!(
                         value.is_array() || value.is_object(),
                         "{} declares a URL slot but the contract holds {value}",
                         field.id
                     ),
+                    // Not merely a string: one the applier accepts back, or the control
+                    // silently resets the field on the first save.
                     Shape::Choice(values) => {
                         let held = value.as_str().unwrap_or_default();
                         assert!(
@@ -1280,12 +1177,8 @@ mod tests {
 
     #[test]
     fn a_hint_never_states_an_obligation() {
-        // The pill states the tier and submit enforces it, so a hint repeating it is redundant
-        // where it agrees and a second, contradictory source of truth where it does not.
-        //
-        // "Needed before the project can be published" is deliberately still allowed, and is what
-        // the `Recommended` fields carry: a different gate, owned by RDU at publication.
-        // The tier note on `Obligation` is where that distinction is written down.
+        // The pill states the tier and submit enforces it. "Needed before the
+        // project can be published" is allowed: a different gate, RDU's.
         for field in FIELDS {
             let Some(hint) = field.hint else { continue };
             assert!(

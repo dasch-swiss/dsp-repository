@@ -1,29 +1,20 @@
 //! The schema, as a forward-only ordered statement list guarded by
 //! `PRAGMA user_version`.
 //!
-//! No migration framework and no added dependency. What one would buy here is a
-//! version table, checksums and down-migrations; what this needs is "run the
-//! statements this database has not run yet", and SQLite already carries the
-//! counter for it in its own header.
-//!
 //! The rules that keep it honest:
 //!
 //! - [`MIGRATIONS`] becomes **append-only at the first deployment**, and is not there yet. The
 //!   editor has never been deployed and every database it has is disposable, so a column the first
-//!   iteration needs belongs in `0001` rather than in a migration recording a history nobody lived
-//!   through. Once a database exists that we cannot recreate, editing a released entry is out:
-//!   every database that already ran it would skip the edit, so the schema would differ by
-//!   deployment age. A developer holding a local file database across such an edit recreates it —
-//!   the `user_version` guard skips an entry it has already applied, so the edit would never reach
-//!   them.
+//!   iteration needs belongs in `0001`. Once a database exists that we cannot recreate, editing a
+//!   released entry is out: the `user_version` guard skips an entry it has already applied, so
+//!   every database that ran it would keep the old shape.
 //! - Everything runs inside one `BEGIN IMMEDIATE` transaction, the `user_version` bump included, so
 //!   a crash part-way leaves the database at the version it started from rather than half-migrated.
 //!   `BEGIN IMMEDIATE` also makes two processes starting at once safe: the second waits and then
 //!   finds nothing to do.
 //! - `PRAGMA foreign_keys` is **not** touched here. It is a documented silent no-op inside a
 //!   transaction, so a migration that set it would appear to work and leave every `ON DELETE
-//!   CASCADE` unenforced. It belongs to the per-connection init hook in [`super::init_connection`],
-//!   and this is the helper it would be tempting to share.
+//!   CASCADE` unenforced. It belongs to the per-connection init hook in [`super::init_connection`].
 
 use super::{Database, DbError};
 

@@ -69,8 +69,8 @@ export const NOTICE_SHORTCODE = DEPOSITOR_SHORTCODES[3];
  */
 export const JOURNEY_SHORTCODE = DEPOSITOR_SHORTCODES[4];
 /**
- * The depositor-visible state sequence (REQ-2.1) and the waiting-for-release
- * notice (REQ-2.5) — **one project per pass**, not one per spec.
+ * The depositor-visible state sequence and the waiting-for-release notice —
+ * **one project per pass**, not one per spec.
  *
  * Every other mutating spec is idempotent enough to run twice against one
  * server, because it asserts a transition rather than a starting point. This
@@ -161,10 +161,9 @@ export default defineConfig({
       EDITOR_DATA_DIR: "modules/dpe/server/data",
       // Unset EDITOR_DB_DIR means in-memory SQLite — a fresh database per run.
       EDITOR_RDU_EMAILS: RDU_EMAIL,
-      // 1, not 0: `EditorConfig::validate` refuses a zero cooldown outright
-      // ("must be at least 1"), so the issue's "set the cooldown to zero"
-      // cannot be followed literally. 1 second is the floor and is enough to
-      // keep a retried sign-in from tripping the resend throttle.
+      // 1, not 0: `EditorConfig::validate` refuses a zero cooldown outright, and
+      // 1 second is the floor — enough to keep a retried sign-in from tripping
+      // the resend throttle.
       EDITOR_LOGIN_COOLDOWN_SECS: "1",
       // The console mailer logs codes at WARN, so `error` would hide them.
       RUST_LOG: "warn",

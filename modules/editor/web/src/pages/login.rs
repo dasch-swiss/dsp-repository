@@ -1,41 +1,27 @@
 //! The two login screens: the address form and the code-entry form.
 //!
-//! Both are plain `<form method="post">` — no Datastar, no JavaScript. Login is
-//! the one surface that has to work before anything else does, and a fetch-based
-//! submit here would put the whole authentication flow behind a script load.
-//!
-//! Neither page renders the address the user typed. Not because the markup is a
-//! log — the address must not reach a log or a trace — but because it never needs to: the
+//! Both are plain `<form method="post">`, no Datastar: login has to work before
+//! any script does. Neither page renders the address the user typed: the
 //! browser is bound to its code by an `HttpOnly` cookie, so nothing has to be
 //! carried in a hidden field, and a page with no address on it cannot leak one
 //! through a screenshot, a shared URL or a cached response.
 //!
-//! Both take `next` — where the reader was going when they were sent here. It
-//! is rendered into form actions and one link, never into a field the reader can
-//! see or edit. The caller has already checked that it is a path inside this
-//! service; these pages add HTML escaping on top, so the worst a bad value could
-//! do here is produce a link that goes nowhere.
-//!
-//! The error strings are the caller's, deliberately. Whether a message may say
-//! "that address is not registered" is an anti-enumeration decision
-//! and belongs with the handler that knows, not with the template.
-//!
-//! The banner and the two fields are Mosaic tiles. `alert` renders `role="alert"`
-//! for its `Danger` variant, so a screen reader announces the message on
-//! arrival: these pages re-render on failure, so it is present at load rather
-//! than injected.
+//! Both take `next`, rendered into form actions and one link, never into a field
+//! the reader can see or edit; the caller has checked it is a path inside this
+//! service, and Maud escapes it on top. The error strings are the caller's:
+//! whether a message may say "that address is not registered" is an
+//! anti-enumeration decision for the handler. The `alert` tile renders
+//! `role="alert"` for `Danger`, so a screen reader announces a re-rendered
+//! failure on arrival.
 
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::button::{button, ButtonType};
 use mosaic_tiles::text_field::{text_field, InputType};
 
-/// `path`, carrying `next` as a query parameter when there is one.
-///
-/// The value is interpolated rather than encoded, which is sound only because
-/// the caller restricts it to unreserved characters — see `safe_next` in
-/// `editor-server`. Maud escapes it into the attribute regardless, so a value
-/// that slipped through that check cannot break out of the `href`.
+/// `path`, carrying `next` as a query parameter when there is one. Interpolated
+/// rather than encoded: the caller restricts it to unreserved characters (see
+/// `safe_next` in `editor-server`), and Maud escapes it into the attribute.
 fn with_next(path: &str, next: Option<&str>) -> String {
     match next {
         Some(next) => format!("{path}?next={next}"),
@@ -61,14 +47,10 @@ pub fn request_code(next: Option<&str>, error: Option<&str>) -> Markup {
     }
 }
 
-/// The login code, shown on the page instead of being sent.
-///
-/// Rendered only where the caller has established that this deployment has no
-/// mail relay, no durable database and is not production — see
-/// `EditorConfig::reveals_login_code`. It is styled as a warning rather than a
-/// convenience because a page that shows a live credential should not look
-/// ordinary, and it names the reason so nobody has to guess whether the
-/// deployment is misconfigured or deliberately throwaway.
+/// The login code, shown on the page instead of being sent. Rendered only where
+/// `EditorConfig::reveals_login_code` holds: no mail relay, no durable database,
+/// not production. Styled as a warning, naming the reason, because a page
+/// showing a live credential must not look ordinary.
 fn revealed_code(code: &str) -> Markup {
     let body = html! {
         p class="mt-1" {
@@ -86,8 +68,6 @@ fn revealed_code(code: &str) -> Markup {
     }
 }
 
-/// The address field, named so the form body reads as a list of fields rather
-/// than a wall of builder calls.
 fn email_field() -> Markup {
     html! {
         ({
@@ -108,16 +88,12 @@ fn code_field() -> Markup {
     }
 }
 
-/// `GET /login/code` — take the six digits.
+/// `GET /login/code`: take the six digits.
 ///
 /// The way back is a link to `/login`, not a resend button: a resend needs the
 /// address, and the only places to keep it would be a hidden field or a third
-/// endpoint. Retyping it costs a legitimate user a few seconds and keeps the
-/// address off the page.
-///
-/// The field is `text_field(...).one_time_code(6)`, which sets
-/// `autocomplete="one-time-code"`, `inputmode="numeric"`, the pattern and the
-/// length together — see the tile for why those four only work as a set.
+/// endpoint. `one_time_code(6)` sets `autocomplete`, `inputmode`, the pattern
+/// and the length together; the tile says why they only work as a set.
 pub fn enter_code(next: Option<&str>, error: Option<&str>, revealed: Option<&str>) -> Markup {
     html! {
         div class="max-w-md mx-auto py-12" {
@@ -168,8 +144,6 @@ mod tests {
 
     #[test]
     fn test_both_forms_are_plain_posts_without_datastar() {
-        // Login has to work before any script does. A `data-on:` control here
-        // would put the whole authentication flow behind a bundle load.
         for out in [
             request_code(None, None).into_string(),
             enter_code(None, None, None).into_string(),
@@ -197,9 +171,8 @@ mod tests {
 
     #[test]
     fn test_the_code_is_absent_unless_the_caller_passes_one() {
-        // The default is no reveal. Every deployment that mails a code renders
-        // this page, so the block appearing by accident is the failure that
-        // matters.
+        // Every deployment that mails a code renders this page, so the block
+        // appearing by accident is the failure that matters.
         let out = enter_code(None, None, None).into_string();
         assert!(!out.contains("no mail was sent"), "{out}");
         assert!(!out.contains("alert-warning"), "{out}");
@@ -207,8 +180,6 @@ mod tests {
 
     #[test]
     fn test_a_revealed_code_says_why_it_is_on_the_page() {
-        // A page showing a live credential must not look ordinary, and it has to
-        // distinguish "deliberately throwaway" from "misconfigured relay".
         let out = enter_code(None, None, Some("482917")).into_string();
         assert!(out.contains("482917"), "{out}");
         assert!(out.contains("no mail relay"), "{out}");
@@ -217,9 +188,8 @@ mod tests {
 
     #[test]
     fn test_a_revealed_code_is_escaped() {
-        // It comes from the database rather than the request, so this is the
-        // second layer rather than the first — but a credential rendered into a
-        // page is the last place to rely on someone else's validation.
+        // The code comes from the database, not the request; a credential rendered
+        // into a page is still escaped here.
         let out = enter_code(None, None, Some("<script>alert(1)</script>")).into_string();
         assert!(!out.contains("<script>alert(1)</script>"), "{out}");
         assert!(out.contains("&lt;script&gt;"), "{out}");
@@ -227,9 +197,6 @@ mod tests {
 
     #[test]
     fn test_neither_page_carries_an_address_field_to_repost() {
-        // The browser is bound to its code by an HttpOnly cookie, so the address
-        // never has to be carried forward. A hidden field would put it in the
-        // markup, in the back/forward cache and in any screenshot of the page.
         let out = enter_code(None, None, None).into_string();
         assert!(!out.contains(r#"type="hidden""#), "{out}");
         assert!(!out.contains(r#"name="email""#), "{out}");
@@ -237,8 +204,6 @@ mod tests {
 
     #[test]
     fn test_the_way_back_from_the_code_page_is_a_get_link() {
-        // Not a resend button: a resend needs the address, and the only places to
-        // keep it are a hidden field or a third endpoint.
         let out = enter_code(None, None, None).into_string();
         assert!(out.contains(r#"<a href="/login""#), "{out}");
     }
@@ -257,9 +222,8 @@ mod tests {
 
     #[test]
     fn test_the_destination_never_becomes_a_field_the_reader_can_edit() {
-        // It belongs in the action, not in the form body: a visible or editable
-        // field invites a reader to change where signing in sends them, and puts
-        // one more thing in the markup of the page that must work.
+        // In the action, not the form body: an editable field invites a reader to
+        // change where signing in sends them.
         let out = request_code(Some("/projects/0801"), None).into_string();
         assert!(!out.contains(r#"name="next""#), "{out}");
         assert!(!out.contains(r#"type="hidden""#), "{out}");
@@ -267,8 +231,7 @@ mod tests {
 
     #[test]
     fn test_a_destination_cannot_break_out_of_the_attribute_it_is_rendered_into() {
-        // The server validates it before it gets here; this is the second layer,
-        // so a widening of that check cannot become an injection in one step.
+        // The server validates it first; this is the second layer.
         let out = request_code(Some(r#"/x" onmouseover="alert(1)"#), None).into_string();
         assert!(!out.contains(r#"onmouseover="alert(1)""#), "{out}");
         assert!(out.contains("&quot;"), "{out}");

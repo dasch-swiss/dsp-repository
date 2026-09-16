@@ -7,10 +7,8 @@ use crate::components;
 
 /// Who a page is rendered for, when anyone is signed in.
 ///
-/// A named type rather than a second `Option<&str>` parameter beside
-/// `traceparent`: two adjacent `Option<&str>` arguments are silently
-/// interchangeable, and the swap would put a trace id in the header where a
-/// name belongs and leave the correlation meta tag holding a person's name.
+/// A named type rather than a second `Option<&str>` beside `traceparent`: two
+/// adjacent `Option<&str>` arguments are silently interchangeable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Viewer<'a> {
     /// The signed-in user's display name. Never the address — the header is on
@@ -18,12 +16,8 @@ pub struct Viewer<'a> {
     pub name: &'a str,
 }
 
-/// The `<head>`: charset/viewport, the conditional `traceparent` correlation
-/// meta tag, Google Fonts (Lora/Lato, matching the Mosaic design tokens), the
-/// compiled stylesheet, and the document title.
-///
-/// No analytics script: the editor is authenticated and its observability comes
-/// from OTel plus the first-party telemetry beacon, not a third-party tracker.
+/// The `<head>`. No analytics script: the editor is authenticated and its
+/// observability is OTel plus the first-party telemetry beacon.
 fn head(title: &str, traceparent: Option<&str>, css_href: &str) -> Markup {
     html! {
         head {
@@ -44,18 +38,12 @@ fn head(title: &str, traceparent: Option<&str>, css_href: &str) -> Markup {
     }
 }
 
-/// The full HTML document: `<head>` plus the body shell (header, the page
-/// `content` in `<main>`, footer).
+/// The full HTML document: `<head>` plus the body shell.
 ///
-/// `title` is the document title as it should appear; callers add the " — DaSCH
-/// Metadata Editor" suffix themselves rather than having it appended here, so a
-/// page can opt out.
-///
-/// `traceparent` is the current server span, rendered as a meta tag for
-/// client-side trace correlation. `css_href` is resolved once at startup —
-/// unhashed in dev, content-hashed in release. `viewer` is `None` on every page
-/// reachable without a session, which is what keeps the sign-out control off
-/// the login screens.
+/// Callers add the " — DaSCH Metadata Editor" suffix to `title` themselves, so
+/// a page can opt out. `css_href` is resolved once at startup, unhashed in dev
+/// and content-hashed in release. `viewer` is `None` on every page reachable
+/// without a session, which keeps the sign-out control off the login screens.
 pub fn page(
     title: &str,
     traceparent: Option<&str>,
@@ -139,8 +127,6 @@ mod tests {
 
     #[test]
     fn the_shell_carries_the_viewer_into_the_header() {
-        // The sign-out control lives in the header, so `page` is where a signed-in
-        // session becomes visible — and where a login screen stays anonymous.
         let signed_in =
             page("t", None, "/assets/app.css", Some(Viewer { name: "A Depositor" }), html! {}).into_string();
         assert!(signed_in.contains("A Depositor"), "{signed_in}");

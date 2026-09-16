@@ -130,8 +130,8 @@ pub(crate) fn render(
 
 /// A 403 rendered as a page.
 ///
-/// The status is what the requirement asks for; the page is because a bare 403
-/// is a dead end in a browser. Everything that reaches this is authenticated —
+/// The status is the answer; the page is because a bare 403 is a dead end in a
+/// browser. Everything that reaches this is authenticated —
 /// an unauthenticated request is redirected to login by the extractor — so the
 /// header renders signed in and its links are a way out.
 pub(crate) fn forbidden(
@@ -148,15 +148,6 @@ pub(crate) fn forbidden(
     )
 }
 
-/// Read the published project set, reporting what did not load.
-///
-/// Deliberately not fatal, in either direction. An unset `EDITOR_DATA_DIR` is a
-/// configured state — the PR preview and a bare `cargo run` have no snapshot —
-/// and a malformed file among 85 is an operational problem with the image, not a
-/// reason to refuse every request including the ones that never touch the
-/// projects. Both are reported at `warn` with the count, which is the thing an
-/// operator can act on: "84 of 85" is a specific, findable problem where a
-/// process that exited says only that it exited.
 /// The temporal-resolution tables, or empty ones without a data directory.
 ///
 /// Empty is not silently permissive: with no tables every free-text period is
@@ -183,6 +174,14 @@ fn load_temporal(data_dir: Option<&std::path::Path>) -> TemporalTables {
     tables
 }
 
+/// Read the published project set, reporting what did not load.
+///
+/// Deliberately not fatal, in either direction. An unset `EDITOR_DATA_DIR` is a
+/// configured state — the PR preview and a bare `cargo run` have no snapshot —
+/// and a malformed file is an operational problem with the image, not a reason
+/// to refuse every request including the ones that never touch the projects.
+/// Both are reported at `warn` with the count, which is the thing an operator
+/// can act on.
 fn load_published(data_dir: Option<&std::path::Path>) -> editor_core::published::PublishedProjects {
     use editor_core::published::PublishedProjects;
 
@@ -239,18 +238,17 @@ fn load_agents(data_dir: Option<&std::path::Path>) -> editor_core::agents::Agent
 /// and redirects to login if there is no account. Answering here instead would
 /// mean two places that know what a signed-out visitor gets.
 ///
-/// It exists because the shell's header links here from every page — without the
-/// route, the logo on the 404 page led to another 404.
+/// It exists because the shell's header links here from every page: without the
+/// route, the logo on the 404 page is another 404.
 pub(crate) async fn root() -> axum::response::Redirect {
     axum::response::Redirect::to("/projects")
 }
 
 /// An instant as a page shows it.
 ///
-/// UTC and explicit about it. The alternative is a local time that depends on
-/// where the server thinks it is, which for a value used to answer "did my code
-/// go out before or after I asked" — or "is this the save I just made" — is
-/// worse than an offset the reader converts themselves.
+/// UTC and explicit about it, rather than a local time that depends on where the
+/// server thinks it is — worse, for a value answering "did my code go out before
+/// or after I asked", than an offset the reader converts themselves.
 ///
 /// Here rather than in one of the surfaces that renders it: the account list and
 /// the project form both do, and two copies of one format string is how the two
@@ -330,7 +328,6 @@ fn main() -> ExitCode {
 
     match cli.command {
         None => {
-            // No subcommand: print help and exit
             use clap::CommandFactory;
             Cli::command().print_help().ok();
             println!();
@@ -429,10 +426,9 @@ async fn serve() -> ExitCode {
     };
 
     // An unset data directory is reported as unset rather than as some path the
-    // editor invented. It is no longer harmless: with no published set the
-    // project list is empty and no form can be pre-filled, so the
-    // load below says how many projects it found and every failure names its
-    // file.
+    // editor invented: with no published set the project list is empty and no
+    // form can be pre-filled, so the load below says how many projects it found
+    // and every failure names its file.
     let data_dir = config
         .data_dir
         .as_deref()
@@ -581,11 +577,10 @@ async fn serve() -> ExitCode {
     let temporal = std::sync::Arc::new(load_temporal(config.data_dir.as_deref()));
     let agents = std::sync::Arc::new(load_agents(config.data_dir.as_deref()));
 
-    // REQ-2.3/2.4, once per process: the published set is baked into the image,
-    // so the moment a deployment carrying an approved change starts is the
-    // moment that change is Online. Not fatal — see `reconcile`'s module docs;
-    // a failure here costs a stale label, and refusing to start costs the
-    // service.
+    // Once per process: the published set is baked into the image, so the moment
+    // a deployment carrying an approved change starts is the moment that change
+    // is Online. Not fatal — see `reconcile`'s module docs; a failure here costs
+    // a stale label, and refusing to start costs the service.
     match reconcile::reconcile_published(&*db, &published).await {
         // Two spelled-out arms rather than one parameterised call: `tracing`
         // resolves the level at compile time, so it cannot be a variable.

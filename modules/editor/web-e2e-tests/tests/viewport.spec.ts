@@ -37,12 +37,10 @@ test("the notice from a below-the-fold save stays inside the viewport", async ({
 
   // The notice region is `sticky top-0`. A `sticky` element whose every offset
   // resolves to `auto` is inert and scrolls away with the page — which is what
-  // an absent `top-0` in the built stylesheet produces. It was measured at
-  // y=-705 once, with `position: sticky` correctly applied and the class simply
-  // missing from app.css.
+  // an absent `top-0` in the built stylesheet produces.
   //
-  // Read the computed position, never the class: the class was present in that
-  // failure.
+  // Read the computed position, never the class: the class can be present while
+  // the built stylesheet has dropped the rule.
   await saveFromBelowTheFold(page);
 
   const notice = noticeOf(page);
@@ -94,7 +92,7 @@ test("a save without JavaScript reports that it happened", async ({ page }) => {
   // Saving with JavaScript disabled navigates, the draft is written, and the
   // live region comes back empty — so a depositor on the no-JS path gets no
   // confirmation that their work was saved. The notice is produced only by the
-  // Datastar patch. Found by this suite; fixing it is not DEV-6920's scope.
+  // Datastar patch.
   test.fail();
 
   await saveFromBelowTheFold(page);

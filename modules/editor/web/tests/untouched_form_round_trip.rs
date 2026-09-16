@@ -1,19 +1,13 @@
-//! Saving a form nobody edited must not change the project, for all 85 files.
-//!
-//! `editor-core`'s `canonical_round_trip` pins `load -> draft -> write`; this
-//! one puts the **form** in the middle, with the submit carrying exactly what an
-//! untouched control would post.
+//! Saving a form nobody edited must not change the project, for every committed
+//! file. `editor-core`'s `canonical_round_trip` pins `load -> draft -> write`;
+//! this one puts the form in the middle, with the submit carrying exactly what
+//! an untouched control would post.
 //!
 //! In `editor-web` because it derives its table from
-//! [`registry::Field`](editor_web::form::registry::Field)'s declared shapes, and
-//! `server -> web -> core` puts the registry on this side. Deriving it is the
-//! point: a field whose shape is declared is covered automatically, where a
-//! hand-written table agrees with the registry only by inspection.
-//!
-//! Asserted against the committed bytes rather than a fixture, because every way
-//! this fails is silent: the unit tests pass, the form renders, the draft is
-//! valid, and the only symptom is a pull request touching dozens of projects
-//! nobody edited.
+//! [`registry::Field`](editor_web::form::registry::Field)'s declared shapes, so a
+//! field whose shape is declared is covered automatically. Asserted against the
+//! committed bytes rather than a fixture because every way this fails is silent:
+//! the only symptom is a pull request touching dozens of projects nobody edited.
 
 use std::path::{Path, PathBuf};
 
@@ -52,12 +46,10 @@ fn project_files() -> Vec<PathBuf> {
     files
 }
 
-/// What an untouched form would post for `draft`.
-///
-/// A control renders the stored value, except that a placeholder renders as
-/// empty — which is the whole point of the test — so that is what the body
-/// carries. Every field with a declared shape is present, because a section
-/// posts its own fields whether or not they hold anything.
+/// What an untouched form would post for `draft`: the stored value per control,
+/// except that a placeholder renders as empty. Every field with a declared shape
+/// is present, because a section posts its own fields whether or not they hold
+/// anything.
 fn untouched_submit(draft: &ProjectDraft) -> FormBody {
     let mut pairs: Vec<(String, String)> = Vec::new();
 
@@ -156,10 +148,8 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                 }
             }
             Shape::TextOrReferenceRows(_) => {
-                // A row is a variant. Both branches are in the DOM and the
-                // inactive one is only `hidden`, so an untouched form posts
-                // *both* candidates plus the discriminant — which is exactly
-                // what the applier must narrow with the discriminant alone.
+                // Both branches are in the DOM, the inactive one only hidden, so an
+                // untouched form posts both candidates plus the discriminant.
                 let rows = draft.get(field.id).and_then(Value::as_array).cloned().unwrap_or_default();
                 if rows.is_empty() {
                     pairs.push((format!("{}.row", field.id), String::new()));
@@ -193,11 +183,8 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                 }
             }
             Shape::AttributionRows => {
-                // A row is a contributor plus a role checkbox group. The group
-                // posts one value per ticked box, which for an untouched form
-                // is exactly the roles the project holds - in the order it
-                // holds them, since the widget lists the offer first and then
-                // whatever the row adds.
+                // The role group posts one value per ticked box: the roles the project
+                // holds, in its order.
                 let rows = draft.get(field.id).and_then(Value::as_array).cloned().unwrap_or_default();
                 if rows.is_empty() {
                     pairs.push((format!("{}.row", field.id), String::new()));
@@ -223,9 +210,7 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                 }
             }
             Shape::AgentRows | Shape::StringRows => {
-                // Same row protocol as the language-map rows below, with one
-                // text per row: the hidden `{field}.row` key, and the empty
-                // marker when the list has none.
+                // The row protocol, with one text per row.
                 let rows = draft.get(field.id).and_then(Value::as_array).cloned().unwrap_or_default();
                 if rows.is_empty() {
                     pairs.push((format!("{}.row", field.id), String::new()));
@@ -237,12 +222,9 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                 }
             }
             Shape::MultilingualRows => {
-                // The tile emits a hidden `{field}.row` per row and a single
-                // empty one when the list has none — the marker, which is what
-                // lets a depositor clear the last row rather than the field
-                // reading as absent and being left alone. Row keys are
-                // positional on a fresh render, so `r0` is the stored list's
-                // first row.
+                // A hidden `{field}.row` per row, and one empty marker when the list
+                // has none, so the last row can be cleared. Keys are positional on a
+                // fresh render.
                 let rows = draft.get(field.id).and_then(Value::as_array).cloned().unwrap_or_default();
                 if rows.is_empty() {
                     pairs.push((format!("{}.row", field.id), String::new()));
@@ -260,10 +242,8 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                 }
             }
             Shape::StringList(_) => {
-                // A checkbox group posts one value per ticked box and nothing at all when none is
-                // ticked. Nothing-at-all is what leaves the field alone rather than
-                // clearing it, so an untouched form over a project with no list
-                // posts no name — the state several committed files are in for `typeOfData`.
+                // A checkbox group posts nothing when none is ticked, which leaves the
+                // field alone; several committed files are in that state for typeOfData.
                 for value in draft
                     .get(field.id)
                     .and_then(Value::as_array)
@@ -275,10 +255,7 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                 }
             }
             Shape::Url(slot) => {
-                // The control renders the slot's stored value, with a
-                // placeholder rendering empty — two projects hold
-                // `url: ["MISSING"]`, which is the same trap the scalar arm
-                // above exists for, reached through a different reader.
+                // A placeholder renders empty; two projects hold url: ["MISSING"].
                 let rendered = draft
                     .url_slot(slot)
                     .filter(|text| !platform_metadata::is_placeholder(text))
@@ -286,21 +263,15 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                 pairs.push((field.id.to_string(), rendered.to_string()));
             }
             Shape::Choice(_) => {
-                // A radio group posts the checked value and a `<select>` the
-                // selected one, so an untouched form carries whatever the
-                // project holds. A project holding *nothing* posts nothing at
-                // all: no radio is checked and the group submits no name, which
-                // is what leaves the field alone rather than clearing it.
+                // A project holding nothing posts nothing: no radio is checked, so the
+                // field is left alone rather than cleared.
                 if let Some(value) = draft.get(field.id).and_then(Value::as_str) {
                     pairs.push((field.id.to_string(), value.to_string()));
                 }
             }
             Shape::Multilingual => {
-                // The widget renders a control per offered language whether or
-                // not the value has that tag, so an untouched submit carries
-                // empty texts for the ones it does not — which is what an
-                // earlier version of this helper left out, posting only the
-                // stored tags and testing a body no browser would send.
+                // A control per offered language whether or not the value has the tag,
+                // so an untouched submit carries empty texts for the missing ones.
                 let stored = draft.multilingual(field.id);
                 for tag in UI_LANGUAGES {
                     pairs.push((format!("{}.{tag}", field.id), stored.get(tag).unwrap_or_default().to_string()));
@@ -368,13 +339,9 @@ fn saving_an_untouched_form_leaves_every_committed_project_byte_identical() {
 
 #[test]
 fn the_corpus_really_does_carry_the_placeholders_this_test_is_about() {
-    // A positive canary. The test above asserts an *absence* of change, so it
-    // would pass just as well over a corpus with no sentinel in it — at which
-    // point it is proving nothing and nobody can tell. This pins that the
-    // opportunity for the failure is present, and how much of it there is.
-    //
-    // The other two traps are covered the same way, by unit tests in
-    // `editor_core::form` that assert the rule directly rather than its effect.
+    // A positive canary: the test above asserts an absence of change and would
+    // pass over a corpus with no sentinel. The other two traps are pinned by unit
+    // tests in editor_core::form.
     let mut sentinels = 0;
     let mut end_date_sentinels = 0;
     for path in project_files() {
@@ -397,12 +364,8 @@ fn the_corpus_really_does_carry_the_placeholders_this_test_is_about() {
 
 #[test]
 fn the_corpus_carries_a_row_whose_text_only_trimming_would_change() {
-    // A positive canary for the row arm. `apply_multilingual_rows` looks a
-    // submitted row text up against every stored row so that trimming cannot
-    // rewrite a value nobody edited — and the only thing that proves the rule is
-    // live is a committed row with surrounding whitespace in it. Without this,
-    // the rule could be removed and the round trip above would still pass over a
-    // corpus that happened to have none.
+    // A positive canary for the row arm: only a committed row with surrounding
+    // whitespace proves the trimming rule is live.
     let mut found: Vec<String> = Vec::new();
     for path in project_files() {
         let raw: ProjectRaw = serde_json::from_str(&std::fs::read_to_string(&path).expect("readable")).expect("parses");
@@ -427,11 +390,8 @@ fn the_corpus_carries_a_row_whose_text_only_trimming_would_change() {
 
 #[test]
 fn the_body_this_test_submits_carries_every_field_a_shape_is_declared_for() {
-    // The other half of the canary, and the reason the table is derived rather
-    // than written out: a field whose shape is declared but which
-    // `untouched_submit` forgets to render is a field the round-trip check
-    // silently skips, and the check would still pass. Asserted against the
-    // registry so a newly shaped field cannot be missed.
+    // A field whose shape is declared but which untouched_submit forgets to
+    // render is one the round trip silently skips.
     let draft = ProjectDraft::from_raw(
         &serde_json::from_str::<ProjectRaw>(
             &std::fs::read_to_string(projects_dir().join("0801_bebb.json")).expect("readable"),
@@ -449,12 +409,7 @@ fn the_body_this_test_submits_carries_every_field_a_shape_is_declared_for() {
                 "{} is declared but never posts its discriminant",
                 field.id
             ),
-            // Only where the project holds one — an unset choice posts nothing,
-            // by design, so requiring the name unconditionally would assert a
-            // body no browser sends.
             Shape::Url(_) => assert!(body.has(field.id), "{} is declared but never posted", field.id),
-            // Only where the project holds one, for the same reason a choice
-            // is: an empty group posts no name.
             Shape::AgentRows
             | Shape::StringRows
             | Shape::MultilingualRows

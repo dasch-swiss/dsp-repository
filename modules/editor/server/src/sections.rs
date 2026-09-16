@@ -85,12 +85,6 @@ const WITHDRAW_REFUSED_GONE: &str = "There is no submission to take back — RDU
 const WITHDRAW_REFUSED_STORAGE: &str = "The submission could not be taken back, so it is still in RDU's queue. Try \
                                         again, and if it keeps happening the service needs attention.";
 
-/// The field-level error an unresolvable `temporalCoverage` entry renders as.
-///
-/// Says what to do, not only what is wrong: the `Reference` variant always
-/// resolves, which is the escape route the decision to refuse rests on —
-/// without naming it, a depositor whose period the table does not know is
-/// simply stuck.
 /// The refusal a body over the per-field cap renders as.
 ///
 /// A write refusal rather than a submit one: applied to a save too, because an
@@ -174,6 +168,10 @@ const SENTINEL_MESSAGE: &str = "\"MISSING\" and \"CALCULATED\" are reserved here
 /// and a link to the section that holds it.
 const UNANSWERED_MESSAGE: &str = "Required before this project can be submitted, and it has no value yet.";
 
+/// The field-level error an unresolvable `temporalCoverage` entry renders as.
+///
+/// Says what to do, not only what is wrong: the `Reference` variant always
+/// resolves, so refusing is only defensible while the message names that way out.
 fn unresolved_message(name: &str) -> String {
     format!(
         "\"{name}\" cannot be matched to a date range, and the repository needs one for every period. Either pick \
@@ -202,8 +200,8 @@ struct Context<'a> {
     record: Option<DraftRecord>,
     /// Set while a submission is awaiting or under review.
     locked: Option<page::Locked>,
-    /// Whether an approved change is waiting for the release that carries it
-    /// (REQ-2.5). Not a lock: approve is the only outcome that does not hand
+    /// Whether an approved change is waiting for the release that carries it.
+    /// Not a lock: approve is the only outcome that does not hand
     /// the project back, so the form stays editable.
     awaiting_release: bool,
     /// The pending submission, when there is one. The same read `locked` comes
@@ -366,7 +364,7 @@ async fn context<'a>(
         SubmissionState::InReview => Some(page::Locked::InReview),
         SubmissionState::Approved => None,
     });
-
+    // An approved record that the published set does not yet carry is
     // REQ-2.5. An approved record that the published set does not yet carry is
     // waiting for a release; one it does carry is already Online, and the
     // startup pass will discard it. Read here rather than derived from `locked`
@@ -892,8 +890,7 @@ async fn row_action(
     //
     // Whether the field has rows comes from `Shape::has_rows`, which is exhaustive, and not from
     // a list of shapes written out here. The renderer emits an add control for every row shape,
-    // so an allowlist that misses one serves a `404` to a button the page itself drew — which is
-    // what four of the eight row shapes did.
+    // so an allowlist that misses one serves a `404` to a button the page itself drew.
     let Some(field) = context
         .section
         .fields_for(context.audience)
@@ -3664,9 +3661,9 @@ mod tests {
     async fn an_approved_submission_cannot_be_taken_back() {
         // The terminal-state rule from the depositor's side: an approved record
         // is on its way to a pull request and is no longer theirs to take back.
-        // Allowed, this is the failure the issue names from the other
-        // direction — the PR open, the editor record gone, and the project
-        // silently back at its published state.
+        // Allowed, it is the failure from the other direction — the PR open,
+        // the editor record gone, and the project silently back at its published
+        // state.
         let (state, _) = test_state("section-withdraw-approved").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&state, user.id).await;
@@ -4150,18 +4147,17 @@ mod tests {
         assert!(proposals_for(&state, "0801d").await.is_empty());
     }
 
-    /// The bug two reviewers found independently, driven through the **rendered markup** rather
-    /// than a hand-built body.
+    /// Driven through the **rendered markup** rather than a hand-built body.
     ///
     /// A section renders every one of its fields inside one `<form>`, so a project with two
     /// resolved agent references renders two "Propose changes" controls. Both a native submit and
-    /// Datastar's form mode post every *field* regardless of which button was clicked, so when the
-    /// entity rode in a hidden input the body carried both ids and `FormBody::get` took the first:
-    /// clicking the second row's button proposed a change to the first row's entity, silently. Only
-    /// the activated **button** posts its name and value, which is why the id lives there.
+    /// Datastar's form mode post every *field* regardless of which button was clicked, so an id in
+    /// a hidden input arrives twice and `FormBody::get` takes the first — clicking the second
+    /// row's button would propose a change to the first row's entity, silently. Only the activated
+    /// **button** posts its name and value, which is why the id lives there.
     ///
-    /// The old tests could not catch this: each hand-crafted a body with one `propose.entity`
-    /// value, so the collision never existed in them.
+    /// A hand-built body cannot catch this: it carries one `propose.entity` value, so the
+    /// collision never exists in it.
     #[tokio::test]
     async fn propose_changes_targets_the_row_whose_button_was_clicked() {
         let (state, _) = test_state("section-propose-changes-second-row").await;
@@ -4251,7 +4247,7 @@ mod tests {
         assert_eq!(proposals[0].entity_id, "organization-001");
     }
 
-    /// Decision 5 on the issue, end to end.
+    /// A committed organisation with an already incomplete address, end to end.
     ///
     /// `organization-065` (Tanta University) is committed with no `postalCode`. A depositor
     /// proposing any other change to it must not be made to invent one — "all four members or
@@ -4259,8 +4255,8 @@ mod tests {
     /// `typed_sentinels` already makes for a reference `url` because `0110_h-steiner` holds
     /// `MISSING`.
     ///
-    /// This is the test that would have caught the carve-out shipping as dead code: it only passes
-    /// once this layer can hand `check_organization` the published entity to compare against.
+    /// It only passes once this layer hands `check_organization` the published entity to compare
+    /// against; without that the carve-out is dead code.
     #[tokio::test]
     async fn a_change_to_an_organisation_with_an_already_incomplete_address_can_be_submitted() {
         let (state, _) = test_state("section-propose-changes-grandfathered").await;
@@ -4830,7 +4826,7 @@ mod tests {
 
     #[tokio::test]
     async fn an_approved_change_not_yet_published_says_it_is_waiting_for_a_release() {
-        // REQ-2.5. Informational, not a lock: approve is the only outcome that
+        // Informational, not a lock: approve is the only outcome that
         // does not hand the project back, so the form has to stay editable.
         let (state, _) = test_state("section-awaiting-release").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;

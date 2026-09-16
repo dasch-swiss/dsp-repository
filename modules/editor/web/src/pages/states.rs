@@ -1,10 +1,8 @@
-//! `GET /states` — what each state means and how long Online takes (REQ-2.6).
+//! `GET /states`: what each state means and how long Online takes.
 //!
-//! Every label and explanation comes from
-//! [`ProjectState`](editor_core::status::ProjectState), which the list column
-//! and the waiting notice also read, so the three cannot drift. The page
-//! iterates `ProjectState::ALL` for the same reason: a sixth state cannot be
-//! added and silently left unexplained.
+//! Every label and explanation comes from [`ProjectState`], which the list
+//! column and the waiting notice also read, so the three cannot drift. The page
+//! iterates `ProjectState::ALL`, so a sixth state cannot be left unexplained.
 use editor_core::status::ProjectState;
 use maud::{html, Markup};
 
@@ -41,9 +39,8 @@ mod tests {
 
     #[test]
     fn test_every_state_is_named_and_explained() {
-        // REQ-2.6 asks for a page "explaining each state". Iterating `ALL` is
-        // what makes that true by construction; this pins that the iteration
-        // actually reaches the rendering.
+        // Iterating `ALL` makes this true by construction; this pins that the
+        // iteration reaches the rendering.
         let out = explanation().into_string();
         for state in ProjectState::ALL {
             assert!(out.contains(state.label()), "{} is missing from the page", state.label());
@@ -57,8 +54,7 @@ mod tests {
 
     #[test]
     fn test_the_page_states_the_expected_wait_before_online() {
-        // The other half of REQ-2.6, and the half nothing else in the codebase
-        // would notice the loss of.
+        // The half nothing else in the codebase would notice the loss of.
         let out = explanation().into_string();
         assert!(
             out.contains("few weeks"),

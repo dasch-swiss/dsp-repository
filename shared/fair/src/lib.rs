@@ -19,7 +19,7 @@ pub mod types;
 
 pub use datacite::project_to_datacite;
 pub use dublin_core::project_to_dublin_core;
-pub use graph::ResolveContext;
+pub use graph::{AgentKind, PartRef, RecordCreator, RecordGraph, ResolveContext};
 pub use record_datacite::record_to_datacite;
 pub use record_dublin_core::record_to_dublin_core;
 pub use types::{

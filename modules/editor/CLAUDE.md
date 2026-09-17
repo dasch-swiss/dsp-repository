@@ -80,7 +80,7 @@ RDU-facing strings are not bound by REQ-2.2. A reviewer needs the mechanism name
 
 ## Observability
 
-Shares `platform-telemetry` with DPE. `POST /telemetry/collect` is untraced and rate-limited per client IP, keyed on the **rightmost** `X-Forwarded-For` entry — the leftmost is client-forgeable. `server/src/page_url.rs` normalizes the `page.url` attribute; a new full-page route needs a matching entry there or its page views collapse into `other`, and no test fails.
+Shares `shared-telemetry` with DPE. `POST /telemetry/collect` is untraced and rate-limited per client IP, keyed on the **rightmost** `X-Forwarded-For` entry — the leftmost is client-forgeable. `server/src/page_url.rs` normalizes the `page.url` attribute; a new full-page route needs a matching entry there or its page views collapse into `other`, and no test fails.
 
 ## Best Practices for AI Agents
 

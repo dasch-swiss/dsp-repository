@@ -6,7 +6,7 @@ This page describes the service as it stands. Surfaces that are not built yet ar
 
 ## Relationship to DPE
 
-The editor is a **separate service** from DPE, not a section of it. They share `platform-telemetry` for the browser-beacon contract, `platform-metadata` for the research-metadata contract and `mosaic-tiles` for components — but not a process, an image, or an origin.
+The editor is a **separate service** from DPE, not a section of it. They share `shared-telemetry` for the browser-beacon contract, `shared-metadata` for the research-metadata contract and `mosaic-tiles` for components — but not a process, an image, or an origin.
 
 The separation is deliberate:
 
@@ -195,7 +195,7 @@ Sixty-four is sixteen times the four tags the UI offers and twenty-one times the
 Two things make that work and are easy to undo by accident:
 
 - The workspace enables `serde_json`'s **`preserve_order`**. The writer round-trips through `serde_json::Value` to strip nulls, and `Value` is `BTreeMap`-backed without that feature, which would alphabetise every key in every file. Under the feature, `Map::remove` is swap-remove: use `retain` or `shift_remove`.
-- Multilingual fields are `platform_metadata::utils::Multilingual` (a `BTreeMap`), not `HashMap`. Under `preserve_order` a `HashMap` field serializes in its own randomised iteration order, which would make the round-trip test flaky.
+- Multilingual fields are `shared_metadata::utils::Multilingual` (a `BTreeMap`), not `HashMap`. Under `preserve_order` a `HashMap` field serializes in its own randomised iteration order, which would make the round-trip test flaky.
 
 `ProjectRaw` deliberately carries no `skip_serializing_if`: `dpe-server`'s `fragments.rs` serializes it through `axum::Json`, so the attribute would drop null members from DPE's API responses too. Stripping happens in the writer instead.
 
@@ -203,7 +203,7 @@ The 85-file round-trip test (`editor-core/tests/canonical_round_trip.rs`) assert
 
 ### Submission checks
 
-`editor_core::submission::unresolved_temporal_coverage` applies the rule that every `temporalCoverage` entry must resolve to a structured date, which `dpe-server validate` does not block on and OAI-PMH needs. It reuses `platform_metadata::temporal_coverage::completeness_gap`, the same decision `validate` and `dpe-api-oai`'s `every_committed_temporal_coverage_resolves` apply, and adds the entry index so the form can mark a row rather than the whole field. The open question is settled as refusal: a depositor who needs a period the enrichment table does not know uses the `Reference` variant, which always resolves — and since the variant chooser landed that escape route is one a depositor can actually take, where before the refusal named a way out the form did not offer.
+`editor_core::submission::unresolved_temporal_coverage` applies the rule that every `temporalCoverage` entry must resolve to a structured date, which `dpe-server validate` does not block on and OAI-PMH needs. It reuses `shared_metadata::temporal_coverage::completeness_gap`, the same decision `validate` and `dpe-api-oai`'s `every_committed_temporal_coverage_resolves` apply, and adds the entry index so the form can mark a row rather than the whole field. The open question is settled as refusal: a depositor who needs a period the enrichment table does not know uses the `Reference` variant, which always resolves — and since the variant chooser landed that escape route is one a depositor can actually take, where before the refusal named a way out the form did not offer.
 
 ## URL scheme
 

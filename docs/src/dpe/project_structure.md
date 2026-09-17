@@ -16,8 +16,8 @@ modules/dpe/
 ## Dependency Graph
 
 ```
-platform-metadata     ← the wire contract, shared with the editor;
-  ↑                     lives in `modules/platform/`
+shared-metadata       ← the wire contract, shared with the editor;
+  ↑                     lives in `shared/`
   │
 dpe-core              ← DPE's view model, caches, repositories; no framework deps
   ↑
@@ -25,17 +25,17 @@ dpe-core              ← DPE's view model, caches, repositories; no framework d
   ├── dpe-web         ← Maud pages + components
   └── dpe-server      ← composition root, Datastar fragment handlers
        ↑
-       platform-telemetry  ← beacon contract + collector endpoint, shared with
-                             editor-server; lives in `modules/platform/`
+       shared-telemetry  ← beacon contract + collector endpoint, shared with
+                           editor-server; lives in `shared/`
 ```
 
-`dpe-api-oai`, `dpe-web` and `dpe-server` depend on `platform-metadata` directly
+`dpe-api-oai`, `dpe-web` and `dpe-server` depend on `shared-metadata` directly
 as well as through `dpe-core` — the contract types are theirs to import, not
 `dpe-core`'s to re-export.
 
 ## Crate Responsibilities
 
-### `platform-metadata` (`modules/platform/metadata/`)
+### `shared-metadata` (`shared/metadata/`)
 
 Not a DPE crate: the research-metadata wire contract, shared with the editor.
 Holds the types a data file deserializes into (`ProjectRaw`, `Person`,
@@ -43,7 +43,7 @@ Holds the types a data file deserializes into (`ProjectRaw`, `Person`,
 a value out of one — `is_placeholder`, the deterministic `multilingual_value`
 lookup key, `is_valid_shortcode`, W3CDTF formatting and temporal-coverage
 resolution. Table loading is exposed as `load_from(data_dir)` so each service
-supplies its own directory. See `modules/platform/README.md`.
+supplies its own directory. See `shared/README.md`.
 
 ### `dpe-core` (core/)
 
@@ -58,13 +58,13 @@ Framework-free domain layer — what only DPE needs. Contains:
 
 The directory paths and display flags are process-global `OnceLock`s set from `dpe-server`'s config at startup (`set_data_dir`, `set_public_dir`, `set_show_placeholder_values`) and read directly by `dpe-web` views, which take no application state. Reuse that pattern rather than threading new values through `AppState`.
 
-Dependencies: `platform-metadata`, `serde`, `serde_json`, `tracing`, `ureq`.
+Dependencies: `shared-metadata`, `serde`, `serde_json`, `tracing`, `ureq`.
 
 ### `dpe-api-oai` (api-oai/)
 
 OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord). Usage is documented in [OAI-PMH Endpoint](./oai-pmh.md).
 
-Depends on `platform-metadata` for the contract types and `dpe-core` for the view model — no web framework dependency.
+Depends on `shared-metadata` for the contract types and `dpe-core` for the view model — no web framework dependency.
 
 ### `dpe-web` (web/)
 
@@ -74,11 +74,11 @@ Maud view library — a plain `lib` crate of page and component functions return
 - **Components**: navbar, footer, project cards, tab panels, search input — small `fn -> Markup` partials
 - **Data access**: loaders and resolvers (`get_project`, `list_projects`, `get_contributors`) as plain functions over `dpe-core`
 
-Imports `platform-metadata` and `dpe-core` types directly; depends on `maud` and `mosaic-tiles`. No Leptos, no WASM, no `cdylib`/`hydrate`/`ssr` features.
+Imports `shared-metadata` and `dpe-core` types directly; depends on `maud` and `mosaic-tiles`. No Leptos, no WASM, no `cdylib`/`hydrate`/`ssr` features.
 
 ### Browser telemetry
 
-`dpe-server` wires `POST /telemetry/collect` from **`platform-telemetry`**, which is not a DPE crate — it is shared with `editor-server` and lives in `modules/platform/telemetry`. See `modules/platform/README.md`, and `docs/src/repo_structure.md` → *Shared Crates* for why it sits outside `modules/dpe/`. `page_url.rs` (below) is the one part of the pipeline that stays in `dpe-server`: `page.url` normalization needs DPE's own route table, which a shared crate cannot hold.
+`dpe-server` wires `POST /telemetry/collect` from **`shared-telemetry`**, which is not a DPE crate — it is shared with `editor-server` and lives in `shared/telemetry`. See `shared/README.md`, and `docs/src/repo_structure.md` → *Shared Crates* for why it sits outside `modules/dpe/`. `page_url.rs` (below) is the one part of the pipeline that stays in `dpe-server`: `page.url` normalization needs DPE's own route table, which a shared crate cannot hold.
 
 ### `dpe-server` (server/)
 
@@ -87,13 +87,13 @@ Composition root and Axum binary. Contains:
 - **Route wiring**: native Axum routes for the Maud pages, the OAI-PMH handler, Datastar fragment endpoints, `/healthz`, `/telemetry/collect`, plus `ServeDir` static serving and a 404 fallback
 - **Head/page shell**: `view.rs` — the hand-written `head()` + `page()` partials (title, content-hashed stylesheet link, conditional `traceparent` meta, fonts, Fathom, Datastar + telemetry scripts)
 - **Fragment handlers**: `fragments.rs` — plain Axum handlers that render Maud `Markup` to HTML and return Datastar SSE events
-- **Page-URL normalization**: `page_url.rs` — bounds the telemetry `page.url` metric attribute to DPE's own known routes, passed into `platform_telemetry::collector::collect_route`
+- **Page-URL normalization**: `page_url.rs` — bounds the telemetry `page.url` metric attribute to DPE's own known routes, passed into `shared_telemetry::collector::collect_route`
 - **Configuration**: `config.rs` — figment-based layered config (defaults → `dpe.toml` → `DPE_*` env vars)
 - **Logging**: OTel-aware subscriber via `init-tracing-opentelemetry`
 
 ## Key Patterns
 
-- **The wire contract in `platform-metadata`, DPE's view model in `dpe-core`** — never in web or API crates
-- **API crates depend on `platform-metadata` and `dpe-core` only**, never on each other or on `dpe-web`
+- **The wire contract in `shared-metadata`, DPE's view model in `dpe-core`** — never in web or API crates
+- **API crates depend on `shared-metadata` and `dpe-core` only**, never on each other or on `dpe-web`
 - **`dpe-server` contains no business logic** — only route composition, the head/page shell, and fragment rendering
 - **Fragment handlers** call dpe-web view functions and render their `Markup` with `.into_string()`, then wrap it in Datastar `PatchElements`/`ExecuteScript` SSE events

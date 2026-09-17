@@ -1,15 +1,16 @@
 //! Transformation of Research Projects into Dublin Core metadata.
 
-use dpe_core::Project;
-use shared_metadata::{ContributorLookup, Discipline, TemporalCoverage};
+use shared_metadata::{Discipline, ProjectRaw, TemporalCoverage};
 
-use super::helpers::{access_rights_to_string, get_multilingual_value, is_creator};
-use super::resolve::resolve_agent;
-use super::types::DublinCoreRecord;
+use crate::graph::ResolveContext;
+use crate::helpers::{access_rights_to_string, get_multilingual_value, is_creator};
+use crate::resolve::resolve_agent;
+use crate::types::DublinCoreRecord;
 
 const PUBLISHER: &str = "DaSCH";
 
-pub fn project_to_dublin_core(project: &Project, lookup: &dyn ContributorLookup) -> DublinCoreRecord {
+pub fn project_to_dublin_core(project: &ProjectRaw, ctx: &ResolveContext) -> DublinCoreRecord {
+    let lookup = ctx.lookup;
     let mut record = DublinCoreRecord::default();
 
     // dc:title - prefer officialName, fallback to name

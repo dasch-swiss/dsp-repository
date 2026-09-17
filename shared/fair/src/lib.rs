@@ -7,3 +7,23 @@
 //! service module either, which `.github/scripts/check-shared-paths.sh`
 //! enforces — corpus-wide tests over the committed data stay in `dpe-api-oai`,
 //! beside the data they read.
+
+pub mod datacite;
+pub mod dublin_core;
+pub mod graph;
+pub mod helpers;
+pub mod record_datacite;
+pub mod record_dublin_core;
+pub mod resolve;
+pub mod types;
+
+pub use datacite::project_to_datacite;
+pub use dublin_core::project_to_dublin_core;
+pub use graph::ResolveContext;
+pub use record_datacite::record_to_datacite;
+pub use record_dublin_core::record_to_dublin_core;
+pub use types::{
+    DataCiteContributor, DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteFundingReference,
+    DataCiteGeoLocation, DataCiteNameIdentifier, DataCiteRecord, DataCiteRelatedIdentifier, DataCiteRights,
+    DataCiteSubject, DataCiteTitle, DublinCoreRecord,
+};

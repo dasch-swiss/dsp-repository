@@ -2,22 +2,23 @@
 
 use std::collections::HashMap;
 
-use dpe_core::Project;
-use shared_metadata::{ContributorLookup, Discipline, Funding, TemporalCoverage};
+use shared_metadata::{Discipline, Funding, ProjectRaw, TemporalCoverage};
 
-use super::helpers::{
+use crate::graph::ResolveContext;
+use crate::helpers::{
     access_rights_to_string, extract_year, format_date_range, get_multilingual_value, infer_subject_scheme, is_creator,
     license_identifier_to_label, map_contributor_type,
 };
-use super::resolve::resolve_agent;
-use super::types::{
+use crate::resolve::resolve_agent;
+use crate::types::{
     DataCiteContributor, DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteFundingReference,
     DataCiteGeoLocation, DataCiteRecord, DataCiteRights, DataCiteSubject, DataCiteTitle,
 };
 
 const PUBLISHER: &str = "DaSCH";
 
-pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) -> DataCiteRecord {
+pub fn project_to_datacite(project: &ProjectRaw, ctx: &ResolveContext) -> DataCiteRecord {
+    let lookup = ctx.lookup;
     let mut record = DataCiteRecord::default();
 
     // Identifier (mandatory) - use PID or generate from shortcode
@@ -210,7 +211,7 @@ pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) ->
     // Dates - temporal coverage as dateType="Coverage". A project may cover
     // several distinct periods, each emitted as its own Coverage date.
     for tc in &project.temporal_coverage {
-        if let Some(date) = resolve_temporal_coverage(tc) {
+        if let Some(date) = resolve_temporal_coverage_in(tc, ctx.periods, ctx.enriched) {
             record.dates.push(date);
         }
     }
@@ -274,16 +275,6 @@ pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) ->
     }
 
     record
-}
-
-/// Resolve one `temporalCoverage` entry to a DataCite `Coverage` date, using the
-/// process-global ChronOntology and enrichment caches.
-fn resolve_temporal_coverage(tc: &TemporalCoverage) -> Option<DataCiteDate> {
-    resolve_temporal_coverage_in(
-        tc,
-        dpe_core::chronontology_cache::all_periods(),
-        dpe_core::temporal_enrichment_cache::all_enriched(),
-    )
 }
 
 /// Pure resolution of a `temporalCoverage` entry over the given lookup maps, so
@@ -422,78 +413,4 @@ mod temporal_tests {
         assert_eq!(date.date, "");
         assert_eq!(date.date_information.as_deref(), Some("Vague Period"));
     }
-
-    // The same lookup-key derivation `resolve_temporal_coverage_in` uses
-    // (Reference → `text`; Text map → `get_multilingual_value`), shared via
-    // shared-metadata so the two can't drift apart.
-    use shared_metadata::temporal_coverage::coverage_name;
-
-    /// Completeness guard over the committed project data: every distinct
-    /// `temporalCoverage` entry must resolve to a non-empty `date` through the
-    /// real period and enrichment tables. A name-only fallback counts as
-    /// UNRESOLVED, because the point is that every path carries a
-    /// machine-readable range rather than a label.
-    ///
-    /// The sole exception is a name explicitly reviewed as *not* a time period:
-    /// an enrichment row with no `date` and `source == "unresolved"`, emitted as
-    /// `dateInformation`-only. Any other empty-date entry is a genuine gap.
-    ///
-    /// Everything is loaded through production's own parse logic, resolved
-    /// relative to this crate so the test depends on neither the process working
-    /// directory nor global cache state.
-    #[test]
-    fn every_committed_temporal_coverage_resolves() {
-        use std::path::Path;
-
-        use shared_metadata::ProjectRaw;
-
-        let data_dir = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../server/data"));
-        let projects_dir = data_dir.join("projects");
-
-        let periods = shared_metadata::chronontology::load_from(data_dir);
-        let enriched = shared_metadata::temporal_enrichment::load_from(data_dir);
-        assert!(!enriched.is_empty(), "committed enrichment table should load and be non-empty");
-
-        let entries = std::fs::read_dir(&projects_dir).expect("projects data directory should be readable");
-
-        let mut seen = std::collections::HashSet::new();
-        let mut unresolved = Vec::new();
-
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.extension().and_then(|e| e.to_str()) != Some("json") {
-                continue;
-            }
-            let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
-            let json = std::fs::read_to_string(&path).expect("project file should be readable");
-            let project = serde_json::from_str::<ProjectRaw>(&json)
-                .map(Project::from)
-                .unwrap_or_else(|e| panic!("failed to parse {filename}: {e}"));
-
-            for tc in &project.temporal_coverage {
-                let Some(name) = coverage_name(tc) else {
-                    continue; // no name to key on; nothing to resolve.
-                };
-                if !seen.insert(name) {
-                    continue; // already checked this distinct name.
-                }
-
-                // The same gap decision `dpe-server validate` applies, so the
-                // two can't drift apart.
-                if let Some(name) = shared_metadata::temporal_coverage::completeness_gap(tc, &periods, &enriched) {
-                    unresolved.push(name);
-                }
-            }
-        }
-
-        unresolved.sort();
-        assert!(
-            unresolved.is_empty(),
-            "temporalCoverage names with no resolved date (add a W3CDTF range to \
-             {ENRICHMENT_FILE}, or mark source=\"unresolved\" if not a time period):\n{}",
-            unresolved.join("\n"),
-        );
-    }
-
-    const ENRICHMENT_FILE: &str = "temporal-coverage-enrichment.json";
 }

@@ -636,6 +636,7 @@ dependencies = [
  "quick-xml",
  "serde",
  "serde_json",
+ "shared-fair",
  "shared-metadata",
  "tempfile",
  "tracing",
@@ -3161,6 +3162,9 @@ dependencies = [
 [[package]]
 name = "shared-fair"
 version = "0.8.5"
+dependencies = [
+ "shared-metadata",
+]
 
 [[package]]
 name = "shared-metadata"

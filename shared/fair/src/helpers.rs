@@ -105,3 +105,97 @@ pub fn infer_subject_scheme(url: &str) -> (Option<String>, Option<String>) {
         (None, Some(url.to_string()))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        extract_year, format_date_range, infer_subject_scheme, is_creator, license_identifier_to_label,
+        map_contributor_type,
+    };
+
+    #[test]
+    fn test_extract_year() {
+        assert_eq!(extract_year("2024-01-15"), "2024");
+        assert_eq!(extract_year("2024"), "2024");
+        assert_eq!(extract_year("MISSING"), "2015");
+    }
+
+    #[test]
+    fn test_is_creator_case_insensitive() {
+        assert!(is_creator(&["Project Leader".to_string()]));
+        assert!(is_creator(&["project leader".to_string()]));
+        assert!(is_creator(&["Principal Investigator (PI)".to_string()]));
+        assert!(is_creator(&["principal investigator (pi)".to_string()]));
+        assert!(is_creator(&["Author".to_string()]));
+        assert!(is_creator(&["author".to_string()]));
+        assert!(is_creator(&["Creator".to_string()]));
+        assert!(is_creator(&["creator".to_string()]));
+        assert!(!is_creator(&["Researcher".to_string()]));
+        assert!(!is_creator(&["Data Collector".to_string()]));
+        assert!(!is_creator(&["Contributor".to_string()]));
+    }
+
+    #[test]
+    fn test_is_creator_multiple_types() {
+        assert!(is_creator(&["Researcher".to_string(), "Project Leader".to_string()]));
+        assert!(!is_creator(&["Researcher".to_string(), "Data Collector".to_string()]));
+    }
+
+    #[test]
+    fn test_format_date_range_both() {
+        assert_eq!(
+            format_date_range("2020-01-01", "2023-12-31"),
+            Some("2020-01-01/2023-12-31".to_string())
+        );
+    }
+
+    #[test]
+    fn test_format_date_range_start_only() {
+        assert_eq!(format_date_range("2020-01-01", "MISSING"), Some("2020-01-01".to_string()));
+    }
+
+    #[test]
+    fn test_format_date_range_end_only() {
+        assert_eq!(format_date_range("MISSING", "2023-12-31"), Some("2023-12-31".to_string()));
+    }
+
+    #[test]
+    fn test_format_date_range_none() {
+        assert_eq!(format_date_range("MISSING", "MISSING"), None);
+    }
+
+    #[test]
+    fn test_map_contributor_type() {
+        assert_eq!(map_contributor_type("Researcher"), "Researcher");
+        assert_eq!(map_contributor_type("researcher"), "Researcher");
+        assert_eq!(map_contributor_type("Data Collector"), "DataCollector");
+        assert_eq!(map_contributor_type("data collector"), "DataCollector");
+        assert_eq!(map_contributor_type("Unknown Role"), "Other");
+    }
+
+    #[test]
+    fn test_license_identifier_to_label() {
+        assert_eq!(
+            license_identifier_to_label("CC-BY-4.0"),
+            "Creative Commons Attribution 4.0 International"
+        );
+        assert_eq!(
+            license_identifier_to_label("CC-BY-NC-SA-4.0"),
+            "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International"
+        );
+        assert_eq!(license_identifier_to_label("UNKNOWN"), "UNKNOWN");
+    }
+
+    #[test]
+    fn test_infer_subject_scheme_gnd() {
+        let (scheme, _uri) = infer_subject_scheme("https://d-nb.info/gnd/4066562-8");
+        assert_eq!(scheme, Some("GND".to_string()));
+    }
+
+    #[test]
+    fn test_infer_subject_scheme_unknown() {
+        let (scheme, uri) = infer_subject_scheme("https://example.com/subject/123");
+        assert_eq!(scheme, None);
+        assert_eq!(uri, Some("https://example.com/subject/123".to_string()));
+    }
+}

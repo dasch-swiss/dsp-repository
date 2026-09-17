@@ -362,7 +362,7 @@ fn collect_entities(
     include_records: bool,
 ) -> Vec<OaiRecord> {
     let mut oai_records: Vec<OaiRecord> = if include_projects {
-        repo.get_all()
+        repo.get_all_raw()
             .iter()
             .filter(|p| matches_date_filter(p, from, until))
             .map(|p| to_oai_record(p, prefix, clusters, lookup))
@@ -405,7 +405,7 @@ fn collect_cluster(
     // by shortcode (case-insensitive).
     let mut seen_projects: Vec<String> = Vec::new();
     let mut oai_records: Vec<OaiRecord> = repo
-        .get_all()
+        .get_all_raw()
         .iter()
         .filter(|p| is_member(&p.shortcode))
         .filter(|p| matches_date_filter(p, from, until))

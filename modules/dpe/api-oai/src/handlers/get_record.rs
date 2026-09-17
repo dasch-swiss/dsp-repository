@@ -1,7 +1,7 @@
 //! Handler for the OAI-PMH GetRecord verb.
 
-use dpe_core::{ClusterRaw, Project, ProjectRepository, RecordRepository};
-use shared_metadata::{ContributorLookup, Record};
+use dpe_core::{ClusterRaw, ProjectRepository, RecordRepository};
+use shared_metadata::{ContributorLookup, ProjectRaw, Record};
 
 use super::{build_error_response, OaiParams, SUPPORTED_PREFIXES};
 use crate::error::OaiError;
@@ -52,7 +52,7 @@ fn reject_unexpected_args(params: &OaiParams) -> Result<(), OaiError> {
 }
 
 enum OaiEntity {
-    Project(Box<Project>),
+    Project(Box<ProjectRaw>),
     Record(Box<Record>),
 }
 
@@ -65,7 +65,7 @@ fn resolve_entity(
 ) -> Result<OaiEntity, OaiError> {
     let id = parse_oai_identifier(identifier).ok_or(OaiError::IdDoesNotExist)?;
 
-    if let Some(project) = repo.get_by_shortcode(&id) {
+    if let Some(project) = repo.get_raw_by_shortcode(&id) {
         return Ok(OaiEntity::Project(Box::new(project.clone())));
     }
 

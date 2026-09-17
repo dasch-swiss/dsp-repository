@@ -3,9 +3,15 @@
 use shared_metadata::AccessRightsType;
 
 /// Extracts the year from a date string (YYYY-MM-DD or YYYY).
+///
+/// Counts characters rather than bytes. A byte length guarding a byte slice
+/// panics on a date whose fourth byte falls inside a multi-byte character; the
+/// two counts agree on the ASCII ISO-8601 dates the corpus holds, so this is
+/// what the byte version produced for every committed date.
 pub fn extract_year(date: &str) -> String {
-    if date.len() >= 4 && !shared_metadata::is_placeholder(date) {
-        date[..4].to_string()
+    let year: String = date.chars().take(4).collect();
+    if year.chars().count() == 4 && !shared_metadata::is_placeholder(date) {
+        year
     } else {
         "2015".to_string() // Default fallback year
     }
@@ -107,6 +113,16 @@ mod tests {
         assert_eq!(extract_year("2024-01-15"), "2024");
         assert_eq!(extract_year("2024"), "2024");
         assert_eq!(extract_year("MISSING"), "2015");
+    }
+
+    /// The fourth byte of "123ä5" is inside the "ä", which a byte slice cannot
+    /// cut; and "äää" is six bytes but only three characters, so a byte-length
+    /// guard would have let it through to a two-character "year".
+    #[test]
+    fn extract_year_counts_characters_not_bytes() {
+        assert_eq!(extract_year("123ä5"), "123ä");
+        assert_eq!(extract_year("äää"), "2015");
+        assert_eq!(extract_year("202"), "2015");
     }
 
     #[test]

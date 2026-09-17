@@ -3163,6 +3163,7 @@ dependencies = [
 name = "shared-fair"
 version = "0.8.5"
 dependencies = [
+ "serde_json",
  "shared-metadata",
 ]
 

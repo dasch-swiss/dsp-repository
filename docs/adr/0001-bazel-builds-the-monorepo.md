@@ -24,7 +24,7 @@ The ruleset the migration introduces — none of these files exists yet; until t
 
 - Every crate becomes a Bazel target; cross-crate dependencies are visible and reviewable in `BUILD.bazel` files.
 - Everything that today keys on the Cargo workspace or on `modules/…` paths — `just` recipes, `bacon.toml` watch lists, the Dockerfiles, the CI workflows, `check-platform-paths.sh` — is replaced or re-pointed in the migration.
-- The migration lands together with, or ahead of, the directory move of ADR-0002, which relies on it for enforcement.
+- The migration lands together with, or ahead of, the area move of ADR-0002 (`areas/deposit/`, `areas/archive/`, `areas/access/`), which relies on it for enforcement. ADR-0002's shared-root move (`modules/platform/` to `shared/`) is enforced by Cargo cycles and the paths gate rather than by Bazel visibility and may land before this migration.
 - Nothing in this repository's build may assume every target is Rust.
 
 Enforced by: none until the migration lands (docs-only); afterwards CI building with Bazel under `--lockfile_mode=error` (static-analysis).

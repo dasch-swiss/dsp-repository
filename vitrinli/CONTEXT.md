@@ -16,7 +16,7 @@ _Avoid_: asset server, download service (the earlier design had a separate one; 
 Vitrinli's third role: producing a Service File from a source under a derivation rule (a pyramidal TIFF for IIIF, for example). Who calls it and from what source is the caller's decision: the Deposit Area's `media` derives from Originals; the Access Area's `media` never derives, because the archive already did.
 
 **Media capability**:
-The per-area capability (`deposit-area/media`, `access-area/media`) that depends on Vitrinli and gives it the area's rules: it owns the tables that say what is servable and where, the routes, the authorisation, and the implementations of Vitrinli's traits over the area's own store. The typed successor of the Lua scripts and configuration that shape sipi today.
+The per-area capability (`areas/deposit/media`, `areas/access/media`) that depends on Vitrinli and gives it the area's rules: it owns the tables that say what is servable and where, the routes, the authorisation, and the implementations of Vitrinli's traits over the area's own store. The typed successor of the Lua scripts and configuration that shape sipi today.
 _Avoid_: glue, plugin, sipi config, Vitrinli mounting (a retired framing in which Vitrinli itself was the capability).
 
 **Byte source**:

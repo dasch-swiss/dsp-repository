@@ -125,9 +125,9 @@
     ],
     "publications": [
         {
-            "text": " Baumgartner, R., Zimmermann, E.: Handbuch zur Erstellung einer digitalen Edition.",
+            "text": "Zimmermann, E., & Baumgartner, R. (2026). Handbuch zur Erstellung einer digitalen Edition [Computer software]. Zenodo.",
             "pid": {
-                "url": "https://digital-editions.pages.uzh.ch/proto4diged/handbook/en"
+                "url": "https://doi.org/10.5281/zenodo.22689079"
             }
         },
         {

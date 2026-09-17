@@ -64,7 +64,7 @@ pub struct DataCiteContributor {
 }
 
 /// A nameIdentifier element (e.g. ORCID or GND) for a creator or contributor.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct DataCiteNameIdentifier {
     pub identifier: String,
     pub scheme: String,

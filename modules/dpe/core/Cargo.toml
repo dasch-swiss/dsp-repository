@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-platform-metadata = { path = "../../platform/metadata" }
+shared-metadata = { path = "../../../shared/metadata" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }

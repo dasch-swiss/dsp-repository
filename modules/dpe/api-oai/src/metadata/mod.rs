@@ -16,9 +16,9 @@ use datacite::project_to_datacite;
 use dpe_core::cluster_cache::clusters_for_shortcode_in;
 use dpe_core::{ClusterRaw, ContributorLookup, Project};
 use dublin_core::project_to_dublin_core;
-use platform_metadata::{record_datestamp, Record, ARK_PATH_PREFIX};
 use record_datacite::record_to_datacite;
 use record_dublin_core::record_to_dublin_core;
+use shared_metadata::{record_datestamp, Record, ARK_PATH_PREFIX};
 pub use types::{DataCiteNameIdentifier, DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
 
 // Namespace identifier for OAI record identifiers (OAI identifier format:
@@ -67,14 +67,14 @@ pub fn to_oai_record(
     clusters: &[ClusterRaw],
     lookup: &dyn ContributorLookup,
 ) -> OaiRecord {
-    let identifier = if !platform_metadata::is_placeholder(&project.pid) && !project.pid.is_empty() {
+    let identifier = if !shared_metadata::is_placeholder(&project.pid) && !project.pid.is_empty() {
         make_oai_identifier_from_pid(&project.pid).unwrap_or_else(|| make_oai_identifier(&project.shortcode))
     } else {
         make_oai_identifier(&project.shortcode)
     };
     let header = OaiRecordHeader {
         identifier,
-        datestamp: if !platform_metadata::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
+        datestamp: if !shared_metadata::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
             project.start_date.clone()
         } else {
             "2015-01-01".to_string()
@@ -140,7 +140,7 @@ pub fn matches_date_filter_record(record: &Record, from: Option<&str>, until: Op
 
 /// Checks if a project matches the given date filter.
 pub fn matches_date_filter(project: &Project, from: Option<&str>, until: Option<&str>) -> bool {
-    let datestamp = if !platform_metadata::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
+    let datestamp = if !shared_metadata::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
         &project.start_date
     } else {
         "2015-01-01"

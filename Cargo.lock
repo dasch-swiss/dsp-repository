@@ -633,10 +633,10 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "dpe-core",
- "platform-metadata",
  "quick-xml",
  "serde",
  "serde_json",
+ "shared-metadata",
  "tempfile",
  "tracing",
 ]
@@ -645,9 +645,9 @@ dependencies = [
 name = "dpe-core"
 version = "0.8.5"
 dependencies = [
- "platform-metadata",
  "serde",
  "serde_json",
+ "shared-metadata",
  "tracing",
  "ureq",
 ]
@@ -675,11 +675,11 @@ dependencies = [
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
- "platform-metadata",
- "platform-telemetry",
  "pyroscope",
  "serde",
  "serde_json",
+ "shared-metadata",
+ "shared-telemetry",
  "tokio",
  "tower",
  "tower-http",
@@ -699,9 +699,9 @@ dependencies = [
  "dpe-core",
  "maud",
  "mosaic-tiles",
- "platform-metadata",
  "serde",
  "serde_json",
+ "shared-metadata",
  "urlencoding",
 ]
 
@@ -717,9 +717,9 @@ version = "0.8.5"
 dependencies = [
  "async-trait",
  "chrono",
- "platform-metadata",
  "serde",
  "serde_json",
+ "shared-metadata",
  "thiserror 2.0.18",
  "uuid",
 ]
@@ -745,13 +745,13 @@ dependencies = [
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
- "platform-metadata",
- "platform-telemetry",
  "pyroscope",
  "rand",
  "rusqlite",
  "serde",
  "serde_json",
+ "shared-metadata",
+ "shared-telemetry",
  "subtle",
  "thiserror 2.0.18",
  "tokio",
@@ -773,8 +773,8 @@ dependencies = [
  "insta",
  "maud",
  "mosaic-tiles",
- "platform-metadata",
  "serde_json",
+ "shared-metadata",
 ]
 
 [[package]]
@@ -2430,30 +2430,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
 
 [[package]]
-name = "platform-metadata"
-version = "0.8.5"
-dependencies = [
- "serde",
- "serde_json",
- "tracing",
-]
-
-[[package]]
-name = "platform-telemetry"
-version = "0.8.5"
-dependencies = [
- "axum",
- "opentelemetry",
- "proptest",
- "serde",
- "serde_json",
- "tokio",
- "tower",
- "tracing",
- "url",
-]
-
-[[package]]
 name = "portable-atomic"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3180,6 +3156,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f40ca3c46823713e0d4209592e8d6e826aa57e928f09752619fc696c499637f6"
 dependencies = [
  "lazy_static",
+]
+
+[[package]]
+name = "shared-metadata"
+version = "0.8.5"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
+name = "shared-telemetry"
+version = "0.8.5"
+dependencies = [
+ "axum",
+ "opentelemetry",
+ "proptest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tower",
+ "tracing",
+ "url",
 ]
 
 [[package]]

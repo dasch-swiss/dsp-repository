@@ -17,7 +17,7 @@ use editor_core::records::{normalize_shortcode, User};
 use editor_core::repository::{ApprovedRecordRepository, DraftRepository, RepositoryError, SubmissionRepository};
 use editor_core::status::{depositor_state, Comparison, ProjectState};
 use editor_web::pages::projects::AssignedProject;
-use platform_metadata::is_valid_shortcode;
+use shared_metadata::is_valid_shortcode;
 
 use crate::auth::guard::Authenticated;
 use crate::AppState;

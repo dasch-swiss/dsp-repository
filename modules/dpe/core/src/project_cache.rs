@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use platform_metadata::ProjectRaw;
+use shared_metadata::ProjectRaw;
 
 use super::project::Project;
 use super::utils::get_data_dir;

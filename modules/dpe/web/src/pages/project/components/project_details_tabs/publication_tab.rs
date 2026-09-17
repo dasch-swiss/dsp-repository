@@ -1,5 +1,5 @@
 use maud::{html, Markup};
-use platform_metadata::Publication;
+use shared_metadata::Publication;
 
 use crate::pages::project::components::publications_section::publications_section;
 
@@ -14,7 +14,7 @@ pub fn publication_tab(publications: Option<&[Publication]>) -> Markup {
 
 #[cfg(test)]
 mod tests {
-    use platform_metadata::project::Pid;
+    use shared_metadata::project::Pid;
 
     use super::*;
 

@@ -226,7 +226,7 @@ CREATE TABLE entity_proposals (
     entity_id    TEXT NOT NULL,
     kind         TEXT NOT NULL CHECK (kind IN ('person', 'organization')),
     operation    TEXT NOT NULL CHECK (operation IN ('new', 'change')),
-    -- JSON: a `platform_metadata::Person` or `Organization` body. Opaque to
+    -- JSON: a `shared_metadata::Person` or `Organization` body. Opaque to
     -- this layer, like `drafts.payload` — a half-filled proposal cannot
     -- deserialize as the contract type yet, and deciding that is submit's job.
     --

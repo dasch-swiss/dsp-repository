@@ -47,11 +47,11 @@ pub(crate) fn build_app(state: AppState, public_dir: &std::path::Path) -> Router
         // The browser beacon: fire-and-forget, unauthenticated, and reachable
         // before login, so it is rate-limited per client IP. Untraced for the
         // same reason as /healthz — tracing it would attach a server span to
-        // every page's telemetry upload. Shared with DPE via `platform-telemetry`;
+        // every page's telemetry upload. Shared with DPE via `shared-telemetry`;
         // "editor" names the OTel instrumentation scope (`editor.browser`).
         .route(
             "/telemetry/collect",
-            platform_telemetry::collector::collect_route("editor", crate::page_url::normalize_page_url).layer({
+            shared_telemetry::collector::collect_route("editor", crate::page_url::normalize_page_url).layer({
                 use tower_governor::governor::GovernorConfigBuilder;
                 use tower_governor::GovernorLayer;
 

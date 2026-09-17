@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::sync::OnceLock;
 use std::time::Instant;
 
-use platform_metadata::Record;
+use shared_metadata::Record;
 
 use super::utils::get_data_dir;
 

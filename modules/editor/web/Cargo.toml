@@ -15,16 +15,16 @@ maud.workspace = true
 # one names `serde_json::Value` — the draft API cannot be used without it.
 serde_json.workspace = true
 # `is_placeholder`: a stored `MISSING`/`CALCULATED` renders as an empty control,
-# which is the rule the whole untouched-save guarantee rests on. The platform's
-# own predicate rather than a second copy of the two sentinel strings.
-platform-metadata = { path = "../../platform/metadata" }
+# which is the rule the whole untouched-save guarantee rests on. The shared
+# crate's own predicate rather than a second copy of the two sentinel strings.
+shared-metadata = { path = "../../../shared/metadata" }
 # The login screens are the first surface to render a tile (the submit buttons),
 # which is what earns the dependency. The Tailwind entry already scanned the
 # crate before this, so its component CSS shipped regardless.
 mosaic-tiles = { path = "../../mosaic/tiles" }
 
 [dev-dependencies]
-# `serde_json` and `platform-metadata` are not repeated here: both are real
+# `serde_json` and `shared-metadata` are not repeated here: both are real
 # dependencies above, and anything in `[dependencies]` is already on a test's
 # path. Repeating them would be two justifications for one fact.
 # Snapshots of the rendered form. The whole markup rather than a summary of it,

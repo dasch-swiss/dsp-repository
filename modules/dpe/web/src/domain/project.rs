@@ -1,9 +1,9 @@
 // ProjectQuery: the projects-list query/filter state, deserialized from the URL
 // query string via Axum's `Query` extractor. The domain types live elsewhere —
-// `ProjectRaw` in platform-metadata, `Project` in dpe-core.
+// `ProjectRaw` in shared-metadata, `Project` in dpe-core.
 
-use platform_metadata::ACCESS_RIGHTS_VALUES;
 use serde::{Deserialize, Serialize};
+use shared_metadata::ACCESS_RIGHTS_VALUES;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct ProjectQuery {

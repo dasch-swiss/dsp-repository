@@ -348,7 +348,7 @@ async fn serve() -> ExitCode {
             "/telemetry/collect",
             // "dpe" names the OTel instrumentation scope (`dpe.browser`), which
             // the dashboards filter on — do not change it.
-            platform_telemetry::collector::collect_route("dpe", page_url::normalize_page_url).layer({
+            shared_telemetry::collector::collect_route("dpe", page_url::normalize_page_url).layer({
                 use tower_governor::governor::GovernorConfigBuilder;
                 use tower_governor::GovernorLayer;
 
@@ -463,12 +463,12 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
     let projects_dir = data_dir.join("projects");
     // Every contributor id every project references, cross-referenced against
     // `persons/` and `organizations/` once the whole corpus has been read.
-    let mut contributor_refs: Vec<platform_metadata::ContributorRef> = Vec::new();
+    let mut contributor_refs: Vec<shared_metadata::ContributorRef> = Vec::new();
     // Temporal-coverage resolution: the same ChronOntology period cache and
     // offline enrichment table the OAI-PMH `every_committed_temporal_coverage_resolves`
     // test loads, so the two can never disagree about what counts as resolved.
-    let temporal_periods = platform_metadata::chronontology::load_from(data_dir);
-    let temporal_enrichment = platform_metadata::temporal_enrichment::load_from(data_dir);
+    let temporal_periods = shared_metadata::chronontology::load_from(data_dir);
+    let temporal_enrichment = shared_metadata::temporal_enrichment::load_from(data_dir);
     // Each distinct offending value is reported once for the whole corpus: an
     // unenriched period name shared by twenty projects is one thing to fix, not
     // twenty. Keyed on the value rather than the project, so the first file to
@@ -488,13 +488,13 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                     Ok(json) => {
                         // Parsing is the one project rule the shared checker cannot
                         // hold: it takes a `&ProjectRaw`, so it is downstream of this.
-                        match serde_json::from_str::<platform_metadata::ProjectRaw>(&json) {
+                        match serde_json::from_str::<shared_metadata::ProjectRaw>(&json) {
                             Ok(raw) => {
                                 project_count += 1;
-                                contributor_refs.extend(platform_metadata::contributor_refs(&raw));
+                                contributor_refs.extend(shared_metadata::contributor_refs(&raw));
 
                                 for finding in
-                                    platform_metadata::check_project(&raw, &temporal_periods, &temporal_enrichment)
+                                    shared_metadata::check_project(&raw, &temporal_periods, &temporal_enrichment)
                                 {
                                     if let Some(value) = &finding.value {
                                         if !reported_values.insert((finding.field, value.clone())) {
@@ -529,7 +529,7 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                 }
                 let filename = path.display().to_string();
                 match fs::read_to_string(&path) {
-                    Ok(json) => match serde_json::from_str::<Vec<platform_metadata::Record>>(&json) {
+                    Ok(json) => match serde_json::from_str::<Vec<shared_metadata::Record>>(&json) {
                         Ok(recs) => record_count += recs.len(),
                         Err(e) => errors.push(format!("{filename}: {e}")),
                     },
@@ -550,14 +550,14 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                 }
                 let filename = path.display().to_string();
                 match fs::read_to_string(&path) {
-                    Ok(json) => match serde_json::from_str::<platform_metadata::Person>(&json) {
+                    Ok(json) => match serde_json::from_str::<shared_metadata::Person>(&json) {
                         Ok(p) => {
                             // Guard against project roles drifting into jobTitles.
                             // A role belongs in a project's attributions
                             // (contributorType), not in a person's jobTitles, or
                             // it becomes invisible to the OAI-PMH creator logic.
                             for title in &p.job_titles {
-                                if platform_metadata::is_role_job_title(title) {
+                                if shared_metadata::is_role_job_title(title) {
                                     errors.push(format!(
                                         "{filename}: jobTitle '{title}' on {} is a project role; \
                                          move it to the project's attributions (contributorType)",
@@ -587,7 +587,7 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
                 }
                 let filename = path.display().to_string();
                 match fs::read_to_string(&path) {
-                    Ok(json) => match serde_json::from_str::<platform_metadata::Organization>(&json) {
+                    Ok(json) => match serde_json::from_str::<shared_metadata::Organization>(&json) {
                         Ok(o) => {
                             known_org_ids.insert(o.id.clone());
                             org_count += 1;

@@ -2,7 +2,7 @@
 //! needs.
 //!
 //! The wire contract itself — the types a data file deserializes into, and the
-//! rules for reading a value out of one — lives in `platform-metadata`, shared
+//! rules for reading a value out of one — lives in `shared-metadata`, shared
 //! with the editor. What is here is DPE's: the `Project` view model, the
 //! process-global caches keyed on `DPE_DATA_DIR`, the repositories, cluster and
 //! collection membership, contributor resolution, and the DSP-API records

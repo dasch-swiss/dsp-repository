@@ -45,8 +45,8 @@ use editor_web::form::registry::Audience;
 use editor_web::form::submit::unresolved_agents;
 use editor_web::form::{registry, INTENT};
 use editor_web::pages::review as page;
-use platform_metadata::is_valid_shortcode;
 use serde_json::Value;
+use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
 use crate::auth::guard::Rdu;

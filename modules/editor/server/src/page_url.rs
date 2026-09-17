@@ -1,9 +1,9 @@
 //! The editor's page-URL normalizer, passed into
-//! `platform_telemetry::collector::collect_route`.
+//! `shared_telemetry::collector::collect_route`.
 //!
 //! Bounds the `page.url` metric attribute to the editor's own routes so browser
 //! metrics stay breakable down by page without exploding cardinality on
-//! arbitrary paths. Lives here rather than in `platform-telemetry` because a
+//! arbitrary paths. Lives here rather than in `shared-telemetry` because a
 //! shared crate cannot know one service's route table
 //! (`docs/src/repo_structure.md` → Shared Crates).
 //!

@@ -16,10 +16,10 @@
 //! used only where there was no prior value; `ProjectDraft::url_shape` reports
 //! the form and `ProjectDraft::set_url_slot` honours it.
 
-use platform_metadata::project::ProjectRaw;
-use platform_metadata::utils::Multilingual;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
+use shared_metadata::project::ProjectRaw;
+use shared_metadata::utils::Multilingual;
 
 use crate::json::strip_null_members;
 use crate::multilingual::DraftMultilingual;
@@ -394,7 +394,7 @@ fn text(value: &str) -> Value {
 /// attempt order: `Reference` is declared first, so a value that satisfies
 /// `AuthorityFileReference` is one whatever else it might also fit.
 fn coverage_shape(entry: &Value) -> TextOrReference {
-    if serde_json::from_value::<platform_metadata::AuthorityFileReference>(entry.clone()).is_ok() {
+    if serde_json::from_value::<shared_metadata::AuthorityFileReference>(entry.clone()).is_ok() {
         TextOrReference::Reference
     } else {
         TextOrReference::Text
@@ -485,7 +485,7 @@ mod tests {
         draft.set("funding", json!("Funded by a person, not a grant"));
         assert_eq!(draft.funding_shape(), Some(FundingShape::Text));
         let raw = draft.to_raw().expect("publishable");
-        assert!(matches!(raw.funding, platform_metadata::Funding::Text(_)));
+        assert!(matches!(raw.funding, shared_metadata::Funding::Text(_)));
     }
 
     #[test]

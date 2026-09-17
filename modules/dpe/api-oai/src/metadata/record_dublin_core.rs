@@ -1,6 +1,6 @@
 //! Transformation of Records into Dublin Core metadata.
 
-use platform_metadata::Record;
+use shared_metadata::Record;
 
 use super::helpers::{get_multilingual_value, license_identifier_to_label};
 use super::types::DublinCoreRecord;
@@ -73,9 +73,9 @@ pub fn record_to_dublin_core(record: &Record) -> DublinCoreRecord {
 
 #[cfg(test)]
 mod tests {
-    use platform_metadata::record::Pid;
-    use platform_metadata::utils::Multilingual;
-    use platform_metadata::{RecordFile, RecordLegalInfo, RecordLicense};
+    use shared_metadata::record::Pid;
+    use shared_metadata::utils::Multilingual;
+    use shared_metadata::{RecordFile, RecordLegalInfo, RecordLicense};
 
     use super::*;
 

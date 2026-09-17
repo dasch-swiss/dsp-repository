@@ -7,7 +7,7 @@
 //! depositor is never stranded: `temporalCoverage`'s `Reference` variant always
 //! resolves.
 //!
-//! The rule is [`platform_metadata::temporal_coverage::completeness_gap`], the
+//! The rule is [`shared_metadata::temporal_coverage::completeness_gap`], the
 //! same function `dpe-server validate` and `dpe-api-oai` apply, so the three
 //! cannot drift on what counts as a gap.
 //!
@@ -15,10 +15,10 @@
 
 use std::collections::HashMap;
 
-use platform_metadata::project::ProjectRaw;
-use platform_metadata::temporal_coverage;
-use platform_metadata::temporal_enrichment::EnrichedDate;
-use platform_metadata::w3cdtf::W3cdtfRange;
+use shared_metadata::project::ProjectRaw;
+use shared_metadata::temporal_coverage;
+use shared_metadata::temporal_enrichment::EnrichedDate;
+use shared_metadata::w3cdtf::W3cdtfRange;
 
 /// A `temporalCoverage` entry that cannot resolve to a structured date.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -64,9 +64,9 @@ pub fn unresolved_temporal_coverage(
 
 #[cfg(test)]
 mod tests {
-    use platform_metadata::project::TemporalCoverage;
-    use platform_metadata::utils::Multilingual;
-    use platform_metadata::AuthorityFileReference;
+    use shared_metadata::project::TemporalCoverage;
+    use shared_metadata::utils::Multilingual;
+    use shared_metadata::AuthorityFileReference;
 
     use super::*;
     use crate::test_support::sample_raw;
@@ -107,7 +107,7 @@ mod tests {
     fn periods() -> HashMap<String, W3cdtfRange> {
         HashMap::from([(
             "0vGXxVln724L".to_string(),
-            platform_metadata::w3cdtf::to_w3cdtf_range(Some("98"), Some("117")).expect("a range"),
+            shared_metadata::w3cdtf::to_w3cdtf_range(Some("98"), Some("117")).expect("a range"),
         )])
     }
 

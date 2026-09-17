@@ -1,7 +1,7 @@
 #![no_main]
 
 use dpe_core::project::VALID_TABS;
-use platform_metadata::project::is_valid_shortcode;
+use shared_metadata::project::is_valid_shortcode;
 use libfuzzer_sys::fuzz_target;
 
 fuzz_target!(|data: &[u8]| {

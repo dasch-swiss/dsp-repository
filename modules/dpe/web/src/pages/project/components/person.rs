@@ -1,6 +1,6 @@
 use maud::{html, Markup};
-use platform_metadata::organization::Organization;
-use platform_metadata::person::Person;
+use shared_metadata::organization::Organization;
+use shared_metadata::person::Person;
 
 /// Shared name + roles + job-titles block for a resolved [`Person`].
 fn person_name_and_roles(person: &Person, roles: Option<&str>) -> Markup {
@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn name_links_to_orcid_when_present() {
-        use platform_metadata::models::AuthorityFileReference;
+        use shared_metadata::models::AuthorityFileReference;
         let mut p = sample_person();
         p.same_as = vec![
             AuthorityFileReference {
@@ -152,7 +152,7 @@ mod tests {
 
     #[test]
     fn name_links_to_sameas_url_when_no_orcid() {
-        use platform_metadata::models::AuthorityFileReference;
+        use shared_metadata::models::AuthorityFileReference;
         let mut p = sample_person();
         p.same_as = vec![AuthorityFileReference {
             type_: "URL".to_string(),

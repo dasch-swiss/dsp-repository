@@ -37,5 +37,5 @@ fuzz_target!(|data: &[u8]| {
     // Also as JSON, which is what a malformed Content-Type produces.
     let _ = serde_json::from_str::<ProjectQuery>(input);
 
-    let _ = serde_json::from_str::<platform_metadata::ProjectRaw>(input);
+    let _ = serde_json::from_str::<shared_metadata::ProjectRaw>(input);
 });

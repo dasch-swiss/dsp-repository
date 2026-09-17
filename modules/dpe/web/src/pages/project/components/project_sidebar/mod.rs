@@ -11,7 +11,7 @@ use funding_section::funding_section;
 use legal_info::{contact_section, legal_info};
 use maud::{html, Markup};
 use permalink::permalink;
-use platform_metadata::project::ProjectStatus;
+use shared_metadata::project::ProjectStatus;
 
 use crate::components::{placeholder_value, should_render_value};
 
@@ -42,7 +42,7 @@ pub fn project_sidebar(proj: &Project) -> Markup {
                 div {
                     div class="dpe-subtitle" { "Period" }
                     div {
-                        @if platform_metadata::is_placeholder(&proj.end_date) {
+                        @if shared_metadata::is_placeholder(&proj.end_date) {
                             @if should_render_value(&proj.end_date) {
                                 span { (proj.start_date) " – " (placeholder_value(&proj.end_date)) }
                             } @else {

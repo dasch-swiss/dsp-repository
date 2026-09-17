@@ -59,9 +59,9 @@ verify-checksums:
 # A shared crate must not know one service's directory layout. It compiles
 # either way, so only a grep catches it.
 
-# Verify no platform crate hardcodes a path into a service module. Run by `just check`. (DEV-7046)
-check-platform-paths:
-    bash .github/scripts/check-platform-paths.sh
+# Verify no shared crate hardcodes a path into a service module. Run by `just check`. (DEV-7046)
+check-shared-paths:
+    bash .github/scripts/check-shared-paths.sh
 
 # `data-on-`, `data-attr-`, `data-class-`, `data-style-`: the attribute renders
 # fine and the control is inert, so only a grep or a browser catches it.
@@ -71,7 +71,7 @@ check-datastar-delimiters:
     bash .github/scripts/check-datastar-delimiters.sh
 
 # Run all fmt and clippy checks
-check: verify-checksums check-platform-paths check-datastar-delimiters
+check: verify-checksums check-shared-paths check-datastar-delimiters
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable
@@ -137,7 +137,7 @@ test:
     # Commit-advisory helpers (deterministic parts only; needs jq)
     bash .github/scripts/commit-advisory.test.sh
     bash .github/scripts/verify-checksums.test.sh
-    bash .github/scripts/check-platform-paths.test.sh
+    bash .github/scripts/check-shared-paths.test.sh
     bash .github/scripts/check-datastar-delimiters.test.sh
 
 # Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap

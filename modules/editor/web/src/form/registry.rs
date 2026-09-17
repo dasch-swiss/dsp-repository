@@ -22,7 +22,7 @@
 use editor_core::draft::UrlSlot;
 use editor_core::form::{ChoiceSet, Shape, WhenCleared};
 use editor_core::multilingual::UI_LANGUAGES;
-use platform_metadata::project::{ACCESS_RIGHTS_VALUES, PROJECT_STATUS_VALUES, TYPE_OF_DATA_VALUES};
+use shared_metadata::project::{ACCESS_RIGHTS_VALUES, PROJECT_STATUS_VALUES, TYPE_OF_DATA_VALUES};
 use Audience::{Everyone, RduOnly};
 use Obligation::{Optional, Recommended, Required};
 use Shape::{
@@ -629,7 +629,7 @@ impl Section {
 mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
-    use platform_metadata::project::{CONTRIBUTOR_ROLES, ROLES_NOT_OFFERED};
+    use shared_metadata::project::{CONTRIBUTOR_ROLES, ROLES_NOT_OFFERED};
 
     use super::*;
 
@@ -745,7 +745,7 @@ mod tests {
 
     /// `typeOfData` is a closed vocabulary with no enum behind it, so only this
     /// test says the offered set covers the committed data. Here rather than in
-    /// `platform-metadata`, which takes no path into a service's data directory.
+    /// `shared-metadata`, which takes no path into a service's data directory.
     #[test]
     fn the_offered_data_kinds_cover_every_value_the_corpus_holds() {
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dpe/server/data/projects");

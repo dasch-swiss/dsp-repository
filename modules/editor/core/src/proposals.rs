@@ -207,7 +207,7 @@ pub struct EntityProposal {
     pub entity_id: String,
     pub kind: ProposalKind,
     pub operation: ProposalOperation,
-    /// The proposed entity as JSON, a `platform_metadata::Person` or
+    /// The proposed entity as JSON, a `shared_metadata::Person` or
     /// `Organization` body. Opaque here, like
     /// [`DraftRecord::payload`](crate::records::DraftRecord::payload): a
     /// half-filled proposal cannot deserialize as the contract type, and
@@ -305,13 +305,13 @@ pub struct EntityFinding {
     pub field: &'static str,
     /// Position within a repeatable member, in document order; `None` for a
     /// scalar. Not an identity — same reasoning as
-    /// [`platform_metadata::checks::Finding`], whose docs state it.
+    /// [`shared_metadata::checks::Finding`], whose docs state it.
     pub index: Option<usize>,
     pub message: String,
 }
 
 /// Every rule a proposed organisation must satisfy, against the `Organization`
-/// shape in `modules/platform/metadata/src/organization.rs`.
+/// shape in `shared/metadata/src/organization.rs`.
 ///
 /// `published` is the entity as the committed store holds it, for a
 /// [`ProposalOperation::Change`], and `None` for a [`ProposalOperation::New`].
@@ -367,7 +367,7 @@ pub fn check_organization(payload: &serde_json::Value, published: Option<&serde_
 }
 
 /// Every rule a proposed person must satisfy, against the `Person` shape in
-/// `modules/platform/metadata/src/person.rs`, including the project-role guard.
+/// `shared/metadata/src/person.rs`, including the project-role guard.
 /// `sameAs` carries no rule, as in [`check_organization`].
 #[must_use]
 pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
@@ -396,13 +396,13 @@ pub fn check_person(payload: &serde_json::Value) -> Vec<EntityFinding> {
     }
 
     // `dpe-server validate` rejects a committed file carrying a
-    // `platform_metadata::JOB_TITLE_ROLE_WORDS` entry in `jobTitles`, because the
+    // `shared_metadata::JOB_TITLE_ROLE_WORDS` entry in `jobTitles`, because the
     // OAI-PMH creator/contributor logic reads only `attributions`. Refusing here
     // stops a proposal that would fail that validation later.
     if let Some(job_titles) = payload.get("jobTitles").and_then(|value| value.as_array()) {
         for (index, title) in job_titles.iter().enumerate() {
             if let Some(title) = title.as_str() {
-                if platform_metadata::is_role_job_title(title) {
+                if shared_metadata::is_role_job_title(title) {
                     findings.push(EntityFinding {
                         field: "jobTitles",
                         index: Some(index),

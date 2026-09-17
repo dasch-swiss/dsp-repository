@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use platform_metadata::Person;
+use shared_metadata::Person;
 
 use super::utils::get_data_dir;
 

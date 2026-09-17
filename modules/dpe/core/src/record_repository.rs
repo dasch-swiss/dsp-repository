@@ -1,6 +1,6 @@
 //! Repository interface and filesystem implementation for Records.
 
-use platform_metadata::Record;
+use shared_metadata::Record;
 
 /// Repository interface for accessing Records.
 pub trait RecordRepository {

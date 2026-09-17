@@ -3,7 +3,7 @@
 //!
 //! Deliberately a separate service from `dpe-server`: the editor is
 //! authenticated and writes state, DPE is public and read-only. They share the
-//! `platform-telemetry` beacon contract, `platform-metadata` for the research
+//! `shared-telemetry` beacon contract, `shared-metadata` for the research
 //! metadata contract, and `mosaic-tiles` for components — but not a process, an
 //! image or an origin.
 
@@ -98,8 +98,8 @@ pub(crate) struct AppState {
 /// arguments of similar map types are silently swappable.
 #[derive(Default)]
 pub(crate) struct TemporalTables {
-    pub(crate) periods: std::collections::HashMap<String, platform_metadata::w3cdtf::W3cdtfRange>,
-    pub(crate) enrichment: std::collections::HashMap<String, platform_metadata::temporal_enrichment::EnrichedDate>,
+    pub(crate) periods: std::collections::HashMap<String, shared_metadata::w3cdtf::W3cdtfRange>,
+    pub(crate) enrichment: std::collections::HashMap<String, shared_metadata::temporal_enrichment::EnrichedDate>,
 }
 
 /// Render a page inside the document shell.
@@ -163,8 +163,8 @@ fn load_temporal(data_dir: Option<&std::path::Path>) -> TemporalTables {
         return TemporalTables::default();
     };
     let tables = TemporalTables {
-        periods: platform_metadata::chronontology::load_from(data_dir),
-        enrichment: platform_metadata::temporal_enrichment::load_from(data_dir),
+        periods: shared_metadata::chronontology::load_from(data_dir),
+        enrichment: shared_metadata::temporal_enrichment::load_from(data_dir),
     };
     tracing::info!(
         periods = tables.periods.len(),

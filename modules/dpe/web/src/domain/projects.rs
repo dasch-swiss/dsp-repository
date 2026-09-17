@@ -76,7 +76,7 @@ pub fn list_projects(
 }
 
 pub fn filter_and_paginate(projects: &[Project], query: &super::project::ProjectQuery, page_size: Option<i32>) -> Page {
-    use platform_metadata::{AccessRightsType, ProjectStatus};
+    use shared_metadata::{AccessRightsType, ProjectStatus};
 
     let items_per_page = page_size.unwrap_or(9).clamp(1, 100) as usize;
     let search_lower = query.search().to_lowercase();
@@ -193,8 +193,8 @@ pub fn get_project(shortcode: &str) -> Option<Project> {
 #[cfg(test)]
 mod tests {
     use dpe_core::Project;
-    use platform_metadata::utils::Multilingual;
-    use platform_metadata::{AccessRights, AccessRightsType, Attribution, Funding, ProjectStatus};
+    use shared_metadata::utils::Multilingual;
+    use shared_metadata::{AccessRights, AccessRightsType, Attribution, Funding, ProjectStatus};
 
     use super::super::project::ProjectQuery;
     use super::filter_and_paginate;

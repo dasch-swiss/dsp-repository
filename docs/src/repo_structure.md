@@ -30,6 +30,7 @@ modules/
     └── playground-e2e-tests/  # Playwright E2E tests for the playground
 
 shared/                        # Crates shared by more than one service
+├── fair/                      # FAIR exposure engine: resolved graphs + writers (crate: shared-fair)
 ├── metadata/                  # Research-metadata wire contract (crate: shared-metadata)
 └── telemetry/                 # Browser beacon contract + collector endpoint (crate: shared-telemetry)
 ```
@@ -41,9 +42,10 @@ shared/                        # Crates shared by more than one service
 | Crate | Folder | Role |
 |-------|--------|------|
 | `dpe-core` | `dpe/core` | DPE's view model, caches and repositories over the shared contract (zero framework deps) |
-| `dpe-api-oai` | `dpe/api-oai` | OAI-PMH 2.0 API (depends on `dpe-core` and `shared-metadata` only) |
+| `dpe-api-oai` | `dpe/api-oai` | OAI-PMH 2.0 API (depends on `dpe-core`, `shared-metadata` and `shared-fair` only) |
 | `dpe-web` | `dpe/web` | Maud pages and components (`fn -> Markup`) |
 | `dpe-server` | `dpe/server` | Server binary — composes all routes |
+| `shared-fair` | `shared/fair` | The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — `dpe-api-oai` is its only consumer today |
 | `shared-metadata` | `shared/metadata` | The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor |
 | `shared-telemetry` | `shared/telemetry` | Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor |
 | `editor-core` | `editor/core` | Pure domain types for the editor (zero framework deps) |
@@ -74,7 +76,7 @@ The directory is the ownership signal, and four things read it:
 Each API is a separate crate under `modules/dpe/`:
 
 - **Naming**: `dpe-api-{name}` (e.g., `dpe-api-oai`)
-- **Dependencies**: `shared-metadata` for the contract, `dpe-core` for the view model; never depends on other API crates or `dpe-web`
+- **Dependencies**: `shared-metadata` for the contract, `dpe-core` for the view model, and any `shared-*` crate it needs — `dpe-api-oai` takes `shared-fair` for the DataCite and Dublin Core mappings; never depends on other API crates or `dpe-web`
 - **Entry point**: Exports a handler function (e.g., `pub async fn oai_handler(...)`)
 - **Composition**: `dpe-server` wires the handler into the Axum router
 

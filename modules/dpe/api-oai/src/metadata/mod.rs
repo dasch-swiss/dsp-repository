@@ -4,6 +4,8 @@
 //! and DataCite 4.6 metadata formats, following the DaSCH Metadata to DataCite
 //! mapping specification.
 
+#[cfg(test)]
+mod corpus;
 mod datacite;
 mod dublin_core;
 mod helpers;

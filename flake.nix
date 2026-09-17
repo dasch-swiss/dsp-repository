@@ -91,6 +91,7 @@
             _ensure_tool bacon           bacon             3.23.0   # dev loop: kill_then_restart server
             _ensure_tool maudfmt         maudfmt           0.1.8    # Maud template formatting
             _ensure_tool cargo-machete   cargo-machete     0.9.2    # unused-dependency check (just check)
+            _ensure_tool commitlint      commitlint-rs     0.2.4    # commit-message gate (just commit-lint)
 
             unset -f _ensure_tool
           '';

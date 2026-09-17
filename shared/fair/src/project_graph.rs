@@ -857,4 +857,67 @@ mod tests {
         let graph = build(&raw, &[]);
         assert_eq!(graph.alternative_names, vec!["Rural Land Use".to_string(), "RLU".to_string()]);
     }
+
+    /// Every multilingual value goes through `shared_metadata::multilingual_value`:
+    /// English when present, otherwise the lexicographically smallest tag. The rule
+    /// is deterministic on purpose — it also keys the temporal-enrichment lookup.
+    #[test]
+    fn multilingual_values_prefer_english_then_the_smallest_tag() {
+        let raw = ProjectRaw {
+            description: Multilingual::from([
+                ("de".to_string(), "Eine Studie.".to_string()),
+                ("en".to_string(), "A study.".to_string()),
+            ]),
+            abstract_text: Some(Multilingual::from([
+                ("fr".to_string(), "Un résumé.".to_string()),
+                ("de".to_string(), "Eine Zusammenfassung.".to_string()),
+            ])),
+            keywords: vec![Multilingual::from([
+                ("it".to_string(), "uso del suolo".to_string()),
+                ("de".to_string(), "Landnutzung".to_string()),
+            ])],
+            ..project()
+        };
+        let graph = build(&raw, &[]);
+        assert_eq!(graph.description.as_deref(), Some("A study."));
+        assert_eq!(graph.abstract_text.as_deref(), Some("Eine Zusammenfassung."));
+        assert_eq!(graph.keywords, vec!["Landnutzung".to_string()]);
+    }
+
+    /// The `url` reading rule, applied once here instead of in every writer: a
+    /// legacy string array yields the first two real entries, a placeholder
+    /// yields nothing, and an explicit `secondaryURL` wins over the array's
+    /// second element.
+    #[test]
+    fn the_url_reading_rule_is_applied_once() {
+        let raw = ProjectRaw {
+            url: Some(serde_json::json!(["https://example.org/site", "https://example.org/data"])),
+            ..project()
+        };
+        let graph = build(&raw, &[]);
+        assert_eq!(graph.website.map(|r| r.url).as_deref(), Some("https://example.org/site"));
+        assert_eq!(
+            graph.secondary_website.map(|r| r.url).as_deref(),
+            Some("https://example.org/data")
+        );
+
+        let raw = ProjectRaw { url: Some(serde_json::json!(["MISSING"])), ..project() };
+        let graph = build(&raw, &[]);
+        assert!(graph.website.is_none());
+        assert!(graph.secondary_website.is_none());
+
+        let raw = ProjectRaw {
+            url: Some(serde_json::json!(["https://example.org/site", "https://example.org/data"])),
+            secondary_url: Some(AuthorityFileReference {
+                type_: "URL".to_string(),
+                url: "https://example.org/explicit".to_string(),
+                text: None,
+            }),
+            ..project()
+        };
+        assert_eq!(
+            build(&raw, &[]).secondary_website.map(|r| r.url).as_deref(),
+            Some("https://example.org/explicit")
+        );
+    }
 }

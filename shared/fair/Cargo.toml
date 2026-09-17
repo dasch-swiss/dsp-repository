@@ -9,3 +9,8 @@ publish = false
 # and Dublin Core writers read the wire contract and nothing else.
 [dependencies]
 shared-metadata = { path = "../metadata" }
+
+# Only the tests name `serde_json`, to build the raw `"url"` values the `url`
+# reading rule parses. Taken from the workspace, which pins `preserve_order`.
+[dev-dependencies]
+serde_json = { workspace = true }

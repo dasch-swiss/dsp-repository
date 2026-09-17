@@ -30,7 +30,7 @@
   }
 
   /* Both controls are buttons rather than links, so they inherit `btn`; these
-   * only shrink them to the size of a row-level action. */
+   * only shrink them to a row-level action. */
   .repeatable-remove,
   .repeatable-add {
     @apply shrink-0 px-3 py-1 text-sm;

@@ -3,7 +3,6 @@ use platform_telemetry::traceparent::is_valid_traceparent;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 /// Extract the W3C traceparent from the current OTel span context.
-/// Returns None if no valid span context is active.
 pub fn extract_traceparent() -> Option<String> {
     let ctx = tracing::Span::current().context();
     let span_ref = ctx.span();

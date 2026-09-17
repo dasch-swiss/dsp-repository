@@ -4,8 +4,6 @@ use libfuzzer_sys::fuzz_target;
 use serde::Deserialize;
 
 /// Mirrors the query parameters accepted by the projects listing page.
-/// Fuzzing deserialization catches panics in serde, unexpected enum values,
-/// and edge cases in optional field handling.
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 struct ProjectQuery {
@@ -29,19 +27,15 @@ struct ProjectQuery {
     tab: Option<String>,
 }
 
-// Fuzz query parameter parsing for the project listing and tab endpoints.
-// Goal: ensure no panics when parsing arbitrary query strings.
 fuzz_target!(|data: &[u8]| {
     let Ok(input) = std::str::from_utf8(data) else {
         return;
     };
 
-    // Try parsing as a query string (key=value&key=value format)
     let _ = serde_urlencoded::from_str::<ProjectQuery>(input);
 
-    // Also try parsing as JSON (in case of malformed Content-Type)
+    // Also as JSON, which is what a malformed Content-Type produces.
     let _ = serde_json::from_str::<ProjectQuery>(input);
 
-    // Fuzz the raw ProjectRaw JSON deserialization from platform-metadata
     let _ = serde_json::from_str::<platform_metadata::ProjectRaw>(input);
 });

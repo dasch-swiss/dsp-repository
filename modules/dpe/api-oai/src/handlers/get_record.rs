@@ -8,7 +8,6 @@ use crate::error::OaiError;
 use crate::metadata::{parse_oai_identifier, to_oai_record, to_oai_record_from_record, OaiRecord};
 use crate::xml::OaiXmlBuilder;
 
-/// Handles the GetRecord verb.
 pub fn handle_get_record(
     params: &OaiParams,
     repo: &dyn ProjectRepository,

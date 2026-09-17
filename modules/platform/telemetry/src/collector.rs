@@ -36,9 +36,9 @@ fn meter_scope_name(namespace: &str) -> String {
 }
 
 /// Scope name used if the metrics are built without any route ever being
-/// declared. Unreachable in either binary — [`collect_route`] is the only way to
-/// wire the collector, and it always sets the scope — but a sane name rather
-/// than the `.browser` that an empty namespace would produce.
+/// declared. Unreachable in either binary, which wires the collector through
+/// [`collect_route`] and so always sets the scope, but a sane name rather than
+/// the `.browser` an empty namespace would produce.
 const FALLBACK_METER_SCOPE: &str = "browser";
 
 /// The per-service page-URL normalizer, set once by [`collect_route`].
@@ -150,7 +150,6 @@ const MAX_SIGNALS: usize = 50;
 /// Receives browser telemetry beacons and converts them to OTel signals.
 /// Always returns 204 (or 413 if payload too large) — never blocks on failures.
 pub async fn collect_handler(headers: HeaderMap, body: Bytes) -> StatusCode {
-    // Reject oversized payloads
     if body.len() > MAX_PAYLOAD_SIZE {
         return StatusCode::PAYLOAD_TOO_LARGE;
     }
@@ -184,7 +183,6 @@ pub async fn collect_handler(headers: HeaderMap, body: Bytes) -> StatusCode {
         }
     };
 
-    // Limit signal count to prevent CPU abuse
     let signals = if payload.signals.len() > MAX_SIGNALS {
         &payload.signals[..MAX_SIGNALS]
     } else {
@@ -358,8 +356,8 @@ mod tests {
 
     #[tokio::test]
     async fn collect_route_serves_the_collector() {
-        // The route helper is the only sanctioned way to wire the collector, so
-        // it has to behave identically to the bare handler.
+        // The route helper is how a service wires the collector, so it has to
+        // behave identically to the bare handler.
         let app: Router = Router::new().route("/telemetry/collect", collect_route("test", test_normalize_page_url));
         let response = app
             .oneshot(
@@ -556,7 +554,6 @@ mod tests {
 
     #[test]
     fn unknown_vital_name_is_silently_dropped() {
-        // process_signal should not panic
         let signal = Signal::WebVital(WebVitalSignal {
             name: "UNKNOWN_VITAL".to_string(),
             value: 1.0,

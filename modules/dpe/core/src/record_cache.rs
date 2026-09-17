@@ -1,7 +1,7 @@
-/// In-process cache for all records.
-///
-/// All records are loaded from disk once on first access and held in memory
-/// for the lifetime of the server process, mirroring the project cache pattern.
+//! In-process cache for all records.
+//!
+//! All records are loaded from disk once on first access and held in memory
+//! for the lifetime of the server process, mirroring the project cache pattern.
 use std::collections::HashMap;
 use std::sync::OnceLock;
 use std::time::Instant;

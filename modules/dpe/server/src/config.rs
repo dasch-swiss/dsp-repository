@@ -110,7 +110,6 @@ mod tests {
 
     #[test]
     fn load_with_defaults() {
-        // Without any env vars or config file, defaults should work
         let config = DpeConfig::load().expect("default config should load");
         assert!(config.fathom_site_id.is_none());
     }

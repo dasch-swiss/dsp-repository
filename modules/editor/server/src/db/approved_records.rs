@@ -252,7 +252,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_discards_the_local_record_once_the_change_is_online() {
-        // A record identical to the published data is dropped.
         let db = test_db("approved-delete").await;
         let record = record("0801", None, at(12));
         ApprovedRecordRepository::create(&db, &record).await.unwrap();

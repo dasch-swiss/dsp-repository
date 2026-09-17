@@ -1,29 +1,17 @@
 //! Text field tile: a label, a single-line `<input>`, and an optional hint,
-//! wired together as one group.
-//!
-//! `text_field(name, label)` returns a [`TextFieldBuilder`]; set options with
-//! chained methods and either splice it into `html!` directly (it implements
-//! [`Render`]) or call `.build()` for a standalone `Markup`. See
+//! wired together as one group. See
 //! `docs/src/mosaic/component-api-conventions.md`.
 //!
-//! ## Why the label and hint are inside the tile, not around it
+//! The label and hint live inside the tile because a bare input would leave the
+//! caller repeating the field name on `id`, the label's `for` and
+//! `aria-describedby`, where a mismatch is silent: the field still renders and
+//! stops being announced correctly. `with_id` overrides the derived id for a
+//! page rendering the same field name twice.
 //!
-//! A bare input tile would leave the caller to repeat the field name three
-//! times — on `id`, on the label's `for`, and on `aria-describedby` — and a
-//! mismatch in any of them is silent: the field still renders, it just stops
-//! being announced correctly. Accessibility is the tile's responsibility, so
-//! the name is given once and the tile derives all three. `with_id` overrides
-//! the derived id (and the `for`/`aria-describedby` that follow it) for the
-//! case where one page renders the same field name twice.
-//!
-//! The `field-*` classes are deliberately not `text-field-*`: a textarea and a
-//! select want the same label, border, hint and error treatment, and share this
-//! shell.
-//!
-//! The label, hint and error around the input are
-//! [`FieldShell`](super::shell::FieldShell), shared by every form tile — see its
-//! module docs for why the error region is rendered even when the field is
-//! valid.
+//! The classes are `field-*` rather than `text-field-*` because the textarea and
+//! the select share this shell. The label, hint and error are
+//! [`FieldShell`](super::shell::FieldShell); see its module docs for why the
+//! error region is rendered even when the field is valid.
 
 use maud::{html, Markup, Render};
 
@@ -44,10 +32,7 @@ pub enum InputType {
     /// (`2019`, `2019-07`) and a string that is not a date at all. Either
     /// renders as an **empty** control rather than as itself, so a field whose
     /// stored value is one of those has to be handled before it reaches here —
-    /// see the caller's field registry. In this repo's project corpus every
-    /// committed `startDate` and `endDate` is either a full `YYYY-MM-DD` or the
-    /// `MISSING` placeholder, which is a field's empty state anyway, so no
-    /// committed value is lost by the choice.
+    /// see the caller's field registry.
     Date,
 }
 
@@ -127,12 +112,11 @@ impl TextFieldBuilder {
 
     /// Mark the field invalid and say why.
     ///
-    /// One method rather than a separate `.invalid()` flag and `.message()`,
-    /// because the two only make sense together: `aria-invalid` with no
-    /// description tells a screen reader something is wrong and not what, and a
-    /// message with no `aria-invalid` leaves the field announcing as valid. The
-    /// message also lands in the field's `aria-describedby`, so it is read out
-    /// with the input rather than only being visible.
+    /// One method rather than a separate `.invalid()` flag and `.message()`:
+    /// `aria-invalid` with no description says something is wrong and not what,
+    /// and a message with no `aria-invalid` leaves the field announcing as
+    /// valid. The message lands in `aria-describedby`, so it is read out with
+    /// the input rather than only being visible.
     pub fn error(mut self, message: impl Render) -> Self {
         self.error = Some(message.render());
         self
@@ -140,29 +124,23 @@ impl TextFieldBuilder {
 
     /// Set the `autocomplete` token — what the browser may fill in here.
     ///
-    /// A standard form attribute rather than an ARIA one, and the caller is who
+    /// A caller-set knob rather than a semantic method, because only the caller
     /// knows what the field collects: `"email"` on a sign-in address invites
-    /// autofill, while `"off"` on an administrator entering somebody else's
-    /// address deliberately refuses it.
+    /// autofill, `"off"` on an administrator entering somebody else's address
+    /// refuses it.
     pub fn autocomplete(mut self, token: impl Into<String>) -> Self {
         self.autocomplete = Some(token.into());
         self
     }
 
-    /// Mark the input required.
     /// Point the input at a `<datalist>` by id, so the browser offers its
     /// options as suggestions.
     ///
-    /// The list itself is the caller's to render, once, wherever it belongs on
-    /// the page — which is the reason this takes an id rather than the options:
-    /// a suggestion list large enough to be worth sharing (hundreds of entries)
-    /// must not be repeated per control.
-    ///
-    /// Progressive by construction: with no JavaScript, and in a browser with
-    /// no `datalist` support, the input stays an ordinary text field and the
-    /// attribute is inert. It is a *suggestion* list either way — the browser
-    /// does not restrict what may be typed, so whatever accepts the value still
-    /// has to validate it.
+    /// By id rather than by options, so a list worth sharing is rendered once on
+    /// the page instead of per control. With no JavaScript, or in a browser
+    /// without `datalist`, the input stays an ordinary text field and the
+    /// attribute is inert; either way the browser does not restrict what may be
+    /// typed, so whatever accepts the value still has to validate it.
     pub fn list(mut self, id: impl Into<String>) -> Self {
         self.list = Some(id.into());
         self
@@ -173,7 +151,6 @@ impl TextFieldBuilder {
         self
     }
 
-    /// Focus this input on page load.
     pub fn autofocus(mut self) -> Self {
         self.autofocus = true;
         self
@@ -181,12 +158,11 @@ impl TextFieldBuilder {
 
     /// Configure the field as a numeric one-time code of `digits` digits.
     ///
-    /// One intent method rather than four knobs, because the four attributes
-    /// only work together: `autocomplete="one-time-code"` is what lets a phone
-    /// offer the code from a message, `inputmode="numeric"` is what raises a
-    /// number keypad instead of a letter keyboard, and the pattern and length
-    /// are what stop a wrong-length entry before it is posted. Setting three of
-    /// the four is a field that looks right and autofills nothing.
+    /// One intent method rather than four knobs, because the four only work
+    /// together: `autocomplete="one-time-code"` lets a phone offer the code from
+    /// a message, `inputmode="numeric"` raises a number keypad, and the pattern
+    /// and length stop a wrong-length entry before it is posted. Setting three
+    /// of the four is a field that looks right and autofills nothing.
     pub fn one_time_code(mut self, digits: u32) -> Self {
         self.autocomplete = Some("one-time-code".to_string());
         self.inputmode = Some("numeric");
@@ -198,15 +174,10 @@ impl TextFieldBuilder {
     /// Configure the field as a four-digit year.
     ///
     /// One intent method rather than three knobs, on the `one_time_code`
-    /// precedent: `inputmode="numeric"` raises a number keypad, the pattern
-    /// refuses a wrong-length entry before it is posted, and `maxlength` stops
-    /// one being typed. Setting two of the three is a field that looks right
-    /// and validates nothing.
-    ///
-    /// Deliberately not `type="number"`: a spinner on a year is a control that
-    /// changes the value on a stray scroll-wheel or arrow key while the field
-    /// has focus, and its thousands separator and step semantics are wrong for
-    /// a year in several locales.
+    /// precedent. Deliberately not `type="number"`: a spinner changes the value
+    /// on a stray scroll-wheel or arrow key while the field has focus, and its
+    /// thousands separator and step semantics are wrong for a year in several
+    /// locales.
     pub fn year(mut self) -> Self {
         self.inputmode = Some("numeric");
         self.pattern = Some("[0-9]{4}".to_string());
@@ -214,7 +185,6 @@ impl TextFieldBuilder {
         self
     }
 
-    /// The id the label and hint point at: the explicit one if set, else the name.
     fn resolved_id(&self) -> &str {
         self.id.as_deref().unwrap_or(&self.name)
     }
@@ -283,8 +253,6 @@ mod tests {
 
     #[test]
     fn the_label_points_at_the_input_it_labels() {
-        // The whole reason the label lives inside the tile: `for` and `id` are
-        // derived from one name, so they cannot drift apart.
         let out = text_field("email", "Email address").build().into_string();
         assert!(
             out.contains(r#"<label class="field-label" for="email">Email address</label>"#),
@@ -331,7 +299,6 @@ mod tests {
 
     #[test]
     fn one_time_code_sets_all_four_attributes_together() {
-        // Three of the four is a field that looks right and autofills nothing.
         let out = text_field("code", "Six-digit code").one_time_code(6).build().into_string();
         assert!(out.contains(r#"autocomplete="one-time-code""#), "{out}");
         assert!(out.contains(r#"inputmode="numeric""#), "{out}");
@@ -341,9 +308,6 @@ mod tests {
 
     #[test]
     fn an_error_marks_the_input_invalid_and_describes_it_by_the_message() {
-        // Either half alone is a defect: `aria-invalid` with no description says
-        // something is wrong and not what; a message with no `aria-invalid`
-        // leaves the field announcing as valid.
         let out = text_field("shortcodes", "Project shortcodes")
             .error("\"nope!\" is not a project shortcode.")
             .build()
@@ -368,9 +332,6 @@ mod tests {
 
     #[test]
     fn the_error_region_is_rendered_empty_when_valid_so_a_live_update_announces() {
-        // The editor re-renders the whole form on a rejected submit and Datastar
-        // morphs it in. An `aria-live` region inserted together with its text is
-        // widely reported not to announce, so the region has to pre-exist.
         let out = text_field("name", "Name").build().into_string();
         assert!(
             out.contains(r#"<p class="field-error" id="name-error" aria-live="polite"></p>"#),
@@ -418,7 +379,6 @@ mod tests {
 
     #[test]
     fn year_sets_all_three_attributes_together() {
-        // Two of the three is a field that looks right and validates nothing.
         let out = text_field("dataPublicationYear", "Data publication year")
             .year()
             .build()
@@ -430,8 +390,6 @@ mod tests {
 
     #[test]
     fn a_year_is_a_text_field_not_a_number_spinner() {
-        // A spinner changes the value on a stray scroll or arrow key while the
-        // field has focus.
         let out = text_field("dataPublicationYear", "Year").year().build().into_string();
         assert!(out.contains(r#"type="text""#), "{out}");
         assert!(!out.contains(r#"type="number""#), "{out}");
@@ -472,8 +430,6 @@ mod tests {
 
     #[test]
     fn a_suggestion_list_is_referenced_by_id_and_is_absent_unless_asked_for() {
-        // By id rather than by options, so a list large enough to be worth
-        // sharing is rendered once on the page instead of per control.
         let plain = text_field("contributor", "Contributor").build().into_string();
         assert!(!plain.contains("list="), "{plain}");
 
@@ -482,8 +438,6 @@ mod tests {
             .build()
             .into_string();
         assert!(out.contains(r#"list="agent-suggestions""#), "{out}");
-        // Still an ordinary text input: a `datalist` suggests and never
-        // restricts, so whatever accepts the value has to validate it.
         assert!(out.contains(r#"type="text""#), "{out}");
     }
 
@@ -520,7 +474,6 @@ mod tests {
 
     #[test]
     fn test_id_lands_on_the_input_not_the_wrapper() {
-        // The input is what a test types into.
         let out = text_field("name", "Name").with_test_id("name-input").build().into_string();
         let testid_at = out.find("data-testid").expect("test id missing");
         let input_at = out.find("<input").expect("input missing");

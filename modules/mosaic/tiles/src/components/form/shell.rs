@@ -1,20 +1,14 @@
 //! The label / hint / error wrapper every form tile renders around its control.
 //!
-//! Private to `form`: it is not a tile and has no showcase. What it owns is the
-//! part that is identical for an input, a textarea and a select and wrong in a
-//! way nothing catches if one of them differs — the derived ids and the
-//! `aria-describedby` that ties them to the control.
-//!
-//! The failure it prevents is specific. Each tile needs `id`, the label's `for`,
-//! the hint's `id`, the error's `id`, and a `aria-describedby` naming whichever
-//! of the last two exist. Written out per tile that is five places to keep in
-//! agreement, and a mismatch is silent: the field still renders, it just stops
-//! being announced correctly, and a snapshot test asserting the attribute is
-//! present still passes. Deriving them once from the field name is the same
-//! argument the label being inside `text_field` rests on, one level up.
+//! Private to `form`: not a tile, and no showcase. It owns the five things every
+//! form tile must keep in agreement — `id`, the label's `for`, the hint's and
+//! error's `id`, and the `aria-describedby` naming whichever of the last two
+//! exist — because a mismatch between them is silent: the field still renders,
+//! it stops being announced correctly, and a test asserting the attribute is
+//! present still passes.
 //!
 //! It is a struct rather than a function taking five arguments because three of
-//! them are `Option<&Markup>` and adjacent optional arguments of one type are
+//! them are `Option<&Markup>`, and adjacent optional arguments of one type are
 //! silently swappable — a hint rendered where an error belongs.
 
 use maud::{html, Markup};
@@ -29,7 +23,6 @@ pub(super) struct FieldShell<'a> {
 }
 
 impl<'a> FieldShell<'a> {
-    /// The hint's id, or `None` when there is no hint to point at.
     pub fn hint_id(&self) -> Option<String> {
         self.hint.map(|_| format!("{}-hint", self.id))
     }
@@ -43,10 +36,9 @@ impl<'a> FieldShell<'a> {
     /// What the control's `aria-describedby` should be, or `None` when there is
     /// nothing to describe it by.
     ///
-    /// Hint before error, matching the order they appear in. The error is the
-    /// more urgent of the two, but "project shortcodes, separated by commas —
-    /// 'nope!' is not a shortcode" reads the way a person would say it, where
-    /// the reverse states a problem about a field not yet described.
+    /// Hint before error, matching the order they appear in: the description
+    /// then reads the way a person would say it, where the reverse states a
+    /// problem about a field not yet described.
     pub fn described_by(&self) -> Option<String> {
         match (self.hint_id(), self.error) {
             (Some(hint), Some(_)) => Some(format!("{hint} {}", self.error_id())),
@@ -67,22 +59,16 @@ impl<'a> FieldShell<'a> {
     /// region.
     ///
     /// The error region is rendered **even when there is no error**. An
-    /// `aria-live` region announces a *change* to content it already contains; a
-    /// region inserted into the DOM together with its text is widely reported
-    /// not to announce at all, and the editor's validation path is exactly that
-    /// case — a rejected submit re-renders the form and Datastar morphs it in,
-    /// so an error paragraph that only exists when errored arrives as a new node
-    /// and says nothing. Rendering it empty from the start means the morph
-    /// writes into a region the assistive technology is already watching.
+    /// `aria-live` region announces a *change* to content it already contains,
+    /// and a region inserted together with its text is widely reported not to
+    /// announce at all — which is exactly the editor's validation path, where a
+    /// rejected submit re-renders the form and Datastar morphs it in. The cost
+    /// is an empty `<p>` per field, collapsed by `.field-error:empty`;
+    /// [`Self::described_by`] names it only when there is a message.
     ///
-    /// The cost is an empty `<p>` per field; `.field-error:empty` collapses it,
-    /// so it occupies no space and shows nothing. [`Self::described_by`] still
-    /// names it only when there is a message, because describing a field by an
-    /// empty element is noise.
-    ///
-    /// `control` is a `Markup` rather than `impl Render` on purpose: this is an
-    /// internal seam whose one caller is the tile that just built its own
-    /// control, not a public content slot.
+    /// `control` is a `Markup` rather than `impl Render` on purpose: an internal
+    /// seam whose one caller is the tile that just built its own control, not a
+    /// public content slot.
     pub fn render(&self, control: Markup) -> Markup {
         let hint_id = self.hint_id();
         html! {
@@ -103,21 +89,16 @@ impl<'a> FieldShell<'a> {
 /// The same field wrapper for a control that is several elements rather than
 /// one.
 ///
-/// A `<label for>` needs a single control to point at, and a checkbox or radio
-/// group has one per choice — each already carrying its own label. The group's
-/// accessible name is therefore a `<legend>` inside a `<fieldset>`, and the
-/// hint and error hang off the fieldset via its `aria-describedby` rather than
-/// off any one control.
+/// A `<label for>` needs a single control to point at and a group has one per
+/// choice, so the group's accessible name is a `<legend>` inside a
+/// `<fieldset>`, and the hint and error hang off the fieldset.
 ///
-/// `aria-invalid` deliberately does **not** go on the fieldset: it is not a
-/// valid attribute there, and putting it on every member control would have a
-/// screen reader announce the same group error once per choice. The red rule
-/// and the message carry the state visually and in the description, and
-/// `data-invalid` is what the CSS selects on.
+/// `aria-invalid` deliberately does **not** go on the fieldset: it is not valid
+/// there, and putting it on every member control would announce the same group
+/// error once per choice. `data-invalid` is what the CSS selects on.
 ///
 /// `controls` arrives already wrapped in its own layout container, so a tile
-/// that lays its choices out in a row rather than a column does not need a
-/// parameter threaded through here.
+/// laying its choices out in a row needs no parameter threaded through here.
 pub(super) fn group_shell(
     id: &str,
     legend: &Markup,
@@ -201,7 +182,6 @@ mod tests {
 
     #[test]
     fn a_group_is_named_by_a_legend_rather_than_a_for_attribute() {
-        // A `for` needs one control to point at, and a group has one per choice.
         let hint = markup("Pick any that apply.");
         let controls = html! {
             input type="checkbox";
@@ -215,8 +195,6 @@ mod tests {
 
     #[test]
     fn a_group_marks_its_invalid_state_without_aria_invalid_on_the_fieldset() {
-        // `aria-invalid` is not valid on a fieldset, and repeating it on every
-        // member would announce one group error once per choice.
         let error = markup("Pick at least one.");
         let controls = html! {
             input type="checkbox";

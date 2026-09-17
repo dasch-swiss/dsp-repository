@@ -4,9 +4,8 @@ use std::collections::BTreeMap;
 ///
 /// `BTreeMap` rather than `HashMap` so serialization is deterministic and
 /// alphabetical by language tag. Two things depend on that: the canonical
-/// project writer, whose byte-identical round-trip over the 85 committed files
-/// would otherwise be flaky, and DPE's `/projects.json`, which emitted language
-/// keys in `HashMap` iteration order and so differed between processes.
+/// project writer's byte-identical round-trip, and DPE's `/projects.json`, whose
+/// language keys would otherwise differ between processes.
 ///
 /// The tag is an open `String`, not a de/en/fr/it enum: `ar` is live in two
 /// committed files, and a closed set would silently drop it.

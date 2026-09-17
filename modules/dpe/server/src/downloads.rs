@@ -277,7 +277,6 @@ mod tests {
             "mimeType should be present"
         );
         assert!(body["mimeType"].is_null(), "mimeType should be null, got {}", body["mimeType"]);
-        // The rest of the document is unaffected.
         assert_eq!(body["fileName"], "Screenshot 2026-08-19 at 16.40.02.png");
         assert_eq!(body["downloadUrl"], INGEST_URL);
     }
@@ -296,7 +295,6 @@ mod tests {
         assert_eq!(body["mimeType"], "image/png");
         assert_eq!(body["version"], 1);
         assert_eq!(body["downloadUrl"], "https://example.invalid/totally/different/layout");
-        // Not parsed out of the URL, so an unparseable one changes nothing.
         assert_eq!(body["fileId"], RECORD_ID);
     }
 

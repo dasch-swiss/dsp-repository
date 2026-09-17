@@ -93,7 +93,6 @@ pub fn router(public_dir: PathBuf) -> Router {
         .fallback_service(ServeDir::new(public_dir))
 }
 
-/// Render a full page document into an `Html` response.
 fn render(active: &str, title: &str, content: Markup) -> Html<String> {
     Html(document(active, title, content).into_string())
 }

@@ -48,7 +48,6 @@ mod tests {
         assert!(out.contains(r#"data-on:click="$_expanded = !$_expanded""#), "{out}");
         assert!(out.contains(r#"data-text="$_expanded ? 'Show less' : 'Show more'""#), "{out}");
         assert!(out.contains("Show more"), "{out}");
-        // The toggle exposes its state to assistive technology.
         assert!(out.contains(r#"aria-expanded="false""#), "missing initial aria-expanded: {out}");
         assert!(
             out.contains(r#"data-attr:aria-expanded="$_expanded ? 'true' : 'false'""#),

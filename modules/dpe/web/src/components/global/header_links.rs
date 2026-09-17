@@ -35,7 +35,6 @@ mod tests {
         let out = header_links().into_string();
         assert!(out.contains(r#"href="/dpe/about""#), "{out}");
         assert!(out.contains("Help"), "{out}");
-        // Ghost button variant styling.
         assert!(out.contains("btn btn-ghost"), "{out}");
     }
 

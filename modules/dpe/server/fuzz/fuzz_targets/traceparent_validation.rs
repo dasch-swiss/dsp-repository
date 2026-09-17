@@ -3,9 +3,7 @@
 use platform_telemetry::traceparent::is_valid_traceparent;
 use libfuzzer_sys::fuzz_target;
 
-// Fuzz the W3C traceparent validation function.
-// Goal: ensure no panics on arbitrary input, and that accepted values
-// conform to W3C Trace Context format.
+// Accepted values must conform to the W3C Trace Context format.
 fuzz_target!(|data: &[u8]| {
     let Ok(input) = std::str::from_utf8(data) else {
         return;

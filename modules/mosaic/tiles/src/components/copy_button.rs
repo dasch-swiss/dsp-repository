@@ -1,7 +1,7 @@
-//! Copy-to-clipboard button tile (promoted from DPE).
+//! Copy-to-clipboard button tile.
 //!
-//! Uses a small inline `onclick` handler (not Datastar): the clipboard API and
-//! the tooltip state are purely client-side with no server interaction needed.
+//! Uses a small inline `onclick` handler rather than Datastar: the clipboard API
+//! and the tooltip state are client-side with no server interaction needed.
 
 use maud::{html, Markup};
 
@@ -64,7 +64,6 @@ mod tests {
         assert!(out.contains(r#"aria-label="Copy""#), "accessible name missing: {out}");
         assert!(out.contains("navigator.clipboard.writeText"), "onclick handler missing: {out}");
         assert!(out.contains(r#"class="icon w-4 h-4""#), "icon missing: {out}");
-        // Copy outcome is announced to assistive technology.
         assert!(out.contains(r#"aria-live="polite""#), "aria-live status region missing: {out}");
         assert!(out.contains(r#"role="status""#), "{out}");
     }

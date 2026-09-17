@@ -106,14 +106,13 @@ impl ButtonBuilder {
     /// Submit the enclosing form to `url` instead of the form's own action.
     ///
     /// The mechanism behind a form with more than one thing to do — an "add a
-    /// row" beside a "save" — without either of them losing what is typed: the
-    /// whole form body is still posted, only the destination differs.
+    /// row" beside a "save" — without either losing what is typed: the whole
+    /// form body is still posted, only the destination differs.
     ///
     /// Implies [`ButtonType::Submit`] and `formmethod="post"`. The method is set
-    /// rather than inherited on purpose: a `formaction` button in a `GET` form
-    /// would send a mutating request as a `GET`, which is the one thing the
-    /// same-origin CSRF control cannot cover, and inheriting would make that
-    /// depend on a form the tile cannot see.
+    /// rather than inherited because a `formaction` button in a `GET` form would
+    /// send a mutating request as a `GET`, the one thing the same-origin CSRF
+    /// control cannot cover.
     pub fn form_action(mut self, url: impl Into<String>) -> Self {
         self.form_action = Some(url.into());
         self.button_type = ButtonType::Submit;
@@ -122,19 +121,14 @@ impl ButtonBuilder {
 
     /// Post `name=value` when this button is the one that submitted the form.
     ///
-    /// The other mechanism behind a form with more than one thing to do, and the
-    /// one to reach for when both destinations are the same URL and the
+    /// The one to reach for when both destinations are the same URL and the
     /// *intent* is what differs — a "save" beside an "accept everything", where
-    /// [`Self::form_action`]'s second URL would have to answer `GET` as well and
-    /// would duplicate the handler.
+    /// [`Self::form_action`]'s second URL would duplicate the handler.
     ///
     /// Implies [`ButtonType::Submit`]: only a submitter's name and value are
-    /// posted, so on any other type the pair is set and never sent, which reads
-    /// as a handler that ignores it.
-    ///
-    /// It survives a Datastar form-mode submit as well as a native one — the
-    /// bundle appends the `SubmitEvent`'s submitter to the body it builds — so a
-    /// page using this does not need two renderings of the same decision.
+    /// posted, so on any other type the pair is set and never sent. It survives
+    /// a Datastar form-mode submit as well as a native one, because the bundle
+    /// appends the `SubmitEvent`'s submitter to the body it builds.
     pub fn name_value(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
         self.name = Some(name.into());
         self.value = Some(value.into());
@@ -145,10 +139,9 @@ impl ButtonBuilder {
     /// Give the button an accessible name other than its visible label.
     ///
     /// For a control whose visible text is only meaningful in context — several
-    /// "Remove" buttons in a list, where "Remove, button" five times says
-    /// nothing about what each removes. WCAG 2.5.3 requires the accessible name
-    /// to contain the visible label, so extend the label rather than replacing
-    /// it: "Remove keyword 2", not "Delete the second keyword".
+    /// "Remove" buttons in a list. WCAG 2.5.3 requires the accessible name to
+    /// contain the visible label, so extend the label rather than replacing it:
+    /// "Remove keyword 2", not "Delete the second keyword".
     pub fn aria_label(mut self, label: impl Into<String>) -> Self {
         self.aria_label = Some(label.into());
         self
@@ -215,9 +208,6 @@ mod tests {
 
     #[test]
     fn name_value_implies_a_submit_button_carrying_the_pair() {
-        // Only a submitter's name and value are posted. On any other type the
-        // pair renders and is never sent, which reads at the server as a
-        // handler that ignores it.
         let out = button("Accept all remaining")
             .name_value("intent", "accept-all")
             .build()
@@ -238,8 +228,6 @@ mod tests {
 
     #[test]
     fn form_action_implies_a_submit_button_posting_to_that_url() {
-        // A `formaction` button in a GET form would send a mutating request as
-        // a GET, which the same-origin CSRF control cannot cover.
         let out = button("Add a keyword")
             .form_action("/projects/0801/sections/dataset/rows/keywords/add")
             .build()
@@ -264,7 +252,6 @@ mod tests {
     fn an_aria_label_names_a_control_whose_visible_text_needs_context() {
         let out = button("Remove").aria_label("Remove keyword 2").build().into_string();
         assert!(out.contains(r#"aria-label="Remove keyword 2""#), "{out}");
-        // WCAG 2.5.3: the accessible name has to contain the visible label.
         assert!(out.contains(">Remove</button>"), "{out}");
     }
 
@@ -295,7 +282,6 @@ mod tests {
 
     #[test]
     fn label_accepts_markup_not_only_strings() {
-        // `impl Render` must accept nested markup, not just a string label.
         let out = button(html! {
             span { "hi" }
         })
@@ -337,8 +323,6 @@ mod tests {
 
     #[test]
     fn renders_identically_whether_spliced_or_built() {
-        // Splicing via `Render` must match `.build()` — the whole point of the
-        // Render impl is that `.build()` is unnecessary inside `html!`.
         let built = button("Go").variant(ButtonVariant::Secondary).build().into_string();
         let spliced = html! {
             (button("Go").variant(ButtonVariant::Secondary))

@@ -49,15 +49,24 @@ install-e2e-requirements: _check-node
 _check-node:
     @command -v node >/dev/null 2>&1 || { echo >&2 "error: 'node' not on PATH. just runs recipes in sh, which can't see nvm's lazy shell functions — expose your default node bin on PATH for all shells (eager-load it in your shell rc, or use brew/volta/asdf). See docs/src/fundamentals/onboarding.md."; exit 1; }
 
-# Verify the third-party bytes we ship or execute: each modules/*/public/vendor/README.md table against the files it describes, and tailwind.pins for completeness. Run by `just check`. (DEV-7126, DEV-6727)
+# Each modules/*/public/vendor/README.md table against the files it describes,
+# plus tailwind.pins for completeness.
+
+# Verify the third-party bytes we ship or execute. Run by `just check`. (DEV-7126, DEV-6727)
 verify-checksums:
     bash .github/scripts/verify-checksums.sh
 
-# Verify no platform crate hardcodes a path into a service module: a shared crate must not know one service's directory layout. Compiles fine, so only a grep catches it. Run by `just check`. (DEV-7046)
+# A shared crate must not know one service's directory layout. It compiles
+# either way, so only a grep catches it.
+
+# Verify no platform crate hardcodes a path into a service module. Run by `just check`. (DEV-7046)
 check-platform-paths:
     bash .github/scripts/check-platform-paths.sh
 
-# Verify no Maud template uses Datastar's pre-RC.6 hyphen delimiter (`data-on-`, `data-attr-`, `data-class-`, `data-style-`): the attribute renders fine and the control is inert, so only a grep or a browser catches it. Run by `just check`. (DEV-6920)
+# `data-on-`, `data-attr-`, `data-class-`, `data-style-`: the attribute renders
+# fine and the control is inert, so only a grep or a browser catches it.
+
+# Verify no Maud template uses Datastar's pre-RC.6 hyphen delimiter. Run by `just check`. (DEV-6920)
 check-datastar-delimiters:
     bash .github/scripts/check-datastar-delimiters.sh
 
@@ -124,15 +133,11 @@ test:
     cargo test --tests
     # The dev-only live-reload code is feature-gated, so its tests need the feature enabled.
     cargo test -p dpe-server -p mosaic-playground --features dpe-server/dev,mosaic-playground/dev --tests
-    # Commit-count gate (dependency-free)
     bash .github/scripts/check-commit-count.test.sh
     # Commit-advisory helpers (deterministic parts only; needs jq)
     bash .github/scripts/commit-advisory.test.sh
-    # Checksum gate (dependency-free)
     bash .github/scripts/verify-checksums.test.sh
-    # Platform-path gate (dependency-free)
     bash .github/scripts/check-platform-paths.test.sh
-    # Datastar delimiter gate (dependency-free)
     bash .github/scripts/check-datastar-delimiters.test.sh
 
 # Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap
@@ -271,10 +276,14 @@ run-docker-mosaic-playground:
 # DPE targets
 ###################
 
-# Rewrite tailwind.pins for a Tailwind release, taking the digests from the sha256sums.txt published alongside it. That file is read once, here, and never at build time, where an attacker able to swap a release asset could swap its checksum file too. Pinning buys a fixed reference point and an audit trail, not authenticity: see docs/src/security.md. (DEV-6727)
+# Rewrite tailwind.pins for a Tailwind release, from the sha256sums.txt published alongside it. (DEV-6727)
 tailwind-pins-refresh version:
     #!/usr/bin/env bash
     set -euo pipefail
+    # That file is read once, here, and never at build time, where an attacker
+    # able to swap a release asset could swap its checksum file too. Pinning buys
+    # a fixed reference point and an audit trail, not authenticity: see
+    # docs/src/security.md.
     . .github/scripts/verify-checksums.sh
     ver="{{ version }}"
     sums="$(curl -fsSL --connect-timeout 10 --max-time 60 \
@@ -292,7 +301,14 @@ tailwind-pins-refresh version:
     TAILWIND_PINS=tailwind.pins verify_tailwind_pins
     git --no-pager diff -- tailwind.pins
 
-# Resolve the pinned Tailwind v4 standalone CLI (download + cache under target/, gitignored); echoes its path. Bundles plugins incl. typography → no Node/npm needed. (DEV-6642) The version and the SHA-256 of every release asset both come from tailwind.pins, which modules/mosaic/playground/Dockerfile reads too, so neither file can drift onto a version the other has not seen; bump with `just tailwind-pins-refresh <version>`. The binary is verified before it is handed to a caller. (DEV-6727)
+# Resolve the pinned Tailwind v4 standalone CLI (download + cache under target/,
+# gitignored); echoes its path. Bundles plugins incl. typography, so no Node/npm
+# is needed. (DEV-6642)
+#
+# The version and the SHA-256 of every release asset both come from tailwind.pins,
+# which modules/mosaic/playground/Dockerfile reads too, so neither file can drift
+# onto a version the other has not seen; bump with `just tailwind-pins-refresh
+# <version>`. The binary is verified before it is handed to a caller. (DEV-6727)
 [private]
 _tailwind-bin:
     #!/usr/bin/env bash
@@ -313,8 +329,6 @@ _tailwind-bin:
     fi
     # Checked on every resolve, not only after a download: a cache left by an
     # earlier build, or a truncated one, is precisely what must not be executed.
-    # Hashing the 75 MB macOS arm64 binary measured ~0.05s under coreutils and
-    # ~0.3s under perl shasum; the 121 MB linux-x64 asset scales from there.
     if ! verify_file "$bin" "$want"; then
         rm -f "$bin"
         echo "removed the unverified binary. If this Tailwind bump is intentional, run 'just tailwind-pins-refresh $ver'" >&2
@@ -330,11 +344,13 @@ css:
     bin="$(just -q _tailwind-bin)"
     "$bin" -i modules/dpe/style/main.css -o modules/dpe/public/assets/app.css --minify
 
-# Build the release stylesheet with a content-hashed filename (app.<hash>.css); the server discovers it by scanning the asset dir at startup. No build.rs / tracked-source edit, so `git diff --exit-code` stays clean. (DEV-6642)
+# Build the release stylesheet with a content-hashed filename (app.<hash>.css). (DEV-6642)
 [group('dpe')]
 css-release:
     #!/usr/bin/env bash
     set -euo pipefail
+    # The server discovers the name by scanning the asset dir at startup, so there
+    # is no build.rs and no tracked-source edit: `git diff --exit-code` stays clean.
     bin="$(just -q _tailwind-bin)"
     out=modules/dpe/public/assets
     "$bin" -i modules/dpe/style/main.css -o "$out/app.css" --minify
@@ -451,7 +467,10 @@ dev-editor-otel:
     PYROSCOPE_ENDPOINT=http://localhost:4040 \
     bacon serve-editor
 
-# Run the editor E2E suite: both the JavaScript-enabled and the javaScriptEnabled=false pass. Needs `cargo build -p editor-server --release` and `just css-editor-release` first; Playwright starts the binary itself.
+# Needs `cargo build -p editor-server --release` and `just css-editor-release`
+# first; Playwright starts the binary itself.
+
+# Run the editor E2E suite: the JavaScript-enabled and the javaScriptEnabled=false pass.
 [group('editor')]
 test-e2e-editor: _check-node
     cd modules/editor/web-e2e-tests && npx playwright test
@@ -461,7 +480,7 @@ test-e2e-editor: _check-node
 test-a11y-editor: _check-node
     cd modules/editor/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium-js
 
-# Build the editor Docker image locally. Compiles the musl binary inside a Linux container, so this works on macOS too, and stages the same artifacts as the CI build action. Defaults to the host architecture; pass `arch=x86_64` for the one CI publishes.
+# Build the editor Docker image locally; `arch=x86_64` reproduces the one CI publishes.
 [group('editor')]
 build-docker-editor arch="": css-editor-release
     #!/usr/bin/env bash

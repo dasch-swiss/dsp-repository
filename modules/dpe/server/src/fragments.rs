@@ -56,21 +56,17 @@ pub async fn tab_fragment_handler(
         return Err(StatusCode::NOT_FOUND);
     }
 
-    // Validate tab name
     if !VALID_TABS.contains(&tab.as_str()) {
         return Err(StatusCode::NOT_FOUND);
     }
 
-    // Load project data
     let project = get_project(&id).ok_or(StatusCode::NOT_FOUND)?;
 
-    // If the publications tab is requested but the project has none, return 404
     let has_publications_tab = has_publications(&project);
     if tab == "publications" && !has_publications_tab {
         return Err(StatusCode::NOT_FOUND);
     }
 
-    // Load contributors only when rendering the contributors tab
     let contributors = if tab == "contributors" {
         get_contributors(project.attributions.clone())
     } else {

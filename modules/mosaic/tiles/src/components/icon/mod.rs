@@ -1,8 +1,7 @@
 //! Icon component for rendering SVG icons with consistent styling.
 //!
-//! Icons are sourced from the `icondata` crate, which tree-shakes unused icons
-//! at compile time. Sizing is controlled via Tailwind classes passed in `class`
-//! or inherited from the parent context.
+//! Icons come from the `icondata` crate, which tree-shakes unused icons at
+//! compile time. Sizing is a Tailwind class passed in `class` or inherited.
 //!
 //! ```
 //! use mosaic_tiles::icon::{icon, IconSearch};

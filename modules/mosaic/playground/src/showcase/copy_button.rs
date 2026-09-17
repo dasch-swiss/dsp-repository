@@ -1,5 +1,3 @@
-//! Copy Button showcase.
-
 use maud::{html, Markup};
 use mosaic_tiles::copy_button::copy_button;
 

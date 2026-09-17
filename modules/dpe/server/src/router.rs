@@ -90,13 +90,10 @@ pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, oai_ro
     use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
     use tower_http::services::ServeDir;
 
-    // Static assets + 404: serve files from the public dir, falling back to the
-    // "Page not found." shell.
     let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::not_found).with_state(state.clone()));
 
     Router::new()
         // --- Traced routes (declared BEFORE .layer()) ---
-        // Page routes.
         .route("/", get(|| async { Redirect::permanent("/dpe/projects") }))
         .route("/dpe", get(|| async { Redirect::permanent("/dpe/projects") }))
         .route("/dpe/projects", get(projects_page_handler))
@@ -111,12 +108,10 @@ pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, oai_ro
         // OAI-PMH (note: /dpe/oai, not /oai) — XML, must stay unbroken.
         // Rate-limited per-IP; the limiter is scoped to this route only (see `oai_router`).
         .merge(oai_router)
-        // Datastar SSE + JSON endpoints.
         .route("/dpe/projects/{id}/tab/{tab}", get(fragments::tab_fragment_handler))
         .route("/dpe/projects/search", get(fragments::search_fragment_handler))
         .route("/dpe/api/v2/projects", get(fragments::projects_json_handler))
         .route("/dpe/api/v2/projects/{id}", get(fragments::project_json_handler))
-        // Static assets + 404 fallback.
         .fallback_service(serve_dir)
         // --- OTel layers ---
         // Axum layers wrap in reverse declaration order:

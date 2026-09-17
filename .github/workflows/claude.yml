@@ -33,9 +33,9 @@ jobs:
         contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.review.author_association)
       )
     runs-on: ubuntu-latest
-    # 30, not 15: the action writes its result only at the end, so a run killed by the
-    # timeout yields no review at all. Measured review runs on comparable diffs reached
-    # 15.5 min, i.e. past the old ceiling. A generous limit costs nothing on fast runs.
+    # The action writes its result only at the end, so a run killed by the timeout
+    # yields no review at all, and reviews on comparable diffs have run past 15
+    # minutes. A generous limit costs nothing on fast runs.
     timeout-minutes: 30
     permissions:
       contents: read
@@ -127,23 +127,15 @@ jobs:
             Use the repository's CLAUDE.md for guidance on style, conventions, and repository-specific best practices.
             Use `gh pr comment` to leave your review as a comment on the PR.
 
-          # --model / --effort / --allowed-tools: from the 2026-08 review benchmark — 157 runs
-          # against 15 commits with known answers in dsp-api and dsp-app. The tool list is
-          # aligned with the one validated there, because what a review has to execute is
-          # language-independent: read the diff, read the changed files in full, search the
-          # repo, fetch an external specification, post the review.
+          # --model / --effort / --allowed-tools: from the 2026-08 review benchmark.
+          # The tool list is aligned with the one validated there, because what a review
+          # has to execute is language-independent: read the diff, read the changed files
+          # in full, search the repo, fetch an external specification, post the review.
           #
-          # Model: Opus 5 caught 6/6 planted bugs with zero blocking false positives, while
-          # Opus 4.8 caught 0/6 at the same list price. Nothing was pinned here before, so
-          # runs took whatever the action defaulted to.
-          # Effort: medium — detection was identical to high on all nine commits run at both
-          # levels, high's only distinguishing behaviour was holding one clean diff on a real
-          # but non-blocking finding, and medium is ~16% cheaper.
-          #
-          # Read/Grep/Glob/WebSearch/WebFetch are additions, and they are what make the
-          # prompt executable rather than aspirational. --allowed-tools is the complete
-          # resolved set — the action adds nothing to it — so previously this reviewer had
-          # seven `gh` commands and no way to read a file, search the repo, or fetch a spec.
+          # Read/Grep/Glob/WebSearch/WebFetch are what make the prompt executable rather
+          # than aspirational, and --allowed-tools is the complete resolved set: the
+          # action adds nothing to it, so a tool left out here is one the review cannot
+          # reach.
           #
           # --setting-sources user: do NOT load this repo's own .claude/settings.json. The
           # action would otherwise union it into this job, and that file scopes WebFetch to

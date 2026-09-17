@@ -7,7 +7,6 @@ use crate::error::OaiError;
 use crate::metadata::parse_oai_identifier;
 use crate::xml::OaiXmlBuilder;
 
-/// Handles the ListMetadataFormats verb.
 pub fn handle_list_metadata_formats(params: &OaiParams, repo: &dyn ProjectRepository) -> String {
     // ListMetadataFormats accepts only identifier as optional argument
     if params.from.is_some() || params.until.is_some() || params.set.is_some() || params.resumption_token.is_some() {
@@ -17,7 +16,6 @@ pub fn handle_list_metadata_formats(params: &OaiParams, repo: &dyn ProjectReposi
         );
     }
 
-    // If identifier is provided, verify it exists
     if let Some(ref id) = params.identifier {
         if let Some(shortcode) = parse_oai_identifier(id) {
             if repo.get_by_shortcode(&shortcode).is_none() {

@@ -18,13 +18,12 @@ use crate::utils::Multilingual;
 ///
 /// **Deliberately looser than the authoritative rule.** DSP-API's `Shortcode`
 /// (`KnoraProject.scala`) is `^\p{XDigit}{4}$` — exactly four hex digits,
-/// uppercased. Of the 85 published projects, 80 match it and five do not:
-/// `0801a` through `0801e`. Those five are a temporary split of BEOL, which is
-/// one VRE project but is represented as several in the metadata, and no real
-/// shortcodes have been assigned to the parts yet. Encoding either the hex
-/// shape or the five-character exception here would bake a transitional state
-/// into a predicate that outlives it, so this checks shape only and leaves
-/// existence to the lookup that follows it.
+/// uppercased. The published `0801a` through `0801e` do not match it: they are a
+/// temporary split of BEOL, one VRE project represented as several in the
+/// metadata, with no real shortcodes assigned to the parts yet. Encoding either
+/// the hex shape or that exception here would bake a transitional state into a
+/// predicate that outlives it, so this checks shape only and leaves existence to
+/// the lookup that follows it.
 ///
 /// The length bound is not a metadata rule; it is input hygiene for the
 /// editor, where this predicate also gates a hand-typed form field whose value
@@ -134,9 +133,8 @@ pub const CONTRIBUTOR_ROLES: &[&str] = &[
 /// somebody did. Lowercased, because that is how
 /// `tests::the_offered_roles_cover_the_roles_several_projects_share` compares.
 pub const ROLES_NOT_OFFERED: &[(&str, &str)] = &[
-    // Four projects use the abbreviation. The offer carries the full form, and
-    // the short one stays as stored data rather than becoming a second way to
-    // say the same role.
+    // The offer carries the full form; the abbreviation stays as stored data
+    // rather than becoming a second way to say the same role.
     ("pi", "offered as \"Principal Investigator\""),
     // Three roles crammed into one entry, in a member that is a `Vec<String>`
     // and could have held them separately. Offering it would make the
@@ -145,8 +143,6 @@ pub const ROLES_NOT_OFFERED: &[(&str, &str)] = &[
         "project member, data collector, data curator",
         "three roles in one entry; the offer lists them separately",
     ),
-    // A shorter wording of the role 37 projects spell "Project Leader", which
-    // is the one the offer carries.
     ("project lead", "offered as \"Project Leader\""),
 ];
 

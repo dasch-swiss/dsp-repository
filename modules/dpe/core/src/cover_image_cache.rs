@@ -1,12 +1,12 @@
-/// In-process cache of the project cover images present on disk.
-///
-/// A cover image is optional: images are onboarded per project on request, so at
-/// any time some published projects have one and some do not. Presence must
-/// therefore be resolved before rendering, not corrected afterwards.
-///
-/// The directory is scanned once on first access and held for the lifetime of
-/// the process, mirroring [`crate::project_cache`]. A file added or removed
-/// afterwards is not picked up; the views keep an `onerror` fallback for that.
+//! In-process cache of the project cover images present on disk.
+//!
+//! A cover image is optional: images are onboarded per project on request, so at
+//! any time some published projects have one and some do not. Presence must
+//! therefore be resolved before rendering, not corrected afterwards.
+//!
+//! The directory is scanned once on first access and held for the lifetime of
+//! the process, mirroring [`crate::project_cache`]. A file added or removed
+//! afterwards is not picked up; the views keep an `onerror` fallback for that.
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;

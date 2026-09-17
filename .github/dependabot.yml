@@ -1,6 +1,3 @@
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
-
 version: 2
 updates:
   - package-ecosystem: "cargo"
@@ -28,7 +25,6 @@ updates:
       - "/modules/dpe"
       - "/modules/editor"
       - "/modules/mosaic/playground"
-    # Check for updates once a week
     schedule:
       interval: "weekly"
   - package-ecosystem: "npm"
@@ -47,6 +43,5 @@ updates:
         patterns:
           - "*"
     ignore:
-      # Ignore major updates for all dependencies
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]

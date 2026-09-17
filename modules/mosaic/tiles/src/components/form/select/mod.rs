@@ -1,21 +1,16 @@
 //! Select tile: a label, a `<select>` of one choice, and an optional hint and
 //! error.
 //!
-//! `select(name, label)` returns a [`SelectBuilder`]; add choices with
-//! [`SelectBuilder::option`], then splice it into `html!` directly (it
-//! implements [`Render`]) or call `.build()`. See
-//! `docs/src/mosaic/component-api-conventions.md`.
-//!
-//! Shares [`FieldShell`](super::shell::FieldShell) and the `field-*` classes
-//! with the other form tiles.
+//! See `docs/src/mosaic/component-api-conventions.md`. Shares
+//! [`FieldShell`](super::shell::FieldShell) and the `field-*` classes with the
+//! other form tiles.
 //!
 //! ## Single choice only
 //!
-//! There is no `multiple`. A `<select multiple>` is a well-known usability
-//! failure — it gives no affordance that more than one item is selectable, and
-//! selecting a second item without holding a modifier silently deselects the
-//! first. A field that takes several values is a checkbox group, which says what
-//! it does and needs no modifier key.
+//! There is no `multiple`: a `<select multiple>` gives no affordance that more
+//! than one item is selectable, and selecting a second without a modifier
+//! silently deselects the first. A field taking several values is a checkbox
+//! group.
 //!
 //! ## The placeholder is never `disabled`
 //!
@@ -23,8 +18,7 @@
 //! here: a disabled option cannot be selected *back*, so a depositor who picks a
 //! value for an optional field can never return it to unset. The placeholder
 //! carries `value=""` instead, which is what makes `required` refuse a
-//! submission that left the field alone — the browser treats the empty string as
-//! no value.
+//! submission that left the field alone.
 
 use maud::{html, Markup, Render};
 
@@ -80,9 +74,8 @@ impl SelectBuilder {
 
     /// Add every choice from an iterator of `(value, label)` pairs.
     ///
-    /// For the common case where the choices are a `const` list on the contract
-    /// — `ACCESS_RIGHTS_VALUES` and friends — so a caller does not fold over
-    /// them by hand.
+    /// For choices that are a `const` list on the contract, so a caller does not
+    /// fold over them by hand.
     pub fn options<V, L>(mut self, choices: impl IntoIterator<Item = (V, L)>) -> Self
     where
         V: Into<String>,
@@ -106,11 +99,11 @@ impl SelectBuilder {
 
     /// Pre-select the choice with this value.
     ///
-    /// A value matching no choice selects nothing, which leaves the placeholder
-    /// showing rather than silently picking the first choice. That is the state
-    /// a stored value the contract no longer offers arrives in, and it has to be
-    /// visible: the alternative is a form that reports a value the project does
-    /// not hold.
+    /// A value matching no choice selects nothing, leaving the placeholder
+    /// showing rather than silently picking the first choice. That is how a
+    /// stored value the contract no longer offers arrives, and it has to be
+    /// visible: the alternative is a form reporting a value the project does not
+    /// hold.
     pub fn selected(mut self, value: impl Into<String>) -> Self {
         self.selected = Some(value.into());
         self
@@ -136,8 +129,6 @@ impl SelectBuilder {
         self
     }
 
-    /// The id the label, hint and error point at: the explicit one if set, else
-    /// the name.
     fn resolved_id(&self) -> &str {
         self.id.as_deref().unwrap_or(&self.name)
     }
@@ -253,8 +244,7 @@ mod tests {
 
     #[test]
     fn without_a_placeholder_an_untouched_select_shows_its_first_choice() {
-        // Stated so the next reader sees it is the browser's behaviour and the
-        // reason `placeholder` exists, not an oversight in the tile.
+        // The browser's behaviour, and the reason `placeholder` exists.
         let out = status().build().into_string();
         assert!(out.contains(r#"<option value="ongoing">Ongoing</option>"#), "{out}");
         assert!(!out.contains("selected"), "{out}");
@@ -268,9 +258,6 @@ mod tests {
 
     #[test]
     fn a_placeholder_is_not_disabled_so_a_field_can_be_returned_to_unset() {
-        // `<option value="" selected disabled>` is the common recipe: it makes
-        // an optional field a one-way door, because the empty choice cannot be
-        // selected back.
         let out = status().placeholder("Select a status…").build().into_string();
         assert!(out.contains(r#"<option value="" selected>Select a status…</option>"#), "{out}");
         assert!(!out.contains("disabled"), "{out}");
@@ -285,9 +272,6 @@ mod tests {
 
     #[test]
     fn a_stored_value_no_longer_on_offer_leaves_the_placeholder_showing() {
-        // The alternative is a form reporting a value the project does not hold:
-        // the browser selects the first choice when nothing is marked, so a
-        // dropped contract value would silently read as "Ongoing".
         let out = status()
             .placeholder("Select a status…")
             .selected("suspended")
@@ -299,9 +283,6 @@ mod tests {
 
     #[test]
     fn there_is_no_multiple_choice_mode() {
-        // A `<select multiple>` gives no affordance that more than one item is
-        // selectable, and picking a second without a modifier deselects the
-        // first. Several values is a checkbox group.
         let out = status().build().into_string();
         assert!(out.contains("<select"), "{out}");
         assert!(!out.contains("multiple"), "{out}");

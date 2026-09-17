@@ -16,7 +16,6 @@ async fn main() {
 
     let router = app::router(public_dir.clone().into());
 
-    // Dev-only browser live-reload (`dev` feature).
     #[cfg(feature = "dev")]
     let router = dev_reload::apply(router, std::path::Path::new(&public_dir));
 

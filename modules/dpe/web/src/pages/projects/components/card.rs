@@ -108,7 +108,6 @@ mod tests {
 
     #[test]
     fn omits_the_img_entirely_when_the_project_has_no_cover() {
-        // No cover means no `<img>` at all, so nothing depends on a client-side handler.
         let out = render_project_card(&sample_project(), &[], None).into_string();
         assert!(!out.contains("<img"), "no img element: {out}");
         assert!(!out.contains("/assets/images/"), "no cover URL: {out}");
@@ -121,7 +120,6 @@ mod tests {
         // `flex`, not the `hidden` class list the with-cover branch emits. Matched on the
         // class list rather than the bare word, which also occurs in `aria-hidden`.
         assert!(!out.contains("justify-center hidden"), "placeholder is not hidden: {out}");
-        // The card is still a working link to the project.
         assert!(out.contains(r#"href="/dpe/projects/0ABC""#), "{out}");
         assert!(out.contains("Sample Research Project"), "{out}");
     }

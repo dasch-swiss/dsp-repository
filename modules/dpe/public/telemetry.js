@@ -139,7 +139,6 @@ if ('PerformanceLongAnimationFrameTiming' in window) {
     }
   });
   observer.observe({ type: 'long-animation-frame', buffered: true });
-  // Clean up on page teardown
   window.addEventListener('pagehide', () => observer.disconnect(), { once: true });
 }
 

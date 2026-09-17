@@ -75,7 +75,7 @@ check "a relative include_str! into a service fails" 1 \
      'const X: &str = include_str!("../../../dpe/server/data/x.json");')"
 
 # 3. Same, one directory deeper. Fails the moment PLATFORM_PATHSPECS stops
-#    being a quoted array, which is how that bug was caught.
+#    being a quoted array.
 check "a violation in a nested src/ subdirectory fails" 1 \
   "$(gate_rc modules/platform/metadata/src/validators/deep.rs \
      'const X: &str = include_str!("../../../../dpe/server/data/x.json");')"

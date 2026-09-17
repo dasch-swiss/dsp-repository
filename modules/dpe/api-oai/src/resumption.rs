@@ -70,7 +70,6 @@ impl ResumptionCursor {
         let bytes = URL_SAFE_NO_PAD.decode(token).map_err(|_| OaiError::BadResumptionToken)?;
         let raw = String::from_utf8(bytes).map_err(|_| OaiError::BadResumptionToken)?;
 
-        // Exactly five fields; the last is the offset. Any other shape is invalid.
         let fields: Vec<&str> = raw.split('|').collect();
         if fields.len() != 5 {
             return Err(OaiError::BadResumptionToken);
@@ -175,7 +174,6 @@ mod tests {
 
     #[test]
     fn decode_rejects_wrong_field_count() {
-        // base64url of "oai_dc|only|three" — too few fields.
         let token = URL_SAFE_NO_PAD.encode(b"oai_dc|only|three");
         assert!(ResumptionCursor::decode(&token).is_err());
     }

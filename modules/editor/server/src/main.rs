@@ -398,7 +398,6 @@ async fn serve() -> ExitCode {
     // silent no-op.
     SUBSCRIBER_READY.store(true, Ordering::Release);
 
-    // Continuous CPU profiling, active only when PYROSCOPE_ENDPOINT is set.
     const PROFILING_SAMPLE_RATE: u32 = 100;
 
     let _pyroscope_agent = if let Ok(endpoint) = std::env::var("PYROSCOPE_ENDPOINT") {

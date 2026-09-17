@@ -5,14 +5,12 @@
 # scope) is the other half and belongs to commitlint-rs — see .commitlintrc.yml
 # and `just commit-lint`.
 #
-# Only this one rule lives here, because the others are already covered:
-#   • fixup!/squash! commits do not parse as Conventional Commits, so
-#     commitlint rejects them — including under the override.
-#   • fixup!/squash! are commitlint's problem, as above.
-#
 # Two rules live here, both about the shape of the branch:
 #   1. the one-commit cap, liftable with the override token;
 #   2. no merge commits, NOT liftable — see check_no_merges.
+#
+# fixup!/squash! commits need no rule here: they do not parse as Conventional
+# Commits, so commitlint rejects them, including under the override.
 #
 # The ruleset's `required_linear_history` keeps merge commits off main, but it
 # says nothing about the branch, and GitHub's "Update branch" button defaults

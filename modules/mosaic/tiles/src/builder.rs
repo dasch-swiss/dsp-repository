@@ -1,9 +1,8 @@
 //! Shared builder machinery for complex tiles.
 //!
-//! Tiles with several independent optional axes are built with a builder rather
-//! than a `*Props` struct (see `docs/src/mosaic/component-api-conventions.md`).
-//! `ComponentBuilder` supplies the options every tile shares — `with_id` and
-//! `with_test_id` — plus `build`, so each builder only writes its own axes.
+//! See `docs/src/mosaic/component-api-conventions.md`. `ComponentBuilder`
+//! supplies the options every tile shares — `with_id` and `with_test_id` — plus
+//! `build`, so each builder only writes its own axes.
 //!
 //! Every builder also implements [`maud::Render`], so it can be spliced into an
 //! `html!` template directly without calling `.build()`:

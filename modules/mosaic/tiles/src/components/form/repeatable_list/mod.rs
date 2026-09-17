@@ -1,42 +1,29 @@
 //! Repeatable list tile: an ordered list of rows a reader can add to and remove
 //! from, each row's fields supplied by the caller.
 //!
-//! `repeatable_list(name, legend, rows_action)` returns a
-//! [`RepeatableListBuilder`]; add rows with [`RepeatableListBuilder::row`], then
-//! splice it into `html!` (it implements [`Render`]) or call `.build()`.
+//! See `docs/src/mosaic/component-api-conventions.md`.
 //!
 //! ## Rows are keyed, never indexed
 //!
 //! Each row carries an **opaque key** the server made when the row was created,
-//! submitted as a repeated hidden `{name}.row` field. The alternative — naming a
-//! row's fields `keywords[0]`, `keywords[1]` — breaks the moment a middle row
-//! goes: the next submit carries indices 0 and 2, a sequence with a hole that
-//! either errors or silently compacts, at which point per-row validation errors
-//! keyed by index point at the **wrong rows**. It bites the no-JavaScript path
-//! and the enhanced one equally.
-//!
-//! Order is not encoded at all. The hidden fields repeat in DOM order, which the
-//! browser preserves for free, so the decoder reads the order off the body
-//! rather than off a number that has to be kept in step with it.
+//! submitted as a repeated hidden `{name}.row` field. Naming a row's fields
+//! `keywords[0]`, `keywords[1]` instead breaks the moment a middle row goes: the
+//! next submit carries indices 0 and 2, a sequence with a hole that either errors
+//! or silently compacts, after which per-row validation errors keyed by index
+//! point at the **wrong rows**. Order is not encoded at all — the hidden fields
+//! repeat in DOM order, which the browser preserves, so the decoder reads the
+//! order off the body rather than off a number kept in step with it.
 //!
 //! ## Add and remove are server round-trips
 //!
 //! Both controls are submit buttons carrying a `formaction`, so the **whole form
-//! body is posted** and the server re-renders the list. Nothing is spliced
-//! client-side. Three things follow, and all three are the point:
+//! body is posted** and the server re-renders the list: nothing typed elsewhere
+//! is lost, the server keeps owning form state, and it works with no JavaScript.
 //!
-//! - Nothing typed elsewhere in the form is lost when a row is added or removed, because the body
-//!   went with the request.
-//! - The server keeps owning form state, so a re-render is the only way rows change and there is no
-//!   client-side array to disagree with it.
-//! - It works with no JavaScript, because a submit button with a `formaction` is plain HTML.
-//!
-//! A `<button type="submit" name="…" value="…">` would be the other way to say
-//! which row to remove. It is avoided deliberately: a form submitted
-//! programmatically — `new FormData(form)` — does **not** include the submitting
-//! button's name and value unless the submitter is passed explicitly, so the
-//! action would arrive on the plain path and vanish on the enhanced one. In the
-//! URL it is carried by both.
+//! Deliberately not `<button type="submit" name="…" value="…">`: a form
+//! submitted programmatically (`new FormData(form)`) does **not** include the
+//! submitting button's name and value unless the submitter is passed explicitly,
+//! so the action would arrive on the plain path and vanish on the enhanced one.
 
 use maud::{html, Markup, Render};
 
@@ -66,9 +53,9 @@ pub struct RepeatableListBuilder {
     test_id: Option<String>,
 }
 
-/// The noun a row is called when the caller does not say. Generic on purpose —
-/// "Remove item 2" is worse than "Remove keyword 2" and better than "Remove",
-/// which five rows repeat identically.
+/// The noun a row is called when the caller does not say. Generic on purpose:
+/// worse than "Remove keyword 2", better than a "Remove" five rows repeat
+/// identically.
 const DEFAULT_ITEM_NOUN: &str = "item";
 
 /// Start a repeatable list for the field `name`, named by `legend`, whose rows
@@ -107,10 +94,8 @@ impl RepeatableListBuilder {
     ///
     /// It also becomes a **path segment** of the row's remove URL, so it must be
     /// URL-safe: `[A-Za-z0-9_-]+`. A key holding `/`, `?` or `#` would silently
-    /// retarget that button at another route. Every key this workspace mints
-    /// satisfies that (`editor_core::form` enforces the same character set when
-    /// reading one back), and the `debug_assert!` below catches a caller that
-    /// does not in a test or a dev build.
+    /// retarget that button at another route. `editor_core::form` enforces the
+    /// same character set when reading one back.
     pub fn row(mut self, key: impl Into<String>, content: impl Render) -> Self {
         let key = key.into();
         debug_assert!(
@@ -156,7 +141,6 @@ impl RepeatableListBuilder {
         self
     }
 
-    /// The id the legend, hint and error hang off.
     fn resolved_id(&self) -> &str {
         self.id.as_deref().unwrap_or(&self.name)
     }
@@ -171,12 +155,10 @@ impl RepeatableListBuilder {
         });
         let body = html! {
             @if self.rows.is_empty() {
-                // The empty marker. A list with no rows would otherwise post no
+                // The empty marker. Without it a list with no rows posts no
                 // `{name}.row` at all, and a decoder cannot tell "the depositor
                 // removed the last row" from "this section did not carry the
-                // field" — so the last removal would not stick. Same reason a
-                // checkbox group with nothing checked needs one: an absent name
-                // and an empty one mean different things.
+                // field", so the last removal would not stick.
                 input type="hidden" name=(row_field) value="";
                 @if let Some(message) = &self.empty_message {
                     p class="repeatable-empty" { (message) }
@@ -185,8 +167,6 @@ impl RepeatableListBuilder {
                 ol class="repeatable-rows" data-testid=[self.test_id.as_deref()] {
                     @for (position, row) in self.rows.iter().enumerate() {
                         li class="repeatable-row" {
-                            // The row's identity, in DOM order. Order is read off
-                            // the repetition of this field, never from a number.
                             input type="hidden" name=(row_field) value=(row.key);
                             div class="repeatable-row-body" { (row.content) }
                             ({
@@ -261,8 +241,6 @@ mod tests {
 
     #[test]
     fn each_row_submits_its_own_opaque_key_in_dom_order() {
-        // Order is read off the repetition of this field, so it must appear once
-        // per row and in the rows' own order.
         let out = keywords().build().into_string();
         let first = out.find(r#"name="keywords.row" value="k7f3""#).expect("first row key");
         let second = out.find(r#"name="keywords.row" value="k2b9""#).expect("second row key");
@@ -272,8 +250,6 @@ mod tests {
 
     #[test]
     fn no_row_field_carries_an_index() {
-        // Removing a middle row would leave indices 0 and 2 — a hole that either
-        // errors or compacts, after which per-row errors point at wrong rows.
         let out = keywords().build().into_string();
         assert!(out.contains("keywords.k7f3.en"), "{out}");
         assert!(!out.contains("keywords[0]"), "{out}");
@@ -296,8 +272,6 @@ mod tests {
 
     #[test]
     fn both_controls_are_submit_buttons_so_the_whole_body_travels_with_them() {
-        // The reason nothing typed elsewhere is lost when a row is added: the
-        // form body is posted, and only the destination differs.
         let out = keywords().build().into_string();
         assert_eq!(out.matches(r#"type="submit""#).count(), 3, "{out}");
         assert_eq!(out.matches(r#"formmethod="post""#).count(), 3, "{out}");
@@ -306,9 +280,7 @@ mod tests {
 
     #[test]
     fn every_remove_button_says_which_row_it_removes() {
-        // "Remove, button" twice tells a screen-reader user nothing about which
-        // is which. Positions are 1-based and human-facing — an index in a
-        // *label* is fine; an index in a *name* is the trap above.
+        // An index in a *label* is fine; an index in a *name* is the trap above.
         let out = keywords().build().into_string();
         assert!(out.contains(r#"aria-label="Remove keyword 1""#), "{out}");
         assert!(out.contains(r#"aria-label="Remove keyword 2""#), "{out}");
@@ -329,11 +301,8 @@ mod tests {
 
     #[test]
     fn an_empty_list_still_posts_its_field_name_so_the_last_removal_sticks() {
-        // Without the marker a list with no rows posts no `{name}.row` at all,
-        // and a decoder cannot tell "the depositor removed the last row" from
-        // "this section did not carry the field" — so the removal would not
-        // stick. `editor_core::form::apply_multilingual_rows` reads exactly
-        // this shape to clear a field.
+        // `editor_core::form::apply_multilingual_rows` reads exactly this shape
+        // to clear a field.
         let out = repeatable_list("keywords", "Keywords", ACTION)
             .empty_message("No keywords yet.")
             .build()

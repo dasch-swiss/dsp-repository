@@ -1,20 +1,16 @@
 //! What a checkbox group and a radio group have in common.
 //!
-//! Private to `form`. The two tiles differ in three things — the input type,
-//! whether one or several choices can be current, and what "nothing chosen"
-//! means — and agree on everything else: a `<fieldset>` named by a `<legend>`,
-//! one label-wrapped control per choice, per-choice ids derived from the group's,
-//! and the hint and error on the fieldset. Writing that twice is how a group
-//! ends up with a label pointing at the wrong input in one of them.
+//! Private to `form`. The two tiles differ in the input type, in whether one or
+//! several choices can be current, and in what "nothing chosen" means, and agree
+//! on everything else. Writing that twice is how a group ends up with a label
+//! pointing at the wrong input in one of them.
 //!
 //! ## Per-choice ids come from the index, not the value
 //!
-//! A choice's value is contract data — `Full Open Access`, a language tag, a URL
-//! — and an `id` has to be unique in the document and is referenced from a
-//! `for`. Slugging a value gives collisions (two values differing only in
-//! punctuation) and unstable ids (a value edited upstream moves every `for`
-//! below it). The index is stable for a given ordered choice list, which is what
-//! the tile has.
+//! A choice's value is contract data and an `id` must be unique in the document.
+//! Slugging a value gives collisions (two values differing only in punctuation)
+//! and unstable ids (a value edited upstream moves every `for` below it); the
+//! index is stable for a given ordered choice list.
 
 use maud::{html, Markup, Render};
 
@@ -104,8 +100,6 @@ mod tests {
 
     #[test]
     fn every_choice_posts_under_the_group_name() {
-        // A checkbox group is repeated keys under one name; that is what the
-        // form decoder reads as a list.
         let out = choice_controls(ChoiceKind::Checkbox, "kinds", "typeOfData", &choices(), |_| false).into_string();
         assert_eq!(out.matches(r#"name="typeOfData""#).count(), 2, "{out}");
     }

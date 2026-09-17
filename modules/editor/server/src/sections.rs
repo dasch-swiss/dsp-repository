@@ -365,7 +365,6 @@ async fn context<'a>(
         SubmissionState::Approved => None,
     });
     // An approved record that the published set does not yet carry is
-    // REQ-2.5. An approved record that the published set does not yet carry is
     // waiting for a release; one it does carry is already Online, and the
     // startup pass will discard it. Read here rather than derived from `locked`
     // because an approval leaves no submission row to read it from.

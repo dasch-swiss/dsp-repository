@@ -1,5 +1,3 @@
-//! Badge showcase.
-
 use maud::{html, Markup, Render};
 use mosaic_tiles::badge::{badge, BadgeSize, BadgeVariant};
 use mosaic_tiles::icon::{icon, IconChevronUp, Info, Mail};

@@ -6,7 +6,6 @@ use super::{build_error_response, next_page_token, validate_list_params, OaiPara
 use crate::resumption::page_size;
 use crate::xml::OaiXmlBuilder;
 
-/// Handles the ListRecords verb.
 pub fn handle_list_records(
     params: &OaiParams,
     repo: &dyn ProjectRepository,
@@ -185,7 +184,6 @@ mod tests {
             pages.push(page);
             match extract_token(&xml) {
                 Some(token) => {
-                    // Next request carries only verb + resumptionToken.
                     params = OaiParams {
                         verb: Some("ListRecords".to_string()),
                         identifier: None,
@@ -415,13 +413,11 @@ mod tests {
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let record_repo = InMemoryRecordRepository::new(vec![first_0803_record()]);
         let xml = handle_list_records(&params, &repo, &record_repo, &clusters, &incunabula_lookup());
-        // project entry present (identifier closes with </identifier>)
         assert!(
             xml.contains("<identifier>oai:dasch.swiss:ark:/72163/1/0803</identifier>"),
             "project entry should be present, got: {}",
             xml
         );
-        // record present
         assert!(
             xml.contains("oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"),
             "member record should be present, got: {}",

@@ -43,7 +43,6 @@ pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) ->
             });
         }
     }
-    // Ensure at least one creator
     if record.creators.is_empty() {
         record.creators.push(DataCiteCreator {
             name: "DaSCH".to_string(),
@@ -393,7 +392,6 @@ mod temporal_tests {
 
     #[test]
     fn stale_url_falls_through_to_enrichment() {
-        // URL present but unknown to the period cache; enrichment by name resolves.
         let tc = reference("https://chronontology.dainst.org/period/stale", Some("Late Middle Ages"));
         let enrich = enrichment(&[("Late Middle Ages", Some("1250/1500"), "Late Middle Ages")]);
         let date = resolve_temporal_coverage_in(&tc, &periods(), &enrich).unwrap();
@@ -435,25 +433,18 @@ mod temporal_tests {
     use platform_metadata::temporal_coverage::coverage_name;
 
     /// Completeness guard over the committed project data: every distinct
-    /// `temporalCoverage` entry across all in-repo project files must resolve to a
-    /// usable date through the *real* period and enrichment tables.
+    /// `temporalCoverage` entry must resolve to a non-empty `date` through the
+    /// real period and enrichment tables. A name-only fallback counts as
+    /// UNRESOLVED, because the point is that every path carries a
+    /// machine-readable range rather than a label.
     ///
-    /// "Resolved" means a non-empty `date` (a ChronOntology timespan or an
-    /// enrichment range). A name-only fallback (empty `date`) counts as
-    /// UNRESOLVED and fails the test — the point of the check is that every path
-    /// carries a machine-readable range, not merely a label.
+    /// The sole exception is a name explicitly reviewed as *not* a time period:
+    /// an enrichment row with no `date` and `source == "unresolved"`, emitted as
+    /// `dateInformation`-only. Any other empty-date entry is a genuine gap.
     ///
-    /// The sole exception is a name explicitly reviewed as *not a time period*: an
-    /// enrichment row with no `date` and `source == "unresolved"` (e.g. "Swiss",
-    /// "English (culture or style)"). Those are intentionally emitted as
-    /// `dateInformation`-only, so they are allowed to stay name-only. Any other
-    /// empty-date entry is a genuine gap in the enrichment table.
-    ///
-    /// Data, periods, and enrichment are loaded through the same parse logic as
-    /// production (`ProjectRaw`, `chronontology_cache::load_from`,
-    /// `temporal_enrichment_cache::load_from`), resolved relative to this crate so
-    /// the test does not depend on the process working directory or on global
-    /// cache state.
+    /// Everything is loaded through production's own parse logic, resolved
+    /// relative to this crate so the test depends on neither the process working
+    /// directory nor global cache state.
     #[test]
     fn every_committed_temporal_coverage_resolves() {
         use std::path::Path;

@@ -310,7 +310,7 @@ mod tests {
         };
 
         // Any record with a file, taken from the cache: the populated-metadata
-        // record is a platform-metadata test fixture and is not part of the
+        // record is a shared-metadata test fixture and is not part of the
         // served data.
         let record = dpe_core::record_cache::all_records()
             .iter()

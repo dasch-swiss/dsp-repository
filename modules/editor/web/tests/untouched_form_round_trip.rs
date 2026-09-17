@@ -16,8 +16,8 @@ use editor_core::draft::ProjectDraft;
 use editor_core::form::{apply, FormBody, Shape};
 use editor_core::multilingual::{DraftMultilingual, UI_LANGUAGES};
 use editor_web::form::registry::{Field, FIELDS};
-use platform_metadata::project::ProjectRaw;
 use serde_json::Value;
+use shared_metadata::project::ProjectRaw;
 
 /// Every field whose shape the registry declares, which is exactly the set an
 /// applier reads and therefore exactly the set that can rewrite a file.
@@ -59,7 +59,7 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                 let rendered = match draft.get(field.id).and_then(Value::as_str) {
                     // The sentinel is not shown to a reader, so the control is
                     // empty.
-                    Some(value) if platform_metadata::is_placeholder(value) => String::new(),
+                    Some(value) if shared_metadata::is_placeholder(value) => String::new(),
                     Some(value) => value.to_string(),
                     // An absent field renders an empty control, which posts
                     // empty.
@@ -258,7 +258,7 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                 // A placeholder renders empty; two projects hold url: ["MISSING"].
                 let rendered = draft
                     .url_slot(slot)
-                    .filter(|text| !platform_metadata::is_placeholder(text))
+                    .filter(|text| !shared_metadata::is_placeholder(text))
                     .unwrap_or_default();
                 pairs.push((field.id.to_string(), rendered.to_string()));
             }
@@ -348,7 +348,7 @@ fn the_corpus_really_does_carry_the_placeholders_this_test_is_about() {
         let raw: ProjectRaw = serde_json::from_str(&std::fs::read_to_string(&path).expect("readable")).expect("parses");
         let value = serde_json::to_value(&raw).expect("serializes");
         sentinels += count_placeholders(&value);
-        if platform_metadata::is_placeholder(&raw.end_date) {
+        if shared_metadata::is_placeholder(&raw.end_date) {
             end_date_sentinels += 1;
         }
     }
@@ -440,7 +440,7 @@ fn the_body_this_test_submits_carries_every_field_a_shape_is_declared_for() {
 
 fn count_placeholders(value: &Value) -> usize {
     match value {
-        Value::String(text) => usize::from(platform_metadata::is_placeholder(text)),
+        Value::String(text) => usize::from(shared_metadata::is_placeholder(text)),
         Value::Array(items) => items.iter().map(count_placeholders).sum(),
         Value::Object(members) => members.values().map(count_placeholders).sum(),
         _ => 0,

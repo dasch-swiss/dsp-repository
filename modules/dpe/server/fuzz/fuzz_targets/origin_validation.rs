@@ -1,6 +1,6 @@
 #![no_main]
 
-use platform_telemetry::origin::is_allowed_origin;
+use shared_telemetry::origin::is_allowed_origin;
 use libfuzzer_sys::fuzz_target;
 
 // Only properly-structured dasch.swiss subdomains and localhost may be accepted.

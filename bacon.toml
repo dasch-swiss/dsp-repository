@@ -14,9 +14,9 @@ background = false
 on_change_strategy = "kill_then_restart"
 # Graceful SIGINT so the server releases its port before restart.
 kill = ["kill", "-s", "INT"]
-# Also watch the tiles crate and the shared `platform-*` crates, so changes in
+# Also watch the tiles crate and the `shared-*` crates, so changes in
 # either rebuild — neither lives under `modules/dpe`.
-watch = ["modules/dpe", "modules/platform", "modules/mosaic/tiles/src"]
+watch = ["modules/dpe", "shared", "modules/mosaic/tiles/src"]
 
 [jobs.serve-editor]
 command = ["cargo", "run", "--bin", "editor-server", "--", "serve"]
@@ -25,6 +25,6 @@ background = false
 on_change_strategy = "kill_then_restart"
 # Graceful SIGINT so the server releases its port before restart.
 kill = ["kill", "-s", "INT"]
-# Also watch the tiles crate and the shared `platform-*` crates, so changes in
+# Also watch the tiles crate and the `shared-*` crates, so changes in
 # either rebuild — neither lives under `modules/editor`.
-watch = ["modules/editor", "modules/platform", "modules/mosaic/tiles/src"]
+watch = ["modules/editor", "shared", "modules/mosaic/tiles/src"]

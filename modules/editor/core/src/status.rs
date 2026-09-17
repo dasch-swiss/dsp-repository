@@ -11,7 +11,7 @@
 //! serialises before comparing: `serde_json::Value`'s map equality compares by
 //! key, so language-map key order cannot register as a change. Pinned by
 //! `tests::language_map_key_order_is_not_a_change`.
-use platform_metadata::project::ProjectRaw;
+use shared_metadata::project::ProjectRaw;
 
 use crate::draft::ProjectDraft;
 use crate::records::SubmissionState;

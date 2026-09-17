@@ -43,7 +43,7 @@ const FALLBACK_METER_SCOPE: &str = "browser";
 
 /// The per-service page-URL normalizer, set once by [`collect_route`].
 ///
-/// A `platform-*` crate depends on no service crate (`docs/src/repo_structure.md`
+/// A `shared-*` crate depends on no service crate (`docs/src/repo_structure.md`
 /// → Shared Crates), so this crate cannot hold a route table of its own — each
 /// service passes in the function that knows its own routes.
 static PAGE_URL_NORMALIZER: OnceLock<fn(&str) -> &'static str> = OnceLock::new();
@@ -598,7 +598,7 @@ mod tests {
         process_signal(&signal); // should not panic, uses "unknown" kind
     }
 
-    // Origin property tests live in platform_telemetry::origin::tests
+    // Origin property tests live in shared_telemetry::origin::tests
 
     #[tokio::test]
     async fn handler_lookalike_domain_rejected() {

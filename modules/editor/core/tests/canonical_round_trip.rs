@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 
 use editor_core::canonical::write_draft;
 use editor_core::draft::ProjectDraft;
-use platform_metadata::project::ProjectRaw;
+use shared_metadata::project::ProjectRaw;
 
 /// Set to rewrite the corpus instead of asserting against it.
 const REGENERATE: &str = "CANONICALIZE_PROJECT_FILES";

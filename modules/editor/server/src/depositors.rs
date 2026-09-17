@@ -29,8 +29,8 @@ use chrono::Utc;
 use editor_core::records::{Role, SubmissionState, User};
 use editor_core::repository::{DraftRepository, RepositoryError, SubmissionRepository, UserRepository};
 use editor_web::pages::depositors as page;
-use platform_metadata::is_valid_shortcode;
 use serde::Deserialize;
+use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
 use crate::auth::guard::Rdu;

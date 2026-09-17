@@ -9,7 +9,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use platform_metadata::{Organization, Person};
+use shared_metadata::{Organization, Person};
 
 use crate::proposals::{entity_id_number, EntityProposal, ProposalKind};
 use crate::published::LoadError;
@@ -468,7 +468,7 @@ mod tests {
             let mut ids: Vec<&str> = Vec::new();
             ids.extend(project.contact_point.iter().flatten().map(String::as_str));
             ids.extend(project.attributions.iter().map(|a| a.contributor.as_str()));
-            if let platform_metadata::project::Funding::Grants(grants) = &project.funding {
+            if let shared_metadata::project::Funding::Grants(grants) = &project.funding {
                 ids.extend(grants.iter().flat_map(|grant| grant.funders.iter().map(String::as_str)));
             }
             for id in ids {

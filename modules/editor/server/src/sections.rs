@@ -39,7 +39,7 @@ use editor_web::form::registry::{self, Audience, Section};
 use editor_web::form::submit::{over_cap, typed_sentinels, unresolved_agents};
 use editor_web::form::INTENT;
 use editor_web::pages::section as page;
-use platform_metadata::is_valid_shortcode;
+use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
 use crate::auth::guard::Authenticated;
@@ -4555,7 +4555,7 @@ mod tests {
             "0816 was chosen for a trailing space in shortDescription"
         );
         assert!(
-            platform_metadata::is_placeholder(&vitrocentre.end_date),
+            shared_metadata::is_placeholder(&vitrocentre.end_date),
             "0816 was chosen for a MISSING endDate"
         );
         let lhtt = state.published.get("0820").expect("0820 is committed");
@@ -4582,7 +4582,7 @@ mod tests {
                     let rendered = draft
                         .get(field.id)
                         .and_then(|value| value.as_str())
-                        .filter(|text| !platform_metadata::is_placeholder(text))
+                        .filter(|text| !shared_metadata::is_placeholder(text))
                         .unwrap_or_default();
                     pairs.push((field.id.to_string(), rendered.to_string()));
                 }
@@ -4795,7 +4795,7 @@ mod tests {
                 Some(Shape::Url(slot)) => {
                     let rendered = draft
                         .url_slot(slot)
-                        .filter(|text| !platform_metadata::is_placeholder(text))
+                        .filter(|text| !shared_metadata::is_placeholder(text))
                         .unwrap_or_default();
                     pairs.push((field.id.to_string(), rendered.to_string()));
                 }

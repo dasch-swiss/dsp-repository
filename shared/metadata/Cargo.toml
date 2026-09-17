@@ -1,5 +1,5 @@
 [package]
-name = "platform-metadata"
+name = "shared-metadata"
 version.workspace = true
 edition = "2021"
 publish = false

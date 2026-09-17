@@ -26,8 +26,8 @@ use editor_core::records::{normalize_shortcode, User};
 use editor_core::repository::{EntityProposalRepository, RepositoryError};
 use editor_web::entity as page;
 use editor_web::form::INTENT;
-use platform_metadata::is_valid_shortcode;
 use serde_json::Value;
+use shared_metadata::is_valid_shortcode;
 
 use crate::auth::guard::Authenticated;
 use crate::sections::is_enhanced;

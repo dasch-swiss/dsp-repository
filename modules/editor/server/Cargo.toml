@@ -12,8 +12,8 @@ editor-web = { path = "../web" }
 # Shared so both services agree on the trace-context and beacon wire formats.
 # Not part of the DPE runtime — it reads none of DPE's data or config. Its
 # contract modules are serde-only; `collector` adds axum/opentelemetry/url.
-platform-metadata = { path = "../../platform/metadata" }
-platform-telemetry = { path = "../../platform/telemetry" }
+shared-metadata = { path = "../../../shared/metadata" }
+shared-telemetry = { path = "../../../shared/telemetry" }
 maud.workspace = true
 
 axum.workspace = true

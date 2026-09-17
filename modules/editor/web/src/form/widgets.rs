@@ -27,9 +27,9 @@ use mosaic_tiles::select::select;
 use mosaic_tiles::text_field::{text_field, InputType};
 use mosaic_tiles::textarea::textarea;
 use mosaic_tiles::ComponentBuilder;
-use platform_metadata::is_placeholder;
-use platform_metadata::project::CONTRIBUTOR_ROLES;
 use serde_json::Value;
+use shared_metadata::is_placeholder;
+use shared_metadata::project::CONTRIBUTOR_ROLES;
 
 use super::registry::{Field, Obligation};
 use crate::form::INTENT;

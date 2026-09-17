@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use dpe_core::{ContributorLookup, Project};
-use platform_metadata::{Discipline, Funding, TemporalCoverage};
+use shared_metadata::{Discipline, Funding, TemporalCoverage};
 
 use super::helpers::{
     access_rights_to_string, extract_year, format_date_range, get_multilingual_value, infer_subject_scheme, is_creator,
@@ -21,7 +21,7 @@ pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) ->
     let mut record = DataCiteRecord::default();
 
     // Identifier (mandatory) - use PID or generate from shortcode
-    if !platform_metadata::is_placeholder(&project.pid) && !project.pid.is_empty() {
+    if !shared_metadata::is_placeholder(&project.pid) && !project.pid.is_empty() {
         record.identifier = project.pid.clone();
         record.identifier_type = "ARK".to_string();
     } else {
@@ -74,9 +74,8 @@ pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) ->
 
     // Titles (mandatory)
     // Use the longer of name/officialName as primary, shorter as AlternativeTitle
-    let name_valid = !platform_metadata::is_placeholder(&project.name) && !project.name.is_empty();
-    let official_valid =
-        !platform_metadata::is_placeholder(&project.official_name) && !project.official_name.is_empty();
+    let name_valid = !shared_metadata::is_placeholder(&project.name) && !project.name.is_empty();
+    let official_valid = !shared_metadata::is_placeholder(&project.official_name) && !project.official_name.is_empty();
 
     match (name_valid, official_valid) {
         (true, true) => {
@@ -228,12 +227,12 @@ pub fn project_to_datacite(project: &Project, lookup: &dyn ContributorLookup) ->
 
     // Rights - with SPDX identifier
     for legal in &project.legal_info {
-        let rights_uri = if !platform_metadata::is_placeholder(&legal.license.license_uri) {
+        let rights_uri = if !shared_metadata::is_placeholder(&legal.license.license_uri) {
             Some(legal.license.license_uri.clone())
         } else {
             None
         };
-        let has_identifier = !platform_metadata::is_placeholder(&legal.license.license_identifier)
+        let has_identifier = !shared_metadata::is_placeholder(&legal.license.license_identifier)
             && !legal.license.license_identifier.is_empty();
         record.rights_list.push(DataCiteRights {
             rights: if has_identifier {
@@ -291,7 +290,7 @@ fn resolve_temporal_coverage(tc: &TemporalCoverage) -> Option<DataCiteDate> {
 /// the fallback chain can be unit-tested without the process-global caches.
 ///
 /// The actual resolution (ChronOntology URL → enrichment table → name-only
-/// fallback) lives in `platform_metadata::temporal_coverage`, shared with `dpe-server`'s
+/// fallback) lives in `shared_metadata::temporal_coverage`, shared with `dpe-server`'s
 /// `validate` command so the two can never disagree about what counts as
 /// resolved. This wraps that outcome into the DataCite `Coverage` date shape.
 ///
@@ -299,10 +298,10 @@ fn resolve_temporal_coverage(tc: &TemporalCoverage) -> Option<DataCiteDate> {
 /// carry — a date with neither value nor information would be useless.
 fn resolve_temporal_coverage_in(
     tc: &TemporalCoverage,
-    periods: &HashMap<String, platform_metadata::w3cdtf::W3cdtfRange>,
-    enrichment: &HashMap<String, platform_metadata::temporal_enrichment::EnrichedDate>,
+    periods: &HashMap<String, shared_metadata::w3cdtf::W3cdtfRange>,
+    enrichment: &HashMap<String, shared_metadata::temporal_enrichment::EnrichedDate>,
 ) -> Option<DataCiteDate> {
-    let resolution = platform_metadata::temporal_coverage::resolve_in(tc, periods, enrichment)?;
+    let resolution = shared_metadata::temporal_coverage::resolve_in(tc, periods, enrichment)?;
     Some(DataCiteDate {
         date: resolution.date,
         date_type: "Coverage".to_string(),
@@ -314,9 +313,9 @@ fn resolve_temporal_coverage_in(
 mod temporal_tests {
     use std::collections::HashMap;
 
-    use platform_metadata::temporal_enrichment::EnrichedDate;
-    use platform_metadata::w3cdtf::{to_w3cdtf_range, W3cdtfRange};
-    use platform_metadata::AuthorityFileReference;
+    use shared_metadata::temporal_enrichment::EnrichedDate;
+    use shared_metadata::w3cdtf::{to_w3cdtf_range, W3cdtfRange};
+    use shared_metadata::AuthorityFileReference;
 
     use super::*;
 
@@ -329,10 +328,7 @@ mod temporal_tests {
     }
 
     fn text(en: &str) -> TemporalCoverage {
-        TemporalCoverage::Text(platform_metadata::utils::Multilingual::from([(
-            "en".to_string(),
-            en.to_string(),
-        )]))
+        TemporalCoverage::Text(shared_metadata::utils::Multilingual::from([("en".to_string(), en.to_string())]))
     }
 
     /// A period cache keyed by bare id (as the real one is), so tests exercise the
@@ -429,8 +425,8 @@ mod temporal_tests {
 
     // The same lookup-key derivation `resolve_temporal_coverage_in` uses
     // (Reference → `text`; Text map → `get_multilingual_value`), shared via
-    // platform-metadata so the two can't drift apart.
-    use platform_metadata::temporal_coverage::coverage_name;
+    // shared-metadata so the two can't drift apart.
+    use shared_metadata::temporal_coverage::coverage_name;
 
     /// Completeness guard over the committed project data: every distinct
     /// `temporalCoverage` entry must resolve to a non-empty `date` through the
@@ -449,13 +445,13 @@ mod temporal_tests {
     fn every_committed_temporal_coverage_resolves() {
         use std::path::Path;
 
-        use platform_metadata::ProjectRaw;
+        use shared_metadata::ProjectRaw;
 
         let data_dir = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../server/data"));
         let projects_dir = data_dir.join("projects");
 
-        let periods = platform_metadata::chronontology::load_from(data_dir);
-        let enriched = platform_metadata::temporal_enrichment::load_from(data_dir);
+        let periods = shared_metadata::chronontology::load_from(data_dir);
+        let enriched = shared_metadata::temporal_enrichment::load_from(data_dir);
         assert!(!enriched.is_empty(), "committed enrichment table should load and be non-empty");
 
         let entries = std::fs::read_dir(&projects_dir).expect("projects data directory should be readable");
@@ -484,7 +480,7 @@ mod temporal_tests {
 
                 // The same gap decision `dpe-server validate` applies, so the
                 // two can't drift apart.
-                if let Some(name) = platform_metadata::temporal_coverage::completeness_gap(tc, &periods, &enriched) {
+                if let Some(name) = shared_metadata::temporal_coverage::completeness_gap(tc, &periods, &enriched) {
                     unresolved.push(name);
                 }
             }

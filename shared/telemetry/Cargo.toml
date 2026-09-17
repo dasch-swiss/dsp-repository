@@ -1,5 +1,5 @@
 [package]
-name = "platform-telemetry"
+name = "shared-telemetry"
 version.workspace = true
 edition = "2021"
 publish = false

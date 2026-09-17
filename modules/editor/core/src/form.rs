@@ -33,9 +33,9 @@
 
 use std::collections::HashSet;
 
-use platform_metadata::is_placeholder;
-use platform_metadata::utils::Multilingual;
 use serde_json::{Map, Value};
+use shared_metadata::is_placeholder;
+use shared_metadata::utils::Multilingual;
 
 use crate::draft::{ProjectDraft, UrlSlot};
 use crate::multilingual::DraftMultilingual;
@@ -387,7 +387,7 @@ pub enum Shape {
     TextOrReferenceRows(&'static [&'static str]),
     /// A list of contributor rows, read by `apply_attribution_rows`:
     /// `attributions`. Each row is an agent id plus a list of roles. Roles are an
-    /// open set (`platform_metadata::project::CONTRIBUTOR_ROLES` is the offer),
+    /// open set (`shared_metadata::project::CONTRIBUTOR_ROLES` is the offer),
     /// because the corpus spells the same role several ways.
     AttributionRows,
     /// A list of agent ids as editable rows, read by `apply_string_rows`:
@@ -407,7 +407,7 @@ pub enum Shape {
     /// One of a fixed set of wire values, read by `apply_choice`. The set rides
     /// inside the shape so a hand-built body cannot put `status: "Cancelled"`
     /// into a file `ProjectStatus` then refuses to deserialize, and it comes
-    /// from `platform_metadata` so it cannot drift from the enum.
+    /// from `shared_metadata` so it cannot drift from the enum.
     Choice(&'static [&'static str]),
 }
 

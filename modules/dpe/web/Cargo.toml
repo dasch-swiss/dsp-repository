@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 dpe-core = { path = "../core" }
-platform-metadata = { path = "../../platform/metadata" }
+shared-metadata = { path = "../../../shared/metadata" }
 mosaic-tiles = { path = "../../mosaic/tiles" }
 maud.workspace = true
 serde.workspace = true

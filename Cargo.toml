@@ -1,7 +1,7 @@
 [workspace]
 members = [
-  "modules/platform/metadata",
-  "modules/platform/telemetry",
+  "shared/metadata",
+  "shared/telemetry",
   "modules/mosaic/playground",
   "modules/mosaic/tiles",
   "modules/dpe/core",

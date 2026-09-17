@@ -10,8 +10,8 @@
 //! field whose control has not landed still counts honestly.
 
 use editor_core::draft::ProjectDraft;
-use platform_metadata::is_placeholder;
 use serde_json::Value;
+use shared_metadata::is_placeholder;
 
 use super::registry::{sections_for, Audience, Field, Obligation, Section};
 

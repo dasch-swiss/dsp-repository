@@ -8,17 +8,17 @@ on:
     branches: [main]
     paths:
       # Any editor crate (core/web/server), styles, assets, or the e2e suite.
-      # `modules/platform/**` covers the shared crates the editor renders
+      # `shared/**` covers the shared crates the editor renders
       # through; `modules/mosaic/**` covers the tiles, which own accessibility
       # here — a missing semantic method on a tile is the usual cause of an
       # editor a11y failure, so a mosaic change must trigger this job.
       - "modules/editor/**"
-      - "modules/platform/**"
+      - "shared/**"
       - "modules/mosaic/**"
   pull_request:
     paths:
       - "modules/editor/**"
-      - "modules/platform/**"
+      - "shared/**"
       - "modules/mosaic/**"
 
 concurrency:

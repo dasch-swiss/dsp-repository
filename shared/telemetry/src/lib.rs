@@ -2,7 +2,7 @@
 //! turns beacons into OTel metrics and structured logs.
 //!
 //! Shared by every DaSCH service that renders the beacon script, which is why
-//! it lives under `modules/platform/` rather than inside a service module —
+//! it lives under `shared/` rather than inside a service module —
 //! nothing here reads any one service's data or configuration.
 
 pub mod beacon;

@@ -2,19 +2,19 @@
 //! contract.
 //!
 //! The contract types themselves (`ProjectRaw` and everything it is built from)
-//! live in `platform-metadata`, shared with the editor. `Project` is DPE's
+//! live in `shared-metadata`, shared with the editor. `Project` is DPE's
 //! rendering shape and stays here: both conversions are lossy in ways only DPE
 //! can accept — `From<&Project>` writes `url` back in the object form
 //! regardless of how it was read, and drops `clusters` — so the editor works
 //! `ProjectRaw` -> draft -> `ProjectRaw` and never passes through this type.
 
-use platform_metadata::models::AuthorityFileReference;
-use platform_metadata::project::{
-    AccessRights, Attribution, Discipline, Funding, LegalInfo, ProjectRaw, ProjectStatus, Publication, TemporalCoverage,
-};
-use platform_metadata::utils::{is_placeholder, Multilingual};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use shared_metadata::models::AuthorityFileReference;
+use shared_metadata::project::{
+    AccessRights, Attribution, Discipline, Funding, LegalInfo, ProjectRaw, ProjectStatus, Publication, TemporalCoverage,
+};
+use shared_metadata::utils::{is_placeholder, Multilingual};
 
 use super::cluster::ClusterRef;
 use super::collection::CollectionRef;
@@ -352,7 +352,7 @@ mod tests {
             let json = std::fs::read_to_string(&path).expect("project file should be readable");
             let raw: ProjectRaw = serde_json::from_str(&json).expect("parses");
             assert!(
-                platform_metadata::is_valid_shortcode(&raw.shortcode),
+                shared_metadata::is_valid_shortcode(&raw.shortcode),
                 "{:?} has a shortcode the shape check rejects: {:?}",
                 path.file_name(),
                 raw.shortcode

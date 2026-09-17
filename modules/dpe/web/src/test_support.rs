@@ -7,13 +7,13 @@
 
 use dpe_core::contributors::ResolvedContributor;
 use dpe_core::project::Project;
-use platform_metadata::models::AuthorityFileReference;
-use platform_metadata::organization::Organization;
-use platform_metadata::person::Person;
-use platform_metadata::project::{
+use shared_metadata::models::AuthorityFileReference;
+use shared_metadata::organization::Organization;
+use shared_metadata::person::Person;
+use shared_metadata::project::{
     AccessRights, AccessRightsType, Attribution, Funding, Grant, LegalInfo, License, Pid, ProjectStatus, Publication,
 };
-use platform_metadata::utils::Multilingual;
+use shared_metadata::utils::Multilingual;
 
 fn lang_map(value: &str) -> Multilingual {
     Multilingual::from([("en".to_string(), value.to_string())])

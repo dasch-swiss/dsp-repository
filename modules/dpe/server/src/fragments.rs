@@ -20,8 +20,8 @@ use dpe_web::pages::project::components::project_details_tabs::{has_publications
 use futures::stream::{self, Stream};
 use maud::html;
 use mosaic_tiles::icon::{icon, IconSearch};
-use platform_metadata::project::is_valid_shortcode;
 use serde::Deserialize;
+use shared_metadata::project::is_valid_shortcode;
 
 #[derive(Deserialize)]
 pub struct TabParams {
@@ -182,7 +182,7 @@ fn render_search_results(query: &str, results: &Page) -> String {
 
 pub async fn projects_json_handler() -> impl IntoResponse {
     use dpe_core::project_repository::{FsProjectRepository, ProjectRepository};
-    use platform_metadata::project::ProjectRaw;
+    use shared_metadata::project::ProjectRaw;
 
     let repo = FsProjectRepository::new();
     let projects: Vec<ProjectRaw> = repo.get_all().iter().map(ProjectRaw::from).collect();
@@ -191,7 +191,7 @@ pub async fn projects_json_handler() -> impl IntoResponse {
 
 pub async fn project_json_handler(Path(id): Path<String>) -> impl IntoResponse {
     use dpe_core::project_repository::{FsProjectRepository, ProjectRepository};
-    use platform_metadata::project::is_valid_shortcode;
+    use shared_metadata::project::is_valid_shortcode;
 
     if !is_valid_shortcode(&id) {
         return StatusCode::BAD_REQUEST.into_response();
@@ -199,7 +199,7 @@ pub async fn project_json_handler(Path(id): Path<String>) -> impl IntoResponse {
 
     let repo = FsProjectRepository::new();
     match repo.get_by_shortcode(&id) {
-        Some(proj) => axum::Json(platform_metadata::project::ProjectRaw::from(proj)).into_response(),
+        Some(proj) => axum::Json(shared_metadata::project::ProjectRaw::from(proj)).into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
     }
 }
@@ -244,16 +244,16 @@ mod tests {
             name: "Test".to_string(),
             shortcode: "0001".to_string(),
             official_name: "Test".to_string(),
-            status: platform_metadata::ProjectStatus::Ongoing,
+            status: shared_metadata::ProjectStatus::Ongoing,
             short_description: "desc".to_string(),
-            description: platform_metadata::utils::Multilingual::new(),
+            description: shared_metadata::utils::Multilingual::new(),
             start_date: "2020".to_string(),
             end_date: "2024".to_string(),
             url: None,
             secondary_url: None,
             how_to_cite: "cite".to_string(),
-            access_rights: platform_metadata::AccessRights {
-                access_rights: platform_metadata::AccessRightsType::FullOpenAccess,
+            access_rights: shared_metadata::AccessRights {
+                access_rights: shared_metadata::AccessRightsType::FullOpenAccess,
                 embargo_date: None,
             },
             legal_info: vec![],
@@ -273,7 +273,7 @@ mod tests {
             abstract_text: None,
             contact_point: None,
             publications: None,
-            funding: platform_metadata::project::Funding::Text("None".to_string()),
+            funding: shared_metadata::project::Funding::Text("None".to_string()),
             alternative_names: None,
             documentation_material: None,
             provenance: None,
@@ -543,7 +543,7 @@ mod tests {
     /// `entity_name`'s person and organization branches.
     #[test]
     fn snapshot_project_sidebar_with_entity_ids() {
-        use platform_metadata::{AccessRights, AccessRightsType, Funding, ProjectStatus};
+        use shared_metadata::{AccessRights, AccessRightsType, Funding, ProjectStatus};
 
         init_test_data();
         let project = Project {
@@ -554,7 +554,7 @@ mod tests {
             official_name: "Entity-id sidebar fixture".to_string(),
             status: ProjectStatus::Ongoing,
             short_description: "Fixture exercising EntityName person/org branches".to_string(),
-            description: platform_metadata::utils::Multilingual::new(),
+            description: shared_metadata::utils::Multilingual::new(),
             start_date: "2020-01-01".to_string(),
             end_date: "2025-12-31".to_string(),
             url: None,
@@ -564,8 +564,8 @@ mod tests {
                 access_rights: AccessRightsType::FullOpenAccess,
                 embargo_date: None,
             },
-            legal_info: vec![platform_metadata::LegalInfo {
-                license: platform_metadata::License {
+            legal_info: vec![shared_metadata::LegalInfo {
+                license: shared_metadata::License {
                     license_identifier: "CC BY 4.0".to_string(),
                     license_uri: "https://creativecommons.org/licenses/by/4.0/".to_string(),
                     license_date: "2024-01-01".to_string(),

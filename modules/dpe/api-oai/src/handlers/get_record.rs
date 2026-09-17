@@ -1,7 +1,7 @@
 //! Handler for the OAI-PMH GetRecord verb.
 
-use dpe_core::{ClusterRaw, ContributorLookup, Project, ProjectRepository, RecordRepository};
-use shared_metadata::Record;
+use dpe_core::{ClusterRaw, Project, ProjectRepository, RecordRepository};
+use shared_metadata::{ContributorLookup, Record};
 
 use super::{build_error_response, OaiParams, SUPPORTED_PREFIXES};
 use crate::error::OaiError;

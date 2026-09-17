@@ -15,6 +15,7 @@
 
 pub mod checks;
 pub mod chronontology;
+pub mod contributors;
 pub mod models;
 pub mod organization;
 pub mod person;
@@ -26,6 +27,7 @@ pub mod utils;
 pub mod w3cdtf;
 
 pub use checks::{check_project, contributor_refs, ContributorRef, Finding};
+pub use contributors::{is_organization_id, ContributorLookup};
 pub use models::AuthorityFileReference;
 pub use organization::{Address, Organization};
 pub use person::{is_role_job_title, Person, JOB_TITLE_ROLE_WORDS};

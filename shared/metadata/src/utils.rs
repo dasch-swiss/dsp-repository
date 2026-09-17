@@ -1,5 +1,9 @@
 use std::collections::BTreeMap;
 
+use serde_json::Value;
+
+use crate::models::AuthorityFileReference;
+
 /// A multilingual value: IETF language tag -> text.
 ///
 /// `BTreeMap` rather than `HashMap` so serialization is deterministic and
@@ -33,8 +37,37 @@ pub fn multilingual_value(map: &Multilingual) -> Option<String> {
         .cloned()
 }
 
+fn make_ref(url: String) -> AuthorityFileReference {
+    AuthorityFileReference { type_: "URL".to_string(), url, text: None }
+}
+
+/// Parses the `"url"` JSON value — either a structured object (new format)
+/// or a legacy string array — into primary and secondary references.
+pub fn parse_url_value(value: Option<Value>) -> (Option<AuthorityFileReference>, Option<AuthorityFileReference>) {
+    match value {
+        Some(Value::Object(_)) => {
+            let reference = serde_json::from_value::<AuthorityFileReference>(value.unwrap())
+                .ok()
+                .filter(|r| !is_placeholder(&r.url));
+            (reference, None)
+        }
+        Some(Value::Array(arr)) => {
+            // Placeholders ("MISSING"/"CALCULATED") signal "no URL yet" and must not
+            // become live links — e.g. a "Discover Project Data" button to nowhere.
+            let mut strings = arr
+                .into_iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .filter(|s| !is_placeholder(s));
+            (strings.next().map(make_ref), strings.next().map(make_ref))
+        }
+        _ => (None, None),
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use super::*;
 
     #[test]
@@ -79,5 +112,54 @@ mod tests {
     #[test]
     fn multilingual_value_empty_map_is_none() {
         assert_eq!(multilingual_value(&Multilingual::new()), None);
+    }
+
+    #[test]
+    fn array_placeholder_url_yields_no_reference() {
+        let (primary, secondary) = parse_url_value(Some(json!(["MISSING"])));
+        assert!(primary.is_none());
+        assert!(secondary.is_none());
+    }
+
+    #[test]
+    fn array_real_url_yields_primary_reference() {
+        let (primary, secondary) = parse_url_value(Some(json!(["https://example.org/data"])));
+        assert_eq!(primary.unwrap().url, "https://example.org/data");
+        assert!(secondary.is_none());
+    }
+
+    #[test]
+    fn array_filters_placeholders_keeps_real_urls() {
+        // A placeholder primary must not shift a real URL into the primary slot
+        // incorrectly, nor become a link itself.
+        let (primary, secondary) = parse_url_value(Some(json!(["MISSING", "https://example.org/site"])));
+        assert_eq!(primary.unwrap().url, "https://example.org/site");
+        assert!(secondary.is_none());
+    }
+
+    #[test]
+    fn array_calculated_placeholder_is_filtered() {
+        let (primary, _) = parse_url_value(Some(json!(["CALCULATED"])));
+        assert!(primary.is_none());
+    }
+
+    #[test]
+    fn object_placeholder_url_yields_no_reference() {
+        let (primary, secondary) = parse_url_value(Some(json!({"type": "URL", "url": "MISSING"})));
+        assert!(primary.is_none());
+        assert!(secondary.is_none());
+    }
+
+    #[test]
+    fn object_real_url_yields_primary_reference() {
+        let (primary, _) = parse_url_value(Some(json!({"type": "URL", "url": "https://example.org/data"})));
+        assert_eq!(primary.unwrap().url, "https://example.org/data");
+    }
+
+    #[test]
+    fn missing_url_yields_no_reference() {
+        let (primary, secondary) = parse_url_value(None);
+        assert!(primary.is_none());
+        assert!(secondary.is_none());
     }
 }

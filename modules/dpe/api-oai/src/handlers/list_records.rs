@@ -1,6 +1,7 @@
 //! Handler for the OAI-PMH ListRecords verb.
 
-use dpe_core::{ClusterRaw, ContributorLookup, ProjectRepository, RecordRepository};
+use dpe_core::{ClusterRaw, ProjectRepository, RecordRepository};
+use shared_metadata::ContributorLookup;
 
 use super::{build_error_response, next_page_token, validate_list_params, OaiParams};
 use crate::resumption::page_size;

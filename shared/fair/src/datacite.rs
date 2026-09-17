@@ -1,15 +1,9 @@
 //! Transformation of Research Projects into DataCite 4.6 metadata.
 
-use std::collections::HashMap;
+use shared_metadata::temporal_coverage::Resolution;
 
-use shared_metadata::{Discipline, Funding, ProjectRaw, TemporalCoverage};
-
-use crate::graph::ResolveContext;
-use crate::helpers::{
-    access_rights_to_string, extract_year, format_date_range, get_multilingual_value, infer_subject_scheme, is_creator,
-    license_identifier_to_label, map_contributor_type,
-};
-use crate::resolve::resolve_agent;
+use crate::helpers::{access_rights_to_string, format_date_range, infer_subject_scheme, map_contributor_type};
+use crate::project_graph::ProjectGraph;
 use crate::types::{
     DataCiteContributor, DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteFundingReference,
     DataCiteGeoLocation, DataCiteRecord, DataCiteRights, DataCiteSubject, DataCiteTitle,
@@ -17,35 +11,27 @@ use crate::types::{
 
 const PUBLISHER: &str = "DaSCH";
 
-pub fn project_to_datacite(project: &ProjectRaw, ctx: &ResolveContext) -> DataCiteRecord {
-    let lookup = ctx.lookup;
-    let mut record = DataCiteRecord::default();
-
-    // Identifier (mandatory) - use PID or generate from shortcode
-    if !shared_metadata::is_placeholder(&project.pid) && !project.pid.is_empty() {
-        record.identifier = project.pid.clone();
-        record.identifier_type = "ARK".to_string();
-    } else {
-        record.identifier = format!("https://ark.dasch.swiss/ark:/72163/1/{}", project.shortcode);
-        record.identifier_type = "ARK".to_string();
-    }
+pub fn project_to_datacite(graph: &ProjectGraph) -> DataCiteRecord {
+    let mut datacite = DataCiteRecord {
+        // Identifier (mandatory) - use PID or generate from shortcode
+        identifier: graph.ark.clone(),
+        identifier_type: "ARK".to_string(),
+        ..Default::default()
+    };
 
     // Creators (mandatory) - principal investigators and project leaders
-    for attr in &project.attributions {
-        if is_creator(&attr.contributor_type) {
-            let agent = resolve_agent(&attr.contributor, lookup);
-            record.creators.push(DataCiteCreator {
-                name: agent.name,
-                name_type: Some(agent.name_type.to_string()),
-                given_name: agent.given_name,
-                family_name: agent.family_name,
-                name_identifiers: agent.name_identifiers,
-                affiliations: agent.affiliations,
-            });
-        }
+    for agent in &graph.creators {
+        datacite.creators.push(DataCiteCreator {
+            name: agent.name.clone(),
+            name_type: Some(agent.kind.name_type().to_string()),
+            given_name: agent.given_name.clone(),
+            family_name: agent.family_name.clone(),
+            name_identifiers: agent.name_identifiers.clone(),
+            affiliations: agent.affiliations.clone(),
+        });
     }
-    if record.creators.is_empty() {
-        record.creators.push(DataCiteCreator {
+    if datacite.creators.is_empty() {
+        datacite.creators.push(DataCiteCreator {
             name: "DaSCH".to_string(),
             name_type: Some("Organizational".to_string()),
             ..Default::default()
@@ -53,145 +39,114 @@ pub fn project_to_datacite(project: &ProjectRaw, ctx: &ResolveContext) -> DataCi
     }
 
     // Contributors - non-creator attributions mapped to DataCite vocabulary
-    for attr in &project.attributions {
-        if !is_creator(&attr.contributor_type) {
-            let datacite_type = attr
-                .contributor_type
-                .first()
-                .map(|t| map_contributor_type(t))
-                .unwrap_or("Other");
-            let agent = resolve_agent(&attr.contributor, lookup);
-            record.contributors.push(DataCiteContributor {
-                name: agent.name,
-                name_type: Some(agent.name_type.to_string()),
-                contributor_type: datacite_type.to_string(),
-                given_name: agent.given_name,
-                family_name: agent.family_name,
-                name_identifiers: agent.name_identifiers,
-                affiliations: agent.affiliations,
-            });
-        }
+    for agent in &graph.contributors {
+        let datacite_type = agent
+            .contributor_type
+            .first()
+            .map(|t| map_contributor_type(t))
+            .unwrap_or("Other");
+        datacite.contributors.push(DataCiteContributor {
+            name: agent.name.clone(),
+            name_type: Some(agent.kind.name_type().to_string()),
+            contributor_type: datacite_type.to_string(),
+            given_name: agent.given_name.clone(),
+            family_name: agent.family_name.clone(),
+            name_identifiers: agent.name_identifiers.clone(),
+            affiliations: agent.affiliations.clone(),
+        });
     }
 
     // Titles (mandatory)
     // Use the longer of name/officialName as primary, shorter as AlternativeTitle
-    let name_valid = !shared_metadata::is_placeholder(&project.name) && !project.name.is_empty();
-    let official_valid = !shared_metadata::is_placeholder(&project.official_name) && !project.official_name.is_empty();
-
-    match (name_valid, official_valid) {
-        (true, true) => {
-            let (primary, alternative) = if project.official_name.len() >= project.name.len() {
-                (&project.official_name, &project.name)
+    match (graph.name.as_ref(), graph.official_name.as_ref()) {
+        (Some(name), Some(official_name)) => {
+            let (primary, alternative) = if official_name.len() >= name.len() {
+                (official_name, name)
             } else {
-                (&project.name, &project.official_name)
+                (name, official_name)
             };
-            record
+            datacite
                 .titles
                 .push(DataCiteTitle { title: primary.clone(), title_type: None, lang: None });
             if primary != alternative {
-                record.titles.push(DataCiteTitle {
+                datacite.titles.push(DataCiteTitle {
                     title: alternative.clone(),
                     title_type: Some("AlternativeTitle".to_string()),
                     lang: None,
                 });
             }
         }
-        (false, true) => {
-            record.titles.push(DataCiteTitle {
-                title: project.official_name.clone(),
-                title_type: None,
-                lang: None,
-            });
-        }
-        _ => {
-            record
+        (None, Some(official_name)) => {
+            datacite
                 .titles
-                .push(DataCiteTitle { title: project.name.clone(), title_type: None, lang: None });
+                .push(DataCiteTitle { title: official_name.clone(), title_type: None, lang: None });
+        }
+        // Either only `name` is real, or neither is: the raw value carries the
+        // placeholder through unchanged.
+        _ => {
+            datacite
+                .titles
+                .push(DataCiteTitle { title: graph.raw_name.clone(), title_type: None, lang: None });
         }
     }
 
     // Additional alternative names
-    if let Some(ref alt_names) = project.alternative_names {
-        for alt_name_map in alt_names {
-            if let Some(alt_name) = get_multilingual_value(alt_name_map) {
-                let already_present = record.titles.iter().any(|t| t.title == alt_name);
-                if !already_present {
-                    record.titles.push(DataCiteTitle {
-                        title: alt_name,
-                        title_type: Some("AlternativeTitle".to_string()),
-                        lang: None,
-                    });
-                }
-            }
+    for alt_name in &graph.alternative_names {
+        let already_present = datacite.titles.iter().any(|t| &t.title == alt_name);
+        if !already_present {
+            datacite.titles.push(DataCiteTitle {
+                title: alt_name.clone(),
+                title_type: Some("AlternativeTitle".to_string()),
+                lang: None,
+            });
         }
     }
 
     // Publisher (mandatory)
-    record.publisher = PUBLISHER.to_string();
+    datacite.publisher = PUBLISHER.to_string();
 
     // PublicationYear (mandatory)
-    if let Some(ref pub_year) = project.data_publication_year {
-        record.publication_year = extract_year(pub_year);
-    } else {
-        record.publication_year = extract_year(&project.start_date);
-    }
+    datacite.publication_year = graph.publication_year.clone();
 
     // ResourceType (mandatory)
-    record.resource_type = "Research Project".to_string();
-    record.resource_type_general = "Project".to_string();
+    datacite.resource_type = "Research Project".to_string();
+    datacite.resource_type_general = "Project".to_string();
 
     // Subjects (recommended) - keywords without scheme info
-    for kw in &project.keywords {
-        if let Some(keyword) = get_multilingual_value(kw) {
-            record.subjects.push(DataCiteSubject {
-                subject: keyword,
-                subject_scheme: None,
-                scheme_uri: None,
-                lang: None,
-            });
-        }
+    for keyword in &graph.keywords {
+        datacite.subjects.push(DataCiteSubject {
+            subject: keyword.clone(),
+            subject_scheme: None,
+            scheme_uri: None,
+            lang: None,
+        });
     }
 
     // Subjects from disciplines - with scheme info when available
-    for discipline in &project.disciplines {
-        match discipline {
-            Discipline::Reference(ref_data) => {
-                if let Some(ref text) = ref_data.text {
-                    let (scheme, scheme_uri) = infer_subject_scheme(&ref_data.url);
-                    record.subjects.push(DataCiteSubject {
-                        subject: text.clone(),
-                        subject_scheme: scheme,
-                        scheme_uri,
-                        lang: None,
-                    });
-                }
-            }
-            Discipline::Text(text_map) => {
-                if let Some(text) = get_multilingual_value(text_map) {
-                    record.subjects.push(DataCiteSubject {
-                        subject: text,
-                        subject_scheme: None,
-                        scheme_uri: None,
-                        lang: None,
-                    });
-                }
-            }
-        }
+    for discipline in &graph.disciplines {
+        let (scheme, scheme_uri) = match discipline.authority_url {
+            Some(ref url) => infer_subject_scheme(url),
+            None => (None, None),
+        };
+        datacite.subjects.push(DataCiteSubject {
+            subject: discipline.text.clone(),
+            subject_scheme: scheme,
+            scheme_uri,
+            lang: None,
+        });
     }
 
     // Descriptions (recommended)
-    if let Some(ref abstract_map) = project.abstract_text {
-        if let Some(abstract_text) = get_multilingual_value(abstract_map) {
-            record.descriptions.push(DataCiteDescription {
-                description: abstract_text,
-                description_type: "Abstract".to_string(),
-                lang: None,
-            });
-        }
+    if let Some(ref abstract_text) = graph.abstract_text {
+        datacite.descriptions.push(DataCiteDescription {
+            description: abstract_text.clone(),
+            description_type: "Abstract".to_string(),
+            lang: None,
+        });
     }
-    if let Some(desc) = get_multilingual_value(&project.description) {
-        record.descriptions.push(DataCiteDescription {
-            description: desc,
+    if let Some(ref desc) = graph.description {
+        datacite.descriptions.push(DataCiteDescription {
+            description: desc.clone(),
             description_type: "Other".to_string(),
             lang: None,
         });
@@ -200,8 +155,8 @@ pub fn project_to_datacite(project: &ProjectRaw, ctx: &ResolveContext) -> DataCi
     // Dates - use startDate/endDate range as dateType="Collected"
     // (kept on format_date_range: project start/end are full ISO YYYY-MM-DD dates,
     // so the year-only w3cdtf formatter used for Coverage would lose precision here.)
-    if let Some(date_range) = format_date_range(&project.start_date, &project.end_date) {
-        record.dates.push(DataCiteDate {
+    if let Some(date_range) = format_date_range(&graph.start_date, &graph.end_date) {
+        datacite.dates.push(DataCiteDate {
             date: date_range,
             date_type: "Collected".to_string(),
             ..Default::default()
@@ -210,207 +165,89 @@ pub fn project_to_datacite(project: &ProjectRaw, ctx: &ResolveContext) -> DataCi
 
     // Dates - temporal coverage as dateType="Coverage". A project may cover
     // several distinct periods, each emitted as its own Coverage date.
-    for tc in &project.temporal_coverage {
-        if let Some(date) = resolve_temporal_coverage_in(tc, ctx.periods, ctx.enriched) {
-            record.dates.push(date);
+    for tc in &graph.temporal_coverage {
+        if let Some(ref resolution) = tc.resolution {
+            datacite.dates.push(coverage_date(resolution));
         }
     }
 
     // Language - from data_language (BCP 47 codes)
-    if let Some(ref languages) = project.data_language {
-        if let Some(first_lang) = languages.first() {
-            record.language = Some(first_lang.clone());
-        }
+    if let Some(first_lang) = graph.data_language.first() {
+        datacite.language = Some(first_lang.clone());
     }
 
     // RelatedIdentifiers -- should contain parent Project Cluster ARK.
     // TODO: Populate once Project Cluster data is available.
 
     // Rights - with SPDX identifier
-    for legal in &project.legal_info {
-        let rights_uri = if !shared_metadata::is_placeholder(&legal.license.license_uri) {
-            Some(legal.license.license_uri.clone())
+    for legal in &graph.legal_info {
+        let rights_uri = if !shared_metadata::is_placeholder(&legal.license_uri) {
+            Some(legal.license_uri.clone())
         } else {
             None
         };
-        let has_identifier = !shared_metadata::is_placeholder(&legal.license.license_identifier)
-            && !legal.license.license_identifier.is_empty();
-        record.rights_list.push(DataCiteRights {
-            rights: if has_identifier {
-                license_identifier_to_label(&legal.license.license_identifier)
-            } else {
-                access_rights_to_string(&project.access_rights.access_rights).to_string()
+        let has_identifier = legal.license_label.is_some();
+        datacite.rights_list.push(DataCiteRights {
+            rights: match legal.license_label {
+                Some(ref label) => label.clone(),
+                None => access_rights_to_string(&graph.access_rights).to_string(),
             },
             rights_uri,
-            rights_identifier: if has_identifier {
-                Some(legal.license.license_identifier.clone())
-            } else {
-                None
-            },
-            rights_identifier_scheme: if has_identifier { Some("SPDX".to_string()) } else { None },
+            rights_identifier: has_identifier.then(|| legal.license_identifier.clone()),
+            rights_identifier_scheme: has_identifier.then(|| "SPDX".to_string()),
         });
     }
 
     // GeoLocations from spatial_coverage
-    for sc in &project.spatial_coverage {
+    for sc in &graph.spatial_coverage {
         if let Some(ref text) = sc.text {
-            record
+            datacite
                 .geo_locations
                 .push(DataCiteGeoLocation { geo_location_place: text.clone() });
         }
     }
 
     // FundingReferences from grants; funder IDs resolved to organization names
-    if let Funding::Grants(ref grants) = project.funding {
-        for grant in grants {
-            for funder in &grant.funders {
-                record.funding_references.push(DataCiteFundingReference {
-                    funder_name: resolve_agent(funder, lookup).name,
-                    award_number: grant.number.clone(),
-                    award_title: grant.name.clone(),
-                    award_uri: grant.url.clone(),
-                });
-            }
+    for grant in &graph.funding {
+        for funder_name in &grant.funder_names {
+            datacite.funding_references.push(DataCiteFundingReference {
+                funder_name: funder_name.clone(),
+                award_number: grant.number.clone(),
+                award_title: grant.name.clone(),
+                award_uri: grant.url.clone(),
+            });
         }
     }
 
-    record
+    datacite
 }
 
-/// Pure resolution of a `temporalCoverage` entry over the given lookup maps, so
-/// the fallback chain can be unit-tested without the process-global caches.
-///
-/// The actual resolution (ChronOntology URL → enrichment table → name-only
-/// fallback) lives in `shared_metadata::temporal_coverage`, shared with `dpe-server`'s
-/// `validate` command so the two can never disagree about what counts as
-/// resolved. This wraps that outcome into the DataCite `Coverage` date shape.
-///
-/// Returns `None` only when there is neither a resolvable range nor any name to
-/// carry — a date with neither value nor information would be useless.
-fn resolve_temporal_coverage_in(
-    tc: &TemporalCoverage,
-    periods: &HashMap<String, shared_metadata::w3cdtf::W3cdtfRange>,
-    enrichment: &HashMap<String, shared_metadata::temporal_enrichment::EnrichedDate>,
-) -> Option<DataCiteDate> {
-    let resolution = shared_metadata::temporal_coverage::resolve_in(tc, periods, enrichment)?;
-    Some(DataCiteDate {
-        date: resolution.date,
+/// The DataCite `Coverage` date shape for one resolved `temporalCoverage`
+/// entry. The resolution chain behind it (ChronOntology URL → enrichment table
+/// → name-only fallback) is `ProjectGraph::build`'s.
+fn coverage_date(resolution: &Resolution) -> DataCiteDate {
+    DataCiteDate {
+        date: resolution.date.clone(),
         date_type: "Coverage".to_string(),
-        date_information: resolution.date_information,
-    })
+        date_information: resolution.date_information.clone(),
+    }
 }
 
 #[cfg(test)]
-mod temporal_tests {
-    use std::collections::HashMap;
-
-    use shared_metadata::temporal_enrichment::EnrichedDate;
-    use shared_metadata::w3cdtf::{to_w3cdtf_range, W3cdtfRange};
-    use shared_metadata::AuthorityFileReference;
-
+mod tests {
     use super::*;
 
-    fn reference(url: &str, text: Option<&str>) -> TemporalCoverage {
-        TemporalCoverage::Reference(AuthorityFileReference {
-            type_: "Chronontology".to_string(),
-            url: url.to_string(),
-            text: text.map(str::to_string),
-        })
-    }
-
-    fn text(en: &str) -> TemporalCoverage {
-        TemporalCoverage::Text(shared_metadata::utils::Multilingual::from([("en".to_string(), en.to_string())]))
-    }
-
-    /// A period cache keyed by bare id (as the real one is), so tests exercise the
-    /// real `/period/` URL-stripping in `timespan_for_in`.
-    fn periods() -> HashMap<String, W3cdtfRange> {
-        let mut map = HashMap::new();
-        map.insert("0vGXxVln724L".to_string(), to_w3cdtf_range(Some("98"), Some("117")).unwrap());
-        map
-    }
-
-    fn enrichment(entries: &[(&str, Option<&str>, &str)]) -> HashMap<String, EnrichedDate> {
-        entries
-            .iter()
-            .map(|(key, date, name)| {
-                (
-                    key.to_string(),
-                    EnrichedDate {
-                        date: date.map(str::to_string),
-                        original_name: name.to_string(),
-                        source: "llm".to_string(),
-                    },
-                )
-            })
-            .collect()
-    }
-
-    /// The default enrichment fixture for tests that are not specifically about an
-    /// empty or missing table. It does carry a `"Trajanic"` row with a *different*
-    /// range than the period cache, so a URL-tier test can prove the URL wins over
-    /// a same-named enrichment row.
-    fn default_enrichment() -> HashMap<String, EnrichedDate> {
-        enrichment(&[
-            ("Trajanic", Some("1111/2222"), "Trajanic"),
-            ("Bronze Age", Some("-3300/-1200"), "Bronze Age"),
-        ])
-    }
-
+    /// The resolution chain itself belongs to `ProjectGraph::build` and is
+    /// tested there; this pins only the shape the writer gives a resolved entry.
     #[test]
-    fn chronontology_url_resolves_to_range() {
-        let tc = reference("https://chronontology.dainst.org/period/0vGXxVln724L", Some("Trajanic"));
-        // Enrichment is present and even has a "Trajanic" row with a different
-        // range; the URL tier must still win, proving its precedence.
-        let date = resolve_temporal_coverage_in(&tc, &periods(), &default_enrichment()).unwrap();
+    fn a_resolution_becomes_a_coverage_date() {
+        let resolution = Resolution {
+            date: "0098/0117".to_string(),
+            date_information: Some("Trajanic".to_string()),
+        };
+        let date = coverage_date(&resolution);
         assert_eq!(date.date, "0098/0117");
         assert_eq!(date.date_type, "Coverage");
         assert_eq!(date.date_information.as_deref(), Some("Trajanic"));
-    }
-
-    #[test]
-    fn free_text_resolves_via_enrichment() {
-        let tc = text("Early Christianity");
-        let enrich = enrichment(&[("Early Christianity", Some("0030/0451"), "Early Christianity")]);
-        let date = resolve_temporal_coverage_in(&tc, &HashMap::new(), &enrich).unwrap();
-        assert_eq!(date.date, "0030/0451");
-        assert_eq!(date.date_information.as_deref(), Some("Early Christianity"));
-    }
-
-    #[test]
-    fn stale_url_falls_through_to_enrichment() {
-        let tc = reference("https://chronontology.dainst.org/period/stale", Some("Late Middle Ages"));
-        let enrich = enrichment(&[("Late Middle Ages", Some("1250/1500"), "Late Middle Ages")]);
-        let date = resolve_temporal_coverage_in(&tc, &periods(), &enrich).unwrap();
-        assert_eq!(date.date, "1250/1500");
-        assert_eq!(date.date_information.as_deref(), Some("Late Middle Ages"));
-    }
-
-    #[test]
-    fn unresolved_emits_name_only_empty_date() {
-        let tc = text("Mysterious Era");
-        // Enrichment is populated but has no row for "Mysterious Era": resolution
-        // must fall through both the URL and enrichment tiers to the name-only tier.
-        let date = resolve_temporal_coverage_in(&tc, &periods(), &default_enrichment()).unwrap();
-        assert_eq!(date.date, "");
-        assert_eq!(date.date_type, "Coverage");
-        assert_eq!(date.date_information.as_deref(), Some("Mysterious Era"));
-    }
-
-    #[test]
-    fn no_name_and_no_resolution_is_none() {
-        let tc = reference("", None);
-        // Even with the period cache and enrichment populated, an entry that
-        // carries neither a resolvable URL nor any name yields nothing.
-        assert!(resolve_temporal_coverage_in(&tc, &periods(), &default_enrichment()).is_none());
-    }
-
-    #[test]
-    fn enrichment_without_range_emits_name_only() {
-        let tc = text("Vague Period");
-        let enrich = enrichment(&[("Vague Period", None, "Vague Period")]);
-        let date = resolve_temporal_coverage_in(&tc, &HashMap::new(), &enrich).unwrap();
-        assert_eq!(date.date, "");
-        assert_eq!(date.date_information.as_deref(), Some("Vague Period"));
     }
 }

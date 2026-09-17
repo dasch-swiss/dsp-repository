@@ -11,7 +11,8 @@ mod types;
 use dpe_core::cluster_cache::clusters_for_shortcode_in;
 use dpe_core::ClusterRaw;
 use shared_fair::{
-    project_to_datacite, project_to_dublin_core, record_to_datacite, record_to_dublin_core, ResolveContext,
+    project_to_datacite, project_to_dublin_core, record_to_datacite, record_to_dublin_core, ProjectGraph,
+    ResolveContext,
 };
 pub use shared_fair::{DataCiteNameIdentifier, DataCiteRecord, DublinCoreRecord};
 use shared_metadata::{record_datestamp, ContributorLookup, ProjectRaw, Record, ARK_PATH_PREFIX};
@@ -84,14 +85,17 @@ pub fn to_oai_record(
         set_specs: membership_set_specs("entityType:ResearchProject", &project.shortcode, clusters),
     };
 
+    // No records: `parts` feeds a future `hasPart`, which neither OAI writer reads.
+    let graph = ProjectGraph::build(project, &ctx, &[]);
+
     let dublin_core = if metadata_prefix == "oai_dc" {
-        Some(project_to_dublin_core(project, &ctx))
+        Some(project_to_dublin_core(&graph))
     } else {
         None
     };
 
     let datacite = if metadata_prefix == "oai_datacite" {
-        Some(project_to_datacite(project, &ctx))
+        Some(project_to_datacite(&graph))
     } else {
         None
     };

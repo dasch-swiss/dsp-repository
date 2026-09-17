@@ -40,6 +40,26 @@ pub enum AgentKind {
     Organization,
 }
 
+impl AgentKind {
+    /// DataCite's `nameType` spelling for this kind.
+    pub fn name_type(self) -> &'static str {
+        match self {
+            AgentKind::Person => "Personal",
+            AgentKind::Organization => "Organizational",
+        }
+    }
+
+    /// The kind behind a [`crate::resolve::ResolvedAgent`]'s `name_type`, so a
+    /// resolved agent and an inferred one carry the same spelling.
+    pub(crate) fn from_name_type(name_type: &str) -> Self {
+        if name_type == "Organizational" {
+            AgentKind::Organization
+        } else {
+            AgentKind::Person
+        }
+    }
+}
+
 /// A named agent credited with the record, with its inferred kind.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RecordCreator {

@@ -2,8 +2,8 @@
 
 use shared_metadata::Record;
 
-use super::helpers::{extract_year, get_multilingual_value, license_identifier_to_label};
-use super::types::{
+use crate::helpers::{extract_year, get_multilingual_value, license_identifier_to_label};
+use crate::types::{
     DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteRecord, DataCiteRelatedIdentifier, DataCiteRights,
     DataCiteTitle,
 };

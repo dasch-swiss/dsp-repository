@@ -4,7 +4,7 @@
 
 use shared_metadata::{is_organization_id, ContributorLookup, Person};
 
-use super::types::DataCiteNameIdentifier;
+use crate::types::DataCiteNameIdentifier;
 
 /// Name details for a creator, contributor, or funder resolved from an
 /// internal ID.
@@ -108,11 +108,45 @@ fn non_empty(s: String) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use shared_metadata::models::AuthorityFileReference;
     use shared_metadata::{Organization, Person};
 
     use super::*;
-    use crate::handlers::test_utils::InMemoryContributorLookup;
+
+    /// In-memory contributor lookup for testing.
+    #[derive(Default)]
+    struct InMemoryContributorLookup {
+        persons: HashMap<String, Person>,
+        organizations: HashMap<String, Organization>,
+    }
+
+    impl InMemoryContributorLookup {
+        fn empty() -> Self {
+            Self::default()
+        }
+
+        fn with_person(mut self, person: Person) -> Self {
+            self.persons.insert(person.id.clone(), person);
+            self
+        }
+
+        fn with_organization(mut self, org: Organization) -> Self {
+            self.organizations.insert(org.id.clone(), org);
+            self
+        }
+    }
+
+    impl ContributorLookup for InMemoryContributorLookup {
+        fn person(&self, id: &str) -> Option<Person> {
+            self.persons.get(id).cloned()
+        }
+
+        fn organization(&self, id: &str) -> Option<Organization> {
+            self.organizations.get(id).cloned()
+        }
+    }
 
     fn person(id: &str) -> Person {
         Person {

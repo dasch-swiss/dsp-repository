@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 dpe-core = { path = "../core" }
+shared-fair = { path = "../../../shared/fair" }
 shared-metadata = { path = "../../../shared/metadata" }
 axum.workspace = true
 base64.workspace = true

@@ -2,8 +2,8 @@
 
 use shared_metadata::Record;
 
-use super::helpers::{get_multilingual_value, license_identifier_to_label};
-use super::types::DublinCoreRecord;
+use crate::helpers::{get_multilingual_value, license_identifier_to_label};
+use crate::types::DublinCoreRecord;
 
 const PUBLISHER: &str = "DaSCH";
 

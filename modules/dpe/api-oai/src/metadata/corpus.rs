@@ -7,7 +7,11 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use dpe_core::{CachedContributorLookup, Project};
+use dpe_core::CachedContributorLookup;
+// `coverage_name` is the same lookup-key derivation `resolve_temporal_coverage_in`
+// uses (Reference → `text`; Text map → `get_multilingual_value`), shared via
+// shared-metadata so the two can't drift apart.
+use shared_metadata::temporal_coverage::coverage_name;
 use shared_metadata::{ProjectRaw, Record};
 
 use super::{to_oai_record, to_oai_record_from_record, OaiRecord};
@@ -87,9 +91,8 @@ fn compute_lines() -> Vec<String> {
             .unwrap_or_else(|e| panic!("project file {} should be readable: {e}", path.display()));
         let raw = serde_json::from_str::<ProjectRaw>(&json)
             .unwrap_or_else(|e| panic!("project file {} should parse: {e}", path.display()));
-        let project = Project::from(raw);
         for prefix in PREFIXES {
-            let oai_record = to_oai_record(&project, prefix, clusters, &lookup);
+            let oai_record = to_oai_record(&raw, prefix, clusters, &lookup);
             lines.push(format!(
                 "{}\t{}\t{}",
                 oai_record.header.identifier,
@@ -208,3 +211,74 @@ fn oai_output_matches_hash_baseline() {
     println!("compared {} entries", actual.len());
     println!("took {:.1?}", started.elapsed());
 }
+
+/// Completeness guard over the committed project data: every distinct
+/// `temporalCoverage` entry across all in-repo project files must resolve to a
+/// usable date through the *real* period and enrichment tables.
+///
+/// "Resolved" means a non-empty `date` (a ChronOntology timespan or an
+/// enrichment range). A name-only fallback (empty `date`) counts as
+/// UNRESOLVED and fails the test — the point of the check is that every path
+/// carries a machine-readable range, not merely a label.
+///
+/// The sole exception is a name explicitly reviewed as *not a time period*: an
+/// enrichment row with no `date` and `source == "unresolved"` (e.g. "Swiss",
+/// "English (culture or style)"). Those are intentionally emitted as
+/// `dateInformation`-only, so they are allowed to stay name-only. Any other
+/// empty-date entry is a genuine gap in the enrichment table.
+///
+/// Data, periods, and enrichment are loaded through the same parse logic as
+/// production (`ProjectRaw`, `chronontology_cache::load_from`,
+/// `temporal_enrichment_cache::load_from`), resolved relative to this crate so
+/// the test does not depend on the process working directory or on global
+/// cache state.
+#[test]
+fn every_committed_temporal_coverage_resolves() {
+    let data_dir = Path::new(DATA_DIR);
+    let projects_dir = data_dir.join("projects");
+
+    let periods = shared_metadata::chronontology::load_from(data_dir);
+    let enriched = shared_metadata::temporal_enrichment::load_from(data_dir);
+    assert!(!enriched.is_empty(), "committed enrichment table should load and be non-empty");
+
+    let entries = std::fs::read_dir(&projects_dir).expect("projects data directory should be readable");
+
+    let mut seen = std::collections::HashSet::new();
+    let mut unresolved = Vec::new();
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+        let json = std::fs::read_to_string(&path).expect("project file should be readable");
+        let raw =
+            serde_json::from_str::<ProjectRaw>(&json).unwrap_or_else(|e| panic!("failed to parse {filename}: {e}"));
+
+        for tc in &raw.temporal_coverage {
+            let Some(name) = coverage_name(tc) else {
+                continue; // no name to key on; nothing to resolve.
+            };
+            if !seen.insert(name) {
+                continue; // already checked this distinct name.
+            }
+
+            // The same gap decision `dpe-server validate` applies, so the
+            // two can't drift apart.
+            if let Some(name) = shared_metadata::temporal_coverage::completeness_gap(tc, &periods, &enriched) {
+                unresolved.push(name);
+            }
+        }
+    }
+
+    unresolved.sort();
+    assert!(
+        unresolved.is_empty(),
+        "temporalCoverage names with no resolved date (add a W3CDTF range to \
+         {ENRICHMENT_FILE}, or mark source=\"unresolved\" if not a time period):\n{}",
+        unresolved.join("\n"),
+    );
+}
+
+const ENRICHMENT_FILE: &str = "temporal-coverage-enrichment.json";

@@ -42,7 +42,7 @@ make_repo() {
   printf '{}\n' >"$dir/modules/dpe/server/data/x.json"
   mkdir -p "$dir/modules/editor/core/src"
   printf 'pub fn a() {}\n' >"$dir/modules/editor/core/src/lib.rs"
-  for f in metadata telemetry; do
+  for f in fair metadata telemetry; do
     mkdir -p "$dir/shared/$f/src"
     printf 'pub fn a() {}\n' >"$dir/shared/$f/src/lib.rs"
   done

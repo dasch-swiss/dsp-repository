@@ -18,10 +18,10 @@ browser-beacon collector) and `mosaic-tiles` (the design system), and nothing el
 dependency arrow is one-way: `services → platform, mosaic`, and a service never imports
 another service. Every component with code lives under `modules/` today (the four planned ones
 hold only a `CONTEXT.md` at their target path); ADR-0002 (accepted, migration pending)
-moves them under `deposit-area/`, `archive-area/`, `access-area/`, `platform/`, `mosaic/`,
+moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`, `mosaic/`,
 `vitrinli/` and `chischtli/` at the root, so read the globs here as current state. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 (the context index and the shared contract terms), `modules/editor/CONTEXT.md`,
-`modules/dpe/CONTEXT.md`, `archive-area/CONTEXT.md`, `vitrinli/CONTEXT.md`,
+`modules/dpe/CONTEXT.md`, `areas/archive/CONTEXT.md`, `vitrinli/CONTEXT.md`,
 `chischtli/CONTEXT.md`. Decisions: [`docs/adr/`](docs/adr/).
 
 ## Components
@@ -265,23 +265,23 @@ moves them under `deposit-area/`, `archive-area/`, `access-area/`, `platform/`, 
   (`beacon_payload`, `origin_validation`, `traceparent_validation`) exist but `fuzz.yml` runs
   only DPE's two.
 
-### archive-area (Spycherli)
+### areas/archive (Spycherli)
 
 - **status: planned**
-- **Paths:** `:(glob)archive-area/**` (today only `archive-area/CONTEXT.md`)
+- **Paths:** `:(glob)areas/archive/**` (today only `areas/archive/CONTEXT.md`)
 - **Purpose:** The Archive Area — the OAIS archive of the platform, working name Spycherli:
   the intent-protocol edge producers submit to, the validation workers, a leader-elected
   coordinator over a NATS JetStream hot log, and the sealed, URN-keyed store on two S3
   replicas plus tape. Feeds every Access-Area read side with NATS pointers plus immutable S3
   payloads. Nothing is implemented here yet; the vocabulary and the boundary commitments are
-  in `archive-area/CONTEXT.md`.
+  in `areas/archive/CONTEXT.md`.
 - **Key entities:** (design vocabulary) `Resource`, `Representation`, `Deposition`,
   `DepositAgreement`, `PreservationAction`, `AccessPolicy`, `Ingest Intent`, `Preservation File`,
   `Service File`, `ARK`
 - **Public interface:** the intent protocol (`RegisterIngestIntent`, `CompleteUpload` over
   HTTPS + mTLS, presigned S3 upload); the read-side notification contract (NATS pointers,
   S3 snapshots and deltas); the internal `CommandAPI` for preservation admin tooling.
-- **Local-context kit:** `archive-area/CONTEXT.md`, `CONTEXT.md`,
+- **Local-context kit:** `areas/archive/CONTEXT.md`, `CONTEXT.md`,
   `docs/adr/0002-areas-at-the-repository-root.md`, `docs/adr/0003-one-modulith-per-area.md`,
   `modules/platform/metadata/src/lib.rs`
 - **Depends on:** modules/platform/metadata (expected, for the contract at the SIP boundary);
@@ -291,7 +291,7 @@ moves them under `deposit-area/`, `archive-area/`, `access-area/`, `platform/`, 
 - **Boundary rules:** Preservation storage is exclusive to this area — no other component
   reaches into the sealed store, the log, or Preservation File bytes; internal producers get no
   shortcut past the intent protocol; DAO is this area's language and appears only at its
-  boundaries (`archive-area/CONTEXT.md` → Boundary commitments; **docs-only** until code exists, then
+  boundaries (`areas/archive/CONTEXT.md` → Boundary commitments; **docs-only** until code exists, then
   **structure** via Bazel visibility).
 - **Durable state:** the sealed store, the hot log, the ingest (quarantine) and Access buckets —
   **single writer:** this area's coordinator and workers.
@@ -315,7 +315,7 @@ moves them under `deposit-area/`, `archive-area/`, `access-area/`, `platform/`, 
   HTTP surface of its own; each area's `media` capability owns the routes.
 - **Local-context kit:** `vitrinli/CONTEXT.md`, `docs/adr/0001-bazel-builds-the-monorepo.md`,
   `docs/adr/0002-areas-at-the-repository-root.md`, `CONTEXT.md` (the file vocabulary under
-  Shared), `archive-area/CONTEXT.md` (where Service Files come from),
+  Shared), `areas/archive/CONTEXT.md` (where Service Files come from),
   `modules/platform/telemetry/src/lib.rs` (the beacon collector it may mount)
 - **Depends on:** nothing in this repository is expected beyond `platform-*` crates
 - **Used by:** the `media` capability of the Deposit Area modulith (today's modules/editor
@@ -349,7 +349,7 @@ moves them under `deposit-area/`, `archive-area/`, `access-area/`, `platform/`, 
   graph, run a Query, maintain a Full-text index, validate against shapes. No HTTP surface of its
   own; the owning capabilities expose what may be read through their ports.
 - **Local-context kit:** `chischtli/CONTEXT.md`, `docs/adr/0002-areas-at-the-repository-root.md`,
-  `docs/adr/0003-one-modulith-per-area.md`, `CONTEXT.md`, `archive-area/CONTEXT.md` (the data
+  `docs/adr/0003-one-modulith-per-area.md`, `CONTEXT.md`, `areas/archive/CONTEXT.md` (the data
   products `sync` rebuilds from), `modules/dpe/CONTEXT.md` (the reading side today)
 - **Depends on:** nothing in this repository is expected beyond `platform-*` crates
 - **Used by:** the Access Area modulith — `sync` (writer of the archive projection), `profile`
@@ -366,10 +366,10 @@ moves them under `deposit-area/`, `archive-area/`, `access-area/`, `platform/`, 
   capability (`sync`, `profile`, data creation); the Access-Area projection is disposable and
   rebuilt from snapshot plus replay, never repaired in place (target design).
 
-### access-area/cpe
+### areas/access/cpe
 
 - **status: planned**
-- **Paths:** `:(glob)access-area/cpe/**` (no files yet)
+- **Paths:** `:(glob)areas/access/cpe/**` (no files yet)
 - **Purpose:** CPE, the Configurable Presentation Environment — a second Access-Area
   hypermedia server rendering project-specific presentations over the same data as DPE,
   configured per project. Where the per-project configuration lives is an open item.

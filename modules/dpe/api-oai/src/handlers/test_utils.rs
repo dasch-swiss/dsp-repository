@@ -6,8 +6,8 @@ use dpe_core::project::Project;
 use dpe_core::{ClusterRaw, ProjectRepository, RecordRepository};
 use shared_metadata::models::AuthorityFileReference;
 use shared_metadata::project::{
-    AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, ProjectStatus,
-    TemporalCoverage,
+    AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, ProjectRaw,
+    ProjectStatus, TemporalCoverage,
 };
 use shared_metadata::{ContributorLookup, Organization, Person, Record};
 
@@ -96,13 +96,17 @@ pub fn incunabula_lookup() -> InMemoryContributorLookup {
         .with_organization(incunabula_organization())
 }
 
+/// Stores the wire-contract `ProjectRaw` fixtures and derives the `Project`
+/// view models from them once in `new()`.
 pub struct InMemoryProjectRepository {
     projects: Vec<Project>,
+    projects_raw: Vec<ProjectRaw>,
 }
 
 impl InMemoryProjectRepository {
-    pub fn new(projects: Vec<Project>) -> Self {
-        Self { projects }
+    pub fn new(projects_raw: Vec<ProjectRaw>) -> Self {
+        let projects = projects_raw.iter().cloned().map(Project::from).collect();
+        Self { projects, projects_raw }
     }
 }
 
@@ -114,11 +118,19 @@ impl ProjectRepository for InMemoryProjectRepository {
     fn get_by_shortcode(&self, shortcode: &str) -> Option<&Project> {
         self.projects.iter().find(|p| p.shortcode == shortcode)
     }
+
+    fn get_all_raw(&self) -> &[ProjectRaw] {
+        &self.projects_raw
+    }
+
+    fn get_raw_by_shortcode(&self, shortcode: &str) -> Option<&ProjectRaw> {
+        self.projects_raw.iter().find(|p| p.shortcode == shortcode)
+    }
 }
 
-/// Builds a minimal Project fixture based on the incunabula project (0803).
-pub fn incunabula_project() -> Project {
-    Project {
+/// Builds a minimal ProjectRaw fixture based on the incunabula project (0803).
+pub fn incunabula_project() -> ProjectRaw {
+    ProjectRaw {
         id: "0803".to_string(),
         pid: "https://ark.dasch.swiss/ark:/72163/1/0803".to_string(),
         name: "Die Bilderfolgen der Basler Frühdrucke: Spätmittelalterliche Didaxe als Bild-Text-Lektüre".to_string(),
@@ -133,11 +145,14 @@ pub fn incunabula_project() -> Project {
         },
         start_date: "2008-06-01".to_string(),
         end_date: "2012-08-31".to_string(),
-        url: Some(AuthorityFileReference {
-            type_: "URL".to_string(),
-            url: "https://app.dasch.swiss/project/3ABR_2i8QYGSIDvmP9mlEw".to_string(),
-            text: None,
-        }),
+        url: Some(
+            serde_json::to_value(AuthorityFileReference {
+                type_: "URL".to_string(),
+                url: "https://app.dasch.swiss/project/3ABR_2i8QYGSIDvmP9mlEw".to_string(),
+                text: None,
+            })
+            .expect("AuthorityFileReference serializes"),
+        ),
         secondary_url: None,
         how_to_cite: "Incunabula (2012) DaSCH. ark.dasch.swiss/ark:/72163/1/0803".to_string(),
         access_rights: AccessRights {
@@ -157,9 +172,8 @@ pub fn incunabula_project() -> Project {
         data_publication_year: None,
         type_of_data: Some(vec!["Image".to_string()]),
         data_language: Some(vec!["de".to_string()]),
-        clusters: vec![],
-        collections: vec![],
-        collection_ids: vec![],
+        clusters: None,
+        collections: None,
         records: None,
         keywords: vec![{
             let mut map = shared_metadata::utils::Multilingual::new();
@@ -226,8 +240,8 @@ pub fn incunabula_project() -> Project {
 /// Clones the incunabula project fixture with a distinct shortcode/id/pid, so
 /// tests can build a repository of several projects to exercise paging without a
 /// large fixture. The shortcode drives the OAI identifier, so each is unique.
-pub fn project_with_shortcode(shortcode: &str) -> Project {
-    Project {
+pub fn project_with_shortcode(shortcode: &str) -> ProjectRaw {
+    ProjectRaw {
         id: shortcode.to_string(),
         shortcode: shortcode.to_string(),
         pid: format!("https://ark.dasch.swiss/ark:/72163/1/{shortcode}"),

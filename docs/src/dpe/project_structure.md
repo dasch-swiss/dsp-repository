@@ -16,22 +16,31 @@ modules/dpe/
 ## Dependency Graph
 
 ```
-shared-metadata       ← the wire contract, shared with the editor;
-  ↑                     lives in `shared/`
+shared-metadata         ← the wire contract, shared with the editor;
+  ↑                       lives in `shared/`
+  ├── shared-fair       ← FAIR exposure engine: resolved graphs + representation
+  │                       writers, over the contract types only; lives in `shared/`
   │
-dpe-core              ← DPE's view model, caches, repositories; no framework deps
-  ↑
-  ├── dpe-api-oai     ← OAI-PMH endpoint
-  ├── dpe-web         ← Maud pages + components
-  └── dpe-server      ← composition root, Datastar fragment handlers
-       ↑
-       shared-telemetry  ← beacon contract + collector endpoint, shared with
-                           editor-server; lives in `shared/`
+  └── dpe-core          ← DPE's view model, caches, repositories; no framework deps
+        ↑
+        ├── dpe-api-oai ← OAI-PMH endpoint; also depends on shared-fair
+        ├── dpe-web     ← Maud pages + components
+        └── dpe-server  ← composition root, Datastar fragment handlers
+              ↑
+              shared-telemetry  ← beacon contract + collector endpoint, shared
+                                  with editor-server; lives in `shared/`
 ```
 
 `dpe-api-oai`, `dpe-web` and `dpe-server` depend on `shared-metadata` directly
 as well as through `dpe-core` — the contract types are theirs to import, not
 `dpe-core`'s to re-export.
+
+The arrow between `dpe-core` and `shared-fair` runs in neither direction, and
+that is deliberate: `shared-fair` names only contract types, so the domain crate
+never depends on the exposure engine and the engine never learns DPE's view
+model. `dpe_core::resolve_inputs()` is the seam — it returns the contributor
+lookup and the two temporal tables, which `dpe-api-oai` wraps in a
+`shared_fair::ResolveContext` at the call site.
 
 ## Crate Responsibilities
 
@@ -43,7 +52,21 @@ Holds the types a data file deserializes into (`ProjectRaw`, `Person`,
 a value out of one — `is_placeholder`, the deterministic `multilingual_value`
 lookup key, `is_valid_shortcode`, W3CDTF formatting and temporal-coverage
 resolution. Table loading is exposed as `load_from(data_dir)` so each service
-supplies its own directory. See `shared/README.md`.
+supplies its own directory. Also holds `ContributorLookup`, the trait a service
+implements over its own corpus to resolve an `Attribution` id to a `Person` or
+an `Organization`. See `shared/README.md`.
+
+### `shared-fair` (`shared/fair/`)
+
+Not a DPE crate: the FAIR exposure engine of ADR-0005, currently with
+`dpe-api-oai` as its only consumer. Builds one resolved graph per published
+object — `ProjectGraph::build` applies agent resolution, placeholder filtering,
+multilingual preference, creator fallback and temporal-coverage resolution once,
+`RecordGraph::build` reads a record alone — and writes each representation off that graph
+(`project_to_datacite`, `project_to_dublin_core`, `record_to_datacite`,
+`record_to_dublin_core`). It knows no routes and no URL layout: a writer returns
+a `String` or a `serde_json::Value`. What it needs from a service arrives in
+`ResolveContext::new(lookup, periods, enriched)`. See `shared/README.md`.
 
 ### `dpe-core` (core/)
 
@@ -64,7 +87,7 @@ Dependencies: `shared-metadata`, `serde`, `serde_json`, `tracing`, `ureq`.
 
 OAI-PMH 2.0 Data Provider. Implements the six required verbs (Identify, ListMetadataFormats, ListSets, ListIdentifiers, ListRecords, GetRecord). Usage is documented in [OAI-PMH Endpoint](./oai-pmh.md).
 
-Depends on `shared-metadata` for the contract types and `dpe-core` for the view model — no web framework dependency.
+Depends on `shared-metadata` for the contract types, `dpe-core` for the view model and the `resolve_inputs()` seam, and `shared-fair` for the DataCite and Dublin Core mappings. What stays here is OAI-PMH protocol: the envelope and XML builder, the verbs, the `oai:dasch.swiss:` identifiers, the set specs, the date filters and `OaiRecord`. The corpus-wide tests over the committed data stay here too (`src/metadata/corpus.rs`), beside the data they read.
 
 ### `dpe-web` (web/)
 
@@ -94,6 +117,6 @@ Composition root and Axum binary. Contains:
 ## Key Patterns
 
 - **The wire contract in `shared-metadata`, DPE's view model in `dpe-core`** — never in web or API crates
-- **API crates depend on `shared-metadata` and `dpe-core` only**, never on each other or on `dpe-web`
+- **API crates depend on `shared-metadata`, `dpe-core` and the `shared-*` crates they need** — `dpe-api-oai` takes `shared-fair` — never on each other or on `dpe-web`
 - **`dpe-server` contains no business logic** — only route composition, the head/page shell, and fragment rendering
 - **Fragment handlers** call dpe-web view functions and render their `Markup` with `.into_string()`, then wrap it in Datastar `PatchElements`/`ExecuteScript` SSE events

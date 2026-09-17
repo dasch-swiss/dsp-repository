@@ -4,6 +4,7 @@ Crates that exist only to be depended on by more than one area. A crate lands he
 
 ```txt
 shared/
+├── fair/              # FAIR exposure engine: resolved graphs + representation writers (crate: shared-fair)
 ├── metadata/          # Research-metadata wire contract (crate: shared-metadata)
 └── telemetry/         # Browser beacon contract + collector endpoint (crate: shared-telemetry)
 ```
@@ -17,7 +18,8 @@ Both halves of that rule are enforced, not just reviewed. A `dpe-*` or `editor-*
 The research-metadata wire contract, shared by `dpe-*` and `editor-*`. Contains:
 
 - **Contract types**: `ProjectRaw` and everything it is built from (`AccessRights`, `LegalInfo`, `License`, `Attribution`, `Publication`, `Grant`, `TemporalCoverage`, `Discipline`, `Funding`, …), plus `Person`, `Organization`, `Record` and `AuthorityFileReference`
-- **Reading rules**: `is_placeholder` (`"MISSING"` / `"CALCULATED"`), `multilingual_value` (the deterministic lookup key), `is_valid_shortcode`, `is_role_job_title`
+- **Reading rules**: `is_placeholder` (`"MISSING"` / `"CALCULATED"`), `multilingual_value` (the deterministic lookup key), `is_valid_shortcode`, `is_role_job_title`, `parse_url_value` (the `url` member's two authority-file references)
+- **Contributor resolution**: the `ContributorLookup` trait and `is_organization_id`, which tells the two kinds of id apart. The trait is here rather than in a consumer because resolving an `Attribution` id to a `Person` or an `Organization` is a rule over the contract's own types; each consumer supplies the corpus behind it (`dpe-core`'s `CachedContributorLookup` over the committed files, the editor's over the published corpus plus its pending proposals)
 - **`Multilingual`**: the language-tag-to-text map every multilingual field uses. A `BTreeMap` with an open `String` tag, so serialization is alphabetical and deterministic (`ar` is live in two committed files, so a closed de/en/fr/it enum would drop content)
 - **Temporal resolution**: `w3cdtf` formatting, the ChronOntology period table and the offline enrichment table, and `temporal_coverage::{resolve_in, completeness_gap}` — the single rule `dpe-server validate`, the OAI-PMH mapping and the editor all apply
 - **Per-project checks**: `checks::{check_project, contributor_refs}` — the rules `dpe-server validate` applies to one project, reported as findings keyed by member and ordinal (`("temporalCoverage", Some(2))`) rather than by file, so the editor can render them per field. Whether a contributor id resolves stays with the caller: DPE's corpus is `persons/` plus `organizations/`, the editor's is the published corpus plus its own pending entity proposals
@@ -31,6 +33,24 @@ Dependencies: `serde`, `serde_json`, `tracing`.
 The workspace enables `serde_json`'s `preserve_order` feature, which the editor's canonical project writer requires: it round-trips `ProjectRaw` through `serde_json::Value` to strip `null` members, and `Value` alphabetises every key unless the feature is on. With it, output follows the struct's declaration order, which is what the 85 committed project files hold. Two consequences to know: `Map::remove` becomes swap-remove (use `retain` to drop members in place), and a `HashMap` field would serialize in its own random iteration order, which is why multilingual fields are `Multilingual` rather than `HashMap`.
 
 `testdata/` holds two supported cross-crate test fixtures, not private ones: `0803-records.json` (a plain record) and `0862-records.json` (the one committed record carrying the full technical file metadata). `record.rs`'s own tests `include_str!` both; `dpe-api-oai`'s `get_record` and `test_utils` tests read `0803-records.json` by relative path. That direction (a service crate reading into a shared crate) is the allowed one, and these are the single copy of each sample, so moving or renaming one breaks those call sites at compile time; update them in the same commit. They live here rather than under `modules/dpe/server/data/` because `record.rs` is what reads them, and a shared crate takes no path into a service module.
+
+## `shared-fair` (fair/)
+
+The FAIR exposure engine of ADR-0005: one resolved graph per published object, and one writer per representation reading it. Contains:
+
+- **Resolved graphs**: `ProjectGraph` and `RecordGraph`, built once from the contract types. `ProjectGraph::build(raw, ctx, records)` applies agent resolution, placeholder filtering, multilingual preference and temporal-coverage resolution; `RecordGraph::build(record)` infers a record's creators from the record alone, which is why it takes no context. The mandatory-creator fallback is resolved once too, but as a derived accessor — `creators_with_fallback()` on each graph — rather than in `build`: only the representations DataCite's mandatory-creator rule governs apply it, and Dublin Core deliberately does not, because `oai_dc` names no creator an object does not have. Every representation of one object then reads the same facts and none of them can disagree. Their supporting refs — `ProjectAgent`, `RecordCreator`, `AgentKind`, `LicenseRef`, `TemporalRef`, `DisciplineRef`, `SpatialRef`, `FundingRef`, `PublicationRef`, `PartRef` — carry facts, not any one standard's vocabulary
+- **`ResolveContext`**: what resolution needs, passed in rather than reached for — a `shared_metadata::ContributorLookup` and the two temporal tables. A consumer adapts its own store behind them; the crate reads no directory and holds no cache
+- **Writers**: `project_to_datacite`, `project_to_dublin_core`, `record_to_datacite`, `record_to_dublin_core`, over `DataCiteRecord` and `DublinCoreRecord` in `types.rs`. Each maps graph facts into its own standard's terms; the vocabulary tables that need no lookup (`map_contributor_type`, `license_identifier_to_label`, `infer_subject_scheme`, `extract_year`, …) sit in `helpers.rs`
+
+It was extracted from `dpe-api-oai` rather than left there. DataCite and Dublin Core are what OAI-PMH serves, so the mappings were not misplaced; the writers that join them are. Left in place, an OAI crate would come to own schema.org JSON-LD, a Signposting link set and Turtle, none of which OAI-PMH has anything to do with, and `dpe-server` would depend on an API crate for non-API code. What stayed behind in `dpe-api-oai` is OAI-PMH protocol, not exposure: the envelope and XML builder, the six verbs, the `oai:dasch.swiss:` identifiers, the set specs, the date filters, `OaiRecord` and `OaiRecordHeader`. Also staying behind are the corpus-wide tests over the committed data (`api-oai/src/metadata/corpus.rs`) — they live beside the data they read, because a shared crate holds no path into a service module.
+
+Only `ProjectGraph::build`, `RecordGraph::build` and `PartRef::from_record` take a wire-contract root aggregate (`&ProjectRaw`, `&Record`); a builder's own private helpers may take one to decompose construction, and no public writer takes anything but a graph or a graph-derived field. That is what keeps resolution to one place: a writer cannot reach past the graph and re-derive a fact its own way.
+
+No web framework, no Maud, no routes: a writer returns a `String` or a `serde_json::Value`, and the consuming service turns that into a response. Nothing here knows where a page is rendered or what its URLs look like.
+
+`dpe-api-oai` is the only consumer today. Unlike the other two crates here, `shared-fair` was shared from the start rather than on a second consumer's arrival, because ADR-0005 names the ones to come: DPE's record pages and CPE in the Access Area, and the Deposit Area, where a depositor assesses a project's FAIRness before submitting it.
+
+Dependencies: `shared-metadata`, and nothing else. No third-party runtime dependency — `serde_json` is a dev-dependency, used only by the tests to build the raw `"url"` values the reading rule parses.
 
 ## `shared-telemetry` (telemetry/)
 

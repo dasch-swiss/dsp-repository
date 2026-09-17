@@ -1,18 +1,18 @@
-# Platform
+# Shared
 
-Crates shared by more than one service. A crate lands here as soon as a second service depends on it, and is named `platform-{role}`; see `docs/src/repo_structure.md` → *Shared Crates* for the rule and why the directory, not just the crate name, is what matters.
+Crates that exist only to be depended on by more than one area. A crate lands here as soon as a second area depends on it, and is named `shared-{role}`; see `docs/src/repo_structure.md` → *Shared Crates* for the rule and why the directory, not just the crate name, is what matters. Until the areas of ADR-0002 land, the areas are today's two services, DPE and the metadata editor.
 
 ```txt
-platform/
-├── metadata/          # Research-metadata wire contract (crate: platform-metadata)
-└── telemetry/         # Browser beacon contract + collector endpoint (crate: platform-telemetry)
+shared/
+├── metadata/          # Research-metadata wire contract (crate: shared-metadata)
+└── telemetry/         # Browser beacon contract + collector endpoint (crate: shared-telemetry)
 ```
 
-Platform crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration takes it as a parameter instead of reaching for it.
+Shared crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration takes it as a parameter instead of reaching for it.
 
-Both halves of that rule are enforced, not just reviewed. A `dpe-*` or `editor-*` dependency in a platform crate's `Cargo.toml` is a Cargo cycle and fails to build. A hardcoded *path* into a service module compiles fine, so `just check` greps for one: see `.github/scripts/check-platform-paths.sh`, which fails on a `../`- or `modules/`-rooted path into any non-platform module under `modules/` appearing in a platform crate's `src/`. Prose cross-references are untouched: the crate names (`dpe-core`, `dpe_core::…`) carry no slash.
+Both halves of that rule are enforced, not just reviewed. A `dpe-*` or `editor-*` dependency in a shared crate's `Cargo.toml` is a Cargo cycle and fails to build. A hardcoded *path* into a service module compiles fine, so `just check` greps for one: see `.github/scripts/check-shared-paths.sh`, which fails on a `../`- or `modules/`-rooted path into any module under `modules/` appearing in a shared crate's `src/`. Prose cross-references are untouched: the crate names (`dpe-core`, `dpe_core::…`) carry no slash.
 
-## `platform-metadata` (metadata/)
+## `shared-metadata` (metadata/)
 
 The research-metadata wire contract, shared by `dpe-*` and `editor-*`. Contains:
 
@@ -30,9 +30,9 @@ Dependencies: `serde`, `serde_json`, `tracing`.
 
 The workspace enables `serde_json`'s `preserve_order` feature, which the editor's canonical project writer requires: it round-trips `ProjectRaw` through `serde_json::Value` to strip `null` members, and `Value` alphabetises every key unless the feature is on. With it, output follows the struct's declaration order, which is what the 85 committed project files hold. Two consequences to know: `Map::remove` becomes swap-remove (use `retain` to drop members in place), and a `HashMap` field would serialize in its own random iteration order, which is why multilingual fields are `Multilingual` rather than `HashMap`.
 
-`testdata/` holds two supported cross-crate test fixtures, not private ones: `0803-records.json` (a plain record) and `0862-records.json` (the one committed record carrying the full technical file metadata). `record.rs`'s own tests `include_str!` both; `dpe-api-oai`'s `get_record` and `test_utils` tests read `0803-records.json` by relative path. That direction (a service crate reading into platform) is the allowed one, and these are the single copy of each sample, so moving or renaming one breaks those call sites at compile time; update them in the same commit. They live here rather than under `modules/dpe/server/data/` because `record.rs` is what reads them, and a platform crate takes no path into a service module.
+`testdata/` holds two supported cross-crate test fixtures, not private ones: `0803-records.json` (a plain record) and `0862-records.json` (the one committed record carrying the full technical file metadata). `record.rs`'s own tests `include_str!` both; `dpe-api-oai`'s `get_record` and `test_utils` tests read `0803-records.json` by relative path. That direction (a service crate reading into a shared crate) is the allowed one, and these are the single copy of each sample, so moving or renaming one breaks those call sites at compile time; update them in the same commit. They live here rather than under `modules/dpe/server/data/` because `record.rs` is what reads them, and a shared crate takes no path into a service module.
 
-## `platform-telemetry` (telemetry/)
+## `shared-telemetry` (telemetry/)
 
 The browser telemetry contract and the endpoint that consumes it. A library crate so fuzz targets can test the real code, and so the beacon has one implementation across `dpe-server` and `editor-server` rather than a fork per service. Contains:
 
@@ -43,4 +43,4 @@ The browser telemetry contract and the endpoint that consumes it. A library crat
 
 The contract modules depend on `serde` only; `collector` additionally pulls in `axum`, `opentelemetry`, `tracing` and `url`.
 
-Page-URL normalization is **not** in this crate: a platform crate depends on no service crate, and a route table is exactly one service's data. `dpe-server` and `editor-server` each own a `page_url.rs` and pass its `normalize_page_url` fn into `collect_route`.
+Page-URL normalization is **not** in this crate: a shared crate depends on no service crate, and a route table is exactly one service's data. `dpe-server` and `editor-server` each own a `page_url.rs` and pass its `normalize_page_url` fn into `collect_route`.

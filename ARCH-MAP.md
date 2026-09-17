@@ -13,13 +13,16 @@ date: 2026-09-16
 server-rendered hypermedia services on Axum + Maud + Datastar, plus the crates they share.
 Two services exist — **DPE**, the public read-only Discovery and Presentation Environment,
 and the authenticated **metadata editor** — each a separate deployable on its own origin;
-they share `platform-metadata` (the research-metadata contract), `platform-telemetry` (the
+they share `shared-metadata` (the research-metadata contract), `shared-telemetry` (the
 browser-beacon collector) and `mosaic-tiles` (the design system), and nothing else. The
-dependency arrow is one-way: `services → platform, mosaic`, and a service never imports
-another service. Every component with code lives under `modules/` today (the four planned ones
-hold only a `CONTEXT.md` at their target path); ADR-0002 (accepted, migration pending)
-moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`, `mosaic/`,
-`vitrinli/` and `chischtli/` at the root, so read the globs here as current state. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
+dependency arrow is one-way: `services → shared, mosaic`, and a service never imports
+another service. Every service component with code lives under `modules/` today; the shared
+root has already moved to `shared/` at the repository root (the first phase of ADR-0002), and
+three of the four planned components hold only a `CONTEXT.md` at their target path
+(`areas/access/cpe` has no files yet). The rest of
+ADR-0002 (accepted, migration pending) moves the services under `areas/deposit/`,
+`areas/archive/` and `areas/access/`, beside `shared/`, `mosaic/`, `vitrinli/` and
+`chischtli/` at the root, so read the globs here as current state. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 (the context index and the shared contract terms), `modules/editor/CONTEXT.md`,
 `modules/dpe/CONTEXT.md`, `areas/archive/CONTEXT.md`, `vitrinli/CONTEXT.md`,
 `chischtli/CONTEXT.md`. Decisions: [`docs/adr/`](docs/adr/).
@@ -52,21 +55,21 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
   `modules/dpe/server/src/main.rs`, `modules/dpe/core/src/lib.rs`,
   `modules/dpe/core/src/project.rs`, `modules/dpe/server/src/fragments.rs`,
   `modules/dpe/api-oai/src/lib.rs` (the OAI crate's whole surface; the contract it reads is
-  modules/platform/metadata's own kit)
-- **Depends on:** modules/platform/metadata (all four crates), modules/platform/telemetry
+  shared/metadata's own kit)
+- **Depends on:** shared/metadata (all four crates), shared/telemetry
   (`dpe-server`), modules/mosaic (`dpe-web`, `dpe-server`); third-party: axum, tokio, tower /
   tower-http / tower_governor, maud, datastar, clap, figment, serde / serde_json, quick-xml,
   ureq, the OpenTelemetry stack, pyroscope, insta
 - **Used by:** modules/editor — data only, never code: the corpus is copied into the editor image
   (`.github/actions/build-editor/action.yml`, `justfile`) and read by the editor's tests through
-  `CARGO_MANIFEST_DIR/../../dpe/server/data`; modules/platform/metadata's committed-data tests
+  `CARGO_MANIFEST_DIR/../../dpe/server/data`; shared/metadata's committed-data tests
   live here (`core/src/temporal_enrichment_cache.rs`, `api-oai/src/metadata/datacite.rs`)
 - **Boundary rules:**
   - Never depends on an `editor-*` crate; the editor never depends on a `dpe-*` crate
     (**review** today; **structure** via Bazel visibility after ADR-0001).
-  - `dpe-api-oai` depends on `dpe-core` and `platform-metadata` only — never on `dpe-web` or
+  - `dpe-api-oai` depends on `dpe-core` and `shared-metadata` only — never on `dpe-web` or
     another API crate (**review**; a `Cargo.toml` check in the style of
-    `check-platform-paths.sh` would make it **static-analysis** today — tracked with the
+    `check-shared-paths.sh` would make it **static-analysis** today — tracked with the
     `dpe-*`/`editor-*` check as a follow-up).
   - The editor's path is `ProjectRaw` → draft → `ProjectRaw`, never through `dpe_core::Project`,
     whose `From` impls are lossy on `url` and `clusters` (**review**).
@@ -113,7 +116,7 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
   `modules/editor/web/src/form/registry.rs`, `modules/editor/core/src/form.rs`,
   `modules/editor/core/src/status.rs`,
   `modules/editor/server/src/db/migrations/0001_initial.sql`, `docs/src/editor/architecture.md`
-- **Depends on:** modules/platform/metadata (all three crates), modules/platform/telemetry
+- **Depends on:** shared/metadata (all three crates), shared/telemetry
   (`editor-server`), modules/mosaic (`editor-web`); modules/dpe's corpus as data (see above),
   never its code; third-party: axum, maud, rusqlite (`bundled`) + deadpool-sqlite, figment,
   lettre, clap, ureq, rand + subtle, tower_governor, the OpenTelemetry stack, pyroscope, insta
@@ -174,7 +177,7 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
   Tailwind entries (`modules/dpe/style/main.css`, `modules/editor/style/main.css`,
   `modules/mosaic/playground/style/main.css`)
 - **Boundary rules:**
-  - Depends on no `platform-*` or service crate (**structure** — a dependency would be a Cargo
+  - Depends on no `shared-*` or service crate (**structure** — a dependency would be a Cargo
     cycle for the services and is simply absent).
   - Every `css_class()` returns a complete literal class string so Tailwind's scan sees it;
     stated in six places, enforced by nothing — a violation surfaces as unstyled markup at
@@ -189,10 +192,10 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
     and the `add-mosaic-component` skill say `lib.rs` — stale, fix on next touch (**docs-only**).
 - **Durable state:** none. The playground E2E suite is dormant (no recipe, no CI job runs it).
 
-### modules/platform/metadata
+### shared/metadata
 
-- **Paths:** `:(glob)modules/platform/metadata/**`
-- **Purpose:** `platform-metadata` — the research-metadata wire contract and the rules for
+- **Paths:** `:(glob)shared/metadata/**`
+- **Purpose:** `shared-metadata` — the research-metadata wire contract and the rules for
   reading a value out of it: `ProjectRaw` and its parts, `Person`, `Organization`, `Record`,
   `Multilingual`, the placeholder rule, shortcode validation, temporal-coverage resolution,
   and the per-project checks. The published language between the Deposit and Access Areas.
@@ -205,8 +208,8 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
   `project::{CONTRIBUTOR_ROLES, ROLES_NOT_OFFERED, PROJECT_STATUS_VALUES, TYPE_OF_DATA_VALUES}`;
   the two fixtures under `testdata/` (`0803-records.json`, `0862-records.json`), read by
   `dpe-api-oai`'s tests by relative path — the single copy of each sample.
-- **Local-context kit:** `modules/platform/metadata/src/project.rs`,
-  `modules/platform/metadata/src/lib.rs`, `modules/platform/README.md`,
+- **Local-context kit:** `shared/metadata/src/project.rs`,
+  `shared/metadata/src/lib.rs`, `shared/README.md`,
   `modules/editor/web/src/form/registry.rs`, `modules/editor/core/src/draft.rs`,
   `modules/dpe/core/src/project.rs`, `modules/editor/core/tests/canonical_round_trip.rs`
   (a contract member moves with all four consumer files in one commit)
@@ -216,7 +219,7 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
   crate
 - **Boundary rules:**
   - Depends on no service crate (**structure** — Cargo cycle); holds no path into a service
-    module (**static-analysis** — `.github/scripts/check-platform-paths.sh`, run by `just check`).
+    module (**static-analysis** — `.github/scripts/check-shared-paths.sh`, run by `just check`).
   - Reads no environment: both lookup tables load from a caller-supplied `data_dir`; the caches
     live in `dpe-core`, and `editor-server` loads its own (**review**).
   - Member order in `ProjectRaw` **is** the on-disk order of every committed project file
@@ -226,10 +229,10 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
 - **Durable state:** none. Loads `chronontology-periods.json` and
   `temporal-coverage-enrichment.json` from whatever directory it is given.
 
-### modules/platform/telemetry
+### shared/telemetry
 
-- **Paths:** `:(glob)modules/platform/telemetry/**`
-- **Purpose:** `platform-telemetry` — the browser-beacon wire contract (`BeaconPayload`,
+- **Paths:** `:(glob)shared/telemetry/**`
+- **Purpose:** `shared-telemetry` — the browser-beacon wire contract (`BeaconPayload`,
   `Signal` and its variants), origin and traceparent validation, and the `/telemetry/collect`
   collector that turns beacons into OTel metrics and structured logs. One implementation for
   both services.
@@ -239,10 +242,10 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
 - **Public interface:** `collector::collect_route(namespace, normalize_page_url)` — the intended
   wiring point (`collect_handler` is also `pub`, contradicting its doc comment); `beacon::*`,
   `origin::is_allowed_origin`, `traceparent::{is_valid_traceparent, validated_traceparent}`.
-- **Local-context kit:** `modules/platform/telemetry/src/beacon.rs`,
-  `modules/platform/telemetry/src/collector.rs`, `modules/dpe/public/telemetry.js`,
+- **Local-context kit:** `shared/telemetry/src/beacon.rs`,
+  `shared/telemetry/src/collector.rs`, `modules/dpe/public/telemetry.js`,
   `modules/editor/public/telemetry.js`, `docs/src/dpe/observability.md`,
-  `modules/platform/README.md`, `modules/dpe/server/fuzz/fuzz_targets/beacon_payload.rs`
+  `shared/README.md`, `modules/dpe/server/fuzz/fuzz_targets/beacon_payload.rs`
 - **Depends on:** nothing in the workspace; third-party: serde, serde_json; axum, opentelemetry,
   tracing, url (collector only). No `tower_governor` — the rate limiter is each server's own.
 - **Used by:** modules/dpe (`dpe-server`: `collect_route("dpe", page_url::normalize_page_url)`),
@@ -250,7 +253,7 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
   the DPE fuzz crate
 - **Boundary rules:**
   - Depends on no service crate; holds no path into one (**structure** + **static-analysis**,
-    as for `platform-metadata`).
+    as for `shared-metadata`).
   - Page-URL normalization is each service's own `page_url.rs`, passed in as a function — a
     shared crate cannot hold one service's route table (**structure** — the argument is
     required).
@@ -283,8 +286,8 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
   S3 snapshots and deltas); the internal `CommandAPI` for preservation admin tooling.
 - **Local-context kit:** `areas/archive/CONTEXT.md`, `CONTEXT.md`,
   `docs/adr/0002-areas-at-the-repository-root.md`, `docs/adr/0003-one-modulith-per-area.md`,
-  `modules/platform/metadata/src/lib.rs`
-- **Depends on:** modules/platform/metadata (expected, for the contract at the SIP boundary);
+  `shared/metadata/src/lib.rs`
+- **Depends on:** shared/metadata (expected, for the contract at the SIP boundary);
   otherwise nothing in this repository
 - **Used by:** modules/editor (target: submits SIPs over the intent protocol), the Access Area
   services (target: consume the notification stream)
@@ -316,8 +319,8 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
 - **Local-context kit:** `vitrinli/CONTEXT.md`, `docs/adr/0001-bazel-builds-the-monorepo.md`,
   `docs/adr/0002-areas-at-the-repository-root.md`, `CONTEXT.md` (the file vocabulary under
   Shared), `areas/archive/CONTEXT.md` (where Service Files come from),
-  `modules/platform/telemetry/src/lib.rs` (the beacon collector it may mount)
-- **Depends on:** nothing in this repository is expected beyond `platform-*` crates
+  `shared/telemetry/src/lib.rs` (the beacon collector it may mount)
+- **Depends on:** nothing in this repository is expected beyond `shared-*` crates
 - **Used by:** the `media` capability of the Deposit Area modulith (today's modules/editor
   area) and the `media` capability of the Access Area modulith (today's modules/dpe area),
   both planned; each implements Vitrinli's traits over its own store and owns the routes
@@ -351,7 +354,7 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
 - **Local-context kit:** `chischtli/CONTEXT.md`, `docs/adr/0002-areas-at-the-repository-root.md`,
   `docs/adr/0003-one-modulith-per-area.md`, `CONTEXT.md`, `areas/archive/CONTEXT.md` (the data
   products `sync` rebuilds from), `modules/dpe/CONTEXT.md` (the reading side today)
-- **Depends on:** nothing in this repository is expected beyond `platform-*` crates
+- **Depends on:** nothing in this repository is expected beyond `shared-*` crates
 - **Used by:** the Access Area modulith — `sync` (writer of the archive projection), `profile`
   (writer of its settings graphs), with DPE, CPE and the SPARQL endpoint reading through
   `sync`'s ports; the Deposit Area modulith — the data-creation capability (writer of the working
@@ -377,13 +380,13 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
 - **Public interface:** its router, mounted by the Access Area's composition root on the area's
   origin beside DPE's routes; `cpe/ports` for anything a sibling capability needs from it.
 - **Local-context kit:** `docs/adr/0002-areas-at-the-repository-root.md`, `modules/dpe/CONTEXT.md`,
-  `modules/dpe/server/src/router.rs` (the shape to copy), `modules/platform/metadata/src/lib.rs`,
+  `modules/dpe/server/src/router.rs` (the shape to copy), `shared/metadata/src/lib.rs`,
   `docs/src/mosaic/component-api-conventions.md`, `docs/adr/0003-one-modulith-per-area.md`
-- **Depends on:** modules/platform/metadata, modules/platform/telemetry, modules/mosaic
+- **Depends on:** shared/metadata, shared/telemetry, modules/mosaic
   (expected); never DPE's domain, store or web crates. Two port directions, each with its own
   consumer (ADR-0003): what CPE needs from DPE, CPE declares in `cpe/ports` and DPE implements;
   what DPE needs from CPE, DPE declares in `dpe/ports` and CPE implements, depending on
-  `dpe/ports` alone. A *concept* both need lives in `platform/`; a shape never does
+  `dpe/ports` alone. A *concept* both need lives in `shared/`; a shape never does
 - **Used by:** —
 - **Boundary rules:** a capability of the Access Area's modulith (ADR-0003) — its own tables,
   ports as described under Depends on, no shared shape; and the platform-wide style commitment
@@ -394,16 +397,16 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
 
 ## Conventions
 
-- **One-way top-level dependency direction:** `services → platform, mosaic, vitrinli, chischtli`;
-  `platform-*`, `mosaic-*`, Vitrinli and Chischtli never import a service; a service never
+- **One-way top-level dependency direction:** `services → shared, mosaic, vitrinli, chischtli`;
+  `shared-*`, `mosaic-*`, Vitrinli and Chischtli never import a service; a service never
   imports another service. *Enforcement:*
-  **structure** for the platform half (a service dependency in a platform crate is a Cargo
-  cycle) + **static-analysis** for hardcoded paths (`check-platform-paths.sh`); **review** for
+  **structure** for the shared half (a service dependency in a shared crate is a Cargo
+  cycle) + **static-analysis** for hardcoded paths (`check-shared-paths.sh`); **review** for
   service→service today, **structure** via Bazel visibility after ADR-0001.
 - **Areas are bounded contexts (ADR-0002):** the Deposit, Archive and Access Areas integrate
   over the wire, never by Rust import; each service is the sole reader and writer of its
   durable state; cross-area references are opaque identifiers (shortcode, ARK); share
-  concepts (a `platform-*` crate), never shapes. *Enforcement:* **review**, becoming
+  concepts (a `shared-*` crate), never shapes. *Enforcement:* **review**, becoming
   **structure** with ADR-0001.
 - **One modulith per area (ADR-0003):** one binary per area, composed at `<area>/server` out of
   capabilities that own their tables, collaborate only through consumer-defined `ports` crates
@@ -412,7 +415,7 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
   seeds of the composition roots. *Enforcement:* **review**, becoming **structure** (Bazel
   visibility: `ports` public within the area; domain / store / web visible to the capability
   and the composition root only) with ADR-0001.
-- **Shared code lives under `modules/platform/` as `platform-{role}`** the moment a second
+- **Shared code lives under `shared/` as `shared-{role}`** the moment a second
   service depends on it; the directory is what CI path filters, `bacon.toml` watch lists and
   directory-scoped `CLAUDE.md` files key on. *Enforcement:* **review** (the rule),
   **static-analysis** (the path grep).
@@ -437,7 +440,7 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
   **static-analysis** (`canonical_round_trip`, `every_committed_temporal_coverage_resolves`,
   `just validate-data`).
 - **Colocated docs:** each service module carries a `CLAUDE.md` (agent runbook), except the
-  `platform-*` crates, which share `modules/platform/README.md` one directory up; each bounded
+  `shared-*` crates, which share `shared/README.md` one directory up; each bounded
   context, and each shared engine with its own vocabulary (Vitrinli, Chischtli), a `CONTEXT.md`;
   authoritative prose lives in `docs/src/`; system-wide decisions in
   `docs/adr/`, context-internal ones under the context's own `docs/adr/` once it has one.
@@ -450,10 +453,10 @@ moves them under `areas/deposit/`, `areas/archive/`, `areas/access/`, `shared/`,
 
 | Locally-attractive pattern | Why it couples globally | Supported alternative | Enforcement |
 |---|---|---|---|
-| A `dpe-*` dependency in an `editor-*` crate (or the reverse) | Turns two deployables with a deliberate origin split into one codebase; the next agent copies the shortcut | Move the shared concept to a `platform-*` crate; pass service-specific data in as a parameter | review → structure (ADR-0001) |
+| A `dpe-*` dependency in an `editor-*` crate (or the reverse) | Turns two deployables with a deliberate origin split into one codebase; the next agent copies the shortcut | Move the shared concept to a `shared-*` crate; pass service-specific data in as a parameter | review → structure (ADR-0001) |
 | A capability importing a sibling capability's domain, store or web crate, or querying its tables | Turns the area's modulith into a tangle; extraction becomes impossible | Declare a port in the consumer's `ports` crate; the provider implements the adapter; wire at `<area>/server` (ADR-0003) | review → structure (ADR-0001) |
 | Opening the area's Chischtli instance to read or write a graph another capability owns | A graph with two writers is a table with two writers; readers past the owner's ports freeze the owner's internal graph layout | Query through the owning capability's ports (`sync` for the archive projection); a new graph gets a new owner, not a second writer (ADR-0003) | review → structure (store handle visible to owners only) |
-| A relative path from a `platform-*` crate into `modules/<service>/` | Makes the shared crate depend on one service's layout and configuration | Take the directory or table as a parameter (`load_from(data_dir)`) | static-analysis |
+| A relative path from a `shared-*` crate into `modules/<service>/` | Makes the shared crate depend on one service's layout and configuration | Take the directory or table as a parameter (`load_from(data_dir)`) | static-analysis |
 | Reading `dpe_core::Project` in the editor | The view model is lossy on `url` and `clusters`; the editor must preserve both | `ProjectRaw` → draft → `ProjectRaw` | review |
 | Hardcoding a Mosaic class string (`card card-bordered`, `tooltip`) in a service's markup | Freezes the design system's CSS contract in 19 call sites; a tile rename breaks silently | Call the tile; add the missing tile (`tooltip`) rather than the string | review |
 | A `css_class()` that assembles its string at runtime | Tailwind's `source(none)` scan never sees the class; the failure is unstyled markup with no error | Complete literal strings, one per variant | docs-only (promote) |
@@ -471,11 +474,11 @@ Not code components; they span the repo and are staleness-exempt here:
   `flake.lock`, `.envrc`, `.node-version`, `.gitignore`, `.dockerignore`, `.worktreeinclude`,
   `.commitlintrc.yml`, `.kodus-readiness.yml`
 - **CI:** `.github/**` — workflows, composite actions, the gate scripts
-  (`check-platform-paths.sh`, `check-datastar-delimiters.sh`, `check-commit-count.sh`,
+  (`check-shared-paths.sh`, `check-datastar-delimiters.sh`, `check-commit-count.sh`,
   `verify-checksums.sh`), release-please config
 - **Documentation:** `docs/**` (the mdBook under `docs/src/`, ADRs under `docs/adr/`),
   `README.md`, `CLAUDE.md`, `CONVENTIONS.md`, `REVIEW.md`, `CHANGELOG.md`, `LICENSE`,
-  `CONTEXT.md`, `ARCH-MAP.md`, `modules/platform/README.md`
+  `CONTEXT.md`, `ARCH-MAP.md`, `shared/README.md`
 - **Agent configuration:** `.claude/**` (settings, the `add-mosaic-component` skill)
 - **Data tooling:** `scripts/**` — the two Python scripts that write DPE's lookup tables
 - **Legacy:** `assets/**` — 58 cover images at the repository root, unreferenced since the

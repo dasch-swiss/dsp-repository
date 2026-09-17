@@ -107,6 +107,10 @@ pub struct ProjectGraph {
     /// `official_name`, and the graph must not pick for them.
     pub name: Option<String>,
     pub official_name: Option<String>,
+    /// The raw `name`, placeholder and all. Both writers fall back to it
+    /// verbatim when neither title is real, so the placeholder string itself
+    /// reaches the output and cannot be resolved away here.
+    pub raw_name: String,
     /// Not deduplicated: each writer deduplicates against its own title list.
     pub alternative_names: Vec<String>,
     /// Kept apart and unordered relative to each other. DataCite emits the
@@ -157,6 +161,7 @@ impl ProjectGraph {
             pid: raw.pid.clone(),
             name: real_value(&raw.name),
             official_name: real_value(&raw.official_name),
+            raw_name: raw.name.clone(),
             alternative_names: raw
                 .alternative_names
                 .iter()
@@ -358,6 +363,8 @@ mod tests {
         lookup
     }
 
+    /// A period cache keyed by bare id (as the real one is), so tests exercise
+    /// the real `/period/` URL-stripping in `timespan_for_in`.
     fn periods() -> HashMap<String, W3cdtfRange> {
         HashMap::from([(
             "0vGXxVln724L".to_string(),
@@ -365,12 +372,47 @@ mod tests {
         )])
     }
 
-    fn enrichment() -> HashMap<String, EnrichedDate> {
-        HashMap::new()
+    fn enrichment(entries: &[(&str, Option<&str>, &str)]) -> HashMap<String, EnrichedDate> {
+        entries
+            .iter()
+            .map(|(key, date, name)| {
+                (
+                    key.to_string(),
+                    EnrichedDate {
+                        date: date.map(str::to_string),
+                        original_name: name.to_string(),
+                        source: "llm".to_string(),
+                    },
+                )
+            })
+            .collect()
+    }
+
+    /// The default enrichment fixture for tests that are not specifically about
+    /// an empty or missing table. It does carry a `"Trajanic"` row with a
+    /// *different* range than the period cache, so a URL-tier test can prove the
+    /// URL wins over a same-named enrichment row.
+    fn default_enrichment() -> HashMap<String, EnrichedDate> {
+        enrichment(&[
+            ("Trajanic", Some("1111/2222"), "Trajanic"),
+            ("Bronze Age", Some("-3300/-1200"), "Bronze Age"),
+        ])
     }
 
     fn english(text: &str) -> Multilingual {
         Multilingual::from([("en".to_string(), text.to_string())])
+    }
+
+    fn temporal_reference(url: &str, text: Option<&str>) -> shared_metadata::TemporalCoverage {
+        shared_metadata::TemporalCoverage::Reference(AuthorityFileReference {
+            type_: "Chronontology".to_string(),
+            url: url.to_string(),
+            text: text.map(str::to_string),
+        })
+    }
+
+    fn temporal_text(en: &str) -> shared_metadata::TemporalCoverage {
+        shared_metadata::TemporalCoverage::Text(english(en))
     }
 
     fn legal(identifier: &str, uri: &str) -> LegalInfo {
@@ -463,7 +505,7 @@ mod tests {
     fn build(raw: &ProjectRaw, records: &[Record]) -> ProjectGraph {
         let lookup = lookup();
         let periods = periods();
-        let enriched = enrichment();
+        let enriched = default_enrichment();
         let ctx = ResolveContext::new(&lookup, &periods, &enriched);
         ProjectGraph::build(raw, &ctx, records)
     }
@@ -568,6 +610,9 @@ mod tests {
             let graph = build(&raw, &[]);
             assert_eq!(graph.name, None, "{value:?}");
             assert_eq!(graph.official_name, None, "{value:?}");
+            // Both writers fall back to the raw name here, so it survives beside
+            // the resolved one.
+            assert_eq!(graph.raw_name, value);
         }
     }
 
@@ -609,13 +654,14 @@ mod tests {
     #[test]
     fn a_resolving_temporal_entry_carries_its_name_and_its_date() {
         let raw = ProjectRaw {
-            temporal_coverage: vec![shared_metadata::TemporalCoverage::Reference(AuthorityFileReference {
-                type_: "Chronontology".to_string(),
-                url: "https://chronontology.dainst.org/period/0vGXxVln724L".to_string(),
-                text: Some("Trajanic".to_string()),
-            })],
+            temporal_coverage: vec![temporal_reference(
+                "https://chronontology.dainst.org/period/0vGXxVln724L",
+                Some("Trajanic"),
+            )],
             ..project()
         };
+        // Enrichment is present and even has a "Trajanic" row with a different
+        // range; the URL tier must still win, proving its precedence.
         let graph = build(&raw, &[]);
         assert_eq!(graph.temporal_coverage[0].name.as_deref(), Some("Trajanic"));
         let resolution = graph.temporal_coverage[0].resolution.as_ref().expect("it resolves");
@@ -623,15 +669,60 @@ mod tests {
         assert_eq!(resolution.date_information.as_deref(), Some("Trajanic"));
     }
 
+    #[test]
+    fn free_text_resolves_via_enrichment() {
+        let raw = ProjectRaw {
+            temporal_coverage: vec![temporal_text("Early Christianity")],
+            ..project()
+        };
+        let enriched = enrichment(&[("Early Christianity", Some("0030/0451"), "Early Christianity")]);
+        let graph = build_with_enrichment(&raw, enriched);
+        let resolution = graph.temporal_coverage[0].resolution.as_ref().expect("it resolves");
+        assert_eq!(resolution.date, "0030/0451");
+        assert_eq!(resolution.date_information.as_deref(), Some("Early Christianity"));
+    }
+
+    #[test]
+    fn a_stale_url_falls_through_to_enrichment() {
+        // URL present but unknown to the period cache; enrichment by name resolves.
+        let raw = ProjectRaw {
+            temporal_coverage: vec![temporal_reference(
+                "https://chronontology.dainst.org/period/stale",
+                Some("Late Middle Ages"),
+            )],
+            ..project()
+        };
+        let enriched = enrichment(&[("Late Middle Ages", Some("1250/1500"), "Late Middle Ages")]);
+        let graph = build_with_enrichment(&raw, enriched);
+        let resolution = graph.temporal_coverage[0].resolution.as_ref().expect("it resolves");
+        assert_eq!(resolution.date, "1250/1500");
+        assert_eq!(resolution.date_information.as_deref(), Some("Late Middle Ages"));
+    }
+
+    #[test]
+    fn an_enrichment_row_without_a_range_carries_its_name_only() {
+        let raw = ProjectRaw {
+            temporal_coverage: vec![temporal_text("Vague Period")],
+            ..project()
+        };
+        let enriched = enrichment(&[("Vague Period", None, "Vague Period")]);
+        let graph = build_with_enrichment(&raw, enriched);
+        let resolution = graph.temporal_coverage[0].resolution.as_ref().expect("a name-only resolution");
+        assert!(resolution.date.is_empty());
+        assert_eq!(resolution.date_information.as_deref(), Some("Vague Period"));
+    }
+
     /// An entry that resolves to no date is not `None`: DataCite still emits it
     /// with an empty `date`, and Dublin Core still emits the name.
     #[test]
     fn an_unresolved_temporal_entry_still_carries_its_name() {
         let raw = ProjectRaw {
-            temporal_coverage: vec![shared_metadata::TemporalCoverage::Text(english("Mysterious Era"))],
+            temporal_coverage: vec![temporal_text("Mysterious Era")],
             ..project()
         };
-        let graph = build_with_enrichment(&raw, enrichment());
+        // Enrichment is populated but has no row for "Mysterious Era": resolution
+        // must fall through both the URL and enrichment tiers to the name-only tier.
+        let graph = build(&raw, &[]);
         assert_eq!(graph.temporal_coverage[0].name.as_deref(), Some("Mysterious Era"));
         let resolution = graph.temporal_coverage[0].resolution.as_ref().expect("a name-only resolution");
         assert!(resolution.date.is_empty());
@@ -641,13 +732,11 @@ mod tests {
     #[test]
     fn a_nameless_unresolvable_temporal_entry_has_no_resolution() {
         let raw = ProjectRaw {
-            temporal_coverage: vec![shared_metadata::TemporalCoverage::Reference(AuthorityFileReference {
-                type_: "Chronontology".to_string(),
-                url: String::new(),
-                text: None,
-            })],
+            temporal_coverage: vec![temporal_reference("", None)],
             ..project()
         };
+        // Even with the period cache and enrichment populated, an entry that
+        // carries neither a resolvable URL nor any name yields nothing.
         let graph = build(&raw, &[]);
         assert_eq!(graph.temporal_coverage[0].name, None);
         assert_eq!(graph.temporal_coverage[0].resolution, None);

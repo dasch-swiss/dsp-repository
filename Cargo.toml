@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "shared/fair",
   "shared/metadata",
   "shared/telemetry",
   "modules/mosaic/playground",

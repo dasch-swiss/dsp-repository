@@ -1,0 +1,13 @@
+[package]
+name = "shared-fair"
+version.workspace = true
+edition = "2021"
+publish = false
+
+# Dependencies arrive with the first code that needs them, in the commit that
+# moves the DataCite and Dublin Core mappings in: `shared-metadata` for the
+# contract types, and `serde`/`serde_json` from the workspace, whose
+# `preserve_order` feature the JSON-LD writer's key ordering depends on. Listing
+# them here while `lib.rs` is still empty would fail `cargo-machete`, which
+# `just check` runs.
+[dependencies]

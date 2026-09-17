@@ -3159,6 +3159,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "shared-fair"
+version = "0.8.5"
+
+[[package]]
 name = "shared-metadata"
 version = "0.8.5"
 dependencies = [

@@ -2,8 +2,7 @@
 //! `organization-001`) to person and organization details for
 //! metadata output.
 
-use dpe_core::{is_organization_id, ContributorLookup};
-use shared_metadata::Person;
+use shared_metadata::{is_organization_id, ContributorLookup, Person};
 
 use super::types::DataCiteNameIdentifier;
 

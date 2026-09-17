@@ -6,7 +6,8 @@ pub use dpe_core::contributors::ResolvedContributor;
 use shared_metadata::project::Attribution;
 
 pub fn get_contributors(attributions: Vec<Attribution>) -> Vec<ResolvedContributor> {
-    use dpe_core::contributors::{is_organization_id, load_organization, load_person};
+    use dpe_core::contributors::{load_organization, load_person};
+    use shared_metadata::is_organization_id;
 
     let mut result = Vec::with_capacity(attributions.len());
     for attr in attributions {

@@ -3,13 +3,13 @@
 use std::collections::HashMap;
 
 use dpe_core::project::Project;
-use dpe_core::{ClusterRaw, ContributorLookup, ProjectRepository, RecordRepository};
+use dpe_core::{ClusterRaw, ProjectRepository, RecordRepository};
 use shared_metadata::models::AuthorityFileReference;
 use shared_metadata::project::{
     AccessRights, AccessRightsType, Attribution, Discipline, Funding, Grant, LegalInfo, License, ProjectStatus,
     TemporalCoverage,
 };
-use shared_metadata::{Organization, Person, Record};
+use shared_metadata::{ContributorLookup, Organization, Person, Record};
 
 #[derive(Default)]
 pub struct InMemoryContributorLookup {

@@ -16,11 +16,11 @@ mod types;
 
 use datacite::project_to_datacite;
 use dpe_core::cluster_cache::clusters_for_shortcode_in;
-use dpe_core::{ClusterRaw, ContributorLookup, Project};
+use dpe_core::{ClusterRaw, Project};
 use dublin_core::project_to_dublin_core;
 use record_datacite::record_to_datacite;
 use record_dublin_core::record_to_dublin_core;
-use shared_metadata::{record_datestamp, Record, ARK_PATH_PREFIX};
+use shared_metadata::{record_datestamp, ContributorLookup, Record, ARK_PATH_PREFIX};
 pub use types::{DataCiteNameIdentifier, DataCiteRecord, DublinCoreRecord, OaiRecord, OaiRecordHeader};
 
 // Namespace identifier for OAI record identifiers (OAI identifier format:

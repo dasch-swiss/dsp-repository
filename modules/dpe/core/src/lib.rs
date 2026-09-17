@@ -28,9 +28,7 @@ pub mod utils;
 // Re-exports for convenience
 pub use cluster::{ClusterRaw, ClusterRef};
 pub use collection::CollectionRef;
-pub use contributors::{
-    is_organization_id, load_organization, load_person, CachedContributorLookup, ContributorLookup, ResolvedContributor,
-};
+pub use contributors::{load_organization, load_person, CachedContributorLookup, ResolvedContributor};
 pub use cover_image_cache::cover_image_url;
 pub use models::Page;
 pub use project::{Project, VALID_TABS};

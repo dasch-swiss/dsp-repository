@@ -2,8 +2,8 @@
 
 use std::collections::HashMap;
 
-use dpe_core::{ContributorLookup, Project};
-use shared_metadata::{Discipline, Funding, TemporalCoverage};
+use dpe_core::Project;
+use shared_metadata::{ContributorLookup, Discipline, Funding, TemporalCoverage};
 
 use super::helpers::{
     access_rights_to_string, extract_year, format_date_range, get_multilingual_value, infer_subject_scheme, is_creator,

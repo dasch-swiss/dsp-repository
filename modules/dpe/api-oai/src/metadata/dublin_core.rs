@@ -1,7 +1,7 @@
 //! Transformation of Research Projects into Dublin Core metadata.
 
-use dpe_core::{ContributorLookup, Project};
-use shared_metadata::{Discipline, TemporalCoverage};
+use dpe_core::Project;
+use shared_metadata::{ContributorLookup, Discipline, TemporalCoverage};
 
 use super::helpers::{access_rights_to_string, get_multilingual_value, is_creator};
 use super::resolve::resolve_agent;

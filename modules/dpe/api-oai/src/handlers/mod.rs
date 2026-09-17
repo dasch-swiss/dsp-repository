@@ -19,8 +19,8 @@ use axum::extract::Query;
 use axum::http::{header, StatusCode};
 use axum::response::IntoResponse;
 use dpe_core::{
-    cluster_cache, CachedContributorLookup, ClusterRaw, ContributorLookup, FsProjectRepository, FsRecordRepository,
-    ProjectRepository, RecordRepository,
+    cluster_cache, CachedContributorLookup, ClusterRaw, FsProjectRepository, FsRecordRepository, ProjectRepository,
+    RecordRepository,
 };
 use get_record::handle_get_record;
 use identify::handle_identify;
@@ -29,6 +29,7 @@ use list_metadata_formats::handle_list_metadata_formats;
 use list_records::handle_list_records;
 use list_sets::handle_list_sets;
 use serde::Deserialize;
+use shared_metadata::ContributorLookup;
 
 use super::error::OaiError;
 use super::xml::OaiXmlBuilder;

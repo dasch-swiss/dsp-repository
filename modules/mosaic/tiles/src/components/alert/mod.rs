@@ -1,29 +1,18 @@
 //! Alert tile: a bordered, tinted block carrying a message, with an optional
 //! bold title above it.
 //!
-//! `alert(content)` returns an [`AlertBuilder`]; set options with chained
-//! methods and either splice it into `html!` directly (it implements [`Render`])
-//! or call `.build()` for a standalone `Markup`. See
-//! `docs/src/mosaic/component-api-conventions.md`.
+//! See `docs/src/mosaic/component-api-conventions.md`.
 //!
 //! ## Why the variant decides the ARIA role
 //!
-//! `role="alert"` marks an assertive live region. Announcement is reliable when
-//! the message is swapped in after load and inconsistent across AT when it is
-//! already in the parsed document, so the role is not a promise that a rejected
-//! form is spoken the instant it arrives — but it is what identifies the block
-//! as an error to a reader who reaches it, and it is what makes the message
+//! `role="alert"` marks an assertive live region. Announcement is unreliable for
+//! a message already in the parsed document, so the role is not a promise that a
+//! rejected form is spoken the instant it arrives; it is what identifies the
+//! block as an error to a reader who reaches it, and what makes the message
 //! announce itself once these banners are updated by a fragment rather than a
-//! full re-render. That fits every `Danger` call site: they report a submission
-//! that did not go through. It is wrong for a block that merely states a
-//! consequence, which is what the `Warning`, `Info` and `Success` surfaces are
-//! used for, so those carry no role.
-//!
-//! Accessibility is the tile's responsibility rather than a caller-set knob, so
-//! the role follows from the variant instead of being passed in. If a *static*
-//! danger notice ever appears — one that states a risk rather than reporting a
-//! failure — that is the signal to add a semantic method for it, not a raw
-//! `role` argument.
+//! full re-render. That fits `Danger`, which reports a submission that did not
+//! go through, and is wrong for a block merely stating a consequence — so
+//! `Warning`, `Info` and `Success` carry no role.
 
 use maud::{html, Markup, Render};
 
@@ -98,10 +87,9 @@ impl AlertBuilder {
     /// Append extra utility classes after the variant classes.
     ///
     /// Not the place for bottom spacing — the tile carries `mb-4` itself. A
-    /// caller needing a different margin has to use Tailwind's `!` modifier
-    /// (`!mb-6`), because two same-property utilities are resolved by CSS
-    /// source order rather than by their order in the attribute, so a plain
-    /// `mb-6` here may or may not win.
+    /// caller needing a different margin uses Tailwind's `!` modifier (`!mb-6`):
+    /// two same-property utilities are resolved by CSS source order rather than
+    /// by their order in the attribute, so a plain `mb-6` may or may not win.
     pub fn class(mut self, classes: impl Into<String>) -> Self {
         self.extra_classes = classes.into();
         self
@@ -162,8 +150,6 @@ mod tests {
 
     #[test]
     fn danger_is_the_only_variant_that_interrupts() {
-        // An assertive live region is for a failure the reader has to hear
-        // about, not for a block that states a consequence.
         assert_eq!(AlertVariant::Danger.aria_role(), Some("alert"));
         assert_eq!(AlertVariant::Info.aria_role(), None);
         assert_eq!(AlertVariant::Success.aria_role(), None);
@@ -232,10 +218,8 @@ mod tests {
 
     #[test]
     fn the_tile_carries_its_own_bottom_margin() {
-        // Every production call site set one and sixteen of the seventeen chose
-        // `mb-4`, so it belongs here rather than being written out per call.
-        // Asserted on the rendered class list because that is the only place
-        // the CSS and the markup meet — `.alert` is what carries it.
+        // Asserted against the stylesheet because that is the only place the CSS
+        // and the markup meet: `.alert` is what carries the margin.
         let out = alert("x").build().into_string();
         assert!(out.contains(r#"class="alert alert-info""#), "{out}");
         let css = include_str!("alert.css");

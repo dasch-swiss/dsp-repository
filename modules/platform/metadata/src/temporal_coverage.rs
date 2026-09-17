@@ -59,7 +59,6 @@ pub fn resolve_in(
 ) -> Option<Resolution> {
     let name = coverage_name(tc);
 
-    // 1. ChronOntology URL -> timespan.
     if let TemporalCoverage::Reference(ref_data) = tc {
         if !ref_data.url.is_empty() {
             if let Some(range) = chronontology::timespan_for_in(periods, &ref_data.url) {
@@ -68,7 +67,6 @@ pub fn resolve_in(
         }
     }
 
-    // 2. Enrichment table, keyed by the display name.
     if let Some(ref key) = name {
         if let Some(enriched) = temporal_enrichment::enriched_for_in(enrichment, key) {
             return Some(Resolution {
@@ -78,7 +76,6 @@ pub fn resolve_in(
         }
     }
 
-    // 3. Name-only fallback.
     name.map(|n| Resolution { date: String::new(), date_information: Some(n) })
 }
 

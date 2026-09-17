@@ -1,4 +1,4 @@
-//! Loading-spinner tile (promoted from DPE).
+//! Loading-spinner tile.
 
 use maud::{html, Markup};
 

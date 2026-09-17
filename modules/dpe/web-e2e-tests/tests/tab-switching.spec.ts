@@ -25,7 +25,6 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
     });
     await contributorsTab.click();
 
-    // Wait for the tab panel content to update via SSE
     await expect(page.locator("#tab-panel")).not.toBeEmpty();
     // Short wait to ensure no navigation event fires
     await page.waitForTimeout(500);
@@ -54,7 +53,6 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
   test("scroll position preserved after tab switch", async ({ page }) => {
     await page.goto(PROJECT_URL);
 
-    // Scroll down
     await page.evaluate(() => window.scrollTo(0, 200));
     const scrollBefore = await page.evaluate(() => window.scrollY);
     expect(scrollBefore).toBeGreaterThan(0);
@@ -64,7 +62,6 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
     });
     await contributorsTab.click();
 
-    // Wait for tab panel to update
     await expect(page.locator('[role="tab"][aria-selected="true"]')).toHaveText(
       /Contributors/,
     );
@@ -86,7 +83,6 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
     });
     await contributorsTab.click();
 
-    // Wait for URL to be updated via history.replaceState
     await page.waitForFunction(
       () => window.location.search.includes("tab=contributors"),
       PROJECT_SHORTCODE,
@@ -121,12 +117,10 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
     });
     await contributorsTab.click();
 
-    // Wait for URL update
     await page.waitForFunction(() =>
       window.location.search.includes("tab=contributors"),
     );
 
-    // Reload the page
     await page.reload();
 
     const activeTab = page.locator('[role="tab"][aria-selected="true"]');
@@ -152,10 +146,8 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
     await contributorsTab.click();
     await page.waitForLoadState("domcontentloaded");
 
-    // The URL should contain the tab query parameter
     expect(page.url()).toContain("tab=contributors");
 
-    // The correct tab should be active in the server-rendered output
     const activeTab = page.locator('[role="tab"][aria-selected="true"]');
     await expect(activeTab).toHaveText(/Contributors/);
 
@@ -180,7 +172,6 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
   test("rapid tab clicking does not cause stale content", async ({ page }) => {
     await page.goto(PROJECT_URL);
 
-    // Click tabs rapidly in sequence
     const overviewTab = page.locator('[role="tab"]', { hasText: "Overview" });
     const contributorsTab = page.locator('[role="tab"]', {
       hasText: "Contributors",
@@ -190,12 +181,10 @@ test.describe("Tab switching — Datastar SSE interactions", () => {
     await overviewTab.click();
     await contributorsTab.click();
 
-    // Wait for the final state to settle
     await expect(page.locator('[role="tab"][aria-selected="true"]')).toHaveText(
       /Contributors/,
     );
 
-    // Verify URL matches the last clicked tab
     await page.waitForFunction(() =>
       window.location.search.includes("tab=contributors"),
     );

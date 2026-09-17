@@ -1,5 +1,3 @@
-//! Repeatable list showcase.
-
 use maud::{html, Markup};
 use mosaic_tiles::repeatable_list::repeatable_list;
 use mosaic_tiles::text_field::text_field;

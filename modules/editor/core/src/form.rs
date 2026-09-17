@@ -1131,7 +1131,6 @@ mod tests {
 
     #[test]
     fn entries_finds_the_language_tags_a_field_actually_carries_with_their_texts() {
-        // The tags come from the body because the form renders whatever the
         let body = body(&[
             ("description.de", "Beschreibung"),
             ("description.en", "Description"),
@@ -1751,7 +1750,6 @@ mod tests {
 
     #[test]
     fn a_role_keeps_its_stored_casing_and_its_stored_spaces() {
-        // An untouched save must not rewrite `Data curator` to `Data Curator`.
         let mut draft = draft();
         draft.set(
             "attributions",

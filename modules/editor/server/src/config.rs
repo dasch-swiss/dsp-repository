@@ -943,7 +943,6 @@ mod tests {
 
     #[test]
     fn load_with_defaults() {
-        // Without any env vars or config file, defaults should work.
         figment::Jail::expect_with(|_| {
             let config = EditorConfig::load().expect("default config should load");
             assert_eq!(config.env, "DEV");

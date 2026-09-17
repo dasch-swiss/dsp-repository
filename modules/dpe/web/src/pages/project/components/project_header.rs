@@ -131,14 +131,12 @@ mod tests {
         // sample_project has a primary url → "Discover Project Data" button.
         assert!(out.contains(r#"href="https://example.org/project""#), "{out}");
         assert!(out.contains("Discover Project Data"), "{out}");
-        // Both header buttons leave DPE, so they open in a new tab.
         assert!(out.contains(r#"target="_blank""#), "{out}");
         assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
     }
 
     #[test]
     fn omits_the_img_entirely_when_the_project_has_no_cover() {
-        // No cover means no `<img>` at all, as on the card.
         let out = render_project_header(&sample_project(), None).into_string();
         assert!(!out.contains("<img"), "no img element: {out}");
         assert!(!out.contains("/assets/images/"), "no cover URL: {out}");
@@ -151,7 +149,6 @@ mod tests {
         // `flex`, not the `hidden` class list the with-cover branch emits. Matched on the
         // class list rather than the bare word, which also occurs in `aria-hidden`.
         assert!(!out.contains("justify-center hidden"), "placeholder is not hidden: {out}");
-        // The rest of the hero is unaffected.
         assert!(out.contains("Sample Research Project"), "{out}");
         assert!(out.contains("Discover Project Data"), "{out}");
     }
@@ -180,8 +177,8 @@ mod tests {
 
     #[test]
     fn omits_the_image_credit_when_there_is_no_cover_to_credit() {
-        // See the matching card test: cover and credit are independent fields
-        // onboarded in separate steps, so a credit with no image is reachable.
+        // See the matching card test: cover and credit are independent fields, so
+        // a credit with no image is reachable.
         let proj = Project {
             image_credit: Some("© Fabrice Ducrest, Unil".to_string()),
             ..sample_project()

@@ -151,7 +151,7 @@ pub struct Record {
 }
 
 impl Record {
-    // Returns the project-level ARK URL, e.g. `https://ark.dasch.swiss/ark:/72163/1/0803`.
+    /// Returns the project-level ARK URL, e.g. `https://ark.dasch.swiss/ark:/72163/1/0803`.
     pub fn project_ark(&self) -> String {
         format!("{}/{}{}", self.pid.host, ARK_PATH_PREFIX, self.pid.shortcode)
     }
@@ -282,7 +282,9 @@ mod tests {
         assert_eq!(file.date_created.as_deref(), Some("2026-08-25T10:25:33.455394630Z"));
     }
 
-    /// Delete this once the exports are regenerated and the fields are required.
+    /// Production exports still predate the technical-metadata fields, so they
+    /// arrive absent. When they no longer do, the fields become required and this
+    /// test goes with them.
     #[test]
     fn file_without_technical_metadata_still_deserialises() {
         let json = r#"{
@@ -300,9 +302,9 @@ mod tests {
     }
 
     /// The production 0803 export shape: every technical field but `mimeType`.
-    /// A missing `mimeType` must not fail the record — before it was optional a
-    /// single such file made `serde_json` reject the whole dump, and the loader
-    /// silently served zero records for the project.
+    /// A missing `mimeType` must not fail the record: `serde_json` rejects the
+    /// whole dump on one bad file, and the loader then serves zero records for
+    /// the project.
     #[test]
     fn file_without_a_mime_type_deserialises() {
         let json = r#"{
@@ -320,8 +322,7 @@ mod tests {
         assert_eq!(file.file_size, Some(28947082));
     }
 
-    /// A whole dump survives one file lacking `mimeType` — the regression that
-    /// made project 0803 invisible.
+    /// A whole dump survives one file lacking `mimeType`.
     #[test]
     fn a_record_list_survives_a_file_without_a_mime_type() {
         let json = r#"[{

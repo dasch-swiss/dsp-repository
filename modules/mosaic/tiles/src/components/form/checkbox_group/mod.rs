@@ -1,28 +1,23 @@
 //! Checkbox group tile: a legend, one checkbox per choice, and an optional hint
 //! and error — a field whose value is a set.
 //!
-//! `checkbox_group(name, legend)` returns a [`CheckboxGroupBuilder`]; add
-//! choices with [`CheckboxGroupBuilder::option`], mark the current ones with
-//! [`CheckboxGroupBuilder::checked`], then splice it into `html!` (it implements
-//! [`Render`]) or call `.build()`.
+//! See `docs/src/mosaic/component-api-conventions.md`.
 //!
 //! ## Every checkbox posts under the group's name
 //!
 //! That is what makes the group one field rather than several: two checked
 //! choices send the name twice, and the form decoder reads repeated keys as a
-//! list. It is also why nothing here uses an index in the name — `typeOfData`
-//! twice is a list of two; `typeOfData[0]` and `typeOfData[1]` are two fields
-//! whose indices go stale as soon as a choice list changes.
+//! list. Nothing here uses an index in the name, whose values would go stale as
+//! soon as a choice list changes.
 //!
 //! ## An empty set posts nothing at all
 //!
 //! Unchecked checkboxes are not submitted, so a group with nothing checked is
-//! *absent* from the body rather than present and empty. A decoder that reads
-//! "absent" as "leave the stored value alone" therefore cannot tell "the
-//! depositor cleared this field" from "this section did not carry it" — the
-//! caller has to render a same-named empty marker alongside the group, or scope
-//! the clear to the fields the section is known to own. Stated here because the
-//! tile cannot fix it: it is how HTML forms work.
+//! *absent* from the body rather than present and empty. A decoder reading
+//! "absent" as "leave the stored value alone" cannot tell "the depositor cleared
+//! this field" from "this section did not carry it", so the caller has to render
+//! a same-named empty marker alongside the group, or scope the clear to the
+//! fields the section owns. The tile cannot fix it: it is how HTML forms work.
 
 use maud::{html, Markup, Render};
 
@@ -78,12 +73,11 @@ impl CheckboxGroupBuilder {
 
     /// Mark the current values.
     ///
-    /// A value matching no choice is ignored rather than added: the group offers
-    /// what it offers, and inventing a control for a stored value would let a
-    /// field the contract no longer has ride back out through the form. Making
-    /// such a value *visible* is the caller's decision, because only the caller
-    /// knows whether it is a retired option to warn about or data to carry
-    /// silently.
+    /// A value matching no choice is ignored rather than added: inventing a
+    /// control for a stored value would let a field the contract no longer has
+    /// ride back out through the form. Making such a value *visible* is the
+    /// caller's decision, since only the caller knows whether it is a retired
+    /// option to warn about or data to carry silently.
     pub fn checked<V: Into<String>>(mut self, values: impl IntoIterator<Item = V>) -> Self {
         self.checked = values.into_iter().map(Into::into).collect();
         self
@@ -101,8 +95,6 @@ impl CheckboxGroupBuilder {
         self
     }
 
-    /// The id the legend, hint and error hang off, and the stem each choice's own
-    /// id is derived from.
     fn resolved_id(&self) -> &str {
         self.id.as_deref().unwrap_or(&self.name)
     }
@@ -160,8 +152,6 @@ mod tests {
 
     #[test]
     fn every_choice_posts_under_the_group_name_with_no_index() {
-        // Repeated keys under one name are what the decoder reads as a list. An
-        // index in the name would go stale the moment the choice list changes.
         let out = kinds().build().into_string();
         assert_eq!(out.matches(r#"name="typeOfData""#).count(), 3, "{out}");
         assert!(!out.contains("typeOfData[0]"), "{out}");
@@ -178,8 +168,6 @@ mod tests {
 
     #[test]
     fn a_current_value_that_is_not_on_offer_adds_no_control() {
-        // Inventing a control would let a value the contract no longer has ride
-        // back out through the form as though it had been offered.
         let out = kinds().checked(["Software"]).build().into_string();
         assert!(!out.contains("Software"), "{out}");
         assert_eq!(out.matches("<input").count(), 3, "{out}");
@@ -195,7 +183,6 @@ mod tests {
 
     #[test]
     fn an_error_is_described_by_the_fieldset_not_repeated_on_every_control() {
-        // One group error announced once per choice is the failure this avoids.
         let out = kinds()
             .hint("Pick every kind the dataset holds.")
             .error("Pick at least one kind of data.")
@@ -220,7 +207,7 @@ mod tests {
     #[test]
     fn an_explicit_id_moves_the_choice_ids_with_it() {
         // Two groups collecting the same field on one page would otherwise share
-        // every choice id, and a duplicate id mislabels one of them.
+        // every choice id.
         let out = kinds().with_id("dataset-kinds").build().into_string();
         assert!(out.contains(r#"for="dataset-kinds-0""#), "{out}");
         assert!(out.contains(r#"id="dataset-kinds-error""#), "{out}");

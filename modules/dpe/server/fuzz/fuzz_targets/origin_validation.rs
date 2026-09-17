@@ -3,9 +3,7 @@
 use platform_telemetry::origin::is_allowed_origin;
 use libfuzzer_sys::fuzz_target;
 
-// Fuzz the origin validation function used by the telemetry collector.
-// Goal: ensure no panics, and that only properly-structured dasch.swiss
-// subdomains and localhost are accepted.
+// Only properly-structured dasch.swiss subdomains and localhost may be accepted.
 fuzz_target!(|data: &[u8]| {
     let Ok(input) = std::str::from_utf8(data) else {
         return;

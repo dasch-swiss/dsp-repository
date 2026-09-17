@@ -1,5 +1,3 @@
-//! Card showcase.
-
 use maud::{html, Markup, Render};
 use mosaic_tiles::button::{button, ButtonVariant};
 use mosaic_tiles::card::{card, card_body, card_footer, card_header, CardVariant};

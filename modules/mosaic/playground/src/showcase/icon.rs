@@ -1,5 +1,3 @@
-//! Icon showcase.
-
 use maud::{html, Markup};
 use mosaic_tiles::icon::{
     icon, Clock, CopyPaste, Data, Document, DownloadFile, Flag, Grid, Hamburger, Help, IconChevronDown,

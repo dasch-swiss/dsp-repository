@@ -30,7 +30,6 @@ pub fn mobile_filters_button(
                 aria-hidden="true"
                 tabindex="-1"
                 class="fixed inset-0 bg-black/40 z-40 lg:hidden" {}
-            // Panel
             div class="fixed right-0 top-0 bottom-0 w-full md:w-96 bg-white z-50 overflow-y-auto lg:hidden"
             {
                 div class="relative p-4" {

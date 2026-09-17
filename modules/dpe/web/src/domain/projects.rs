@@ -87,7 +87,6 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
     let filtered_projects: Vec<&Project> = projects
         .iter()
         .filter(|project| {
-            // Status filter
             let is_ongoing = project.status == ProjectStatus::Ongoing;
             let is_finished = project.status == ProjectStatus::Finished;
             let status_match = match (query.ongoing, query.finished) {
@@ -95,7 +94,6 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
                 _ => (query.ongoing() && is_ongoing) || (query.finished() && is_finished),
             };
 
-            // Search filter
             let search_match = if search_lower.is_empty() {
                 true
             } else {
@@ -105,7 +103,6 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
                     || project.status.as_str().contains(&search_lower)
             };
 
-            // Type of data filter
             let type_match = if type_of_data_filter.is_empty() {
                 true
             } else {
@@ -116,7 +113,6 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
                     .unwrap_or(false)
             };
 
-            // Data language filter
             let language_match = if data_language_filter.is_empty() {
                 true
             } else {
@@ -127,7 +123,6 @@ pub fn filter_and_paginate(projects: &[Project], query: &super::project::Project
                     .unwrap_or(false)
             };
 
-            // Access rights filter
             let access_rights_match = if access_rights_filter.is_empty() {
                 true
             } else {
@@ -178,7 +173,6 @@ pub fn get_project(shortcode: &str) -> Option<Project> {
     // resolve to the same project.
     project.clusters = dpe_core::cluster_cache::clusters_for_shortcode(&canonical_shortcode);
 
-    // Resolve collection IDs stored on the cached project.
     let data_path = PathBuf::from(get_data_dir());
     let collections_dir = data_path.join("collections");
     project.collections = project

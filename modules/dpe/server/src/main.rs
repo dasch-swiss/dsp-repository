@@ -243,19 +243,13 @@ async fn serve() -> ExitCode {
         None
     };
 
-    // Initialize OpenTelemetry tracing subscriber.
-    // Reads OTEL_* env vars automatically. Falls back to no-op export when
-    // OTEL_EXPORTER_OTLP_ENDPOINT is not set (safe for local development).
-    // Log level is controlled via RUST_LOG.
+    // Reads OTEL_* env vars automatically, falling back to no-op export when
+    // OTEL_EXPORTER_OTLP_ENDPOINT is not set. Log level comes from RUST_LOG.
     //
-    // Format depends on where stdout points. Attached to a terminal, use the
-    // pretty formatter: one indented block per event with a colour-coded level
-    // (ERROR red, WARN yellow, INFO green) and the source location, which is
-    // what a developer wants when reading the dev server's output. Redirected
-    // to a file, pipe or container runtime, stay on single-line JSON so Loki
-    // keeps parsing it. `NO_COLOR` (https://no-color.org) forces JSON too: the
-    // pretty formatter always emits ANSI, so honouring the variable means not
-    // selecting it.
+    // The format follows where stdout points: the pretty formatter on a
+    // terminal, single-line JSON when redirected to a file, pipe or container
+    // runtime, so Loki keeps parsing it. `NO_COLOR` (https://no-color.org)
+    // forces JSON too, because the pretty formatter always emits ANSI.
     let human_readable = std::io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none();
     let tracing_config = if human_readable {
         // `production()` disables line numbers; pretty output is worth much
@@ -303,7 +297,6 @@ async fn serve() -> ExitCode {
         None
     };
 
-    // Load DPE-specific configuration (defaults → dpe.toml → DPE_* env vars)
     let dpe_config = config::DpeConfig::load().expect("failed to load DPE configuration");
     tracing::info!(data_dir = %dpe_config.data_dir.display(), "DPE configuration loaded");
 
@@ -311,7 +304,7 @@ async fn serve() -> ExitCode {
         tracing::info!(fathom_site_id = %site_id, "Fathom Analytics enabled");
     }
 
-    // Set data directory for dpe-core (thread-safe OnceLock, no env mutation)
+    // A thread-safe OnceLock rather than env mutation.
     dpe_core::set_data_dir(dpe_config.data_dir.to_str().expect("data_dir path must be valid UTF-8"));
 
     // The same directory ServeDir serves, so a cover present under it is reachable at
@@ -322,7 +315,6 @@ async fn serve() -> ExitCode {
     dpe_api_oai::set_base_url(&dpe_config.oai_base_url);
     tracing::info!(oai_base_url = %dpe_config.oai_base_url, "OAI-PMH base URL set");
 
-    // Set placeholder visibility flag for dpe-core
     dpe_core::set_show_placeholder_values(dpe_config.show_placeholder_values);
     if dpe_config.show_placeholder_values {
         tracing::info!("Placeholder values (MISSING/CALCULATED) will be shown in the UI");
@@ -330,7 +322,6 @@ async fn serve() -> ExitCode {
 
     tokio::task::spawn_blocking(dpe_core::record_cache::all_records);
 
-    // Listen address: DPE_SITE_ADDR → default 127.0.0.1:4000.
     let addr: std::net::SocketAddr = std::env::var("DPE_SITE_ADDR")
         .unwrap_or_else(|_| "127.0.0.1:4000".to_string())
         .parse()
@@ -469,7 +460,6 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
     let mut person_count = 0;
     let mut org_count = 0;
 
-    // Validate projects
     let projects_dir = data_dir.join("projects");
     // Every contributor id every project references, cross-referenced against
     // `persons/` and `organizations/` once the whole corpus has been read.
@@ -529,7 +519,6 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
         errors.push(format!("projects directory not found: {}", projects_dir.display()));
     }
 
-    // Validate records
     let records_dir = data_dir.join("records");
     if records_dir.is_dir() {
         if let Ok(entries) = fs::read_dir(&records_dir) {
@@ -550,7 +539,6 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
         }
     }
 
-    // Validate persons
     let persons_dir = data_dir.join("persons");
     let mut known_person_ids = std::collections::HashSet::new();
     if persons_dir.is_dir() {
@@ -588,7 +576,6 @@ fn collect_validation_errors(data_dir: &std::path::Path) -> ValidationReport {
         }
     }
 
-    // Validate organizations
     let orgs_dir = data_dir.join("organizations");
     let mut known_org_ids = std::collections::HashSet::new();
     if orgs_dir.is_dir() {
@@ -715,9 +702,8 @@ mod validate_tests {
     /// The wording is a contract in two directions: `just validate-data` is read
     /// by a human deciding what to fix, and `modules/dpe/CLAUDE.md` quotes the
     /// temporal-coverage message as the instruction for adding an enrichment
-    /// row. Snapshotting the recipe's output does not protect it — the committed
-    /// corpus is valid, so that output is two lines and exercises no error
-    /// branch at all.
+    /// row. Snapshotting the recipe's output does not protect it, since the
+    /// committed corpus is valid and exercises no error branch.
     struct Fixture {
         dir: std::path::PathBuf,
     }
@@ -735,9 +721,7 @@ mod validate_tests {
 
         /// A data dir with nothing in it.
         fn bare() -> Self {
-            // Same reasoning as `validate_with`: an atomic counter rather than
-            // anything derived from the contents, so two same-shaped fixtures
-            // cannot collide and let one test's cleanup race another's write.
+            // Same reasoning as `validate_with`.
             static CALL_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
             let call_id = CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             let dir = std::env::temp_dir().join(format!("dpe_validate_wording_{}_{call_id}", std::process::id()));
@@ -897,14 +881,9 @@ mod validate_tests {
     fn a_name_resolved_in_one_project_no_longer_masks_a_gap_in_another() {
         // Two projects share the coverage name "Trajanic": one carries it as a
         // ChronOntology reference that resolves, the other as unenriched free
-        // text, which is a genuine gap.
-        //
-        // The corpus-wide de-duplication used to be keyed on every *named* entry
-        // rather than every *reported* one, so reading the resolving project
-        // first marked the name checked and the real gap went unreported —
-        // `validate` printed "All data files are valid." and exited 0. Reported
-        // values are now what de-duplicates, so the gap is reported once no
-        // matter which file is read first.
+        // text, which is a genuine gap. De-duplication is keyed on reported
+        // values, not named ones, so the gap is reported once no matter which
+        // file is read first.
         let fixture = Fixture::new()
             .with(
                 "projects/0000_resolves.json",
@@ -945,8 +924,7 @@ mod validate_tests {
                 "organizations/unibas.json",
                 r#"{"id": "unibas", "name": "University of Basel", "url": "https://unibas.ch"}"#,
             )
-            // Records are counted per entry, not per file: the summary line says
-            // "50994 records" over 85 files.
+            // Records are counted per entry, not per file.
             .with("records/0000.json", "[]")
             .with(
                 "records/0001.json",

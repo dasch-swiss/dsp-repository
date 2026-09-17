@@ -1,20 +1,15 @@
 //! Radio group tile: a legend, one radio per choice, and an optional hint and
 //! error — a field with exactly one value, chosen from a short visible list.
 //!
-//! `radio_group(name, legend)` returns a [`RadioGroupBuilder`]; add choices with
-//! [`RadioGroupBuilder::option`], mark the current one with
-//! [`RadioGroupBuilder::selected`], then splice it into `html!` (it implements
-//! [`Render`]) or call `.build()`.
+//! See `docs/src/mosaic/component-api-conventions.md`.
 //!
 //! ## When this rather than a select
 //!
 //! A [`select`](super::select) hides its choices until opened, which suits a
-//! closed list nobody needs to compare — a status, an access-rights value. A
-//! radio group shows all of them at once, which is what a *discriminant* wants:
-//! the editor's variant choosers ("is this coverage an authority reference or
-//! free text?") change which fields below them apply, so the reader has to see
-//! the alternatives to understand the question. Keep the list short; a long one
-//! is a select.
+//! closed list nobody needs to compare. A radio group shows all of them at once,
+//! which is what a *discriminant* wants: a chooser that changes which fields
+//! below it apply needs the reader to see the alternatives to understand the
+//! question. Keep the list short; a long one is a select.
 //!
 //! ## A radio group cannot be returned to unset
 //!
@@ -104,8 +99,6 @@ impl RadioGroupBuilder {
         self
     }
 
-    /// The id the legend, hint and error hang off, and the stem each choice's own
-    /// id is derived from.
     fn resolved_id(&self) -> &str {
         self.id.as_deref().unwrap_or(&self.name)
     }

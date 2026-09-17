@@ -1,26 +1,19 @@
 //! Textarea tile: a label, a multi-line `<textarea>`, and an optional hint and
 //! error, wired together as one group.
 //!
-//! `textarea(name, label)` returns a [`TextareaBuilder`]; set options with
-//! chained methods and either splice it into `html!` directly (it implements
-//! [`Render`]) or call `.build()` for a standalone `Markup`. See
-//! `docs/src/mosaic/component-api-conventions.md`.
-//!
-//! Shares [`FieldShell`](super::shell::FieldShell) and the `field-*` classes
-//! with [`text_field`](super::text_field), so a multi-line field is the same
-//! control with a different box rather than a second look.
+//! See `docs/src/mosaic/component-api-conventions.md`. Shares
+//! [`FieldShell`](super::shell::FieldShell) and the `field-*` classes with
+//! [`text_field`](super::text_field), so a multi-line field is the same control
+//! with a different box rather than a second look.
 //!
 //! ## The leading newline
 //!
 //! A `<textarea>` holds its value as element content, not in an attribute, and
 //! the HTML parser **drops a newline immediately after the start tag**
-//! (§13.2.5, "A single U+000A LINE FEED character may be placed immediately
-//! after the start tag"). A value that itself begins with a newline therefore
-//! comes back one newline shorter than it went out. That is invisible until a
-//! depositor opens a description that starts with a blank line, saves, and finds
-//! the blank line gone — and it compounds, because every save loses another one.
-//! [`TextareaBuilder::markup`] emits an extra newline in that case, which the
-//! parser then eats, leaving the value intact.
+//! (§13.2.5). A value beginning with a newline therefore comes back one newline
+//! shorter than it went out, and it compounds: every save loses another one.
+//! [`TextareaBuilder::markup`] emits a spare newline in that case, which the
+//! parser eats, leaving the value intact.
 
 use maud::{html, Markup, PreEscaped, Render};
 
@@ -101,14 +94,11 @@ impl TextareaBuilder {
         self
     }
 
-    /// Mark the control required.
     pub fn required(mut self) -> Self {
         self.required = true;
         self
     }
 
-    /// The id the label, hint and error point at: the explicit one if set, else
-    /// the name.
     fn resolved_id(&self) -> &str {
         self.id.as_deref().unwrap_or(&self.name)
     }
@@ -122,10 +112,8 @@ impl TextareaBuilder {
             error: self.error.as_ref(),
         };
         let described_by = shell.described_by();
-        // See the module docs: the parser eats one newline after the start tag,
-        // so a value beginning with one needs a spare in front of it. The spare
-        // is `PreEscaped` because a newline has no escaped form; the value
-        // itself still goes through `Render` and is escaped.
+        // See the module docs. The spare is `PreEscaped` because a newline has
+        // no escaped form; the value itself still goes through `Render`.
         let leading_newline = self.value.as_deref().is_some_and(|v| v.starts_with('\n'));
         let control = html! {
             textarea
@@ -203,9 +191,6 @@ mod tests {
 
     #[test]
     fn a_value_beginning_with_a_newline_survives_the_parser() {
-        // The parser drops one newline after the start tag, so the value needs a
-        // spare in front of it or a description opening with a blank line loses
-        // it on every save.
         let out = textarea("description", "Description")
             .value("\nIndented.")
             .build()

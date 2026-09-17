@@ -1,7 +1,7 @@
-/// In-process cache for persons.
-///
-/// All persons are loaded from disk once on first access and held in a
-/// HashMap keyed by person ID for O(1) lookup.
+//! In-process cache for persons.
+//!
+//! All persons are loaded from disk once on first access and held in a
+//! HashMap keyed by person ID for O(1) lookup.
 use std::collections::HashMap;
 use std::sync::OnceLock;
 

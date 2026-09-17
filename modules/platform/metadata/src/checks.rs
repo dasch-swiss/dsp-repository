@@ -1,45 +1,37 @@
 //! The rules `dpe-server validate` applies to a single project, callable.
 //!
-//! `validate` grew these rules inline in a binary crate, where nothing could
-//! depend on them, and reported every result as a string keyed by the file it
-//! came from. The editor validates the same project against the same rules but
-//! renders per field, so it needs to know *which member* a finding is about, not
-//! which file.
+//! `dpe-server validate` reports per file; the editor renders the same rules per
+//! field, so a finding names *which member* it is about rather than which file.
 //!
 //! ## What is here and what is not
 //!
-//! Only the rules that need nothing but one project. `validate`'s other checks
-//! are corpus-level — records parse, the data directories exist — and stay in
-//! `dpe-server`, which is the thing that walks a corpus.
+//! Only the rules that need nothing but one project. The corpus-level checks —
+//! records parse, the data directories exist — stay in `dpe-server`, which is the
+//! thing that walks a corpus.
 //!
-//! The rule that a project's JSON parses as [`ProjectRaw`] is not here either,
-//! and cannot be: a checker taking `&ProjectRaw` is downstream of it. It stays
-//! with whoever does the parsing. That is also the honest place for it — serde's
-//! `Path` for an `#[serde(untagged)]` enum names the last variant it tried, not
-//! the one the data meant, so a malformed `funding` reports against
-//! `Funding::Text` regardless and the path would be a lie.
+//! The rule that a project's JSON parses as [`ProjectRaw`] cannot be here: a
+//! checker taking `&ProjectRaw` is downstream of it. It is also the honest place
+//! for it, since serde's `Path` for an `#[serde(untagged)]` enum names the last
+//! variant it tried rather than the one the data meant, so a malformed `funding`
+//! reports against `Funding::Text` regardless.
 //!
 //! ## Why a finding is not a path string
 //!
 //! A finding names a member and, for a repeatable one, an ordinal:
 //! `("temporalCoverage", Some(2))` rather than `"temporalCoverage[2]"`. The
-//! ordinal is a position in document order, which is all this module can
-//! honestly know. It is deliberately not an identity: the editor's form keys
-//! repeatable rows by an opaque server-generated id precisely because an index
-//! shifts when a row is removed, so baking `[2]` into a path string would hand
-//! the form an address it cannot use. The form builds its rows from the same
-//! ordered project, so it can map ordinal to row key itself.
+//! ordinal is a position in document order and deliberately not an identity: the
+//! editor's form keys repeatable rows by an opaque server-generated id precisely
+//! because an index shifts when a row is removed, so `[2]` in a path string would
+//! be an address the form cannot use. The form builds its rows from the same
+//! ordered project, so it maps ordinal to row key itself.
 //!
 //! ## Why the corpus half of the contributor rule is inverted
 //!
-//! `validate` checks that every contributor id resolves to a person or
-//! organization on disk. The editor applies the same rule against the published
-//! corpus *plus* entity proposals that exist only in its database. So this
-//! module reports which ids a project references and where
-//! ([`contributor_refs`]), and leaves "is this id known" to the caller, which is
-//! the only party that knows what its corpus is. Splitting there keeps the
-//! per-project half shared without this crate learning about either caller's
-//! storage.
+//! `validate` checks every contributor id against persons and organizations on
+//! disk; the editor checks the published corpus *plus* entity proposals that
+//! exist only in its database. So this module reports which ids a project
+//! references and where ([`contributor_refs`]) and leaves "is this id known" to
+//! the caller, without learning about either caller's storage.
 
 use std::collections::HashMap;
 

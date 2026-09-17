@@ -84,7 +84,6 @@ mod tests {
         // Page 1 has no `page=` param (omitted when 1).
         assert!(out.contains(r#"href="/dpe/projects""#), "{out}");
         assert!(out.contains(r#"aria-label="Pagination""#), "{out}");
-        // The current page is marked for assistive technology.
         assert!(
             out.contains(r#"aria-current="page""#),
             "current page missing aria-current: {out}"
@@ -108,9 +107,7 @@ mod tests {
     fn disables_next_on_last_page() {
         let query = ProjectQuery { page: Some(3), ..Default::default() };
         let out = project_pagination(3, &query).into_string();
-        // Next is disabled (aria-disabled) on the last page.
         assert!(out.contains(r#"aria-disabled="true""#), "last page disables next: {out}");
-        // The href-less disabled arrow must NOT carry aria-label.
         assert!(
             !out.contains(r#"aria-label="Next page""#),
             "disabled next must not set aria-label: {out}"

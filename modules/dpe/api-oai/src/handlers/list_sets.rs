@@ -6,8 +6,6 @@ use super::{build_error_response, OaiParams};
 use crate::error::OaiError;
 use crate::xml::OaiXmlBuilder;
 
-/// Handles the ListSets verb.
-///
 /// Advertises the static `entityType:*` sets plus a dynamic `project:{shortcode}`
 /// set per known project and a `cluster:{id}` set per cluster.
 pub fn handle_list_sets(params: &OaiParams, repo: &dyn ProjectRepository, clusters: &[ClusterRaw]) -> String {
@@ -23,19 +21,16 @@ pub fn handle_list_sets(params: &OaiParams, repo: &dyn ProjectRepository, cluste
         );
     }
 
-    // We don't support resumption tokens in v1
     if params.resumption_token.is_some() {
         return build_error_response(OaiError::BadResumptionToken, Some("ListSets"));
     }
 
-    // Dynamic project sets: (setSpec, setName) = (project:{shortcode}, project name).
     let project_sets: Vec<(String, String)> = repo
         .get_all()
         .iter()
         .map(|p| (format!("project:{}", p.shortcode), p.name.clone()))
         .collect();
 
-    // Dynamic cluster sets: (setSpec, setName) = (cluster:{id}, cluster name).
     let cluster_sets: Vec<(String, String)> =
         clusters.iter().map(|c| (format!("cluster:{}", c.id), c.name.clone())).collect();
 
@@ -96,12 +91,9 @@ mod tests {
     fn advertises_static_project_and_cluster_sets() {
         let params = make_params();
         let xml = handle_list_sets(&params, &repo(), &clusters());
-        // static sets remain
         assert!(xml.contains("entityType:ProjectCluster"), "got: {}", xml);
         assert!(xml.contains("entityType:ResearchProject"), "got: {}", xml);
-        // dynamic project set with the project name as setName
         assert!(xml.contains("<setSpec>project:0803</setSpec>"), "got: {}", xml);
-        // dynamic cluster set with the cluster name as setName
         assert!(xml.contains("<setSpec>cluster:cluster-001</setSpec>"), "got: {}", xml);
         assert!(
             xml.contains("<setName>EKWS</setName>"),

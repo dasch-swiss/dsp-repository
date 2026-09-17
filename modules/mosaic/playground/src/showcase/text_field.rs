@@ -1,5 +1,3 @@
-//! Text field showcase.
-
 use maud::{html, Markup};
 use mosaic_tiles::text_field::{text_field, InputType};
 use mosaic_tiles::ComponentBuilder;
@@ -101,7 +99,6 @@ fn examples() -> Markup {
     }
 }
 
-/// The showcase renders fields in a column, as a form would.
 fn form_column(content: Markup) -> Markup {
     html! {
         div class="flex max-w-md flex-col gap-4" { (content) }

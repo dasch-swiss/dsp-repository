@@ -6,7 +6,6 @@ use super::{build_error_response, next_page_token, validate_list_params, OaiPara
 use crate::resumption::page_size;
 use crate::xml::OaiXmlBuilder;
 
-/// Handles the ListIdentifiers verb.
 pub fn handle_list_identifiers(
     params: &OaiParams,
     repo: &dyn ProjectRepository,

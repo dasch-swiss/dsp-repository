@@ -36,7 +36,6 @@ mod tests {
     #[test]
     fn includes_header_links() {
         let out = header().into_string();
-        // header_links renders the Help link to the about page.
         assert!(out.contains(r#"href="/dpe/about""#), "{out}");
     }
 }

@@ -224,8 +224,6 @@ mod tests {
         let out = legal_info(&info).into_string();
         assert!(out.contains("/assets/images/cc-licenses/by-4.0.svg"), "{out}");
         assert!(out.contains("(2024-01-01)"), "license date: {out}");
-        // The badge links to creativecommons.org, so it opens in a new tab. Before
-        // DEV-6986 this anchor carried `rel` with no `target`, which does nothing.
         assert!(out.contains(r#"target="_blank""#), "{out}");
         assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
     }

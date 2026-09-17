@@ -30,7 +30,6 @@ impl OaiError {
         }
     }
 
-    /// Returns a human-readable error message.
     pub fn message(&self) -> String {
         match self {
             Self::BadVerb => "Illegal OAI verb".to_string(),

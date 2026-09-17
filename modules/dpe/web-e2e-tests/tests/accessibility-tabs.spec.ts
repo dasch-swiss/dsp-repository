@@ -10,16 +10,13 @@ test.describe("Tab accessibility — ARIA roles and keyboard navigation", () => 
   test("ARIA roles are present on tab components", async ({ page }) => {
     await page.goto(PROJECT_URL);
 
-    // Tab container has role="tablist"
     const tablist = page.locator('[role="tablist"]');
     await expect(tablist).toBeVisible();
 
-    // Individual tabs have role="tab"
     const tabs = page.locator('[role="tab"]');
     const tabCount = await tabs.count();
     expect(tabCount).toBeGreaterThanOrEqual(2); // at minimum: overview + contributors
 
-    // Tab panel has role="tabpanel"
     const tabpanel = page.locator('[role="tabpanel"]');
     await expect(tabpanel).toBeVisible();
   });
@@ -53,7 +50,6 @@ test.describe("Tab accessibility — ARIA roles and keyboard navigation", () => 
     });
     await contributorsTab.click();
 
-    // Wait for SSE update
     await expect(page.locator('[role="tab"][aria-selected="true"]')).toHaveText(
       /Contributors/,
     );
@@ -100,14 +96,12 @@ test.describe("Tab accessibility — ARIA roles and keyboard navigation", () => 
   test("arrow key navigation between tabs", async ({ page }) => {
     await page.goto(PROJECT_URL);
 
-    // Focus the active tab
     const overviewTab = page.locator('[role="tab"]', { hasText: "Overview" });
     await overviewTab.focus();
 
     // Press ArrowRight — focus should move to the next tab
     await page.keyboard.press("ArrowRight");
 
-    // The next tab should now be focused
     const focusedTabText = await page.evaluate(() => {
       const el = document.activeElement;
       return el?.textContent?.trim() ?? "";
@@ -123,7 +117,6 @@ test.describe("Tab accessibility — ARIA roles and keyboard navigation", () => 
   test("no a11y violations after tab switch via SSE", async ({ page }) => {
     await page.goto(PROJECT_URL);
 
-    // Click a non-default tab to trigger SSE patch
     await page.click('[role="tab"]:has-text("Contributors")');
 
     // Wait for the Datastar SSE patch to complete
@@ -131,7 +124,6 @@ test.describe("Tab accessibility — ARIA roles and keyboard navigation", () => 
       /Contributors/,
     );
 
-    // Run axe-core on the post-patch DOM
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
       .analyze();

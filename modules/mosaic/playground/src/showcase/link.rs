@@ -1,5 +1,3 @@
-//! Link showcase.
-
 use maud::{html, Markup, Render};
 use mosaic_tiles::button::ButtonVariant;
 use mosaic_tiles::icon::{icon, IconGitHub, LinkExternal};

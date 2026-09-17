@@ -22,11 +22,9 @@ pub fn has_publications(project: &Project) -> bool {
 /// outer-morphs `#project-tabs` with this output. Keeping one renderer prevents
 /// the two paths from drifting.
 ///
-/// NOTE (DEV-6642): this is a second, DPE-specific tab implementation, separate
-/// from the generic `mosaic_tiles::tabs` tile (a CSS-only radio group). This one
-/// is a Datastar/SSE, URL-addressable tablist with full ARIA + keyboard nav.
-/// The two should probably converge onto one ARIA-complete Mosaic tab component;
-/// see the note in `modules/mosaic/tiles/src/components/tabs/mod.rs`.
+/// NOTE (DEV-6642): a second, DPE-specific tab implementation, separate from
+/// `mosaic_tiles::tabs`. Whether the two converge is the issue's question; see
+/// the matching note in `modules/mosaic/tiles/src/components/tabs/mod.rs`.
 pub fn project_tabs(
     proj: &Project,
     contributors: &[ResolvedContributor],

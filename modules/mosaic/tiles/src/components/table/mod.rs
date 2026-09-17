@@ -1,35 +1,25 @@
 //! Table tile: a horizontally scrollable data table with a required caption,
 //! plus head-cell and cell partials.
 //!
-//! `table(caption)` returns a [`TableBuilder`]; set the head and body rows with
-//! chained methods and either splice it into `html!` directly (it implements
-//! [`Render`]) or call `.build()` for a standalone `Markup`. See
-//! `docs/src/mosaic/component-api-conventions.md`.
+//! See `docs/src/mosaic/component-api-conventions.md`.
 //!
 //! ## Why the caption is required, and a `String` rather than `impl Render`
 //!
-//! The caption does two jobs, and both need it to exist. It is the table's
-//! accessible name, rendered as a visually hidden `<caption>` — a table
-//! announced as "table with 6 columns" and nothing else leaves a screen reader
-//! user to infer what it lists from the first row. And it names the scroll
-//! region described below, which as a `role="region"` must have a name or it is
-//! worse than no landmark at all.
-//!
-//! It is `impl Into<String>` rather than the `impl Render` the other tiles take
-//! because it is reused verbatim as an `aria-label`, and an icon or nested
-//! markup in an accessible name means nothing.
+//! It is the table's accessible name, rendered as a visually hidden `<caption>`
+//! — without it a table announces its column count and nothing else — and it
+//! names the scroll region below, which as a `role="region"` must have a name or
+//! it is worse than no landmark at all. It is `impl Into<String>` rather than
+//! the `impl Render` the other tiles take because it is reused verbatim as an
+//! `aria-label`, where nested markup means nothing.
 //!
 //! ## Why the scroll wrapper is focusable
 //!
-//! A table wider than its column scrolls horizontally, and a scroll container is
-//! not reachable by keyboard on its own everywhere. Measured on an empty
-//! scroller with no `tabindex`, Chromium focuses it; WebKit and Firefox do not.
-//! So the wrapper carries `tabindex="0"` — with it, arrow keys scroll the region
-//! in all three — and, having a tab stop, `role="region"` named by the caption,
-//! so what the reader lands on announces itself rather than being an unlabelled
-//! stop. The cost is one tab stop per table even when it does not overflow; the
-//! alternative is columns a keyboard user cannot reach at all in two engines of
-//! three.
+//! A scroll container is not reachable by keyboard on its own everywhere:
+//! Chromium focuses an untabindexed scroller, WebKit and Firefox do not. So the
+//! wrapper carries `tabindex="0"`, which makes arrow keys scroll the region in
+//! all three, and — having a tab stop — `role="region"` named by the caption, so
+//! what the reader lands on announces itself. The cost is one tab stop per table
+//! even when it does not overflow.
 
 use maud::{html, Markup, Render};
 
@@ -151,8 +141,6 @@ mod tests {
 
     #[test]
     fn the_caption_names_both_the_table_and_its_scroll_region() {
-        // A `role="region"` without a name is worse than no landmark, and a
-        // table with no caption announces its column count and nothing else.
         let out = table("Accounts").build().into_string();
         assert!(out.contains(r#"aria-label="Accounts""#), "{out}");
         assert!(out.contains(r#"<caption class="sr-only">Accounts</caption>"#), "{out}");
@@ -160,9 +148,6 @@ mod tests {
 
     #[test]
     fn the_scroll_wrapper_is_reachable_by_keyboard() {
-        // Measured with Playwright: an untabindexed scroller is focusable in
-        // Chromium but not in WebKit or Firefox, and with `tabindex="0"` the
-        // arrow keys scroll the region in all three.
         let out = table("Accounts").build().into_string();
         assert!(out.contains(r#"class="data-table-scroll""#), "{out}");
         assert!(out.contains(r#"role="region""#), "{out}");
@@ -208,8 +193,6 @@ mod tests {
 
     #[test]
     fn an_empty_table_still_renders_its_sections() {
-        // A table built with no rows is a caller bug, not a render failure; the
-        // shell has to be stable so the caller can see what it produced.
         let out = table("Accounts").build().into_string();
         assert!(out.contains("<thead></thead>"), "{out}");
         assert!(out.contains("<tbody></tbody>"), "{out}");

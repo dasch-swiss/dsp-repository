@@ -15,7 +15,6 @@ pub fn is_valid_traceparent(tp: &str) -> bool {
 }
 
 /// Validate and return a traceparent string reference.
-/// Returns None if the value is absent or invalid.
 pub fn validated_traceparent(tp: &Option<String>) -> Option<&str> {
     tp.as_deref().filter(|s| is_valid_traceparent(s))
 }

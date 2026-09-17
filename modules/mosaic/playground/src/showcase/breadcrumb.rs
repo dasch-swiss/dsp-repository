@@ -1,5 +1,3 @@
-//! Breadcrumb showcase.
-
 use maud::{html, Markup};
 use mosaic_tiles::breadcrumb::{breadcrumb, breadcrumb_current, breadcrumb_item};
 use mosaic_tiles::icon::{icon, Grid, People, Tune};

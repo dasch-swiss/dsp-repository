@@ -1,5 +1,3 @@
-//! Loading showcase.
-
 use maud::{html, Markup};
 use mosaic_tiles::loading::loading;
 

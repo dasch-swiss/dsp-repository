@@ -6,7 +6,6 @@ use super::{build_error_response, OaiParams};
 use crate::error::OaiError;
 use crate::xml::{OaiXmlBuilder, EARLIEST_DATESTAMP};
 
-/// Handles the Identify verb.
 pub fn handle_identify(params: &OaiParams, repo: &dyn ProjectRepository) -> String {
     // Identify does not accept any parameters except verb
     if params.identifier.is_some()
@@ -86,8 +85,8 @@ mod tests {
     #[test]
     fn identify_emits_configured_base_url_in_both_request_and_base_url() {
         // The base URL resolves from the process-global / DPE_OAI_BASE_URL / default
-        // (here the default). It must appear in BOTH the <request> text and <baseURL>,
-        // and must no longer be the obsolete meta.dasch.swiss host.
+        // (here the default). It must appear in BOTH the <request> text and
+        // <baseURL>, and must not be the obsolete meta.dasch.swiss host.
         let params = make_params();
         let repo = InMemoryProjectRepository::new(vec![incunabula_project()]);
         let xml = handle_identify(&params, &repo);

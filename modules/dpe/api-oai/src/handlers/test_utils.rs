@@ -11,7 +11,6 @@ use platform_metadata::project::{
 };
 use platform_metadata::{Organization, Person, Record};
 
-/// In-memory contributor lookup for testing.
 #[derive(Default)]
 pub struct InMemoryContributorLookup {
     persons: HashMap<String, Person>,
@@ -97,7 +96,6 @@ pub fn incunabula_lookup() -> InMemoryContributorLookup {
         .with_organization(incunabula_organization())
 }
 
-/// In-memory repository for testing.
 pub struct InMemoryProjectRepository {
     projects: Vec<Project>,
 }
@@ -259,7 +257,6 @@ pub fn first_0803_record() -> Record {
     record
 }
 
-/// In-memory record repository for testing.
 pub struct InMemoryRecordRepository {
     records: Vec<Record>,
 }

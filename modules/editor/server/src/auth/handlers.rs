@@ -621,7 +621,6 @@ async fn verify(
     match LoginCodeRepository::claim_attempt(&*state.db, code.id, secret::MAX_CODE_ATTEMPTS).await {
         Ok(Attempt::Claimed) => {}
         Ok(Attempt::Exhausted) => {
-            // The attempt limit doing its job.
             outcome("code_invalidated");
             tracing::warn!("a code with its three attempts spent was submitted");
             return Err(());

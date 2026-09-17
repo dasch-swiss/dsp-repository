@@ -1,5 +1,3 @@
-//! Table showcase.
-
 use maud::{html, Markup};
 use mosaic_tiles::link::link;
 use mosaic_tiles::table::{table, table_cell, table_cell_with_class, table_head_cell};

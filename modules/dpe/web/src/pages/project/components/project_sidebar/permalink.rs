@@ -41,14 +41,12 @@ mod tests {
         assert!(out.contains("Permalink"), "{out}");
         // The link target and copy text keep the full, resolvable URL.
         assert!(out.contains(r#"href="https://ark.dasch.swiss/ark:/72163/1/0ABC""#), "{out}");
-        // The ARK resolves outside DPE, so it opens in a new tab.
         assert!(out.contains(r#"target="_blank""#), "{out}");
         assert!(out.contains(r#"rel="noopener noreferrer""#), "{out}");
         assert!(
             out.contains(r#"data-copy-text="https://ark.dasch.swiss/ark:/72163/1/0ABC""#),
             "copy button: {out}"
         );
-        // The visible link text is the bare ARK identifier (like a DOI, no host).
         assert!(out.contains(r#">ark:/72163/1/0ABC<"#), "display bare ark id: {out}");
         assert!(!out.contains(">ark.dasch.swiss"), "host stripped from display: {out}");
         // Underlines on hover, like the other text links (contributors, persons).

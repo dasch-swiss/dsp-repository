@@ -1,8 +1,8 @@
-/// In-process cache for the full project list.
-///
-/// All projects are loaded from disk once on first access and held in memory
-/// for the lifetime of the server process. This avoids re-reading and
-/// re-deserializing every JSON file on every request.
+//! In-process cache for the full project list.
+//!
+//! All projects are loaded from disk once on first access and held in memory
+//! for the lifetime of the server process. This avoids re-reading and
+//! re-deserializing every JSON file on every request.
 use std::collections::HashMap;
 use std::sync::OnceLock;
 

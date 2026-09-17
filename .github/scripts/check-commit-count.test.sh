@@ -148,8 +148,7 @@ test_merge_commit_fails() {
   local rc=$?; rm -rf "$repo"; return $rc
 }
 # The override says "these are several independent changes worth their own
-# lines on main". That is never true of a merge commit, so it must not lift
-# this — it used to, which let merge commits through the gate entirely.
+# lines on main". That is never true of a merge commit, so it must not lift this.
 test_override_does_not_excuse_a_merge() {
   local repo; repo="$(make_merged_repo 1)"
   ( cd "$repo" || exit 1; BASE_REF=base PR_BODY="- [x] allow-many-commits" MAX_COMMITS=1 main )

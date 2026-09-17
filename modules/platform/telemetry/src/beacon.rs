@@ -47,7 +47,6 @@ pub struct WebVitalSignal {
     #[serde(rename = "pageLoadId")]
     pub page_load_id: String,
     pub timestamp: u64,
-    // LCP attribution
     #[serde(rename = "lcpElement")]
     pub lcp_element: Option<String>,
     #[serde(rename = "lcpUrl")]
@@ -60,7 +59,6 @@ pub struct WebVitalSignal {
     pub resource_load_duration: Option<f64>,
     #[serde(rename = "elementRenderDelay")]
     pub element_render_delay: Option<f64>,
-    // INP attribution
     #[serde(rename = "inpTarget")]
     pub inp_target: Option<String>,
     #[serde(rename = "inpType")]
@@ -71,10 +69,8 @@ pub struct WebVitalSignal {
     pub processing_duration: Option<f64>,
     #[serde(rename = "presentationDelay")]
     pub presentation_delay: Option<f64>,
-    // CLS attribution
     #[serde(rename = "clsTarget")]
     pub cls_target: Option<String>,
-    // TTFB attribution
     #[serde(rename = "dnsDuration")]
     pub dns_duration: Option<f64>,
     #[serde(rename = "connectionDuration")]

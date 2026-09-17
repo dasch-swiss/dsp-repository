@@ -22,7 +22,6 @@ mod tests {
 
     #[test]
     fn real_values_always_render() {
-        // A non-placeholder value renders regardless of the global flag.
         assert!(should_render_value("A real project name"));
         assert!(should_render_value("2020-01-01"));
     }

@@ -11,16 +11,11 @@
 //! tab has no single `id`/`data-testid` target, so it does not implement
 //! `ComponentBuilder`; it provides an inherent `.build()` for standalone use.
 //!
-//! NOTE (DEV-6642): this CSS-only radio tile emits no ARIA tab-widget semantics
+//! NOTE (DEV-6642): this tile emits no ARIA tab-widget semantics
 //! (`role="tablist"`/`"tab"`/`"tabpanel"`, `aria-selected`, `aria-controls`), so
-//! screen readers announce it as a radio group, not a tab interface. The DPE
-//! hand-rolls a second, richer tab implementation in
-//! `dpe-web`'s `pages/project/components/project_details_tabs` — a Datastar/SSE,
-//! URL-addressable tablist that *does* carry full ARIA + keyboard nav. These two
-//! should probably converge: grow this tile into the canonical, ARIA-complete
-//! tab component (with a `.selected()` semantic method) and have the DPE consume
-//! it, rather than maintaining two. Deferred — it's a design decision, not a
-//! mechanical change (CSS-radio vs Datastar-morph switching differ).
+//! screen readers announce it as a radio group. `dpe-web`'s
+//! `pages/project/components/project_details_tabs` is a second, ARIA-complete
+//! implementation; whether the two converge is the issue's question.
 //!
 //! ```
 //! use mosaic_tiles::tabs::{tab, tabs};

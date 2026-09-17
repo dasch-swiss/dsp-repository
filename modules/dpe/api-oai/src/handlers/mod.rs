@@ -248,7 +248,6 @@ pub fn validate_list_params(
         .as_deref()
         .ok_or_else(|| OaiError::BadArgument("metadataPrefix argument is required".to_string()))?;
 
-    // Validate metadataPrefix
     if !SUPPORTED_PREFIXES.contains(&prefix) {
         return Err(OaiError::CannotDisseminateFormat);
     }
@@ -299,7 +298,6 @@ fn collect_filtered_records(
     clusters: &[ClusterRaw],
     lookup: &dyn ContributorLookup,
 ) -> Result<Vec<OaiRecord>, OaiError> {
-    // Syntactic parse — an unsupported set or empty value is a badArgument.
     let syntax = parse_set_syntax(set)?;
 
     let oai_records = match syntax {
@@ -322,7 +320,6 @@ fn collect_filtered_records(
             include_records,
         ),
         SetSyntax::Project(shortcode) => {
-            // Existence check: an unknown project shortcode is a badArgument.
             if repo.get_by_shortcode(&shortcode).is_none() {
                 return Err(OaiError::BadArgument(format!("unknown project set: project:{shortcode}")));
             }
@@ -336,7 +333,6 @@ fn collect_filtered_records(
                 .collect()
         }
         SetSyntax::Cluster(id) => {
-            // Existence check: an unknown cluster id is a badArgument.
             let Some(member_shortcodes) = cluster_cache::projects_for_cluster_in(clusters, &id) else {
                 return Err(OaiError::BadArgument(format!("unknown cluster set: cluster:{id}")));
             };

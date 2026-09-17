@@ -1,5 +1,3 @@
-//! Alert showcase.
-
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::link::link;

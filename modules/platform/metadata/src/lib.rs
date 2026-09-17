@@ -25,7 +25,6 @@ pub mod temporal_enrichment;
 pub mod utils;
 pub mod w3cdtf;
 
-// Re-exports for convenience
 pub use checks::{check_project, contributor_refs, ContributorRef, Finding};
 pub use models::AuthorityFileReference;
 pub use organization::{Address, Organization};

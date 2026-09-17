@@ -63,11 +63,12 @@ pub fn to_oai_record(
     clusters: &[ClusterRaw],
     lookup: &dyn ContributorLookup,
 ) -> OaiRecord {
-    let ctx = ResolveContext::new(
-        lookup,
-        dpe_core::chronontology_cache::all_periods(),
-        dpe_core::temporal_enrichment_cache::all_enriched(),
-    );
+    // The temporal tables come from `resolve_inputs`, the one place in DPE that
+    // says what resolution needs, so this endpoint and the landing page cannot
+    // drift apart. The lookup it returns is discarded: handlers take theirs as a
+    // parameter, which is how the tests inject an in-memory double.
+    let (_cached_lookup, periods, enriched) = dpe_core::resolve_inputs();
+    let ctx = ResolveContext::new(lookup, periods, enriched);
     let identifier = if !shared_metadata::is_placeholder(&project.pid) && !project.pid.is_empty() {
         make_oai_identifier_from_pid(&project.pid).unwrap_or_else(|| make_oai_identifier(&project.shortcode))
     } else {

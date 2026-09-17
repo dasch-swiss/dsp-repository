@@ -39,3 +39,25 @@ pub use utils::{
     get_data_dir, get_public_dir, lang_value, language_display_name, set_data_dir, set_public_dir,
     set_show_placeholder_values, show_placeholder_values,
 };
+
+/// Everything resolving a project's metadata needs that DPE owns: the
+/// contributor lookup and the two temporal-coverage tables, all three backed by
+/// the process-global caches.
+///
+/// One function rather than three call sites reaching for three caches, so the
+/// OAI endpoint and the landing page cannot end up resolving against different
+/// inputs. Callers wrap the tuple in a `shared_fair::ResolveContext`; the tuple
+/// itself names only `shared-metadata` types, so `dpe-core` never depends on the
+/// exposure engine.
+pub fn resolve_inputs() -> (
+    &'static dyn shared_metadata::ContributorLookup,
+    &'static std::collections::HashMap<String, shared_metadata::w3cdtf::W3cdtfRange>,
+    &'static std::collections::HashMap<String, shared_metadata::temporal_enrichment::EnrichedDate>,
+) {
+    static LOOKUP: CachedContributorLookup = CachedContributorLookup;
+    (
+        &LOOKUP,
+        chronontology_cache::all_periods(),
+        temporal_enrichment_cache::all_enriched(),
+    )
+}

@@ -375,7 +375,7 @@ async fn serve() -> ExitCode {
     };
 
     // Traced routes, incl. the rate-limited /dpe/oai (limiter scoped to that route).
-    let app = router::build_router(state, &dpe_config.public_dir, router::oai_router(&dpe_config));
+    let app = router::build_router(state, &dpe_config.public_dir, router::rate_limited_router(&dpe_config));
 
     // Dev-only browser live-reload (`dev` feature): wraps the page/static
     // routes declared above; the untraced routes below stay outside it.

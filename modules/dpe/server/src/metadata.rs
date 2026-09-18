@@ -10,11 +10,14 @@
 //! produce byte-identical output. Free text — a name, a title, a description —
 //! never reaches a header at all.
 
-use axum::http::{header, HeaderMap, HeaderValue};
+use axum::extract::{Path, State};
+use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
+use axum::response::{IntoResponse, Response};
 use maud::{html, Markup, PreEscaped};
 use shared_fair::{
-    project_to_dublin_core_meta, project_to_link_set, project_to_schema_org, script_safe_json, LinkSet, ProjectGraph,
-    ResolveContext, SchemaOrgOptions, UrlLayout,
+    project_to_datacite, project_to_datacite_json, project_to_dublin_core_meta, project_to_link_set,
+    project_to_schema_org, representation_to_link_set, script_safe_json, LinkSet, ProjectGraph, ResolveContext,
+    SchemaOrgOptions, UrlLayout,
 };
 use shared_metadata::{ProjectRaw, Record};
 
@@ -27,13 +30,41 @@ use crate::AppState;
 /// `PartRef` per record to emit a hundred, and the writer caps at the same
 /// number, so the cap holds however the graph was built. The complete list is
 /// harvestable from the OAI set `project:{shortcode}`, and the standalone
-/// representation will serve it uncapped.
+/// JSON-LD representation serves it uncapped.
 const HAS_PART_CAP: usize = 100;
 
 /// The two OAI records that describe a project, and the media type of the
 /// envelope `GetRecord` returns them in.
 const OAI_PREFIXES: [&str; 2] = ["oai_datacite", "oai_dc"];
 const OAI_MEDIA_TYPE: &str = "application/xml";
+
+/// The machine-readable representations served beside a landing page, as
+/// `(media type, path suffix)`.
+///
+/// One table, read once by [`url_layout`]. Everything downstream comes from
+/// `UrlLayout.representations`: the representation half of the `describedby`
+/// links and, through `UrlLayout::candidates`, the whole `Accept` candidate
+/// list. So adding a row here links a representation and makes it negotiable in
+/// one edit, and the route table in `router.rs` is the only other place a
+/// suffix appears.
+///
+/// Not the reverse: `describedby` also carries the two OAI records, which are
+/// deliberately never candidates. A harvester is pointed at them; it is never
+/// redirected to them.
+const REPRESENTATIONS: [(&str, &str); 2] = [
+    ("application/ld+json", "metadata.jsonld"),
+    ("application/vnd.datacite.datacite+json", "metadata.datacite.json"),
+];
+
+/// Which row of [`REPRESENTATIONS`] each handler serves.
+const JSON_LD: usize = 0;
+const DATACITE_JSON: usize = 1;
+
+/// Errors on the representation routes are `text/plain` with an empty body.
+/// A client that asked for JSON-LD is a machine, and the content type is how it
+/// learns that what came back is not the document it asked for — a bare status
+/// carrying the representation's own type would invite a parse.
+const PLAIN_TEXT: &str = "text/plain; charset=utf-8";
 
 /// The head markup and response headers for a project's landing page, or
 /// `None` when no project answers to `shortcode`.
@@ -61,8 +92,7 @@ fn render<'a>(
     records: impl IntoIterator<Item = &'a Record>,
     state: &AppState,
 ) -> (Markup, HeaderMap) {
-    let (lookup, periods, enriched) = dpe_core::resolve_inputs();
-    let graph = ProjectGraph::build(raw, &ResolveContext::new(lookup, periods, enriched), records);
+    let graph = build_graph(raw, records);
 
     let urls = url_layout(raw, state);
     let json = script_safe_json(&project_to_schema_org(
@@ -91,6 +121,20 @@ fn render<'a>(
     (markup, link_header(&links, &graph.shortcode))
 }
 
+/// One project's resolved graph, over the records the caller chose to
+/// materialise.
+///
+/// The three call sites differ in nothing else: the landing page passes the
+/// first [`HAS_PART_CAP`] records, the JSON-LD representation passes every one
+/// of them, and DataCite passes none. `ProjectGraph::build` returns an owned
+/// value, so the resolve context — whose `ContributorLookup` carries no `Sync`
+/// bound — is created and dropped inside this call and can reach no await
+/// point.
+fn build_graph<'a>(raw: &ProjectRaw, records: impl IntoIterator<Item = &'a Record>) -> ProjectGraph {
+    let (lookup, periods, enriched) = dpe_core::resolve_inputs();
+    ProjectGraph::build(raw, &ResolveContext::new(lookup, periods, enriched), records)
+}
+
 /// The `Link` header for a link set, or an empty map when the HTTP layer will
 /// not take it.
 ///
@@ -113,6 +157,89 @@ fn link_header(links: &LinkSet, shortcode: &str) -> HeaderMap {
     headers
 }
 
+/// The project's schema.org graph as a standalone JSON-LD document.
+///
+/// Uncapped, unlike the block embedded in the page: `hasPart` lists every
+/// record. For the largest committed project that is a few megabytes, which is
+/// why this route sits behind the per-IP limiter from its first day
+/// (`router.rs`).
+pub(crate) async fn project_json_ld_handler(State(state): State<AppState>, Path(id): Path<String>) -> Response {
+    representation(&id, &state, JSON_LD, |raw, urls| {
+        let records = dpe_core::record_cache::records_for_shortcode(&raw.shortcode);
+        let graph = build_graph(raw, records.iter().copied());
+        project_to_schema_org(&graph, urls, SchemaOrgOptions { has_part_cap: None })
+    })
+    .await
+}
+
+/// The project's DataCite record as kernel-4 JSON, for a harvester that wants
+/// bare DataCite rather than the OAI envelope the `describedby` links to.
+pub(crate) async fn project_datacite_json_handler(State(state): State<AppState>, Path(id): Path<String>) -> Response {
+    representation(&id, &state, DATACITE_JSON, |raw, _urls| {
+        // No records: DataCite carries no part list, so building one would cost
+        // a `PartRef` per record for nothing.
+        let graph = build_graph(raw, std::iter::empty());
+        project_to_datacite_json(&project_to_datacite(&graph))
+    })
+    .await
+}
+
+/// One representation response: the document `write` produces, served at the
+/// media type its own row in [`REPRESENTATIONS`] names, with a `describes` link
+/// back to the landing page.
+///
+/// 400 for a shortcode that could not name a project and 404 for one that names
+/// none, mirroring `project_json_handler` in `fragments.rs`. The landing page's
+/// own always-200 behaviour is deliberately not mirrored: that is a page a
+/// person reads, and this is a document a machine parses.
+///
+/// `write` runs on a blocking thread. Building the graph and serialising it is
+/// CPU-bound with nothing to await — up to 27,026 `PartRef`s and a few
+/// megabytes of JSON — and on a runtime worker it stalls every other request
+/// that worker is driving, `/healthz` included. Nothing it borrows reaches an
+/// await point: the project is a `&'static` cache reference, and the resolve
+/// context lives and dies inside `build_graph`, inside the closure.
+async fn representation(
+    id: &str,
+    state: &AppState,
+    row: usize,
+    write: impl FnOnce(&'static ProjectRaw, &UrlLayout) -> serde_json::Value + Send + 'static,
+) -> Response {
+    if !shared_metadata::project::is_valid_shortcode(id) {
+        return (StatusCode::BAD_REQUEST, plain_text()).into_response();
+    }
+    let Some(raw) = dpe_core::project_cache::project_raw_by_shortcode(id) else {
+        return (StatusCode::NOT_FOUND, plain_text()).into_response();
+    };
+
+    // `describedby`'s other half, built before the work leaves the runtime.
+    let urls = url_layout(raw, state);
+    let mut headers = link_header(&representation_to_link_set(&urls), &raw.shortcode);
+
+    let write_body = move || serde_json::to_string(&write(raw, &urls)).expect("a Value should serialise");
+    let body = match tokio::task::spawn_blocking(write_body).await {
+        Ok(body) => body,
+        Err(error) => {
+            // A panic in the writer, or a runtime shutting down. Either way the
+            // rest of the site is fine, so this request gets a 500 rather than
+            // taking its connection task down with it.
+            tracing::error!(shortcode = %raw.shortcode, %error, "writing a representation failed");
+            return (StatusCode::INTERNAL_SERVER_ERROR, plain_text()).into_response();
+        }
+    };
+
+    // `axum::Json` would hardcode `application/json`. Both documents are served
+    // at their own registered type, read from the same row of `REPRESENTATIONS`
+    // that the `describedby` link and the `Accept` candidate come from, or a
+    // client that negotiated for one would not recognise what it got.
+    headers.insert(header::CONTENT_TYPE, HeaderValue::from_static(REPRESENTATIONS[row].0));
+    (StatusCode::OK, headers, body).into_response()
+}
+
+fn plain_text() -> [(header::HeaderName, HeaderValue); 1] {
+    [(header::CONTENT_TYPE, HeaderValue::from_static(PLAIN_TEXT))]
+}
+
 /// Where this deployment publishes the project.
 ///
 /// The site's URLs come from `DPE_PUBLIC_BASE_URL` and the OAI ones from
@@ -129,7 +256,15 @@ fn url_layout(raw: &ProjectRaw, state: &AppState) -> UrlLayout {
     UrlLayout {
         landing: format!("{}/dpe/projects/{shortcode}", state.public_base_url),
         catalog: format!("{}/dpe/projects", state.public_base_url),
-        representations: Vec::new(),
+        representations: REPRESENTATIONS
+            .iter()
+            .map(|(media_type, suffix)| {
+                (
+                    media_type.to_string(),
+                    format!("{}/dpe/projects/{shortcode}/{suffix}", state.public_base_url),
+                )
+            })
+            .collect(),
         oai_records: OAI_PREFIXES
             .iter()
             .map(|prefix| {
@@ -207,8 +342,12 @@ mod tests {
         Some(element[start..end].to_string())
     }
 
+    /// The two representations this deployment serves, off the site's base URL,
+    /// then the two OAI records, off the OAI endpoint's own. The two base URLs
+    /// differ in `test_state`, as they do on DEV, so neither can be passing by
+    /// being derived from the other.
     #[test]
-    fn the_describedby_targets_are_the_oai_records_of_this_project() {
+    fn the_describedby_targets_are_the_representations_and_the_oai_records() {
         let (_, headers) = rendered(&project());
         let described: Vec<String> = header_links(&headers)
             .into_iter()
@@ -219,6 +358,8 @@ mod tests {
         assert_eq!(
             described,
             vec![
+                "https://example.test/dpe/projects/0001/metadata.jsonld".to_string(),
+                "https://example.test/dpe/projects/0001/metadata.datacite.json".to_string(),
                 format!("https://oai.example.test/dpe/oai?verb=GetRecord&identifier={identifier}&metadataPrefix=oai_datacite"),
                 format!("https://oai.example.test/dpe/oai?verb=GetRecord&identifier={identifier}&metadataPrefix=oai_dc"),
             ]
@@ -241,10 +382,12 @@ mod tests {
         let mut raw = project();
         raw.pid = "https://ark.dasch.swiss/ark:/72163/1/0001&x=1".to_string();
         let (_, headers) = rendered(&raw);
+        // The OAI targets specifically: the representation URLs are built from
+        // the shortcode and carry no PID at all.
         let described = header_links(&headers)
             .into_iter()
-            .find(|link| link.rel == "describedby")
-            .expect("a describedby link");
+            .find(|link| link.rel == "describedby" && link.href.contains("GetRecord"))
+            .expect("a describedby link to an OAI record");
         assert!(described.href.contains("%26x%3D1"), "{}", described.href);
         assert!(!described.href.contains("&x=1"), "{}", described.href);
     }
@@ -299,8 +442,17 @@ mod tests {
     /// The corpus, not a fixture: the casing rule is about the shortcode index
     /// and the project cache agreeing, which only the real data exercises.
     /// `test_state` is what points `dpe-core` at it.
+    ///
+    /// The rate-limited sub-router is built with a passthrough limiter: these
+    /// tests are about what the routes answer, and that the limiter is wired to
+    /// exactly these routes is `router.rs`'s own test. A real `GovernorLayer`
+    /// here would make every assertion depend on how fast the suite runs.
     fn corpus_app() -> axum::Router {
-        crate::router::build_router(test_state(), NO_PUBLIC_DIR.as_ref(), axum::Router::new())
+        crate::router::build_router(
+            test_state(),
+            NO_PUBLIC_DIR.as_ref(),
+            crate::router::rate_limited_router_with(tower::layer::util::Identity::new()),
+        )
     }
 
     async fn get(uri: &str) -> (StatusCode, HeaderMap, String) {
@@ -375,6 +527,130 @@ mod tests {
         assert!(headers.get(header::LINK).is_none(), "{headers:?}");
         assert!(!body.contains("application/ld+json"), "{body}");
         assert!(!body.contains("DC.title"), "{body}");
+    }
+
+    // --- the machine-readable representations ---
+
+    fn content_type(headers: &HeaderMap) -> &str {
+        headers
+            .get(header::CONTENT_TYPE)
+            .expect("a Content-Type")
+            .to_str()
+            .expect("ascii")
+    }
+
+    /// 0803, not 0862: only three committed projects have records at all, and
+    /// the point of this route is the part list the embedded block caps.
+    #[tokio::test]
+    async fn the_json_ld_representation_is_the_uncapped_graph() {
+        let (status, headers, body) = get("/dpe/projects/0803/metadata.jsonld").await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(content_type(&headers), REPRESENTATIONS[JSON_LD].0);
+
+        let doc: serde_json::Value = serde_json::from_str(&body).expect("the body should be JSON");
+        assert_eq!(doc["@type"], "Dataset", "{}", &body[..200.min(body.len())]);
+        assert_eq!(
+            doc["url"], "https://example.test/dpe/projects/0803",
+            "the landing page, from the configured base URL"
+        );
+        // The whole set, where the embedded block stops at HAS_PART_CAP.
+        let parts = doc["hasPart"].as_array().map_or(0, Vec::len);
+        let records = dpe_core::record_cache::records_for_shortcode("0803").len();
+        assert!(records > HAS_PART_CAP, "0803 should have more records than the cap");
+        assert_eq!(parts, records, "hasPart should be uncapped here");
+
+        // The embedded block on the same project's page is the capped one.
+        let (_, _, page) = get("/dpe/projects/0803").await;
+        let at = page.find(r#"<script type="application/ld+json">"#).expect("the script");
+        let embedded = &page[at..page[at..].find("</script>").expect("a closed script") + at];
+        let embedded: serde_json::Value =
+            serde_json::from_str(embedded.split_once('>').expect("the open tag").1).expect("the block should be JSON");
+        assert_eq!(
+            embedded["hasPart"].as_array().map_or(0, Vec::len),
+            HAS_PART_CAP,
+            "the embedded block should still be capped"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_datacite_representation_is_a_datacite_document() {
+        let (status, headers, body) = get("/dpe/projects/0862/metadata.datacite.json").await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(content_type(&headers), REPRESENTATIONS[DATACITE_JSON].0);
+
+        let doc: serde_json::Value = serde_json::from_str(&body).expect("the body should be JSON");
+        assert_eq!(doc["identifiers"][0]["identifierType"], "ARK", "{doc}");
+        assert_eq!(doc["types"]["resourceTypeGeneral"], "Project", "{doc}");
+        assert_eq!(doc["schemaVersion"], "http://datacite.org/schema/kernel-4", "{doc}");
+    }
+
+    /// The other half of the page's `describedby`: each representation says
+    /// which page it is a representation of.
+    #[tokio::test]
+    async fn every_representation_describes_its_landing_page() {
+        for (_, suffix) in REPRESENTATIONS {
+            let (_, headers, _) = get(&format!("/dpe/projects/0862/{suffix}")).await;
+            assert_eq!(
+                header_links(&headers),
+                vec![ParsedLink {
+                    rel: "describes".to_string(),
+                    href: "https://example.test/dpe/projects/0862".to_string(),
+                    media_type: None,
+                }],
+                "{suffix}"
+            );
+        }
+    }
+
+    /// The page links exactly the representations it serves, at exactly the
+    /// media types it serves them at — both sides read the one table.
+    #[tokio::test]
+    async fn the_page_links_every_representation_it_serves() {
+        let (_, headers, _) = get("/dpe/projects/0862").await;
+        let described: Vec<(String, Option<String>)> = header_links(&headers)
+            .into_iter()
+            .filter(|link| link.rel == "describedby")
+            .map(|link| (link.href, link.media_type))
+            .collect();
+        for (media_type, suffix) in REPRESENTATIONS {
+            let url = format!("https://example.test/dpe/projects/0862/{suffix}");
+            assert!(
+                described.contains(&(url.clone(), Some(media_type.to_string()))),
+                "{url} at {media_type} is not linked: {described:?}"
+            );
+            let (status, headers, _) = get(&format!("/dpe/projects/0862/{suffix}")).await;
+            assert_eq!(status, StatusCode::OK, "{suffix}");
+            assert_eq!(content_type(&headers), media_type, "{suffix}");
+        }
+    }
+
+    /// A machine asked for a document; an HTML error page it cannot parse would
+    /// be worse than nothing.
+    #[tokio::test]
+    async fn a_bad_or_unknown_shortcode_is_answered_in_plain_text() {
+        for (segment, expected) in [
+            ("no-such-shortcode!", StatusCode::BAD_REQUEST),
+            ("%22", StatusCode::BAD_REQUEST),
+            ("thisistoolongtobeashortcode", StatusCode::BAD_REQUEST),
+            ("zzzz", StatusCode::NOT_FOUND),
+        ] {
+            for (_, suffix) in REPRESENTATIONS {
+                let (status, headers, body) = get(&format!("/dpe/projects/{segment}/{suffix}")).await;
+                assert_eq!(status, expected, "{segment}/{suffix}");
+                assert_eq!(content_type(&headers), PLAIN_TEXT, "{segment}/{suffix}");
+                assert!(body.is_empty(), "{segment}/{suffix}: {body}");
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn shortcode_casing_changes_no_representation() {
+        for (_, suffix) in REPRESENTATIONS {
+            let (_, lower_headers, lower) = get(&format!("/dpe/projects/081c/{suffix}")).await;
+            let (_, upper_headers, upper) = get(&format!("/dpe/projects/081C/{suffix}")).await;
+            assert_eq!(lower, upper, "{suffix}");
+            assert_eq!(lower_headers.get(header::LINK), upper_headers.get(header::LINK), "{suffix}");
+        }
     }
 
     /// The path segment reaches the handler percent-decoded, so these are the

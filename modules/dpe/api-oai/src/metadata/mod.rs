@@ -11,8 +11,8 @@ mod types;
 use dpe_core::cluster_cache::clusters_for_shortcode_in;
 use dpe_core::ClusterRaw;
 use shared_fair::{
-    project_to_datacite, project_to_dublin_core, record_to_datacite, record_to_dublin_core, ProjectGraph, RecordGraph,
-    ResolveContext,
+    project_to_datacite, project_to_dublin_core, record_to_datacite, record_to_dublin_core, ArkHost, ProjectGraph,
+    RecordGraph, ResolveContext,
 };
 pub use shared_fair::{DataCiteNameIdentifier, DataCiteRecord, DublinCoreRecord};
 use shared_metadata::{record_datestamp, ContributorLookup, ProjectRaw, Record, ARK_PATH_PREFIX};
@@ -83,7 +83,7 @@ pub fn to_oai_record(
     // drift apart. The lookup it returns is discarded: handlers take theirs as a
     // parameter, which is how the tests inject an in-memory double.
     let (_cached_lookup, periods, enriched) = dpe_core::resolve_inputs();
-    let ctx = ResolveContext::new(lookup, periods, enriched);
+    let ctx = ResolveContext::new(lookup, periods, enriched, ArkHost::Recorded);
     let header = OaiRecordHeader {
         identifier: project_oai_identifier(project),
         datestamp: if !shared_metadata::is_placeholder(&project.start_date) && !project.start_date.is_empty() {
@@ -122,7 +122,7 @@ pub fn to_oai_record_from_record(record: &Record, metadata_prefix: &str, cluster
         set_specs: membership_set_specs("entityType:Record", &record.pid.shortcode, clusters),
     };
 
-    let graph = RecordGraph::build(record);
+    let graph = RecordGraph::build(record, ArkHost::Recorded);
 
     let dublin_core = if metadata_prefix == "oai_dc" {
         Some(record_to_dublin_core(&graph))

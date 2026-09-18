@@ -1,5 +1,7 @@
 //! Transformation of Records into Dublin Core metadata.
 
+#[cfg(test)]
+use crate::graph::ArkHost;
 use crate::graph::RecordGraph;
 use crate::types::DublinCoreRecord;
 
@@ -117,7 +119,7 @@ mod tests {
 
     #[test]
     fn identifier_is_pid() {
-        let dc = record_to_dublin_core(&RecordGraph::build(&test_record()));
+        let dc = record_to_dublin_core(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert!(dc
             .identifiers
             .contains(&"https://ark.dasch.swiss/ark:/72163/1/0001/record-0001".to_string()));
@@ -125,37 +127,37 @@ mod tests {
 
     #[test]
     fn title_prefers_english() {
-        let dc = record_to_dublin_core(&RecordGraph::build(&test_record()));
+        let dc = record_to_dublin_core(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert_eq!(dc.titles, vec!["Survey Responses on Rural Land Use, 1920–1950"]);
     }
 
     #[test]
     fn creators_from_authorship() {
-        let dc = record_to_dublin_core(&RecordGraph::build(&test_record()));
+        let dc = record_to_dublin_core(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert_eq!(dc.creators, vec!["Dr. Anna Müller", "Prof. Hans Bauer"]);
     }
 
     #[test]
     fn description_in_english() {
-        let dc = record_to_dublin_core(&RecordGraph::build(&test_record()));
+        let dc = record_to_dublin_core(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert_eq!(dc.descriptions, vec!["A collection of survey responses."]);
     }
 
     #[test]
     fn publisher_is_dasch() {
-        let dc = record_to_dublin_core(&RecordGraph::build(&test_record()));
+        let dc = record_to_dublin_core(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert_eq!(dc.publisher, "DaSCH");
     }
 
     #[test]
     fn date_is_date_published() {
-        let dc = record_to_dublin_core(&RecordGraph::build(&test_record()));
+        let dc = record_to_dublin_core(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert!(dc.dates.contains(&"2024-02-01".to_string()));
     }
 
     #[test]
     fn resource_type_mapped_from_type_of_data() {
-        let dc = record_to_dublin_core(&RecordGraph::build(&test_record()));
+        let dc = record_to_dublin_core(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert_eq!(dc.resource_type, "Text");
     }
 
@@ -163,13 +165,13 @@ mod tests {
     fn relation_links_to_parent_project() {
         let mut record = test_record();
         record.pid = Pid::new("https://ark.dasch.swiss", "0803", "lklK7rVuVOmpBZYWrF8o=gh");
-        let dc = record_to_dublin_core(&RecordGraph::build(&record));
+        let dc = record_to_dublin_core(&RecordGraph::build(&record, ArkHost::Recorded));
         assert!(dc.relations.contains(&"https://ark.dasch.swiss/ark:/72163/1/0803".to_string()));
     }
 
     #[test]
     fn rights_contains_license_label_and_uri() {
-        let dc = record_to_dublin_core(&RecordGraph::build(&test_record()));
+        let dc = record_to_dublin_core(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert!(dc
             .rights
             .contains(&"Creative Commons Attribution 4.0 International".to_string()));
@@ -180,26 +182,26 @@ mod tests {
     fn rights_are_empty_without_a_license() {
         let mut record = test_record();
         record.legal_info.license = RecordLicense::default();
-        let dc = record_to_dublin_core(&RecordGraph::build(&record));
+        let dc = record_to_dublin_core(&RecordGraph::build(&record, ArkHost::Recorded));
         assert!(dc.rights.is_empty());
     }
 
     #[test]
     fn record_without_file_has_no_format() {
-        let dc = record_to_dublin_core(&RecordGraph::build(&test_record()));
+        let dc = record_to_dublin_core(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert!(dc.formats.is_empty());
     }
 
     #[test]
     fn bitstream_format_is_mime_type() {
-        let dc = record_to_dublin_core(&RecordGraph::build(&bitstream_record()));
+        let dc = record_to_dublin_core(&RecordGraph::build(&bitstream_record(), ArkHost::Recorded));
         assert_eq!(dc.formats, vec!["image/jp2"]);
     }
 
     #[test]
     fn bitstream_file_url_is_not_an_identifier() {
         let record = bitstream_record();
-        let dc = record_to_dublin_core(&RecordGraph::build(&record));
+        let dc = record_to_dublin_core(&RecordGraph::build(&record, ArkHost::Recorded));
 
         assert_eq!(dc.identifiers, vec![record.pid.as_url()]);
         let file_url = record.file.as_ref().expect("bitstream record has a file").url.clone();
@@ -211,7 +213,7 @@ mod tests {
     #[test]
     fn record_without_file_has_the_same_single_identifier() {
         let record = test_record();
-        let dc = record_to_dublin_core(&RecordGraph::build(&record));
+        let dc = record_to_dublin_core(&RecordGraph::build(&record, ArkHost::Recorded));
         assert_eq!(dc.identifiers, vec![record.pid.as_url()]);
     }
 }

@@ -1,5 +1,7 @@
 //! Transformation of Records into DataCite 4.6 metadata.
 
+#[cfg(test)]
+use crate::graph::ArkHost;
 use crate::graph::RecordGraph;
 use crate::types::{
     DataCiteCreator, DataCiteDate, DataCiteDescription, DataCiteRecord, DataCiteRelatedIdentifier, DataCiteRights,
@@ -189,14 +191,14 @@ mod tests {
 
     #[test]
     fn identifier_is_resolvable_ark_url() {
-        let dc = record_to_datacite(&RecordGraph::build(&test_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert_eq!(dc.identifier, "https://ark.dasch.swiss/ark:/72163/1/0001/record-0001");
         assert_eq!(dc.identifier_type, "ARK");
     }
 
     #[test]
     fn creators_from_authorship() {
-        let dc = record_to_datacite(&RecordGraph::build(&test_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert_eq!(dc.creators.len(), 2);
         assert_eq!(dc.creators[0].name, "Dr. Anna Müller");
         assert_eq!(dc.creators[1].name, "Prof. Hans Bauer");
@@ -204,7 +206,7 @@ mod tests {
 
     #[test]
     fn personal_authorship_keeps_personal_name_type() {
-        let dc = record_to_datacite(&RecordGraph::build(&test_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert_eq!(dc.creators[0].name_type.as_deref(), Some("Personal"));
         assert_eq!(dc.creators[1].name_type.as_deref(), Some("Personal"));
     }
@@ -213,7 +215,7 @@ mod tests {
     fn empty_authorship_falls_back_to_organizational_dasch() {
         let mut record = test_record();
         record.legal_info.authorship = vec![];
-        let dc = record_to_datacite(&RecordGraph::build(&record));
+        let dc = record_to_datacite(&RecordGraph::build(&record, ArkHost::Recorded));
         assert_eq!(dc.creators.len(), 1);
         assert_eq!(dc.creators[0].name, "DaSCH");
         assert_eq!(dc.creators[0].name_type.as_deref(), Some("Organizational"));
@@ -221,7 +223,7 @@ mod tests {
 
     #[test]
     fn title_prefers_english_as_primary() {
-        let dc = record_to_datacite(&RecordGraph::build(&test_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert!(!dc.titles.is_empty());
         assert_eq!(dc.titles[0].title, "Survey Responses on Rural Land Use, 1920–1950");
         assert_eq!(dc.titles[0].title_type, None);
@@ -233,26 +235,26 @@ mod tests {
 
     #[test]
     fn publisher_is_dasch() {
-        let dc = record_to_datacite(&RecordGraph::build(&test_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert_eq!(dc.publisher, "DaSCH");
     }
 
     #[test]
     fn publication_year_from_date_published() {
-        let dc = record_to_datacite(&RecordGraph::build(&test_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert_eq!(dc.publication_year, "2024");
     }
 
     #[test]
     fn resource_type_from_type_of_data() {
-        let dc = record_to_datacite(&RecordGraph::build(&test_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert_eq!(dc.resource_type, "Text");
         assert_eq!(dc.resource_type_general, "Text");
     }
 
     #[test]
     fn dates_include_created_updated_available() {
-        let dc = record_to_datacite(&RecordGraph::build(&test_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         let date_types: Vec<&str> = dc.dates.iter().map(|d| d.date_type.as_str()).collect();
         assert!(date_types.contains(&"Created"));
         assert!(date_types.contains(&"Updated"));
@@ -261,7 +263,7 @@ mod tests {
 
     #[test]
     fn rights_from_license() {
-        let dc = record_to_datacite(&RecordGraph::build(&test_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert_eq!(dc.rights_list.len(), 1);
         assert_eq!(dc.rights_list[0].rights, "Creative Commons Attribution 4.0 International");
         assert_eq!(dc.rights_list[0].rights_identifier.as_deref(), Some("CC-BY-4.0"));
@@ -272,7 +274,7 @@ mod tests {
     fn rights_fall_back_to_access_rights_without_a_license() {
         let mut record = test_record();
         record.legal_info.license = RecordLicense::default();
-        let dc = record_to_datacite(&RecordGraph::build(&record));
+        let dc = record_to_datacite(&RecordGraph::build(&record, ArkHost::Recorded));
         assert_eq!(dc.rights_list[0].rights, "Full Open Access");
         assert_eq!(dc.rights_list[0].rights_uri, None);
         assert_eq!(dc.rights_list[0].rights_identifier, None);
@@ -281,7 +283,7 @@ mod tests {
 
     #[test]
     fn description_from_description_field() {
-        let dc = record_to_datacite(&RecordGraph::build(&test_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         let abstract_desc = dc.descriptions.iter().find(|d| d.description_type == "Abstract");
         assert!(abstract_desc.is_some());
         assert_eq!(abstract_desc.unwrap().description, "A collection of survey responses.");
@@ -289,7 +291,7 @@ mod tests {
 
     #[test]
     fn size_included_as_technical_info() {
-        let dc = record_to_datacite(&RecordGraph::build(&test_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         let size_desc = dc.descriptions.iter().find(|d| d.description_type == "TechnicalInfo");
         assert!(size_desc.is_some());
         assert_eq!(size_desc.unwrap().description, "2.3 GB");
@@ -299,7 +301,7 @@ mod tests {
     fn related_identifier_links_to_parent_project() {
         let mut record = test_record();
         record.pid = Pid::new("https://ark.dasch.swiss", "0803", "lklK7rVuVOmpBZYWrF8o=gh");
-        let dc = record_to_datacite(&RecordGraph::build(&record));
+        let dc = record_to_datacite(&RecordGraph::build(&record, ArkHost::Recorded));
         assert_eq!(dc.related_identifiers.len(), 1);
         let ri = &dc.related_identifiers[0];
         assert_eq!(ri.identifier, "https://ark.dasch.swiss/ark:/72163/1/0803");
@@ -309,20 +311,20 @@ mod tests {
 
     #[test]
     fn record_without_file_has_no_format() {
-        let dc = record_to_datacite(&RecordGraph::build(&test_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&test_record(), ArkHost::Recorded));
         assert!(dc.formats.is_empty());
     }
 
     #[test]
     fn bitstream_format_is_mime_type() {
-        let dc = record_to_datacite(&RecordGraph::build(&bitstream_record()));
+        let dc = record_to_datacite(&RecordGraph::build(&bitstream_record(), ArkHost::Recorded));
         assert_eq!(dc.formats, vec!["image/jp2"]);
     }
 
     #[test]
     fn bitstream_file_url_is_not_a_related_identifier() {
         let record = bitstream_record();
-        let dc = record_to_datacite(&RecordGraph::build(&record));
+        let dc = record_to_datacite(&RecordGraph::build(&record, ArkHost::Recorded));
 
         assert!(!dc.related_identifiers.iter().any(|ri| ri.relation_type == "HasPart"));
         assert!(!dc.related_identifiers.iter().any(|ri| ri.identifier.contains("ingest.")));
@@ -345,7 +347,7 @@ mod tests {
             }),
             ..test_record()
         };
-        let dc = record_to_datacite(&RecordGraph::build(&record));
+        let dc = record_to_datacite(&RecordGraph::build(&record, ArkHost::Recorded));
         assert!(!dc.descriptions.iter().any(|d| d.description.contains("377685")));
     }
 }

@@ -353,7 +353,9 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path, datac
             .map(|legal| legal.license_uri.clone())
             .filter(|uri| !uri.is_empty() && !shared_metadata::is_placeholder(uri)),
     );
-    assert_eq!(json_ld_strings(&json_ld, "license"), licensed, "{file}: JSON-LD licenses");
+    // The JSON-LD carries each licence as a node object, so the URI is read out
+    // of `@id` rather than off a string.
+    assert_eq!(json_ld_ids(&json_ld, "license"), licensed, "{file}: JSON-LD licenses");
     // DataCite emits one entry per `legalInfo` element and keeps an empty URI,
     // so the comparison is against the same filtered, deduplicated set.
     assert_eq!(
@@ -563,10 +565,11 @@ fn json_ld_values<'a>(doc: &'a serde_json::Value, key: &str) -> Vec<&'a serde_js
     }
 }
 
-fn json_ld_strings(doc: &serde_json::Value, key: &str) -> Vec<String> {
+/// The `@id` of each node object a property holds.
+fn json_ld_ids(doc: &serde_json::Value, key: &str) -> Vec<String> {
     json_ld_values(doc, key)
         .into_iter()
-        .filter_map(|value| value.as_str().map(str::to_string))
+        .filter_map(|node| node.get("@id").and_then(|id| id.as_str()).map(str::to_string))
         .collect()
 }
 

@@ -58,7 +58,15 @@ pub fn project_to_schema_org(graph: &ProjectGraph, urls: &UrlLayout, opts: Schem
     }
     insert_list(&mut root, "keywords", graph.keywords.iter().filter_map(|k| real(k)));
 
-    insert_list(&mut root, "license", graph.license_uris());
+    // A node object, not a string. schema.org's remote context does not coerce
+    // `license` to `@id`, so a bare string parses as a literal and a consumer
+    // asking for a licence *resource* finds none — which is what FAIR Champion's
+    // LicenseStrong test asks for.
+    insert_list(
+        &mut root,
+        "license",
+        graph.license_uris().into_iter().map(|uri| json!({ "@id": uri })),
+    );
 
     root.insert("isAccessibleForFree".into(), json!(is_accessible_for_free(graph)));
     root.insert("conditionsOfAccess".into(), json!(conditions_of_access(graph)));
@@ -386,7 +394,7 @@ mod tests {
         assert_eq!(doc["identifier"]["propertyID"], "ARK");
         assert_eq!(doc["identifier"]["value"], "https://ark.dasch.swiss/ark:/72163/1/0001");
         assert_eq!(doc["url"], "https://example.test/dpe/projects/0001");
-        assert_eq!(doc["license"], "https://creativecommons.org/licenses/by/4.0/");
+        assert_eq!(doc["license"], json!({ "@id": "https://creativecommons.org/licenses/by/4.0/" }));
     }
 
     #[test]
@@ -401,8 +409,8 @@ mod tests {
         assert_eq!(
             render(&raw)["license"],
             json!([
-                "https://creativecommons.org/licenses/by/4.0/",
-                "https://creativecommons.org/publicdomain/zero/1.0/"
+                { "@id": "https://creativecommons.org/licenses/by/4.0/" },
+                { "@id": "https://creativecommons.org/publicdomain/zero/1.0/" }
             ])
         );
     }

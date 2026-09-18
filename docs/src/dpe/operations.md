@@ -77,6 +77,8 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 > **Two base URLs, on purpose.** `DPE_PUBLIC_BASE_URL` and `DPE_OAI_BASE_URL` are set independently and neither is derived from the other. The OAI endpoint advertises its own `baseURL` in every response, and on DEV that endpoint lives on a different host (`https://api.dev.dasch.swiss/dpe/oai`) from the site (`https://repository.dev.dasch.swiss`). Set both per environment.
 >
 > **Assessing a local run from a container.** A FAIR assessor running in Docker resolves the URLs the page emits, so `DPE_PUBLIC_BASE_URL` must name a host the container can reach — `http://host.docker.internal:4000`, not `http://localhost:4000`, which inside the container is the container itself.
+>
+> **PR previews set it themselves.** `cloud-run-dpe-pull-request.yml` runs `gcloud run services update` right after the deploy, setting `DPE_PUBLIC_BASE_URL` to the preview's own Cloud Run URL. It is a second step because Cloud Run assigns that URL only once the service exists. Without it a preview would emit production URLs, and every typed link and the `303` target would point at a deployment that does not carry the branch's code.
 
 > **What the rate limit does not bound.** It bounds the request *rate*, not the
 > per-request size, and the uncapped JSON-LD representation is large: project

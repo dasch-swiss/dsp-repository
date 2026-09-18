@@ -62,6 +62,7 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 | `DPE_FATHOM_SITE_ID` | No | *(none)* | Fathom Analytics site ID (not a secret) |
 | `DPE_SHOW_PLACEHOLDER_VALUES` | No | `false` | Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility. |
 | `DPE_OAI_BASE_URL` | No | `https://repository.dasch.swiss/dpe/oai` | Public base URL emitted as the OAI-PMH `baseURL` and echoed in `<request>` elements. Set per environment to match the public endpoint (e.g. `https://api.dev.dasch.swiss/dpe/oai` on DEV, `http://localhost:4000/dpe/oai` locally). See [OAI-PMH](./oai-pmh.md). |
+| `DPE_PUBLIC_BASE_URL` | No | `https://repository.dasch.swiss` | Public origin of the site itself, used to build the landing-page and machine-readable-representation URLs carried by the embedded metadata and the `Link` header. Origin only: scheme `http` or `https`, no path, query or trailing slash. A bad value fails startup. Independent of `DPE_OAI_BASE_URL` (see the note below). |
 | `DPE_OAI_RATE_LIMIT_PER_SECOND` | No | `1` | Per-IP rate limit on `/dpe/oai`: seconds per request once the burst is spent. `1` ≈ 60 requests/minute sustained. See [OAI-PMH](./oai-pmh.md). |
 | `DPE_OAI_RATE_LIMIT_BURST` | No | `60` | Per-IP burst allowance on `/dpe/oai`: back-to-back requests before the sustained rate applies. |
 | `DPE_OAI_PAGE_SIZE` | No | `100` | Items per page in `ListRecords` / `ListIdentifiers` responses before a resumption token is emitted. Non-positive or non-numeric values fall back to the default. See [OAI-PMH](./oai-pmh.md). |
@@ -72,6 +73,10 @@ dpe-server healthcheck --url http://localhost:9090/healthz # custom URL
 | `DPE_SITE_ADDR` | No | `127.0.0.1:4000` | Listen address and port. The Docker image sets `0.0.0.0:8080`. |
 | `DPE_PUBLIC_DIR` | No | `modules/dpe/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, project images, and the compiled `app.<hash>.css`). |
 | `DPE_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`. |
+
+> **Two base URLs, on purpose.** `DPE_PUBLIC_BASE_URL` and `DPE_OAI_BASE_URL` are set independently and neither is derived from the other. The OAI endpoint advertises its own `baseURL` in every response, and on DEV that endpoint lives on a different host (`https://api.dev.dasch.swiss/dpe/oai`) from the site (`https://repository.dev.dasch.swiss`). Set both per environment.
+>
+> **Assessing a local run from a container.** A FAIR assessor running in Docker resolves the URLs the page emits, so `DPE_PUBLIC_BASE_URL` must name a host the container can reach — `http://host.docker.internal:4000`, not `http://localhost:4000`, which inside the container is the container itself.
 
 > **Rate limiting and reverse proxies.** The OAI (`/dpe/oai`) and telemetry (`/telemetry/collect`) rate limits key on the client IP, taken from the **rightmost** `X-Forwarded-For` entry (the address Traefik itself appends), falling back to the connection peer address. Reading the rightmost entry — not the leftmost — is deliberate: Traefik appends the real client after any `X-Forwarded-For` value the client supplied, so the rightmost entry is proxy-authored and cannot be spoofed, while the leftmost stays attacker-controlled. This holds only while Traefik is the sole hop in front of DPE; a second proxy that appends to `X-Forwarded-For` would shift the trusted entry and require counting hops from the right.
 

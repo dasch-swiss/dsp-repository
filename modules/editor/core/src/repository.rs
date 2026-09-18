@@ -292,8 +292,10 @@ pub trait SubmissionRepository: Send + Sync {
 pub trait ApprovedRecordRepository: Send + Sync {
     async fn create(&self, record: &ApprovedRecord) -> Result<()>;
 
-    /// What the public collection endpoint serves: approved and not yet
-    /// collected, oldest first.
+    /// Approved records carrying no collection timestamp, oldest first.
+    ///
+    /// Not what the public endpoint serves: that one applies no filter at all,
+    /// so advisory collection state can never decide what is published.
     async fn list_uncollected(&self) -> Result<Vec<ApprovedRecord>>;
 
     /// Every approved record for a project, so the startup comparison can find

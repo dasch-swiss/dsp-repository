@@ -182,6 +182,9 @@ mod tests {
             approved_by: None,
             approved_at: Utc::now(),
             collected_at: collected.then(Utc::now),
+            pull_request_url: None,
+            pull_request_state: None,
+            last_failure: None,
         }
     }
 

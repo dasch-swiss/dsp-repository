@@ -12,7 +12,7 @@ use shared_metadata::{
     AccessRightsType, AuthorityFileReference, Discipline, Funding, LegalInfo, ProjectRaw, ProjectStatus, Record,
 };
 
-use crate::graph::{AgentKind, PartRef, ResolveContext, DASCH};
+use crate::graph::{AgentKind, PartRef, ResolveContext, DASCH, FALLBACK_PUBLICATION_YEAR};
 use crate::helpers::{extract_year, is_creator, license_identifier_to_label};
 use crate::resolve::resolve_agent;
 use crate::types::DataCiteNameIdentifier;
@@ -132,7 +132,12 @@ pub struct ProjectGraph {
     /// Dublin Core emits `start_date` alone and only when it is real.
     pub start_date: String,
     pub end_date: String,
-    pub publication_year: String,
+    /// The year the declared publication year or the start date yields, or
+    /// `None` when neither yields one. The mandatory-year fallback is
+    /// [`ProjectGraph::publication_year_with_fallback`], not this field:
+    /// resolving it here would make every writer assert a publication year for
+    /// a project that records no usable date.
+    pub publication_year: Option<String>,
     pub temporal_coverage: Vec<TemporalRef>,
     pub spatial_coverage: Vec<SpatialRef>,
     /// Every entry: DataCite takes the first as its single `language`, Dublin
@@ -226,6 +231,19 @@ impl ProjectGraph {
             status: raw.status.clone(),
             parts: records.into_iter().map(PartRef::from_record).collect(),
         }
+    }
+
+    /// `publication_year`, or the fallback year when neither the declared
+    /// publication year nor the start date yields one.
+    ///
+    /// DataCite makes `publicationYear` mandatory, so the representations that
+    /// rule governs need this and resolve it here rather than writing the
+    /// fallback out again. schema.org's `datePublished` is optional and reads
+    /// the raw `Option` instead: a landing page asserting a publication year a
+    /// project never recorded is an invented fact (ADR-0005, *Nothing is
+    /// invented for a score*), and one a FAIR assessor would read.
+    pub fn publication_year_with_fallback(&self) -> &str {
+        self.publication_year.as_deref().unwrap_or(FALLBACK_PUBLICATION_YEAR)
     }
 
     /// The project's usable license URIs: placeholders and empties dropped,
@@ -329,9 +347,14 @@ fn real_value(value: &str) -> Option<String> {
 }
 
 /// `data_publication_year` when the key is present at all, otherwise
-/// `start_date`. Presence rather than validity: `extract_year` already turns an
-/// unusable value into its own fallback year.
-fn publication_year(raw: &ProjectRaw) -> String {
+/// `start_date`.
+///
+/// Presence rather than validity, deliberately: a recorded but unusable
+/// `dataPublicationYear` yields `None` and does **not** fall through to the
+/// start date. That is what the byte-identical DataCite output has always done,
+/// and a project that declared a publication year is not making a claim about
+/// its start date.
+fn publication_year(raw: &ProjectRaw) -> Option<String> {
     match raw.data_publication_year {
         Some(ref year) => extract_year(year),
         None => extract_year(&raw.start_date),
@@ -703,13 +726,45 @@ mod tests {
     #[test]
     fn publication_year_prefers_the_declared_year_over_the_start_date() {
         let graph = build(&project(), &[]);
-        assert_eq!(graph.publication_year, "2008");
+        assert_eq!(graph.publication_year.as_deref(), Some("2008"));
 
         let raw = ProjectRaw {
             data_publication_year: Some("2014-03-01".to_string()),
             ..project()
         };
-        assert_eq!(build(&raw, &[]).publication_year, "2014");
+        assert_eq!(build(&raw, &[]).publication_year.as_deref(), Some("2014"));
+    }
+
+    /// Presence, not validity: a declared but unusable year does not fall
+    /// through to the start date, and the graph reports no year at all rather
+    /// than one it made up.
+    #[test]
+    fn an_unusable_declared_year_yields_no_year_and_does_not_fall_back_to_the_start_date() {
+        let raw = ProjectRaw {
+            data_publication_year: Some("MISSING".to_string()),
+            start_date: "2008-06-01".to_string(),
+            ..project()
+        };
+        let graph = build(&raw, &[]);
+        assert_eq!(graph.publication_year, None);
+        assert_eq!(graph.publication_year_with_fallback(), "2015");
+    }
+
+    #[test]
+    fn an_unusable_start_date_yields_no_year_when_none_is_declared() {
+        let raw = ProjectRaw {
+            data_publication_year: None,
+            start_date: "MISSING".to_string(),
+            ..project()
+        };
+        let graph = build(&raw, &[]);
+        assert_eq!(graph.publication_year, None);
+        assert_eq!(graph.publication_year_with_fallback(), "2015");
+    }
+
+    #[test]
+    fn the_year_fallback_leaves_a_real_year_alone() {
+        assert_eq!(build(&project(), &[]).publication_year_with_fallback(), "2008");
     }
 
     #[test]

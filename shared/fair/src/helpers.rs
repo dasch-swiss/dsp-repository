@@ -2,19 +2,21 @@
 
 use shared_metadata::AccessRightsType;
 
-/// Extracts the year from a date string (YYYY-MM-DD or YYYY).
+/// The year in a date string (YYYY-MM-DD or YYYY), or `None` when there is not
+/// one to read.
+///
+/// `None` rather than a fallback year: whether a missing year is worth
+/// inventing is the writer's decision, not this function's. DataCite makes
+/// `publicationYear` mandatory and falls back through
+/// `publication_year_with_fallback`; schema.org's `datePublished` is optional
+/// and omits the key instead.
 ///
 /// Counts characters rather than bytes. A byte length guarding a byte slice
 /// panics on a date whose fourth byte falls inside a multi-byte character; the
-/// two counts agree on the ASCII ISO-8601 dates the corpus holds, so this is
-/// what the byte version produced for every committed date.
-pub fn extract_year(date: &str) -> String {
+/// two counts agree on the ASCII ISO-8601 dates the corpus holds.
+pub fn extract_year(date: &str) -> Option<String> {
     let year: String = date.chars().take(4).collect();
-    if year.chars().count() == 4 && !shared_metadata::is_placeholder(date) {
-        year
-    } else {
-        "2015".to_string() // Default fallback year
-    }
+    (year.chars().count() == 4 && !shared_metadata::is_placeholder(date)).then_some(year)
 }
 
 /// Converts an AccessRightsType to a human-readable string.
@@ -136,9 +138,11 @@ mod tests {
 
     #[test]
     fn test_extract_year() {
-        assert_eq!(extract_year("2024-01-15"), "2024");
-        assert_eq!(extract_year("2024"), "2024");
-        assert_eq!(extract_year("MISSING"), "2015");
+        assert_eq!(extract_year("2024-01-15").as_deref(), Some("2024"));
+        assert_eq!(extract_year("2024").as_deref(), Some("2024"));
+        assert_eq!(extract_year("MISSING"), None);
+        assert_eq!(extract_year("CALCULATED"), None);
+        assert_eq!(extract_year(""), None);
     }
 
     /// The fourth byte of "123ä5" is inside the "ä", which a byte slice cannot
@@ -146,9 +150,9 @@ mod tests {
     /// guard would have let it through to a two-character "year".
     #[test]
     fn extract_year_counts_characters_not_bytes() {
-        assert_eq!(extract_year("123ä5"), "123ä");
-        assert_eq!(extract_year("äää"), "2015");
-        assert_eq!(extract_year("202"), "2015");
+        assert_eq!(extract_year("123ä5").as_deref(), Some("123ä"));
+        assert_eq!(extract_year("äää"), None);
+        assert_eq!(extract_year("202"), None);
     }
 
     /// Every level has a term, and each of the four is distinct: a FAIR

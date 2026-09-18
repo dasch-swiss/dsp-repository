@@ -63,7 +63,12 @@ pub fn project_to_schema_org(graph: &ProjectGraph, urls: &UrlLayout, opts: Schem
     root.insert("isAccessibleForFree".into(), json!(is_accessible_for_free(graph)));
     root.insert("conditionsOfAccess".into(), json!(conditions_of_access(graph)));
 
-    root.insert("datePublished".into(), json!(graph.publication_year));
+    // The raw fact, not `publication_year_with_fallback`: `datePublished` is
+    // optional here, so a project that records no usable date gets no key
+    // rather than the year DataCite's mandatory field has to invent.
+    if let Some(year) = &graph.publication_year {
+        root.insert("datePublished".into(), json!(year));
+    }
 
     // The mandatory-creator fallback the graph resolves, so every
     // representation governed by that rule credits the same agents. Dublin Core
@@ -449,6 +454,27 @@ mod tests {
         let rendered = render(&raw).to_string();
         assert!(!rendered.contains("MISSING"), "{rendered}");
         assert!(!rendered.contains("CALCULATED"), "{rendered}");
+    }
+
+    /// `datePublished` is optional in schema.org, so a project that records no
+    /// usable date gets no key. DataCite's `publicationYear` is mandatory and
+    /// still carries the fallback year, which is why this cannot be resolved
+    /// into the graph: the same graph has to answer both ways.
+    #[test]
+    fn no_usable_date_means_no_date_published_but_datacite_still_gets_its_year() {
+        let raw = ProjectRaw {
+            data_publication_year: Some("MISSING".to_string()),
+            start_date: "MISSING".to_string(),
+            ..project()
+        };
+        let graph = build(&raw, &[]);
+        assert!(render(&raw).get("datePublished").is_none(), "{}", render(&raw));
+        assert_eq!(crate::project_to_datacite(&graph).publication_year, "2015");
+    }
+
+    #[test]
+    fn a_recorded_year_reaches_date_published() {
+        assert_eq!(render(&project())["datePublished"], "2008");
     }
 
     /// No project-level download exists, so inventing one for a score is out.

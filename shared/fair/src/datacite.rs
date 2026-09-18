@@ -67,7 +67,7 @@ pub fn project_to_datacite(graph: &ProjectGraph) -> DataCiteRecord {
     datacite.publisher = PUBLISHER.to_string();
 
     // PublicationYear (mandatory)
-    datacite.publication_year = graph.publication_year.clone();
+    datacite.publication_year = graph.publication_year_with_fallback().to_string();
 
     // ResourceType (mandatory)
     datacite.resource_type = "Research Project".to_string();

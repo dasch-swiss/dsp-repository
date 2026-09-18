@@ -158,6 +158,9 @@ impl ContributorLookup for CorpusContributorLookup {
 ///   graph's title set rather than for equality with another writer's pick.
 /// - The meta-tag writer drops placeholders; the OAI writers carry them through. So a placeholder
 ///   value is compared only where both keep it.
+/// - DataCite's `publicationYear` is mandatory and reads `publication_year_with_fallback`; the
+///   JSON-LD's `datePublished` is optional and reads the raw `Option`, so an object with no usable
+///   date gets a fallback year in DataCite and no key at all in the JSON-LD.
 #[test]
 fn every_representation_of_a_committed_object_agrees_with_the_others() {
     let data_dir = Path::new(DATA_DIR);
@@ -313,6 +316,23 @@ fn assert_project_representations_agree(graph: &ProjectGraph, path: &Path) {
     };
     assert_eq!(hrefs(&links, "license"), expected_link, "{file}: license link");
 
+    // --- the publication year ---
+    // DataCite's field is mandatory and falls back; schema.org's is optional
+    // and omits rather than invents. Where the graph has a year, both carry it.
+    match graph.publication_year {
+        Some(ref year) => {
+            assert_eq!(json_ld["datePublished"], year.as_str(), "{file}: JSON-LD datePublished");
+            assert_eq!(datacite.publication_year, *year, "{file}: DataCite publicationYear");
+        }
+        None => {
+            assert!(
+                json_ld.get("datePublished").is_none(),
+                "{file}: JSON-LD invented a datePublished"
+            );
+            assert_eq!(datacite.publication_year, "2015", "{file}: DataCite fallback year");
+        }
+    }
+
     // --- access rights ---
     assert_eq!(
         values(&meta, "DC.accessRights"),
@@ -364,6 +384,13 @@ fn assert_record_representations_agree(graph: &RecordGraph, path: &Path) {
         graph.creators.iter().map(|c| c.name.clone()).collect::<Vec<_>>(),
         "{file}: dc:creator stays at the attributed authorship"
     );
+
+    // The record path applies the same rule: DataCite falls back, the graph
+    // records no year rather than inventing one.
+    match graph.publication_year {
+        Some(ref year) => assert_eq!(datacite.publication_year, *year, "{file}: DataCite publicationYear"),
+        None => assert_eq!(datacite.publication_year, "2015", "{file}: DataCite fallback year"),
+    }
 
     let uri = (!graph.license_uri.is_empty()).then(|| graph.license_uri.clone());
     assert_eq!(datacite.rights_list[0].rights_uri, uri, "{file}: DataCite rights URI");

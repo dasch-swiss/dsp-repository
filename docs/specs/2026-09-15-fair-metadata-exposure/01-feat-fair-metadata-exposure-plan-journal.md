@@ -2938,3 +2938,110 @@ The run also exercised the `chore(ci)` change from this phase in anger: it
 printed `full result: .claude/tmp/fair-check-20260918T113302Z.json`, and the
 sub-test attributions above were read out of that file rather than from a
 re-run.
+
+## Round 16 — rebase onto main (2026-09-18)
+
+No new capability. `main` moved underneath the branch while the PR sat
+conflicted, so CI could not compute a merge ref and no `pull_request` workflow
+had run since 08:58. This round rebases the 55 commits onto `78c4a7c7` and
+carries in the one functional change `main` made to code this branch had moved.
+
+### What `main` contributed
+
+`origin/main` was five commits ahead of the merge base `79dc4168`. Two mattered.
+
+`70acb525 docs(docs): group the areas under areas/ and name the shared root
+shared/` is the ADR branch this PR was originally based on, merged into `main`.
+The branch already carries it verbatim as `01a8a456`, so `git rebase` matched it
+by patch id and skipped it. That is why the thirteen conflicts a test merge
+predicted came out as eight: the docs halves of ARCH-MAP.md, CONTEXT.md,
+ADR-0001 and ADR-0002 never conflicted at all.
+
+`78c4a7c7 fix(oai): add ARK resolver for identifiers in the payload` changed the
+DataCite `identifier` from the bare `ark:/…` path to the resolvable URL, deleted
+`Pid::ark_path()`, and wrote the reason into `docs/src/dpe/oai-pmh.md`: the OAI
+`<identifier>` header is the only place an ARK appears without the resolver, and
+there is deliberately no accessor for the bare form.
+
+### The graph-shape decision
+
+`RecordGraph` carried both ARK forms — `ark` (the URL) and `ark_path` (the bare
+path) — because the DataCite writer used the path form. With `main`'s fix that
+premise is gone, so **`ark_path` is removed from the graph along with the method
+it read**. Grepping first confirmed the field had exactly two consumers,
+`record_datacite.rs`'s `identifier` and the agreement test's two assertions;
+nothing needs the path-only form. The OAI identifier header, the one place a
+bare ARK still appears, builds its own from `Pid::ark_suffix()` and never touched
+the graph.
+
+Keeping the field would have put the tree in direct contradiction with the
+paragraph `main` added to `oai-pmh.md`, which is what settled it rather than
+taste. Applied at `52214684`, the commit that introduced the field, so no commit
+in the branch ever compiles against a method that does not exist:
+
+| Site | Before | After |
+|------|--------|-------|
+| `shared/fair/src/graph.rs` | `pub ark_path: String` plus its doc comment | field gone; `ark`'s doc comment now states why the URL is the only form |
+| `shared/fair/src/graph.rs` | `ark_path: record.pid.ark_path()` | gone |
+| `shared/fair/src/graph.rs` (test) | `identifiers_carry_both_ark_forms` | `identifiers_are_resolvable_ark_urls` |
+| `shared/fair/src/record_datacite.rs` | `identifier: graph.ark_path.clone()` | `identifier: graph.ark.clone()` |
+| `shared/fair/src/record_datacite.rs` (test) | `identifier_is_ark_path` | `identifier_is_resolvable_ark_url`, mirroring `main`'s rename |
+| `modules/dpe/api-oai/…/corpus.rs` | `datacite.identifier == graph.ark_path`; `graph.ark.ends_with(&graph.ark_path)` | `datacite.identifier == graph.ark`; the `ends_with` assertion and its comment gone |
+
+### The eight conflicts
+
+All but one were `57ce87db`'s comment trim colliding with a line this branch had
+moved or rewritten. In each, `main`'s trim is the intent and the branch's
+identifier is the fact, so the resolution takes both.
+
+| File | Resolution |
+|------|-----------|
+| `justfile` | `main`'s two-block comment shape and its trimmed `test`-recipe labels, with `check-shared-paths` as the name. The neighbouring `check-datastar-delimiters` recipe already has that shape, so the file is now internally consistent. |
+| `.github/scripts/check-shared-paths.test.sh` | `main` modified `check-platform-paths.test.sh`, which this branch deleted. The modification was incidental — `57ce87db` dropping ", which is how that bug was caught" from one comment. Ported into the renamed file rather than resurrecting the old one. |
+| `modules/dpe/server/fuzz/fuzz_targets/query_params.rs` | `main`'s deletion of the label comment, with `shared_metadata`. |
+| `modules/dpe/web/src/domain/project.rs` | `main`'s three-line header, with `shared-metadata`. |
+| `modules/dpe/api-oai/src/handlers/test_utils.rs` | `main` deleted `/// In-memory repository for testing.` as a label restating the name. The branch's replacement said that *and* explained the two fields. Kept the explanation, dropped the label. |
+| `modules/dpe/api-oai/src/handlers/mod.rs` | `main`'s deletion of `// Existence check: …`, with the branch's `let … else`. |
+| `modules/dpe/server/src/router.rs` | `main`'s deletion of `// Datastar SSE + JSON endpoints.`, with the branch's `rate_limited` merge. |
+| `shared/fair/src/datacite.rs` | Three hunks, all consequences of the two above: the temporal test block and the creator fallback that later commits move out anyway. |
+
+`docs/adr/0005` auto-merged and still reads correctly beside this branch's
+amendment. `docs/src/dpe/oai-pmh.md` auto-merged; `main`'s two added lines sit
+under *Identifiers* and are accurate for the rebased tree — a grep confirms every
+ARK any writer emits is the URL form, and the only bare one is the OAI header
+they describe.
+
+### Re-proving byte identity against the new main
+
+The old baseline at `.claude/tmp/oai-baseline-hashes.txt` predates `78c4a7c7`,
+which deliberately changed OAI output, so it could not be used as-is;
+regenerating it from this branch's own tip would have proved nothing. Instead a
+fresh baseline was generated from `origin/main` — `main`'s code, fix included,
+none of this branch's work — in a throwaway detached worktree, by hand-porting
+`588ee18d`'s version of the hash test (`platform_metadata` for `shared_metadata`
+is the only difference; `main`'s `to_oai_record` signature already matches it).
+
+**102,158 entries from `78c4a7c7`.** 50,994 of them differ from the pre-fix
+baseline, which is the record-level `oai_datacite` half plus `18a8f36f`'s `0105`
+data change.
+
+The recovered hash test then ran at the rebased tip against that file:
+`compared 102158 entries`, pass. Byte identity now means what it always meant —
+this branch's refactor changes no OAI output — measured against the new `main`.
+Both edits (`hash_check.rs` and its `mod` line) were removed afterwards. The
+pre-fix baseline is kept beside the new one as
+`.claude/tmp/oai-baseline-hashes.pre-78c4a7c7.txt`.
+
+### Verification
+
+`cargo check --workspace --all-targets` ran per commit through the rebase, so
+every one of the 55 compiles. At the tip: `cargo +nightly fmt --check`, `cargo
+clippy --all-features -D warnings`, `cargo machete`, the maudfmt no-op check and
+all three gate scripts pass; `mdbook build docs` succeeds; the DataCite golden
+carries the resolvable URL.
+
+One pre-existing failure, not caused by this round: `just --check --fmt
+--unstable` reports a difference on `justfile` at `origin/main` as well as here,
+under local `just` 1.49.0. The reformat it wants inserts a blank line into an
+unrelated wrapped comment above `_tailwind-bin`. Left alone rather than
+committed, since CI installs its own `just` and the same check passes there.

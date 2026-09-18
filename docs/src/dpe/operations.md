@@ -137,6 +137,16 @@ calling `/dpe/records/{shortcode}/{record_id}/file` per record, which returns
 the same `downloadUrl`. What changed is that one request now returns every URL
 at once.
 
+**Retiring ingest carries a metadata obligation.** All 11,778 published
+`contentUrl` values name `ingest.dasch.swiss`. When media moves to Vitrinli and
+downloads are served by the Access Area's `media` capability, the host in them
+changes. Metadata heals going forward on its own — the URL comes from the corpus
+export, so the first export after the migration carries the new host and DPE
+re-serves it without a code change — but copies already harvested by third
+parties do not, and `schema:distribution` exists to be harvested. Plan the
+retirement to include a corpus re-export and a re-publish, or external copies
+404.
+
 ## Logging
 
 Structured logging via `init-tracing-opentelemetry` (OTel-aware tracing subscriber). In production (`DPE_ENV=PROD`), logs are JSON-formatted to stdout only. In local development (`DPE_ENV=DEV`), logs are additionally exported via OTLP to Loki when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Configure levels with `RUST_LOG`:

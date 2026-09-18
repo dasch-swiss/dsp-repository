@@ -290,15 +290,18 @@ pub struct FileRef {
     pub license_uri: Option<String>,
 }
 
-/// The record's file when it may be advertised, and nothing otherwise.
+/// The record's file when a representation may advertise it, and nothing
+/// otherwise.
 ///
-/// dsp-ingest serves these URLs to anyone, so a record the corpus does not
-/// record as fully open must not have one published for it. The rule lives here
-/// rather than in a writer so that a writer cannot be added that forgets it,
-/// and it fails closed: an access level spelled in a way this does not
-/// recognise yields no file. `Record::access_rights` is free text, unlike a
-/// project's typed `AccessRightsType`, which is why this is a comparison and
-/// not a match.
+/// This governs what `shared-fair` writes into a representation. It is not an
+/// access control and makes nothing unreachable: dsp-ingest serves these URLs
+/// to anyone who has one, and DPE's own `/dpe/records/{shortcode}/{record_id}/file`
+/// returns the same URL for any record with a file. What it controls is whether
+/// a landing page *publishes* one, and the rule lives here rather than in a
+/// writer so that a writer cannot be added that forgets it. It fails closed: an
+/// access level spelled in a way this does not recognise yields no file.
+/// `Record::access_rights` is free text, unlike a project's typed
+/// `AccessRightsType`, which is why this is a comparison and not a match.
 fn publishable_file(record: &Record) -> Option<FileRef> {
     if record.access_rights != access_rights_to_string(&AccessRightsType::FullOpenAccess) {
         return None;

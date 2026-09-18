@@ -105,9 +105,12 @@ one `DataDownload` per file, at the root under `distribution`.
 
 Four rules govern what appears here:
 
-- **Only a record the corpus records as `Full Open Access`.** dsp-ingest serves
-  these URLs to anyone, so a restricted record's file is never advertised. The
-  rule is applied where the graph is built, not in the writer, so no
+- **Only a record the corpus records as `Full Open Access`.** A restricted
+  record's file is not advertised in any representation. This governs what is
+  *published*, not what is reachable — it is not an access control. dsp-ingest
+  serves these URLs to anyone who holds one, and the file-metadata endpoint
+  returns the same URL for any record with a file, neither of which this rule
+  changes. It is applied where the graph is built rather than in a writer, so no
   representation can be added that forgets it, and it fails closed: an access
   level spelled in a way the builder does not recognise yields no download.
 - **`encodingFormat` only when the export records a MIME type.** Project 0803's
@@ -127,6 +130,28 @@ This does not contradict the OAI-PMH mapping, which drops the download URL. That
 decision is about fit: `dc:identifier` identifies the described resource and a
 `HasPart` `relatedIdentifier` relates resources, not bitstreams, so neither
 field could carry it. `schema:distribution` is the field that fits.
+
+**`contentUrl` names a host with a retirement date.** Every one of these URLs
+points at `ingest.dasch.swiss`. Media moves to Vitrinli and ingest is then
+retired, after which downloads are served by the Access Area's `media`
+capability, so the host changes. The URLs are true today, which is the standard
+everything on this page is held to, and they largely heal themselves:
+`RecordFile.url` comes from the corpus export, so the first export after the
+migration carries the new host and DPE re-serves it with no code change —
+nothing in `shared-fair` hardcodes ingest.
+
+What does not heal is a harvested copy. [OAI-PMH](./oai-pmh.md) already records
+this tradeoff for the file endpoint's `downloadUrl`, with the mitigation that a
+consumer fetches it fresh per request. That mitigation does not apply here:
+`schema:distribution` exists to be harvested and cached, so an aggregator that
+read `/metadata.jsonld` before the move holds dead links until it re-harvests.
+**Retiring ingest therefore carries a metadata obligation: re-export the corpus,
+then re-publish.**
+
+A DPE-owned stable download URL redirecting to wherever the bytes live would
+remove the problem. It is not done here, because [OAI-PMH](./oai-pmh.md#file-metadata-endpoint)
+records that DPE serves metadata only and does not redirect to bytes. Changing
+that is an ADR question, not a detail of this page.
 
 **The cap bounds the page, not the assessor.** F-UJI reads the embedded block,
 then follows the `describedby` link to `/metadata.jsonld` and merges what it

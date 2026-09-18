@@ -101,6 +101,25 @@ jobs:
             --max-instances=1
             --cpu-throttling
 
+      # A second step, not a flag on the deploy: Cloud Run assigns the service
+      # URL when the service is created, so it cannot be passed to the call that
+      # creates it. Without it DPE falls back to its compiled default of
+      # https://repository.dasch.swiss, and every `describedby` link, every
+      # JSON-LD URL and the `303` target on the preview point at production,
+      # which does not carry the branch's code. One extra revision on an
+      # ephemeral preview is the right price for identifiers that are absolute
+      # and self-consistent.
+      #
+      # The reported URL is an origin with an https scheme and no trailing
+      # slash, which is what `validate_public_base_url` requires, so it is
+      # passed through unmodified.
+      - name: Point the preview at its own URL
+        run: |
+          gcloud run services update "$SERVICE_NAME" \
+            --region="${{ secrets.GCP_REGION }}" \
+            --update-env-vars="DPE_PUBLIC_BASE_URL=${{ steps.deploy.outputs.url }}" \
+            --quiet
+
       - name: Find existing preview comment
         uses: peter-evans/find-comment@v3
         id: find-comment

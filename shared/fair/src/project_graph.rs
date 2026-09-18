@@ -5,12 +5,14 @@
 //! about it, the graph carries the *underlying* value — placeholders and
 //! emptiness included — so each writer can keep branching on it.
 
+use std::borrow::Cow;
+
 use shared_metadata::temporal_coverage::Resolution;
 use shared_metadata::{
     AccessRightsType, AuthorityFileReference, Discipline, Funding, LegalInfo, ProjectRaw, ProjectStatus, Record,
 };
 
-use crate::graph::{AgentKind, PartRef, ResolveContext};
+use crate::graph::{AgentKind, PartRef, ResolveContext, DASCH};
 use crate::helpers::{extract_year, is_creator, license_identifier_to_label};
 use crate::resolve::resolve_agent;
 use crate::types::DataCiteNameIdentifier;
@@ -118,9 +120,10 @@ pub struct ProjectGraph {
     /// Core emits the description first and drops an abstract equal to it.
     pub description: Option<String>,
     pub abstract_text: Option<String>,
-    /// Possibly empty. DataCite requires one creator and its writer appends an
-    /// organizational `DaSCH` when there is none; Dublin Core emits no creator
-    /// at all, so applying that fallback here would change `oai_dc` output.
+    /// Possibly empty. The mandatory-creator fallback is
+    /// [`ProjectGraph::creators_with_fallback`], not this field: applying it
+    /// here would change `oai_dc` output for every project with no attributed
+    /// creator.
     pub creators: Vec<ProjectAgent>,
     pub contributors: Vec<ProjectAgent>,
     pub keywords: Vec<String>,
@@ -209,6 +212,32 @@ impl ProjectGraph {
                 .collect(),
             status: raw.status.clone(),
             parts: records.iter().map(PartRef::from_record).collect(),
+        }
+    }
+
+    /// `creators`, or a single organizational `DaSCH` when the project credits
+    /// nobody as one.
+    ///
+    /// DataCite makes at least one creator mandatory, so every representation
+    /// that rule governs needs this fallback and resolves it here rather than
+    /// writing it out again (ADR-0005). Dublin Core deliberately does not call
+    /// it: `oai_dc` has no such rule, and naming DaSCH as the creator of a
+    /// project nobody is credited with would invent attribution (ADR-0005,
+    /// *Nothing is invented for a score*). That is also why `build` leaves
+    /// `creators` holding only the agents the project actually attributes.
+    pub fn creators_with_fallback(&self) -> Cow<'_, [ProjectAgent]> {
+        if self.creators.is_empty() {
+            Cow::Owned(vec![ProjectAgent {
+                name: DASCH.to_string(),
+                kind: AgentKind::Organization,
+                given_name: None,
+                family_name: None,
+                name_identifiers: Vec::new(),
+                affiliations: Vec::new(),
+                contributor_type: Vec::new(),
+            }])
+        } else {
+            Cow::Borrowed(&self.creators)
         }
     }
 }
@@ -535,8 +564,9 @@ mod tests {
         }
     }
 
-    /// The DataCite writer owns the mandatory-creator fallback; adding it here
-    /// would put a DaSCH creator into `oai_dc` too.
+    /// `build` records the attributed creators as they are; the
+    /// mandatory-creator fallback is the accessor below, so that it cannot
+    /// reach `oai_dc`.
     #[test]
     fn an_empty_creator_set_stays_empty() {
         let raw = ProjectRaw {
@@ -549,6 +579,37 @@ mod tests {
         let graph = build(&raw, &[]);
         assert!(graph.creators.is_empty());
         assert_eq!(graph.contributors.len(), 1);
+    }
+
+    #[test]
+    fn an_empty_creator_set_falls_back_to_the_dasch_organization() {
+        let raw = ProjectRaw {
+            attributions: vec![Attribution {
+                contributor: "person-001".to_string(),
+                contributor_type: vec!["Researcher".to_string()],
+            }],
+            ..project()
+        };
+        let creators = build(&raw, &[]).creators_with_fallback().into_owned();
+        assert_eq!(creators.len(), 1);
+        assert_eq!(creators[0].name, "DaSCH");
+        assert_eq!(creators[0].kind, AgentKind::Organization);
+        assert!(creators[0].name_identifiers.is_empty());
+        assert!(creators[0].affiliations.is_empty());
+    }
+
+    #[test]
+    fn the_fallback_leaves_attributed_creators_alone() {
+        let raw = ProjectRaw {
+            attributions: vec![Attribution {
+                contributor: "person-001".to_string(),
+                contributor_type: vec!["Project Leader".to_string()],
+            }],
+            ..project()
+        };
+        let graph = build(&raw, &[]);
+        assert!(!graph.creators.is_empty());
+        assert_eq!(graph.creators_with_fallback().as_ref(), graph.creators.as_slice());
     }
 
     #[test]

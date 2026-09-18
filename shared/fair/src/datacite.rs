@@ -19,8 +19,9 @@ pub fn project_to_datacite(graph: &ProjectGraph) -> DataCiteRecord {
         ..Default::default()
     };
 
-    // Creators (mandatory) - principal investigators and project leaders
-    for agent in &graph.creators {
+    // Creators (mandatory) - principal investigators and project leaders, or the
+    // graph's organizational fallback when the project attributes none
+    for agent in graph.creators_with_fallback().iter() {
         datacite.creators.push(DataCiteCreator {
             name: agent.name.clone(),
             name_type: Some(agent.kind.name_type().to_string()),
@@ -28,13 +29,6 @@ pub fn project_to_datacite(graph: &ProjectGraph) -> DataCiteRecord {
             family_name: agent.family_name.clone(),
             name_identifiers: agent.name_identifiers.clone(),
             affiliations: agent.affiliations.clone(),
-        });
-    }
-    if datacite.creators.is_empty() {
-        datacite.creators.push(DataCiteCreator {
-            name: "DaSCH".to_string(),
-            name_type: Some("Organizational".to_string()),
-            ..Default::default()
         });
     }
 
